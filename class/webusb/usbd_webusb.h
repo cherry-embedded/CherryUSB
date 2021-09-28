@@ -19,19 +19,4 @@
 #define WEBUSB_CONFIGURATION_SUBSET_HEADER_SIZE 4
 #define WEBUSB_FUNCTION_SUBSET_HEADER_SIZE      3
 
-/* BOS Capability webusb */
-struct usb_bos_webusb_platform_capability_descriptor {
-    struct usb_bos_capability_descriptor webusb_platform;
-    uint16_t bcdVersion;
-    uint8_t bVendorCode;
-    uint8_t iLandingPage;
-} __packed;
-
-struct webusb_url_descriptor {
-    uint8_t bLength;
-    uint8_t bDescriptorType;
-    uint8_t bScheme;
-    char URL[];
-} __packed;
-
 #endif

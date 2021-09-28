@@ -64,30 +64,57 @@ struct CSW {
 
 /*Length of template descriptor: 23 bytes*/
 #define MSC_DESCRIPTOR_LEN (9 + 7 + 7)
-
-#define MSC_DESCRIPTOR_INIT(bFirstInterface, out_ep, in_ep, str_idx) \
+// clang-format off
+#ifndef SUPPORT_USB_HS
+#define MSC_DESCRIPTOR_INIT(bFirstInterface, out_ep, in_ep,str_idx) \
     /* Interface */                                                  \
-    0x09,                              /* bLength */                 \
-        USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType */         \
-        bFirstInterface,               /* bInterfaceNumber */        \
-        0x00,                          /* bAlternateSetting */       \
-        0x02,                          /* bNumEndpoints */           \
-        USB_DEVICE_CLASS_MASS_STORAGE, /* bInterfaceClass */         \
-        MSC_SUBCLASS_SCSI,             /* bInterfaceSubClass */      \
-        MSC_PROTOCOL_BULK_ONLY,        /* bInterfaceProtocol */      \
-        str_idx, /* iInterface */      /* Endpoint Out */            \
-        0x07,                          /* bLength */                 \
-        USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
-        out_ep,                        /* bEndpointAddress */        \
-        0x02,                          /* bmAttributes */            \
-        0x40, 0x00,                    /* wMaxPacketSize */          \
-        0x01, /* bInterval */          /* Endpoint In */             \
-        0x07,                          /* bLength */                 \
-        USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
-        in_ep,                         /* bEndpointAddress */        \
-        0x02,                          /* bmAttributes */            \
-        0x40, 0x00,                    /* wMaxPacketSize */          \
-        0x01                           /* bInterval */
+    0x09,                          /* bLength */                 \
+    USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType */         \
+    bFirstInterface,               /* bInterfaceNumber */        \
+    0x00,                          /* bAlternateSetting */       \
+    0x02,                          /* bNumEndpoints */           \
+    USB_DEVICE_CLASS_MASS_STORAGE, /* bInterfaceClass */         \
+    MSC_SUBCLASS_SCSI,             /* bInterfaceSubClass */      \
+    MSC_PROTOCOL_BULK_ONLY,        /* bInterfaceProtocol */      \
+    str_idx, /* iInterface */      /* Endpoint Out */            \
+    0x07,                          /* bLength */                 \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
+    out_ep,                        /* bEndpointAddress */        \
+    0x02,                          /* bmAttributes */            \
+    0x40, 0x00,                    /* wMaxPacketSize */          \
+    0x01, /* bInterval */          /* Endpoint In */             \
+    0x07,                          /* bLength */                 \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
+    in_ep,                         /* bEndpointAddress */        \
+    0x02,                          /* bmAttributes */            \
+    0x40, 0x00,                    /* wMaxPacketSize */          \
+    0x01                           /* bInterval */
+#else
+#define MSC_DESCRIPTOR_INIT(bFirstInterface, out_ep, in_ep,str_idx) \
+    /* Interface */                                                 \
+    0x09,                          /* bLength */                 \
+    USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType */         \
+    bFirstInterface,               /* bInterfaceNumber */        \
+    0x00,                          /* bAlternateSetting */       \
+    0x02,                          /* bNumEndpoints */           \
+    USB_DEVICE_CLASS_MASS_STORAGE, /* bInterfaceClass */         \
+    MSC_SUBCLASS_SCSI,             /* bInterfaceSubClass */      \
+    MSC_PROTOCOL_BULK_ONLY,        /* bInterfaceProtocol */      \
+    str_idx, /* iInterface */      /* Endpoint Out */            \
+    0x07,                          /* bLength */                 \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
+    out_ep,                        /* bEndpointAddress */        \
+    0x02,                          /* bmAttributes */            \
+    0x02, 0x00,                    /* wMaxPacketSize */          \
+    0x01, /* bInterval */          /* Endpoint In */             \
+    0x07,                          /* bLength */                 \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
+    in_ep,                         /* bEndpointAddress */        \
+    0x02,                          /* bmAttributes */            \
+    0x02, 0x00,                    /* wMaxPacketSize */          \
+    0x01                           /* bInterval */
+#endif
+// clang-format on
 
 void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep);
 void usbd_msc_get_cap(uint8_t lun, uint32_t *block_num, uint16_t *block_size);

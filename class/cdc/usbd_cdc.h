@@ -295,71 +295,139 @@ struct cdc_ecm_descriptor {
 
 /*Length of template descriptor: 66 bytes*/
 #define CDC_ACM_DESCRIPTOR_LEN (8 + 9 + 5 + 5 + 4 + 5 + 7 + 9 + 7 + 7)
-
+// clang-format off
+#ifndef CONFIG_USB_HS
 #define CDC_ACM_DESCRIPTOR_INIT(bFirstInterface, int_ep, out_ep, in_ep, str_idx)                   \
     /* Interface Associate */                                                                      \
-    0x08,                                                      /* bLength */                       \
-        USB_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION,             /* bDescriptorType */               \
-        bFirstInterface,                                       /* bFirstInterface */               \
-        0x02,                                                  /* bInterfaceCount */               \
-        USB_DEVICE_CLASS_CDC,                                  /* bFunctionClass */                \
-        CDC_ABSTRACT_CONTROL_MODEL,                            /* bFunctionSubClass */             \
-        CDC_COMMON_PROTOCOL_AT_COMMANDS,                       /* bFunctionProtocol */             \
-        0x00, /* iFunction */                                  /* CDC Control Interface */         \
-        0x09,                                                  /* bLength */                       \
-        USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
-        bFirstInterface,                                       /* bInterfaceNumber */              \
-        0x00,                                                  /* bAlternateSetting */             \
-        0x01,                                                  /* bNumEndpoints */                 \
-        USB_DEVICE_CLASS_CDC,                                  /* bInterfaceClass */               \
-        CDC_ABSTRACT_CONTROL_MODEL,                            /* bInterfaceSubClass */            \
-        CDC_COMMON_PROTOCOL_AT_COMMANDS,                       /* bInterfaceProtocol */            \
-        str_idx, /* iInterface */                              /* CDC Header */                    \
-        0x05,                                                  /* bLength */                       \
-        CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
-        CDC_FUNC_DESC_HEADER,                                  /* bDescriptorSubtype */            \
-        WBVAL(CDC_V1_10), /* bcdCDC */                         /* CDC Call */                      \
-        0x05,                                                  /* bLength */                       \
-        CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
-        CDC_FUNC_DESC_CALL_MANAGEMENT,                         /* bDescriptorSubtype */            \
-        bFirstInterface,                                       /* bmCapabilities */                \
-        (uint8_t)(bFirstInterface + 1), /* bDataInterface */   /* CDC ACM: support line request */ \
-        0x04,                                                  /* bLength */                       \
-        CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
-        CDC_FUNC_DESC_ABSTRACT_CONTROL_MANAGEMENT,             /* bDescriptorSubtype */            \
-        0x02, /* bmCapabilities */                             /* CDC Union */                     \
-        0x05,                                                  /* bLength */                       \
-        CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
-        CDC_FUNC_DESC_UNION,                                   /* bDescriptorSubtype */            \
-        bFirstInterface,                                       /* bMasterInterface */              \
-        (uint8_t)(bFirstInterface + 1), /* bSlaveInterface0 */ /* Endpoint Notification */         \
-        0x07,                                                  /* bLength */                       \
-        USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
-        int_ep,                                                /* bEndpointAddress */              \
-        0x03,                                                  /* bmAttributes */                  \
-        0x40, 0x00,                                            /* wMaxPacketSize */                \
-        0x01, /* bInterval */                                  /* CDC Data Interface */            \
-        0x09,                                                  /* bLength */                       \
-        USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
-        (uint8_t)(bFirstInterface + 1),                        /* bInterfaceNumber */              \
-        0x00,                                                  /* bAlternateSetting */             \
-        0x02,                                                  /* bNumEndpoints */                 \
-        CDC_DATA_INTERFACE_CLASS,                              /* bInterfaceClass */               \
-        0x00,                                                  /* bInterfaceSubClass */            \
-        0x00,                                                  /* bInterfaceProtocol */            \
-        0x00, /* iInterface */                                 /* Endpoint Out */                  \
-        0x07,                                                  /* bLength */                       \
-        USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
-        out_ep,                                                /* bEndpointAddress */              \
-        0x02,                                                  /* bmAttributes */                  \
-        0x40, 0x00,                                            /* wMaxPacketSize */                \
-        0x01, /* bInterval */                                  /* Endpoint In */                   \
-        0x07,                                                  /* bLength */                       \
-        USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
-        in_ep,                                                 /* bEndpointAddress */              \
-        0x02,                                                  /* bmAttributes */                  \
-        0x40, 0x00,                                            /* wMaxPacketSize */                \
-        0x01                                                   /* bInterval */
+    0x08,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION,             /* bDescriptorType */               \
+    bFirstInterface,                                       /* bFirstInterface */               \
+    0x02,                                                  /* bInterfaceCount */               \
+    USB_DEVICE_CLASS_CDC,                                  /* bFunctionClass */                \
+    CDC_ABSTRACT_CONTROL_MODEL,                            /* bFunctionSubClass */             \
+    CDC_COMMON_PROTOCOL_AT_COMMANDS,                       /* bFunctionProtocol */             \
+    0x00, /* iFunction */                                  /* CDC Control Interface */         \
+    0x09,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
+    bFirstInterface,                                       /* bInterfaceNumber */              \
+    0x00,                                                  /* bAlternateSetting */             \
+    0x01,                                                  /* bNumEndpoints */                 \
+    USB_DEVICE_CLASS_CDC,                                  /* bInterfaceClass */               \
+    CDC_ABSTRACT_CONTROL_MODEL,                            /* bInterfaceSubClass */            \
+    CDC_COMMON_PROTOCOL_AT_COMMANDS,                       /* bInterfaceProtocol */            \
+    str_idx, /* iInterface */                              /* CDC Header */                    \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_HEADER,                                  /* bDescriptorSubtype */            \
+    WBVAL(CDC_V1_10), /* bcdCDC */                         /* CDC Call */                      \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_CALL_MANAGEMENT,                         /* bDescriptorSubtype */            \
+    bFirstInterface,                                       /* bmCapabilities */                \
+    (uint8_t)(bFirstInterface + 1), /* bDataInterface */   /* CDC ACM: support line request */ \
+    0x04,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_ABSTRACT_CONTROL_MANAGEMENT,             /* bDescriptorSubtype */            \
+    0x02, /* bmCapabilities */                             /* CDC Union */                     \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_UNION,                                   /* bDescriptorSubtype */            \
+    bFirstInterface,                                       /* bMasterInterface */              \
+    (uint8_t)(bFirstInterface + 1), /* bSlaveInterface0 */ /* Endpoint Notification */         \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    int_ep,                                                /* bEndpointAddress */              \
+    0x03,                                                  /* bmAttributes */                  \
+    0x40, 0x00,                                            /* wMaxPacketSize */                \
+    0x01, /* bInterval */                                  /* CDC Data Interface */            \
+    0x09,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
+    (uint8_t)(bFirstInterface + 1),                        /* bInterfaceNumber */              \
+    0x00,                                                  /* bAlternateSetting */             \
+    0x02,                                                  /* bNumEndpoints */                 \
+    CDC_DATA_INTERFACE_CLASS,                              /* bInterfaceClass */               \
+    0x00,                                                  /* bInterfaceSubClass */            \
+    0x00,                                                  /* bInterfaceProtocol */            \
+    0x00, /* iInterface */                                 /* Endpoint Out */                  \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    out_ep,                                                /* bEndpointAddress */              \
+    0x02,                                                  /* bmAttributes */                  \
+    0x40, 0x00,                                            /* wMaxPacketSize */                \
+    0x01, /* bInterval */                                  /* Endpoint In */                   \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    in_ep,                                                 /* bEndpointAddress */              \
+    0x02,                                                  /* bmAttributes */                  \
+    0x40, 0x00,                                            /* wMaxPacketSize */                \
+    0x01                                                   /* bInterval */
+#else
+#define CDC_ACM_DESCRIPTOR_INIT(bFirstInterface, int_ep, out_ep, in_ep, str_idx)               \
+    /* Interface Associate */                                                                  \
+    0x08,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION,             /* bDescriptorType */               \
+    bFirstInterface,                                       /* bFirstInterface */               \
+    0x02,                                                  /* bInterfaceCount */               \
+    USB_DEVICE_CLASS_CDC,                                  /* bFunctionClass */                \
+    CDC_ABSTRACT_CONTROL_MODEL,                            /* bFunctionSubClass */             \
+    CDC_COMMON_PROTOCOL_AT_COMMANDS,                       /* bFunctionProtocol */             \
+    0x00, /* iFunction */                                  /* CDC Control Interface */         \
+    0x09,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
+    bFirstInterface,                                       /* bInterfaceNumber */              \
+    0x00,                                                  /* bAlternateSetting */             \
+    0x01,                                                  /* bNumEndpoints */                 \
+    USB_DEVICE_CLASS_CDC,                                  /* bInterfaceClass */               \
+    CDC_ABSTRACT_CONTROL_MODEL,                            /* bInterfaceSubClass */            \
+    CDC_COMMON_PROTOCOL_AT_COMMANDS,                       /* bInterfaceProtocol */            \
+    str_idx, /* iInterface */                              /* CDC Header */                    \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_HEADER,                                  /* bDescriptorSubtype */            \
+    WBVAL(CDC_V1_10), /* bcdCDC */                         /* CDC Call */                      \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_CALL_MANAGEMENT,                         /* bDescriptorSubtype */            \
+    bFirstInterface,                                       /* bmCapabilities */                \
+    (uint8_t)(bFirstInterface + 1), /* bDataInterface */   /* CDC ACM: support line request */ \
+    0x04,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_ABSTRACT_CONTROL_MANAGEMENT,             /* bDescriptorSubtype */            \
+    0x02, /* bmCapabilities */                             /* CDC Union */                     \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_UNION,                                   /* bDescriptorSubtype */            \
+    bFirstInterface,                                       /* bMasterInterface */              \
+    (uint8_t)(bFirstInterface + 1), /* bSlaveInterface0 */ /* Endpoint Notification */         \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    int_ep,                                                /* bEndpointAddress */              \
+    0x03,                                                  /* bmAttributes */                  \
+    0x02, 0x00,                                            /* wMaxPacketSize */                \
+    0x01, /* bInterval */                                  /* CDC Data Interface */            \
+    0x09,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
+    (uint8_t)(bFirstInterface + 1),                        /* bInterfaceNumber */              \
+    0x00,                                                  /* bAlternateSetting */             \
+    0x02,                                                  /* bNumEndpoints */                 \
+    CDC_DATA_INTERFACE_CLASS,                              /* bInterfaceClass */               \
+    0x00,                                                  /* bInterfaceSubClass */            \
+    0x00,                                                  /* bInterfaceProtocol */            \
+    0x00, /* iInterface */                                 /* Endpoint Out */                  \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    out_ep,                                                /* bEndpointAddress */              \
+    0x02,                                                  /* bmAttributes */                  \
+    0x02, 0x00,                                            /* wMaxPacketSize */                \
+    0x01, /* bInterval */                                  /* Endpoint In */                   \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    in_ep,                                                 /* bEndpointAddress */              \
+    0x02,                                                  /* bmAttributes */                  \
+    0x02, 0x00,                                            /* wMaxPacketSize */                \
+    0x01                                                   /* bInterval */
+#endif
+// clang-format on
 
 void usbd_cdc_add_acm_interface(usbd_class_t *class, usbd_interface_t *intf);
 

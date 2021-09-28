@@ -125,6 +125,8 @@ void usbd_event_notify_handler(uint8_t event, void *arg);
 void usbd_desc_register(const uint8_t *desc);
 void usbd_class_register(usbd_class_t *class);
 void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);
+void usbd_msosv2_desc_register(struct usb_msosv2_descriptor *desc);
+void usbd_bos_desc_register(struct usb_bos_descriptor *desc);
 void usbd_class_add_interface(usbd_class_t *class, usbd_interface_t *intf);
 void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep);
 bool usb_device_is_configured(void);

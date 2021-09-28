@@ -17,7 +17,14 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
                     memcpy(&audio_control_info.mute, *data, *len);
                 } else if (setup->wValueH == AUDIO_FU_CONTROL_VOLUME) {
                     memcpy(&audio_control_info.vol_current, *data, *len);
-                    USBD_LOG_DBG("vol:0x%x\r\n", audio_control_info.vol_current);
+                    uint32_t vol;
+                    if (audio_control_info.vol_current == 0) {
+                        vol = 100;
+                    } else {
+                        vol = (audio_control_info.vol_current - 0xDB00 + 1) * 100 / (0xFFFF - 0xDB00);
+                    }
+                    usbd_audio_set_volume(vol);
+                    USBD_LOG_WRN("vol:%d\r\n", vol);
                 }
             }
 
@@ -78,7 +85,9 @@ void audio_notify_handler(uint8_t event, void *arg)
             break;
     }
 }
-
+__weak void usbd_audio_set_volume(uint8_t vol)
+{
+}
 void usbd_audio_add_interface(usbd_class_t *class, usbd_interface_t *intf)
 {
     static usbd_class_t *last_class = NULL;

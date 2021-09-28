@@ -25,8 +25,11 @@
 #include "usbd_msc.h"
 
 /* max USB packet size */
+#ifndef CONFIG_USB_HS
 #define MASS_STORAGE_BULK_EP_MPS 64
-#define MASS_STORAGE_BLOCK_SIZE  512
+#else
+#define MASS_STORAGE_BULK_EP_MPS 512
+#endif
 
 #define MSD_OUT_EP_IDX 0
 #define MSD_IN_EP_IDX  1
@@ -60,7 +63,7 @@ struct usbd_msc_cfg_private {
 
     uint32_t scsi_blk_addr;
     uint32_t scsi_blk_len;
-    uint8_t block_buffer[MASS_STORAGE_BLOCK_SIZE];
+    uint8_t *block_buffer;
 
 } usbd_msc_cfg;
 
@@ -76,6 +79,11 @@ static void usbd_msc_reset(void)
     usbd_msc_cfg.scsi_blk_len = 0U;
     usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
     usbd_msc_cfg.max_lun_count = 0;
+
+    if (usbd_msc_cfg.block_buffer) {
+        free(usbd_msc_cfg.block_buffer);
+    }
+    usbd_msc_cfg.block_buffer = malloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
 }
 
 /**
@@ -138,7 +146,6 @@ static bool usbd_msc_datain_check(void)
 {
     if (!usbd_msc_cfg.cbw.DataLength) {
         USBD_LOG_WRN("Zero length in CBW");
-        //SCSI_SenseCode(pdev, hmsc->cbw.bLUN, ILLEGAL_REQUEST, INVALID_CDB);
         usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
         usbd_msc_send_csw();
         return false;
@@ -164,7 +171,7 @@ static bool usbd_msc_send_to_host(uint8_t *buffer, uint16_t size)
     }
 
     if (usbd_ep_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buffer, size, NULL)) {
-        USBD_LOG_ERR("USB write failed");
+        USBD_LOG_ERR("USB write failed\r\n");
         return false;
     }
 
@@ -478,11 +485,10 @@ static bool usbd_msc_read_write_process(void)
 {
     /* Logical Block Address of First Block */
     uint32_t lba;
-    uint32_t len = 0;
+    uint32_t blk_num = 0;
 
     if (!usbd_msc_cfg.cbw.DataLength) {
         USBD_LOG_WRN("Zero length in CBW\r\n");
-        //SCSI_SenseCode(pdev, hmsc->cbw.bLUN, ILLEGAL_REQUEST, INVALID_CDB);
         usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
         usbd_msc_send_csw();
         return false;
@@ -498,22 +504,22 @@ static bool usbd_msc_read_write_process(void)
         case SCSI_READ10:
         case SCSI_WRITE10:
         case SCSI_VERIFY10:
-            len = GET_BE16(&usbd_msc_cfg.cbw.CB[7]);
+            blk_num = GET_BE16(&usbd_msc_cfg.cbw.CB[7]);
             break;
 
         case SCSI_READ12:
         case SCSI_WRITE12:
-            len = GET_BE32(&usbd_msc_cfg.cbw.CB[6]);
+            blk_num = GET_BE32(&usbd_msc_cfg.cbw.CB[6]);
             break;
 
         default:
             break;
     }
 
-    USBD_LOG_DBG("len (block) : 0x%x\r\n", len);
-    usbd_msc_cfg.scsi_blk_len = len * usbd_msc_cfg.scsi_blk_size;
+    USBD_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
+    usbd_msc_cfg.scsi_blk_len = blk_num * usbd_msc_cfg.scsi_blk_size;
 
-    if ((lba + len) > usbd_msc_cfg.scsi_blk_nbr) {
+    if ((lba + blk_num) > usbd_msc_cfg.scsi_blk_nbr) {
         USBD_LOG_ERR("LBA out of range\r\n");
         usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_FAILED;
         usbd_msc_send_csw();

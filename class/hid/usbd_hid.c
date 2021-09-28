@@ -30,11 +30,19 @@ struct usbd_hid_cfg_private {
     const uint8_t *hid_descriptor;
     const uint8_t *hid_report_descriptor;
     uint32_t hid_report_descriptor_len;
-    uint32_t protocol;
-    uint32_t idle_state;
+    uint8_t current_intf_num;
     uint8_t hid_state;
     uint8_t report;
-    uint8_t current_intf_num;
+    uint8_t idle_state;
+    uint8_t protocol;
+
+    uint8_t (*get_report_callback)(uint8_t report_id, uint8_t report_type);
+    void (*set_report_callback)(uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len);
+    uint8_t (*get_idle_callback)(uint8_t report_id);
+    void (*set_idle_callback)(uint8_t report_id, uint8_t duration);
+    void (*set_protocol_callback)(uint8_t protocol);
+    uint8_t (*get_protocol_callback)(void);
+
     usb_slist_t list;
 } usbd_hid_cfg[4];
 
@@ -47,6 +55,7 @@ static void usbd_hid_reset(void)
     {
         struct usbd_hid_cfg_private *hid_intf = usb_slist_entry(i, struct usbd_hid_cfg_private, list);
         hid_intf->hid_state = HID_STATE_IDLE;
+        hid_intf->report = 0;
         hid_intf->idle_state = 0;
         hid_intf->protocol = 0;
     }
@@ -131,24 +140,42 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
 
     switch (setup->bRequest) {
         case HID_REQUEST_GET_REPORT:
+            if (current_hid_intf->get_report_callback)
+                current_hid_intf->report = current_hid_intf->get_report_callback(setup->wValueL, setup->wValueH); /*report id ,report type*/
+
             *data = (uint8_t *)&current_hid_intf->report;
             *len = 1;
             break;
         case HID_REQUEST_GET_IDLE:
+            if (current_hid_intf->get_idle_callback)
+                current_hid_intf->idle_state = current_hid_intf->get_idle_callback(setup->wValueL);
+
             *data = (uint8_t *)&current_hid_intf->idle_state;
             *len = 1;
             break;
         case HID_REQUEST_GET_PROTOCOL:
+            if (current_hid_intf->get_protocol_callback)
+                current_hid_intf->protocol = current_hid_intf->get_protocol_callback();
+
             *data = (uint8_t *)&current_hid_intf->protocol;
             *len = 1;
             break;
         case HID_REQUEST_SET_REPORT:
+            if (current_hid_intf->set_report_callback)
+                current_hid_intf->set_report_callback(setup->wValueL, setup->wValueH, *data, *len); /*report id ,report type,report,report len*/
+
             current_hid_intf->report = **data;
             break;
         case HID_REQUEST_SET_IDLE:
-            current_hid_intf->idle_state = setup->wValueH;
+            if (current_hid_intf->set_idle_callback)
+                current_hid_intf->set_idle_callback(setup->wValueL, setup->wIndexH); /*report id ,duration*/
+
+            current_hid_intf->idle_state = setup->wIndexH;
             break;
         case HID_REQUEST_SET_PROTOCOL:
+            if (current_hid_intf->set_protocol_callback)
+                current_hid_intf->set_protocol_callback(setup->wValueL); /*protocol*/
+
             current_hid_intf->protocol = setup->wValueL;
             break;
 
@@ -201,6 +228,38 @@ void usbd_hid_report_descriptor_register(uint8_t intf_num, const uint8_t *desc, 
         if (hid_intf->current_intf_num == intf_num) {
             hid_intf->hid_report_descriptor = desc;
             hid_intf->hid_report_descriptor_len = desc_len;
+            return;
+        }
+    }
+}
+// clang-format off
+void usbd_hid_set_request_callback( uint8_t intf_num,
+                                    uint8_t (*get_report_callback)(uint8_t report_id, uint8_t report_type),
+                                    void (*set_report_callback)(uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len),
+                                    uint8_t (*get_idle_callback)(uint8_t report_id),
+                                    void (*set_idle_callback)(uint8_t report_id, uint8_t duration),
+                                    void (*set_protocol_callback)(uint8_t protocol),
+                                    uint8_t (*get_protocol_callback)(void))
+// clang-format on
+{
+    usb_slist_t *i;
+    usb_slist_for_each(i, &usbd_hid_class_head)
+    {
+        struct usbd_hid_cfg_private *hid_intf = usb_slist_entry(i, struct usbd_hid_cfg_private, list);
+
+        if (hid_intf->current_intf_num == intf_num) {
+            if (get_report_callback)
+                hid_intf->get_report_callback = get_report_callback;
+            if (set_report_callback)
+                hid_intf->set_report_callback = set_report_callback;
+            if (get_idle_callback)
+                hid_intf->get_idle_callback = get_idle_callback;
+            if (set_idle_callback)
+                hid_intf->set_idle_callback = set_idle_callback;
+            if (set_protocol_callback)
+                hid_intf->set_protocol_callback = set_protocol_callback;
+            if (get_protocol_callback)
+                hid_intf->get_protocol_callback = get_protocol_callback;
             return;
         }
     }

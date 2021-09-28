@@ -23,13 +23,4 @@
 #define WINUSB_PROP_DATA_TYPE_REG_SZ       0x01
 #define WINUSB_PROP_DATA_TYPE_REG_MULTI_SZ 0x07
 
-/* WinUSB Microsoft OS 2.0 descriptor Platform Capability Descriptor */
-struct usb_bos_winusb_platform_capability_descriptor {
-    struct usb_bos_capability_descriptor winusb_platform;
-    uint32_t dwWindowsVersion;
-    uint16_t wMSOSDescriptorSetTotalLength;
-    uint8_t bMS_VendorCode;
-    uint8_t bAltEnumCode;
-} __packed;
-
 #endif

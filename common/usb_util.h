@@ -68,12 +68,21 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef BCD
 #define BCD(x) ((((x) / 10) << 4) | ((x) % 10))
+#endif
 
-#define BIT(x) (1 << (x))
+#ifdef BIT
+#undef BIT
+#define BIT(n) (1UL << (n))
+#else
+#define BIT(n) (1UL << (n))
+#endif
 
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array) \
     ((int)((sizeof(array) / sizeof((array)[0]))))
+#endif
 
 #define USB_DESC_SECTION __attribute__((section("usb_desc"))) __used __aligned(1)
 

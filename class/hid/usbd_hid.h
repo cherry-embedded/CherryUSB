@@ -12,6 +12,13 @@
 extern "C" {
 #endif
 
+/* HID Protocol Codes */
+#define HID_PROTOCOL_NONE     0x00
+#define HID_PROTOCOL_BOOT     0x00
+#define HID_PROTOCOL_KEYBOARD 0x01
+#define HID_PROTOCOL_REPORT   0x01
+#define HID_PROTOCOL_MOUSE    0x02
+
 /* HID Class Descriptor Types */
 #define HID_DESCRIPTOR_TYPE_HID          0x21
 #define HID_DESCRIPTOR_TYPE_HID_REPORT   0x22
@@ -24,6 +31,11 @@ extern "C" {
 #define HID_REQUEST_SET_REPORT   0x09
 #define HID_REQUEST_SET_IDLE     0x0A
 #define HID_REQUEST_SET_PROTOCOL 0x0B
+
+/* HID Report Types */
+#define HID_REPORT_INPUT   0x01
+#define HID_REPORT_OUTPUT  0x02
+#define HID_REPORT_FEATURE 0x03
 
 /* HID Report Definitions */
 struct usb_hid_class_subdescriptor {
@@ -121,10 +133,6 @@ struct usb_hid_descriptor {
 /* Collection types */
 #define COLLECTION_PHYSICAL    0x00
 #define COLLECTION_APPLICATION 0x01
-
-/* Protocols */
-#define HID_PROTOCOL_BOOT   0x00
-#define HID_PROTOCOL_REPORT 0x01
 
 /* Example HID report descriptors */
 /**
@@ -336,7 +344,15 @@ void usbd_hid_report_descriptor_register(uint8_t intf_num, const uint8_t *desc, 
 void usbd_hid_add_interface(usbd_class_t *class, usbd_interface_t *intf);
 void usbd_hid_reset_state(void);
 void usbd_hid_send_report(uint8_t ep, uint8_t *data, uint8_t len);
-
+// clang-format off
+void usbd_hid_set_request_callback( uint8_t intf_num,
+                                    uint8_t (*get_report_callback)(uint8_t report_id, uint8_t report_type),
+                                    void (*set_report_callback)(uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len),
+                                    uint8_t (*get_idle_callback)(uint8_t report_id),
+                                    void (*set_idle_callback)(uint8_t report_id, uint8_t duration),
+                                    void (*set_protocol_callback)(uint8_t protocol),
+                                    uint8_t (*get_protocol_callback)(void));
+// clang-format on
 #ifdef __cplusplus
 }
 #endif
