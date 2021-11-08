@@ -18,16 +18,7 @@ USB Stack 是一个跨平台的、用于嵌入式 MCU 的 USB 协议栈。其中
 - 支持 Vendor 类 class
 - 支持 WINUSB1.0、WINUSB2.0
 
-当前支持的芯片（当然，是个 有 USB 的 mcu 都支持）以及 USB IP如下：
-
-- STM32
-- MicroChip
-- Kinetis
-- Synopsys USB IP
-- faraday USB IP
-- 开源 USB IP `<https://github.com/www-asics-ws/usb2_dev>`_
-
-.. note:: USB DEVICE 协议栈的代码实现过程参考 `<https://www.bilibili.com/video/BV1Ef4y1t73d>`_
+USB DEVICE 协议栈的代码实现过程参考 `<https://www.bilibili.com/video/BV1Ef4y1t73d>`_
 
 USB DEVICE 协议栈 porting 接口
 -------------------------------
@@ -46,24 +37,7 @@ USB DEVICE 协议栈 porting 接口在 ``usb_stack/common/usb_dc.h`` 文件中�
 USB DEVICE 控制器接口
 -------------------------------
 
-**usb_dc_init**
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-``usb_dc_init`` 用来注册 USB 设备和初始化 USB 硬件相关寄存器，注册 usb 中断回调函数。在注册之前需要打开对应 USB 设备的宏定义,例如定义宏 ``BSP_USING_USB`` 方可使用 USB 设备。
-
-.. code-block:: C
-
-    struct device *usb_dc_init(void)
-    {
-        usb_dc_register(USB_INDEX, "usb", DEVICE_OFLAG_RDWR);
-        usb = device_find("usb");
-        device_set_callback(usb, usb_dc_event_callback);
-        device_open(usb, 0);
-        return usb;
-    }
-
-- device 返回 USB 设备句柄
-
-.. note::中断处理函数则是调用 ``usbd_event_notify_handler``
+用户需要实现 usb controller 相关寄存器初始化（可以命名为 ``usb_dc_init`` ）以及在 USB 中断函数中，根据不同的中断标志调用 ``usbd_event_notify_handler``。
 
 USB DEVICE 应用层接口
 ------------------------
