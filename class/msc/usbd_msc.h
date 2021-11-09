@@ -43,31 +43,12 @@ extern "C" {
 #define CSW_STATUS_CMD_FAILED  0x01
 #define CSW_STATUS_PHASE_ERROR 0x02
 
-/** MSC Bulk-Only Command Block Wrapper (CBW) */
-struct CBW {
-    uint32_t Signature;
-    uint32_t Tag;
-    uint32_t DataLength;
-    uint8_t Flags;
-    uint8_t LUN;
-    uint8_t CBLength;
-    uint8_t CB[16];
-} __packed;
-
-/** MSC Bulk-Only Command Status Wrapper (CSW) */
-struct CSW {
-    uint32_t Signature;
-    uint32_t Tag;
-    uint32_t DataResidue;
-    uint8_t Status;
-} __packed;
-
 /*Length of template descriptor: 23 bytes*/
 #define MSC_DESCRIPTOR_LEN (9 + 7 + 7)
 // clang-format off
 #ifndef SUPPORT_USB_HS
 #define MSC_DESCRIPTOR_INIT(bFirstInterface, out_ep, in_ep,str_idx) \
-    /* Interface */                                                  \
+    /* Interface */                                              \
     0x09,                          /* bLength */                 \
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType */         \
     bFirstInterface,               /* bInterfaceNumber */        \
@@ -76,22 +57,22 @@ struct CSW {
     USB_DEVICE_CLASS_MASS_STORAGE, /* bInterfaceClass */         \
     MSC_SUBCLASS_SCSI,             /* bInterfaceSubClass */      \
     MSC_PROTOCOL_BULK_ONLY,        /* bInterfaceProtocol */      \
-    str_idx, /* iInterface */      /* Endpoint Out */            \
+    str_idx,                       /* iInterface */              \
     0x07,                          /* bLength */                 \
     USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
     out_ep,                        /* bEndpointAddress */        \
     0x02,                          /* bmAttributes */            \
     0x40, 0x00,                    /* wMaxPacketSize */          \
-    0x01, /* bInterval */          /* Endpoint In */             \
+    0x00,                          /* bInterval */               \
     0x07,                          /* bLength */                 \
     USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
     in_ep,                         /* bEndpointAddress */        \
     0x02,                          /* bmAttributes */            \
     0x40, 0x00,                    /* wMaxPacketSize */          \
-    0x01                           /* bInterval */
+    0x00                           /* bInterval */
 #else
 #define MSC_DESCRIPTOR_INIT(bFirstInterface, out_ep, in_ep,str_idx) \
-    /* Interface */                                                 \
+    /* Interface */                                              \
     0x09,                          /* bLength */                 \
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType */         \
     bFirstInterface,               /* bInterfaceNumber */        \
@@ -100,19 +81,19 @@ struct CSW {
     USB_DEVICE_CLASS_MASS_STORAGE, /* bInterfaceClass */         \
     MSC_SUBCLASS_SCSI,             /* bInterfaceSubClass */      \
     MSC_PROTOCOL_BULK_ONLY,        /* bInterfaceProtocol */      \
-    str_idx, /* iInterface */      /* Endpoint Out */            \
+    str_idx,                       /* iInterface */              \
     0x07,                          /* bLength */                 \
     USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
     out_ep,                        /* bEndpointAddress */        \
     0x02,                          /* bmAttributes */            \
-    0x02, 0x00,                    /* wMaxPacketSize */          \
-    0x01, /* bInterval */          /* Endpoint In */             \
+    0x00, 0x02,                    /* wMaxPacketSize */          \
+    0x00,                          /* bInterval */               \
     0x07,                          /* bLength */                 \
     USB_DESCRIPTOR_TYPE_ENDPOINT,  /* bDescriptorType */         \
     in_ep,                         /* bEndpointAddress */        \
     0x02,                          /* bmAttributes */            \
-    0x02, 0x00,                    /* wMaxPacketSize */          \
-    0x01                           /* bInterval */
+    0x00, 0x02,                    /* wMaxPacketSize */          \
+    0x00                           /* bInterval */
 #endif
 // clang-format on
 

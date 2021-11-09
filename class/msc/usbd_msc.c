@@ -39,16 +39,31 @@ static usbd_endpoint_t mass_ep_data[2];
 
 /* MSC Bulk-only Stage */
 enum Stage {
-    /* MSC Bulk-only Stage */
-    MSC_BS_CBW = 0,                /* Command Block Wrapper */
-    MSC_BS_DATA_OUT = 1,           /* Data Out Phase */
-    MSC_BS_DATA_IN = 2,            /* Data In Phase */
-    MSC_BS_DATA_IN_LAST = 3,       /* Data In Last Phase */
-    MSC_BS_DATA_IN_LAST_STALL = 4, /* Data In Last Phase with Stall */
-    MSC_BS_CSW = 5,                /* Command Status Wrapper */
-    MSC_BS_ERROR = 6,              /* Error */
-    MSC_BS_RESET = 7,              /* Bulk-Only Mass Storage Reset */
+    MSC_READ_CBW = 0, /* Command Block Wrapper */
+    MSC_DATA_OUT = 1, /* Data Out Phase */
+    MSC_DATA_IN = 2,  /* Data In Phase */
+    MSC_SEND_CSW = 3, /* Command Status Wrapper */
+    MSC_WAIT_CSW = 4, /* Command Status Wrapper */
 };
+
+/** MSC Bulk-Only Command Block Wrapper (CBW) */
+struct CBW {
+    uint32_t dSignature;
+    uint32_t dTag;
+    uint32_t dDataLength;
+    uint8_t bmFlags;
+    uint8_t bLUN;
+    uint8_t bCBLength;
+    uint8_t CB[16];
+} __packed;
+
+/** MSC Bulk-Only Command Status Wrapper (CSW) */
+struct CSW {
+    uint32_t dSignature;
+    uint32_t dTag;
+    uint32_t dDataResidue;
+    uint8_t bStatus;
+} __packed;
 
 /* Device data structure */
 struct usbd_msc_cfg_private {
@@ -57,7 +72,10 @@ struct usbd_msc_cfg_private {
     struct CBW cbw;
     struct CSW csw;
 
-    uint8_t max_lun_count;
+    uint8_t sKey; /* Sense key */
+    uint8_t ASC;  /* Additional Sense Code */
+    uint8_t ASQ;  /* Additional Sense Qualifier */
+    uint8_t max_lun;
     uint16_t scsi_blk_size;
     uint32_t scsi_blk_nbr;
 
@@ -72,18 +90,24 @@ static bool memOK;
 
 static void usbd_msc_reset(void)
 {
-    usbd_msc_cfg.stage = MSC_BS_CBW;
-    (void)memset((void *)&usbd_msc_cfg.cbw, 0, sizeof(struct CBW));
-    (void)memset((void *)&usbd_msc_cfg.csw, 0, sizeof(struct CSW));
+    usbd_msc_cfg.stage = MSC_READ_CBW;
     usbd_msc_cfg.scsi_blk_addr = 0U;
     usbd_msc_cfg.scsi_blk_len = 0U;
+    usbd_msc_cfg.max_lun = 0;
+    usbd_msc_cfg.sKey = 0;
+    usbd_msc_cfg.ASC = 0;
+    usbd_msc_cfg.ASQ = 0;
+
+    (void)memset((void *)&usbd_msc_cfg.cbw, 0, sizeof(struct CBW));
+    (void)memset((void *)&usbd_msc_cfg.csw, 0, sizeof(struct CSW));
+
     usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
-    usbd_msc_cfg.max_lun_count = 0;
 
     if (usbd_msc_cfg.block_buffer) {
         free(usbd_msc_cfg.block_buffer);
     }
     usbd_msc_cfg.block_buffer = malloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
+    memset(usbd_msc_cfg.block_buffer, 0, usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
 }
 
 /**
@@ -97,6 +121,10 @@ static void usbd_msc_reset(void)
  */
 static int msc_storage_class_request_handler(struct usb_setup_packet *pSetup, uint8_t **data, uint32_t *len)
 {
+    USBD_LOG_DBG("MSC Class request: "
+                 "bRequest 0x%02x\r\n",
+                 setup->bRequest);
+
     switch (pSetup->bRequest) {
         case MSC_REQUEST_RESET:
             USBD_LOG_DBG("MSC_REQUEST_RESET");
@@ -117,7 +145,7 @@ static int msc_storage_class_request_handler(struct usb_setup_packet *pSetup, ui
                 return -1;
             }
 
-            *data = (uint8_t *)(&usbd_msc_cfg.max_lun_count);
+            *data = (uint8_t *)(&usbd_msc_cfg.max_lun);
             *len = 1;
             break;
 
@@ -130,197 +158,298 @@ static int msc_storage_class_request_handler(struct usb_setup_packet *pSetup, ui
     return 0;
 }
 
-static void usbd_msc_send_csw(void)
+static void usbd_msc_bot_abort(void)
 {
-    usbd_msc_cfg.csw.Signature = MSC_CSW_Signature;
+    if ((usbd_msc_cfg.cbw.bmFlags == 0) && (usbd_msc_cfg.cbw.dDataLength != 0)) {
+        usbd_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
+    }
+    usbd_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
+}
+
+static void sendCSW(uint8_t CSW_Status)
+{
+    usbd_msc_cfg.csw.dSignature = MSC_CSW_Signature;
+    usbd_msc_cfg.csw.bStatus = CSW_Status;
+
+    /* updating the State Machine , so that we wait CSW when this
+	 * transfer is complete, ie when we get a bulk in callback
+	 */
+    usbd_msc_cfg.stage = MSC_WAIT_CSW;
 
     if (usbd_ep_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, (uint8_t *)&usbd_msc_cfg.csw,
                       sizeof(struct CSW), NULL) != 0) {
-        USBD_LOG_ERR("usb write failure");
+        USBD_LOG_ERR("usb write failure\r\n");
     }
-
-    usbd_msc_cfg.stage = MSC_BS_CSW;
 }
 
-static bool usbd_msc_datain_check(void)
+static void sendLastData(uint8_t *buffer, uint8_t size)
 {
-    if (!usbd_msc_cfg.cbw.DataLength) {
-        USBD_LOG_WRN("Zero length in CBW");
-        usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-        usbd_msc_send_csw();
-        return false;
-    }
+    size = MIN(size, usbd_msc_cfg.cbw.dDataLength);
 
-    if ((usbd_msc_cfg.cbw.Flags & 0x80) == 0) {
-        usbd_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-        usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-        usbd_msc_send_csw();
-        return false;
-    }
+    /* updating the State Machine , so that we send CSW when this
+	 * transfer is complete, ie when we get a bulk in callback
+	 */
+    usbd_msc_cfg.stage = MSC_SEND_CSW;
 
-    return true;
-}
-
-static bool usbd_msc_send_to_host(uint8_t *buffer, uint16_t size)
-{
-    if (size >= usbd_msc_cfg.cbw.DataLength) {
-        size = usbd_msc_cfg.cbw.DataLength;
-        usbd_msc_cfg.stage = MSC_BS_DATA_IN_LAST;
-    } else {
-        usbd_msc_cfg.stage = MSC_BS_DATA_IN_LAST_STALL;
-    }
-
-    if (usbd_ep_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buffer, size, NULL)) {
+    if (usbd_ep_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buffer, size, NULL) != 0) {
         USBD_LOG_ERR("USB write failed\r\n");
-        return false;
     }
 
-    usbd_msc_cfg.csw.DataResidue -= size;
-    usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-
-    return true;
+    usbd_msc_cfg.csw.dDataResidue -= size;
+    usbd_msc_cfg.csw.bStatus = CSW_STATUS_CMD_PASSED;
 }
 
-static void usbd_msc_memory_verify(uint8_t *buf, uint16_t size)
-{
-    uint32_t n;
-
-    if ((usbd_msc_cfg.scsi_blk_addr + size) > (usbd_msc_cfg.scsi_blk_nbr * usbd_msc_cfg.scsi_blk_size)) {
-        size = usbd_msc_cfg.scsi_blk_nbr * usbd_msc_cfg.scsi_blk_size - usbd_msc_cfg.scsi_blk_addr;
-        usbd_msc_cfg.stage = MSC_BS_ERROR;
-        usbd_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-        USBD_LOG_WRN("addr overflow,verify error\r\n");
-    }
-
-    /* beginning of a new block -> load a whole block in RAM */
-    if (!(usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size)) {
-        USBD_LOG_DBG("Disk READ sector %d", usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size);
-        // if (disk_access_read(disk_pdrv, page, addr / BLOCK_SIZE, 1))
-        // {
-        //  USBD_LOG_ERR("---- Disk Read Error %d", addr / BLOCK_SIZE);
-        // }
-    }
-
-    /* info are in RAM -> no need to re-read memory */
-    for (n = 0U; n < size; n++) {
-        if (usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size + n] != buf[n]) {
-            USBD_LOG_DBG("Mismatch sector %d offset %d",
-                         usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size, n);
-            memOK = false;
-            break;
-        }
-    }
-
-    usbd_msc_cfg.scsi_blk_addr += size;
-    usbd_msc_cfg.scsi_blk_len -= size;
-    usbd_msc_cfg.csw.DataResidue -= size;
-
-    if (!usbd_msc_cfg.scsi_blk_len || (usbd_msc_cfg.stage == MSC_BS_CSW)) {
-        usbd_msc_cfg.csw.Status = (memOK) ? CSW_STATUS_CMD_PASSED : CSW_STATUS_CMD_FAILED;
-        usbd_msc_send_csw();
-    }
-}
-
-static void usbd_msc_memory_write(uint8_t *buf, uint16_t size)
-{
-    USBD_LOG_DBG("w:%d\r\n", usbd_msc_cfg.scsi_blk_addr);
-
-    if ((usbd_msc_cfg.scsi_blk_addr + size) > (usbd_msc_cfg.scsi_blk_nbr * usbd_msc_cfg.scsi_blk_size)) {
-        size = usbd_msc_cfg.scsi_blk_nbr * usbd_msc_cfg.scsi_blk_size - usbd_msc_cfg.scsi_blk_addr;
-        usbd_msc_cfg.stage = MSC_BS_ERROR;
-        usbd_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-        USBD_LOG_WRN("addr overflow,write error\r\n");
-    }
-
-    /* we fill an array in RAM of 1 block before writing it in memory */
-    for (int i = 0; i < size; i++) {
-        usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size + i] = buf[i];
-    }
-
-    /* if the array is filled, write it in memory */
-    if ((usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size) + size >= usbd_msc_cfg.scsi_blk_size) {
-        usbd_msc_sector_write((usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size), usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size);
-    }
-
-    usbd_msc_cfg.scsi_blk_addr += size;
-    usbd_msc_cfg.scsi_blk_len -= size;
-    usbd_msc_cfg.csw.DataResidue -= size;
-
-    if ((!usbd_msc_cfg.scsi_blk_len) || (usbd_msc_cfg.stage == MSC_BS_CSW)) {
-        usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-        usbd_msc_send_csw();
-    }
-}
-
-static void usbd_msc_memory_read(void)
+static bool SCSI_processRead(void)
 {
     uint32_t transfer_len;
+
+    USBD_LOG_DBG("read addr:%d\r\n", usbd_msc_cfg.scsi_blk_addr);
 
     transfer_len = MIN(usbd_msc_cfg.scsi_blk_len, MASS_STORAGE_BULK_EP_MPS);
 
     /* we read an entire block */
     if (!(usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size)) {
-        usbd_msc_sector_read((usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size), usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size);
+        if (usbd_msc_sector_read((usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size), usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size) != 0) {
+            return false;
+        }
     }
-
-    USBD_LOG_DBG("addr:%d\r\n", usbd_msc_cfg.scsi_blk_addr);
 
     usbd_ep_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
                   &usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size], transfer_len, NULL);
 
     usbd_msc_cfg.scsi_blk_addr += transfer_len;
     usbd_msc_cfg.scsi_blk_len -= transfer_len;
-    usbd_msc_cfg.csw.DataResidue -= transfer_len;
+    usbd_msc_cfg.csw.dDataResidue -= transfer_len;
 
-    if (!usbd_msc_cfg.scsi_blk_len) {
-        usbd_msc_cfg.stage = MSC_BS_DATA_IN_LAST;
-        usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-    }
-}
-
-/*********************************SCSI CMD*******************************************************************/
-static bool scsi_test_unit_ready(void)
-{
-    if (usbd_msc_cfg.cbw.DataLength != 0U) {
-        if ((usbd_msc_cfg.cbw.Flags & 0x80) != 0U) {
-            USBD_LOG_WRN("Stall IN endpoint\r\n");
-            usbd_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-        } else {
-            USBD_LOG_WRN("Stall OUT endpoint\r\n");
-            usbd_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-        }
-
-        return false;
+    if (usbd_msc_cfg.scsi_blk_len == 0) {
+        usbd_msc_cfg.stage = MSC_SEND_CSW;
     }
 
-    usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-    usbd_msc_send_csw();
     return true;
 }
 
-static bool scsi_request_sense(void)
+static bool SCSI_processWrite(uint8_t *buf, uint16_t len)
 {
-    if (!usbd_msc_datain_check()) {
+    USBD_LOG_DBG("write addr:%d\r\n", usbd_msc_cfg.scsi_blk_addr);
+
+    /* we fill an array in RAM of 1 block before writing it in memory */
+    for (int i = 0; i < len; i++) {
+        usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size + i] = buf[i];
+    }
+
+    /* if the array is filled, write it in memory */
+    if ((usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size) + len >= usbd_msc_cfg.scsi_blk_size) {
+        if (usbd_msc_sector_write((usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size), usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size) != 0) {
+            return false;
+        }
+    }
+
+    usbd_msc_cfg.scsi_blk_addr += len;
+    usbd_msc_cfg.scsi_blk_len -= len;
+    usbd_msc_cfg.csw.dDataResidue -= len;
+
+    if (usbd_msc_cfg.scsi_blk_len == 0) {
+        sendCSW(CSW_STATUS_CMD_PASSED);
+    }
+
+    return true;
+}
+
+static bool SCSI_processVerify(uint8_t *buf, uint16_t len)
+{
+    USBD_LOG_DBG("verify addr:%d\r\n", usbd_msc_cfg.scsi_blk_addr);
+
+    /* we read an entire block */
+    if (!(usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size)) {
+        if (usbd_msc_sector_read((usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size), usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size) != 0) {
+            return false;
+        }
+    }
+
+    /* info are in RAM -> no need to re-read memory */
+    for (uint16_t i = 0U; i < len; i++) {
+        if (usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size + i] != buf[i]) {
+            USBD_LOG_DBG("Mismatch sector %d offset %d",
+                         usbd_msc_cfg.scsi_blk_addr / usbd_msc_cfg.scsi_blk_size, i);
+            memOK = false;
+            break;
+        }
+    }
+
+    usbd_msc_cfg.scsi_blk_addr += len;
+    usbd_msc_cfg.scsi_blk_len -= len;
+    usbd_msc_cfg.csw.dDataResidue -= len;
+
+    if (usbd_msc_cfg.scsi_blk_len == 0) {
+        sendCSW(CSW_STATUS_CMD_PASSED);
+    }
+
+    return true;
+}
+/**
+ * @brief SCSI COMMAND
+ */
+static bool SCSI_testUnitReady(uint8_t **data, uint32_t *len);
+static bool SCSI_requestSense(uint8_t **data, uint32_t *len);
+static bool SCSI_inquiry(uint8_t **data, uint32_t *len);
+static bool SCSI_startStopUnit(uint8_t **data, uint32_t *len);
+static bool SCSI_preventAllowMediaRemoval(uint8_t **data, uint32_t *len);
+static bool SCSI_modeSense6(uint8_t **data, uint32_t *len);
+static bool SCSI_modeSense10(uint8_t **data, uint32_t *len);
+static bool SCSI_readFormatCapacity(uint8_t **data, uint32_t *len);
+static bool SCSI_readCapacity10(uint8_t **data, uint32_t *len);
+static bool SCSI_read10(uint8_t **data, uint32_t *len);
+static bool SCSI_read12(uint8_t **data, uint32_t *len);
+static bool SCSI_write10(uint8_t **data, uint32_t *len);
+static bool SCSI_write12(uint8_t **data, uint32_t *len);
+static bool SCSI_verify10(uint8_t **data, uint32_t *len);
+
+/**
+* @brief  SCSI_SenseCode
+*         Load the last error code in the error list
+* @param  sKey: Sense Key
+* @param  ASC: Additional Sense Code
+* @retval none
+
+*/
+void SCSI_SenseCode(uint8_t sKey, uint8_t ASC)
+{
+    usbd_msc_cfg.sKey = sKey;
+    usbd_msc_cfg.ASC = ASC;
+}
+
+static bool SCSI_CBWDecode(uint8_t *buf, uint16_t size)
+{
+    uint8_t send_buffer[64];
+    uint8_t *buf2send = send_buffer;
+    uint32_t len2send = 0;
+    bool ret = false;
+
+    if (size != sizeof(struct CBW)) {
+        USBD_LOG_ERR("size != sizeof(cbw)\r\n");
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
         return false;
     }
 
-    scsi_sense_fixed_resp_t sense_rsp = {
-        .response_code = 0x70,
-        .valid = 1
-    };
+    memcpy((uint8_t *)&usbd_msc_cfg.cbw, buf, size);
 
-    sense_rsp.add_sense_len = sizeof(scsi_sense_fixed_resp_t) - 8;
-    sense_rsp.sense_key = 0x00;
-    sense_rsp.add_sense_code = 0x00;
-    sense_rsp.add_sense_qualifier = 0x00;
+    usbd_msc_cfg.csw.dTag = usbd_msc_cfg.cbw.dTag;
+    usbd_msc_cfg.csw.dDataResidue = usbd_msc_cfg.cbw.dDataLength;
 
-    /* Win host requests maximum number of bytes but as all we have is 4 bytes we have
-       to tell host back that it is all we have, that's why we correct residue */
-    if (usbd_msc_cfg.csw.DataResidue > sizeof(sense_rsp)) {
-        usbd_msc_cfg.cbw.DataLength = sizeof(sense_rsp);
-        usbd_msc_cfg.csw.DataResidue = sizeof(sense_rsp);
+    if ((usbd_msc_cfg.cbw.bLUN > 1) || (usbd_msc_cfg.cbw.dSignature != MSC_CBW_Signature) || (usbd_msc_cfg.cbw.bCBLength < 1) || (usbd_msc_cfg.cbw.bCBLength > 16)) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    } else {
+        switch (usbd_msc_cfg.cbw.CB[0]) {
+            case SCSI_TEST_UNIT_READY:
+                ret = SCSI_testUnitReady(&buf2send, &len2send);
+                break;
+            case SCSI_REQUEST_SENSE:
+                ret = SCSI_requestSense(&buf2send, &len2send);
+                break;
+            case SCSI_INQUIRY:
+                ret = SCSI_inquiry(&buf2send, &len2send);
+                break;
+            case SCSI_START_STOP_UNIT:
+                ret = SCSI_startStopUnit(&buf2send, &len2send);
+                break;
+            case SCSI_PREVENT_ALLOW_MEDIA_REMOVAL:
+                ret = SCSI_preventAllowMediaRemoval(&buf2send, &len2send);
+                break;
+            case SCSI_MODE_SENSE6:
+                ret = SCSI_modeSense6(&buf2send, &len2send);
+                break;
+            case SCSI_MODE_SENSE10:
+                ret = SCSI_modeSense10(&buf2send, &len2send);
+                break;
+            case SCSI_READ_FORMAT_CAPACITIES:
+                ret = SCSI_readFormatCapacity(&buf2send, &len2send);
+                break;
+            case SCSI_READ_CAPACITY10:
+                ret = SCSI_readCapacity10(&buf2send, &len2send);
+                break;
+            case SCSI_READ10:
+                ret = SCSI_read10(NULL, 0);
+                break;
+            case SCSI_READ12:
+                ret = SCSI_read12(NULL, 0);
+                break;
+            case SCSI_WRITE10:
+                ret = SCSI_write10(NULL, 0);
+                break;
+            case SCSI_WRITE12:
+                ret = SCSI_write12(NULL, 0);
+                break;
+            case SCSI_VERIFY10:
+                ret = SCSI_verify10(NULL, 0);
+                break;
+
+            default:
+                SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+                USBD_LOG_WRN("unsupported cmd:0x%02x\r\n", usbd_msc_cfg.cbw.CB[0]);
+                ret = false;
+                break;
+        }
+    }
+    if (ret) {
+        if (usbd_msc_cfg.stage == MSC_READ_CBW) {
+            if (len2send) {
+                sendLastData(buf2send, len2send);
+            } else {
+                sendCSW(CSW_STATUS_CMD_PASSED);
+            }
+        }
+    }
+    return ret;
+}
+
+static bool SCSI_testUnitReady(uint8_t **data, uint32_t *len)
+{
+    if (usbd_msc_cfg.cbw.dDataLength != 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+    *data = NULL;
+    *len = 0;
+    return true;
+}
+
+static bool SCSI_requestSense(uint8_t **data, uint32_t *len)
+{
+    uint8_t data_len = REQUEST_SENSE_DATA_LEN;
+    if (usbd_msc_cfg.cbw.dDataLength == 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
     }
 
+    if (usbd_msc_cfg.cbw.CB[4] < REQUEST_SENSE_DATA_LEN) {
+        data_len = usbd_msc_cfg.cbw.CB[4];
+    }
+
+    uint8_t request_sense[REQUEST_SENSE_DATA_LEN] = {
+        0x70,
+        0x00,
+        0x00, /* Sense Key */
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        REQUEST_SENSE_DATA_LEN - 8,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00, /* Additional Sense Code */
+        0x00, /* Additional Sense Request */
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+    };
+
+    request_sense[2] = usbd_msc_cfg.sKey;
+    request_sense[12] = usbd_msc_cfg.ASC;
+    request_sense[13] = usbd_msc_cfg.ASQ;
 #if 0
     request_sense[ 2] = 0x06;           /* UNIT ATTENTION */
     request_sense[12] = 0x28;           /* Additional Sense Code: Not ready to ready transition */
@@ -342,412 +471,414 @@ static bool scsi_request_sense(void)
     request_sense[13] = 0x00;         /* Additional Sense Code Qualifier */
 #endif
 
-    return usbd_msc_send_to_host((uint8_t *)&sense_rsp, sizeof(sense_rsp));
-}
-
-static bool scsi_inquiry_request(void)
-{
-    if (!usbd_msc_datain_check()) {
-        return false;
-    }
-
-    scsi_inquiry_resp_t inquiry_rsp = {
-        .is_removable = 1, /* RMB = 1: Removable Medium */
-        .version = 2,
-        .response_data_format = 2,
-        .additional_length = 31
-    };
-    // vendor_id, product_id, product_rev is space padded string
-    memcpy(inquiry_rsp.vendor_id, "BL702USB", sizeof(inquiry_rsp.vendor_id));
-    memcpy(inquiry_rsp.product_id, "FAT16 RAM DEMO  ", sizeof(inquiry_rsp.product_id));
-    memcpy(inquiry_rsp.product_rev, "1.0 ", sizeof(inquiry_rsp.product_rev));
-
-    /* Win host requests maximum number of bytes but as all we have is 4 bytes we have
-       to tell host back that it is all we have, that's why we correct residue */
-    if (usbd_msc_cfg.csw.DataResidue > sizeof(inquiry_rsp)) {
-        usbd_msc_cfg.cbw.DataLength = sizeof(inquiry_rsp);
-        usbd_msc_cfg.csw.DataResidue = sizeof(inquiry_rsp);
-    }
-
-    return usbd_msc_send_to_host((uint8_t *)&inquiry_rsp, sizeof(inquiry_rsp));
-}
-
-static bool scsi_mode_sense_6(void)
-{
-    if (!usbd_msc_datain_check()) {
-        return false;
-    }
-
-    scsi_mode_sense6_resp_t mode_resp = {
-        .data_len = 3,
-        .medium_type = 0,
-        .write_protected = false,
-        .reserved = 0,
-        .block_descriptor_len = 0 // no block descriptor are included
-    };
-
-    /* Win host requests maximum number of bytes but as all we have is 4 bytes we have
-       to tell host back that it is all we have, that's why we correct residue */
-    if (usbd_msc_cfg.csw.DataResidue > sizeof(mode_resp)) {
-        usbd_msc_cfg.cbw.DataLength = sizeof(mode_resp);
-        usbd_msc_cfg.csw.DataResidue = sizeof(mode_resp);
-    }
-
-    return usbd_msc_send_to_host((uint8_t *)&mode_resp, sizeof(mode_resp));
-}
-
-static bool scsi_start_stop_unit(void)
-{
-    // if (!cbw.CB[3]) {               /* If power condition modifier is 0 */
-    //     USBD_MSC_MediaReady  = cbw.CB[4] & 0x01;   /* Media ready = START bit value */
-    //     usbd_msc_start_stop(USBD_MSC_MediaReady);
-    //     cbw.bStatus = CSW_CMD_PASSED; /* Start Stop Unit -> pass */
-    //     USBD_MSC_SetCSW();
-    //     return;
-    // }
-
-    // cbw.bStatus = CSW_CMD_FAILED;   /* Start Stop Unit -> fail */
-    // usbd_msc_send_csw();
-    usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-    usbd_msc_send_csw();
-    return true;
-}
-/*
- *  USB Device MSC SCSI Media Removal Callback
- *    Parameters:      None
- *    Return Value:    None
- */
-
-static bool scsi_media_removal(void)
-{
-    // if (USBD_MSC_CBW.CB[4] & 1) {            /* If prevent */
-    //     USBD_MSC_CSW.bStatus = CSW_CMD_FAILED;    /* Prevent media removal -> fail */
-    // } else {                                 /* If allow */
-    //     USBD_MSC_CSW.bStatus = CSW_CMD_PASSED;    /* Allow media removal -> pass */
-    // }
-
-    // USBD_MSC_SetCSW();
-    usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-    usbd_msc_send_csw();
+    memcpy(*data, (uint8_t *)&request_sense, data_len);
+    *len = data_len;
     return true;
 }
 
-static bool scsi_read_format_capacity(void)
+static bool SCSI_inquiry(uint8_t **data, uint32_t *len)
 {
-    if (!usbd_msc_datain_check()) {
+    uint8_t data_len = STANDARD_INQUIRY_DATA_LEN;
+    if (usbd_msc_cfg.cbw.dDataLength == 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
         return false;
     }
 
-    scsi_read_format_capacity_resp_t read_fmt_capa = {
-        .list_length = 8, /* Capacity List Length */
-        .block_num = 0,
-        .descriptor_type = 2, /* Descriptor Code: Formatted Media */
-        .block_size_u16 = 0
+    if (usbd_msc_cfg.cbw.CB[4] < STANDARD_INQUIRY_DATA_LEN) {
+        data_len = usbd_msc_cfg.cbw.CB[4];
+    }
+
+    uint8_t inquiry[STANDARD_INQUIRY_DATA_LEN] = {
+        /* 36 */
+
+        /* LUN 0 */
+        0x00,
+        0x80,
+        0x02,
+        0x02,
+        (STANDARD_INQUIRY_DATA_LEN - 5),
+        0x00,
+        0x00,
+        0x00,
+        'B', 'o', 'u', 'f', 'f', 'a', 'l', 'o', /* Manufacturer : 8 bytes */
+        'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 Bytes */
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+        '0', '.', '0', '1' /* Version      : 4 Bytes */
     };
-    /* Block Count */
-    read_fmt_capa.block_num = BSWAP32(usbd_msc_cfg.scsi_blk_nbr);
-    /* Block Length */
-    read_fmt_capa.block_size_u16 = BSWAP16(usbd_msc_cfg.scsi_blk_size);
 
-    /* Win host requests maximum number of bytes but as all we have is 4 bytes we have
-       to tell host back that it is all we have, that's why we correct residue */
-    if (usbd_msc_cfg.csw.DataResidue > sizeof(read_fmt_capa)) {
-        usbd_msc_cfg.cbw.DataLength = sizeof(read_fmt_capa);
-        usbd_msc_cfg.csw.DataResidue = sizeof(read_fmt_capa);
-    }
-
-    return usbd_msc_send_to_host((uint8_t *)&read_fmt_capa, sizeof(read_fmt_capa));
+    memcpy(*data, (uint8_t *)&inquiry, data_len);
+    *len = data_len;
+    return true;
 }
 
-static bool scsi_read_capacity(void)
+static bool SCSI_startStopUnit(uint8_t **data, uint32_t *len)
 {
-    if (!usbd_msc_datain_check()) {
+    if (usbd_msc_cfg.cbw.dDataLength != 0U) {
+        //SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
         return false;
     }
 
-    scsi_read_capacity10_resp_t read_capa10;
-    /* Last Logical Block */
-    read_capa10.last_lba = BSWAP32((usbd_msc_cfg.scsi_blk_nbr - 1));
-    /* Block Length */
-    read_capa10.block_size = BSWAP32(usbd_msc_cfg.scsi_blk_size);
-
-    /* Win host requests maximum number of bytes but as all we have is 4 bytes we have
-       to tell host back that it is all we have, that's why we correct residue */
-    if (usbd_msc_cfg.csw.DataResidue > sizeof(read_capa10)) {
-        usbd_msc_cfg.cbw.DataLength = sizeof(read_capa10);
-        usbd_msc_cfg.csw.DataResidue = sizeof(read_capa10);
+    if ((usbd_msc_cfg.cbw.CB[4] & 0x3U) == 0x1U) /* START=1 */
+    {
+        //SCSI_MEDIUM_UNLOCKED;
+    } else if ((usbd_msc_cfg.cbw.CB[4] & 0x3U) == 0x2U) /* START=0 and LOEJ Load Eject=1 */
+    {
+        //SCSI_MEDIUM_EJECTED;
+    } else if ((usbd_msc_cfg.cbw.CB[4] & 0x3U) == 0x3U) /* START=1 and LOEJ Load Eject=1 */
+    {
+        //SCSI_MEDIUM_UNLOCKED;
+    } else {
     }
 
-    return usbd_msc_send_to_host((uint8_t *)&read_capa10, sizeof(read_capa10));
+    *data = NULL;
+    *len = 0;
+    return true;
 }
 
-static bool usbd_msc_read_write_process(void)
+static bool SCSI_preventAllowMediaRemoval(uint8_t **data, uint32_t *len)
+{
+    if (usbd_msc_cfg.cbw.dDataLength != 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+    if (usbd_msc_cfg.cbw.CB[4] == 0U) {
+        //SCSI_MEDIUM_UNLOCKED;
+    } else {
+        //SCSI_MEDIUM_LOCKED;
+    }
+    *data = NULL;
+    *len = 0;
+    return true;
+}
+
+static bool SCSI_modeSense6(uint8_t **data, uint32_t *len)
+{
+    uint8_t data_len = 4;
+    if (usbd_msc_cfg.cbw.dDataLength == 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+    if (usbd_msc_cfg.cbw.CB[4] < MODE_SENSE6_DATA_LEN) {
+        data_len = usbd_msc_cfg.cbw.CB[4];
+    }
+
+    uint8_t sense6[] = { 0x03, 0x00, 0x00, 0x00 };
+
+    memcpy(*data, (uint8_t *)&sense6, data_len);
+    *len = data_len;
+    return true;
+}
+
+static bool SCSI_modeSense10(uint8_t **data, uint32_t *len)
+{
+    uint8_t data_len = MODE_SENSE10_DATA_LEN;
+    if (usbd_msc_cfg.cbw.dDataLength == 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+    if (usbd_msc_cfg.cbw.CB[8] < MODE_SENSE10_DATA_LEN) {
+        data_len = usbd_msc_cfg.cbw.CB[8];
+    }
+
+    uint8_t sense10[MODE_SENSE10_DATA_LEN] = {
+        0x00,
+        0x26,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x08,
+        0x12,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00
+    };
+    memcpy(*data, (uint8_t *)&sense10, data_len);
+    *len = data_len;
+    return true;
+}
+
+static bool SCSI_readFormatCapacity(uint8_t **data, uint32_t *len)
+{
+    if (usbd_msc_cfg.cbw.dDataLength == 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+    uint8_t capacity[READ_FORMAT_CAPACITY_DATA_LEN] = {
+        0x00,
+        0x00,
+        0x00,
+        0x08, /* Capacity List Length */
+        (uint8_t)((usbd_msc_cfg.scsi_blk_nbr >> 24) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_nbr >> 16) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_nbr >> 8) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_nbr >> 0) & 0xff),
+
+        0x02, /* Descriptor Code: Formatted Media */
+        0x00,
+        (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 8) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 0) & 0xff),
+    };
+
+    memcpy(*data, (uint8_t *)&capacity, READ_FORMAT_CAPACITY_DATA_LEN);
+    *len = READ_FORMAT_CAPACITY_DATA_LEN;
+    return true;
+}
+
+static bool SCSI_readCapacity10(uint8_t **data, uint32_t *len)
+{
+    if (usbd_msc_cfg.cbw.dDataLength == 0U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+
+    uint8_t capacity[READ_CAPACITY10_DATA_LEN] = {
+        (uint8_t)(((usbd_msc_cfg.scsi_blk_nbr - 1) >> 24) & 0xff),
+        (uint8_t)(((usbd_msc_cfg.scsi_blk_nbr - 1) >> 16) & 0xff),
+        (uint8_t)(((usbd_msc_cfg.scsi_blk_nbr - 1) >> 8) & 0xff),
+        (uint8_t)(((usbd_msc_cfg.scsi_blk_nbr - 1) >> 0) & 0xff),
+
+        (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 24) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 16) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 8) & 0xff),
+        (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 0) & 0xff),
+    };
+
+    memcpy(*data, (uint8_t *)&capacity, READ_CAPACITY10_DATA_LEN);
+    *len = READ_CAPACITY10_DATA_LEN;
+    return true;
+}
+
+static bool SCSI_read10(uint8_t **data, uint32_t *len)
 {
     /* Logical Block Address of First Block */
-    uint32_t lba;
+    uint32_t lba = 0;
     uint32_t blk_num = 0;
-
-    if (!usbd_msc_cfg.cbw.DataLength) {
-        USBD_LOG_WRN("Zero length in CBW\r\n");
-        usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-        usbd_msc_send_csw();
+    if (((usbd_msc_cfg.cbw.bmFlags & 0x80U) != 0x80U) || (usbd_msc_cfg.cbw.dDataLength == 0U)) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
         return false;
     }
 
     lba = GET_BE32(&usbd_msc_cfg.cbw.CB[2]);
+    USBD_LOG_DBG("lba: 0x%x\r\n", lba);
 
-    USBD_LOG_DBG("LBA (block) : 0x%x\r\n", lba);
     usbd_msc_cfg.scsi_blk_addr = lba * usbd_msc_cfg.scsi_blk_size;
 
     /* Number of Blocks to transfer */
-    switch (usbd_msc_cfg.cbw.CB[0]) {
-        case SCSI_READ10:
-        case SCSI_WRITE10:
-        case SCSI_VERIFY10:
-            blk_num = GET_BE16(&usbd_msc_cfg.cbw.CB[7]);
-            break;
-
-        case SCSI_READ12:
-        case SCSI_WRITE12:
-            blk_num = GET_BE32(&usbd_msc_cfg.cbw.CB[6]);
-            break;
-
-        default:
-            break;
-    }
+    blk_num = GET_BE16(&usbd_msc_cfg.cbw.CB[7]);
 
     USBD_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
     usbd_msc_cfg.scsi_blk_len = blk_num * usbd_msc_cfg.scsi_blk_size;
 
     if ((lba + blk_num) > usbd_msc_cfg.scsi_blk_nbr) {
         USBD_LOG_ERR("LBA out of range\r\n");
-        usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_FAILED;
-        usbd_msc_send_csw();
         return false;
     }
 
-    if (usbd_msc_cfg.cbw.DataLength != usbd_msc_cfg.scsi_blk_len) {
-        if ((usbd_msc_cfg.cbw.Flags & 0x80) != 0U) {
-            USBD_LOG_WRN("read write process error\r\n");
-            usbd_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-        } else {
-            USBD_LOG_WRN("read write process error\r\n");
-            usbd_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-        }
+    if (usbd_msc_cfg.cbw.dDataLength != usbd_msc_cfg.scsi_blk_len) {
+        return false;
+    }
+    usbd_msc_cfg.stage = MSC_DATA_IN;
+    return SCSI_processRead();
+}
 
-        usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_FAILED;
-        usbd_msc_send_csw();
+static bool SCSI_read12(uint8_t **data, uint32_t *len)
+{
+    /* Logical Block Address of First Block */
+    uint32_t lba = 0;
+    uint32_t blk_num = 0;
+    if (((usbd_msc_cfg.cbw.bmFlags & 0x80U) != 0x80U) || (usbd_msc_cfg.cbw.dDataLength == 0U)) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
         return false;
     }
 
+    lba = GET_BE32(&usbd_msc_cfg.cbw.CB[2]);
+    USBD_LOG_DBG("lba: 0x%x\r\n", lba);
+
+    usbd_msc_cfg.scsi_blk_addr = lba * usbd_msc_cfg.scsi_blk_size;
+
+    /* Number of Blocks to transfer */
+    blk_num = GET_BE32(&usbd_msc_cfg.cbw.CB[6]);
+
+    USBD_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
+    usbd_msc_cfg.scsi_blk_len = blk_num * usbd_msc_cfg.scsi_blk_size;
+
+    if ((lba + blk_num) > usbd_msc_cfg.scsi_blk_nbr) {
+        USBD_LOG_ERR("LBA out of range\r\n");
+        return false;
+    }
+
+    if (usbd_msc_cfg.cbw.dDataLength != usbd_msc_cfg.scsi_blk_len) {
+        return false;
+    }
+    usbd_msc_cfg.stage = MSC_DATA_IN;
+    return SCSI_processRead();
+}
+
+static bool SCSI_write10(uint8_t **data, uint32_t *len)
+{
+    /* Logical Block Address of First Block */
+    uint32_t lba = 0;
+    uint32_t blk_num = 0;
+    if (((usbd_msc_cfg.cbw.bmFlags & 0x80U) != 0x00U) || (usbd_msc_cfg.cbw.dDataLength == 0U)) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
+    }
+
+    lba = GET_BE32(&usbd_msc_cfg.cbw.CB[2]);
+    USBD_LOG_DBG("lba: 0x%x\r\n", lba);
+
+    usbd_msc_cfg.scsi_blk_addr = lba * usbd_msc_cfg.scsi_blk_size;
+
+    /* Number of Blocks to transfer */
+    blk_num = GET_BE16(&usbd_msc_cfg.cbw.CB[7]);
+
+    USBD_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
+    usbd_msc_cfg.scsi_blk_len = blk_num * usbd_msc_cfg.scsi_blk_size;
+
+    if ((lba + blk_num) > usbd_msc_cfg.scsi_blk_nbr) {
+        USBD_LOG_ERR("LBA out of range\r\n");
+        return false;
+    }
+
+    if (usbd_msc_cfg.cbw.dDataLength != usbd_msc_cfg.scsi_blk_len) {
+        return false;
+    }
+    usbd_msc_cfg.stage = MSC_DATA_OUT;
     return true;
 }
 
-static bool scsi_mode_sense_10(void)
+static bool SCSI_write12(uint8_t **data, uint32_t *len)
 {
-    if (!usbd_msc_datain_check()) {
+    /* Logical Block Address of First Block */
+    uint32_t lba = 0;
+    uint32_t blk_num = 0;
+    if (((usbd_msc_cfg.cbw.bmFlags & 0x80U) != 0x00U) || (usbd_msc_cfg.cbw.dDataLength == 0U)) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
         return false;
     }
 
-    scsi_mode_10_resp_t mode10_resp = {
-        .mode_data_length_low = 0x06,
-        .write_protect = 1,
-    };
+    lba = GET_BE32(&usbd_msc_cfg.cbw.CB[2]);
+    USBD_LOG_DBG("lba: 0x%x\r\n", lba);
 
-    /* Win host requests maximum number of bytes but as all we have is 4 bytes we have
-       to tell host back that it is all we have, that's why we correct residue */
-    if (usbd_msc_cfg.csw.DataResidue > sizeof(mode10_resp)) {
-        usbd_msc_cfg.cbw.DataLength = sizeof(mode10_resp);
-        usbd_msc_cfg.csw.DataResidue = sizeof(mode10_resp);
+    usbd_msc_cfg.scsi_blk_addr = lba * usbd_msc_cfg.scsi_blk_size;
+
+    /* Number of Blocks to transfer */
+    blk_num = GET_BE32(&usbd_msc_cfg.cbw.CB[6]);
+
+    USBD_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
+    usbd_msc_cfg.scsi_blk_len = blk_num * usbd_msc_cfg.scsi_blk_size;
+
+    if ((lba + blk_num) > usbd_msc_cfg.scsi_blk_nbr) {
+        USBD_LOG_ERR("LBA out of range\r\n");
+        return false;
     }
 
-    return usbd_msc_send_to_host((uint8_t *)&mode10_resp, sizeof(mode10_resp));
+    if (usbd_msc_cfg.cbw.dDataLength != usbd_msc_cfg.scsi_blk_len) {
+        return false;
+    }
+    usbd_msc_cfg.stage = MSC_DATA_OUT;
+    return true;
 }
 
-static void usbd_msc_cbw_decode(uint8_t *buf, uint16_t size)
+static bool SCSI_verify10(uint8_t **data, uint32_t *len)
 {
-    if (size != sizeof(usbd_msc_cfg.cbw)) {
-        USBD_LOG_ERR("size != sizeof(cbw)");
-        return;
+    /* Logical Block Address of First Block */
+    uint32_t lba = 0;
+    uint32_t blk_num = 0;
+
+    if ((usbd_msc_cfg.cbw.CB[1] & 0x02U) == 0x00U) {
+        return true;
     }
 
-    memcpy((uint8_t *)&usbd_msc_cfg.cbw, buf, size);
-
-    if (usbd_msc_cfg.cbw.Signature != MSC_CBW_Signature) {
-        USBD_LOG_ERR("CBW Signature Mismatch");
-        return;
+    if (((usbd_msc_cfg.cbw.bmFlags & 0x80U) != 0x00U) || (usbd_msc_cfg.cbw.dDataLength == 0U)) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_CDB);
+        return false;
     }
 
-    usbd_msc_cfg.csw.Tag = usbd_msc_cfg.cbw.Tag;
-    usbd_msc_cfg.csw.DataResidue = usbd_msc_cfg.cbw.DataLength;
-
-    if ((usbd_msc_cfg.cbw.CBLength < 1) || (usbd_msc_cfg.cbw.CBLength > 16) || (usbd_msc_cfg.cbw.LUN != 0U)) {
-        USBD_LOG_WRN("cbw.CBLength %d", usbd_msc_cfg.cbw.CBLength);
-        /* Stall data stage */
-        usbd_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-        usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_FAILED;
-        usbd_msc_send_csw();
-    } else {
-        switch (usbd_msc_cfg.cbw.CB[0]) {
-            case SCSI_TEST_UNIT_READY:
-                USBD_LOG_DBG(">> TUR");
-                scsi_test_unit_ready();
-                break;
-
-            case SCSI_REQUEST_SENSE:
-                USBD_LOG_DBG(">> REQ_SENSE");
-                scsi_request_sense();
-                break;
-
-            case SCSI_INQUIRY:
-                USBD_LOG_DBG(">> INQ");
-                scsi_inquiry_request();
-                break;
-
-            case SCSI_START_STOP_UNIT:
-                scsi_start_stop_unit();
-                break;
-
-            case SCSI_MEDIA_REMOVAL:
-                scsi_media_removal();
-                break;
-
-            case SCSI_MODE_SENSE6:
-                USBD_LOG_DBG(">> MODE_SENSE6");
-                scsi_mode_sense_6();
-                break;
-
-            case SCSI_MODE_SENSE10:
-                USBD_LOG_DBG(">> MODE_SENSE10");
-                scsi_mode_sense_10();
-                break;
-
-            case SCSI_READ_FORMAT_CAPACITIES:
-                USBD_LOG_DBG(">> READ_FORMAT_CAPACITY");
-                scsi_read_format_capacity();
-                break;
-
-            case SCSI_READ_CAPACITY:
-                USBD_LOG_DBG(">> READ_CAPACITY");
-                scsi_read_capacity();
-                break;
-
-            case SCSI_READ10:
-            case SCSI_READ12:
-                USBD_LOG_DBG(">> READ");
-
-                if (usbd_msc_read_write_process()) {
-                    if ((usbd_msc_cfg.cbw.Flags & 0x80)) {
-                        usbd_msc_cfg.stage = MSC_BS_DATA_IN;
-                        usbd_msc_memory_read();
-                    } else {
-                        usbd_ep_set_stall(
-                            mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-                        USBD_LOG_WRN("Stall OUT endpoint");
-                        usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-                        usbd_msc_send_csw();
-                    }
-                }
-
-                break;
-
-            case SCSI_WRITE10:
-            case SCSI_WRITE12:
-                USBD_LOG_DBG(">> WRITE");
-
-                if (usbd_msc_read_write_process()) {
-                    if (!(usbd_msc_cfg.cbw.Flags & 0x80)) {
-                        usbd_msc_cfg.stage = MSC_BS_DATA_OUT;
-                    } else {
-                        usbd_ep_set_stall(
-                            mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-                        USBD_LOG_WRN("Stall IN endpoint");
-                        usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-                        usbd_msc_send_csw();
-                    }
-                }
-
-                break;
-
-            case SCSI_VERIFY10:
-                USBD_LOG_DBG(">> VERIFY10");
-
-                if (!(usbd_msc_cfg.cbw.CB[1] & 0x02)) {
-                    usbd_msc_cfg.csw.Status = CSW_STATUS_CMD_PASSED;
-                    usbd_msc_send_csw();
-                    break;
-                }
-
-                if (usbd_msc_read_write_process()) {
-                    if (!(usbd_msc_cfg.cbw.Flags & 0x80)) {
-                        usbd_msc_cfg.stage = MSC_BS_DATA_OUT;
-                        memOK = true;
-                    } else {
-                        usbd_ep_set_stall(
-                            mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-                        USBD_LOG_WRN("Stall IN endpoint");
-                        usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-                        usbd_msc_send_csw();
-                    }
-                }
-
-                break;
-
-            default:
-                USBD_LOG_WRN(">> default CB[0] %x", usbd_msc_cfg.cbw.CB[0]);
-                /* Stall data stage */
-                usbd_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-                usbd_msc_cfg.stage = MSC_BS_ERROR;
-                break;
-        }
+    if ((usbd_msc_cfg.cbw.CB[1] & 0x02U) == 0x02U) {
+        SCSI_SenseCode(SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELED_IN_COMMAND);
+        return false; /* Error, Verify Mode Not supported*/
     }
+
+    lba = GET_BE32(&usbd_msc_cfg.cbw.CB[2]);
+    USBD_LOG_DBG("lba: 0x%x\r\n", lba);
+
+    usbd_msc_cfg.scsi_blk_addr = lba * usbd_msc_cfg.scsi_blk_size;
+
+    /* Number of Blocks to transfer */
+    blk_num = GET_BE16(&usbd_msc_cfg.cbw.CB[7]);
+
+    USBD_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
+    usbd_msc_cfg.scsi_blk_len = blk_num * usbd_msc_cfg.scsi_blk_size;
+
+    if ((lba + blk_num) > usbd_msc_cfg.scsi_blk_nbr) {
+        USBD_LOG_ERR("LBA out of range\r\n");
+        return false;
+    }
+
+    if (usbd_msc_cfg.cbw.dDataLength != usbd_msc_cfg.scsi_blk_len) {
+        return false;
+    }
+
+    memOK = true;
+    usbd_msc_cfg.stage = MSC_DATA_OUT;
+    return true;
 }
 
 static void mass_storage_bulk_out(uint8_t ep)
 {
-    uint32_t bytes_read = 0U;
-    uint8_t bo_buf[MASS_STORAGE_BULK_EP_MPS];
+    uint8_t out_buf[MASS_STORAGE_BULK_EP_MPS];
+    uint32_t bytes_read;
 
-    usbd_ep_read(ep, bo_buf, MASS_STORAGE_BULK_EP_MPS,
+    usbd_ep_read(ep, out_buf, MASS_STORAGE_BULK_EP_MPS,
                  &bytes_read);
 
     switch (usbd_msc_cfg.stage) {
-        /*the device has to decode the CBW received*/
-        case MSC_BS_CBW:
-            USBD_LOG_DBG("> BO - MSC_BS_CBW\r\n");
-            usbd_msc_cbw_decode(bo_buf, bytes_read);
+        case MSC_READ_CBW:
+            if (SCSI_CBWDecode(out_buf, bytes_read) == false) {
+                USBD_LOG_ERR("Command:0x%02x decode err\r\n", usbd_msc_cfg.cbw.CB[0]);
+                usbd_msc_bot_abort();
+                return;
+            }
             break;
-
-        /*the device has to receive data from the host*/
-        case MSC_BS_DATA_OUT:
+        /* last command is write10 or write12,and has caculated blk_addr and blk_len,so the device start reading data from host*/
+        case MSC_DATA_OUT:
             switch (usbd_msc_cfg.cbw.CB[0]) {
                 case SCSI_WRITE10:
                 case SCSI_WRITE12:
-                    /* USBD_LOG_DBG("> BO - PROC_CBW WR");*/
-                    usbd_msc_memory_write(bo_buf, bytes_read);
+                    if (SCSI_processWrite(out_buf, bytes_read) == false) {
+                        sendCSW(CSW_STATUS_CMD_FAILED); /* send fail status to host,and the host will retry*/
+                        //return;
+                    }
                     break;
-
                 case SCSI_VERIFY10:
-                    USBD_LOG_DBG("> BO - PROC_CBW VER\r\n");
-                    usbd_msc_memory_verify(bo_buf, bytes_read);
+                    if (SCSI_processVerify(out_buf, bytes_read) == false) {
+                        sendCSW(CSW_STATUS_CMD_FAILED); /* send fail status to host,and the host will retry*/
+                        //return;
+                    }
                     break;
-
                 default:
-                    USBD_LOG_ERR("> BO - PROC_CBW default <<ERROR!!!>>\r\n");
                     break;
             }
-
             break;
-
-        case MSC_BS_CSW:
-            break;
-
-        /*an error has occurred: stall endpoint and send CSW*/
         default:
-            USBD_LOG_WRN("Stall OUT endpoint, stage: %d\r\n", usbd_msc_cfg.stage);
-            // usbd_ep_set_stall(ep);
-            // usbd_msc_cfg.csw.Status = CSW_STATUS_PHASE_ERROR;
-            // usbd_msc_send_csw();
             break;
     }
 
@@ -765,41 +896,31 @@ static void mass_storage_bulk_out(uint8_t ep)
  */
 static void mass_storage_bulk_in(uint8_t ep)
 {
-    USBD_LOG_DBG("I:%d\r\n", usbd_msc_cfg.stage);
-
     switch (usbd_msc_cfg.stage) {
-        /*the device has to send data to the host*/
-        case MSC_BS_DATA_IN:
+        /* last command is read10 or read12,and has caculated blk_addr and blk_len,so the device has to send remain data to host*/
+        case MSC_DATA_IN:
             switch (usbd_msc_cfg.cbw.CB[0]) {
                 case SCSI_READ10:
                 case SCSI_READ12:
-                    /* USBD_LOG_DBG("< BI - PROC_CBW  READ"); */
-                    usbd_msc_memory_read();
+                    if (SCSI_processRead() == false) {
+                        sendCSW(CSW_STATUS_CMD_FAILED); /* send fail status to host,and the host will retry*/
+                        return;
+                    }
                     break;
-
                 default:
-                    USBD_LOG_ERR("< BI-PROC_CBW default <<ERROR!!>>\r\n");
                     break;
             }
 
             break;
 
         /*the device has to send a CSW*/
-        case MSC_BS_DATA_IN_LAST:
-            USBD_LOG_DBG("< BI - MSC_BS_DATA_IN_LAST\r\n");
-            usbd_msc_send_csw();
+        case MSC_SEND_CSW:
+            sendCSW(CSW_STATUS_CMD_PASSED);
             break;
 
-        case MSC_BS_DATA_IN_LAST_STALL:
-            USBD_LOG_WRN("Stall IN endpoint, stage: %d\r\n", usbd_msc_cfg.stage);
-            //usbd_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-            usbd_msc_send_csw();
-            break;
-
-        /*the host has received the CSW -> we wait a CBW*/
-        case MSC_BS_CSW:
-            USBD_LOG_DBG("< BI - MSC_BS_CSW\r\n");
-            usbd_msc_cfg.stage = MSC_BS_CBW;
+        /*the host has received the CSW*/
+        case MSC_WAIT_CSW:
+            usbd_msc_cfg.stage = MSC_READ_CBW;
             break;
 
         default:
