@@ -18,7 +18,30 @@ USB Stack 是一个跨平台的、用于嵌入式 MCU 的 USB 协议栈。其中
 - 支持 Vendor 类 class
 - 支持 WINUSB1.0、WINUSB2.0
 
+USB 参考手册
+-------------------------------
+
+- USB2.0规格书: `<https://www.usb.org/document-library/usb-20-specification>`_
+- CDC: `<https://www.usb.org/document-library/class-definitions-communication-devices-12>`_
+- MSC: `<https://www.usb.org/document-library/mass-storage-class-specification-overview-14>`_
+     `<https://www.usb.org/document-library/mass-storage-bulk-only-10>`_
+- AUDIO:
+- VIDEO:
+- TMC:
+- DFU:
+
+USB 协议栈实现
+-------------------------------
+
+USB DEVICE 协议栈
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 USB DEVICE 协议栈的代码实现过程参考 `<https://www.bilibili.com/video/BV1Ef4y1t73d>`_
+
+USB HOST 协议栈
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+waiting....
 
 USB DEVICE 协议栈 porting 接口
 -------------------------------
