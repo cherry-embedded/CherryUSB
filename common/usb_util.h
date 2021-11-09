@@ -5,6 +5,7 @@
 #include "string.h"
 #include "stdint.h"
 #include "stdio.h"
+#include "stdlib.h"
 #include "usb_slist.h"
 
 #ifndef __packed
@@ -127,14 +128,14 @@
 #define DBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), ((x >> 24) & 0xFF)
 
 #if 0
-#define USBD_LOG_WRN(a, ...) bflb_platform_printf(a, ##__VA_ARGS__)
-#define USBD_LOG_DBG(a, ...) bflb_platform_printf(a, ##__VA_ARGS__)
-#define USBD_LOG_ERR(a, ...) bflb_platform_printf(a, ##__VA_ARGS__)
+#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG_DBG(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
 #else
-#define USBD_LOG_WRN(a, ...) bflb_platform_printf(a, ##__VA_ARGS__)
+#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
 #define USBD_LOG_DBG(a, ...)
-#define USBD_LOG_ERR(a, ...) bflb_platform_printf(a, ##__VA_ARGS__)
-#define USBD_LOG(a, ...)     bflb_platform_printf(a, ##__VA_ARGS__)
+#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG(a, ...)     printf(a, ##__VA_ARGS__)
 #endif
 
 #endif

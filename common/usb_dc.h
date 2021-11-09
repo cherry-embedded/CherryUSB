@@ -2,7 +2,6 @@
 #define _USB_DC_H
 
 #include "stdint.h"
-#include "bflb_platform.h"
 
 #ifdef __cplusplus
 extern "C" {

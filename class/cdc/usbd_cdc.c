@@ -65,6 +65,10 @@ static void usbd_cdc_acm_reset(void)
  */
 static int cdc_acm_class_request_handler(struct usb_setup_packet *pSetup, uint8_t **data, uint32_t *len)
 {
+    USBD_LOG_DBG("CDC Class request: "
+                 "bRequest 0x%02x\r\n",
+                 setup->bRequest);
+
     switch (pSetup->bRequest) {
         case CDC_REQUEST_SET_LINE_CODING:
 

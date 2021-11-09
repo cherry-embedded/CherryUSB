@@ -27,9 +27,9 @@ extern struct video_probe_and_commit_controls commit;
 
 int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("Class request:"
-                 "bRequest 0x%02x, bmRequestType 0x%02x len %d",
-                 setup->bRequest, setup->bmRequestType, *len);
+    USBD_LOG_DBG("VIDEO Class request: "
+                 "bRequest 0x%02x\r\n",
+                 setup->bRequest);
 
     switch (setup->bRequest) {
         case VIDEO_REQUEST_SET_CUR:

@@ -63,9 +63,9 @@ static void usbd_hid_reset(void)
 
 int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("Standard request:"
-                 "bmRequestType 0x%02x, bRequest 0x%02x, len %d\r\n",
-                 setup->bmRequestType, setup->bRequest, *len);
+    USBD_LOG_DBG("HID Custom request: "
+                 "bRequest 0x%02x\r\n",
+                 setup->bRequest);
 
     if (REQTYPE_GET_DIR(setup->bmRequestType) == USB_REQUEST_DEVICE_TO_HOST &&
         setup->bRequest == USB_REQUEST_GET_DESCRIPTOR) {
@@ -118,9 +118,9 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
 
 int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG("Class request:"
-             "bmRequestType 0x%02x bRequest 0x%02x,  len %d\r\n",
-             setup->bmRequestType, setup->bRequest, *len);
+    USBD_LOG_DBG("HID Class request: "
+                 "bRequest 0x%02x\r\n",
+                 setup->bRequest);
 
     struct usbd_hid_cfg_private *current_hid_intf = NULL;
     usb_slist_t *i;
