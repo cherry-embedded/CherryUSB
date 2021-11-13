@@ -38,8 +38,12 @@
 #endif
 #define __unused __attribute__((__unused__))
 
-#define __ALIGN_END __attribute__((aligned(4)))
+#ifndef __ALIGN_BEGIN
 #define __ALIGN_BEGIN
+#endif
+#ifndef __ALIGN_END
+#define __ALIGN_END __attribute__((aligned(4)))
+#endif
 
 #ifndef LO_BYTE
 #define LO_BYTE(x) ((uint8_t)(x & 0x00FF))
@@ -85,10 +89,12 @@
     ((int)((sizeof(array) / sizeof((array)[0]))))
 #endif
 
-#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __used __aligned(1)
-
+#ifndef BSWAP16
 #define BSWAP16(u16) (__builtin_bswap16(u16))
+#endif
+#ifndef BSWAP32
 #define BSWAP32(u32) (__builtin_bswap32(u32))
+#endif
 
 #define GET_BE16(field) \
     (((uint16_t)(field)[0] << 8) | ((uint16_t)(field)[1]))
@@ -127,15 +133,17 @@
 #define WBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF)
 #define DBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), ((x >> 24) & 0xFF)
 
+#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __used __aligned(1)
+
 #if 0
 #define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
 #define USBD_LOG_DBG(a, ...) printf(a, ##__VA_ARGS__)
 #define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
 #else
-#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG_INFO(a, ...) printf(a, ##__VA_ARGS__)
 #define USBD_LOG_DBG(a, ...)
-#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG(a, ...)     printf(a, ##__VA_ARGS__)
+#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG_ERR(a, ...)  printf(a, ##__VA_ARGS__)
 #endif
 
 #endif

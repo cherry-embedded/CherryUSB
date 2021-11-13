@@ -88,7 +88,7 @@ static struct usb_bos_descriptor *bos_desc;
  */
 static void usbd_print_setup(struct usb_setup_packet *setup)
 {
-    USBD_LOG_ERR("Setup: "
+    USBD_LOG_INFO("Setup: "
                  "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
                  setup->bmRequestType,
                  setup->bRequest,
@@ -202,7 +202,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
-    USBD_LOG("Open endpoint:0x%x type:%u mps:%u\r\n",
+    USBD_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
              ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
     usbd_ep_open(&ep_cfg);
@@ -228,7 +228,7 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
-    USBD_LOG("Close endpoint:0x%x type:%u\r\n",
+    USBD_LOG_INFO("Close endpoint:0x%x type:%u\r\n",
              ep_cfg.ep_addr, ep_cfg.ep_type);
 
     usbd_ep_close(ep_cfg.ep_addr);
@@ -261,7 +261,7 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
     index = GET_DESC_INDEX(type_index);
 
     if ((type == USB_DESCRIPTOR_TYPE_STRING) && (index == USB_OSDESC_STRING_DESC_INDEX)) {
-        USBD_LOG("read MS OS 2.0 descriptor string\r\n");
+        USBD_LOG_INFO("read MS OS 2.0 descriptor string\r\n");
 
         if (!msosv1_desc) {
             return false;
@@ -272,7 +272,7 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
 
         return true;
     } else if (type == USB_DESCRIPTOR_TYPE_BINARY_OBJECT_STORE) {
-        USBD_LOG("read BOS descriptor string\r\n");
+        USBD_LOG_INFO("read BOS descriptor string\r\n");
 
         if (!bos_desc) {
             return false;
@@ -781,7 +781,7 @@ static int usbd_standard_request_handler(struct usb_setup_packet *setup, uint8_t
  */
 static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x", setup->bRequest, setup->wIndex);
+    USBD_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x\r\n", setup->bRequest, setup->wIndex);
 
     if (setup->bmRequestType_b.Recipient != USB_REQUEST_TO_INTERFACE) {
         return -1;
@@ -806,7 +806,7 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
 
 static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("bRequest 0x%02x, wValue0x%04x, wIndex 0x%04x", setup->bRequest, setup->wValue, setup->wIndex);
+    USBD_LOG_DBG("bRequest 0x%02x, wValue0x%04x, wIndex 0x%04x\r\n", setup->bRequest, setup->wValue, setup->wIndex);
 
     // if(setup->bmRequestType_b.Recipient != USB_REQUEST_TO_DEVICE)
     // {
@@ -817,19 +817,19 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
         if (setup->bRequest == msosv1_desc->vendor_code) {
             switch (setup->wIndex) {
                 case 0x04:
-                    USBD_LOG("get Compat ID\r\n");
+                    USBD_LOG_INFO("get Compat ID\r\n");
                     *data = (uint8_t *)msosv1_desc->compat_id;
                     *len = msosv1_desc->compat_id_len;
 
                     return 0;
                 case 0x05:
-                    USBD_LOG("get Compat id properties\r\n");
+                    USBD_LOG_INFO("get Compat id properties\r\n");
                     *data = (uint8_t *)msosv1_desc->comp_id_property;
                     *len = msosv1_desc->comp_id_property_len;
 
                     return 0;
                 default:
-                    USBD_LOG("unknown vendor code\r\n");
+                    USBD_LOG_ERR("unknown vendor code\r\n");
                     return -1;
             }
         }
@@ -837,12 +837,12 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
         if (setup->bRequest == msosv2_desc->vendor_code) {
             switch (setup->wIndex) {
                 case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
-                    USBD_LOG("GET MS OS 2.0 Descriptor\r\n");
+                    USBD_LOG_INFO("GET MS OS 2.0 Descriptor\r\n");
                     *data = (uint8_t *)msosv2_desc->compat_id;
                     *len = msosv2_desc->compat_id_len;
                     return 0;
                 default:
-                    USBD_LOG("unknown vendor code\r\n");
+                    USBD_LOG_ERR("unknown vendor code\r\n");
                     return -1;
             }
         }
@@ -869,7 +869,7 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
 
 static int usbd_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x", setup->bRequest, setup->wIndex);
+    USBD_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x\r\n", setup->bRequest, setup->wIndex);
 
     if (setup->bmRequestType_b.Recipient != USB_REQUEST_TO_INTERFACE) {
         return -1;
@@ -965,11 +965,12 @@ static void usbd_send_to_host(uint16_t len)
          * packet.
          */
         /* Send less data as requested during the Setup stage */
-        if ((!usbd_core_cfg.ep0_data_buf_residue) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
+        if ((!usbd_core_cfg.ep0_data_buf_residue) && (len > usbd_core_cfg.ep0_data_buf_len)) {
             /* Transfers a zero-length packet */
-            // USBD_LOG("ZLP, requested %u , length %u ",
-            //  len, usb_dev.ep0_data_buf_len);
-            usbd_core_cfg.zlp_flag = true;
+            if (!(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
+                USBD_LOG_DBG("send zlp\r\n");
+                usbd_core_cfg.zlp_flag = true;
+            }
         }
     } else {
         usbd_core_cfg.zlp_flag = false;
@@ -1218,7 +1219,7 @@ void usbd_event_notify_handler(uint8_t event, void *arg)
             break;
 
         default:
-            USBD_LOG_ERR("USB unknown event: %d", event);
+            USBD_LOG_ERR("USB unknown event: %d\r\n", event);
             break;
     }
 }

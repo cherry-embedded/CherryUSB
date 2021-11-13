@@ -57,19 +57,19 @@ static void usbd_cdc_acm_reset(void)
 /**
  * @brief Handler called for Class requests not handled by the USB stack.
  *
- * @param pSetup    Information about the request to execute.
+ * @param setup    Information about the request to execute.
  * @param len       Size of the buffer.
  * @param data      Buffer containing the request result.
  *
  * @return  0 on success, negative errno code on fail.
  */
-static int cdc_acm_class_request_handler(struct usb_setup_packet *pSetup, uint8_t **data, uint32_t *len)
+static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USBD_LOG_DBG("CDC Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
-    switch (pSetup->bRequest) {
+    switch (setup->bRequest) {
         case CDC_REQUEST_SET_LINE_CODING:
 
             /*******************************************************************************/
@@ -105,9 +105,9 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *pSetup, uint8_
             break;
 
         case CDC_REQUEST_SET_CONTROL_LINE_STATE:
-            usbd_cdc_acm_cfg.line_state = (uint8_t)pSetup->wValue;
-            bool dtr = (pSetup->wValue & 0x01);
-            bool rts = (pSetup->wValue & 0x02);
+            usbd_cdc_acm_cfg.line_state = (uint8_t)setup->wValue;
+            bool dtr = (setup->wValue & 0x01);
+            bool rts = (setup->wValue & 0x02);
             USBD_LOG_DBG("DTR 0x%x,RTS 0x%x\r\n",
                          dtr, rts);
             usbd_cdc_acm_set_dtr(dtr);
@@ -125,8 +125,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *pSetup, uint8_
             break;
 
         default:
-            USBD_LOG_DBG("CDC ACM request 0x%x, value 0x%x\r\n",
-                         pSetup->bRequest, pSetup->wValue);
+            USBD_LOG_WRN("Unhandled CDC Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 

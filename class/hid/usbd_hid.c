@@ -90,19 +90,19 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
 
         switch (value) {
             case HID_DESCRIPTOR_TYPE_HID:
-                USBD_LOG("get HID Descriptor\r\n");
+                USBD_LOG_INFO("get HID Descriptor\r\n");
                 *data = (uint8_t *)current_hid_intf->hid_descriptor;
                 *len = current_hid_intf->hid_descriptor[0];
                 break;
 
             case HID_DESCRIPTOR_TYPE_HID_REPORT:
-                USBD_LOG("get Report Descriptor\r\n");
+                USBD_LOG_INFO("get Report Descriptor\r\n");
                 *data = (uint8_t *)current_hid_intf->hid_report_descriptor;
                 *len = current_hid_intf->hid_report_descriptor_len;
                 break;
 
             case HID_DESCRIPTOR_TYPE_HID_PHYSICAL:
-                USBD_LOG_DBG("get PHYSICAL Descriptor\r\n");
+                USBD_LOG_INFO("get PHYSICAL Descriptor\r\n");
 
                 break;
 
@@ -180,8 +180,8 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
             break;
 
         default:
-            USBD_LOG_ERR("Unhandled request 0x%02x\r\n", setup->bRequest);
-            break;
+            USBD_LOG_WRN("Unhandled HID Class bRequest 0x%02x\r\n", setup->bRequest);
+            return -1;
     }
 
     return 0;

@@ -27,7 +27,7 @@ extern struct video_probe_and_commit_controls commit;
 
 int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("VIDEO Class request: "
+    USBD_LOG_DBG("Video Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -90,8 +90,8 @@ int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             break;
 
         default:
-            USBD_LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
-            break;
+            USBD_LOG_WRN("Unhandled Video Class bRequest 0x%02x\r\n", setup->bRequest);
+            return -1;
     }
 
     return 0;

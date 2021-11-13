@@ -24,7 +24,7 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
                         vol = (audio_control_info.vol_current - 0xDB00 + 1) * 100 / (0xFFFF - 0xDB00);
                     }
                     usbd_audio_set_volume(vol);
-                    USBD_LOG("current volume:%d\r\n", vol);
+                    USBD_LOG_INFO("current audio volume:%d\r\n", vol);
                 }
             }
 
@@ -67,8 +67,8 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             break;
 
         default:
-            USBD_LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
-            break;
+            USBD_LOG_WRN("Unhandled Audio Class bRequest 0x%02x\r\n", setup->bRequest);
+            return -1;
     }
 
     return 0;

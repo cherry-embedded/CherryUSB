@@ -28,8 +28,8 @@ int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
         case DFU_REQUEST_ABORT:
             break;
         default:
-            USBD_LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
-            break;
+            USBD_LOG_WRN("Unhandled DFU Class bRequest 0x%02x\r\n", setup->bRequest);
+            return -1;
     }
 
     return 0;

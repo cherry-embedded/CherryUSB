@@ -113,24 +113,24 @@ static void usbd_msc_reset(void)
 /**
  * @brief Handler called for Class requests not handled by the USB stack.
  *
- * @param pSetup    Information about the request to execute.
+ * @param setup    Information about the request to execute.
  * @param len       Size of the buffer.
  * @param data      Buffer containing the request result.
  *
  * @return  0 on success, negative errno code on fail.
  */
-static int msc_storage_class_request_handler(struct usb_setup_packet *pSetup, uint8_t **data, uint32_t *len)
+static int msc_storage_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USBD_LOG_DBG("MSC Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
-    switch (pSetup->bRequest) {
+    switch (setup->bRequest) {
         case MSC_REQUEST_RESET:
-            USBD_LOG_DBG("MSC_REQUEST_RESET");
+            USBD_LOG_DBG("MSC_REQUEST_RESET\r\n");
 
-            if (pSetup->wLength) {
-                USBD_LOG_WRN("Invalid length");
+            if (setup->wLength) {
+                USBD_LOG_WRN("Invalid length\r\n");
                 return -1;
             }
 
@@ -138,10 +138,10 @@ static int msc_storage_class_request_handler(struct usb_setup_packet *pSetup, ui
             break;
 
         case MSC_REQUEST_GET_MAX_LUN:
-            USBD_LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
+            USBD_LOG_DBG("MSC_REQUEST_GET_MAX_LUN\r\n");
 
-            if (pSetup->wLength != 1) {
-                USBD_LOG_WRN("Invalid length");
+            if (setup->wLength != 1) {
+                USBD_LOG_WRN("Invalid length\r\n");
                 return -1;
             }
 
@@ -150,8 +150,7 @@ static int msc_storage_class_request_handler(struct usb_setup_packet *pSetup, ui
             break;
 
         default:
-            USBD_LOG_WRN("Unknown request 0x%02x, value 0x%02x",
-                         pSetup->bRequest, pSetup->wValue);
+            USBD_LOG_WRN("Unhandled MSC Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 
