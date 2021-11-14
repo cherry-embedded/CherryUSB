@@ -25,10 +25,13 @@ USB 参考手册
 - CDC: `<https://www.usb.org/document-library/class-definitions-communication-devices-12>`_
 - MSC: `<https://www.usb.org/document-library/mass-storage-class-specification-overview-14>`_
      `<https://www.usb.org/document-library/mass-storage-bulk-only-10>`_
-- AUDIO:
-- VIDEO:
-- TMC:
-- DFU:
+- HID: `<https://www.usb.org/document-library/device-class-definition-hid-111>`_
+       `<https://www.usb.org/document-library/hid-usage-tables-122>`_
+- AUDIO: `<https://www.usb.org/document-library/audiovideo-device-class-v10-spec-and-adopters-agreement>`_
+        `<https://www.usb.org/document-library/audio-data-formats-10>`_
+- VIDEO: `<https://www.usb.org/document-library/video-class-v11-document-set>`_
+- TMC: `<https://www.usb.org/document-library/test-measurement-class-specification>`_
+- DFU: `<https://www.st.com/resource/zh/application_note/cd00264379-usb-dfu-protocol-used-in-the-stm32-bootloader-stmicroelectronics.pdf>`_
 
 USB 协议栈实现
 -------------------------------
