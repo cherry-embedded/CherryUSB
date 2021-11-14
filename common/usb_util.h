@@ -143,7 +143,7 @@
 #define USBD_LOG_INFO(a, ...) printf(a, ##__VA_ARGS__)
 #define USBD_LOG_DBG(a, ...)
 #define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_ERR(a, ...)  printf(a, ##__VA_ARGS__)
+#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
 #endif
 
 #endif

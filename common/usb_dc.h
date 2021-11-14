@@ -172,7 +172,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
  * This is similar to usb_dc_ep_read, the difference being that, it doesn't
  * clear the endpoint NAKs so that the consumer is not bogged down by further
  * upcalls till he is done with the processing of the data. The caller should
- * reactivate ep by invoking usb_dc_ep_read_continue() do so.
+ * reactivate ep by setting max_data_len 0 do so.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table

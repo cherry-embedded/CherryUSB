@@ -89,12 +89,12 @@ static struct usb_bos_descriptor *bos_desc;
 static void usbd_print_setup(struct usb_setup_packet *setup)
 {
     USBD_LOG_INFO("Setup: "
-                 "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
-                 setup->bmRequestType,
-                 setup->bRequest,
-                 setup->wValue,
-                 setup->wIndex,
-                 setup->wLength);
+                  "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
+                  setup->bmRequestType,
+                  setup->bRequest,
+                  setup->wValue,
+                  setup->wIndex,
+                  setup->wLength);
 }
 
 /**
@@ -203,7 +203,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
     USBD_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
-             ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
+                  ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
     usbd_ep_open(&ep_cfg);
     usbd_core_cfg.configured = true;
@@ -229,7 +229,7 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
     USBD_LOG_INFO("Close endpoint:0x%x type:%u\r\n",
-             ep_cfg.ep_addr, ep_cfg.ep_type);
+                  ep_cfg.ep_addr, ep_cfg.ep_type);
 
     usbd_ep_close(ep_cfg.ep_addr);
 
