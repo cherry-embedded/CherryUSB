@@ -964,16 +964,13 @@ static void usbd_send_to_host(uint16_t len)
          * last chunk is wMaxPacketSize long, to indicate the last
          * packet.
          */
-        /* Send less data as requested during the Setup stage */
-        if ((!usbd_core_cfg.ep0_data_buf_residue) && (len > usbd_core_cfg.ep0_data_buf_len)) {
-            /* Transfers a zero-length packet */
-            if (!(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
-                USBD_LOG_DBG("send zlp\r\n");
-                usbd_core_cfg.zlp_flag = true;
-            }
+        if ((!usbd_core_cfg.ep0_data_buf_residue) && (usbd_core_cfg.ep0_data_buf_len >= USB_CTRL_EP_MPS) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
+            /* Transfers a zero-length packet next*/
+            usbd_core_cfg.zlp_flag = true;
         }
     } else {
         usbd_core_cfg.zlp_flag = false;
+        USBD_LOG_DBG("send zlp\r\n");
         if (usbd_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL) < 0) {
             USBD_LOG_ERR("USB write zlp failed\r\n");
             return;
@@ -1015,8 +1012,6 @@ static void usbd_ep0_setup_handler(void)
     if (setup->wLength &&
         setup->bmRequestType_b.Dir == USB_REQUEST_HOST_TO_DEVICE) {
         USBD_LOG_DBG("prepare to out data\r\n");
-        /*set ep ack to recv next data*/
-        usbd_ep_read(USB_CONTROL_OUT_EP0, NULL, 0, NULL);
         return;
     }
 
@@ -1084,6 +1079,7 @@ static void usbd_ep0_out_handler(void)
         USBD_LOG_ERR("ep0_data_buf_residue is not zero\r\n");
     }
 }
+
 static void usbd_ep0_in_handler(void)
 {
     struct usb_setup_packet *setup = &usbd_core_cfg.setup;
@@ -1091,6 +1087,8 @@ static void usbd_ep0_in_handler(void)
     /* Send more data if available */
     if (usbd_core_cfg.ep0_data_buf_residue != 0 || usbd_core_cfg.zlp_flag == true) {
         usbd_send_to_host(setup->wLength);
+    } else {
+        /*ep0 tx has completed,and no data to send,so do nothing*/
     }
 }
 
