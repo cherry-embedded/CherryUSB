@@ -232,8 +232,11 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    
     /* USER CODE BEGIN 3 */
+      uint8_t data_buffer[10] = {0x31,0x32,0x33,0x34,0x35,0x31,0x32,0x33,0x34,0x35};
+      usbd_ep_write(0x81,data_buffer,10,NULL);
+      HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
