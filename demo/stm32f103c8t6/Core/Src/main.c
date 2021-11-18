@@ -41,9 +41,9 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart1;
+//UART_HandleTypeDef huart1;
 
-PCD_HandleTypeDef hpcd_USB_FS;
+//PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
 
@@ -63,7 +63,8 @@ static void MX_USB_PCD_Init(void);
 int fputc(int ch, FILE *f)
 {
 
-  HAL_UART_Transmit(&huart1,(uint8_t*)&ch,1,1000);
+  while((USART1->SR & USART_SR_TXE) == 0);
+  USART1->DR = ch;
   return ch;
 }
 
@@ -214,7 +215,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  MX_USB_PCD_Init();
+  //MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
   usbd_desc_register(cdc_descriptor);
 
@@ -232,7 +233,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    
+
     /* USER CODE BEGIN 3 */
       uint8_t data_buffer[10] = {0x31,0x32,0x33,0x34,0x35,0x31,0x32,0x33,0x34,0x35};
       usbd_ep_write(0x81,data_buffer,10,NULL);
@@ -324,31 +325,31 @@ static void MX_USART1_UART_Init(void)
   * @param None
   * @retval None
   */
-static void MX_USB_PCD_Init(void)
-{
+//static void MX_USB_PCD_Init(void)
+//{
 
-  /* USER CODE BEGIN USB_Init 0 */
+//  /* USER CODE BEGIN USB_Init 0 */
 
-  /* USER CODE END USB_Init 0 */
+//  /* USER CODE END USB_Init 0 */
 
-  /* USER CODE BEGIN USB_Init 1 */
+//  /* USER CODE BEGIN USB_Init 1 */
 
-  /* USER CODE END USB_Init 1 */
-  hpcd_USB_FS.Instance = USB;
-  hpcd_USB_FS.Init.dev_endpoints = 8;
-  hpcd_USB_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_FS.Init.battery_charging_enable = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_FS) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_Init 2 */
+//  /* USER CODE END USB_Init 1 */
+//  hpcd_USB_FS.Instance = USB;
+//  hpcd_USB_FS.Init.dev_endpoints = 8;
+//  hpcd_USB_FS.Init.speed = PCD_SPEED_FULL;
+//  hpcd_USB_FS.Init.low_power_enable = DISABLE;
+//  hpcd_USB_FS.Init.lpm_enable = DISABLE;
+//  hpcd_USB_FS.Init.battery_charging_enable = DISABLE;
+//  if (HAL_PCD_Init(&hpcd_USB_FS) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
+//  /* USER CODE BEGIN USB_Init 2 */
 
-  /* USER CODE END USB_Init 2 */
+//  /* USER CODE END USB_Init 2 */
 
-}
+//}
 
 /**
   * @brief GPIO Initialization Function

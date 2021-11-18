@@ -326,15 +326,25 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     if (!data && max_data_len) {
         return -1;
     }
-    if (!max_data_len && (ep == 0x00)) {
-        /* do nothing*/
-        return 0;
-    }
 
     ep_state->read_count = HAL_PCD_EP_GetRxCount(&hpcd_USB_FS, ep);
     ep_state->read_offset = 0U;
     read_count = ep_state->read_count;
 
+    if (max_data_len == 0) {
+        /* If no more data in the buffer, start a new read transaction.
+	 * DataOutStageCallback will called on transaction complete.
+	 */
+        if (!ep_state->read_count) {
+            status = HAL_PCD_EP_Receive(&hpcd_USB_FS, ep,
+                                        usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
+                                        EP_MPS);
+            if (status != HAL_OK) {
+                return -2;
+            }
+        }
+        return 0;
+    }
     /* When both buffer and max data to read are zero, just ingore reading
 	 * and return available data in buffer. Otherwise, return data
 	 * previously stored in the buffer.
@@ -403,14 +413,9 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 {
     struct usb_setup_packet *setup = (void *)hpcd_USB_FS.Setup;
-    struct usb_dc_ep_state *ep_state;
 
-    ep_state = usb_dc_stm32_get_ep_state(0x00);
-
-    ep_state->read_count = 8;
-    ep_state->read_offset = 0U;
     memcpy(&usb_dc_pcd_state.ep_buf[0],
-           hpcd_USB_FS.Setup, ep_state->read_count);
+           hpcd_USB_FS.Setup, 8);
 
     usbd_event_notify_handler(USB_EVENT_SETUP_NOTIFY, NULL);
     if (!(setup->wLength == 0U) &&

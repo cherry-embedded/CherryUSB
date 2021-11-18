@@ -284,7 +284,7 @@
 
   <Group>
     <GroupName>Drivers/STM32F1xx_HAL_Driver</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -551,8 +551,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\port\stm32\usb_dc.c</PathWithFileName>
-      <FilenameWithoutPath>usb_dc.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\port\stm32\usb_dc_nohal.c</PathWithFileName>
+      <FilenameWithoutPath>usb_dc_nohal.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
