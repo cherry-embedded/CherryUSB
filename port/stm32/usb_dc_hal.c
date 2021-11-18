@@ -1,7 +1,11 @@
-#include "stm32f1xx_hal.h" //chanage this header for different soc
 #include "usbd_core.h"
-
-extern PCD_HandleTypeDef hpcd_USB_FS;
+#ifdef STM32F1
+#include "stm32f1xx_hal.h" //chanage this header for different soc
+#elif defined(STM32F4)
+#include "stm32f4xx_hal.h" //chanage this header for different soc
+#elif defined(STM32H7)
+#include "stm32h7xx_hal.h" //chanage this header for different soc
+#endif
 
 #ifndef USB_RAM_SIZE
 #define USB_RAM_SIZE 512
@@ -10,6 +14,18 @@ extern PCD_HandleTypeDef hpcd_USB_FS;
 #define USB_NUM_BIDIR_ENDPOINTS 8
 #endif
 
+#ifdef USB
+extern PCD_HandleTypeDef hpcd_USB_FS;
+#define PCD_HANDLE &hpcd_USB_FS
+#else
+#ifdef CONFIG_USB_HS
+extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+#define PCD_HANDLE &hpcd_USB_OTG_HS
+#else
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+#define PCD_HANDLE &hpcd_USB_OTG_FS
+#endif
+#endif
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
  * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
@@ -111,7 +127,7 @@ int usb_dc_init(void)
     unsigned int i;
 
     /*pcd has init*/
-    status = HAL_PCD_Start(&hpcd_USB_FS);
+    status = HAL_PCD_Start(PCD_HANDLE);
     if (status != HAL_OK) {
         return -2;
     }
@@ -126,9 +142,9 @@ int usb_dc_init(void)
     usb_dc_pcd_state.pma_offset = USB_BTABLE_SIZE;
 #else /* USB_OTG_FS */
     /* TODO: make this dynamic (depending usage) */
-    HAL_PCDEx_SetRxFiFo(&hpcd_USB_FS, FIFO_EP_WORDS);
+    HAL_PCDEx_SetRxFiFo(PCD_HANDLE, FIFO_EP_WORDS);
     for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
-        HAL_PCDEx_SetTxFiFo(&hpcd_USB_FS, i,
+        HAL_PCDEx_SetTxFiFo(PCD_HANDLE, i,
                             FIFO_EP_WORDS);
     }
 #endif /* USB */
@@ -143,7 +159,7 @@ int usbd_set_address(const uint8_t addr)
 {
     HAL_StatusTypeDef status;
 
-    status = HAL_PCD_SetAddress(&hpcd_USB_FS, addr);
+    status = HAL_PCD_SetAddress(PCD_HANDLE, addr);
     if (status != HAL_OK) {
         return -2;
     }
@@ -192,14 +208,14 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
             return -1;
     }
 
-    status = HAL_PCD_EP_Open(&hpcd_USB_FS, ep,
+    status = HAL_PCD_EP_Open(PCD_HANDLE, ep,
                              ep_state->ep_mps, ep_state->ep_type);
     if (status != HAL_OK) {
         return -1;
     }
 
     if (USB_EP_DIR_IS_OUT(ep) && ep != USB_CONTROL_OUT_EP0) {
-        return HAL_PCD_EP_Receive(&hpcd_USB_FS, ep,
+        return HAL_PCD_EP_Receive(PCD_HANDLE, ep,
                                   usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
                                   EP_MPS);
     }
@@ -214,7 +230,7 @@ int usbd_ep_close(const uint8_t ep)
         return -1;
     }
 
-    status = HAL_PCD_EP_Close(&hpcd_USB_FS, ep);
+    status = HAL_PCD_EP_Close(PCD_HANDLE, ep);
     if (status != HAL_OK) {
         return -2;
     }
@@ -230,7 +246,7 @@ int usbd_ep_set_stall(const uint8_t ep)
         return -1;
     }
 
-    status = HAL_PCD_EP_SetStall(&hpcd_USB_FS, ep);
+    status = HAL_PCD_EP_SetStall(PCD_HANDLE, ep);
     if (status != HAL_OK) {
         return -2;
     }
@@ -248,7 +264,7 @@ int usbd_ep_clear_stall(const uint8_t ep)
         return -1;
     }
 
-    status = HAL_PCD_EP_ClrStall(&hpcd_USB_FS, ep);
+    status = HAL_PCD_EP_ClrStall(PCD_HANDLE, ep);
     if (status != HAL_OK) {
         return -2;
     }
@@ -285,7 +301,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         data_len = 64;
     }
 
-    status = HAL_PCD_EP_Transmit(&hpcd_USB_FS, ep,
+    status = HAL_PCD_EP_Transmit(PCD_HANDLE, ep,
                                  (void *)data, data_len);
     if (status != HAL_OK) {
         ret = -2;
@@ -295,7 +311,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         /* Wait for an empty package as from the host.
 		 * This also flushes the TX FIFO to the host.
 		 */
-        status = HAL_PCD_EP_Receive(&hpcd_USB_FS, ep,
+        status = HAL_PCD_EP_Receive(PCD_HANDLE, ep,
                                     usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
                                     0);
         if (status != HAL_OK) {
@@ -327,7 +343,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
         return -1;
     }
 
-    ep_state->read_count = HAL_PCD_EP_GetRxCount(&hpcd_USB_FS, ep);
+    ep_state->read_count = HAL_PCD_EP_GetRxCount(PCD_HANDLE, ep);
     ep_state->read_offset = 0U;
     read_count = ep_state->read_count;
 
@@ -336,7 +352,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 	 * DataOutStageCallback will called on transaction complete.
 	 */
         if (!ep_state->read_count) {
-            status = HAL_PCD_EP_Receive(&hpcd_USB_FS, ep,
+            status = HAL_PCD_EP_Receive(PCD_HANDLE, ep,
                                         usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
                                         EP_MPS);
             if (status != HAL_OK) {
@@ -360,7 +376,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 	 * DataOutStageCallback will called on transaction complete.
 	 */
     if (!ep_state->read_count) {
-        status = HAL_PCD_EP_Receive(&hpcd_USB_FS, ep,
+        status = HAL_PCD_EP_Receive(PCD_HANDLE, ep,
                                     usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
                                     EP_MPS);
         if (status != HAL_OK) {
@@ -412,16 +428,16 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 
 void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 {
-    struct usb_setup_packet *setup = (void *)hpcd_USB_FS.Setup;
+    struct usb_setup_packet *setup = (void*)hpcd->Setup;
 
     memcpy(&usb_dc_pcd_state.ep_buf[0],
-           hpcd_USB_FS.Setup, 8);
+           hpcd->Setup, 8);
 
     usbd_event_notify_handler(USB_EVENT_SETUP_NOTIFY, NULL);
     if (!(setup->wLength == 0U) &&
         !(REQTYPE_GET_DIR(setup->bmRequestType) ==
           USB_REQUEST_DEVICE_TO_HOST)) {
-        HAL_PCD_EP_Receive(&hpcd_USB_FS, 0x00,
+        HAL_PCD_EP_Receive(PCD_HANDLE, 0x00,
                            usb_dc_pcd_state.ep_buf[0],
                            setup->wLength);
     }

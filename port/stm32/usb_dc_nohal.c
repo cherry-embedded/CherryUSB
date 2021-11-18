@@ -1,5 +1,11 @@
-#include "stm32f1xx_hal.h" //chanage this header for different soc
 #include "usbd_core.h"
+#ifdef STM32F1
+#include "stm32f1xx_hal.h" //chanage this header for different soc
+#elif defined(STM32F4)
+#include "stm32f4xx_hal.h" //chanage this header for different soc
+#elif defined(STM32H7)
+#include "stm32h7xx_hal.h" //chanage this header for different soc
+#endif
 
 #ifndef USB_RAM_SIZE
 #define USB_RAM_SIZE 512
