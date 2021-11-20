@@ -213,6 +213,7 @@ void usbd_hid_send_report(uint8_t ep, uint8_t *data, uint8_t len)
     // }
 }
 
+
 void usbd_hid_descriptor_register(uint8_t intf_num, const uint8_t *desc)
 {
     // usbd_hid_cfg.hid_descriptor = desc;
