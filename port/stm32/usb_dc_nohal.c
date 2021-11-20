@@ -32,13 +32,13 @@ struct usb_dc_ep_state {
 
 /* Driver state */
 struct usb_dc_config_priv {
-    PCD_TypeDef *Instance;                                  /*!< Register base address              */
-    __IO uint8_t USB_Address;                               /*!< USB Address                       */
-    struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters             */
-    struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters            */
+    PCD_TypeDef *Instance;                                  /*!< Register base address */
+    PCD_InitTypeDef Init;                                   /*!< PCD required parameters */
+    __IO uint8_t USB_Address;                               /*!< USB Address */
+    struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
+    struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 #ifdef USB
     uint32_t pma_offset;
-#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
 #endif
 } usb_dc_cfg;
 
@@ -48,75 +48,108 @@ int usb_dc_init(void)
 #ifdef USB
     usb_dc_cfg.Instance = USB;
     usb_dc_cfg.pma_offset = 64;
-#elif defined(USB_OTG_FS)
-    usb_dc_cfg.Instance = USB_OTG_FS;
-#elif defined(USB_OTG_HS)
+    usb_dc_cfg.Init.speed = PCD_SPEED_FULL;
+#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+#ifdef CONFIG_USB_HS
     usb_dc_cfg.Instance = USB_OTG_HS;
+    usb_dc_cfg.Init.speed = PCD_SPEED_FULL;
+    usb_dc_cfg.Init.dma_enable = DISABLE;
+    usb_dc_cfg.Init.phy_itface = USB_OTG_ULPI_PHY;
+    usb_dc_cfg.Init.vbus_sensing_enable = DISABLE;
+    usb_dc_cfg.Init.use_dedicated_ep1 = DISABLE;
+    usb_dc_cfg.Init.use_external_vbus = DISABLE;
+#else
+    //usb_dc_cfg.Instance = USB_OTG_HS;  //run in full speed
+    usb_dc_cfg.Instance = USB_OTG_FS;
+    usb_dc_cfg.Init.speed = PCD_SPEED_FULL;
+    usb_dc_cfg.Init.dma_enable = DISABLE;
+    usb_dc_cfg.Init.phy_itface = USB_OTG_EMBEDDED_PHY;
+    usb_dc_cfg.Init.vbus_sensing_enable = DISABLE;
+    usb_dc_cfg.Init.use_dedicated_ep1 = DISABLE;
+    usb_dc_cfg.Init.use_external_vbus = DISABLE;
 #endif
+#endif
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
+
+    usb_dc_cfg.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
+    usb_dc_cfg.Init.Sof_enable = DISABLE;
+    usb_dc_cfg.Init.low_power_enable = DISABLE;
+    usb_dc_cfg.Init.lpm_enable = DISABLE;
 
     HAL_PCD_MspInit((PCD_HandleTypeDef *)&usb_dc_cfg);
 
 #ifdef USB
-    /* CNTR_FRES = 1 */
-    USB->CNTR = (uint16_t)USB_CNTR_FRES;
-
-    /* CNTR_FRES = 0 */
-    USB->CNTR = 0U;
-
-    /* Clear pending interrupts */
-    USB->ISTR = 0U;
-
-    /*Set Btable Address*/
-    USB->BTABLE = BTABLE_ADDRESS;
-
-    USB->DADDR = (uint16_t)USB_DADDR_EF;
-
-    /* Set winterruptmask variable */
-    uint32_t winterruptmask = USB_CNTR_CTRM | USB_CNTR_WKUPM |
-                              USB_CNTR_SUSPM | USB_CNTR_ERRM |
-                              USB_CNTR_SOFM | USB_CNTR_ESOFM |
-                              USB_CNTR_RESETM;
-
-    /* Set interrupt mask */
-    USB->CNTR = (uint16_t)winterruptmask;
+    USB_DisableGlobalInt(USBx);
+    USB_DevInit(USBx, usb_dc_cfg.Init);
+    USB_EnableGlobalInt(USBx);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    /* Disable DMA mode for FS instance */
+#ifndef CONFIG_USB_HS
+    if ((USBx->CID & (0x1U << 8)) == 0U) {
+        usb_dc_cfg.Init.dma_enable = 0U;
+    }
+#endif
+    /* Disable the Interrupts */
+    USB_DisableGlobalInt(USBx);
+
+    /*Init the Core (common init.) */
+    if (USB_CoreInit(usb_dc_cfg.Instance, usb_dc_cfg.Init) != HAL_OK) {
+        return -1;
+    }
+
+    /* Force Device Mode*/
+    (void)USB_SetCurrentMode(USBx, USB_DEVICE_MODE);
+
+    /* Init Device */
+    if (USB_DevInit(USBx, usb_dc_cfg.Init) != HAL_OK) {
+        return -1;
+    }
+
+    USB_DevDisconnect(USBx);
+
+    if ((usb_dc_cfg.Init.battery_charging_enable == 1U) &&
+        (usb_dc_cfg.Init.phy_itface != USB_OTG_ULPI_PHY)) {
+        /* Enable USB Transceiver */
+        USBx->GCCFG |= USB_OTG_GCCFG_PWRDWN;
+    }
+    (void)USB_DevConnect(USBx);
+    /* Enable the Interrupts */
+    USB_EnableGlobalInt(USBx);
 #endif
     return 0;
 }
 
 void usb_dc_deinit(void)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
+    USB_StopDevice(USBx);
     HAL_PCD_MspDeInit((PCD_HandleTypeDef *)&usb_dc_cfg);
 }
 
 int usbd_set_address(const uint8_t addr)
 {
-#ifdef USB
-    if (addr == 0U) {
-        /* set device address and enable function */
-        USB->DADDR = (uint16_t)USB_DADDR_EF;
-    }
-#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
-#endif
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
+
+    USB_SetDevAddress(USBx, addr);
     usb_dc_cfg.USB_Address = addr;
     return 0;
 }
 
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
-    uint8_t ep;
-    uint8_t ep_idx;
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
+    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
     if (!ep_cfg) {
         return -1;
     }
 
-    ep = ep_cfg->ep_addr;
-    ep_idx = USB_EP_GET_IDX(ep);
-
 #ifdef USB
     uint16_t wEpRegVal;
 
-    wEpRegVal = PCD_GET_ENDPOINT(USB, ep_idx) & USB_EP_T_MASK;
+    wEpRegVal = PCD_GET_ENDPOINT(USBx, ep_idx) & USB_EP_T_MASK;
     /* initialize Endpoint */
     switch (ep_cfg->ep_type) {
         case EP_TYPE_CTRL:
@@ -138,10 +171,10 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         default:
             break;
     }
-    PCD_SET_ENDPOINT(USB, ep_idx, (wEpRegVal | USB_EP_CTR_RX | USB_EP_CTR_TX));
+    PCD_SET_ENDPOINT(USBx, ep_idx, (wEpRegVal | USB_EP_CTR_RX | USB_EP_CTR_TX));
 
-    PCD_SET_EP_ADDRESS(USB, ep_idx, ep_idx);
-    if (USB_EP_DIR_IS_OUT(ep)) {
+    PCD_SET_EP_ADDRESS(USBx, ep_idx, ep_idx);
+    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         usb_dc_cfg.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         usb_dc_cfg.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
         if (usb_dc_cfg.out_ep[ep_idx].ep_mps > usb_dc_cfg.out_ep[ep_idx].ep_pma_buf_len) {
@@ -151,15 +184,15 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
             usb_dc_cfg.out_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
             usb_dc_cfg.out_ep[ep_idx].ep_pma_addr = usb_dc_cfg.pma_offset;
             /*Set the endpoint Receive buffer address */
-            PCD_SET_EP_RX_ADDRESS(USB, ep_idx, usb_dc_cfg.pma_offset);
+            PCD_SET_EP_RX_ADDRESS(USBx, ep_idx, usb_dc_cfg.pma_offset);
             usb_dc_cfg.pma_offset += ep_cfg->ep_mps;
         }
         /*Set the endpoint Receive buffer counter*/
-        PCD_SET_EP_RX_CNT(USB, ep_idx, ep_cfg->ep_mps);
-        PCD_CLEAR_RX_DTOG(USB, ep_idx);
+        PCD_SET_EP_RX_CNT(USBx, ep_idx, ep_cfg->ep_mps);
+        PCD_CLEAR_RX_DTOG(USBx, ep_idx);
 
         /* Configure VALID status for the Endpoint*/
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
+        PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
     } else {
         usb_dc_cfg.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         usb_dc_cfg.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
@@ -170,81 +203,160 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
             usb_dc_cfg.in_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
             usb_dc_cfg.in_ep[ep_idx].ep_pma_addr = usb_dc_cfg.pma_offset;
             /*Set the endpoint Transmit buffer address */
-            PCD_SET_EP_TX_ADDRESS(USB, ep_idx, usb_dc_cfg.pma_offset);
+            PCD_SET_EP_TX_ADDRESS(USBx, ep_idx, usb_dc_cfg.pma_offset);
             usb_dc_cfg.pma_offset += ep_cfg->ep_mps;
         }
 
-        PCD_CLEAR_TX_DTOG(USB, ep_idx);
+        PCD_CLEAR_TX_DTOG(USBx, ep_idx);
         if (ep_cfg->ep_type != EP_TYPE_ISOC) {
             /* Configure NAK status for the Endpoint */
-            PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
+            PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_NAK);
         } else {
             /* Configure TX Endpoint to disabled state */
-            PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+            PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_DIS);
         }
     }
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
+        usb_dc_cfg.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
+        usb_dc_cfg.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        USBx_DEVICE->DAINTMSK |= USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & EP_ADDR_MSK)) << 16);
+
+        if (((USBx_OUTEP(ep_idx)->DOEPCTL) & USB_OTG_DOEPCTL_USBAEP) == 0U) {
+            USBx_OUTEP(ep_idx)->DOEPCTL |= (ep_cfg->ep_mps & USB_OTG_DOEPCTL_MPSIZ) |
+                                           ((uint32_t)ep_cfg->ep_type << 18) |
+                                           USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                           USB_OTG_DOEPCTL_USBAEP;
+        }
+
+    } else {
+        usb_dc_cfg.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
+        usb_dc_cfg.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        USBx_DEVICE->DAINTMSK |= USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & EP_ADDR_MSK));
+
+        if ((USBx_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_USBAEP) == 0U) {
+            USBx_INEP(ep_idx)->DIEPCTL |= (ep_cfg->ep_mps & USB_OTG_DIEPCTL_MPSIZ) |
+                                          ((uint32_t)ep_cfg->ep_type << 18) | (ep_idx << 22) |
+                                          USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                          USB_OTG_DIEPCTL_USBAEP;
+        }
+    }
+
 #endif
 
     return 0;
 }
 int usbd_ep_close(const uint8_t ep)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
     if (USB_EP_DIR_IS_OUT(ep)) {
-        PCD_CLEAR_RX_DTOG(USB, ep_idx);
+#ifdef USB
+        PCD_CLEAR_RX_DTOG(USBx, ep_idx);
 
         /* Configure DISABLE status for the Endpoint*/
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_DIS);
+        PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_DIS);
+#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        if (((USBx_OUTEP(ep_idx)->DOEPCTL) & USB_OTG_DOEPCTL_USBAEP) == 0U) {
+            USBx_OUTEP(ep_idx)->DOEPCTL |= (usb_dc_cfg.out_ep[ep_idx].ep_mps & USB_OTG_DOEPCTL_MPSIZ) |
+                                           ((uint32_t)usb_dc_cfg.out_ep[ep_idx].ep_type << 18) | (ep_idx << 22) |
+                                           USB_OTG_DOEPCTL_USBAEP;
+        }
+
+        USBx_DEVICE->DEACHMSK |= USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & EP_ADDR_MSK)) << 16);
+#endif
     } else {
-        PCD_CLEAR_TX_DTOG(USB, ep_idx);
+#ifdef USB
+        PCD_CLEAR_TX_DTOG(USBx, ep_idx);
 
         /* Configure DISABLE status for the Endpoint*/
-        PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+        PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_DIS);
+#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        if (((USBx_INEP(ep_idx)->DIEPCTL) & USB_OTG_DIEPCTL_USBAEP) == 0U) {
+            USBx_INEP(ep_idx)->DIEPCTL |= (usb_dc_cfg.in_ep[ep_idx].ep_mps & USB_OTG_DIEPCTL_MPSIZ) |
+                                          ((uint32_t)usb_dc_cfg.in_ep[ep_idx].ep_type << 18) | (ep_idx << 22) |
+                                          USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                          USB_OTG_DIEPCTL_USBAEP;
+        }
+
+        USBx_DEVICE->DEACHMSK |= USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & EP_ADDR_MSK));
+#endif
     }
     return 0;
 }
 int usbd_ep_set_stall(const uint8_t ep)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
     if (USB_EP_DIR_IS_OUT(ep)) {
 #ifdef USB
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_STALL);
+        PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_STALL);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        if (((USBx_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) == 0U) && (ep_idx != 0U)) {
+            USBx_OUTEP(ep_idx)->DOEPCTL &= ~(USB_OTG_DOEPCTL_EPDIS);
+        }
+        USBx_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_STALL;
 #endif
     } else {
 #ifdef USB
-        PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_STALL);
+        PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_STALL);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        if (((USBx_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) == 0U) && (ep_idx != 0U)) {
+            USBx_INEP(ep_idx)->DIEPCTL &= ~(USB_OTG_DIEPCTL_EPDIS);
+        }
+        USBx_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_STALL;
 #endif
     }
     return 0;
 }
 int usbd_ep_clear_stall(const uint8_t ep)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
     if (USB_EP_DIR_IS_OUT(ep)) {
 #ifdef USB
-        PCD_CLEAR_TX_DTOG(USB, ep_idx);
+        PCD_CLEAR_TX_DTOG(USBx, ep_idx);
 
         if (usb_dc_cfg.in_ep[ep_idx].ep_type != EP_TYPE_ISOC) {
             /* Configure NAK status for the Endpoint */
-            PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
+            PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_NAK);
         }
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        USBx_OUTEP(ep_idx)->DOEPCTL &= ~USB_OTG_DOEPCTL_STALL;
+        if ((usb_dc_cfg.out_ep[ep_idx].ep_type == EP_TYPE_INTR) || (usb_dc_cfg.out_ep[ep_idx].ep_type == EP_TYPE_BULK)) {
+            USBx_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SD0PID_SEVNFRM; /* DATA0 */
+        }
 #endif
     } else {
 #ifdef USB
-        PCD_CLEAR_RX_DTOG(USB, ep_idx);
+        PCD_CLEAR_RX_DTOG(USBx, ep_idx);
         /* Configure VALID status for the Endpoint */
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
+        PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        USBx_INEP(ep_idx)->DIEPCTL &= ~USB_OTG_DIEPCTL_STALL;
+        if ((usb_dc_cfg.in_ep[ep_idx].ep_type == EP_TYPE_INTR) || (usb_dc_cfg.in_ep[ep_idx].ep_type == EP_TYPE_BULK)) {
+            USBx_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SD0PID_SEVNFRM; /* DATA0 */
+        }
 #endif
     }
     return 0;
 }
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
     if (USB_EP_DIR_IS_OUT(ep)) {
     } else {
     }
@@ -253,16 +365,28 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 
 int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
+
     if (!data && data_len) {
         return -1;
     }
 
     if (!data_len) {
 #ifdef USB
-        PCD_SET_EP_TX_CNT(USB, ep_idx, (uint16_t)0);
-        PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_VALID);
+        PCD_SET_EP_TX_CNT(USBx, ep_idx, (uint16_t)0);
+        PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_PKTCNT);
+        USBx_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_PKTCNT & (1U << 19));
+        USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_XFRSIZ);
+
+        /* EP enable, IN data in FIFO */
+        USBx_INEP(ep_idx)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
+
 #endif
         return 0;
     }
@@ -271,10 +395,65 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         data_len = usb_dc_cfg.in_ep[ep_idx].ep_mps;
     }
 #ifdef USB
-    USB_WritePMA(USB, (uint8_t *)data, usb_dc_cfg.in_ep[ep_idx].ep_pma_addr, (uint16_t)data_len);
-    PCD_SET_EP_TX_CNT(USB, ep_idx, (uint16_t)data_len);
-    PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_VALID);
+    USB_WritePMA(USBx, (uint8_t *)data, usb_dc_cfg.in_ep[ep_idx].ep_pma_addr, (uint16_t)data_len);
+    PCD_SET_EP_TX_CNT(USBx, ep_idx, (uint16_t)data_len);
+    PCD_SET_EP_TX_STATUS(USBx, ep_idx, USB_EP_TX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+
+    if (ep_idx == 0x00) {
+        /* Program the transfer size and packet count
+      * as follows: xfersize = N * maxpacket +
+      * short_packet pktcnt = N + (short_packet
+      * exist ? 1 : 0)
+      */
+        USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_XFRSIZ);
+        USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_PKTCNT);
+        USBx_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_PKTCNT & (1U << 19));
+        USBx_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_XFRSIZ & data_len);
+
+        /* EP enable, IN data in FIFO */
+        USBx_INEP(ep_idx)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
+
+        /* Enable the Tx FIFO Empty Interrupt for this EP */
+        USBx_DEVICE->DIEPEMPMSK |= 1UL << (ep_idx & EP_ADDR_MSK);
+
+    } else {
+        /* Program the transfer size and packet count
+      * as follows: xfersize = N * maxpacket +
+      * short_packet pktcnt = N + (short_packet
+      * exist ? 1 : 0)
+      */
+        uint32_t len32b = (data_len + 3) / 4;
+        while ((USBx_INEP(ep_idx)->DTXFSTS & USB_OTG_DTXFSTS_INEPTFSAV) >= len32b) {
+        }
+
+        USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_XFRSIZ);
+        USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_PKTCNT);
+        USBx_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_PKTCNT & (((data_len + usb_dc_cfg.in_ep[ep_idx].ep_mps - 1U) / usb_dc_cfg.in_ep[ep_idx].ep_mps) << 19));
+        USBx_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_XFRSIZ & data_len);
+
+        if (usb_dc_cfg.in_ep[ep_idx].ep_type == EP_TYPE_ISOC) {
+            USBx_INEP(ep_idx)->DIEPTSIZ &= ~(USB_OTG_DIEPTSIZ_MULCNT);
+            USBx_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_MULCNT & (1U << 29));
+        }
+
+        (void)USB_WritePacket(USBx, (uint8_t *)data, ep_idx, (uint16_t)data_len, 0);
+
+        /* EP enable, IN data in FIFO */
+        USBx_INEP(ep_idx)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
+
+        if (usb_dc_cfg.in_ep[ep_idx].ep_type != EP_TYPE_ISOC) {
+            /* Enable the Tx FIFO Empty Interrupt for this EP */
+            //USBx_DEVICE->DIEPEMPMSK |= 1UL << (ep_idx & EP_ADDR_MSK);
+        } else {
+            if ((USBx_DEVICE->DSTS & (1U << 8)) == 0U) {
+                USBx_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SODDFRM;
+            } else {
+                USBx_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SD0PID_SEVNFRM;
+            }
+        }
+    }
+
 #endif
     if (ret_bytes) {
         *ret_bytes = data_len;
@@ -285,27 +464,71 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
 
 int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
-    uint32_t read_count;
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    uint32_t USBx_BASE = (uint32_t)USBx;
+#endif
+
+    uint32_t read_count;
     if (!data && max_data_len) {
         return -1;
     }
 
     if (!max_data_len) {
 #ifdef USB
-        //PCD_SET_EP_RX_CNT(USB, ep_idx, usb_dc_cfg.out_ep[ep_idx].ep_mps);
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
+        //PCD_SET_EP_RX_CNT(USBx, ep_idx, usb_dc_cfg.out_ep[ep_idx].ep_mps);
+        PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+        /* Program the transfer size and packet count as follows:
+    * pktcnt = N
+    * xfersize = N * maxpacket
+    */
+        USBx_OUTEP(ep_idx)->DOEPTSIZ &= ~(USB_OTG_DOEPTSIZ_XFRSIZ);
+        USBx_OUTEP(ep_idx)->DOEPTSIZ &= ~(USB_OTG_DOEPTSIZ_PKTCNT);
+        USBx_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19));
+        USBx_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & (usb_dc_cfg.out_ep[ep_idx].ep_mps));
+
+        if (usb_dc_cfg.out_ep[ep_idx].ep_type == EP_TYPE_ISOC) {
+            if ((USBx_DEVICE->DSTS & (1U << 8)) == 0U) {
+                USBx_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SODDFRM;
+            } else {
+                USBx_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SD0PID_SEVNFRM;
+            }
+        }
+        /* EP enable */
+        USBx_OUTEP(ep_idx)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+
 #endif
         return 0;
     }
 #ifdef USB
-    read_count = PCD_GET_EP_RX_CNT(USB, ep_idx);
+    read_count = PCD_GET_EP_RX_CNT(USBx, ep_idx);
     read_count = MIN(read_count, max_data_len);
-    USB_ReadPMA(USB, (uint8_t *)data,
+    USB_ReadPMA(USBx, (uint8_t *)data,
                 usb_dc_cfg.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
-    PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
+    PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+
+    read_count = (USBx->GRXSTSP & USB_OTG_GRXSTSP_BCNT) >> 4;
+    read_count = MIN(read_count, max_data_len);
+    (void)USB_ReadPacket(USBx, data, read_count);
+
+    USBx_OUTEP(ep_idx)->DOEPTSIZ &= ~(USB_OTG_DOEPTSIZ_XFRSIZ);
+    USBx_OUTEP(ep_idx)->DOEPTSIZ &= ~(USB_OTG_DOEPTSIZ_PKTCNT);
+    USBx_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19));
+    USBx_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & (usb_dc_cfg.out_ep[ep_idx].ep_mps));
+
+    if (usb_dc_cfg.out_ep[ep_idx].ep_type == EP_TYPE_ISOC) {
+        if ((USBx_DEVICE->DSTS & (1U << 8)) == 0U) {
+            USBx_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SODDFRM;
+        } else {
+            USBx_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SD0PID_SEVNFRM;
+        }
+    }
+    /* EP enable */
+    USBx_OUTEP(ep_idx)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+
 #endif
     if (read_bytes) {
         *read_bytes = read_count;
@@ -454,5 +677,94 @@ void USBD_IRQHandler(void)
         USB->ISTR &= (uint16_t)(~USB_ISTR_ESOF);
     }
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
+    uint32_t USBx_BASE = (uint32_t)USBx;
+    uint32_t int_status;
+    uint32_t temp, epindex, ep_intr, ep_int_status;
+    /* ensure that we are in device mode */
+    if (USB_GetMode(USBx) == USB_OTG_MODE_DEVICE) {
+        while (int_status == USB_ReadInterrupts(USBx)) {
+            if (int_status & USB_OTG_GINTSTS_USBRST) {
+                usbd_event_notify_handler(USB_EVENT_RESET, NULL);
+                USBx->GINTSTS &= USB_OTG_GINTSTS_USBRST;
+            }
+            if (int_status & USB_OTG_GINTSTS_ENUMDNE) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_ENUMDNE;
+            }
+            if (int_status & USB_OTG_GINTSTS_RXFLVL) {
+                USB_MASK_INTERRUPT(USBx, USB_OTG_GINTSTS_RXFLVL);
+                temp = USBx->GRXSTSP;
+                epindex = temp & USB_OTG_GRXSTSP_EPNUM;
+                if (((temp & USB_OTG_GRXSTSP_PKTSTS) >> 17) == STS_DATA_UPDT) {
+                    if (epindex == 0)
+                        usbd_event_notify_handler(USB_EVENT_EP0_OUT_NOTIFY, NULL);
+                    else {
+                        usbd_event_notify_handler(USB_EVENT_EP_OUT_NOTIFY, (void *)(epindex & 0x7f));
+                    }
+                } else if (((temp & USB_OTG_GRXSTSP_PKTSTS) >> 17) == STS_SETUP_UPDT) {
+                    usbd_event_notify_handler(USB_EVENT_SETUP_NOTIFY, NULL);
+                } else {
+                    /* ... */
+                }
+                USB_UNMASK_INTERRUPT(USBx, USB_OTG_GINTSTS_RXFLVL);
+            }
+            if (int_status & USB_OTG_GINTSTS_IEPINT) {
+                epindex = 0U;
+                /* Read in the device interrupt bits */
+                ep_intr = USB_ReadDevAllInEpInterrupt(USBx);
+
+                while (ep_intr != 0U) {
+                    if ((ep_intr & 0x1U) != 0U) {
+                        /* Read IN EP interrupt status */
+                        ep_int_status = USB_ReadDevInEPInterrupt(USBx, (uint8_t)epindex);
+                        /* Clear IN EP interrupts */
+                        CLEAR_IN_EP_INTR(epindex, ep_int_status);
+                        if (ep_int_status & USB_OTG_DIEPINT_XFRC) {
+                            usbd_event_notify_handler(USB_EVENT_EP_IN_NOTIFY, (void *)(epindex | 0x80));
+                        }
+                    }
+                    epindex++;
+                    ep_intr >>= 1U;
+                }
+            }
+            if (int_status & USB_OTG_GINTSTS_OEPINT) {
+                epindex = 0;
+                /* Read in the device interrupt bits */
+                ep_intr = USB_ReadDevAllOutEpInterrupt(USBx);
+
+                while (ep_intr != 0U) {
+                    if ((ep_intr & 0x1U) != 0U) {
+                        /* Read OUT EP interrupt status */
+                        ep_int_status = USB_ReadDevOutEPInterrupt(USBx, (uint8_t)epindex);
+                        /* Clear OUT EP interrupts */
+                        CLEAR_OUT_EP_INTR(epindex, ep_int_status);
+                    }
+                    epindex++;
+                    ep_intr >>= 1U;
+                }
+            }
+            if (int_status & USB_OTG_GINTSTS_MMIS) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_MMIS;
+            }
+            if (int_status & USB_OTG_GINTSTS_WKUINT) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_WKUINT;
+            }
+            if (int_status & USB_OTG_GINTSTS_USBSUSP) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_USBSUSP;
+            }
+            //            if (int_status & USB_OTG_GINTSTS_LPMINT) {
+            //                USBx->GINTSTS &= USB_OTG_GINTSTS_LPMINT;
+            //            }
+            if (int_status & USB_OTG_GINTSTS_SOF) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_SOF;
+            }
+            if (int_status & USB_OTG_GINTSTS_SRQINT) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_SRQINT;
+            }
+            if (int_status & USB_OTG_GINTSTS_OTGINT) {
+                USBx->GINTSTS &= USB_OTG_GINTSTS_OTGINT;
+            }
+        }
+    }
 #endif
 }

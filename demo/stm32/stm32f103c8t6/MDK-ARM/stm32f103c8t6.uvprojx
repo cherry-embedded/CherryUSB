@@ -525,14 +525,14 @@
               <FilePath>..\..\..\..\core\usbd_core.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc_nohal.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\port\stm32\usb_dc_nohal.c</FilePath>
-            </File>
-            <File>
               <FileName>usbd_hid.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\class\hid\usbd_hid.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dc_nohal.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\port\stm32\usb_dc_nohal.c</FilePath>
             </File>
           </Files>
         </Group>
