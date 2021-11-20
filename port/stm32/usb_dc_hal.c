@@ -7,23 +7,28 @@
 #include "stm32h7xx_hal.h" //chanage this header for different soc
 #endif
 
-#ifndef USB_RAM_SIZE
-#define USB_RAM_SIZE 512
-#endif
 #ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 8
+#define USB_NUM_BIDIR_ENDPOINTS 6
 #endif
 
 #ifdef USB
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 512
+#endif
 extern PCD_HandleTypeDef hpcd_USB_FS;
 #define PCD_HANDLE &hpcd_USB_FS
 #else
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 4096
+#endif
 #ifdef CONFIG_USB_HS
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 #define PCD_HANDLE &hpcd_USB_OTG_HS
 #else
-extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
-#define PCD_HANDLE &hpcd_USB_OTG_FS
+extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+#define PCD_HANDLE &hpcd_USB_OTG_HS
+//extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+//#define PCD_HANDLE &hpcd_USB_OTG_FS
 #endif
 #endif
 /*
@@ -48,32 +53,21 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 #define USB_BTABLE_SIZE (8 * USB_NUM_BIDIR_ENDPOINTS)
 
 #else /* USB_OTG_FS */
-
-#ifndef USB_OTG_MAX_EP0_SIZE
-#define USB_OTG_MAX_EP0_SIZE 64
-#endif
 #define EP0_MPS USB_OTG_MAX_EP0_SIZE
 
 #ifdef CONFIG_USB_HS
-#ifndef USB_OTG_HS_MAX_PACKET_SIZE
-#define USB_OTG_HS_MAX_PACKET_SIZE 512
-#endif
 #define EP_MPS USB_OTG_HS_MAX_PACKET_SIZE
 #else
-#ifndef USB_OTG_FS_MAX_PACKET_SIZE
-#define USB_OTG_FS_MAX_PACKET_SIZE 64
-#endif
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
 #endif
 
-/* We need one RX FIFO and n TX-IN FIFOs */
-#define FIFO_NUM      (1 + USB_NUM_BIDIR_ENDPOINTS)
 
-/* 4-byte words FIFO */
-#define FIFO_WORDS    (USB_RAM_SIZE / 4)
-
-/* Allocate FIFO memory evenly between the FIFOs */
-#define FIFO_EP_WORDS (FIFO_WORDS / FIFO_NUM)
+#define CONTROL_EP_NUM   1
+/*this should user make config*/
+#define OUT_EP_NUM       2
+#define OUT_EP_MPS       1024
+#define EP_RX_FIFO_WORDS ((4 * CONTROL_EP_NUM + 6) + ((OUT_EP_MPS / 4) + 1) + 2 * OUT_EP_NUM + 1)
+#define EP_TX_FIFO_WORDS 0x40
 
 #endif /* USB */
 
@@ -142,10 +136,10 @@ int usb_dc_init(void)
     usb_dc_pcd_state.pma_offset = USB_BTABLE_SIZE;
 #else /* USB_OTG_FS */
     /* TODO: make this dynamic (depending usage) */
-    HAL_PCDEx_SetRxFiFo(PCD_HANDLE, FIFO_EP_WORDS);
+    HAL_PCDEx_SetRxFiFo(PCD_HANDLE, EP_RX_FIFO_WORDS);
     for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
         HAL_PCDEx_SetTxFiFo(PCD_HANDLE, i,
-                            FIFO_EP_WORDS);
+                            EP_TX_FIFO_WORDS);
     }
 #endif /* USB */
     return 0;
@@ -428,7 +422,7 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 
 void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 {
-    struct usb_setup_packet *setup = (void*)hpcd->Setup;
+    struct usb_setup_packet *setup = (void *)hpcd->Setup;
 
     memcpy(&usb_dc_pcd_state.ep_buf[0],
            hpcd->Setup, 8);
