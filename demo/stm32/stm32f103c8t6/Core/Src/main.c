@@ -115,6 +115,9 @@ int main(void)
 #elif defined USB_HID_CUSTOM
     extern void hid_custom_init(void);
     hid_custom_init();
+#elif defined USB_MSC_RAM
+    extern void msc_ram_init(void);
+    msc_ram_init();
 #endif
 
     /*!< init */
