@@ -21,8 +21,8 @@
  *
  */
 #include "usbd_core.h"
-#include "usbd_scsi.h"
 #include "usbd_msc.h"
+#include "usb_scsi.h"
 
 /* max USB packet size */
 #ifndef CONFIG_USB_HS
@@ -45,25 +45,6 @@ enum Stage {
     MSC_SEND_CSW = 3, /* Command Status Wrapper */
     MSC_WAIT_CSW = 4, /* Command Status Wrapper */
 };
-
-/** MSC Bulk-Only Command Block Wrapper (CBW) */
-struct CBW {
-    uint32_t dSignature;
-    uint32_t dTag;
-    uint32_t dDataLength;
-    uint8_t bmFlags;
-    uint8_t bLUN;
-    uint8_t bCBLength;
-    uint8_t CB[16];
-} __packed;
-
-/** MSC Bulk-Only Command Status Wrapper (CSW) */
-struct CSW {
-    uint32_t dSignature;
-    uint32_t dTag;
-    uint32_t dDataResidue;
-    uint8_t bStatus;
-} __packed;
 
 /* Device data structure */
 struct usbd_msc_cfg_private {
@@ -970,7 +951,7 @@ static void mass_storage_bulk_in(uint8_t ep)
 void msc_storage_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
             usbd_msc_reset();
             break;
 

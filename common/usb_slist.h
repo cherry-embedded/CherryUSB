@@ -1,8 +1,8 @@
 #ifndef __USB_SLIST_H__
 #define __USB_SLIST_H__
 
-#include "string.h"
-#include "stdint.h"
+#include <string.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

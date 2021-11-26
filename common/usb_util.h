@@ -1,48 +1,118 @@
 #ifndef _USB_UTIL_H
 #define _USB_UTIL_H
 
-#include "stdbool.h"
-#include "string.h"
-#include "stdint.h"
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdbool.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "usb_slist.h"
 
-#ifndef __packed
-#define __packed __attribute__((__packed__))
+#if defined(__CC_ARM)
+#ifndef __USED
+#define __USED __attribute__((used))
 #endif
-#ifndef __aligned
-#define __aligned(x) __attribute__((__aligned__(x)))
+#ifndef __WEAK
+#define __WEAK __attribute__((weak))
 #endif
-#define __may_alias __attribute__((__may_alias__))
-#ifndef __printf_like
-#define __printf_like(f, a) __attribute__((format(printf, f, a)))
+#ifndef __PACKED
+#define __PACKED __attribute__((packed))
 #endif
-#define __used __attribute__((__used__))
-#ifndef __deprecated
-#define __deprecated __attribute__((deprecated))
+#ifndef __PACKED_STRUCT
+#define __PACKED_STRUCT __packed struct
 #endif
-#define ARG_UNUSED(x) (void)(x)
+#ifndef __PACKED_UNION
+#define __PACKED_UNION __packed union
+#endif
+#ifndef __ALIGNED
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#endif
+#elif defined(__GNUC__)
+#ifndef __USED
+#define __USED __attribute__((used))
+#endif
+#ifndef __WEAK
+#define __WEAK __attribute__((weak))
+#endif
+#ifndef __PACKED
+#define __PACKED __attribute__((packed, aligned(1)))
+#endif
+#ifndef __PACKED_STRUCT
+#define __PACKED_STRUCT struct __attribute__((packed, aligned(1)))
+#endif
+#ifndef __PACKED_UNION
+#define __PACKED_UNION union __attribute__((packed, aligned(1)))
+#endif
+#ifndef __ALIGNED
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#endif
+#elif defined(__ICCARM__)
+#ifndef __USED
+#if __ICCARM_V8
+#define __USED __attribute__((used))
+#else
+#define __USED _Pragma("__root")
+#endif
+#endif
 
-// #define likely(x)   __builtin_expect((bool)!!(x), true)
-// #define unlikely(x) __builtin_expect((bool)!!(x), false)
-
-#define popcount(x) __builtin_popcount(x)
-
-#ifndef __no_optimization
-#define __no_optimization __attribute__((optimize("-O0")))
+#ifndef __WEAK
+#if __ICCARM_V8
+#define __WEAK __attribute__((weak))
+#else
+#define __WEAK _Pragma("__weak")
+#endif
 #endif
 
-#ifndef __weak
-#define __weak __attribute__((__weak__))
+#ifndef __PACKED
+#if __ICCARM_V8
+#define __PACKED __attribute__((packed, aligned(1)))
+#else
+/* Needs IAR language extensions */
+#define __PACKED __packed
 #endif
-#define __unused __attribute__((__unused__))
+#endif
+
+#ifndef __PACKED_STRUCT
+#if __ICCARM_V8
+#define __PACKED_STRUCT struct __attribute__((packed, aligned(1)))
+#else
+/* Needs IAR language extensions */
+#define __PACKED_STRUCT __packed struct
+#endif
+#endif
+
+#ifndef __PACKED_UNION
+#if __ICCARM_V8
+#define __PACKED_UNION union __attribute__((packed, aligned(1)))
+#else
+/* Needs IAR language extensions */
+#define __PACKED_UNION __packed union
+#endif
+#endif
+
+#ifndef __ALIGNED
+#if __ICCARM_V8
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#elif (__VER__ >= 7080000)
+/* Needs IAR language extensions */
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#else
+#warning No compiler specific solution for __ALIGNED.__ALIGNED is ignored.
+#define __ALIGNED(x)
+#endif
+#endif
+
+#endif
 
 #ifndef __ALIGN_BEGIN
 #define __ALIGN_BEGIN
 #endif
 #ifndef __ALIGN_END
 #define __ALIGN_END __attribute__((aligned(4)))
+#endif
+
+#ifndef ARG_UNUSED
+#define ARG_UNUSED(x) (void)(x)
 #endif
 
 #ifndef LO_BYTE
@@ -133,12 +203,13 @@
 #define WBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF)
 #define DBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), ((x >> 24) & 0xFF)
 
-#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __used __aligned(1)
+#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __USED __ALIGNED(1)
 
 #if 0
-#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_DBG(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG_INFO(a, ...) printf(a, ##__VA_ARGS__)
+#define USBD_LOG_DBG(a, ...)  printf(a, ##__VA_ARGS__)
+#define USBD_LOG_WRN(a, ...)  printf(a, ##__VA_ARGS__)
+#define USBD_LOG_ERR(a, ...)  printf(a, ##__VA_ARGS__)
 #else
 #define USBD_LOG_INFO(a, ...) printf(a, ##__VA_ARGS__)
 #define USBD_LOG_DBG(a, ...)

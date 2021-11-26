@@ -67,7 +67,7 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
-    if (REQTYPE_GET_DIR(setup->bmRequestType) == USB_REQUEST_DEVICE_TO_HOST &&
+    if (REQTYPE_GET_DIR(setup->bmRequestType) == USB_REQUEST_DIR_IN &&
         setup->bRequest == USB_REQUEST_GET_DESCRIPTOR) {
         uint8_t value = (uint8_t)(setup->wValue >> 8);
         uint8_t intf_num = (uint8_t)setup->wIndex;
@@ -141,14 +141,14 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
     switch (setup->bRequest) {
         case HID_REQUEST_GET_REPORT:
             if (current_hid_intf->get_report_callback)
-                current_hid_intf->report = current_hid_intf->get_report_callback(setup->wValueL, setup->wValueH); /*report id ,report type*/
+                current_hid_intf->report = current_hid_intf->get_report_callback(LO_BYTE(setup->wValue), HI_BYTE(setup->wValue)); /*report id ,report type*/
 
             *data = (uint8_t *)&current_hid_intf->report;
             *len = 1;
             break;
         case HID_REQUEST_GET_IDLE:
             if (current_hid_intf->get_idle_callback)
-                current_hid_intf->idle_state = current_hid_intf->get_idle_callback(setup->wValueL);
+                current_hid_intf->idle_state = current_hid_intf->get_idle_callback(LO_BYTE(setup->wValue));
 
             *data = (uint8_t *)&current_hid_intf->idle_state;
             *len = 1;
@@ -162,21 +162,21 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
             break;
         case HID_REQUEST_SET_REPORT:
             if (current_hid_intf->set_report_callback)
-                current_hid_intf->set_report_callback(setup->wValueL, setup->wValueH, *data, *len); /*report id ,report type,report,report len*/
+                current_hid_intf->set_report_callback(LO_BYTE(setup->wValue), HI_BYTE(setup->wValue), *data, *len); /*report id ,report type,report,report len*/
 
             current_hid_intf->report = **data;
             break;
         case HID_REQUEST_SET_IDLE:
             if (current_hid_intf->set_idle_callback)
-                current_hid_intf->set_idle_callback(setup->wValueL, setup->wIndexH); /*report id ,duration*/
+                current_hid_intf->set_idle_callback(LO_BYTE(setup->wValue), HI_BYTE(setup->wIndex)); /*report id ,duration*/
 
-            current_hid_intf->idle_state = setup->wIndexH;
+            current_hid_intf->idle_state = HI_BYTE(setup->wIndex);
             break;
         case HID_REQUEST_SET_PROTOCOL:
             if (current_hid_intf->set_protocol_callback)
-                current_hid_intf->set_protocol_callback(setup->wValueL); /*protocol*/
+                current_hid_intf->set_protocol_callback(LO_BYTE(setup->wValue)); /*protocol*/
 
-            current_hid_intf->protocol = setup->wValueL;
+            current_hid_intf->protocol = LO_BYTE(setup->wValue);
             break;
 
         default:
@@ -190,7 +190,7 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
 static void hid_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
             usbd_hid_reset();
             break;
 

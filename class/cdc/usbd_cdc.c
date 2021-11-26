@@ -135,7 +135,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
 static void cdc_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
             usbd_cdc_acm_reset();
             break;
 
@@ -144,13 +144,13 @@ static void cdc_notify_handler(uint8_t event, void *arg)
     }
 }
 
-__weak void usbd_cdc_acm_set_line_coding(uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits)
+__WEAK void usbd_cdc_acm_set_line_coding(uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits)
 {
 }
-__weak void usbd_cdc_acm_set_dtr(bool dtr)
+__WEAK void usbd_cdc_acm_set_dtr(bool dtr)
 {
 }
-__weak void usbd_cdc_acm_set_rts(bool rts)
+__WEAK void usbd_cdc_acm_set_rts(bool rts)
 {
 }
 

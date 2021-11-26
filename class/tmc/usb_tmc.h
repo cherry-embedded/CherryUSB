@@ -1,15 +1,11 @@
 /**
  * @file
- * @brief USB TMC Device Class public header
+ * @brief USB TMC Class public header
  *
  */
 
-#ifndef _USBD_TMC_H_
-#define _USBD_TMC_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _USB_TMC_H_
+#define _USB_TMC_H_
 
 /**@addtogroup MODULE_TMC USB TMC class
  * @brief This module contains USB Device Test and Measurement Class definitions.
@@ -55,7 +51,7 @@ struct tmc_get_capabilities_response {
     uint8_t InterfaceCapabilities;
     uint8_t DeviceCapabilities;
     uint8_t Reserved1[18];
-} __packed;
+} __PACKED;
 
 /**@name MsgId values
  * @{*/
@@ -129,10 +125,6 @@ struct usb_tmc_bulk_header {
     uint8_t Reserved;
     /** USBTMC command message specific */
     union usb_tmc_bulk_header_specific MsgSpecific;
-} __packed;
+} __PACKED;
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _USBD_TMC_H_ */
+#endif /* _USB_TMC_H_ */

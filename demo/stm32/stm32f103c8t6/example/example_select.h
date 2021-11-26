@@ -2,7 +2,7 @@
 /*!< Use macros to select the examples to test */
 
 /*!< cdc */
-//#define USB_CDC
+#define USB_CDC
 
 /*!< hid keyboard */
 //#define USB_HID_KEYBOARD
@@ -14,4 +14,5 @@
 //#define USB_HID_CUSTOM
 
 /*!< msc ram */
-#define USB_MSC_RAM
+//#define USB_MSC_RAM
+

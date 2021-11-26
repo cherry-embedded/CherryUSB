@@ -100,15 +100,15 @@ int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
 void video_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
 
             break;
 
-        case USB_EVENT_SOF:
+        case USBD_EVENT_SOF:
             usbd_video_sof_callback();
             break;
 
-        case USB_EVENT_SET_INTERFACE:
+        case USBD_EVENT_SET_INTERFACE:
             usbd_video_set_interface_callback(((uint8_t *)arg)[3]);
             break;
 

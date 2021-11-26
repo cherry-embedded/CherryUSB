@@ -9,8 +9,8 @@
  * Header is limited to Bulk-Only Transfer protocol.
  */
 
-#ifndef _USBD_SCSI_H_
-#define _USBD_SCSI_H_
+#ifndef _USB_SCSI_H_
+#define _USB_SCSI_H_
 
 /* SCSI Commands */
 #define SCSI_TEST_UNIT_READY             0x00
@@ -90,7 +90,7 @@
 //--------------------------------------------------------------------+
 
 /// SCSI Test Unit Ready Command
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code; ///< SCSI OpCode for \ref SCSI_CMD_TEST_UNIT_READY
     uint8_t lun;      ///< Logical Unit
     uint8_t reserved[3];
@@ -98,7 +98,7 @@ typedef struct __packed {
 } scsi_test_unit_ready_cmd_t;
 
 /// SCSI Inquiry Command
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code; ///< SCSI OpCode for \ref SCSI_CMD_INQUIRY
     uint8_t reserved1;
     uint8_t page_code;
@@ -108,7 +108,7 @@ typedef struct __packed {
 } scsi_inquiry_cmd_t, scsi_request_sense_cmd_t;
 
 /// SCSI Inquiry Response Data
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t peripheral_device_type : 5;
     uint8_t peripheral_qualifier   : 3;
 
@@ -150,7 +150,7 @@ typedef struct __packed {
     uint8_t product_rev[4]; ///< 4 bytes of ASCII data defined by the vendor.
 } scsi_inquiry_resp_t;
 
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t response_code : 7; ///< 70h - current errors, Fixed Format 71h - deferred errors, Fixed Format
     uint8_t valid         : 1;
 
@@ -173,7 +173,7 @@ typedef struct __packed {
 
 } scsi_sense_fixed_resp_t;
 
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code; ///< SCSI OpCode for \ref SCSI_CMD_MODE_SENSE_6
 
     uint8_t                          : 3;
@@ -189,7 +189,7 @@ typedef struct __packed {
 } scsi_mode_sense6_cmd_t;
 
 // This is only a Mode parameter header(6).
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t data_len;
     uint8_t medium_type;
 
@@ -240,14 +240,14 @@ typedef struct
     uint8_t block_desc_length[2];
 } scsi_mode_10_resp_t;
 
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code; ///< SCSI OpCode for \ref SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL
     uint8_t reserved[3];
     uint8_t prohibit_removal;
     uint8_t control;
 } scsi_prevent_allow_medium_removal_t;
 
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code;
 
     uint8_t immded : 1;
@@ -271,14 +271,14 @@ typedef struct __packed {
 // SCSI MMC
 //--------------------------------------------------------------------+
 /// SCSI Read Format Capacity: Write Capacity
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code;
     uint8_t reserved[6];
     uint16_t alloc_length;
     uint8_t control;
 } scsi_read_format_capacity_cmd_t;
 
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t reserved[3];
     uint8_t list_length; /// must be 8*n, length in bytes of formattable capacity descriptor followed it.
 
@@ -296,7 +296,7 @@ typedef struct __packed {
 //--------------------------------------------------------------------+
 
 /// SCSI Read Capacity 10 Command: Read Capacity
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code; ///< SCSI OpCode for \ref SCSI_CMD_READ_CAPACITY_10
     uint8_t reserved1;
     uint32_t lba; ///< The first Logical Block Address (LBA) accessed by this command
@@ -313,7 +313,7 @@ typedef struct
 } scsi_read_capacity10_resp_t;
 
 /// SCSI Read 10 Command
-typedef struct __packed {
+typedef struct __PACKED {
     uint8_t cmd_code; ///< SCSI OpCode
     uint8_t reserved; // has LUN according to wiki
     uint32_t lba;     ///< The first Logical Block Address (LBA) accessed by this command
@@ -322,4 +322,4 @@ typedef struct __packed {
     uint8_t control;
 } scsi_read10_t, scsi_write10_t, scsi_read_write_10_t;
 
-#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_ */
+#endif /* USB_SCSI_H */

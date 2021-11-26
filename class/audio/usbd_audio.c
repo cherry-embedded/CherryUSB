@@ -12,12 +12,12 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
     switch (setup->bRequest) {
         case AUDIO_REQUEST_SET_CUR:
 
-            if (setup->wValueL == 0x01) {
-                if (setup->wValueH == AUDIO_FU_CONTROL_MUTE) {
+            if (LO_BYTE(setup->wValue) == 0x01) {
+                if (HI_BYTE(setup->wValue) == AUDIO_FU_CONTROL_MUTE) {
                     memcpy(&audio_control_info.mute, *data, *len);
-                } else if (setup->wValueH == AUDIO_FU_CONTROL_VOLUME) {
+                } else if (HI_BYTE(setup->wValue) == AUDIO_FU_CONTROL_VOLUME) {
                     memcpy(&audio_control_info.vol_current, *data, *len);
-                    uint32_t vol;
+                    int vol;
                     if (audio_control_info.vol_current == 0) {
                         vol = 100;
                     } else {
@@ -31,10 +31,10 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             break;
 
         case AUDIO_REQUEST_GET_CUR:
-            if (setup->wValueH == AUDIO_FU_CONTROL_MUTE) {
+            if (HI_BYTE(setup->wValue) == AUDIO_FU_CONTROL_MUTE) {
                 *data = (uint8_t *)&audio_control_info.mute;
                 *len = 1;
-            } else if (setup->wValueH == AUDIO_FU_CONTROL_VOLUME) {
+            } else if (HI_BYTE(setup->wValue) == AUDIO_FU_CONTROL_VOLUME) {
                 *data = (uint8_t *)&audio_control_info.vol_current;
                 *len = 2;
             }
@@ -77,24 +77,20 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
 void audio_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
 
             break;
 
-        case USB_EVENT_SOF:
+        case USBD_EVENT_SOF:
             break;
 
-        case USB_EVENT_SET_INTERFACE:
+        case USBD_EVENT_SET_INTERFACE:
             usbd_audio_set_interface_callback(((uint8_t *)arg)[3]);
             break;
 
         default:
             break;
     }
-}
-
-__weak void usbd_audio_set_volume(uint8_t vol)
-{
 }
 
 void usbd_audio_add_interface(usbd_class_t *class, usbd_interface_t *intf)
@@ -111,4 +107,8 @@ void usbd_audio_add_interface(usbd_class_t *class, usbd_interface_t *intf)
     intf->vendor_handler = NULL;
     intf->notify_handler = audio_notify_handler;
     usbd_class_add_interface(class, intf);
+}
+
+__WEAK void usbd_audio_set_volume(uint8_t vol)
+{
 }

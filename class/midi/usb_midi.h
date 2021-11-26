@@ -1,15 +1,11 @@
 /**
  * @file
- * @brief USB MIDI Device Class public header
+ * @brief USB MIDI Class public header
  *
  */
 
-#ifndef _USBD_MIDI_H_
-#define _USBD_MIDI_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _USB_MIDI_H_
+#define _USB_MIDI_H_
 
 /* MIDI Streaming class specific interfaces */
 #define MIDI_IN_JACK  0x02
@@ -130,7 +126,7 @@ struct midi_cs_interface_descriptor {
     uint8_t SubType;
     uint16_t bcdADC;
     uint16_t wTotalLength;
-} __packed;
+} __PACKED;
 
 struct midi_in_jack_descriptor {
     uint8_t bLength;
@@ -139,7 +135,7 @@ struct midi_in_jack_descriptor {
     uint8_t bJackType;
     uint8_t bJackId;
     uint8_t iJack;
-} __packed;
+} __PACKED;
 
 struct midi_out_jack_descriptor {
     uint8_t bLength;
@@ -151,7 +147,7 @@ struct midi_out_jack_descriptor {
     uint8_t baSourceId;
     uint8_t baSourcePin;
     uint8_t iJack;
-} __packed;
+} __PACKED;
 
 #define MIDI_ADAPTER_AC_INTERFACE_DESCRIPTOR_SIZE(num) (8 + num)
 #define MIDI_ADAPTER_AC_INTERFACE_DESCRIPTOR(num) \
@@ -163,7 +159,7 @@ struct midi_out_jack_descriptor {
         uint16_t wTotalLength;                    \
         uint8_t bInCollection;                    \
         uint8_t baInterfaceNr[num];               \
-    } __packed
+    } __PACKED
 
 #define MIDI_CS_BULK_ENDPOINT_DESCRIPTOR_SIZE(num) (4 + num)
 #define MIDI_CS_BULK_ENDPOINT_DESCRIPTOR(num) \
@@ -173,10 +169,6 @@ struct midi_out_jack_descriptor {
         uint8_t SubType;                      \
         uint8_t bNumEmbMIDIJack;              \
         uint8_t baAssocJackID[num];           \
-    } __packed
+    } __PACKED
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _USBD_MIDI_H_ */
+#endif /* _USB_MIDI_H_ */

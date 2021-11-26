@@ -1,13 +1,13 @@
 /** @mainpage  msc_ram_demo_init
   * <table>
-  * <tr><th>Project  <td>msc_ram_demo 
-  * <tr><th>Author   <td>LiGuo 1570139720@qq.com 
+  * <tr><th>Project  <td>msc_ram_demo
+  * <tr><th>Author   <td>LiGuo 1570139720@qq.com
   * </table>
   * @section   msc ram init demo
-  * 
-  * 
+  *
+  *
   * @section   版本更新历史
-  * 
+  *
   * 版本|作者|时间|描述
   * ----|----|----|----
   * 1.0|LiGuo|2021.11.19|creat project
@@ -23,9 +23,8 @@
 #include "usbd_core.h"
 #include "usbd_msc.h"
 
-
-#define MSC_IN_EP  0x85
-#define MSC_OUT_EP 0x04
+#define MSC_IN_EP  0x81
+#define MSC_OUT_EP 0x01
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
@@ -111,31 +110,31 @@ const uint8_t msc_ram_descriptor[] = {
 };
 
 #define BLOCK_SIZE  512
-#define BLOCK_COUNT 2
+#define BLOCK_COUNT 10
 
 typedef struct
 {
     uint8_t BlockSpace[BLOCK_SIZE];
 } BLOCK_TYPE;
 
-// The CDC recv buffer size should equal to the out endpoint size
-// or we will need a timeout to flush the recv buffer
 BLOCK_TYPE mass_block[BLOCK_COUNT];
 
 void usbd_msc_get_cap(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
-    *block_num = BLOCK_COUNT;
+    *block_num = 1000; //Pretend having so many buffer,not has actually.
     *block_size = BLOCK_SIZE;
 }
 int usbd_msc_sector_read(uint32_t sector, uint8_t *buffer, uint32_t length)
 {
-    memcpy(buffer, mass_block[sector].BlockSpace, length);
+    if (sector < 10)
+        memcpy(buffer, mass_block[sector].BlockSpace, length);
     return 0;
 }
 
 int usbd_msc_sector_write(uint32_t sector, uint8_t *buffer, uint32_t length)
 {
-    memcpy(mass_block[sector].BlockSpace, buffer, length);
+    if (sector < 10)
+        memcpy(mass_block[sector].BlockSpace, buffer, length);
     return 0;
 }
 
