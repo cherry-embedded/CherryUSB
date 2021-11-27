@@ -477,8 +477,8 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 
     if (!max_data_len) {
 #ifdef USB
-        //PCD_SET_EP_RX_CNT(USBx, ep_idx, usb_dc_cfg.out_ep[ep_idx].ep_mps);
-        PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
+        if (ep_idx != 0x00)
+            PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
         /* Program the transfer size and packet count as follows:
     * pktcnt = N
@@ -507,7 +507,6 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     read_count = MIN(read_count, max_data_len);
     USB_ReadPMA(USBx, (uint8_t *)data,
                 usb_dc_cfg.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
-    PCD_SET_EP_RX_STATUS(USBx, ep_idx, USB_EP_RX_VALID);
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
 
     read_count = (USBx->GRXSTSP & USB_OTG_GRXSTSP_BCNT) >> 4;
@@ -544,15 +543,16 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
   */
 void USBD_IRQHandler(void)
 {
+    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
 #ifdef USB
     uint16_t wIstr, wEPVal;
     uint8_t epindex;
-    wIstr = USB->ISTR;
+    wIstr = USBx->ISTR;
 
     uint16_t store_ep[8];
     if (wIstr & USB_ISTR_CTR) {
-        while ((USB->ISTR & USB_ISTR_CTR) != 0U) {
-            wIstr = USB->ISTR;
+        while ((USBx->ISTR & USB_ISTR_CTR) != 0U) {
+            wIstr = USBx->ISTR;
 
             /* extract highest priority endpoint number */
             epindex = (uint8_t)(wIstr & USB_ISTR_EP_ID);
@@ -566,10 +566,10 @@ void USBD_IRQHandler(void)
 
                     /* DIR = 0 => IN  int */
                     /* DIR = 0 implies that (EP_CTR_TX = 1) always */
-                    PCD_CLEAR_TX_EP_CTR(USB, PCD_ENDP0);
-                    usbd_event_notify_handler(USB_EVENT_EP0_IN_NOTIFY, NULL);
-                    if ((usb_dc_cfg.USB_Address > 0U) && (PCD_GET_EP_TX_CNT(USB, PCD_ENDP0) == 0U)) {
-                        USB->DADDR = ((uint16_t)usb_dc_cfg.USB_Address | USB_DADDR_EF);
+                    PCD_CLEAR_TX_EP_CTR(USBx, PCD_ENDP0);
+                    usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
+                    if ((usb_dc_cfg.USB_Address > 0U) && (PCD_GET_EP_TX_CNT(USBx, PCD_ENDP0) == 0U)) {
+                        USBx->DADDR = ((uint16_t)usb_dc_cfg.USB_Address | USB_DADDR_EF);
                         usb_dc_cfg.USB_Address = 0U;
                     }
                 }
@@ -578,106 +578,97 @@ void USBD_IRQHandler(void)
                 /* DIR = 1 & CTR_RX => SETUP or OUT int */
                 /* DIR = 1 & (CTR_TX | CTR_RX) => 2 int pending */
 
-                wEPVal = PCD_GET_ENDPOINT(USB, PCD_ENDP0);
+                wEPVal = PCD_GET_ENDPOINT(USBx, PCD_ENDP0);
 
                 if ((wEPVal & USB_EP_SETUP) != 0U) {
                     /* SETUP bit kept frozen while CTR_RX = 1 */
-                    PCD_CLEAR_RX_EP_CTR(USB, PCD_ENDP0);
+                    PCD_CLEAR_RX_EP_CTR(USBx, PCD_ENDP0);
 
                     /* Process SETUP Packet*/
-                    usbd_event_notify_handler(USB_EVENT_SETUP_NOTIFY, NULL);
+                    usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
+                    PCD_SET_EP_RX_STATUS(USBx, 0, USB_EP_RX_VALID);
                 } else if ((wEPVal & USB_EP_CTR_RX) != 0U) {
-                    PCD_CLEAR_RX_EP_CTR(USB, PCD_ENDP0);
+                    PCD_CLEAR_RX_EP_CTR(USBx, PCD_ENDP0);
                     /* Process Control Data OUT Packet */
-                    usbd_event_notify_handler(USB_EVENT_EP0_OUT_NOTIFY, NULL);
+                    usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
+                    PCD_SET_EP_RX_STATUS(USBx, 0, USB_EP_RX_VALID);
                 }
             } else {
                 /* Decode and service non control endpoints interrupt */
                 /* process related endpoint register */
-                wEPVal = PCD_GET_ENDPOINT(USB, epindex);
+                wEPVal = PCD_GET_ENDPOINT(USBx, epindex);
 
                 if ((wEPVal & USB_EP_CTR_RX) != 0U) {
                     /* clear int flag */
-                    PCD_CLEAR_RX_EP_CTR(USB, epindex);
-                    usbd_event_notify_handler(USB_EVENT_EP_OUT_NOTIFY, (void *)(epindex & 0x7f));
+                    PCD_CLEAR_RX_EP_CTR(USBx, epindex);
+                    usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (void *)(epindex & 0x7f));
                 }
 
                 if ((wEPVal & USB_EP_CTR_TX) != 0U) {
                     /* clear int flag */
-                    PCD_CLEAR_TX_EP_CTR(USB, epindex);
-                    usbd_event_notify_handler(USB_EVENT_EP_IN_NOTIFY, (void *)(epindex | 0x80));
+                    PCD_CLEAR_TX_EP_CTR(USBx, epindex);
+                    usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (void *)(epindex | 0x80));
                 }
             }
         }
     }
     if (wIstr & USB_ISTR_RESET) {
-        struct usbd_endpoint_cfg ep0_cfg;
-        /* Configure control EP */
-        ep0_cfg.ep_mps = 64;
-        ep0_cfg.ep_type = USB_DC_EP_CONTROL;
+        usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
 
-        ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
-        usbd_ep_open(&ep0_cfg);
-
-        ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
-        usbd_ep_open(&ep0_cfg);
-        usbd_event_notify_handler(USB_EVENT_RESET, NULL);
-
-        USB->ISTR &= (uint16_t)(~USB_ISTR_RESET);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_RESET);
     }
     if (wIstr & USB_ISTR_PMAOVR) {
-        USB->ISTR &= (uint16_t)(~USB_ISTR_PMAOVR);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_PMAOVR);
     }
     if (wIstr & USB_ISTR_ERR) {
-        USB->ISTR &= (uint16_t)(~USB_ISTR_ERR);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_ERR);
     }
     if (wIstr & USB_ISTR_WKUP) {
-        USB->CNTR &= (uint16_t) ~(USB_CNTR_LP_MODE);
-        USB->CNTR &= (uint16_t) ~(USB_CNTR_FSUSP);
+        USBx->CNTR &= (uint16_t) ~(USB_CNTR_LP_MODE);
+        USBx->CNTR &= (uint16_t) ~(USB_CNTR_FSUSP);
 
-        USB->ISTR &= (uint16_t)(~USB_ISTR_WKUP);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_WKUP);
     }
     if (wIstr & USB_ISTR_SUSP) {
         /* WA: To Clear Wakeup flag if raised with suspend signal */
 
         /* Store Endpoint register */
         for (uint8_t i = 0U; i < 8U; i++) {
-            store_ep[i] = PCD_GET_ENDPOINT(USB, i);
+            store_ep[i] = PCD_GET_ENDPOINT(USBx, i);
         }
 
         /* FORCE RESET */
-        USB->CNTR |= (uint16_t)(USB_CNTR_FRES);
+        USBx->CNTR |= (uint16_t)(USB_CNTR_FRES);
 
         /* CLEAR RESET */
-        USB->CNTR &= (uint16_t)(~USB_CNTR_FRES);
+        USBx->CNTR &= (uint16_t)(~USB_CNTR_FRES);
 
         /* wait for reset flag in ISTR */
-        while ((USB->ISTR & USB_ISTR_RESET) == 0U) {
+        while ((USBx->ISTR & USB_ISTR_RESET) == 0U) {
         }
 
         /* Clear Reset Flag */
-        USB->ISTR &= (uint16_t)(~USB_ISTR_RESET);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_RESET);
         /* Restore Registre */
         for (uint8_t i = 0U; i < 8U; i++) {
-            PCD_SET_ENDPOINT(USB, i, store_ep[i]);
+            PCD_SET_ENDPOINT(USBx, i, store_ep[i]);
         }
 
         /* Force low-power mode in the macrocell */
-        USB->CNTR |= (uint16_t)USB_CNTR_FSUSP;
+        USBx->CNTR |= (uint16_t)USB_CNTR_FSUSP;
 
         /* clear of the ISTR bit must be done after setting of CNTR_FSUSP */
-        USB->ISTR &= (uint16_t)(~USB_ISTR_SUSP);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_SUSP);
 
-        USB->CNTR |= (uint16_t)USB_CNTR_LP_MODE;
+        USBx->CNTR |= (uint16_t)USB_CNTR_LP_MODE;
     }
     if (wIstr & USB_ISTR_SOF) {
-        USB->ISTR &= (uint16_t)(~USB_ISTR_SOF);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_SOF);
     }
     if (wIstr & USB_ISTR_ESOF) {
-        USB->ISTR &= (uint16_t)(~USB_ISTR_ESOF);
+        USBx->ISTR &= (uint16_t)(~USB_ISTR_ESOF);
     }
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
-    PCD_TypeDef *USBx = usb_dc_cfg.Instance;
     uint32_t USBx_BASE = (uint32_t)USBx;
     uint32_t int_status;
     uint32_t temp, epindex, ep_intr, ep_int_status;
@@ -685,7 +676,7 @@ void USBD_IRQHandler(void)
     if (USB_GetMode(USBx) == USB_OTG_MODE_DEVICE) {
         while (int_status == USB_ReadInterrupts(USBx)) {
             if (int_status & USB_OTG_GINTSTS_USBRST) {
-                usbd_event_notify_handler(USB_EVENT_RESET, NULL);
+                usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
                 USBx->GINTSTS &= USB_OTG_GINTSTS_USBRST;
             }
             if (int_status & USB_OTG_GINTSTS_ENUMDNE) {
@@ -697,12 +688,12 @@ void USBD_IRQHandler(void)
                 epindex = temp & USB_OTG_GRXSTSP_EPNUM;
                 if (((temp & USB_OTG_GRXSTSP_PKTSTS) >> 17) == STS_DATA_UPDT) {
                     if (epindex == 0)
-                        usbd_event_notify_handler(USB_EVENT_EP0_OUT_NOTIFY, NULL);
+                        usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
                     else {
-                        usbd_event_notify_handler(USB_EVENT_EP_OUT_NOTIFY, (void *)(epindex & 0x7f));
+                        usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (void *)(epindex & 0x7f));
                     }
                 } else if (((temp & USB_OTG_GRXSTSP_PKTSTS) >> 17) == STS_SETUP_UPDT) {
-                    usbd_event_notify_handler(USB_EVENT_SETUP_NOTIFY, NULL);
+                    usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
                 } else {
                     /* ... */
                 }
@@ -720,7 +711,7 @@ void USBD_IRQHandler(void)
                         /* Clear IN EP interrupts */
                         CLEAR_IN_EP_INTR(epindex, ep_int_status);
                         if (ep_int_status & USB_OTG_DIEPINT_XFRC) {
-                            usbd_event_notify_handler(USB_EVENT_EP_IN_NOTIFY, (void *)(epindex | 0x80));
+                            usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (void *)(epindex | 0x80));
                         }
                     }
                     epindex++;

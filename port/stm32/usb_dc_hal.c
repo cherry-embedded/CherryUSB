@@ -61,7 +61,6 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
 #endif
 
-
 #define CONTROL_EP_NUM   1
 /*this should user make config*/
 #define OUT_EP_NUM       2
@@ -186,16 +185,16 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     ep_state->ep_mps = ep_cfg->ep_mps;
 
     switch (ep_cfg->ep_type) {
-        case USB_DC_EP_CONTROL:
+        case USBD_EP_TYPE_CTRL:
             ep_state->ep_type = EP_TYPE_CTRL;
             break;
-        case USB_DC_EP_ISOCHRONOUS:
+        case USBD_EP_TYPE_ISOC:
             ep_state->ep_type = EP_TYPE_ISOC;
             break;
-        case USB_DC_EP_BULK:
+        case USBD_EP_TYPE_BULK:
             ep_state->ep_type = EP_TYPE_BULK;
             break;
-        case USB_DC_EP_INTERRUPT:
+        case USBD_EP_TYPE_INTR:
             ep_state->ep_type = EP_TYPE_INTR;
             break;
         default:
@@ -337,14 +336,10 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
         return -1;
     }
 
-    ep_state->read_count = HAL_PCD_EP_GetRxCount(PCD_HANDLE, ep);
-    ep_state->read_offset = 0U;
-    read_count = ep_state->read_count;
-
     if (max_data_len == 0) {
         /* If no more data in the buffer, start a new read transaction.
-	 * DataOutStageCallback will called on transaction complete.
-	 */
+        * DataOutStageCallback will called on transaction complete.
+        */
         if (!ep_state->read_count) {
             status = HAL_PCD_EP_Receive(PCD_HANDLE, ep,
                                         usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
@@ -355,6 +350,11 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
         }
         return 0;
     }
+
+    ep_state->read_count = HAL_PCD_EP_GetRxCount(PCD_HANDLE, ep);
+    ep_state->read_offset = 0U;
+    read_count = ep_state->read_count;
+
     /* When both buffer and max data to read are zero, just ingore reading
 	 * and return available data in buffer. Otherwise, return data
 	 * previously stored in the buffer.
@@ -369,6 +369,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     /* If no more data in the buffer, start a new read transaction.
 	 * DataOutStageCallback will called on transaction complete.
 	 */
+#if 0
     if (!ep_state->read_count) {
         status = HAL_PCD_EP_Receive(PCD_HANDLE, ep,
                                     usb_dc_pcd_state.ep_buf[USB_EP_GET_IDX(ep)],
@@ -377,6 +378,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
             return -2;
         }
     }
+#endif
     if (read_bytes) {
         *read_bytes = read_count;
     }
@@ -391,17 +393,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
-    struct usbd_endpoint_cfg ep0_cfg;
-    /* Configure control EP */
-    ep0_cfg.ep_mps = EP0_MPS;
-    ep0_cfg.ep_type = USB_DC_EP_CONTROL;
-
-    ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
-    usbd_ep_open(&ep0_cfg);
-
-    ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
-    usbd_ep_open(&ep0_cfg);
-    usbd_event_notify_handler(USB_EVENT_RESET, NULL);
+    usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
 }
 
 void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
@@ -427,10 +419,10 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
     memcpy(&usb_dc_pcd_state.ep_buf[0],
            hpcd->Setup, 8);
 
-    usbd_event_notify_handler(USB_EVENT_SETUP_NOTIFY, NULL);
+    usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
     if (!(setup->wLength == 0U) &&
         !(REQTYPE_GET_DIR(setup->bmRequestType) ==
-          USB_REQUEST_DEVICE_TO_HOST)) {
+          USB_REQUEST_DIR_IN)) {
         HAL_PCD_EP_Receive(PCD_HANDLE, 0x00,
                            usb_dc_pcd_state.ep_buf[0],
                            setup->wLength);
@@ -440,17 +432,17 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
     if (epnum == 0) {
-        usbd_event_notify_handler(USB_EVENT_EP0_OUT_NOTIFY, NULL);
+        usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
     } else {
-        usbd_event_notify_handler(USB_EVENT_EP_OUT_NOTIFY, (void *)(epnum | USB_EP_DIR_OUT));
+        usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (void *)(epnum | USB_EP_DIR_OUT));
     }
 }
 
 void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
     if (epnum == 0) {
-        usbd_event_notify_handler(USB_EVENT_EP0_IN_NOTIFY, NULL);
+        usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
     } else {
-        usbd_event_notify_handler(USB_EVENT_EP_IN_NOTIFY, (void *)(epnum | USB_EP_DIR_IN));
+        usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (void *)(epnum | USB_EP_DIR_IN));
     }
 }
