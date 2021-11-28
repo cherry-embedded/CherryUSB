@@ -166,6 +166,7 @@ void usbd_cdc_acm_out(uint8_t ep)
     usbd_ep_read(ep,data,64,&read_byte);
     printf("out\r\n");
     printf("read len:%d\r\n",read_byte);
+    usbd_ep_read(ep,NULL,0,NULL);
 }
 
 void usbd_cdc_acm_in(uint8_t ep)
