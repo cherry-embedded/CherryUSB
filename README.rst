@@ -1,22 +1,7 @@
 USB Stack
 =======================
 
-USB Stack 是一个跨平台的、用于嵌入式 MCU 的 USB 协议栈。其中 DEVICE 协议栈对标准设备请求、CLASS 请求、VENDOR 请求规范了一套统一的函数框架，从而对复合设备或者使用自定义设备类时，能够在极短的时间内进行添加和移植。同时提供了一套标准的 dcd porting 接口，供给不同的 MCU 使用,因此，通用性也非常高。此外在代码优美方面，以及内存占用方面也是相当出色。USB DEVICE 协议栈当前具有以下功能：
-
-- 支持 USB2.0 全速和高速设备
-- 支持端点中断注册功能，porting 给用户自己处理中断里的数据
-- 支持复合设备
-- 支持 Communication Class (CDC)
-- 支持 Human Interface Device (HID)
-- 支持 Custom human Interface Device (HID)
-- 支持 Mass Storage Class (MSC)
-- 支持 USB VIDEO CLASS (UVC)
-- 支持 USB AUDIO CLASS (UAC)
-- 支持 Device Firmware Upgrade CLASS (DFU)
-- 支持 USB MIDI CLASS (MIDI)
-- 支持 Test and Measurement CLASS (TMC)
-- 支持 Vendor 类 class
-- 支持 WINUSB1.0、WINUSB2.0
+USB Stack 是一个小而美的、可移植性高的、用于嵌入式 MCU 的 USB 主从协议栈。其中 Device 协议栈最小占用 FLASH 3K，RAM 256字节(可以简单修改接近为0)。
 
 USB 参考手册
 -------------------------------
@@ -33,42 +18,58 @@ USB 参考手册
 - TMC: `<https://www.usb.org/document-library/test-measurement-class-specification>`_
 - DFU: `<https://www.st.com/resource/zh/application_note/cd00264379-usb-dfu-protocol-used-in-the-stm32-bootloader-stmicroelectronics.pdf>`_
 
-USB 协议栈实现
+USB Device 协议栈
 -------------------------------
 
-USB DEVICE 协议栈
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+USB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求以及 custom 特殊请求规范了一套统一的函数框架，采用面向对象和链表的方式，能够使得用户快速上手复合设备，不用管底层的逻辑。同时，规范了一套标准的 dcd porting 接口，用于适配不通的 USB IP，达到面向 ip 编程。
 
-USB DEVICE 协议栈的代码实现过程参考 `<https://www.bilibili.com/video/BV1Ef4y1t73d>`_
+USB Device 协议栈的代码实现过程参考 `<https://www.bilibili.com/video/BV1Ef4y1t73d>`_。
 
-USB HOST 协议栈
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+USB DEVICE 协议栈当前实现以下功能：
+
+- 支持 USB2.0 全速和高速设备
+- 支持端点中断注册功能，porting 给用户自己处理中断里的数据
+- 支持复合设备
+- 支持 Communication Class (CDC)
+- 支持 Human Interface Device (HID)
+- 支持 Custom human Interface Device (HID)
+- 支持 Mass Storage Class (MSC)
+- 支持 USB VIDEO CLASS (UVC)
+- 支持 USB AUDIO CLASS (UAC)
+- 支持 Device Firmware Upgrade CLASS (DFU)
+- 支持 USB MIDI CLASS (MIDI)
+- 支持 Test and Measurement CLASS (TMC)
+- 支持 Vendor 类 class
+- 支持 WINUSB1.0、WINUSB2.0
+
+USB Host 协议栈
+-------------------------------
 
 waiting....
 
-USB DEVICE 协议栈 porting 接口
--------------------------------
+USB Device Controller Porting 接口
+------------------------------------
 
-USB DEVICE 协议栈 porting 接口在 ``usb_stack/common/usb_dc.h`` 文件中声明，用户根据自己的 MCU 实现以下接口
+USB Device controller porting 接口在 ``usb_stack/common/usb_dc.h`` 文件中声明，用户根据自己的 MCU 实现以下接口
 
-    - ``usbd_set_address``      调用    :ref:`usb_dc_set_address`
-    - ``usbd_ep_open``          调用    :ref:`usb_dc_ep_open`
-    - ``usbd_ep_close``         调用    :ref:`usb_dc_ep_close`
-    - ``usbd_ep_set_stall``     调用    :ref:`usb_dc_ep_set_stall`
-    - ``usbd_ep_clear_stall``   调用    :ref:`usb_dc_ep_clear_stall`
-    - ``usbd_ep_is_stalled``    调用    :ref:`usb_dc_ep_is_stalled`
-    - ``usbd_ep_write``         调用    :ref:`usb_dc_ep_write`
-    - ``usbd_ep_read``          调用    :ref:`usb_dc_ep_read`
+    - ``usbd_set_address``
+    - ``usbd_ep_open``
+    - ``usbd_ep_close``
+    - ``usbd_ep_set_stall``
+    - ``usbd_ep_clear_stall``
+    - ``usbd_ep_is_stalled``
+    - ``usbd_ep_write``
+    - ``usbd_ep_read``
 
-USB DEVICE 控制器接口
--------------------------------
+USB Device Controller 其他接口
+--------------------------------
 
-用户需要实现 usb controller 相关寄存器初始化（可以命名为 ``usb_dc_init`` ）以及在 USB 中断函数中，根据不同的中断标志调用 ``usbd_event_notify_handler``。
+用户需要实现 usb device controller 相关寄存器初始化的函数（可以命名为 ``usb_dc_init`` ）,以及在 USB 中断函数中根据不同的中断标志调用 ``usbd_event_notify_handler``。
 
-USB DEVICE 应用层接口
+USB Device 应用层接口
 ------------------------
 
-USB DEVICE 通用接口
+USB Device 通用接口
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **usbd_desc_register**
@@ -127,7 +128,7 @@ USB DEVICE 通用接口
 
     typedef struct usbd_interface {
         usb_slist_t list;
-        /** Handler for USB Class specific Control (EP 0) communications */
+        /** Handler for USB Class specific commands */
         usbd_request_handler class_handler;
         /** Handler for USB Vendor specific commands */
         usbd_request_handler vendor_handler;
@@ -376,5 +377,7 @@ USB Device VIDEO 类接口
 
 - **class** 类的句柄
 - **intf**  接口句柄
+
+
 USB Device DFU 类接口
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
