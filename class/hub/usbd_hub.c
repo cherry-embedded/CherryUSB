@@ -19,7 +19,7 @@ int hub_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
                  setup->bRequest);
 
     if (((setup->bmRequestType & USB_REQUEST_TYPE_MASK) == USB_REQUEST_CLASS) &&
-        ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_TO_DEVICE) &&
+        ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_DEVICE) &&
         (setup->bRequest == HUB_REQUEST_GET_DESCRIPTOR)) {
         uint8_t value = (uint8_t)(setup->wValue >> 8);
         uint8_t intf_num = (uint8_t)setup->wIndex;
@@ -36,7 +36,7 @@ int hub_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
     }
 
     else if (((setup->bmRequestType & USB_REQUEST_TYPE_MASK) == USB_REQUEST_CLASS) &&
-             ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_TO_OTHER)) {
+             ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_OTHER)) {
         uint8_t hub_port_feature = (uint8_t)(setup->wValue);
         uint8_t hub_port = (uint8_t)setup->wIndex;
 

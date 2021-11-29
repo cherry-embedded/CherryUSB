@@ -736,21 +736,21 @@ static int usbd_standard_request_handler(struct usb_setup_packet *setup, uint8_t
     int rc = 0;
 
     switch (setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) {
-        case USB_REQUEST_TO_DEVICE:
+        case USB_REQUEST_RECIPIENT_DEVICE:
             if (usbd_std_device_req_handler(setup, data, len) == false) {
                 rc = -1;
             }
 
             break;
 
-        case USB_REQUEST_TO_INTERFACE:
+        case USB_REQUEST_RECIPIENT_INTERFACE:
             if (usbd_std_interface_req_handler(setup, data, len) == false) {
                 rc = -1;
             }
 
             break;
 
-        case USB_REQUEST_TO_ENDPOINT:
+        case USB_REQUEST_RECIPIENT_ENDPOINT:
             if (usbd_std_endpoint_req_handler(setup, data, len) == false) {
                 rc = -1;
             }
@@ -779,7 +779,7 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
 {
     USBD_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x\r\n", setup->bRequest, setup->wIndex);
 
-    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_TO_INTERFACE) {
+    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_RECIPIENT_INTERFACE) {
         return -1;
     }
 
@@ -815,7 +815,7 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
 {
     USBD_LOG_DBG("bRequest 0x%02x, wValue0x%04x, wIndex 0x%04x\r\n", setup->bRequest, setup->wValue, setup->wIndex);
 
-    // if((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_TO_DEVICE)
+    // if((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_RECIPIENT_DEVICE)
     // {
     //     return -1;
     // }
@@ -889,7 +889,7 @@ static int usbd_custom_request_handler(struct usb_setup_packet *setup, uint8_t *
 {
     USBD_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x\r\n", setup->bRequest, setup->wIndex);
 
-    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_TO_INTERFACE) {
+    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_RECIPIENT_INTERFACE) {
         return -1;
     }
 
