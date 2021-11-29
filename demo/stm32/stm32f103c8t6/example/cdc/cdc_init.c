@@ -21,7 +21,6 @@
 /* include ------------------------------------------------------------------*/
 #include "main.h"
 #include "usbd_core.h"
-#include "usb_def.h"
 #include "usbd_cdc.h"
 
 /*!< endpoint address */
