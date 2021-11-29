@@ -1,7 +1,7 @@
 USB Stack
 =======================
 
-USB Stack 是一个小而美的、可移植性高的、用于嵌入式 MCU 的 USB 主从协议栈。其中 Device 协议栈最小占用 FLASH 3K，RAM 256字节(可以简单修改接近为0)。
+USB Stack 是一个小而美的、可移植性高的、用于嵌入式 MCU 的 USB 主从协议栈。
 
 USB 参考手册
 -------------------------------
@@ -18,14 +18,14 @@ USB 参考手册
 - TMC: `<https://www.usb.org/document-library/test-measurement-class-specification>`_
 - DFU: `<https://www.st.com/resource/zh/application_note/cd00264379-usb-dfu-protocol-used-in-the-stm32-bootloader-stmicroelectronics.pdf>`_
 
-USB Device 协议栈
+USB Device 协议栈简介
 -------------------------------
 
 USB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求以及 custom 特殊请求规范了一套统一的函数框架，采用面向对象和链表的方式，能够使得用户快速上手复合设备，不用管底层的逻辑。同时，规范了一套标准的 dcd porting 接口，用于适配不通的 USB IP，达到面向 ip 编程。
 
 USB Device 协议栈的代码实现过程参考 `<https://www.bilibili.com/video/BV1Ef4y1t73d>`_。
 
-USB DEVICE 协议栈当前实现以下功能：
+USB Device 协议栈当前实现以下功能：
 
 - 支持 USB2.0 全速和高速设备
 - 支持端点中断注册功能，porting 给用户自己处理中断里的数据
@@ -42,7 +42,35 @@ USB DEVICE 协议栈当前实现以下功能：
 - 支持 Vendor 类 class
 - 支持 WINUSB1.0、WINUSB2.0
 
-USB Host 协议栈
+USB Device 协议栈资源占用说明：
+
+.. list-table::
+    :widths: 15 10 10
+    :header-rows: 1
+
+    * - file
+      - FLASH (Byte)
+      - RAM (Byte)
+    * - usbd_core.c
+      - 3045
+      - 373
+    * - usbd_cdc.c
+      - 302
+      - 20
+    * - usbd_msc.c
+      - 2452
+      - 132
+    * - usbd_hid.c
+      - 784
+      - 201
+    * - usbd_audio.c
+      - 438
+      - 14
+    * - usbd_video.c
+      - 402
+      - 4
+
+USB Host 协议栈简介
 -------------------------------
 
 waiting....
@@ -50,16 +78,16 @@ waiting....
 USB Device Controller Porting 接口
 ------------------------------------
 
-USB Device controller porting 接口在 ``usb_stack/common/usb_dc.h`` 文件中声明，用户根据自己的 MCU 实现以下接口
+USB Device controller porting 接口在 ``usb_stack/common/usb_dc.h`` 文件中声明，用户根据自己的 MCU 实现以下接口:
 
-    - ``usbd_set_address``
-    - ``usbd_ep_open``
-    - ``usbd_ep_close``
-    - ``usbd_ep_set_stall``
-    - ``usbd_ep_clear_stall``
-    - ``usbd_ep_is_stalled``
-    - ``usbd_ep_write``
-    - ``usbd_ep_read``
+- ``usbd_set_address``
+- ``usbd_ep_open``
+- ``usbd_ep_close``
+- ``usbd_ep_set_stall``
+- ``usbd_ep_clear_stall``
+- ``usbd_ep_is_stalled``
+- ``usbd_ep_write``
+- ``usbd_ep_read``
 
 USB Device Controller 其他接口
 --------------------------------
@@ -349,7 +377,7 @@ USB Device HID 类接口
 - **get_protocol_callback** get protocol命令处理回调函数
 
 
-USB Device AUDIO 类接口
+USB Device Audio 类接口
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **usbd_audio_add_interface**
@@ -364,7 +392,7 @@ USB Device AUDIO 类接口
 - **intf**  接口句柄
 
 
-USB Device VIDEO 类接口
+USB Device Video 类接口
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **usbd_video_add_interface**
