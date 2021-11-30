@@ -189,7 +189,7 @@ USB Device 通用接口
 - **intf**  USB 设备接口的句柄
 - **ep**    USB 设备端点的句柄
 
-``usbd_class_t`` 定义如下
+``usbd_endpoint_t`` 定义如下
 
 .. code-block:: C
 
