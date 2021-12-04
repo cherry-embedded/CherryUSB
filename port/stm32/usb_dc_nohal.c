@@ -1,19 +1,31 @@
 #include "usbd_core.h"
-#ifdef STM32F1
-#include "stm32f1xx_hal.h" //chanage this header for different soc
-#elif defined(STM32F4)
-#include "stm32f4xx_hal.h" //chanage this header for different soc
-#elif defined(STM32H7)
-#include "stm32h7xx_hal.h" //chanage this header for different soc
-#endif
+#include "usbd_config.h"
 
-#ifndef USB_RAM_SIZE
-#define USB_RAM_SIZE 512
-#endif
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
 #endif
 
+#ifdef USB
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 512
+#endif
+#define USB_BTABLE_SIZE (8 * USB_NUM_BIDIR_ENDPOINTS)
+#else
+
+#ifdef CONFIG_USB_HS
+
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 4096
+#endif
+#else
+
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 1280
+#endif
+
+#endif
+
+#endif
 /* Endpoint state */
 struct usb_dc_ep_state {
     /** Endpoint max packet size */
@@ -47,7 +59,7 @@ int usb_dc_init(void)
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
 #ifdef USB
     usb_dc_cfg.Instance = USB;
-    usb_dc_cfg.pma_offset = 64;
+    usb_dc_cfg.pma_offset = USB_BTABLE_SIZE;
     usb_dc_cfg.Init.speed = PCD_SPEED_FULL;
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
 #ifdef CONFIG_USB_HS

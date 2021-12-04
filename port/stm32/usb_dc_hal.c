@@ -1,11 +1,5 @@
 #include "usbd_core.h"
-#ifdef STM32F1
-#include "stm32f1xx_hal.h" //chanage this header for different soc
-#elif defined(STM32F4)
-#include "stm32f4xx_hal.h" //chanage this header for different soc
-#elif defined(STM32H7)
-#include "stm32h7xx_hal.h" //chanage this header for different soc
-#endif
+#include "usbd_config.h"
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 6
@@ -18,28 +12,27 @@
 extern PCD_HandleTypeDef hpcd_USB_FS;
 #define PCD_HANDLE &hpcd_USB_FS
 #else
+
+#ifdef CONFIG_USB_HS
+
 #ifndef USB_RAM_SIZE
 #define USB_RAM_SIZE 4096
 #endif
-#ifdef CONFIG_USB_HS
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 #define PCD_HANDLE &hpcd_USB_OTG_HS
+
 #else
+
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 1280
+#endif
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 #define PCD_HANDLE &hpcd_USB_OTG_HS
 //extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 //#define PCD_HANDLE &hpcd_USB_OTG_FS
 #endif
 #endif
-/*
- * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
- * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
- * controller. STM32 F4 and F7 series support USB_OTG_FS device controller.
- * STM32 F1 and L4 series support either USB or USB_OTG_FS device controller.
- *
- * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB from Zephyr
- * Kconfig system.
- */
+
 #ifdef USB
 
 #define EP0_MPS 64U
