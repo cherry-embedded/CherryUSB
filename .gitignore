@@ -6,3 +6,8 @@ demo/stm32/**/**/MDK-ARM/*.uvguix.*
 demo/stm32/**/**/MDK-ARM/stm32f103c8t6/**
 demo/stm32/**/**/MDK-ARM/stm32f429igt6/**
 demo/stm32/**/**/MDK-ARM/stm32h743vbt6/**
+demo/mm32/**/obj/**
+demo/mm32/**/RET/**
+demo/mm32/**/*.map
+demo/mm32/**/*.lst
+demo/mm32/**/*.uvguix.*
