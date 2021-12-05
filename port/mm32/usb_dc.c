@@ -10,6 +10,10 @@
 #define USB_GET_EP_FIFO(ep_idx)            (*(volatile uint32_t *)(&USB->rEP0_FIFO + ep_idx))
 #define USB_SET_EP_FIFO(ep_idx, val)       (*(volatile uint32_t *)(&USB->rEP0_FIFO + ep_idx) = val)
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler USB_HP_CAN1_TX_IRQHandler //use actual usb irq name instead
+#endif
+
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 5
 #endif
@@ -121,13 +125,12 @@ int usbd_ep_close(const uint8_t ep)
 
 int usbd_ep_set_stall(const uint8_t ep)
 {
-    while (USB->rEP0_CTRL & 0x80)
-        ;
-    USB->rEP_HALT = (1 << (ep & 0x7f));
+    USB->rEP_HALT |= (1 << (ep & 0x7f));
     return 0;
 }
 int usbd_ep_clear_stall(const uint8_t ep)
 {
+    USB->rEP_HALT &= ~(1 << (ep & 0x7f));
     return 0;
 }
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
@@ -208,7 +211,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
   * @param  hpcd PCD handle
   * @retval HAL status
   */
-void USB_HP_CAN1_TX_IRQHandler(void)
+void USBD_IRQHandler(void)
 {
     uint32_t int_status;
     uint32_t epindex;
