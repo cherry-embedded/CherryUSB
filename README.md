@@ -9,7 +9,7 @@ USB Stack 是一个小而美的、可移植性高的、用于嵌入式 MCU 的 U
 - MSC: <https://www.usb.org/document-library/mass-storage-class-specification-overview-14>
      <https://www.usb.org/document-library/mass-storage-bulk-only-10>
 - HID: <https://www.usb.org/document-library/device-class-definition-hid-111>
-       <https://www.usb.org/document-library/hid-usage-tables-122>`_
+       <https://www.usb.org/document-library/hid-usage-tables-122>
 - AUDIO: <https://www.usb.org/document-library/audiovideo-device-class-v10-spec-and-adopters-agreement>
         <https://www.usb.org/document-library/audio-data-formats-10>
 - VIDEO: <https://www.usb.org/document-library/video-class-v11-document-set>
@@ -35,12 +35,15 @@ USB Stack 是一个小而美的、可移植性高的、用于嵌入式 MCU 的 U
 ├── demo
 │   ├── bouffalolab
 │   └── stm32
+│   └── mm32
 ├── docs
 ├── packet capture
 └── port
     ├── bouffalolab
     │   └── bl702
     ├── ch32
+    ├── dw2
+    ├── fsdev
     ├── mm32
     ├── stm32
     └── template
