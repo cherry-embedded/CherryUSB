@@ -27,7 +27,7 @@
 
 ### 在 STM32 平台
 
-STM32 系列单片机有两种 USB IP,分别是 USB IP 和 USB OTG IP。其中 USB IP，例如 STM32F0、STM32F1、STM32F3等等，USB OTG IP(我们都知道用的是 **DesignWare** 公司的)的有 STM32F4、STM32F7、STM32H7等等。当前如果你需要使用 USB Device 功能，porting 接口提供了两种，一种是不带 hal 层的 **usb_dc_nohal.c**，一种是带 hal 层的 **usb_dc_hal.c**,如果你使用的是 USB IP系列，推荐用前者，否则用后者，需要注意的是后者在后面会删除，不使用 hal 版本。
+STM32 系列单片机有两种 USB IP,分别是 USB IP 和 USB OTG IP。其中 USB IP，例如 STM32F0、STM32F1、STM32F3等等，USB OTG IP(我们都知道用的是 **synopsys** 公司的)的有 STM32F4、STM32F7、STM32H7等等。当前如果你需要使用 USB Device 功能，porting 接口提供了两种，一种是不带 hal 层的 **usb_dc_nohal.c**，一种是带 hal 层的 **usb_dc_hal.c**,如果你使用的是 USB IP系列，推荐用前者，否则用后者，需要注意的是后者在后面会删除，不使用 hal 版本。
 
 #### 使用 USB Device 功能
 
