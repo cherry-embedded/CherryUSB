@@ -92,7 +92,7 @@
 #endif
 
 #ifndef CONFIG_USB_TURNAROUND_TIME
-#define CONFIG_USB_TURNAROUND_TIME 9
+#define CONFIG_USB_TURNAROUND_TIME 6
 #endif
 
 /* Endpoint state */

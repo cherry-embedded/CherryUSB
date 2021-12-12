@@ -280,11 +280,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-          uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+    uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
     usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
-           printf("start\r\n");
     HAL_Delay(500);
-          printf("end\r\n");
   }
   /* USER CODE END 3 */
 }
