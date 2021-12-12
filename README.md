@@ -44,14 +44,14 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
 |core           |  usb core implementation  |
 |demo           |  different chip demo     |
 |docs           |  doc for guiding         |
-|packet capture |  packet caputre file     |
+|packet capture |  packet capture file     |
 |port           |  usb dcd and hcd porting |
 
 ## USB Device Stack Overview
 
-USB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests，The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.。
+USB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests. The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.
 
-How USB Device Stack is implemented, this video will tell you: <https://www.bilibili.com/video/BV1Ef4y1t73d> 。
+How USB Device Stack is implemented, this video will tell you: <https://www.bilibili.com/video/BV1Ef4y1t73d> .
 
 USB Device Stack has the following functions：
 
@@ -67,7 +67,7 @@ USB Device Stack has the following functions：
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
 - Support Test and Measurement CLASS (TMC)
-- Support Vendor 类 class
+- Support Vendor class
 - Support WINUSB1.0、WINUSB2.0
 
 USB Device Stack resource usage：

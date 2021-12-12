@@ -7,7 +7,9 @@ src  = Glob('core/usbd_core.c')
 CPPDEFINES = []
 if GetDepend(['PKG_USB_STACK_USING_HS']):
     CPPDEFINES+=['CONFIG_USB_HS']
-    
+elif GetDepend(['PKG_USB_STACK_USING_HS_IN_FULL']):
+        CPPDEFINES += ['CONFIG_USB_HS_IN_FULL']
+            
 # USB DEVICE
 if GetDepend(['PKG_USB_STACK_USING_DEVICE']):
     if GetDepend(['PKG_USB_STACK_USING_CDC']):
@@ -32,37 +34,13 @@ if GetDepend(['PKG_USB_STACK_USING_DEVICE']):
         path += [cwd + '/class/msc']
         src += Glob('class/cdc/usbd_msc.c')
     if GetDepend(['SOC_FAMILY_STM32']):
-        if GetDepend(['SOC_SERIES_STM32F0']):
-            src += Glob('port/stm32/usb_dc_nohal.c')
-            src += Glob('../../../../libraries/STM32F0xx_HAL/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pcd.c')
-            src += Glob('../../../../libraries/STM32F0xx_HAL/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pcd_ex.c')
-            src += Glob('../../../../libraries/STM32F0xx_HAL/STM32F0xx_HAL_Driver/Src/stm32f0xx_ll_usb.c')
-            CPPDEFINES += ['STM32F0']
-        elif GetDepend(['SOC_SERIES_STM32F1']):
-            src += Glob('port/stm32/usb_dc_nohal.c')
-            src += Glob('../../../../libraries/STM32F1xx_HAL/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd.c')
-            src += Glob('../../../../libraries/STM32F1xx_HAL/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd_ex.c')
-            src += Glob('../../../../libraries/STM32F1xx_HAL/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_usb.c')
-            CPPDEFINES += ['STM32F1']
-        elif GetDepend(['SOC_SERIES_STM32F3']):
-            src += Glob('port/stm32/usb_dc_nohal.c')
-            src += Glob('../../../../libraries/STM32F3xx_HAL/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_pcd.c')
-            src += Glob('../../../../libraries/STM32F3xx_HAL/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_pcd_ex.c')
-            src += Glob('../../../../libraries/STM32F3xx_HAL/STM32F3xx_HAL_Driver/Src/stm32f3xx_ll_usb.c')
-            CPPDEFINES += ['STM32F3']
-        elif GetDepend(['SOC_SERIES_STM32F4']):
-            src += Glob('port/stm32/usb_dc_hal.c')
-            src += Glob('../../../../libraries/STM32F4xx_HAL/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c')
-            src += Glob('../../../../libraries/STM32F4xx_HAL/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c')
-            src += Glob('../../../../libraries/STM32F4xx_HAL/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c')
-            CPPDEFINES += ['STM32F4']
-        elif GetDepend(['SOC_SERIES_STM32H7']):
-            src += Glob('port/stm32/usb_dc_hal.c')
-            src += Glob('../../../../libraries/STM32H7xx_HAL/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd.c')
-            src += Glob('../../../../libraries/STM32H7xx_HAL/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c')
-            src += Glob('../../../../libraries/STM32H7xx_HAL/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c')
-            CPPDEFINES += ['STM32H7']
-
+        if GetDepend(['SOC_SERIES_STM32F0']) or GetDepend(['SOC_SERIES_STM32F1']) or GetDepend(['SOC_SERIES_STM32F3']) or GetDepend(['SOC_SERIES_STM32L0']):
+            src += Glob('port/fsdev/usb_dc_fsdev.c')
+        else:
+            src += Glob('port/synopsys/usb_dc_synopsys.c')
+            if GetDepend(['SOC_SERIES_STM32F0']):
+                CPPDEFINES += ['STM32H7']
+            
 # USB HOST       
 if GetDepend(['USB_STACK_USING_HOST']):
     pass;

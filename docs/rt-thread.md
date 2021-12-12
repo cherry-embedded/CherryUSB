@@ -10,7 +10,7 @@ To use usb stack package, you need to select it in the RT-Thread package manager
         --- USB Stack: tiny and portable USB stack for embedded system with USB IP
 
             USB STACK Options  ---->
-                    [ ] Enable usb high speed mode
+                    USB Speed (FS)  --->
                     [*] Enable usb device mode
                     [*]   Enable usb cdc acm device
                     [ ]   Enable usb hid device
@@ -28,7 +28,7 @@ To use usb stack package, you need to select it in the RT-Thread package manager
 ### In STM32
 
 Please note that stm32 series have two usb ip. For usb ip, like stm32f0、stm32f1、stm32f3, for usb otg ip(as we know it is from **synopsys**),like stm32f4、stm32f7 and so on.
-Currently,if you usb usb device on mcu with usb ip, recommend you to use dcd porting named **usb_dc_nohal.c**,otherwise use **usb_dc_hal.c**.In the future,**usb_dc_hal.c** will be droped.
+~~Currently,if you usb usb device on mcu with usb ip, recommend you to use dcd porting named **usb_dc_nohal.c**,otherwise use **usb_dc_hal.c**.In the future,**usb_dc_hal.c** will be droped~~.
 
 #### Use USB Device
 
@@ -43,7 +43,21 @@ Currently,if you usb usb device on mcu with usb ip, recommend you to use dcd por
 
 - Generate code.
 - Copy **SystemClock_Config** into **board.c**.
-- Copy **MX_USB_OTG_FS_PCD_Init** or **MX_USB_OTG_HS_PCD_Init** into **main.c** if you use **usb_dc_hal.c**.Also, USB Irq from **it.c** needs the same.
+- ~~Copy **MX_USB_OTG_FS_PCD_Init** or **MX_USB_OTG_HS_PCD_Init** into **main.c** if you use **usb_dc_hal.c**.Also, USB Irq from **it.c** needs the same.~~
+- Implement **usb_dc_low_level_init** and copy codes in from ``HAL_PCD_MspInit``.
+
+```
+void usb_dc_low_level_init(void)
+{
+    /* Peripheral clock enable */
+    __HAL_RCC_USB_CLK_ENABLE();
+    /* USB interrupt Init */
+    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+
+}
+```
+
 - Implement **printf** or modify with **rt_kprintf** in **usb_utils.h**, usb stack needs.
 - Now we can call some functions provided by **usb_stack**.Your should register descriptors、interfaces and endpoint callback firstly, and then call `usb_dc_init`. Example is as follows:
 
@@ -52,10 +66,11 @@ int main(void)
 {
     extern void cdc_init(void);
     cdc_init();
-    extern void usb_dc_init(void);
     usb_dc_init();
     while (1)
     {
+        uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+        usbd_ep_write(0x81, data_buffer, 10, NULL);
         rt_thread_mdelay(500);
     }
 }
