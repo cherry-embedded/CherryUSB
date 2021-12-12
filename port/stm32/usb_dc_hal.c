@@ -26,10 +26,10 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 #ifndef USB_RAM_SIZE
 #define USB_RAM_SIZE 1280
 #endif
-extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
-#define PCD_HANDLE &hpcd_USB_OTG_HS
-//extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
-//#define PCD_HANDLE &hpcd_USB_OTG_FS
+//extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+//#define PCD_HANDLE &hpcd_USB_OTG_HS
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+#define PCD_HANDLE &hpcd_USB_OTG_FS
 #endif
 #endif
 

@@ -190,7 +190,7 @@
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>0</useUlib>
+            <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <nSecure>0</nSecure>
@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32H750xx,STM32H7,CONFIG_USB_HS</Define>
+              <Define>USE_HAL_DRIVER,STM32H750xx,STM32H7</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc; ../Drivers/STM32H7xx_HAL_Driver/Inc; ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32H7xx/Include; ../Drivers/CMSIS/Include; ..\..\..\..\class\cdc; ..\..\..\..\common; ..\..\..\..\core; ..\..\..\..\class\winusb</IncludePath>
+              <IncludePath>../Core/Inc;   ../Drivers/STM32H7xx_HAL_Driver/Inc;   ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;   ../Drivers/CMSIS/Device/ST/STM32H7xx/Include;   ../Drivers/CMSIS/Include;   ..\..\..\..\class\cdc;   ..\..\..\..\common;   ..\..\..\..\core;   ..\..\..\..\class\winusb</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -657,9 +657,9 @@
               <FilePath>..\..\..\..\core\usbd_core.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc_hal.c</FileName>
+              <FileName>usb_dc_synopsys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\port\stm32\usb_dc_hal.c</FilePath>
+              <FilePath>..\..\..\..\port\synopsys\usb_dc_synopsys.c</FilePath>
             </File>
           </Files>
         </Group>

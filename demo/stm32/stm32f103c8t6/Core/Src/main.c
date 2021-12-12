@@ -67,6 +67,16 @@ int fputc(int ch, FILE *f)
     USART1->DR = ch;
     return ch;
 }
+
+void usb_dc_low_level_init(void)
+{
+    /* Peripheral clock enable */
+    __HAL_RCC_USB_CLK_ENABLE();
+    /* USB interrupt Init */
+    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+
+}
 extern void usb_dc_init(void);
 /* USER CODE END 0 */
 

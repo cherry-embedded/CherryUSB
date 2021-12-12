@@ -13,6 +13,12 @@
 #define USB_RAM_SIZE 512
 #endif
 
+/* USB device FS */
+#define USB_BASE    (0x40005C00UL) /*!< USB_IP Peripheral Registers base address */
+#define USB_PMAADDR (0x40006000UL) /*!< USB_IP Packet Memory Area base address */
+
+#define USB ((USB_TypeDef *)USB_BASE)
+
 #define USB_BTABLE_SIZE (8 * USB_NUM_BIDIR_ENDPOINTS)
 
 static void USB_WritePMA(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
@@ -40,6 +46,14 @@ struct usb_dc_config_priv {
     uint32_t pma_offset;
 } usb_dc_cfg;
 
+__WEAK void usb_dc_low_level_init(void)
+{
+}
+
+__WEAK void usb_dc_low_level_deinit(void)
+{
+}
+
 int usb_dc_init(void)
 {
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
@@ -49,7 +63,7 @@ int usb_dc_init(void)
 
     USB_TypeDef *USBx = usb_dc_cfg.Instance;
 
-    HAL_PCD_MspInit(&usb_dc_cfg);
+    usb_dc_low_level_init();
 
     /* Init Device */
     /* CNTR_FRES = 1 */
@@ -90,7 +104,7 @@ void usb_dc_deinit(void)
     /* switch-off device */
     USBx->CNTR = (uint16_t)(USB_CNTR_FRES | USB_CNTR_PDWN);
 
-    HAL_PCD_MspDeInit(&usb_dc_cfg);
+    usb_dc_low_level_deinit();
 }
 
 int usbd_set_address(const uint8_t addr)

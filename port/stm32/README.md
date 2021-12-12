@@ -5,3 +5,6 @@
 - 如果使用的是 usb_dc_hal.c 则上条不需要
 - 推荐使用 nohal 版本，极简代码
 
+
+## 该目录下porting可以不再使用，选择 fsdev 或者 synopsys下的porting接口
+
