@@ -38,11 +38,11 @@ if GetDepend(['PKG_USB_STACK_USING_DEVICE']):
             src += Glob('port/fsdev/usb_dc_fsdev.c')
         else:
             src += Glob('port/synopsys/usb_dc_synopsys.c')
-            if GetDepend(['SOC_SERIES_STM32F0']):
+            if GetDepend(['SOC_SERIES_STM32H7']):
                 CPPDEFINES += ['STM32H7']
             
 # USB HOST       
-if GetDepend(['USB_STACK_USING_HOST']):
+if GetDepend(['PKG_USB_STACK_USING_HOST']):
     pass;
 
 group = DefineGroup('usb_stack', src, depend = ['PKG_USING_USB_STACK'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
