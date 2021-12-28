@@ -67,7 +67,7 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
-    if (REQTYPE_GET_DIR(setup->bmRequestType) == USB_REQUEST_DIR_IN &&
+    if (((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_IN) &&
         setup->bRequest == USB_REQUEST_GET_DESCRIPTOR) {
         uint8_t value = (uint8_t)(setup->wValue >> 8);
         uint8_t intf_num = (uint8_t)setup->wIndex;
