@@ -2,7 +2,7 @@
 
 ## Support Chip List
 
-- CH32F10x、CH32V10x
+- all of CH chips with usb HD ip are supported, like CH57x、CH58x、CH32Vxxx、CH32Fxxx
 
 ## Before Use
 

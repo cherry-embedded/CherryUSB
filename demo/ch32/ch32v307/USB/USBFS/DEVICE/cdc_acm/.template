@@ -1,0 +1,13 @@
+
+Vendor=WCH
+Link=WCH-Link
+Toolchain=
+Series=
+Description=
+Mcu Type=CH32V30x
+Address=0x08000000
+Erase All=true
+Program=true
+Verify=true
+Reset=true
+Target Path=obj/usb_stack_cdc_acm.hex
