@@ -136,10 +136,8 @@ void usbd_cdc_acm_out(uint8_t ep)
 {
     uint8_t data[64];
     uint32_t read_byte;
-    printf("out:%d\r\n",ep);
+
     usbd_ep_read(ep, data, 64, &read_byte);
-
-
     printf("read len:%d\r\n", read_byte);
     usbd_ep_read(ep, NULL, 0, NULL);
 }
@@ -172,6 +170,24 @@ void cdc_init(void)
     usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
 }
 
+void usb_dc_low_level_init(void)
+{
+    RCC->APB1ENR |= RCC_APB1ENR_USBEN;					  //使能USB时钟
+    RCC->APB2ENR |= RCC_APB2RSTR_IOPARST;   //RCC->APB2ENR|=1<<2;  //使能GPIOA时钟
+    GPIOA->CRH &= 0XFFF00FFF;				  //将PA11&PA12配置成模拟输入
+    MY_NVIC_Init(1, 1, USB_HP_CAN1_TX_IRQn, 2);			 //配置USB中断
+     
+}
+volatile uint8_t dtr_enable = 0;
+
+void usbd_cdc_acm_set_dtr(bool dtr)
+{
+    if (dtr) {
+        dtr_enable = 1;
+    } else {
+        dtr_enable = 0;
+    }
+}
 /********************************************************************************************************
 **函数信息 ：main(void)
 **功能描述 ：主函数
@@ -187,19 +203,19 @@ int main(void)
     uart_initwBaudRate(48, 115200);	 //串口初始化为115200
 
     printf("UART OK!\r\n");
-    RCC->APB1ENR |= RCC_APB1ENR_USBEN;					  //使能USB时钟
-    RCC->APB2ENR |= RCC_APB2RSTR_IOPARST;   //RCC->APB2ENR|=1<<2;  //使能GPIOA时钟
-    GPIOA->CRH &= 0XFFF00FFF;				  //将PA11&PA12配置成模拟输入
-    MY_NVIC_Init(1, 1, USB_HP_CAN1_TX_IRQn, 2);			 //配置USB中断
-    
+
     cdc_init();
     extern int usb_dc_init(void);
     usb_dc_init();
     while(1)
     {
-    uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
-    usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
-    DelayMs(1000);
+        if(dtr_enable)
+        {
+            uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+            usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
+            DelayMs(1000);            
+        }
+
     }
 }
 

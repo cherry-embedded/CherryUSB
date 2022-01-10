@@ -114,8 +114,8 @@ void usbd_cdc_acm_out(uint8_t ep)
 {
     uint8_t data[64];
     uint32_t read_byte;
+    
     usbd_ep_read(ep, data, 64, &read_byte);
-
     printf("read len:%d\r\n", read_byte);
     usbd_ep_read(ep, NULL, 0, NULL);
 }
@@ -174,6 +174,17 @@ void usb_dc_low_level_init(void)
     NVIC_EnableIRQ(OTG_FS_IRQn);
 }
 
+volatile uint8_t dtr_enable = 0;
+
+void usbd_cdc_acm_set_dtr(bool dtr)
+{
+    if (dtr) {
+        dtr_enable = 1;
+    } else {
+        dtr_enable = 0;
+    }
+}
+
 /*********************************************************************
  * @fn      main
  *
@@ -196,8 +207,12 @@ int main(void)
     while (!usb_device_is_configured()) {
     }
     while (1) {
-        uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
-        usbd_ep_write(0x81, data_buffer, 10, NULL);
-        Delay_Ms(500);
+        if(dtr_enable)
+        {
+            uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+            usbd_ep_write(0x81, data_buffer, 10, NULL);
+            Delay_Ms(500);            
+        }
+
     }
 }

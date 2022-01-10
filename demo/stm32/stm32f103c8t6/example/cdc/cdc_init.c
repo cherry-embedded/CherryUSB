@@ -1,14 +1,14 @@
 /** @mainpage  cdc_demo_init
   * <table>
-  * <tr><th>Project  <td>cdc_demo 
-  * <tr><th>Author   <td>LiGuo 1570139720@qq.com 
+  * <tr><th>Project  <td>cdc_demo
+  * <tr><th>Author   <td>LiGuo 1570139720@qq.com
   * </table>
   * @section   cdc class init demo
-  * 
+  *
   * -# You can use USB to create a virtual serial port
-  * 
+  *
   * @section   版本更新历史
-  * 
+  *
   * 版本|作者|时间|描述
   * ----|----|----|----
   * 1.0|LiGuo|2021.11.19|creat project
@@ -124,8 +124,8 @@ void usbd_cdc_acm_out(uint8_t ep)
 {
     uint8_t data[64];
     uint32_t read_byte;
+    
     usbd_ep_read(ep, data, 64, &read_byte);
-    printf("out\r\n");
     printf("read len:%d\r\n", read_byte);
     usbd_ep_read(ep, NULL, 0, NULL);
 }
@@ -158,9 +158,22 @@ void cdc_init(void)
     usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
 }
 
+volatile uint8_t dtr_enable = 0;
+
+void usbd_cdc_acm_set_dtr(bool dtr)
+{
+    if (dtr) {
+        dtr_enable = 1;
+    } else {
+        dtr_enable = 0;
+    }
+}
+
 void cdc_test(void)
 {
-    uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
-    usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
-    HAL_Delay(500);
+    if (dtr_enable) {
+        uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+        usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
+        HAL_Delay(500);
+    }
 }

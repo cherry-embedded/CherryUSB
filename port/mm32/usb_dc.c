@@ -35,15 +35,12 @@ struct usb_dc_config_priv {
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } usb_dc_cfg;
 
-__WEAK void usb_low_level_init(void)
+__WEAK void usb_dc_low_level_init(void)
 {
-    /*copy this out file*/
-    /*set usb clock 48Mhz*/
-    //SetUSBSysClockTo48M();
-    // RCC->APB1ENR |= RCC_APB1ENR_USBEN;  //enable usb clock
-    // RCC->APB2ENR |= RCC_APB2RSTR_IOPARST;   //enable gpioa clock
-    // GPIOA->CRH &= 0XFFF00FFF;			    //PA11/PA12 analog in
-    // MY_NVIC_Init(1, 1, USB_HP_CAN1_TX_IRQn, 2);	//enable usb irq
+}
+
+__WEAK void usb_dc_low_level_deinit(void)
+{
 }
 
 int usb_dc_init(void)
@@ -55,7 +52,7 @@ int usb_dc_init(void)
     usb_dc_cfg.in_ep[0].ep_mps = USB_CTRL_EP_MPS;
     usb_dc_cfg.in_ep[0].ep_type = USBD_EP_TYPE_CTRL;
 
-    usb_low_level_init();
+    usb_dc_low_level_init();
 
     USB->rTOP = USB_TOP_RESET; //reset usb
     USB->rTOP &= ~USB_TOP_RESET;
@@ -89,6 +86,7 @@ int usb_dc_init(void)
 
 void usb_dc_deinit(void)
 {
+    usb_dc_low_level_deinit();
 }
 
 int usbd_set_address(const uint8_t addr)
