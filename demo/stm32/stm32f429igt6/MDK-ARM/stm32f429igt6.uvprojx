@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F429xx,STM32F4</Define>
+              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS_IN_FULL</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;   ../Drivers/STM32F4xx_HAL_Driver/Inc;   ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;   ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;   ../Drivers/CMSIS/Include;   ..\..\..\..\class\cdc;   ..\..\..\..\core;   ..\..\..\..\common;   ..\..\..\..\class\winusb</IncludePath>
             </VariousControls>
@@ -586,9 +586,9 @@
               <FilePath>..\..\..\..\class\cdc\usbd_cdc.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc_hal.c</FileName>
+              <FileName>usb_dc_synopsys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\port\stm32\usb_dc_hal.c</FilePath>
+              <FilePath>..\..\..\..\port\synopsys\usb_dc_synopsys.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -62,7 +62,6 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN 0 */
 int fputc(int ch, FILE *f)
 {
-
   HAL_UART_Transmit(&huart1,(uint8_t*)&ch,1,1000);
   return ch;
 }
@@ -163,7 +162,6 @@ void usbd_cdc_acm_out(uint8_t ep)
     uint8_t data[64];
     uint32_t read_byte;
     usbd_ep_read(ep,data,64,&read_byte);
-    printf("out\r\n");
     printf("read len:%d\r\n",read_byte);
     usbd_ep_read(ep,NULL,0,NULL);
 }
@@ -183,7 +181,49 @@ usbd_endpoint_t cdc_in_ep = {
     .ep_cb = usbd_cdc_acm_in
 };
 
+void usb_dc_low_level_init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* USER CODE BEGIN USB_OTG_HS_MspInit 0 */
+
+  /* USER CODE END USB_OTG_HS_MspInit 0 */
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    /**USB_OTG_HS GPIO Configuration
+    PB14     ------> USB_OTG_HS_DM
+    PB15     ------> USB_OTG_HS_DP
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_OTG_HS_FS;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* Peripheral clock enable */
+    __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
+    /* USB_OTG_HS interrupt Init */
+    HAL_NVIC_SetPriority(OTG_HS_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
+}
+
+
 extern void usb_dc_init(void);
+
+volatile uint8_t dtr_enable = 0;
+
+void usbd_cdc_acm_set_dtr(bool dtr)
+{
+    if(dtr)
+    {
+        dtr_enable = 1;
+    }
+    else
+    {
+        dtr_enable = 0;
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -214,7 +254,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USB_OTG_HS_PCD_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   usbd_desc_register(cdc_descriptor);
@@ -234,9 +273,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
-    usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
-    HAL_Delay(500);
+      if(dtr_enable)
+      {
+        uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+        usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
+        HAL_Delay(500);
+      }
   }
   /* USER CODE END 3 */
 }

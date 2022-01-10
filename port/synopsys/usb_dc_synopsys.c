@@ -17,24 +17,27 @@
 #define USBD_IRQHandler OTG_HS_IRQHandler
 #endif
 
-#ifndef USB_RAM_SIZE
-#define USB_RAM_SIZE 4096
+#ifndef USB_NUM_BIDIR_ENDPOINTS
+#define USB_NUM_BIDIR_ENDPOINTS 6 /* define with minimum value*/
 #endif
 
-#define USB_INSTANCE USB_OTG_HS
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 4096 /* define with minimum value*/
+#endif
+
 #else
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler OTG_FS_IRQHandler
 #endif
 
-#ifndef USB_RAM_SIZE
-#define USB_RAM_SIZE 1280
-#endif
-
-#endif
-
 #ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 6
+#define USB_NUM_BIDIR_ENDPOINTS 4 /* define with minimum value*/
+#endif
+
+#ifndef USB_RAM_SIZE
+#define USB_RAM_SIZE 1280 /* define with minimum value*/
+#endif
+
 #endif
 
 #if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
@@ -60,34 +63,22 @@
 #ifndef CONFIG_USB_TX5_FIFO_SIZE
 #define CONFIG_USB_TX5_FIFO_SIZE (256U)
 #endif
-#ifndef CONFIG_USB_TX6_FIFO_SIZE
-#define CONFIG_USB_TX6_FIFO_SIZE (256U)
-#endif
-#ifndef CONFIG_USB_TX7_FIFO_SIZE
-#define CONFIG_USB_TX7_FIFO_SIZE (256U)
-#endif
-#ifndef CONFIG_USB_TX8_FIFO_SIZE
-#define CONFIG_USB_TX8_FIFO_SIZE (192U)
-#endif
 #else
 /*FIFO sizes in bytes (total available memory for FIFOs is 1.25kB)*/
 #ifndef CONFIG_USB_RX_FIFO_SIZE
 #define CONFIG_USB_RX_FIFO_SIZE (640U)
 #endif
 #ifndef CONFIG_USB_TX0_FIFO_SIZE
-#define CONFIG_USB_TX0_FIFO_SIZE (160U)
+#define CONFIG_USB_TX0_FIFO_SIZE (64U)
 #endif
 #ifndef CONFIG_USB_TX1_FIFO_SIZE
-#define CONFIG_USB_TX1_FIFO_SIZE (160U)
+#define CONFIG_USB_TX1_FIFO_SIZE (256U)
 #endif
 #ifndef CONFIG_USB_TX2_FIFO_SIZE
 #define CONFIG_USB_TX2_FIFO_SIZE (160U)
 #endif
 #ifndef CONFIG_USB_TX3_FIFO_SIZE
 #define CONFIG_USB_TX3_FIFO_SIZE (160U)
-#endif
-#ifndef CONFIG_USB_TX4_FIFO_SIZE
-#define CONFIG_USB_TX4_FIFO_SIZE (160U)
 #endif
 #endif
 
@@ -161,16 +152,9 @@ int usb_dc_init(void)
 #else
     /* Select FS Embedded PHY */
     USBx->GUSBCFG |= USB_OTG_GUSBCFG_PHYSEL;
-    //    if (cfg.battery_charging_enable == 0U)
-    //    {
     /* Activate the USB Transceiver */
     USBx->GCCFG |= USB_OTG_GCCFG_PWRDWN;
-//    }
-//    else
-//    {
-//      /* Deactivate the USB Transceiver */
-//      USBx->GCCFG &= ~(USB_OTG_GCCFG_PWRDWN);
-//    }
+
 #endif
 
     /* Reset after a PHY select and set Host mode */
@@ -201,23 +185,18 @@ int usb_dc_init(void)
         USBx->DIEPTXF[i] = 0U;
     }
 
-    /* VBUS Sensing setup */
-    //  if (cfg.vbus_sensing_enable == 0U)
-    //  {
+#if 1 /* To fix vbus sensing disable*/
     /* Deactivate VBUS Sensing B */
     USBx->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
 
     /* B-peripheral session valid override enable */
     USBx->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
     USBx->GOTGCTL |= USB_OTG_GOTGCTL_BVALOVAL;
-    //  }
-    //  else
-    //  {
-    //    /* Enable HW VBUS sensing */
-    //    USBx->GCCFG |= USB_OTG_GCCFG_VBDEN;
-    //  }
-    //
-
+#else
+    USBx->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+    USBx->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
+    USBx->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
+#endif
     /* Restart the Phy Clock */
     USBx_PCGCCTL = 0U;
 
@@ -226,6 +205,8 @@ int usb_dc_init(void)
 #if defined(CONFIG_USB_HS)
     /* Set Core speed to High speed mode */
     USBx_DEVICE->DCFG |= USB_OTG_SPEED_HIGH;
+#elif defined(CONFIG_USB_HS_IN_FULL)
+    USBx_DEVICE->DCFG |= USB_OTG_SPEED_HIGH_IN_FULL;
 #else
     USBx_DEVICE->DCFG |= USB_OTG_SPEED_FULL;
 #endif
@@ -277,15 +258,27 @@ int usb_dc_init(void)
     USBx->GINTMSK |= USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
                      USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IEPINT | USB_OTG_GINTMSK_RXFLVLM |
                      USB_OTG_GINTMSK_WUIM;
+#if 0
+    USBx->GINTMSK |= USB_OTG_GINTMSK_SOFM;
+#endif
+    USBx_DEVICE->DOEPMSK = USB_OTG_DOEPMSK_STUPM | USB_OTG_DOEPMSK_XFRCM;
+
+    USBx_DEVICE->DIEPMSK = USB_OTG_DIEPMSK_XFRCM;
 
     USBx->GRXFSIZ = (CONFIG_USB_RX_FIFO_SIZE / 4);
-
+#if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
     usb_set_txfifo(USBx, 0, CONFIG_USB_TX0_FIFO_SIZE / 4);
     usb_set_txfifo(USBx, 1, CONFIG_USB_TX1_FIFO_SIZE / 4);
     usb_set_txfifo(USBx, 2, CONFIG_USB_TX2_FIFO_SIZE / 4);
     usb_set_txfifo(USBx, 3, CONFIG_USB_TX3_FIFO_SIZE / 4);
     usb_set_txfifo(USBx, 4, CONFIG_USB_TX4_FIFO_SIZE / 4);
-
+    usb_set_txfifo(USBx, 5, CONFIG_USB_TX5_FIFO_SIZE / 4);
+#else
+    usb_set_txfifo(USBx, 0, CONFIG_USB_TX0_FIFO_SIZE / 4);
+    usb_set_txfifo(USBx, 1, CONFIG_USB_TX1_FIFO_SIZE / 4);
+    usb_set_txfifo(USBx, 2, CONFIG_USB_TX2_FIFO_SIZE / 4);
+    usb_set_txfifo(USBx, 3, CONFIG_USB_TX3_FIFO_SIZE / 4);
+#endif
     USBx->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
     USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_SDIS;
 
@@ -298,6 +291,22 @@ void usb_dc_deinit(void)
     uint32_t USBx_BASE = (uint32_t)USBx;
 
     usb_dc_low_level_deinit();
+    /* Clear Pending interrupt */
+    for (uint8_t i = 0U; i < 15U; i++) {
+        USBx_INEP(i)->DIEPINT = 0xFB7FU;
+        USBx_OUTEP(i)->DOEPINT = 0xFB7FU;
+    }
+
+    /* Clear interrupt masks */
+    USBx_DEVICE->DIEPMSK = 0U;
+    USBx_DEVICE->DOEPMSK = 0U;
+    USBx_DEVICE->DAINTMSK = 0U;
+
+    /* Flush the FIFO */
+    usb_flush_txfifo(USBx, 0x10U);
+    usb_flush_rxfifo(USBx);
+
+    USBx_DEVICE->DCTL |= USB_OTG_DCTL_SDIS;
 }
 
 int usbd_set_address(const uint8_t addr)
@@ -346,13 +355,6 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 }
 int usbd_ep_close(const uint8_t ep)
 {
-    USB_OTG_GlobalTypeDef *USBx = usb_dc_cfg.Instance;
-    uint32_t USBx_BASE = (uint32_t)USBx;
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-    if (USB_EP_DIR_IS_OUT(ep)) {
-    } else {
-    }
     return 0;
 }
 int usbd_ep_set_stall(const uint8_t ep)
@@ -616,12 +618,6 @@ void USBD_IRQHandler(void)
                 USBx_OUTEP(i)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
             }
             USBx_DEVICE->DAINTMSK |= 0x10001U;
-
-            USBx_DEVICE->DOEPMSK |= USB_OTG_DOEPMSK_STUPM |
-                                    USB_OTG_DOEPMSK_XFRCM;
-
-            USBx_DEVICE->DIEPMSK |= USB_OTG_DIEPMSK_TOM |
-                                    USB_OTG_DIEPMSK_XFRCM;
 
             USBx_OUTEP(0U)->DOEPTSIZ = 0U;
             USBx_OUTEP(0U)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19));
