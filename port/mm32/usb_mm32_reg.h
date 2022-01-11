@@ -1,5 +1,5 @@
-#ifndef __USB_REG_H__
-#define __USB_REG_H__
+#ifndef __USB_MM32_REG_H__
+#define __USB_MM32_REG_H__
 
 #define     __IO    volatile             /*!< Defines 'read / write' permissions */
 

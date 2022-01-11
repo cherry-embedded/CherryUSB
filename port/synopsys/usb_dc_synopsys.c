@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "usb_synopsys_regs.h"
+#include "usb_synopsys_reg.h"
 
 /*!< USB registers base address */
 #define USB_OTG_HS_PERIPH_BASE 0x40040000UL

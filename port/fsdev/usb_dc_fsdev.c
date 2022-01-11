@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "usb_fsdev_regs.h"
+#include "usb_fsdev_reg.h"
 
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler USB_LP_CAN1_RX0_IRQHandler //use actual usb irq name instead

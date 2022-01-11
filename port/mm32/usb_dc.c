@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "usb_mm32_regs.h"
+#include "usb_mm32_reg.h"
 
 #define USB_GET_EPX_INT_STATE(ep_idx)      (*(volatile uint32_t *)(&USB->rEP1_INT_STATE + (ep_idx - 1)))
 #define USB_SET_EPX_INT_STATE(ep_idx, val) (*(volatile uint32_t *)(&USB->rEP1_INT_STATE + (ep_idx - 1)) = val)

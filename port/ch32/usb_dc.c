@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "usb_ch32_regs.h"
+#include "usb_ch32_reg.h"
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
