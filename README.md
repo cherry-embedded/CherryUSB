@@ -24,6 +24,7 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
 │   ├── bouffalolab
 │   └── stm32
 │   └── mm32
+│   └── ch32
 ├── docs
 ├── packet capture
 └── port
@@ -32,8 +33,8 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
     ├── ch32
     ├── fsdev
     ├── mm32
-    ├── stm32
     ├── synopsys
+    ├── musb
     └── template
 ```
 

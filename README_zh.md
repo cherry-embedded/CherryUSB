@@ -24,6 +24,7 @@ USB Stack 是一个小而美的、可移植性高的、用于嵌入式系统的 
 │   ├── bouffalolab
 │   └── stm32
 │   └── mm32
+│   └── ch32
 ├── docs
 ├── packet capture
 └── port
@@ -32,8 +33,8 @@ USB Stack 是一个小而美的、可移植性高的、用于嵌入式系统的 
     ├── ch32
     ├── fsdev
     ├── mm32
-    ├── stm32
     ├── synopsys
+    ├── musb
     └── template
 ```
 
