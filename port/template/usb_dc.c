@@ -21,6 +21,14 @@ struct usb_dc_config_priv {
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } usb_dc_cfg;
 
+__WEAK void usb_dc_low_level_init(void)
+{
+}
+
+__WEAK void usb_dc_low_level_deinit(void)
+{
+}
+
 int usb_dc_init(void)
 {
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
