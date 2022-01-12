@@ -12,3 +12,4 @@ demo/mm32/**/*.map
 demo/mm32/**/*.lst
 demo/mm32/**/*.uvguix.*
 demo/ch32/**/**/**/**/**/obj/**
+demo/ch58x/**/**/**/**/**/obj/**
