@@ -1,7 +1,7 @@
 /**
  * @file usbd_video.c
  *
- * Copyright (c) 2021 sakumisu
+ * Copyright (c) 2021 Bouffalolab team
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,7 +27,7 @@ extern struct video_probe_and_commit_controls commit;
 
 int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("Video Class request: "
+    USB_LOG_DBG("Video Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -90,7 +90,7 @@ int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             break;
 
         default:
-            USBD_LOG_WRN("Unhandled Video Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled Video Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 

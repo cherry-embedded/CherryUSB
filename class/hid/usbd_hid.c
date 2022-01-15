@@ -2,7 +2,7 @@
  * @file usbd_hid.c
  * @brief
  *
- * Copyright (c) 2021 sakumisu
+ * Copyright (c) 2021 Bouffalolab team
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -63,7 +63,7 @@ static void usbd_hid_reset(void)
 
 int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("HID Custom request: "
+    USB_LOG_DBG("HID Custom request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -90,19 +90,19 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
 
         switch (value) {
             case HID_DESCRIPTOR_TYPE_HID:
-                USBD_LOG_INFO("get HID Descriptor\r\n");
+                USB_LOG_INFO("get HID Descriptor\r\n");
                 *data = (uint8_t *)current_hid_intf->hid_descriptor;
                 *len = current_hid_intf->hid_descriptor[0];
                 break;
 
             case HID_DESCRIPTOR_TYPE_HID_REPORT:
-                USBD_LOG_INFO("get Report Descriptor\r\n");
+                USB_LOG_INFO("get Report Descriptor\r\n");
                 *data = (uint8_t *)current_hid_intf->hid_report_descriptor;
                 *len = current_hid_intf->hid_report_descriptor_len;
                 break;
 
             case HID_DESCRIPTOR_TYPE_HID_PHYSICAL:
-                USBD_LOG_INFO("get PHYSICAL Descriptor\r\n");
+                USB_LOG_INFO("get PHYSICAL Descriptor\r\n");
 
                 break;
 
@@ -118,7 +118,7 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
 
 int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("HID Class request: "
+    USB_LOG_DBG("HID Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -180,7 +180,7 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
             break;
 
         default:
-            USBD_LOG_WRN("Unhandled HID Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled HID Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 

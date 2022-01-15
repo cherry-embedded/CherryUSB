@@ -2,7 +2,7 @@
  * @file usbd_cdc.c
  * @brief
  *
- * Copyright (c) 2021 sakumisu
+ * Copyright (c) 2021 Bouffalolab team
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -65,7 +65,7 @@ static void usbd_cdc_acm_reset(void)
  */
 static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("CDC Class request: "
+    USB_LOG_DBG("CDC Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -95,7 +95,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             }
 
             memcpy(&usbd_cdc_acm_cfg.line_coding, *data, sizeof(usbd_cdc_acm_cfg.line_coding));
-            USBD_LOG_DBG("CDC_SET_LINE_CODING <%d %d %s %s>\r\n",
+            USB_LOG_DBG("CDC_SET_LINE_CODING <%d %d %s %s>\r\n",
                          usbd_cdc_acm_cfg.line_coding.dwDTERate,
                          usbd_cdc_acm_cfg.line_coding.bDataBits,
                          parity_name[usbd_cdc_acm_cfg.line_coding.bParityType],
@@ -108,7 +108,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             usbd_cdc_acm_cfg.line_state = (uint8_t)setup->wValue;
             bool dtr = (setup->wValue & 0x01);
             bool rts = (setup->wValue & 0x02);
-            USBD_LOG_DBG("DTR 0x%x,RTS 0x%x\r\n",
+            USB_LOG_DBG("DTR 0x%x,RTS 0x%x\r\n",
                          dtr, rts);
             usbd_cdc_acm_set_dtr(dtr);
             usbd_cdc_acm_set_rts(rts);
@@ -117,7 +117,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
         case CDC_REQUEST_GET_LINE_CODING:
             *data = (uint8_t *)(&usbd_cdc_acm_cfg.line_coding);
             *len = sizeof(usbd_cdc_acm_cfg.line_coding);
-            USBD_LOG_DBG("CDC_GET_LINE_CODING %d %d %d %d\r\n",
+            USB_LOG_DBG("CDC_GET_LINE_CODING %d %d %d %d\r\n",
                          usbd_cdc_acm_cfg.line_coding.dwDTERate,
                          usbd_cdc_acm_cfg.line_coding.bCharFormat,
                          usbd_cdc_acm_cfg.line_coding.bParityType,
@@ -125,7 +125,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             break;
 
         default:
-            USBD_LOG_WRN("Unhandled CDC Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled CDC Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 

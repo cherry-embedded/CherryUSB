@@ -1,25 +1,3 @@
-/**
- * @file usbd_audio.c
- * @brief
- *
- * Copyright (c) 2021 sakumisu
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The
- * ASF licenses this file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
- */
 #include "usbd_core.h"
 #include "usbd_audio.h"
 
@@ -27,7 +5,7 @@ struct usbd_audio_control_info audio_control_info = { 0xdb00, 0x0000, 0x0100, 0x
 
 int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("AUDIO Class request: "
+    USB_LOG_DBG("AUDIO Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -46,7 +24,7 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
                         vol = (audio_control_info.vol_current - 0xDB00 + 1) * 100 / (0xFFFF - 0xDB00);
                     }
                     usbd_audio_set_volume(vol);
-                    USBD_LOG_INFO("current audio volume:%d\r\n", vol);
+                    USB_LOG_INFO("current audio volume:%d\r\n", vol);
                 }
             }
 
@@ -89,7 +67,7 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             break;
 
         default:
-            USBD_LOG_WRN("Unhandled Audio Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 
