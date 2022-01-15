@@ -26,6 +26,7 @@ USB Stack 是一个小而美的、可移植性高的、用于嵌入式系统的 
 │   └── mm32
 │   └── ch32
 ├── docs
+├── osal
 ├── packet capture
 └── port
     ├── bouffalolab
@@ -45,6 +46,7 @@ USB Stack 是一个小而美的、可移植性高的、用于嵌入式系统的 
 |core           |  usb 主从核心实现               |
 |demo           |  示例                          |
 |docs           |  文档                          |
+|osal           |  os 封装层                       |
 |packet capture |  抓包文件（需要使用力科软件打开）|
 |port           |  usb 主从需要实现的 porting 接口 |
 

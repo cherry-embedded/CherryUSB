@@ -26,6 +26,7 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
 │   └── mm32
 │   └── ch32
 ├── docs
+├── osal
 ├── packet capture
 └── port
     ├── bouffalolab
@@ -44,6 +45,7 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
 |common         |  usb spec macros and utils  |
 |core           |  usb core implementation  |
 |demo           |  different chip demo     |
+|osal           |  os wrapper              |
 |docs           |  doc for guiding         |
 |packet capture |  packet capture file     |
 |port           |  usb dcd and hcd porting |
