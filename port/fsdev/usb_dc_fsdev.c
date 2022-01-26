@@ -352,26 +352,27 @@ void USBD_IRQHandler(void)
                         USBx->DADDR = ((uint16_t)usb_dc_cfg.USB_Address | USB_DADDR_EF);
                         usb_dc_cfg.USB_Address = 0U;
                     }
-                }
-                /* DIR = 1 */
+                } else {
+                    /* DIR = 1 */
 
-                /* DIR = 1 & CTR_RX => SETUP or OUT int */
-                /* DIR = 1 & (CTR_TX | CTR_RX) => 2 int pending */
+                    /* DIR = 1 & CTR_RX => SETUP or OUT int */
+                    /* DIR = 1 & (CTR_TX | CTR_RX) => 2 int pending */
 
-                wEPVal = PCD_GET_ENDPOINT(USBx, 0);
+                    wEPVal = PCD_GET_ENDPOINT(USBx, 0);
 
-                if ((wEPVal & USB_EP_SETUP) != 0U) {
-                    /* SETUP bit kept frozen while CTR_RX = 1 */
-                    PCD_CLEAR_RX_EP_CTR(USBx, 0);
+                    if ((wEPVal & USB_EP_SETUP) != 0U) {
+                        /* SETUP bit kept frozen while CTR_RX = 1 */
+                        PCD_CLEAR_RX_EP_CTR(USBx, 0);
 
-                    /* Process SETUP Packet*/
-                    usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
-                    PCD_SET_EP_RX_STATUS(USBx, 0, USB_EP_RX_VALID);
-                } else if ((wEPVal & USB_EP_CTR_RX) != 0U) {
-                    PCD_CLEAR_RX_EP_CTR(USBx, 0);
-                    /* Process Control Data OUT Packet */
-                    usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
-                    PCD_SET_EP_RX_STATUS(USBx, 0, USB_EP_RX_VALID);
+                        /* Process SETUP Packet*/
+                        usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
+                        PCD_SET_EP_RX_STATUS(USBx, 0, USB_EP_RX_VALID);
+                    } else if ((wEPVal & USB_EP_CTR_RX) != 0U) {
+                        PCD_CLEAR_RX_EP_CTR(USBx, 0);
+                        /* Process Control Data OUT Packet */
+                        usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
+                        PCD_SET_EP_RX_STATUS(USBx, 0, USB_EP_RX_VALID);
+                    }
                 }
             } else {
                 /* Decode and service non control endpoints interrupt */
