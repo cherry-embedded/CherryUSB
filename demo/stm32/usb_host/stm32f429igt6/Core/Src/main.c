@@ -71,7 +71,6 @@ int fputc(int ch, FILE *f)
 void usb_hc_low_level_init(void)
 {
     MX_USB_OTG_HS_HCD_Init();
-    HAL_HCD_Start(&hhcd_USB_OTG_HS);
 }
 
 /* USER CODE END 0 */
