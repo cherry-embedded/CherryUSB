@@ -28,7 +28,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "usb_slist.h"
+#include "usb_errno.h"
+#include "usb_list.h"
+#include "usb_mem.h"
 
 #if defined(__CC_ARM)
 #ifndef __USED
@@ -287,5 +289,12 @@
 #else
 #define USB_LOG_ERR(...)
 #endif
+
+void usb_assert(const char *filename, int linenum);
+#define USB_ASSERT(f)                       \
+    do {                                    \
+        if (!(f))                           \
+            usb_assert(__FILE__, __LINE__); \
+    } while (0)
 
 #endif
