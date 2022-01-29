@@ -32,6 +32,7 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
     ├── bouffalolab
     │   └── bl702
     ├── ch32
+    ├── ehci
     ├── fsdev
     ├── mm32
     ├── synopsys
@@ -60,8 +61,8 @@ USB Device Stack has the following functions：
 
 - Support USB2.0 full and high speed
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
-- Support Composite class
-- Support Communication Class (CDC)
+- Support Compound and Composite Device
+- Support Communication Device Class (CDC)
 - Support Human Interface Device (HID)
 - Support Custom human Interface Device (HID)
 - Support Mass Storage Class (MSC)
@@ -86,7 +87,25 @@ USB Device Stack resource usage：
 
 ## USB Host Stack Overview
 
-waiting....
+The USB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for the different Class to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the protocol stack is managed using os, and provides osal to make a adaptation to different os.
+
+How USB Host Stack is implemented, the video will be provided in future.
+
+USB Host Stack has the following functions：
+
+- Automatic loading of supported Class drivers
+- Support blocking transfers and asynchronous transfers
+- Support Compound and Composite Device
+- Multi-level HUB support, expandable up to 7 levels
+- Support Communication Device Class (CDC)
+- Support Human Interface Device (HID)
+- Support Mass Storage Class (MSC)
+- Support Vendor class
+- Support Andriod AOA Communication
+
+The USB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
+
+![lsusb](docs/img/lsusb.png)
 
 ## USB Device API
 
