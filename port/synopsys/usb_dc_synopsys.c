@@ -185,7 +185,7 @@ int usb_dc_init(void)
         USBx->DIEPTXF[i] = 0U;
     }
 
-#if 1 /* To fix vbus sensing disable*/
+#ifdef CONFIG_USB_SYNOPSYS_NOVBUSSEN
     /* Deactivate VBUS Sensing B */
     USBx->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
 
