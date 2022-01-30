@@ -22,11 +22,6 @@
  */
 #ifndef _USB_MEM_H
 
-//#include <stdint.h>
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <malloc.h>
-
 #define DCACHE_LINE_SIZE 32
 #define DCACHE_LINEMASK (DCACHE_LINE_SIZE -1)
 
@@ -50,14 +45,12 @@ static inline void usb_free(void *ptr)
 static inline void *usb_iomalloc(size_t size)
 {
     size  = (size + DCACHE_LINEMASK) & ~DCACHE_LINEMASK;
-    uint32_t no_cache_addr = (uint32_t)(uintptr_t)memalign(DCACHE_LINE_SIZE, size) & ~(1 << 30);
-    return (void *)no_cache_addr;
+    return malloc(size);
 }
 
 static inline void usb_iofree(void *addr)
 {
-    uint32_t cache_addr = (uint32_t)(uintptr_t)addr | (1 << 30);
-    free((void *)cache_addr);
+    free(addr);
 }
 #else
 static inline void *usb_iomalloc(size_t size)
