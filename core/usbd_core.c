@@ -159,9 +159,9 @@ static void usbd_ep_callback_register(void)
     usb_slist_t *i, *j, *k;
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -786,9 +786,9 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
     usb_slist_t *i, *j;
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -859,9 +859,9 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
 
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -896,9 +896,9 @@ static int usbd_custom_request_handler(struct usb_setup_packet *setup, uint8_t *
     usb_slist_t *i, *j;
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -1116,9 +1116,9 @@ static void usbd_ep_out_handler(uint8_t ep)
     usb_slist_t *i, *j, *k;
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -1147,9 +1147,9 @@ static void usbd_ep_in_handler(uint8_t ep)
     usb_slist_t *i, *j, *k;
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -1177,9 +1177,9 @@ static void usbd_class_event_notify_handler(uint8_t event, void *arg)
     usb_slist_t *i, *j;
     usb_slist_for_each(i, &usbd_class_head)
     {
-        usbd_class_t *class = usb_slist_entry(i, struct usbd_class, list);
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &class->intf_list)
+        usb_slist_for_each(j, &devclass->intf_list)
         {
             usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
 
@@ -1273,17 +1273,17 @@ void usbd_bos_desc_register(struct usb_bos_descriptor *desc)
     bos_desc = desc;
 }
 
-void usbd_class_register(usbd_class_t *class)
+void usbd_class_register(usbd_class_t *devclass)
 {
-    usb_slist_add_tail(&usbd_class_head, &class->list);
-    usb_slist_init(&class->intf_list);
+    usb_slist_add_tail(&usbd_class_head, &devclass->list);
+    usb_slist_init(&devclass->intf_list);
 }
 
-void usbd_class_add_interface(usbd_class_t *class, usbd_interface_t *intf)
+void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static uint8_t intf_offset = 0;
     intf->intf_num = intf_offset;
-    usb_slist_add_tail(&class->intf_list, &intf->list);
+    usb_slist_add_tail(&devclass->intf_list, &intf->list);
     usb_slist_init(&intf->ep_list);
     intf_offset++;
 }

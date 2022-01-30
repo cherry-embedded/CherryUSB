@@ -265,20 +265,20 @@ void usbd_hid_set_request_callback( uint8_t intf_num,
     }
 }
 
-void usbd_hid_add_interface(usbd_class_t *class, usbd_interface_t *intf)
+void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static usbd_class_t *last_class = NULL;
     static uint8_t hid_num = 0;
-    if (last_class != class) {
-        last_class = class;
-        usbd_class_register(class);
+    if (last_class != devclass) {
+        last_class = devclass;
+        usbd_class_register(devclass);
     }
 
     intf->class_handler = hid_class_request_handler;
     intf->custom_handler = hid_custom_request_handler;
     intf->vendor_handler = NULL;
     intf->notify_handler = hid_notify_handler;
-    usbd_class_add_interface(class, intf);
+    usbd_class_add_interface(devclass, intf);
 
     usbd_hid_cfg[hid_num].current_intf_num = intf->intf_num;
     usb_slist_add_tail(&usbd_hid_class_head, &usbd_hid_cfg[hid_num].list);

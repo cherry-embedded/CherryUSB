@@ -37,7 +37,7 @@ struct usbd_audio_control_info {
     uint8_t mute;
 };
 
-void usbd_audio_add_interface(usbd_class_t *class, usbd_interface_t *intf);
+void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 void usbd_audio_set_interface_callback(uint8_t value);
 void usbd_audio_set_volume(uint8_t vol);
 #ifdef __cplusplus

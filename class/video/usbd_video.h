@@ -31,7 +31,7 @@ extern "C" {
 
 void usbd_video_sof_callback(void);
 void usbd_video_set_interface_callback(uint8_t value);
-void usbd_video_add_interface(usbd_class_t *class, usbd_interface_t *intf);
+void usbd_video_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 
 #ifdef __cplusplus
 }

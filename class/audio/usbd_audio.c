@@ -115,20 +115,20 @@ void audio_notify_handler(uint8_t event, void *arg)
     }
 }
 
-void usbd_audio_add_interface(usbd_class_t *class, usbd_interface_t *intf)
+void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static usbd_class_t *last_class = NULL;
 
-    if (last_class != class) {
-        last_class = class;
-        usbd_class_register(class);
+    if (last_class != devclass) {
+        last_class = devclass;
+        usbd_class_register(devclass);
     }
 
     intf->class_handler = audio_class_request_handler;
     intf->custom_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = audio_notify_handler;
-    usbd_class_add_interface(class, intf);
+    usbd_class_add_interface(devclass, intf);
 }
 
 __WEAK void usbd_audio_set_volume(uint8_t vol)

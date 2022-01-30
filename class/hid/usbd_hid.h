@@ -31,7 +31,7 @@ extern "C" {
 
 void usbd_hid_descriptor_register(uint8_t intf_num, const uint8_t *desc);
 void usbd_hid_report_descriptor_register(uint8_t intf_num, const uint8_t *desc, uint32_t desc_len);
-void usbd_hid_add_interface(usbd_class_t *class, usbd_interface_t *intf);
+void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 void usbd_hid_reset_state(void);
 void usbd_hid_send_report(uint8_t ep, uint8_t *data, uint8_t len);
 // clang-format off

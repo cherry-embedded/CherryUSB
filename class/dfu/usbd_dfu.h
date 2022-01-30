@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-void usbd_dfu_add_interface(usbd_class_t *class, usbd_interface_t *intf);
+void usbd_dfu_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 
 #ifdef __cplusplus
 }
