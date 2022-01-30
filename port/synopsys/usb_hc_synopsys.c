@@ -229,17 +229,27 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
 
         ret = usb_osal_sem_take(g_usbhost.chan[ep0info->outndx].waitsem);
         if (ret < 0) {
-            return ret;
+            goto errout_with_mutex;
         }
-
-        if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_DONE) {
+        usb_osal_msleep(5);
+        if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_NOTREADY) {
+            ret = -EAGAIN;
+            continue;
+        } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_STALL) {
+            ret = -EPERM;
+            goto errout_with_mutex;
+        } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_ERROR) {
+            ret = -EIO;
+            goto errout_with_mutex;
+        } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_DONE) {
             break;
         }
     }
-
     if (retries >= USB_SNOPSYS_RETRY_COUNT) {
-        goto urb_timeout;
+        ret = -ETIMEDOUT;
+        goto errout_with_mutex;
     }
+
     if (setup->wLength && buffer) {
         if (setup->bmRequestType & 0x80) {
             for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
@@ -253,15 +263,25 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                                0);             /* do ping (HS Only)*/
                 usb_osal_sem_take(g_usbhost.chan[ep0info->inndx].waitsem);
                 if (ret < 0) {
-                    return ret;
+                    goto errout_with_mutex;
                 }
-
-                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_DONE) {
+                usb_osal_msleep(5);
+                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_NOTREADY) {
+                    ret = -EAGAIN;
+                    continue;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_STALL) {
+                    ret = -EPERM;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_ERROR) {
+                    ret = -EIO;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_DONE) {
                     break;
                 }
             }
             if (retries >= USB_SNOPSYS_RETRY_COUNT) {
-                goto urb_timeout;
+                ret = -ETIMEDOUT;
+                goto errout_with_mutex;
             }
             for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
                 ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
@@ -274,15 +294,25 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                                0);              /* do ping (HS Only)*/
                 usb_osal_sem_take(g_usbhost.chan[ep0info->outndx].waitsem);
                 if (ret < 0) {
-                    return ret;
+                    goto errout_with_mutex;
                 }
-
-                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_DONE) {
+                usb_osal_msleep(5);
+                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_NOTREADY) {
+                    ret = -EAGAIN;
+                    continue;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_STALL) {
+                    ret = -EPERM;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_ERROR) {
+                    ret = -EIO;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_DONE) {
                     break;
                 }
             }
             if (retries >= USB_SNOPSYS_RETRY_COUNT) {
-                goto urb_timeout;
+                ret = -ETIMEDOUT;
+                goto errout_with_mutex;
             }
         } else {
             for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
@@ -297,16 +327,26 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
 
                 usb_osal_sem_take(g_usbhost.chan[ep0info->outndx].waitsem);
                 if (ret < 0) {
-                    return ret;
+                    goto errout_with_mutex;
                 }
-
-                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_DONE) {
+                usb_osal_msleep(5);
+                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_NOTREADY) {
+                    ret = -EAGAIN;
+                    continue;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_STALL) {
+                    ret = -EPERM;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_ERROR) {
+                    ret = -EIO;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->outndx) == URB_DONE) {
                     break;
                 }
             }
 
             if (retries >= USB_SNOPSYS_RETRY_COUNT) {
-                goto urb_timeout;
+                ret = -ETIMEDOUT;
+                goto errout_with_mutex;
             }
             for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
                 ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
@@ -319,16 +359,26 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                                0);             /* do ping (HS Only)*/
                 usb_osal_sem_take(g_usbhost.chan[ep0info->inndx].waitsem);
                 if (ret < 0) {
-                    return ret;
+                    goto errout_with_mutex;
                 }
-
-                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_DONE) {
+                usb_osal_msleep(5);
+                if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_NOTREADY) {
+                    ret = -EAGAIN;
+                    continue;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_STALL) {
+                    ret = -EPERM;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_ERROR) {
+                    ret = -EIO;
+                    goto errout_with_mutex;
+                } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_DONE) {
                     break;
                 }
             }
 
             if (retries >= USB_SNOPSYS_RETRY_COUNT) {
-                goto urb_timeout;
+                ret = -ETIMEDOUT;
+                goto errout_with_mutex;
             }
         }
     } else {
@@ -343,97 +393,197 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                            0);             /* do ping (HS Only)*/
             usb_osal_sem_take(g_usbhost.chan[ep0info->inndx].waitsem);
             if (ret < 0) {
-                return ret;
+                goto errout_with_mutex;
             }
             usb_osal_msleep(10);
-            if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_DONE) {
+            if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_NOTREADY) {
+                ret = -EAGAIN;
+                continue;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_STALL) {
+                ret = -EPERM;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_ERROR) {
+                ret = -EIO;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, ep0info->inndx) == URB_DONE) {
                 break;
             }
         }
         if (retries >= USB_SNOPSYS_RETRY_COUNT) {
-            goto urb_timeout;
+            ret = -ETIMEDOUT;
+            goto errout_with_mutex;
         }
     }
     usb_osal_mutex_give(g_usbhost.exclsem);
     return 0;
-urb_timeout:
+errout_with_mutex:
     usb_osal_mutex_give(g_usbhost.exclsem);
-    return -ETIMEDOUT;
+    return ret;
 }
 int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
 {
+    uint8_t retries;
     int ret;
     uint8_t chidx = (uint8_t)ep;
 
-    if (g_usbhost.handle->hc[chidx].ep_is_in) {
-        ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
-                                       chidx,         /* Pipe index       */
-                                       1,             /* Direction : IN  */
-                                       2,             /* EP type          */
-                                       USBH_PID_DATA, /* Type Data        */
-                                       buffer,        /* data buffer      */
-                                       buflen,        /* data length      */
-                                       0);            /* do ping (HS Only)*/
-
-        usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
-        if (ret < 0) {
-            return ret;
-        }
-        return HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx);
-    } else {
-        ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
-                                       chidx,         /* Pipe index       */
-                                       0,             /* Direction : OUT  */
-                                       2,             /* EP type          */
-                                       USBH_PID_DATA, /* Type Data        */
-                                       buffer,        /* data buffer      */
-                                       buflen,        /* data length      */
-                                       0);            /* do ping (HS Only)*/
-        usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
-        if (ret < 0) {
-            return ret;
-        }
-        return HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx);
+    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    if (ret < 0) {
+        return ret;
     }
-    return -1;
+    if (g_usbhost.handle->hc[chidx].ep_is_in) {
+        for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
+            ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
+                                           chidx,         /* Pipe index       */
+                                           1,             /* Direction : IN  */
+                                           2,             /* EP type          */
+                                           USBH_PID_DATA, /* Type Data        */
+                                           buffer,        /* data buffer      */
+                                           buflen,        /* data length      */
+                                           0);            /* do ping (HS Only)*/
+
+            usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
+            if (ret < 0) {
+                goto errout_with_mutex;
+            }
+            usb_osal_msleep(10);
+            if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_NOTREADY) {
+                ret = -EAGAIN;
+                continue;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_STALL) {
+                ret = -EPERM;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_ERROR) {
+                ret = -EIO;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_DONE) {
+                break;
+            }
+        }
+        if (retries >= USB_SNOPSYS_RETRY_COUNT) {
+            ret = -ETIMEDOUT;
+            goto errout_with_mutex;
+        }
+    } else {
+        for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
+            ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
+                                           chidx,         /* Pipe index       */
+                                           0,             /* Direction : OUT  */
+                                           2,             /* EP type          */
+                                           USBH_PID_DATA, /* Type Data        */
+                                           buffer,        /* data buffer      */
+                                           buflen,        /* data length      */
+                                           1);            /* do ping (HS Only)*/
+            usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
+            if (ret < 0) {
+                goto errout_with_mutex;
+            }
+            usb_osal_msleep(10);
+            if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_NOTREADY) {
+                ret = -EAGAIN;
+                continue;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_STALL) {
+                ret = -EPERM;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_ERROR) {
+                ret = -EIO;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_DONE) {
+                break;
+            }
+        }
+        if (retries >= USB_SNOPSYS_RETRY_COUNT) {
+            ret = -ETIMEDOUT;
+            goto errout_with_mutex;
+        }
+    }
+    usb_osal_mutex_give(g_usbhost.exclsem);
+    return HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx);
+errout_with_mutex:
+    usb_osal_mutex_give(g_usbhost.exclsem);
+    return ret;
 }
 
 int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
 {
+    uint8_t retries;
     int ret;
     uint8_t chidx = (uint8_t)ep;
 
-    if (g_usbhost.handle->hc[chidx].ep_is_in) {
-        ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
-                                       chidx,         /* Pipe index       */
-                                       1,             /* Direction : IN  */
-                                       3,             /* EP type          */
-                                       USBH_PID_DATA, /* Type Data        */
-                                       buffer,        /* data buffer      */
-                                       buflen,        /* data length      */
-                                       0);            /* do ping (HS Only)*/
-
-        usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
-        if (ret < 0) {
-            return ret;
-        }
-        return HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx);
-    } else {
-        ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
-                                       chidx,         /* Pipe index       */
-                                       0,             /* Direction : OUT  */
-                                       3,             /* EP type          */
-                                       USBH_PID_DATA, /* Type Data        */
-                                       buffer,        /* data buffer      */
-                                       buflen,        /* data length      */
-                                       0);            /* do ping (HS Only)*/
-        usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
-        if (ret < 0) {
-            return ret;
-        }
-        return HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx);
+    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    if (ret < 0) {
+        return ret;
     }
-    return -1;
+    if (g_usbhost.handle->hc[chidx].ep_is_in) {
+        for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
+            ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
+                                           chidx,         /* Pipe index       */
+                                           1,             /* Direction : IN  */
+                                           3,             /* EP type          */
+                                           USBH_PID_DATA, /* Type Data        */
+                                           buffer,        /* data buffer      */
+                                           buflen,        /* data length      */
+                                           0);            /* do ping (HS Only)*/
+
+            usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
+            if (ret < 0) {
+                goto errout_with_mutex;
+            }
+            usb_osal_msleep(10);
+            if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_NOTREADY) {
+                ret = -EAGAIN;
+                continue;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_STALL) {
+                ret = -EPERM;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_ERROR) {
+                ret = -EIO;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_DONE) {
+                break;
+            }
+        }
+        if (retries >= USB_SNOPSYS_RETRY_COUNT) {
+            ret = -ETIMEDOUT;
+            goto errout_with_mutex;
+        }
+    } else {
+        for (retries = 0; retries < USB_SNOPSYS_RETRY_COUNT; retries++) {
+            ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
+                                           chidx,         /* Pipe index       */
+                                           0,             /* Direction : OUT  */
+                                           3,             /* EP type          */
+                                           USBH_PID_DATA, /* Type Data        */
+                                           buffer,        /* data buffer      */
+                                           buflen,        /* data length      */
+                                           1);            /* do ping (HS Only)*/
+            usb_osal_sem_take(g_usbhost.chan[chidx].waitsem);
+            if (ret < 0) {
+                goto errout_with_mutex;
+            }
+            usb_osal_msleep(10);
+            if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_NOTREADY) {
+                ret = -EAGAIN;
+                continue;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_STALL) {
+                ret = -EPERM;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_ERROR) {
+                ret = -EIO;
+                goto errout_with_mutex;
+            } else if (HAL_HCD_HC_GetURBState(g_usbhost.handle, chidx) == URB_DONE) {
+                break;
+            }
+        }
+        if (retries >= USB_SNOPSYS_RETRY_COUNT) {
+            ret = -ETIMEDOUT;
+            goto errout_with_mutex;
+        }
+    }
+    usb_osal_mutex_give(g_usbhost.exclsem);
+    return HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx);
+errout_with_mutex:
+    usb_osal_mutex_give(g_usbhost.exclsem);
+    return ret;
 }
 
 int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, usbh_asynch_callback_t callback, void *arg)
