@@ -1,10 +1,10 @@
-# USB Stack
+# CherryUSB
 
 [中文版](./README_zh.md)
 
-USB Stack is a tiny, beautiful and portable USB host and device stack for embedded system.
+CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system.
 
-## USB Stack Directoy Structure
+## CherryUSB Directoy Structure
 
 ```
 .
@@ -51,13 +51,13 @@ USB Stack is a tiny, beautiful and portable USB host and device stack for embedd
 |packet capture |  packet capture file     |
 |port           |  usb dcd and hcd porting |
 
-## USB Device Stack Overview
+## CherryUSB Device Stack Overview
 
-USB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests. The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.
+CherryUSB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests. The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.
 
-How USB Device Stack is implemented, this video will tell you: <https://www.bilibili.com/video/BV1Ef4y1t73d> .
+How CherryUSB Device Stack is implemented, this video will tell you: <https://www.bilibili.com/video/BV1Ef4y1t73d> .
 
-USB Device Stack has the following functions：
+CherryUSB Device Stack has the following functions：
 
 - Support USB2.0 full and high speed
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
@@ -74,7 +74,7 @@ USB Device Stack has the following functions：
 - Support Vendor class
 - Support WINUSB1.0、WINUSB2.0
 
-USB Device Stack resource usage：
+CherryUSB Device Stack resource usage：
 
 |   file      |  FLASH (Byte)  |  RAM (Byte)  |
 |:-----------:|:--------------:|:------------:|
@@ -85,13 +85,13 @@ USB Device Stack resource usage：
 |usbd_audio.c |  438           | 14           |
 |usbd_video.c |  402           | 4            |
 
-## USB Host Stack Overview
+## CherryUSB Host Stack Overview
 
-The USB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for the different Class to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the protocol stack is managed using os, and provides osal to make a adaptation to different os.
+The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for the different Class to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the protocol stack is managed using os, and provides osal to make a adaptation to different os.
 
-How USB Host Stack is implemented, the video will be provided in future.
+How CherryUSB Host Stack is implemented, the video will be provided in future.
 
-USB Host Stack has the following functions：
+CherryUSB Host Stack has the following functions：
 
 - Automatic loading of supported Class drivers
 - Support blocking transfers and asynchronous transfers
@@ -103,18 +103,18 @@ USB Host Stack has the following functions：
 - Support Vendor class
 - Support Andriod AOA Communication
 
-The USB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
+The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 
 ![lsusb](docs/img/lsusb.png)
 
-## USB Device API
+## CherryUSB Device API
 
-More of USB Device API reference, please visit : [USB Device API](docs/usb_device.md)
+More of USB Device API reference, please visit : [CherryUSB Device API](docs/usb_device.md)
 
-## USB Host API
+## CherryUSB Host API
 
-More of USB Host API reference, please visit: [USB Host API](docs/usb_host.md)
+More of USB Host API reference, please visit: [CherryUSB Host API](docs/usb_host.md)
 
 ## How To Use In RT-Thread package
 
-How to use in RT-Thread package, please visit：[RT-Thread package Userguide with usb stack](docs/rt-thread.md)
+How to use in RT-Thread package, please visit：[RT-Thread package Userguide with CherryUSB](docs/rt-thread.md)

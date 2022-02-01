@@ -1,15 +1,15 @@
-# RT-Thread package Userguide with usb stack
+# RT-Thread package Userguide with CherryUSB
 
 [中文版](rt-thread_zh.md)
 
-To use usb stack package, you need to select it in the RT-Thread package manager. The specific path is as follows:
+To use CherryUSB package, you need to select it in the RT-Thread package manager. The specific path is as follows:
 
 ```
 -> RT-Thread online packages
     -> system packages
-        --- USB Stack: tiny and portable USB stack for embedded system with USB IP
+        --- CherryUSB: tiny and portable USB stack for embedded system with USB IP
 
-            USB STACK Options  ---->
+            CherryUSB Options  ---->
                     USB Speed (FS)  --->
                     [*] Enable usb device mode
                     [*]   Enable usb cdc acm device

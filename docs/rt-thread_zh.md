@@ -1,15 +1,15 @@
-# USB Stack 在 RT-Thread package 中的使用
+# CherryUSB 在 RT-Thread package 中的使用
 
 [English Version](rt-thread.md)
 
-使用 USB Stack package 需要在 RT-Thread 的包管理器中选择它，具体路径如下：
+使用 CherryUSB package 需要在 RT-Thread 的包管理器中选择它，具体路径如下：
 
 ```
 -> RT-Thread online packages
     -> system packages
-        ---  USB Stack: tiny and portable USB stack for embedded system with USB IP
+        ---  CherryUSB: tiny and portable USB stack for embedded system with USB IP
 
-            USB STACK Options  ---->
+            CherryUSB Options  ---->
                     USB Speed (FS)  --->
                     [*] Enable usb device mode
                     [*]   Enable usb cdc acm device

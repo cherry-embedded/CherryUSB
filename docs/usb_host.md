@@ -1,1 +1,1 @@
-# USB STACK API For host
+# CherryUSB Host API

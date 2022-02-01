@@ -1,6 +1,6 @@
-# USB STACK API For device
+# CherryUSB Device API
 
-## USB Device Controller Porting 接口
+## CherryUSB Device Controller Porting 接口
 
 USB Device controller porting 接口在 `usb_stack/common/usb_dc.h` 文件中声明，用户根据自己的 MCU 实现以下接口:
 
@@ -13,13 +13,13 @@ USB Device controller porting 接口在 `usb_stack/common/usb_dc.h` 文件中声
 - `usbd_ep_write`
 - `usbd_ep_read`
 
-## USB Device Controller 其他接口
+## CherryUSB Device Controller 其他接口
 
 用户需要实现 usb device controller 相关寄存器初始化的函数（可以命名为 `usb_dc_init` ）,以及在 USB 中断函数中根据不同的中断标志调用 `usbd_event_notify_handler`。
 
-## USB Device 应用层接口
+## CherryUSB Device 应用层接口
 
-### USB Device 通用接口
+### CherryUSB Device 通用接口
 
 #### **usbd_desc_register**
 
