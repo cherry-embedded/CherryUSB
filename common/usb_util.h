@@ -1,48 +1,142 @@
+/**
+ * @file usb_util.h
+ * @brief
+ *
+ * Copyright (c) 2022 sakumisu
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 #ifndef _USB_UTIL_H
 #define _USB_UTIL_H
 
-#include "stdbool.h"
-#include "string.h"
-#include "stdint.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "usb_slist.h"
+#include <stdbool.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "usb_errno.h"
+#include "usb_list.h"
+#include "usb_mem.h"
 
-#ifndef __packed
-#define __packed __attribute__((__packed__))
+#if defined(__CC_ARM)
+#ifndef __USED
+#define __USED __attribute__((used))
 #endif
-#ifndef __aligned
-#define __aligned(x) __attribute__((__aligned__(x)))
+#ifndef __WEAK
+#define __WEAK __attribute__((weak))
 #endif
-#define __may_alias __attribute__((__may_alias__))
-#ifndef __printf_like
-#define __printf_like(f, a) __attribute__((format(printf, f, a)))
+#ifndef __PACKED
+#define __PACKED __attribute__((packed))
 #endif
-#define __used __attribute__((__used__))
-#ifndef __deprecated
-#define __deprecated __attribute__((deprecated))
+#ifndef __PACKED_STRUCT
+#define __PACKED_STRUCT __packed struct
 #endif
-#define ARG_UNUSED(x) (void)(x)
+#ifndef __PACKED_UNION
+#define __PACKED_UNION __packed union
+#endif
+#ifndef __ALIGNED
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#endif
+#elif defined(__GNUC__)
+#ifndef __USED
+#define __USED __attribute__((used))
+#endif
+#ifndef __WEAK
+#define __WEAK __attribute__((weak))
+#endif
+#ifndef __PACKED
+#define __PACKED __attribute__((packed, aligned(1)))
+#endif
+#ifndef __PACKED_STRUCT
+#define __PACKED_STRUCT struct __attribute__((packed, aligned(1)))
+#endif
+#ifndef __PACKED_UNION
+#define __PACKED_UNION union __attribute__((packed, aligned(1)))
+#endif
+#ifndef __ALIGNED
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#endif
+#elif defined(__ICCARM__)
+#ifndef __USED
+#if __ICCARM_V8
+#define __USED __attribute__((used))
+#else
+#define __USED _Pragma("__root")
+#endif
+#endif
 
-// #define likely(x)   __builtin_expect((bool)!!(x), true)
-// #define unlikely(x) __builtin_expect((bool)!!(x), false)
-
-#define popcount(x) __builtin_popcount(x)
-
-#ifndef __no_optimization
-#define __no_optimization __attribute__((optimize("-O0")))
+#ifndef __WEAK
+#if __ICCARM_V8
+#define __WEAK __attribute__((weak))
+#else
+#define __WEAK _Pragma("__weak")
+#endif
 #endif
 
-#ifndef __weak
-#define __weak __attribute__((__weak__))
+#ifndef __PACKED
+#if __ICCARM_V8
+#define __PACKED __attribute__((packed, aligned(1)))
+#else
+/* Needs IAR language extensions */
+#define __PACKED __packed
 #endif
-#define __unused __attribute__((__unused__))
+#endif
+
+#ifndef __PACKED_STRUCT
+#if __ICCARM_V8
+#define __PACKED_STRUCT struct __attribute__((packed, aligned(1)))
+#else
+/* Needs IAR language extensions */
+#define __PACKED_STRUCT __packed struct
+#endif
+#endif
+
+#ifndef __PACKED_UNION
+#if __ICCARM_V8
+#define __PACKED_UNION union __attribute__((packed, aligned(1)))
+#else
+/* Needs IAR language extensions */
+#define __PACKED_UNION __packed union
+#endif
+#endif
+
+#ifndef __ALIGNED
+#if __ICCARM_V8
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#elif (__VER__ >= 7080000)
+/* Needs IAR language extensions */
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#else
+#warning No compiler specific solution for __ALIGNED.__ALIGNED is ignored.
+#define __ALIGNED(x)
+#endif
+#endif
+
+#endif
 
 #ifndef __ALIGN_BEGIN
 #define __ALIGN_BEGIN
 #endif
 #ifndef __ALIGN_END
 #define __ALIGN_END __attribute__((aligned(4)))
+#endif
+
+#ifndef ARG_UNUSED
+#define ARG_UNUSED(x) (void)(x)
 #endif
 
 #ifndef LO_BYTE
@@ -133,17 +227,74 @@
 #define WBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF)
 #define DBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), ((x >> 24) & 0xFF)
 
-#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __used __aligned(1)
+#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __USED __ALIGNED(1)
 
-#if 0
-#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_DBG(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
-#else
-#define USBD_LOG_INFO(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_DBG(a, ...)
-#define USBD_LOG_WRN(a, ...) printf(a, ##__VA_ARGS__)
-#define USBD_LOG_ERR(a, ...) printf(a, ##__VA_ARGS__)
+/* DEBUG level */
+#define USB_DBG_ERROR   0
+#define USB_DBG_WARNING 1
+#define USB_DBG_INFO    2
+#define USB_DBG_LOG     3
+
+#ifndef USB_DBG_LEVEL
+#define USB_DBG_LEVEL USB_DBG_INFO
 #endif
+
+#ifndef USB_DBG_TAG
+#define USB_DBG_TAG "USB"
+#endif
+/*
+ * The color for terminal (foreground)
+ * BLACK    30
+ * RED      31
+ * GREEN    32
+ * YELLOW   33
+ * BLUE     34
+ * PURPLE   35
+ * CYAN     36
+ * WHITE    37
+ */
+#define _USB_DBG_COLOR(n) printf("\033[" #n "m")
+#define _USB_DBG_LOG_HDR(lvl_name, color_n) \
+    printf("\033[" #color_n "m[" lvl_name "/" USB_DBG_TAG "] ")
+#define _USB_DBG_LOG_X_END \
+    printf("\033[0m")
+
+#define usb_dbg_log_line(lvl, color_n, fmt, ...) \
+    do {                                         \
+        _USB_DBG_LOG_HDR(lvl, color_n);          \
+        printf(fmt, ##__VA_ARGS__);              \
+        _USB_DBG_LOG_X_END;                      \
+    } while (0)
+
+#if (USB_DBG_LEVEL >= USB_DBG_LOG)
+#define USB_LOG_DBG(fmt, ...) usb_dbg_log_line("D", 0, fmt, ##__VA_ARGS__)
+#else
+#define USB_LOG_DBG(...)
+#endif
+
+#if (USB_DBG_LEVEL >= USB_DBG_INFO)
+#define USB_LOG_INFO(fmt, ...) usb_dbg_log_line("I", 32, fmt, ##__VA_ARGS__)
+#else
+#define USB_LOG_INFO(...)
+#endif
+
+#if (USB_DBG_LEVEL >= USB_DBG_WARNING)
+#define USB_LOG_WRN(fmt, ...) usb_dbg_log_line("W", 33, fmt, ##__VA_ARGS__)
+#else
+#define USB_LOG_WRN(...)
+#endif
+
+#if (USB_DBG_LEVEL >= USB_DBG_ERROR)
+#define USB_LOG_ERR(fmt, ...) usb_dbg_log_line("E", 31, fmt, ##__VA_ARGS__)
+#else
+#define USB_LOG_ERR(...)
+#endif
+
+void usb_assert(const char *filename, int linenum);
+#define USB_ASSERT(f)                       \
+    do {                                    \
+        if (!(f))                           \
+            usb_assert(__FILE__, __LINE__); \
+    } while (0)
 
 #endif

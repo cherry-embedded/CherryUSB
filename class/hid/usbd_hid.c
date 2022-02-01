@@ -2,7 +2,7 @@
  * @file usbd_hid.c
  * @brief
  *
- * Copyright (c) 2021 Bouffalolab team
+ * Copyright (c) 2022 sakumisu
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -63,11 +63,11 @@ static void usbd_hid_reset(void)
 
 int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("HID Custom request: "
+    USB_LOG_DBG("HID Custom request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
-    if (REQTYPE_GET_DIR(setup->bmRequestType) == USB_REQUEST_DEVICE_TO_HOST &&
+    if (((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_IN) &&
         setup->bRequest == USB_REQUEST_GET_DESCRIPTOR) {
         uint8_t value = (uint8_t)(setup->wValue >> 8);
         uint8_t intf_num = (uint8_t)setup->wIndex;
@@ -90,19 +90,19 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
 
         switch (value) {
             case HID_DESCRIPTOR_TYPE_HID:
-                USBD_LOG_INFO("get HID Descriptor\r\n");
+                USB_LOG_INFO("get HID Descriptor\r\n");
                 *data = (uint8_t *)current_hid_intf->hid_descriptor;
                 *len = current_hid_intf->hid_descriptor[0];
                 break;
 
             case HID_DESCRIPTOR_TYPE_HID_REPORT:
-                USBD_LOG_INFO("get Report Descriptor\r\n");
+                USB_LOG_INFO("get Report Descriptor\r\n");
                 *data = (uint8_t *)current_hid_intf->hid_report_descriptor;
                 *len = current_hid_intf->hid_report_descriptor_len;
                 break;
 
             case HID_DESCRIPTOR_TYPE_HID_PHYSICAL:
-                USBD_LOG_INFO("get PHYSICAL Descriptor\r\n");
+                USB_LOG_INFO("get PHYSICAL Descriptor\r\n");
 
                 break;
 
@@ -118,7 +118,7 @@ int hid_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
 
 int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("HID Class request: "
+    USB_LOG_DBG("HID Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -141,14 +141,14 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
     switch (setup->bRequest) {
         case HID_REQUEST_GET_REPORT:
             if (current_hid_intf->get_report_callback)
-                current_hid_intf->report = current_hid_intf->get_report_callback(setup->wValueL, setup->wValueH); /*report id ,report type*/
+                current_hid_intf->report = current_hid_intf->get_report_callback(LO_BYTE(setup->wValue), HI_BYTE(setup->wValue)); /*report id ,report type*/
 
             *data = (uint8_t *)&current_hid_intf->report;
             *len = 1;
             break;
         case HID_REQUEST_GET_IDLE:
             if (current_hid_intf->get_idle_callback)
-                current_hid_intf->idle_state = current_hid_intf->get_idle_callback(setup->wValueL);
+                current_hid_intf->idle_state = current_hid_intf->get_idle_callback(LO_BYTE(setup->wValue));
 
             *data = (uint8_t *)&current_hid_intf->idle_state;
             *len = 1;
@@ -162,25 +162,25 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
             break;
         case HID_REQUEST_SET_REPORT:
             if (current_hid_intf->set_report_callback)
-                current_hid_intf->set_report_callback(setup->wValueL, setup->wValueH, *data, *len); /*report id ,report type,report,report len*/
+                current_hid_intf->set_report_callback(LO_BYTE(setup->wValue), HI_BYTE(setup->wValue), *data, *len); /*report id ,report type,report,report len*/
 
             current_hid_intf->report = **data;
             break;
         case HID_REQUEST_SET_IDLE:
             if (current_hid_intf->set_idle_callback)
-                current_hid_intf->set_idle_callback(setup->wValueL, setup->wIndexH); /*report id ,duration*/
+                current_hid_intf->set_idle_callback(LO_BYTE(setup->wValue), HI_BYTE(setup->wIndex)); /*report id ,duration*/
 
-            current_hid_intf->idle_state = setup->wIndexH;
+            current_hid_intf->idle_state = HI_BYTE(setup->wIndex);
             break;
         case HID_REQUEST_SET_PROTOCOL:
             if (current_hid_intf->set_protocol_callback)
-                current_hid_intf->set_protocol_callback(setup->wValueL); /*protocol*/
+                current_hid_intf->set_protocol_callback(LO_BYTE(setup->wValue)); /*protocol*/
 
-            current_hid_intf->protocol = setup->wValueL;
+            current_hid_intf->protocol = LO_BYTE(setup->wValue);
             break;
 
         default:
-            USBD_LOG_WRN("Unhandled HID Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled HID Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 
@@ -190,7 +190,7 @@ int hid_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
 static void hid_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
             usbd_hid_reset();
             break;
 
@@ -265,20 +265,20 @@ void usbd_hid_set_request_callback( uint8_t intf_num,
     }
 }
 
-void usbd_hid_add_interface(usbd_class_t *class, usbd_interface_t *intf)
+void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static usbd_class_t *last_class = NULL;
     static uint8_t hid_num = 0;
-    if (last_class != class) {
-        last_class = class;
-        usbd_class_register(class);
+    if (last_class != devclass) {
+        last_class = devclass;
+        usbd_class_register(devclass);
     }
 
     intf->class_handler = hid_class_request_handler;
     intf->custom_handler = hid_custom_request_handler;
     intf->vendor_handler = NULL;
     intf->notify_handler = hid_notify_handler;
-    usbd_class_add_interface(class, intf);
+    usbd_class_add_interface(devclass, intf);
 
     usbd_hid_cfg[hid_num].current_intf_num = intf->intf_num;
     usb_slist_add_tail(&usbd_hid_class_head, &usbd_hid_cfg[hid_num].list);

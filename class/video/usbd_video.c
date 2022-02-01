@@ -1,7 +1,7 @@
 /**
  * @file usbd_video.c
  *
- * Copyright (c) 2021 Bouffalolab team
+ * Copyright (c) 2022 sakumisu
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,7 +27,7 @@ extern struct video_probe_and_commit_controls commit;
 
 int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("Video Class request: "
+    USB_LOG_DBG("Video Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -90,7 +90,7 @@ int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             break;
 
         default:
-            USBD_LOG_WRN("Unhandled Video Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled Video Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 
@@ -100,15 +100,15 @@ int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
 void video_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
-        case USB_EVENT_RESET:
+        case USBD_EVENT_RESET:
 
             break;
 
-        case USB_EVENT_SOF:
+        case USBD_EVENT_SOF:
             usbd_video_sof_callback();
             break;
 
-        case USB_EVENT_SET_INTERFACE:
+        case USBD_EVENT_SET_INTERFACE:
             usbd_video_set_interface_callback(((uint8_t *)arg)[3]);
             break;
 
@@ -117,18 +117,18 @@ void video_notify_handler(uint8_t event, void *arg)
     }
 }
 
-void usbd_video_add_interface(usbd_class_t *class, usbd_interface_t *intf)
+void usbd_video_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static usbd_class_t *last_class = NULL;
 
-    if (last_class != class) {
-        last_class = class;
-        usbd_class_register(class);
+    if (last_class != devclass) {
+        last_class = devclass;
+        usbd_class_register(devclass);
     }
 
     intf->class_handler = video_class_request_handler;
     intf->custom_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = video_notify_handler;
-    usbd_class_add_interface(class, intf);
+    usbd_class_add_interface(devclass, intf);
 }

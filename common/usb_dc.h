@@ -1,7 +1,29 @@
+/**
+ * @file usb_dc.h
+ * @brief
+ *
+ * Copyright (c) 2022 sakumisu
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 #ifndef _USB_DC_H
 #define _USB_DC_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +47,13 @@ extern "C" {
 /** True if the endpoint is an OUT endpoint */
 #define USB_EP_DIR_IS_OUT(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT)
 
+/* Default USB control EP, always 0 and 0x80 */
+#define USB_CONTROL_OUT_EP0 0
+#define USB_CONTROL_IN_EP0  0x80
+
+/**< maximum packet size (MPS) for EP 0 */
+#define USB_CTRL_EP_MPS 64
+
 /**
  * USB endpoint Transfer Type mask.
  */
@@ -33,32 +62,6 @@ extern "C" {
 #define USBD_EP_TYPE_BULK 2
 #define USBD_EP_TYPE_INTR 3
 #define USBD_EP_TYPE_MASK 3
-
-/* Default USB control EP, always 0 and 0x80 */
-#define USB_CONTROL_OUT_EP0 0
-#define USB_CONTROL_IN_EP0  0x80
-
-/**
- * @brief USB Device Controller API
- * @defgroup _usb_device_controller_api USB Device Controller API
- * @{
- */
-/**< maximum packet size (MPS) for EP 0 */
-#define USB_CTRL_EP_MPS 64
-
-/**
- * @brief USB Endpoint Transfer Type
- */
-enum usb_dc_ep_transfer_type {
-    /** Control type endpoint */
-    USB_DC_EP_CONTROL = 0,
-    /** Isochronous type endpoint */
-    USB_DC_EP_ISOCHRONOUS,
-    /** Bulk type endpoint */
-    USB_DC_EP_BULK,
-    /** Interrupt type endpoint  */
-    USB_DC_EP_INTERRUPT
-};
 
 /**
  * @brief USB Endpoint Configuration.
@@ -72,12 +75,12 @@ struct usbd_endpoint_cfg {
      *       OUT EP = 0x00 | \<endpoint number\>
      */
     uint8_t ep_addr;
-    /** Endpoint max packet size */
-    uint16_t ep_mps;
     /** Endpoint Transfer Type.
      * May be Bulk, Interrupt, Control or Isochronous
      */
-    enum usb_dc_ep_transfer_type ep_type;
+    uint8_t ep_type;
+    /** Endpoint max packet size */
+    uint16_t ep_mps;
 };
 
 /**

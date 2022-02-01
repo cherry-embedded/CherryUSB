@@ -1,7 +1,7 @@
 /**
  * @file usbd_core.h
  *
- * Copyright (c) 2021 Bouffalolab team
+ * Copyright (c) 2022 sakumisu
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -30,46 +30,46 @@ extern "C" {
 #include "usb_def.h"
 #include "usb_dc.h"
 
-enum usb_event_type {
+enum usbd_event_type {
     /** USB error reported by the controller */
-    USB_EVENT_ERROR,
+    USBD_EVENT_ERROR,
     /** USB reset */
-    USB_EVENT_RESET,
+    USBD_EVENT_RESET,
     /** Start of Frame received */
-    USB_EVENT_SOF,
+    USBD_EVENT_SOF,
     /** USB connection established, hardware enumeration is completed */
-    USB_EVENT_CONNECTED,
+    USBD_EVENT_CONNECTED,
     /** USB configuration done */
-    USB_EVENT_CONFIGURED,
+    USBD_EVENT_CONFIGURED,
     /** USB connection suspended by the HOST */
-    USB_EVENT_SUSPEND,
+    USBD_EVENT_SUSPEND,
     /** USB connection lost */
-    USB_EVENT_DISCONNECTED,
+    USBD_EVENT_DISCONNECTED,
     /** USB connection resumed by the HOST */
-    USB_EVENT_RESUME,
+    USBD_EVENT_RESUME,
 
     /** USB interface selected */
-    USB_EVENT_SET_INTERFACE,
+    USBD_EVENT_SET_INTERFACE,
     /** USB interface selected */
-    USB_EVENT_SET_REMOTE_WAKEUP,
+    USBD_EVENT_SET_REMOTE_WAKEUP,
     /** USB interface selected */
-    USB_EVENT_CLEAR_REMOTE_WAKEUP,
+    USBD_EVENT_CLEAR_REMOTE_WAKEUP,
     /** Set Feature ENDPOINT_HALT received */
-    USB_EVENT_SET_HALT,
+    USBD_EVENT_SET_HALT,
     /** Clear Feature ENDPOINT_HALT received */
-    USB_EVENT_CLEAR_HALT,
+    USBD_EVENT_CLEAR_HALT,
     /** setup packet received */
-    USB_EVENT_SETUP_NOTIFY,
+    USBD_EVENT_SETUP_NOTIFY,
     /** ep0 in packet received */
-    USB_EVENT_EP0_IN_NOTIFY,
+    USBD_EVENT_EP0_IN_NOTIFY,
     /** ep0 out packet received */
-    USB_EVENT_EP0_OUT_NOTIFY,
+    USBD_EVENT_EP0_OUT_NOTIFY,
     /** ep in packet except ep0 received */
-    USB_EVENT_EP_IN_NOTIFY,
+    USBD_EVENT_EP_IN_NOTIFY,
     /** ep out packet except ep0 received */
-    USB_EVENT_EP_OUT_NOTIFY,
+    USBD_EVENT_EP_OUT_NOTIFY,
     /** Initial USB connection status */
-    USB_EVENT_UNKNOWN
+    USBD_EVENT_UNKNOWN
 };
 
 /**
@@ -102,7 +102,7 @@ typedef struct usbd_endpoint {
 
 typedef struct usbd_interface {
     usb_slist_t list;
-    /** Handler for USB Class specific Control (EP 0) communications */
+    /** Handler for USB Class specific commands*/
     usbd_request_handler class_handler;
     /** Handler for USB Vendor specific commands */
     usbd_request_handler vendor_handler;
@@ -123,11 +123,11 @@ typedef struct usbd_class {
 void usbd_event_notify_handler(uint8_t event, void *arg);
 
 void usbd_desc_register(const uint8_t *desc);
-void usbd_class_register(usbd_class_t *class);
+void usbd_class_register(usbd_class_t *devclass);
 void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);
 void usbd_msosv2_desc_register(struct usb_msosv2_descriptor *desc);
 void usbd_bos_desc_register(struct usb_bos_descriptor *desc);
-void usbd_class_add_interface(usbd_class_t *class, usbd_interface_t *intf);
+void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep);
 bool usb_device_is_configured(void);
 

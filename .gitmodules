@@ -1,0 +1,3 @@
+[submodule "tools/chryusb_configurator"]
+	path = tools/chryusb_configurator
+	url = https://github.com/Egahp/chryusb_configurator.git
