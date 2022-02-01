@@ -118,17 +118,3 @@ More of USB Host API reference, please visit: [USB Host API](docs/usb_host.md)
 ## How To Use In RT-Thread package
 
 How to use in RT-Thread package, please visit：[RT-Thread package Userguide with usb stack](docs/rt-thread.md)
-
-## USB Reference Manual
-
-- USB2.0 spec: <https://www.usb.org/document-library/usb-20-specification>
-- CDC: <https://www.usb.org/document-library/class-definitions-communication-devices-12>
-- MSC: <https://www.usb.org/document-library/mass-storage-class-specification-overview-14>
-     <https://www.usb.org/document-library/mass-storage-bulk-only-10>
-- HID: <https://www.usb.org/document-library/device-class-definition-hid-111>
-       <https://www.usb.org/document-library/hid-usage-tables-122>
-- AUDIO: <https://www.usb.org/document-library/audiovideo-device-class-v10-spec-and-adopters-agreement>
-        <https://www.usb.org/document-library/audio-data-formats-10>
-- VIDEO: <https://www.usb.org/document-library/video-class-v11-document-set>
-- TMC: <https://www.usb.org/document-library/test-measurement-class-specification>
-- DFU: <https://www.st.com/resource/zh/application_note/cd00264379-usb-dfu-protocol-used-in-the-stm32-bootloader-stmicroelectronics.pdf>
