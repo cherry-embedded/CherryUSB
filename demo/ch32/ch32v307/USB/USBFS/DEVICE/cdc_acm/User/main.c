@@ -155,23 +155,19 @@ void usb_dc_low_level_init(void)
     RCC_USBHSConfig(RCC_USBPLL_Div2);
     RCC_USBHSPLLCKREFCLKConfig(RCC_USBHSPLLCKREFCLK_4M);
     RCC_USBHSPHYPLLALIVEcmd(ENABLE);
+#ifdef CONFIG_USB_HS
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_USBHS, ENABLE);
+#else
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_OTG_FS, ENABLE);
+#endif
 
     Delay_Us(100);
-
-    EXTEN->EXTEN_CTR |= EXTEN_USBD_PU_EN;
-
-    GPIO_InitTypeDef GPIO_InitTypdefStruct = { 0 };
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-    GPIO_InitTypdefStruct.GPIO_Pin = GPIO_Pin_15;
-    GPIO_InitTypdefStruct.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_InitTypdefStruct.GPIO_Speed = GPIO_Speed_50MHz;
-
-    GPIO_Init(GPIOB, &GPIO_InitTypdefStruct);
-
+#ifndef CONFIG_USB_HS
+    //EXTEN->EXTEN_CTR |= EXTEN_USBD_PU_EN;
     NVIC_EnableIRQ(OTG_FS_IRQn);
+#else
+    NVIC_EnableIRQ( USBHS_IRQn );
+#endif
 }
 
 volatile uint8_t dtr_enable = 0;
