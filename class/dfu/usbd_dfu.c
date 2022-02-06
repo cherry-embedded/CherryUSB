@@ -30,7 +30,7 @@ struct dfu_cfg_private {
 
 int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    USBD_LOG_DBG("DFU Class request: "
+    USB_LOG_WRN("DFU Class request: "
                  "bRequest 0x%02x\r\n",
                  setup->bRequest);
 
@@ -50,7 +50,7 @@ int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
         case DFU_REQUEST_ABORT:
             break;
         default:
-            USBD_LOG_WRN("Unhandled DFU Class bRequest 0x%02x\r\n", setup->bRequest);
+            USB_LOG_WRN("Unhandled DFU Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 
@@ -82,5 +82,6 @@ void usbd_dfu_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
     intf->custom_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = dfu_notify_handler;
+
     usbd_class_add_interface(devclass, intf);
 }
