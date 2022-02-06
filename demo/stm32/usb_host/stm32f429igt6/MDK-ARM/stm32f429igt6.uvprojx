@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS</Define>
+              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS_IN_FULL</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32F4xx/Include; ../Drivers/CMSIS/Include; ..\FreeRTOS\include; ..\FreeRTOS\portable\GCC\ARM_CM4F; ..\..\..\..\..\common; ..\..\..\..\..\core; ..\..\..\..\..\class\cdc; ..\..\..\..\..\class\hub; ..\..\..\..\..\class\hid; ..\..\..\..\..\class\msc; ..\..\..\..\..\osal</IncludePath>
+              <IncludePath>../Core/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;  ../Drivers/CMSIS/Include;  ..\FreeRTOS\include;  ..\FreeRTOS\portable\GCC\ARM_CM4F;  ..\..\..\..\..\common;  ..\..\..\..\..\core;  ..\..\..\..\..\class\cdc;  ..\..\..\..\..\class\hub;  ..\..\..\..\..\class\hid;  ..\..\..\..\..\class\msc;  ..\..\..\..\..\osal</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -395,6 +395,11 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
+              <FileName>FreeRTOSConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\FreeRTOSConfig.h</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -408,11 +413,6 @@
               <FileName>stm32f4xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>FreeRTOSConfig.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Core\Inc\FreeRTOSConfig.h</FilePath>
             </File>
           </Files>
         </Group>
