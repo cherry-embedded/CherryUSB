@@ -27,7 +27,7 @@
 
 static uint32_t g_devinuse = 0;
 
-void usbh_cdc_acm_callback(void *arg, ssize_t nbytes);
+void usbh_cdc_acm_callback(void *arg, int nbytes);
 
 /****************************************************************************
  * Name: usbh_cdc_acm_devno_alloc
@@ -316,7 +316,7 @@ int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-void usb_cdc_acm_callback(void *arg, ssize_t result)
+void usb_cdc_acm_callback(void *arg, int result)
 {
     printf("result:%d\r\n", result);
 }

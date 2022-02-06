@@ -161,7 +161,7 @@ int usbh_hid_get_idle(struct usbh_hubport *hport, uint8_t intf, uint8_t *buffer)
 
 USB_NOCACHE_RAM_SECTION uint8_t report_buffer[128];
 
-void usbh_hid_callback(void *arg, ssize_t nbytes)
+void usbh_hid_callback(void *arg, int nbytes)
 {
     printf("nbytes:%d\r\n", nbytes);
 }

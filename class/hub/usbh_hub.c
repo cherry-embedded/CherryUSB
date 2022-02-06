@@ -35,7 +35,7 @@ extern void usbh_external_hport_disconnect(struct usbh_hubport *hport);
 extern void usbh_hport_activate(struct usbh_hubport *hport);
 extern void usbh_hport_deactivate(struct usbh_hubport *hport);
 
-static void usbh_external_hub_callback(void *arg, ssize_t nbytes);
+static void usbh_external_hub_callback(void *arg, int nbytes);
 
 static inline void usbh_hub_register(struct usbh_hub *hub)
 {
@@ -468,7 +468,7 @@ static void usbh_extern_hub_psc_event(void *arg)
     usb_osal_leave_critical_section(flags);
 }
 
-static void usbh_external_hub_callback(void *arg, ssize_t nbytes)
+static void usbh_external_hub_callback(void *arg, int nbytes)
 {
     struct usbh_hub *hub_class = (struct usbh_hub *)arg;
     uint32_t delay = 0;
