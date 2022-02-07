@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS_IN_FULL</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;  ../Drivers/CMSIS/Include;  ..\FreeRTOS\include;  ..\FreeRTOS\portable\GCC\ARM_CM4F;  ..\..\..\..\..\common;  ..\..\..\..\..\core;  ..\..\..\..\..\class\cdc;  ..\..\..\..\..\class\hub;  ..\..\..\..\..\class\hid;  ..\..\..\..\..\class\msc;  ..\..\..\..\..\osal</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hub;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -527,42 +527,42 @@
             <File>
               <FileName>croutine.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\croutine.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\croutine.c</FilePath>
             </File>
             <File>
               <FileName>event_groups.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\event_groups.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\event_groups.c</FilePath>
             </File>
             <File>
               <FileName>list.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\list.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\list.c</FilePath>
             </File>
             <File>
               <FileName>queue.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\queue.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\queue.c</FilePath>
             </File>
             <File>
               <FileName>tasks.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\tasks.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\tasks.c</FilePath>
             </File>
             <File>
               <FileName>timers.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\timers.c</FilePath>
-            </File>
-            <File>
-              <FileName>port.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\portable\GCC\ARM_CM4F\port.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\timers.c</FilePath>
             </File>
             <File>
               <FileName>heap_4.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FreeRTOS\portable\MemMang\heap_4.c</FilePath>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\portable\MemMang\heap_4.c</FilePath>
+            </File>
+            <File>
+              <FileName>port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F\port.c</FilePath>
             </File>
           </Files>
         </Group>
