@@ -104,6 +104,25 @@ static void usb_synopsys_chan_free(struct usb_synopsys_priv *priv, int chidx)
 }
 
 /****************************************************************************
+ * Name: usb_synopsys_chan_freeall
+ *
+ * Description:
+ *   Free all channels.
+ *
+ ****************************************************************************/
+
+static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
+{
+    uint8_t chidx;
+
+    /* Free all host channels */
+
+    for (chidx = 2; chidx < CONFIG_USBHOST_CHANNELS; chidx++) {
+        usb_synopsys_chan_free(priv, chidx);
+    }
+}
+
+/****************************************************************************
  * Name: usb_synopsys_chan_waitsetup
  *
  * Description:
@@ -407,10 +426,24 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     usb_osal_mutex_give(g_usbhost.exclsem);
     return 0;
 }
+
 int usbh_ep_free(usbh_epinfo_t ep)
 {
-    uint8_t chidx = (uint8_t)ep;
-    usb_synopsys_chan_free(&g_usbhost, chidx);
+    int ret;
+
+    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    if (ret < 0) {
+        return ret;
+    }
+    if ((uintptr_t)ep < CONFIG_USBHOST_CHANNELS) {
+        usb_synopsys_chan_free(&g_usbhost, (int)ep);
+    } else {
+        struct usb_synopsys_ctrlinfo *ep0 = (struct usb_synopsys_ctrlinfo *)ep;
+        usb_synopsys_chan_free(&g_usbhost, ep0->inndx);
+        usb_synopsys_chan_free(&g_usbhost, ep0->outndx);
+    }
+
+    usb_osal_mutex_give(g_usbhost.exclsem);
     return 0;
 }
 
@@ -679,16 +712,13 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     return 0;
 }
 
-void HAL_Delay(uint32_t Delay)
-{
-    usb_osal_msleep(Delay);
-}
-
 void HAL_HCD_Connect_Callback(HCD_HandleTypeDef *hhcd)
 {
-    g_usbhost.connected = true;
-    extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-    usbh_event_notify_handler(USBH_EVENT_ATTACHED, 1);
+    if (!g_usbhost.connected) {
+        g_usbhost.connected = true;
+        extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
+        usbh_event_notify_handler(USBH_EVENT_ATTACHED, 1);
+    }
 }
 
 /**
@@ -698,9 +728,12 @@ void HAL_HCD_Connect_Callback(HCD_HandleTypeDef *hhcd)
   */
 void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
 {
-    g_usbhost.connected = false;
-    extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-    usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
+    if (g_usbhost.connected) {
+        g_usbhost.connected = false;
+        usb_synopsys_chan_freeall(&g_usbhost);
+        extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
+        usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
+    }
 }
 
 void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum, HCD_URBStateTypeDef urb_state)
@@ -713,7 +746,6 @@ void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum,
         if (urb_state != URB_NOTREADY) {
             if (urb_state == URB_ERROR) {
                 chan->result = -EIO;
-                HAL_HCD_HC_Halt(hhcd, chnum);
             } else if (urb_state == URB_STALL) {
                 chan->result = -EPERM;
             } else if (urb_state == URB_DONE) {
@@ -746,4 +778,9 @@ void USBH_IRQHandler(void)
     /* USER CODE BEGIN OTG_HS_IRQn 1 */
 
     /* USER CODE END OTG_HS_IRQn 1 */
+}
+
+void HAL_Delay(uint32_t Delay)
+{
+    usb_osal_msleep(Delay);
 }
