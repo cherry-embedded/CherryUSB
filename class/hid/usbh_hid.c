@@ -175,7 +175,8 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_hid *hid_class = usb_malloc(sizeof(struct usbh_hid));
     if (hid_class == NULL) {
-        return -1;
+        USB_LOG_ERR("Fail to alloc hid_class\r\n");
+        return -ENOMEM;
     }
     memset(hid_class, 0, sizeof(struct usbh_hid));
 
@@ -185,6 +186,10 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     hport->config.intf[intf].priv = hid_class;
 
     hid_class->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
+    if (hid_class->setup == NULL) {
+        USB_LOG_ERR("Fail to alloc setup\r\n");
+        return -ENOMEM;
+    }
     hid_class->intf = intf;
 
     ret = usbh_hid_set_idle(hport, intf, 0, 0);

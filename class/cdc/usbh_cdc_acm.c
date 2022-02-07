@@ -180,6 +180,7 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_cdc_acm *cdc_acm_class = usb_malloc(sizeof(struct usbh_cdc_acm));
     if (cdc_acm_class == NULL) {
+        USB_LOG_ERR("Fail to alloc cdc_acm_class\r\n");
         return -ENOMEM;
     }
 
@@ -192,8 +193,15 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     hport->config.intf[intf + 1].priv = cdc_acm_class;
 
     cdc_acm_class->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
+    if (cdc_acm_class->setup == NULL) {
+        USB_LOG_ERR("Fail to alloc setup\r\n");
+        return -ENOMEM;
+    }
     cdc_acm_class->linecoding = usb_iomalloc(sizeof(struct cdc_line_coding));
-
+    if (cdc_acm_class->linecoding == NULL) {
+        USB_LOG_ERR("Fail to alloc linecoding\r\n");
+        return -ENOMEM;
+    }
     cdc_acm_class->ctrl_intf = intf;
     cdc_acm_class->data_intf = intf + 1;
 
@@ -316,7 +324,7 @@ int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-void usb_cdc_acm_callback(void *arg, int result)
+void usbh_cdc_acm_callback(void *arg, int result)
 {
     printf("result:%d\r\n", result);
 }

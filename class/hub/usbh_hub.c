@@ -215,11 +215,20 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     hub_class = usb_malloc(sizeof(struct usbh_hub));
     if (hub_class == NULL) {
-        return -1;
+        USB_LOG_ERR("Fail to alloc hub_class\r\n");
+        return -ENOMEM;
     }
     memset(hub_class, 0, sizeof(struct usbh_hub));
     hub_class->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
+    if (hub_class->setup == NULL) {
+        USB_LOG_ERR("Fail to alloc setup\r\n");
+        return -ENOMEM;
+    }
     hub_class->port_status = usb_iomalloc(sizeof(struct hub_port_status));
+    if (hub_class->port_status == NULL) {
+        USB_LOG_ERR("Fail to alloc port_status\r\n");
+        return -ENOMEM;
+    }
 
     hub_desc_buffer = usb_iomalloc(32);
 
