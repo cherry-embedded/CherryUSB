@@ -21,6 +21,7 @@
  *
  */
 #ifndef _USB_MEM_H
+#define _USB_MEM_H
 
 #define DCACHE_LINE_SIZE 32
 #define DCACHE_LINEMASK (DCACHE_LINE_SIZE -1)
