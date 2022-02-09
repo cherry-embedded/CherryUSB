@@ -2192,10 +2192,11 @@ int usb_hc_init(void)
     usb_ehci_putreg(regval, &HCOR->usbcmd);
 
     /* Route all ports to this host controller by setting the CONFIG flag. */
-    // regval = usb_ehci_getreg(&HCOR->configflag);
-    // regval |= EHCI_CONFIGFLAG;
-    // usb_ehci_putreg(regval, &HCOR->configflag);
-
+#ifdef CONFIG_USB_EHCI_CONFIGFLAG
+    regval = usb_ehci_getreg(&HCOR->configflag);
+    regval |= EHCI_CONFIGFLAG;
+    usb_ehci_putreg(regval, &HCOR->configflag);
+#endif
     /* Wait for the EHCI to run (i.e., no longer report halted) */
     ret = usb_ehci_wait_usbsts(EHCI_USBSTS_HALTED, 0, 100 * 1000);
     if (ret < 0) {
@@ -2210,6 +2211,52 @@ int usb_hc_init(void)
 
     usb_ehci_last_hw_init();
     return ret;
+}
+
+int usbh_reset_port(const uint8_t port)
+{
+    uint32_t timeout = 0;
+    uint32_t regval;
+    regval = usb_ehci_getreg(&HCOR->portsc[port - 1]);
+    regval &= ~EHCI_PORTSC_PE;
+    regval |= EHCI_PORTSC_RESET;
+    usb_ehci_putreg(regval, &HCOR->portsc[port - 1]);
+
+    usb_osal_msleep(55);
+
+    regval = usb_ehci_getreg(&HCOR->portsc[port - 1]);
+    regval &= ~EHCI_PORTSC_RESET;
+    usb_ehci_putreg(regval, &HCOR->portsc[port - 1]);
+
+    /* Wait for the port reset to complete
+    *
+    * Paragraph 2.3.9:
+    *
+    *  "Note that when software writes a zero to this bit there may be a
+    *   delay before the bit status changes to a zero. The bit status will
+    *   not read as a zero until after the reset has completed. If the port
+    *   is in high-speed mode after reset is complete, the host controller
+    *   will automatically enable this port (e.g. set the Port Enable bit
+    *   to a one). A host controller must terminate the reset and stabilize
+    *   the state of the port within 2 milliseconds of software transitioning
+    *   this bit from a one to a zero ..."
+    */
+
+    while ((usb_ehci_getreg(&HCOR->portsc[port - 1]) & EHCI_PORTSC_RESET) != 0) {
+        usb_osal_msleep(1);
+        timeout++;
+        if (timeout > 100) {
+            return -ETIMEDOUT;
+        }
+    }
+
+    return 0;
+}
+
+__WEAK uint8_t usbh_get_port_speed(const uint8_t port)
+{
+    /* Defined by individual manufacturers */
+    return 0;
 }
 
 int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)

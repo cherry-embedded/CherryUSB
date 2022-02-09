@@ -872,7 +872,9 @@ struct ehci_hcor_s
   uint32_t ctrldssegment;    /* 0x10: 4G Segment Selector */
   uint32_t periodiclistbase; /* 0x14: Frame List Base Address */
   uint32_t asynclistaddr;    /* 0x18: Next Asynchronous List Address */
-  // uint32_t reserved[9];
+#ifdef CONFIG_USB_ECHI_HCOR_RESERVED
+  uint32_t reserved[9];
+#endif
   uint32_t configflag;       /* 0x40: Configured Flag Register */
   uint32_t portsc[15];       /* 0x44: Port Status/Control */
 };

@@ -78,7 +78,7 @@ int usbh_reset_port(const uint8_t port);
  * @brief get roothub port speed
  *
  * @param port port index
- * @return return 0 means USB_SPEED_LOW, 1 means USB_SPEED_FULL and 2 means USB_SPEED_HIGH.
+ * @return return 1 means USB_SPEED_LOW, 2 means USB_SPEED_FULL and 3 means USB_SPEED_HIGH.
  */
 uint8_t usbh_get_port_speed(const uint8_t port);
 
