@@ -1,5 +1,6 @@
 /**
  * @file usbh_msc.c
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -21,7 +22,7 @@
  */
 #include "usbh_core.h"
 #include "usbh_msc.h"
-#include "scsi.h"
+#include "usb_scsi.h"
 
 #define DEV_FORMAT  "/dev/sd%c"
 #define DEV_NAMELEN 16
@@ -176,7 +177,7 @@ static inline int usbh_msc_scsi_requestsense(struct usbh_msc *msc_class)
     cbw->bmFlags = 0x80;
     cbw->bCBLength = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
     cbw->dDataLength = SCSICMD_REQUESTSENSE_SIZEOF;
-    cbw->CB[0] = SCSI_REQUEST_SENSE;
+    cbw->CB[0] = SCSI_CMD_REQUESTSENSE;
     cbw->CB[4] = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
     /* Send the CBW */
     nbytes = usbh_ep_bulk_transfer(msc_class->bulkout, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW);
@@ -207,7 +208,7 @@ static inline int usbh_msc_scsi_inquiry(struct usbh_msc *msc_class)
     cbw->dDataLength = SCSIRESP_INQUIRY_SIZEOF;
     cbw->bmFlags = 0x80;
     cbw->bCBLength = SCSICMD_INQUIRY_SIZEOF;
-    cbw->CB[0] = SCSI_INQUIRY;
+    cbw->CB[0] = SCSI_CMD_INQUIRY;
     cbw->CB[4] = SCSIRESP_INQUIRY_SIZEOF;
 
     /* Send the CBW */
@@ -239,7 +240,7 @@ static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
     cbw->dDataLength = SCSIRESP_READCAPACITY10_SIZEOF;
     cbw->bmFlags = 0x80;
     cbw->bCBLength = SCSICMD_READCAPACITY10_SIZEOF;
-    cbw->CB[0] = SCSI_READ_CAPACITY10;
+    cbw->CB[0] = SCSI_CMD_READCAPACITY10;
 
     /* Send the CBW */
     nbytes = usbh_ep_bulk_transfer(msc_class->bulkout, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW);
@@ -274,7 +275,7 @@ int usbh_msc_mem_write(struct usbh_msc *msc_class, uint32_t sector, const uint8_
 
     cbw->dDataLength = (msc_class->blocksize * nsectors);
     cbw->bCBLength = SCSICMD_WRITE10_SIZEOF;
-    cbw->CB[0] = SCSI_WRITE10;
+    cbw->CB[0] = SCSI_CMD_WRITE10;
 
     SET_BE24(&cbw->CB[2], sector);
     SET_BE24(&cbw->CB[7], nsectors);
@@ -308,7 +309,7 @@ int usbh_msc_mem_read(struct usbh_msc *msc_class, uint32_t sector, const uint8_t
     cbw->dDataLength = (msc_class->blocksize * nsectors);
     cbw->bmFlags = 0x80;
     cbw->bCBLength = SCSICMD_READ10_SIZEOF;
-    cbw->CB[0] = SCSI_READ10;
+    cbw->CB[0] = SCSI_CMD_READ10;
 
     SET_BE24(&cbw->CB[2], sector);
     SET_BE24(&cbw->CB[7], nsectors);
