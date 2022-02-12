@@ -24,11 +24,11 @@
 #include "usbd_dfu.h"
 
 /* Device data structure */
-struct dfu_cfg_private {
+struct dfu_cfg_priv {
     struct dfu_info info;
 } usbd_dfu_cfg;
 
-int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_WRN("DFU Class request: "
                  "bRequest 0x%02x\r\n",
@@ -57,7 +57,7 @@ int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, ui
     return 0;
 }
 
-void dfu_notify_handler(uint8_t event, void *arg)
+static void dfu_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:

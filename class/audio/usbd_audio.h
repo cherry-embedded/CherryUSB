@@ -29,17 +29,13 @@
 extern "C" {
 #endif
 
-struct usbd_audio_control_info {
-    uint16_t vol_min;
-    uint16_t vol_max;
-    uint16_t vol_res;
-    uint16_t vol_current;
-    uint8_t mute;
-};
-
 void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
-void usbd_audio_set_interface_callback(uint8_t value);
+
+void usbd_audio_set_mute(uint8_t mute);
 void usbd_audio_set_volume(uint8_t vol);
+void usbd_audio_sof_callback(void);
+void usbd_audio_set_interface_callback(uint8_t value);
+
 #ifdef __cplusplus
 }
 #endif

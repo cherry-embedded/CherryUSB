@@ -47,7 +47,7 @@ enum Stage {
 };
 
 /* Device data structure */
-struct usbd_msc_cfg_private {
+struct usbd_msc_cfg_priv {
     /* state of the bulk-only state machine */
     enum Stage stage;
     struct CBW cbw;

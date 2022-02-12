@@ -23,13 +23,19 @@
 #include "usbd_core.h"
 #include "usbd_audio.h"
 
-struct usbd_audio_control_info audio_control_info = { 0xdb00, 0x0000, 0x0100, 0xf600, 0 };
+struct usbd_audio_control_info {
+    uint16_t vol_min;
+    uint16_t vol_max;
+    uint16_t vol_res;
+    uint16_t vol_current;
+    uint8_t mute;
+} audio_control_info = { 0xdb00, 0x0000, 0x0100, 0xf600, 0 };
 
-int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("AUDIO Class request: "
-                 "bRequest 0x%02x\r\n",
-                 setup->bRequest);
+                "bRequest 0x%02x\r\n",
+                setup->bRequest);
 
     switch (setup->bRequest) {
         case AUDIO_REQUEST_SET_CUR:
@@ -37,6 +43,7 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
             if (LO_BYTE(setup->wValue) == 0x01) {
                 if (HI_BYTE(setup->wValue) == AUDIO_FU_CONTROL_MUTE) {
                     memcpy(&audio_control_info.mute, *data, *len);
+                    usbd_audio_set_mute(audio_control_info.mute);
                 } else if (HI_BYTE(setup->wValue) == AUDIO_FU_CONTROL_VOLUME) {
                     memcpy(&audio_control_info.vol_current, *data, *len);
                     int vol;
@@ -96,7 +103,7 @@ int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, 
     return 0;
 }
 
-void audio_notify_handler(uint8_t event, void *arg)
+static void audio_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -104,10 +111,12 @@ void audio_notify_handler(uint8_t event, void *arg)
             break;
 
         case USBD_EVENT_SOF:
+            usbd_audio_sof_callback();
             break;
 
         case USBD_EVENT_SET_INTERFACE:
-            usbd_audio_set_interface_callback(((uint8_t *)arg)[3]);
+            struct usb_interface_descriptor *intf = (struct usb_interface_descriptor *)arg;
+            usbd_audio_set_interface_callback(intf->bAlternateSetting);
             break;
 
         default:
@@ -132,5 +141,13 @@ void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 }
 
 __WEAK void usbd_audio_set_volume(uint8_t vol)
+{
+}
+
+__WEAK void usbd_audio_set_mute(uint8_t mute)
+{
+}
+
+__WEAK void usbd_audio_sof_callback(void)
 {
 }

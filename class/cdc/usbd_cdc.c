@@ -27,7 +27,7 @@ const char *stop_name[] = { "1", "1.5", "2" };
 const char *parity_name[] = { "N", "O", "E", "M", "S" };
 
 /* Device data structure */
-struct cdc_acm_cfg_private {
+struct cdc_acm_cfg_priv {
     /* CDC ACM line coding properties. LE order */
     struct cdc_line_coding line_coding;
     /* CDC ACM line state bitmap, DTE side */
@@ -144,16 +144,6 @@ static void cdc_notify_handler(uint8_t event, void *arg)
     }
 }
 
-__WEAK void usbd_cdc_acm_set_line_coding(uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits)
-{
-}
-__WEAK void usbd_cdc_acm_set_dtr(bool dtr)
-{
-}
-__WEAK void usbd_cdc_acm_set_rts(bool rts)
-{
-}
-
 void usbd_cdc_add_acm_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static usbd_class_t *last_class = NULL;
@@ -168,4 +158,14 @@ void usbd_cdc_add_acm_interface(usbd_class_t *devclass, usbd_interface_t *intf)
     intf->vendor_handler = NULL;
     intf->notify_handler = cdc_notify_handler;
     usbd_class_add_interface(devclass, intf);
+}
+
+__WEAK void usbd_cdc_acm_set_line_coding(uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits)
+{
+}
+__WEAK void usbd_cdc_acm_set_dtr(bool dtr)
+{
+}
+__WEAK void usbd_cdc_acm_set_rts(bool rts)
+{
 }

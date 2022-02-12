@@ -34,7 +34,7 @@ static struct usb_hub_descriptor hub_desc = {
     .PortPwrCtrlMask = 0xff
 };
 
-int hub_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int hub_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USBD_LOG_DBG("HUB Class Custom request: "
                  "bRequest 0x%02x\r\n",
@@ -78,7 +78,7 @@ int hub_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, u
     return -1;
 }
 
-void hub_notify_handler(uint8_t event, void *arg)
+static void hub_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:

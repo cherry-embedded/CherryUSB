@@ -34,15 +34,15 @@ void usbd_hid_report_descriptor_register(uint8_t intf_num, const uint8_t *desc, 
 void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 void usbd_hid_reset_state(void);
 void usbd_hid_send_report(uint8_t ep, uint8_t *data, uint8_t len);
-// clang-format off
-void usbd_hid_set_request_callback( uint8_t intf_num,
-                                    uint8_t (*get_report_callback)(uint8_t report_id, uint8_t report_type),
-                                    void (*set_report_callback)(uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len),
-                                    uint8_t (*get_idle_callback)(uint8_t report_id),
-                                    void (*set_idle_callback)(uint8_t report_id, uint8_t duration),
-                                    void (*set_protocol_callback)(uint8_t protocol),
-                                    uint8_t (*get_protocol_callback)(void));
-// clang-format on
+
+void usbd_hid_set_request_callback(uint8_t intf_num,
+                                   uint8_t (*get_report_callback)(uint8_t report_id, uint8_t report_type),
+                                   void (*set_report_callback)(uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len),
+                                   uint8_t (*get_idle_callback)(uint8_t report_id),
+                                   void (*set_idle_callback)(uint8_t report_id, uint8_t duration),
+                                   void (*set_protocol_callback)(uint8_t protocol),
+                                   uint8_t (*get_protocol_callback)(void));
+
 #ifdef __cplusplus
 }
 #endif
