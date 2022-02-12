@@ -154,7 +154,7 @@
 #define VIDEO_EU_PEAK_BIT_RATE_CONTROL       0x09U
 #define VIDEO_EU_QUANTIZATION_PARAMS_CONTROL 0x0AU
 #define VIDEO_EU_SYNC_REF_FRAME_CONTROL      0x0BU
-#define VIDEO_EU_LTR_BUFFER_                 CONTROL0x0CU
+#define VIDEO_EU_LTR_BUFFER_CONTROL          0x0CU
 #define VIDEO_EU_LTR_PICTURE_CONTROL         0x0DU
 #define VIDEO_EU_LTR_VALIDATION_CONTROL      0x0EU
 #define VIDEO_EU_LEVEL_IDC_LIMIT_CONTROL     0x0FU
@@ -806,4 +806,80 @@ struct video_still_probe_and_commit_controls {
                                           receive in a single payload transfer.*/
 } __PACKED;
 
+struct video_cs_vc_if_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bNumFormats;
+    uint16_t wTotalLength;
+    uint8_t bEndpointAddress;
+    uint8_t bmInfo;
+    uint8_t bTerminalLink;
+    uint8_t bStillCaptureMethod;
+    uint8_t bTriggerSupport;
+    uint8_t bTriggerUsage;
+    uint8_t bControlSize;
+    uint8_t bmaControls[];
+} __PACKED;
+
+struct video_cs_vs_input_header_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bNumFormats;
+    uint16_t wTotalLength;
+    uint8_t bEndpointAddress;
+    uint8_t bmInfo;
+    uint8_t bTerminalLink;
+    uint8_t bStillCaptureMethod;
+    uint8_t bTriggerSupport;
+    uint8_t bTriggerUsage;
+    uint8_t bControlSize;
+    uint8_t bmaControls[];
+} __PACKED;
+
+struct video_cs_vs_output_header_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bNumFormats;
+    uint16_t wTotalLength;
+    uint8_t bEndpointAddress;
+    uint8_t bTerminalLink;
+    uint8_t bControlSize;
+    uint8_t bmaControls[];
+} __PACKED;
+
+struct video_cs_vs_padload_format_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bNumFormats;
+    uint16_t wTotalLength;
+    uint8_t bEndpointAddress;
+    uint8_t bTerminalLink;
+    uint8_t bControlSize;
+    uint8_t bmaControls[];
+} __PACKED;
+
+struct video_cs_vs_frame_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bFrameIndex;
+    uint8_t bmCapabilities;
+    uint16_t wWidth;
+    uint16_t wHeight;
+    uint32_t dwMinBitRate;
+    uint32_t dwMaxBitRate;
+    uint32_t dwMaxVideoFrameBufferSize;
+    uint32_t dwDefaultFrameInterval;
+    uint8_t bFrameIntervalType;
+    uint32_t dwFrameInterval[];
+} __PACKED;
+
+struct video_entity_info {
+    uint8_t bDescriptorSubtype;
+    uint8_t bEntityId;
+};
 #endif /* USB_VIDEO_H_ */

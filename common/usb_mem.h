@@ -24,11 +24,18 @@
 #define _USB_MEM_H
 
 #define DCACHE_LINE_SIZE 32
-#define DCACHE_LINEMASK (DCACHE_LINE_SIZE -1)
+#define DCACHE_LINEMASK  (DCACHE_LINE_SIZE - 1)
 
 #ifdef CONFIG_USB_DCACHE_ENABLE
+#ifdef CONFIG_USB_NOCACHE_RAM
+#define USB_MEM_ALIGN32
 #define USB_NOCACHE_RAM_SECTION __attribute__((section(".nocache_ram")))
 #else
+#define USB_MEM_ALIGN32 __attribute__((aligned(DCACHE_LINE_SIZE)))
+#define USB_NOCACHE_RAM_SECTION
+#endif
+#else
+#define USB_MEM_ALIGN32
 #define USB_NOCACHE_RAM_SECTION
 #endif
 
@@ -45,7 +52,7 @@ static inline void usb_free(void *ptr)
 #ifdef CONFIG_USB_DCACHE_ENABLE
 static inline void *usb_iomalloc(size_t size)
 {
-    size  = (size + DCACHE_LINEMASK) & ~DCACHE_LINEMASK;
+    size = (size + DCACHE_LINEMASK) & ~DCACHE_LINEMASK;
     return malloc(size);
 }
 
