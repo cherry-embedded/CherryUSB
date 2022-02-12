@@ -534,6 +534,7 @@ static int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
+    USB_LOG_INFO("Enumeration success, start loading class driver\r\n");
     /*search supported class driver*/
     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
         intf_desc = &hport->config.intf[i].intf_desc;
@@ -627,7 +628,7 @@ static void usbh_portchange_detect_thread(void *argument)
     }
 
     usb_osal_leave_critical_section(flags);
-    
+
     while (1) {
         usbh_portchange_wait(&hport);
         if (hport->connected) {
