@@ -1,7 +1,8 @@
 from building import *
 
 cwd = GetCurrentDir()
-path = [cwd + '/common']
+path = [cwd]
+path += [cwd + '/common']
 path += [cwd + '/core']
 
 CPPDEFINES = []
@@ -55,8 +56,9 @@ if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
     path += [cwd + '/class/msc']
     src += Glob('class/msc/usbh_msc.c')
     path += [cwd + '/class/hub']
-    src += Glob('class/hub/usbdh_hub.c')
-
+    src += Glob('class/hub/usbh_hub.c')
+    
+    CPPDEFINES += ['CONFIG_USBHOST_HUB']
     if GetDepend(['SOC_FAMILY_STM32']):
         src += Glob('port/synopsys/usb_hc_synopsys.c')
 
