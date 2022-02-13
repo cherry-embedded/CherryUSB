@@ -28,7 +28,6 @@ To use CherryUSB package, you need to select it in the RT-Thread package manager
 ### In STM32
 
 Please note that stm32 series have two usb ip. For usb ip, like stm32f0、stm32f1、stm32f3, for usb otg ip(as we know it is from **synopsys**),like stm32f4、stm32f7 and so on.
-~~Currently,if you usb usb device on mcu with usb ip, recommend you to use dcd porting named **usb_dc_nohal.c**,otherwise use **usb_dc_hal.c**.In the future,**usb_dc_hal.c** will be droped~~.
 
 #### Use USB Device
 
