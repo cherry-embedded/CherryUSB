@@ -27,8 +27,6 @@
 
 static uint32_t g_devinuse = 0;
 
-void usbh_cdc_acm_callback(void *arg, int nbytes);
-
 /****************************************************************************
  * Name: usbh_cdc_acm_devno_alloc
  *
@@ -169,7 +167,21 @@ int usbh_cdc_acm_set_line_state(struct usbh_hubport *hport, uint8_t intf, bool d
 
     return 0;
 }
+
 USB_NOCACHE_RAM_SECTION uint8_t cdc_buffer[4096];
+
+void usbh_cdc_acm_callback(void *arg, int nbytes)
+{
+    struct usbh_hub *cdc_acm_class = (struct usbh_hub *)arg;
+
+    if (nbytes > 0) {
+        for (size_t i = 0; i < nbytes; i++) {
+            printf("0x%02x ", cdc_buffer[i]);
+        }
+    }
+
+    printf("nbytes:%d\r\n", nbytes);
+}
 
 int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
 {
@@ -268,7 +280,7 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     printf("send over:%d\r\n", ret);
 
 #if 0
-    usbh_ep_bulk_async_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, usbh_cdc_acm_callback, NULL);
+    usbh_ep_bulk_async_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, usbh_cdc_acm_callback, cdc_acm_class);
 #else
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512);
     if (ret < 0) {
@@ -322,11 +334,6 @@ int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     return ret;
-}
-
-void usbh_cdc_acm_callback(void *arg, int result)
-{
-    printf("result:%d\r\n", result);
 }
 
 const struct usbh_class_driver cdc_acm_class_driver = {

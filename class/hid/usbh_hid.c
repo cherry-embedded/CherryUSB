@@ -163,6 +163,14 @@ USB_NOCACHE_RAM_SECTION uint8_t report_buffer[128];
 
 void usbh_hid_callback(void *arg, int nbytes)
 {
+    struct usbh_hub *hid_class = (struct usbh_hub *)arg;
+
+    if (nbytes > 0) {
+        for (size_t i = 0; i < nbytes; i++) {
+            printf("0x%02x ", report_buffer[i]);
+        }
+    }
+
     printf("nbytes:%d\r\n", nbytes);
 }
 
@@ -218,11 +226,12 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register HID Class:%s\r\n", devname);
 
-    ret = usbh_ep_intr_async_transfer(hid_class->intin, report_buffer, 128, usbh_hid_callback, NULL);
+#if 1
+    ret = usbh_ep_intr_async_transfer(hid_class->intin, report_buffer, 128, usbh_hid_callback, hid_class);
     if (ret < 0) {
         return ret;
     }
-#if 0
+#else
     ret = usbh_ep_intr_transfer(hid_class->intin, report_buffer, 128);
     if (ret < 0) {
         return ret;
