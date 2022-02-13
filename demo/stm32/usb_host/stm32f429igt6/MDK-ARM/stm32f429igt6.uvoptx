@@ -159,7 +159,7 @@
           <Type>0</Type>
           <LineNumber>360</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134233946</Address>
+          <Address>134238192</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -169,6 +169,38 @@
           <Filename>..\..\..\..\..\class\msc\usbh_msc.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\stm32f429igt6\../../../../../class/msc/usbh_msc.c\360</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>649</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134239628</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\..\..\..\core\usbh_core.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\stm32f429igt6\../../../../../core/usbh_core.c\649</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>493</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134240378</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\..\..\..\core\usbh_core.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\stm32f429igt6\../../../../../core/usbh_core.c\493</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -242,7 +274,7 @@
 
   <Group>
     <GroupName>Application/MDK-ARM</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
