@@ -832,18 +832,18 @@ void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
         g_usbhost.connected = false;
         usb_synopsys_chan_freeall(&g_usbhost);
 
-        if (g_usbhost.chan[0].waiter) {
-            /* Wake'em up! */
-            g_usbhost.chan[0].waiter = false;
-            usb_osal_sem_give(g_usbhost.chan[0].waitsem);
+        for (uint8_t chnum = 0; chnum < CONFIG_USBHOST_CHANNELS; chnum++) {
+            {
+                if (g_usbhost.chan[chnum].waiter) {
+                    /* Wake'em up! */
+                    g_usbhost.chan[chnum].waiter = false;
+                    usb_osal_sem_give(g_usbhost.chan[chnum].waitsem);
+                }
+            }
+
+            extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
+            usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
         }
-        if (g_usbhost.chan[1].waiter) {
-            /* Wake'em up! */
-            g_usbhost.chan[1].waiter = false;
-            usb_osal_sem_give(g_usbhost.chan[1].waitsem);
-        }
-        extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-        usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
     }
 }
 
