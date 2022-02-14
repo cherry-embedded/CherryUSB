@@ -172,7 +172,7 @@ USB_NOCACHE_RAM_SECTION uint8_t cdc_buffer[4096];
 
 void usbh_cdc_acm_callback(void *arg, int nbytes)
 {
-    struct usbh_hub *cdc_acm_class = (struct usbh_hub *)arg;
+    struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)arg;
 
     if (nbytes > 0) {
         for (size_t i = 0; i < nbytes; i++) {

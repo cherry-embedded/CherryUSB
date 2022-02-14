@@ -159,15 +159,15 @@ int usbh_hid_get_idle(struct usbh_hubport *hport, uint8_t intf, uint8_t *buffer)
     return 0;
 }
 
-USB_NOCACHE_RAM_SECTION uint8_t report_buffer[128];
+USB_NOCACHE_RAM_SECTION uint8_t hid_buffer[128];
 
 void usbh_hid_callback(void *arg, int nbytes)
 {
-    struct usbh_hub *hid_class = (struct usbh_hub *)arg;
+    struct usbh_hid *hid_class = (struct usbh_hid *)arg;
 
     if (nbytes > 0) {
         for (size_t i = 0; i < nbytes; i++) {
-            printf("0x%02x ", report_buffer[i]);
+            printf("0x%02x ", hid_buffer[i]);
         }
     }
 
@@ -205,7 +205,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         return ret;
     }
 
-    ret = usbh_hid_get_report_descriptor(hport, intf, report_buffer);
+    ret = usbh_hid_get_report_descriptor(hport, intf, hid_buffer);
     if (ret < 0) {
         return ret;
     }
@@ -227,12 +227,12 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     USB_LOG_INFO("Register HID Class:%s\r\n", devname);
 
 #if 1
-    ret = usbh_ep_intr_async_transfer(hid_class->intin, report_buffer, 128, usbh_hid_callback, hid_class);
+    ret = usbh_ep_intr_async_transfer(hid_class->intin, hid_buffer, 128, usbh_hid_callback, hid_class);
     if (ret < 0) {
         return ret;
     }
 #else
-    ret = usbh_ep_intr_transfer(hid_class->intin, report_buffer, 128);
+    ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128);
     if (ret < 0) {
         return ret;
     }
