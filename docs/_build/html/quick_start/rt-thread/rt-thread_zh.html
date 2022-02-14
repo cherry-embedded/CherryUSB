@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>基于 RT-Thread 软件包开发指南 &mdash; CherryUSB 使用指南  文档</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="索引" href="../../genindex.html" />
+    <link rel="search" title="搜索" href="../../search.html" />
+    <link rel="next" title="设备协议栈" href="../../api/api_device.html" />
+    <link rel="prev" title="基于 CH32V307 开发指南" href="../ch32v307.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> CherryUSB 使用指南
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="在文档中搜索" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">快速入门</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../bl702.html">基于 BL702 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stm32f429.html">基于 STM32F429 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ch32v307.html">基于 CH32V307 开发指南</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">基于 RT-Thread 软件包开发指南</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#stm32">基于 STM32 平台</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usb-device">使用 USB Device 功能</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-host">使用 USB Host 功能</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo">Demo 演示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">视频教程</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API 手册</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api_host.html">主机协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api_common.html">其他</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption"><span class="caption-text">综合例程</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../demo/usb2uart.html">USB 转串口</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo/mouse_keyboard.html">键盘与鼠标</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo/msc_boot.html">U盘制作 BootLoader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo/video.html">USB 摄像头</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo/speaker_mic.html">USB 双通道扬声器和麦克风</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo/daplink.html">DAPLINK V2.0调试器</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CherryUSB 使用指南</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>基于 RT-Thread 软件包开发指南</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/quick_start/rt-thread/rt-thread_zh.md.txt" rel="nofollow"> 查看页面源码</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="rt-thread">
+<h1>基于 RT-Thread 软件包开发指南<a class="headerlink" href="#rt-thread" title="永久链接至标题">¶</a></h1>
+<p><a class="reference internal" href="rt-thread.html"><span class="doc">English Version</span></a></p>
+<p>使用 CherryUSB package 需要在 RT-Thread 的包管理器中选择它，具体路径如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-&gt;</span> <span class="n">RT</span><span class="o">-</span><span class="n">Thread</span> <span class="n">online</span> <span class="n">packages</span>
+    <span class="o">-&gt;</span> <span class="n">system</span> <span class="n">packages</span>
+        <span class="o">---</span>  <span class="n">CherryUSB</span><span class="p">:</span> <span class="n">tiny</span> <span class="ow">and</span> <span class="n">portable</span> <span class="n">USB</span> <span class="n">stack</span> <span class="k">for</span> <span class="n">embedded</span> <span class="n">system</span> <span class="k">with</span> <span class="n">USB</span> <span class="n">IP</span>
+
+            <span class="n">CherryUSB</span> <span class="n">Options</span>  <span class="o">----&gt;</span>
+                    <span class="n">USB</span> <span class="n">Speed</span> <span class="p">(</span><span class="n">FS</span><span class="p">)</span>  <span class="o">---&gt;</span>
+                    <span class="p">[</span><span class="o">*</span><span class="p">]</span> <span class="n">Enable</span> <span class="n">usb</span> <span class="n">device</span> <span class="n">mode</span>
+                    <span class="p">[</span> <span class="p">]</span> <span class="n">Enable</span> <span class="n">usb</span> <span class="n">host</span> <span class="n">mode</span>
+                    <span class="p">[</span><span class="o">*</span><span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">cdc</span> <span class="n">acm</span> <span class="n">device</span>
+                    <span class="p">[</span> <span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">hid</span> <span class="n">device</span>
+                    <span class="p">[</span> <span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">dfu</span> <span class="n">device</span>
+                    <span class="p">[</span> <span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">msc</span> <span class="n">device</span>
+                    <span class="p">[</span> <span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">hub</span> <span class="n">device</span>
+                    <span class="p">[</span> <span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">audio</span> <span class="n">device</span>
+                    <span class="p">[</span> <span class="p">]</span>   <span class="n">Enable</span> <span class="n">usb</span> <span class="n">video</span> <span class="n">device</span>
+
+            <span class="n">Version</span> <span class="p">(</span><span class="n">latest</span><span class="p">)</span>  <span class="o">---&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="stm32">
+<h2>基于 STM32 平台<a class="headerlink" href="#stm32" title="永久链接至标题">¶</a></h2>
+<p>STM32 系列单片机有两种 USB IP,分别是 USB IP 和 USB OTG IP。其中 USB IP，例如 STM32F0、STM32F1、STM32F3等等，USB OTG IP(我们都知道用的是 <strong>synopsys</strong> 公司的)的有 STM32F4、STM32F7、STM32H7等等。当前如果你需要使用 USB Device 功能，porting 接口提供了两种，一种是适配 USB IP的 <strong>fsdev</strong>,另一种是适配 USB OTG IP 的 <strong>synopsys</strong>。</p>
+<div class="section" id="usb-device">
+<h3>使用 USB Device 功能<a class="headerlink" href="#usb-device" title="永久链接至标题">¶</a></h3>
+<ul class="simple">
+<li><p>首先，你需要有一个 bsp 工程，之后进入到 <code class="docutils literal notranslate"><span class="pre">board\CubeMX_Config</span></code> 目录下，使用 <strong>STM32CubeMX</strong> 打开后缀名为 <code class="docutils literal notranslate"><span class="pre">.ioc</span></code> 的文件。</p></li>
+<li><p>进入 <strong>Connectivity</strong> 选项，选择 <strong>USB</strong> 或者 <strong>USB_OTG_FS</strong> 或者 <strong>USB_OTG_HS</strong>，并使能 device 功能，在 <strong>NVIC Setting</strong> 中开启 USB 中断。</p></li>
+</ul>
+<p><img alt="STM32CubeMX USB setting" src="../../_images/stm32cubemx.png" /></p>
+<ul class="simple">
+<li><p>在 <strong>Clock configuration</strong> 栏配置 USB 时钟为 48Mhz.</p></li>
+</ul>
+<p><img alt="STM32CubeMX USB clock" src="../../_images/stm32cubemx_clk.png" /></p>
+<ul class="simple">
+<li><p>点击 <strong>Generate code</strong>。</p></li>
+<li><p>复制 <strong>SystemClock_Config</strong> 函数内容到 <strong>board.c</strong> 中。</p></li>
+<li><p>实现 <code class="docutils literal notranslate"><span class="pre">usb_dc_low_level_init</span></code>，并将 <code class="docutils literal notranslate"><span class="pre">HAL_PCD_MspInit</span></code> 里面内容复制进来，例如：</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">usb_dc_low_level_init</span><span class="p">(</span><span class="n">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="o">/*</span> <span class="n">Peripheral</span> <span class="n">clock</span> <span class="n">enable</span> <span class="o">*/</span>
+    <span class="n">__HAL_RCC_USB_CLK_ENABLE</span><span class="p">();</span>
+    <span class="o">/*</span> <span class="n">USB</span> <span class="n">interrupt</span> <span class="n">Init</span> <span class="o">*/</span>
+    <span class="n">HAL_NVIC_SetPriority</span><span class="p">(</span><span class="n">USB_LP_CAN1_RX0_IRQn</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">HAL_NVIC_EnableIRQ</span><span class="p">(</span><span class="n">USB_LP_CAN1_RX0_IRQn</span><span class="p">);</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>由于协议栈默认使用 <code class="docutils literal notranslate"><span class="pre">printf</span></code> 和 <code class="docutils literal notranslate"><span class="pre">malloc</span></code> 和 <code class="docutils literal notranslate"><span class="pre">free</span></code>,所以需要开启 libc 支持或者自己实现。
+<img alt="libc" src="../../_images/rtt_libc.png" /></p></li>
+<li><p>使用 <strong>menuconfig</strong> 配置 <strong>CherryUSB</strong> 软件包，使能 usb device 并勾选需要的 device class。
+<img alt="usb host" src="../../_images/rtt_menuconfig1.png" /></p></li>
+<li><p>现在我们可以调用 CherryUSB 中的函数来注册描述符、接口、端点中断，并调用 <code class="docutils literal notranslate"><span class="pre">usb_dc_init</span></code>，示例如下：</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &lt;rtthread.h&gt;</span>
+<span class="c1">#include &lt;rtdevice.h&gt;</span>
+<span class="c1">#include &lt;board.h&gt;</span>
+<span class="c1">#include &lt;stdio.h&gt;</span>
+
+<span class="n">extern</span> <span class="n">void</span> <span class="n">usb_dc_init</span><span class="p">(</span><span class="n">void</span><span class="p">);</span>
+<span class="nb">int</span> <span class="n">main</span><span class="p">(</span><span class="n">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">extern</span> <span class="n">void</span> <span class="n">cdc_init</span><span class="p">(</span><span class="n">void</span><span class="p">);</span>
+    <span class="n">cdc_init</span><span class="p">();</span>
+    <span class="n">usb_dc_init</span><span class="p">();</span>
+    <span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">uint8_t</span> <span class="n">data_buffer</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="mh">0x31</span><span class="p">,</span> <span class="mh">0x32</span><span class="p">,</span> <span class="mh">0x33</span><span class="p">,</span> <span class="mh">0x34</span><span class="p">,</span> <span class="mh">0x35</span><span class="p">,</span> <span class="mh">0x31</span><span class="p">,</span> <span class="mh">0x32</span><span class="p">,</span> <span class="mh">0x33</span><span class="p">,</span> <span class="mh">0x34</span><span class="p">,</span> <span class="mh">0x35</span> <span class="p">};</span>
+        <span class="n">usbd_ep_write</span><span class="p">(</span><span class="mh">0x81</span><span class="p">,</span> <span class="n">data_buffer</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">NULL</span><span class="p">);</span>
+        <span class="n">rt_thread_mdelay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>关于如何注册 class 类可以参考 <a class="reference external" href="https://github.com/sakumisu/usb_stack/tree/master/demo/stm32/stm32f103c8t6/example">stm32 class examples</a>。</p></li>
+</ul>
+</div>
+<div class="section" id="usb-host">
+<h3>使用 USB Host 功能<a class="headerlink" href="#usb-host" title="永久链接至标题">¶</a></h3>
+<ul class="simple">
+<li><p>首先，你需要有一个 bsp 工程，之后进入到 <code class="docutils literal notranslate"><span class="pre">board\CubeMX_Config</span></code> 目录下，使用 <strong>STM32CubeMX</strong> 打开后缀名为 <code class="docutils literal notranslate"><span class="pre">.ioc</span></code> 的文件。</p></li>
+<li><p>进入 <strong>Connectivity</strong> 选项，选择 <strong>USB_OTG_FS</strong> 或者 <strong>USB_OTG_HS</strong>，并使能 <strong>host only</strong> 功能，在 <strong>NVIC Setting</strong> 中开启 OTG GLOBAL 中断，其余两个端点中断不需要。</p></li>
+</ul>
+<p><img alt="STM32CubeMX USB setting" src="../../_images/stm32cubemx2.png" /></p>
+<ul class="simple">
+<li><p>在 <strong>Clock configuration</strong> 栏配置 USB 时钟为 48Mhz.</p></li>
+<li><p>点击 <strong>Generate code</strong>。</p></li>
+<li><p>复制 <strong>SystemClock_Config</strong> 函数内容到 <strong>board.c</strong> 中。</p></li>
+<li><p>修改 <strong>usb_hc_synopsys.c</strong> 中 HAL 库头文件包含，例如 <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;stm32f4xx_hal.h&quot;</span></code>。</p></li>
+<li><p>手动增加 <strong>xxx_hal_hcd.c</strong> 和 <strong>xxx_ll_usb.c</strong> 文件</p></li>
+<li><p>由于协议栈默认使用 <code class="docutils literal notranslate"><span class="pre">printf</span></code> 和 <code class="docutils literal notranslate"><span class="pre">malloc</span></code> 和 <code class="docutils literal notranslate"><span class="pre">free</span></code>,所以需要开启 libc 支持或者自己实现。
+<img alt="libc" src="../../_images/rtt_libc.png" /></p></li>
+<li><p>使用 <strong>menuconfig</strong> 配置 <strong>CherryUSB</strong> 软件包，使能 usb host（默认加载所有支持的 class）。
+<img alt="usb host" src="../../_images/rtt_menuconfig2.png" /></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">main.c</span></code> 中调用 <code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code> 初始化 host 协议栈。</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &lt;rtthread.h&gt;</span>
+<span class="c1">#include &lt;rtdevice.h&gt;</span>
+<span class="c1">#include &lt;board.h&gt;</span>
+<span class="c1">#include &quot;usbh_core.h&quot;</span>
+<span class="o">/*</span> <span class="n">defined</span> <span class="n">the</span> <span class="n">LED0</span> <span class="n">pin</span><span class="p">:</span> <span class="n">PH10</span> <span class="o">*/</span>
+<span class="c1">#define LED0_PIN    GET_PIN(H, 10)</span>
+
+<span class="nb">int</span> <span class="n">main</span><span class="p">(</span><span class="n">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="o">/*</span> <span class="nb">set</span> <span class="n">LED0</span> <span class="n">pin</span> <span class="n">mode</span> <span class="n">to</span> <span class="n">output</span> <span class="o">*/</span>
+    <span class="n">rt_pin_mode</span><span class="p">(</span><span class="n">LED0_PIN</span><span class="p">,</span> <span class="n">PIN_MODE_OUTPUT</span><span class="p">);</span>
+    <span class="n">usbh_initialize</span><span class="p">();</span>
+    <span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">rt_pin_write</span><span class="p">(</span><span class="n">LED0_PIN</span><span class="p">,</span> <span class="n">PIN_HIGH</span><span class="p">);</span>
+        <span class="n">rt_thread_mdelay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+        <span class="n">rt_pin_write</span><span class="p">(</span><span class="n">LED0_PIN</span><span class="p">,</span> <span class="n">PIN_LOW</span><span class="p">);</span>
+        <span class="n">rt_thread_mdelay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div>
+</div>
+</div>
+<div class="section" id="demo">
+<h3>Demo 演示<a class="headerlink" href="#demo" title="永久链接至标题">¶</a></h3>
+<ul class="simple">
+<li><p>cdc acm device demo</p></li>
+</ul>
+<p><img alt="CDC Device Demo" src="../../_images/rtt_cdc_demo.png" /></p>
+<ul class="simple">
+<li><p>host demo</p></li>
+</ul>
+<p><img alt="USB Host Demo" src="../../_images/rtt_host_demo.png" /></p>
+</div>
+<div class="section" id="id1">
+<h3>视频教程<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h3>
+<p>如果对上述步骤还有问题，可以参考 <a class="reference external" href="https://www.bilibili.com/video/BV1Ef4y1t73d?p=26">协议栈在 RT-Thread 包管理器中的使用</a>。</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../../api/api_device.html" class="btn btn-neutral float-right" title="设备协议栈" accesskey="n" rel="next">下一页 <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../ch32v307.html" class="btn btn-neutral float-left" title="基于 CH32V307 开发指南" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> 上一页</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; 版权所有 2022, sakumisu.
+
+    </p>
+  </div>
+    
+    
+    
+    利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用了 
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    
+    由 <a href="https://readthedocs.org">Read the Docs</a>开发. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -105,16 +105,12 @@ CherryUSB Host Stack has the following functions：
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 
-![lsusb](docs/img/lsusb.png)
+![lsusb](docs/lsusb.png)
 
-## CherryUSB Device API
+## CherryUSB Documentation Tutorial
 
-More of USB Device API reference, please visit : [CherryUSB Device API](docs/usb_device.md)
+Quickly start, API manual,and Class knowledge and examples, see [CherryUSB Documentation Tutorial](https://htmlpreview.github.io/?https://raw.githubusercontent.com/sakumisu/CherryUSB/master/docs/_build/html/index.html)
 
-## CherryUSB Host API
+## CherryUSB Video Tutorial
 
-More of USB Host API reference, please visit: [CherryUSB Host API](docs/usb_host.md)
-
-## How To Use In RT-Thread package
-
-How to use in RT-Thread package, please visit：[RT-Thread package Userguide with CherryUSB](docs/rt-thread.md)
+USB basic concepts and how the CherryUSB Device protocol stack is implemented, see [CherryUSB Device Protocol Stack Tutorial](https://www.bilibili.com/video/BV1Ef4y1t73d).

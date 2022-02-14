@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>主机协议栈 &mdash; CherryUSB 使用指南  文档</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="其他" href="api_common.html" />
+    <link rel="prev" title="设备协议栈" href="api_device.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> CherryUSB 使用指南
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="在文档中搜索" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">快速入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/bl702.html">基于 BL702 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/stm32f429.html">基于 STM32F429 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/ch32v307.html">基于 CH32V307 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/rt-thread/rt-thread_zh.html">基于 RT-Thread 软件包开发指南</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API 手册</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api_device.html">设备协议栈</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">主机协议栈</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core">主机 CORE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cdc">主机 CDC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hid">主机 HID</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#msc">主机 MSC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#audio">主机 AUDIO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#video">主机 VIDEO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dfu">主机 DFU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#porting">主机 PORTING</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_common.html">其他</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption"><span class="caption-text">综合例程</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usb2uart.html">USB 转串口</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/mouse_keyboard.html">键盘与鼠标</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/msc_boot.html">U盘制作 BootLoader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/video.html">USB 摄像头</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/speaker_mic.html">USB 双通道扬声器和麦克风</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/daplink.html">DAPLINK V2.0调试器</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CherryUSB 使用指南</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>主机协议栈</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/api/api_host.rst.txt" rel="nofollow"> 查看页面源码</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>主机协议栈<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="core">
+<h2>主机 CORE<a class="headerlink" href="#core" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="cdc">
+<h2>主机 CDC<a class="headerlink" href="#cdc" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="hid">
+<h2>主机 HID<a class="headerlink" href="#hid" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="msc">
+<h2>主机 MSC<a class="headerlink" href="#msc" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="audio">
+<h2>主机 AUDIO<a class="headerlink" href="#audio" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="video">
+<h2>主机 VIDEO<a class="headerlink" href="#video" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="dfu">
+<h2>主机 DFU<a class="headerlink" href="#dfu" title="永久链接至标题">¶</a></h2>
+</div>
+<div class="section" id="porting">
+<h2>主机 PORTING<a class="headerlink" href="#porting" title="永久链接至标题">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="api_common.html" class="btn btn-neutral float-right" title="其他" accesskey="n" rel="next">下一页 <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="api_device.html" class="btn btn-neutral float-left" title="设备协议栈" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> 上一页</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; 版权所有 2022, sakumisu.
+
+    </p>
+  </div>
+    
+    
+    
+    利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用了 
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    
+    由 <a href="https://readthedocs.org">Read the Docs</a>开发. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

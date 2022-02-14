@@ -55,8 +55,6 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 
 CherryUSB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求以及 custom 特殊请求规范了一套统一的函数框架，采用面向对象和链表的方式，能够使得用户快速上手复合设备，不用管底层的逻辑。同时，规范了一套标准的 dcd porting 接口，用于适配不同的 USB IP，达到面向 ip 编程。
 
-CherryUSB Device 协议栈的代码实现过程参考 <https://www.bilibili.com/video/BV1Ef4y1t73d> 。
-
 CherryUSB Device 协议栈当前实现以下功能：
 
 - 支持 USB2.0 全速和高速设备
@@ -89,8 +87,6 @@ CherryUSB Device 协议栈资源占用说明：
 
 CherryUSB Host 协议栈对挂载在 roothub、外部 hub 上的设备规范了一套标准的枚举实现，对不同的 Class 类也规范了一套标准接口，用来指示在枚举后和断开连接后该 Class 驱动需要做的事情。同时，规范了一套标准的 hcd porting 接口，用于适配不同的 USB IP，达到面向 IP 编程。最后，协议栈使用 OS 管理，并提供了 osal 用来适配不同的 os。
 
-CherryUSB Host 协议栈的代码实现过程参考：视频后续发布。
-
 CherryUSB Host 协议栈当前实现以下功能：
 
 - 自动加载支持的Class 驱动
@@ -104,16 +100,12 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
-![lsusb](docs/img/lsusb.png)
+![lsusb](docs/lsusb.png)
 
-## CherryUSB Device API
+## CherryUSB 文档教程
 
-更详细的设备协议栈 API 请参考: [CherryUSB Device API](docs/usb_device.md)
+CherryUSB 快速入门、API 手册以及 Class 知识点和例程，参考 [CherryUSB 文档教程](https://htmlpreview.github.io/?https://raw.githubusercontent.com/sakumisu/CherryUSB/master/docs/_build/html/index.html)
 
-## CherryUSB Host API
+## CherryUSB 视频教程
 
-更详细的主机协议栈 API 请参考: [CherryUSB Host API](docs/usb_host.md)
-
-## RT-Thread 软件包使用
-
-如何在 RT-Thread OS 中使用软件包，请参考：[CherryUSB 在 RT-Thread package 中的使用](docs/rt-thread_zh.md)
+USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [CherryUSB Device 协议栈教程](https://www.bilibili.com/video/BV1Ef4y1t73d).
