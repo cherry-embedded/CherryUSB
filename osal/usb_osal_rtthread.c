@@ -26,7 +26,7 @@
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
     rt_thread_t htask;
-    htask = rt_thread_create(name, entry, args, stack_size, prio, 10);
+    htask = rt_thread_create(name, entry, args, stack_size, RT_THREAD_PRIORITY_MAX - 1 - prio, 10);
     rt_thread_startup(htask);
     return (usb_osal_thread_t)htask;
 }
