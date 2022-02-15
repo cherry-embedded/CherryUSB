@@ -19,6 +19,14 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 
 .. toctree::
    :maxdepth: 1
+   :caption: USB 基本知识点
+
+   usb/usb_basic
+   usb/usb_desc
+   usb/usb_request
+   usb/usb_enum
+.. toctree::
+   :maxdepth: 1
    :caption: API 手册
 
    api/api_device
@@ -46,3 +54,9 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    demo/video
    demo/speaker_mic
    demo/daplink
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Porting 说明
+
+   porting
