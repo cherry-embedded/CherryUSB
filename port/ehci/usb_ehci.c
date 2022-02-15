@@ -3,9 +3,6 @@
 
 #define DEBUGASSERT(f)
 
-#define BL_USBOTG_HCCR_BASE (0x20072000)
-#define BL_USBOTG_HCOR_BASE (0x20072000 + 0x10)
-
 /* Configurable number of Queue Head (QH) structures.  The default is one per
  * Root hub port plus one for EP0.
  */
@@ -37,11 +34,11 @@
 
 /* Host Controller Capability Registers */
 
-#define HCCR ((struct ehci_hccr_s *)BL_USBOTG_HCCR_BASE)
+#define HCCR ((struct ehci_hccr_s *)CONFIG_USB_EHCI_HCCR_BASE)
 
 /* Host Controller Operational Registers */
 
-#define HCOR ((volatile struct ehci_hcor_s *)BL_USBOTG_HCOR_BASE)
+#define HCOR ((volatile struct ehci_hcor_s *)CONFIG_USB_EHCI_HCOR_BASE)
 
 /* Interrupts ***************************************************************/
 
@@ -141,6 +138,7 @@ struct usb_ehci_epinfo_s {
     void *arg;                       /* Argument that accompanies the callback */
 #endif
     struct usbh_hubport *hport;
+    usb_slist_t list;
 };
 
 /* This structure retains the overall state of the USB host controller */
@@ -154,6 +152,7 @@ struct usb_ehci_s {
     struct usb_ehci_list_s *qtdfree; /* List of free Queue Element Transfer Descriptor (qTD) */
 
     struct usb_ehci_epinfo_s ep0[CONFIG_USBHOST_RHPORTS]; /* EP0 endpoint info */
+    usb_slist_t epinfo_list;
 };
 
 /****************************************************************************
@@ -700,20 +699,7 @@ static struct usb_ehci_qh_s *usb_ehci_qh_create(struct usb_ehci_epinfo_s *epinfo
 
 #ifndef CONFIG_USBHOST_INT_DISABLE
     if (epinfo->xfrtype == USB_ENDPOINT_TYPE_INTERRUPT) {
-        /* Here, the S-Mask field in the queue head is set to 1, indicating
-        * that the transaction for the endpoint should be executed on the bus
-        * during micro-frame 0 of the frame.
-        *
-        * REVISIT: The polling interval should be controlled by the which
-        * entry is the framelist holds the QH pointer for a given micro-frame
-        * and the QH pointer should be replicated for different polling rates.
-        * This implementation currently just sets all frame_list entry to
-        * all the same interrupt queue.  That should work but will not give
-        * any control over polling rates.
-        */
-        // #warning REVISIT
-
-        regval |= ((uint32_t)1 << QH_EPCAPS_SSMASK_SHIFT);
+        regval |= ((uint32_t)epinfo->interval << QH_EPCAPS_SSMASK_SHIFT);
     }
 #endif
 
@@ -1394,36 +1380,6 @@ static void usb_ehci_asynch_completion(struct usb_ehci_epinfo_s *epinfo)
 #endif
 
 /****************************************************************************
- * Name: usb_ehci_ioc_wait
- *
- * Description:
- *   Wait for the IOC event.
- *
- * Assumption:  The caller does *NOT* hold the EHCI exclsem.  That would
- * cause a deadlock when the bottom-half, worker thread needs to take the
- * semaphore.
- *
- ****************************************************************************/
-
-static int usb_ehci_ioc_wait(struct usb_ehci_epinfo_s *epinfo)
-{
-    int ret = 0;
-
-    /* Wait for the IOC event.  Loop to handle any false alarm semaphore
-    * counts.  Return an error if the task is canceled.
-    */
-
-    while (epinfo->iocwait) {
-        ret = usb_osal_sem_take(epinfo->iocsem);
-        if (ret < 0) {
-            break;
-        }
-    }
-
-    return ret < 0 ? ret : epinfo->result;
-}
-
-/****************************************************************************
  * Name: usb_ehci_transfer_wait
  *
  * Description:
@@ -1445,39 +1401,29 @@ static int usb_ehci_ioc_wait(struct usb_ehci_epinfo_s *epinfo)
 
 static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo)
 {
-    int ret;
+    int ret = 0;
     int ret2;
 
     /* Release the EHCI semaphore while we wait.  Other threads need the
-    * opportunity to access the EHCI resources while we wait.
-    *
-    * REVISIT:  Is this safe?  NO.  This is a bug and needs rethinking.
-    * We need to lock all of the port-resources (not EHCI common) until
-    * the transfer is complete.  But we can't use the common EHCI exclsem
-    * or we will deadlock while waiting (because the working thread that
-    * wakes this thread up needs the exclsem).
-    */
-
-    /* REVISIT */
+    * opportunity to access the EHCI resources while we wait. */
 
     usb_osal_mutex_give(g_ehci.exclsem);
 
     /* Wait for the IOC completion event */
+    if (epinfo->iocwait) {
+        ret = usb_osal_sem_take(epinfo->iocsem);
+        if (ret == 0) {
+            ret = epinfo->result;
+        }
+    }
 
-    ret = usb_ehci_ioc_wait(epinfo);
-
-    /* Re-acquire the EHCI semaphore.  The caller expects to be holding
-   * this upon return.
-   */
-
+    /* Re-acquire the EHCI semaphore. The caller expects to be holding this upon return.*/
     ret2 = usb_osal_mutex_take(g_ehci.exclsem);
     if (ret2 < 0) {
         ret = ret2;
     }
 
-    /* Did usb_ehci_ioc_wait() or usb_osal_mutex_take()report an
-   * error?
-   */
+    /* Did epinfo->result or usb_osal_mutex_take() report an error? */
 
     if (ret < 0) {
         //usbhost_trace1(EHCI_TRACE1_TRANSFER_FAILED, -ret);
@@ -1485,10 +1431,7 @@ static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo)
         return ret;
     }
 
-    /* Transfer completed successfully.  Return the number of bytes
-    * transferred.
-    */
-
+    /* Transfer completed successfully.  Return the number of bytes transferred.*/
     return epinfo->xfrd;
 }
 
@@ -1868,11 +1811,24 @@ static inline void usb_ehci_portsc_bottomhalf(void)
             /* Check current connect status */
             if ((portsc & EHCI_PORTSC_CCS) != 0) {
                 /* Connected ... Did we just become connected? */
-                g_ehci.connected = 1;
-                usbh_event_notify_handler(USBH_EVENT_ATTACHED, 1);
+                if (!g_ehci.connected) {
+                    g_ehci.connected = 1;
+                    usbh_event_notify_handler(USBH_EVENT_ATTACHED, 1);
+                }
             } else {
-                g_ehci.connected = 0;
-                usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
+                if (g_ehci.connected) {
+                    g_ehci.connected = 0;
+                    usb_slist_t *i;
+                    usb_slist_for_each(i, &g_ehci.epinfo_list)
+                    {
+                        struct usb_ehci_epinfo_s *epinfo = usb_slist_entry(i, struct usb_ehci_epinfo_s, list);
+                        if (epinfo->iocwait) {
+                            epinfo->iocwait = false;
+                            usb_osal_sem_give(epinfo->iocsem);
+                        }
+                    }
+                    usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
+                }
             }
         }
 
@@ -2059,6 +2015,7 @@ int usb_hc_init(void)
     uintptr_t physaddr1;
     uintptr_t physaddr2;
 
+    memset(&g_ehci, 0, sizeof(struct usb_ehci_s));
     /* Initialize the list of free Queue Head (QH) structures */
 
     for (uint8_t i = 0; i < CONFIG_USB_EHCI_QH_NUM; i++) {
@@ -2143,18 +2100,16 @@ int usb_hc_init(void)
 #if defined(CONFIG_USB_EHCI_INFO_ENABLE)
     /* Show the EHCI version */
     uint16_t regval16 = usb_ehci_swap16(HCCR->hciversion);
-    //usbhost_vtrace2(EHCI_VTRACE2_HCIVERSION, regval16 >> 8, regval16 & 0xff);
+    USB_LOG_INFO("EHCI HCIVERSION %x.%02x\r\n", regval16 >> 8, regval16 & 0xff);
 
     /* Verify that the correct number of ports is reported */
     regval = usb_ehci_getreg(&HCCR->hcsparams);
     uint8_t nports = (regval & EHCI_HCSPARAMS_NPORTS_MASK) >> EHCI_HCSPARAMS_NPORTS_SHIFT;
-
-    //usbhost_vtrace2(EHCI_VTRACE2_HCSPARAMS, nports, regval);
-    //DEBUGASSERT(nports == LPC43_EHCI_NRHPORT);
+    USB_LOG_INFO("EHCI nports=%d, HCSPARAMS=%04x\r\n", nports, regval);
 
     /* Show the HCCPARAMS register */
     regval = usb_ehci_getreg(&HCCR->hccparams);
-    //usbhost_vtrace1(EHCI_VTRACE1_HCCPARAMS, regval);
+    USB_LOG_INFO("EHCI HCCPARAMS=%06x\r\n", regval);
 #endif
     /* Set the Current Asynchronous List Address. */
     usb_ehci_putreg(usb_ehci_swap32(physaddr1), &HCOR->asynclistaddr);
@@ -2175,7 +2130,7 @@ int usb_hc_init(void)
     regval |= EHCI_USBCMD_FLSIZE_1024;
 #elif FRAME_LIST_SIZE == 512
     regval |= EHCI_USBCMD_FLSIZE_512;
-#elif FRAME_LIST_SIZE == 512
+#elif FRAME_LIST_SIZE == 256
     regval |= EHCI_USBCMD_FLSIZE_256;
 #else
 #error Unsupported frame size list size
@@ -2284,16 +2239,16 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
 
 int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 {
-    // int ret;
+    int ret;
     struct usb_ehci_epinfo_s *epinfo;
     struct usbh_hubport *hport;
 
     DEBUGASSERT(ep_cfg != NULL && ep_cfg->hport != NULL);
 
-    // ret = usb_osal_mutex_take(g_ehci.exclsem);
-    // if (ret < 0) {
-    //     return ret;
-    // }
+    ret = usb_osal_mutex_take(g_ehci.exclsem);
+    if (ret < 0) {
+        return ret;
+    }
 
     hport = ep_cfg->hport;
 
@@ -2323,9 +2278,8 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     epinfo->iocsem = usb_osal_sem_create(0);
 
     *ep = epinfo;
-
-    //usb_osal_mutex_give(g_ehci.exclsem);
-
+    usb_slist_add_tail(&g_ehci.epinfo_list, &epinfo->list);
+    usb_osal_mutex_give(g_ehci.exclsem);
     return 0;
 }
 
@@ -2340,6 +2294,7 @@ int usbh_ep_free(usbh_epinfo_t ep)
     }
 
     usb_osal_sem_delete(epinfo->iocsem);
+    usb_slist_remove(&g_ehci.epinfo_list, &epinfo->list);
     usb_free(epinfo);
 
     usb_osal_mutex_give(g_ehci.exclsem);
@@ -2857,7 +2812,6 @@ void usb_ehci_interrupt(void)
     pending = usbsts & regval;
 
     if (pending != 0) {
-
         /* Schedule interrupt handling work for the high priority worker
         * thread so that we are not pressed for time and so that we can
         * interrupt with other USB threads gracefully.
