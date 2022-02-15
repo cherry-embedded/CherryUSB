@@ -55,8 +55,6 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 
 CherryUSB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests. The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.
 
-How CherryUSB Device Stack is implemented, this video will tell you: <https://www.bilibili.com/video/BV1Ef4y1t73d> .
-
 CherryUSB Device Stack has the following functions：
 
 - Support USB2.0 full and high speed
@@ -89,8 +87,6 @@ CherryUSB Device Stack resource usage：
 
 The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for the different Class to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the protocol stack is managed using os, and provides osal to make a adaptation to different os.
 
-How CherryUSB Host Stack is implemented, the video will be provided in future.
-
 CherryUSB Host Stack has the following functions：
 
 - Automatic loading of supported Class drivers
@@ -113,4 +109,4 @@ Quickly start, API manual,and Class knowledge and examples, see [CherryUSB Docum
 
 ## CherryUSB Video Tutorial
 
-USB basic concepts and how the CherryUSB Device protocol stack is implemented, see [CherryUSB Device Protocol Stack Tutorial](https://www.bilibili.com/video/BV1Ef4y1t73d).
+USB basic concepts and how the CherryUSB Device stack is implemented, see [CherryUSB Device Stack Tutorial](https://www.bilibili.com/video/BV1Ef4y1t73d).
