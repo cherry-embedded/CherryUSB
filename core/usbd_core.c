@@ -982,7 +982,7 @@ static void usbd_send_to_host(uint16_t len)
          * last chunk is wMaxPacketSize long, to indicate the last
          * packet.
          */
-        if ((!usbd_core_cfg.ep0_data_buf_residue) && (usbd_core_cfg.ep0_data_buf_len >= USB_CTRL_EP_MPS) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
+        if(!usbd_core_cfg.ep0_data_buf_residue && (len > usbd_core_cfg.ep0_data_buf_len) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)){
             /* Transfers a zero-length packet next*/
             usbd_core_cfg.zlp_flag = true;
         }
