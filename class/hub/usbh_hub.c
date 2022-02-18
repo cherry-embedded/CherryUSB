@@ -401,12 +401,47 @@ static void usbh_extern_hub_psc_event(void *arg)
 
         /* Handle connect or disconnect, no power management */
         if (change & HUB_PORT_STATUS_C_CONNECTION) {
-            ret = usbh_hub_get_portstatus(hub_class, port, hub_class->port_status);
-            if (ret < 0) {
-                USB_LOG_ERR("Failed to read port:%d status, errorcode: %d\r\n", port, ret);
+            uint16_t debouncetime = 0;
+            uint16_t debouncestable = 0;
+            uint16_t connection = 0xffff;
+
+            /* Debounce */
+            while (debouncetime < 1500) {
+                ret = usbh_hub_get_portstatus(hub_class, port, hub_class->port_status);
+                if (ret < 0) {
+                    USB_LOG_ERR("Failed to read port:%d status, errorcode: %d\r\n", port, ret);
+                    break;
+                }
+                status = hub_class->port_status->wPortStatus;
+                change = hub_class->port_status->wPortChange;
+
+                if ((change & HUB_PORT_STATUS_C_CONNECTION) == 0 &&
+                    (status & HUB_PORT_STATUS_CONNECTION) == connection) {
+                    debouncestable += 25;
+                    if (debouncestable >= 100) {
+                        USB_LOG_DBG("Port %d debouncestable=%d\r\n",
+                                    port, debouncestable);
+                        break;
+                    }
+                } else {
+                    debouncestable = 0;
+                    connection = status & HUB_PORT_STATUS_CONNECTION;
+                }
+
+                if ((change & HUB_PORT_STATUS_C_CONNECTION) != 0) {
+                    ret = usbh_hub_clear_feature(hub_class, port, HUB_PORT_FEATURE_C_CONNECTION);
+                    if (ret < 0) {
+                        USB_LOG_ERR("Failed to clear port:%d, change mask:%04x, errorcode:%d\r\n", port, mask, ret);
+                    }
+                }
+                debouncetime += 25;
+                usb_osal_msleep(25);
             }
-            status = hub_class->port_status->wPortStatus;
-            change = hub_class->port_status->wPortChange;
+
+            if (ret < 0 || debouncetime >= 1500) {
+                USB_LOG_ERR("ERROR: Failed to debounce port %d: %d\r\n", port, ret);
+                continue;
+            }
 
             if (status & HUB_PORT_STATUS_CONNECTION) {
                 /* Device connected to a port on the hub */
