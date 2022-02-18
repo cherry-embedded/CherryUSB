@@ -18,22 +18,20 @@ struct usb_dc_ep_state {
 
 /* Driver state */
 struct usb_dc_config_priv {
-    uint8_t dev_addr;
+    volatile uint8_t dev_addr;
     struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } usb_dc_cfg;
 
-// clang-format off
 /* Endpoint Buffer */
-__attribute__ ((aligned(4))) uint8_t EP0_DatabufHD[64]; //ep0(64)
-__attribute__ ((aligned(4))) uint8_t EP1_DatabufHD[64+64];  //ep1_out(64)+ep1_in(64)
-__attribute__ ((aligned(4))) uint8_t EP2_DatabufHD[64+64];  //ep2_out(64)+ep2_in(64)
-__attribute__ ((aligned(4))) uint8_t EP3_DatabufHD[64+64];  //ep3_out(64)+ep3_in(64)
-__attribute__ ((aligned(4))) uint8_t EP4_DatabufHD[64+64];  //ep4_out(64)+ep4_in(64)
-__attribute__ ((aligned(4))) uint8_t EP5_DatabufHD[64+64];  //ep5_out(64)+ep5_in(64)
-__attribute__ ((aligned(4))) uint8_t EP6_DatabufHD[64+64];  //ep6_out(64)+ep6_in(64)
-__attribute__ ((aligned(4))) uint8_t EP7_DatabufHD[64+64];  //ep7_out(64)+ep7_in(64)
-// clang-format on
+__attribute__((aligned(4))) uint8_t EP0_DatabufHD[64];      //ep0(64)
+__attribute__((aligned(4))) uint8_t EP1_DatabufHD[64 + 64]; //ep1_out(64)+ep1_in(64)
+__attribute__((aligned(4))) uint8_t EP2_DatabufHD[64 + 64]; //ep2_out(64)+ep2_in(64)
+__attribute__((aligned(4))) uint8_t EP3_DatabufHD[64 + 64]; //ep3_out(64)+ep3_in(64)
+__attribute__((aligned(4))) uint8_t EP4_DatabufHD[64 + 64]; //ep4_out(64)+ep4_in(64)
+__attribute__((aligned(4))) uint8_t EP5_DatabufHD[64 + 64]; //ep5_out(64)+ep5_in(64)
+__attribute__((aligned(4))) uint8_t EP6_DatabufHD[64 + 64]; //ep6_out(64)+ep6_in(64)
+__attribute__((aligned(4))) uint8_t EP7_DatabufHD[64 + 64]; //ep7_out(64)+ep7_in(64)
 
 void OTG_FS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 

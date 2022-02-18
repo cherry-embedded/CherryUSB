@@ -99,10 +99,10 @@ struct usb_dc_ep_state {
 
 /* Driver state */
 struct usb_dc_config_priv {
-    USB_OTG_GlobalTypeDef *Instance;                        /*!< Register base address */
+    USB_OTG_GlobalTypeDef *Instance; /*!< Register base address */
+    volatile uint32_t grxstsp;
     struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
-    volatile uint32_t grxstsp;
 } usb_dc_cfg;
 
 static int usb_flush_rxfifo(USB_OTG_GlobalTypeDef *USBx);

@@ -17,6 +17,7 @@ struct usb_dc_ep_state {
 
 /* Driver state */
 struct usb_dc_config_priv {
+    volatile uint8_t dev_addr;
     struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } usb_dc_cfg;

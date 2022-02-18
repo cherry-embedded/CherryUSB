@@ -40,10 +40,10 @@ struct usb_dc_ep_state {
 /* Driver state */
 struct usb_dc_config_priv {
     USB_TypeDef *Instance;                                  /*!< Register base address */
-    __IO uint8_t USB_Address;                               /*!< USB Address */
+    volatile uint8_t dev_addr;                              /*!< USB Address */
+    volatile uint32_t pma_offset;                           /*!< pma offset */
     struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
-    uint32_t pma_offset;
 } usb_dc_cfg;
 
 __WEAK void usb_dc_low_level_init(void)
@@ -116,7 +116,7 @@ int usbd_set_address(const uint8_t addr)
         USBx->DADDR = (uint16_t)USB_DADDR_EF;
     }
 
-    usb_dc_cfg.USB_Address = addr;
+    usb_dc_cfg.dev_addr = addr;
     return 0;
 }
 
@@ -348,9 +348,9 @@ void USBD_IRQHandler(void)
                     /* DIR = 0 implies that (EP_CTR_TX = 1) always */
                     PCD_CLEAR_TX_EP_CTR(USBx, 0);
                     usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
-                    if ((usb_dc_cfg.USB_Address > 0U) && (PCD_GET_EP_TX_CNT(USBx, 0) == 0U)) {
-                        USBx->DADDR = ((uint16_t)usb_dc_cfg.USB_Address | USB_DADDR_EF);
-                        usb_dc_cfg.USB_Address = 0U;
+                    if ((usb_dc_cfg.dev_addr > 0U) && (PCD_GET_EP_TX_CNT(USBx, 0) == 0U)) {
+                        USBx->DADDR = ((uint16_t)usb_dc_cfg.dev_addr | USB_DADDR_EF);
+                        usb_dc_cfg.dev_addr = 0U;
                     }
                 } else {
                     /* DIR = 1 */
