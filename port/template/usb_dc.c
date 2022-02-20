@@ -1,5 +1,9 @@
 #include "usbd_core.h"
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler USB_FS_Handler //use actual usb irq name instead
+#endif
+
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 5
 #endif
@@ -34,6 +38,7 @@ int usb_dc_init(void)
 {
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
 
+    usb_dc_low_level_init();
     return 0;
 }
 
@@ -59,18 +64,22 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     }
     return 0;
 }
+
 int usbd_ep_close(const uint8_t ep)
 {
     return 0;
 }
+
 int usbd_ep_set_stall(const uint8_t ep)
 {
     return 0;
 }
+
 int usbd_ep_clear_stall(const uint8_t ep)
 {
     return 0;
 }
+
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 {
     return 0;
