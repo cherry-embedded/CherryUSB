@@ -413,6 +413,11 @@
               <FileType>1</FileType>
               <FilePath>..\bsp\main.c</FilePath>
             </File>
+            <File>
+              <FileName>cdc_acm_template.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\cdc_acm_template.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -444,9 +449,9 @@
               <FilePath>..\..\..\core\usbd_core.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc.c</FileName>
+              <FileName>usb_dc_mm32.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\port\mm32\usb_dc.c</FilePath>
+              <FilePath>..\..\..\port\mm32\usb_dc_mm32.c</FilePath>
             </File>
           </Files>
         </Group>
