@@ -73,37 +73,21 @@ static void usb_musb_data_ack(uint8_t ep_idx, bool bIsLastPacket)
     }
 }
 
-static void usb_musb_data_send(uint8_t ep_idx, uint32_t ui32TransType)
+static void usb_musb_data_send(uint8_t ep_idx, bool bIsLastPacket)
 {
-    uint32_t ui32TxPktRdy;
-
     if (ep_idx == 0) {
-        ui32TxPktRdy = ui32TransType & 0xff;
-        USB->CSRL0 = ui32TxPktRdy;
+        USB->CSRL0 = USB_CSRL0_TXRDY | (bIsLastPacket ? USB_CSRL0_DATAEND : 0);
     } else {
-        ui32TxPktRdy = (ui32TransType >> 8) & 0xff;
-        HWREGB(USB_TXCSRLx_BASE(ep_idx)) = ui32TxPktRdy;
+        HWREGB(USB_TXCSRLx_BASE(ep_idx)) = USB_TXCSRL1_TXRDY;
     }
 }
 
 static int usb_musb_write_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
 {
-    uint8_t ui8TxPktRdy;
-
     uint32_t *buf32;
     uint8_t *buf8;
     uint32_t count32;
     uint32_t count8;
-
-    if (ep_idx == 0x00) {
-        if (USB->CSRL0 & USB_CSRL0_TXRDY) {
-            return -1;
-        }
-    } else {
-        if (HWREGB(USB_TXCSRLx_BASE(ep_idx)) & USB_TXCSRL1_TXRDY) {
-            return -1;
-        }
-    }
 
     buf32 = (uint32_t *)buffer;
 
@@ -397,9 +381,30 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
 {
     int ret = 0;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint32_t timeout = 0xffffff;
 
     if (!data && data_len) {
         return -1;
+    }
+
+    if (ep_idx == 0x00) {
+        while (USB->CSRL0 & USB_CSRL0_TXRDY) {
+            if (USB->CSRL0 & USB_CSRL0_ERROR) {
+                return -2;
+            }
+            if (!(timeout--)) {
+                return -3;
+            }
+        }
+    } else {
+        while (HWREGB(USB_TXCSRLx_BASE(ep_idx)) & USB_TXCSRL1_TXRDY) {
+            if ((HWREGB(USB_TXCSRLx_BASE(ep_idx)) & USB_TXCSRL1_ERROR) || (HWREGB(USB_TXCSRLx_BASE(ep_idx)) & USB_TXCSRL1_UNDRN)) {
+                return -2;
+            }
+            if (!(timeout--)) {
+                return -3;
+            }
+        }
     }
 
     if (!data_len) {
@@ -410,9 +415,9 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
             } else {
                 usb_musb_data_ack(ep_idx, true);
             }
-            memset(&usb_dc_cfg.setup, 0, 8);
+        } else {
+            usb_musb_data_send(ep_idx, true);
         }
-
         return 0;
     }
 
@@ -427,13 +432,13 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
             usb_ep0_state = USB_EP0_STATE_IN_DATA;
         }
 
-        usb_musb_data_send(ep_idx, USB_TRANS_IN);
+        usb_musb_data_send(ep_idx, false);
     } else {
         if (ep_idx == 0) {
             usb_ep0_state = USB_EP0_STATE_OUT_STATUS;
         }
 
-        usb_musb_data_send(ep_idx, USB_TRANS_IN_LAST);
+        usb_musb_data_send(ep_idx, true);
     }
     if (ret_bytes) {
         *ret_bytes = data_len;
@@ -453,7 +458,9 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     }
 
     if (!max_data_len) {
-        usb_musb_data_ack(ep_idx, true);
+        if (ep_idx != 0x00) {
+            usb_musb_data_ack(ep_idx, true);
+        }
         return 0;
     }
 
@@ -496,9 +503,7 @@ static void handle_ep0(void)
             if (ep0_status & USB_CSRL0_RXRDY) {
                 uint8_t read_count = USB->COUNT0;
                 usb_musb_read_packet(0, (uint8_t *)&usb_dc_cfg.setup, read_count);
-                if (usb_dc_cfg.setup.wLength) {
-                    usb_musb_data_ack(0, false);
-                }
+                usb_musb_data_ack(0, false);
 
                 if (usb_dc_cfg.setup.wLength && !(usb_dc_cfg.setup.bmRequestType & 0x80)) {
                     usb_ep0_state = USB_EP0_STATE_OUT_DATA;
@@ -589,7 +594,8 @@ void USBD_IRQHandler(void)
     rxis &= USB->RXIE;
     while (rxis) {
         uint8_t ep_idx = __builtin_ctz(rxis);
-        usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (void *)(ep_idx & 0x7f));
+        if (HWREGB(USB_RXCSRLx_BASE(ep_idx)) & USB_RXCSRL1_RXRDY)
+            usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (void *)(ep_idx & 0x7f));
         rxis &= ~(1 << ep_idx);
     }
 }
