@@ -2,7 +2,7 @@
 #include "usbd_msc.h"
 
 #define MSC_IN_EP  0x81
-#define MSC_OUT_EP 0x01
+#define MSC_OUT_EP 0x02
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
