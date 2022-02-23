@@ -50,8 +50,8 @@ enum Stage {
 struct usbd_msc_cfg_priv {
     /* state of the bulk-only state machine */
     enum Stage stage;
-    struct CBW cbw;
-    struct CSW csw;
+    USB_MEM_ALIGN32 struct CBW cbw;
+    USB_MEM_ALIGN32 struct CSW csw;
 
     uint8_t sKey; /* Sense key */
     uint8_t ASC;  /* Additional Sense Code */
@@ -71,24 +71,12 @@ static bool memOK;
 
 static void usbd_msc_reset(void)
 {
-    usbd_msc_cfg.stage = MSC_READ_CBW;
-    usbd_msc_cfg.scsi_blk_addr = 0U;
-    usbd_msc_cfg.scsi_blk_len = 0U;
-    usbd_msc_cfg.max_lun = 0;
-    usbd_msc_cfg.sKey = 0;
-    usbd_msc_cfg.ASC = 0;
-    usbd_msc_cfg.ASQ = 0;
-
-    (void)memset((void *)&usbd_msc_cfg.cbw, 0, sizeof(struct CBW));
-    (void)memset((void *)&usbd_msc_cfg.csw, 0, sizeof(struct CSW));
-
+    memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
     usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
 
-    if (usbd_msc_cfg.block_buffer) {
-        free(usbd_msc_cfg.block_buffer);
+    if (usbd_msc_cfg.block_buffer == NULL) {
+        usbd_msc_cfg.block_buffer = usb_iomalloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
     }
-    usbd_msc_cfg.block_buffer = malloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
-    memset(usbd_msc_cfg.block_buffer, 0, usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
 }
 
 /**

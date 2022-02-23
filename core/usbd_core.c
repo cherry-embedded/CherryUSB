@@ -43,9 +43,9 @@
 #define USB_EP_OUT_NUM          8
 #define USB_EP_IN_NUM           8
 
-static struct usbd_core_cfg_priv {
+struct usbd_core_cfg_priv {
     /** Setup packet */
-    struct usb_setup_packet setup;
+    USB_MEM_ALIGN32 struct usb_setup_packet setup;
     /** Pointer to data buffer */
     uint8_t *ep0_data_buf;
     /** Remaining bytes in buffer */
@@ -57,7 +57,7 @@ static struct usbd_core_cfg_priv {
     /** Pointer to registered descriptors */
     const uint8_t *descriptors;
     /* Buffer used for storing standard, class and vendor request data */
-    uint8_t req_data[USB_REQUEST_BUFFER_SIZE];
+    USB_MEM_ALIGN32 uint8_t req_data[USB_REQUEST_BUFFER_SIZE];
 
 #if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_ARR_SEARCH
     usbd_endpoint_callback in_ep_cb[USB_EP_IN_NUM];
@@ -86,12 +86,12 @@ static struct usb_bos_descriptor *bos_desc;
 static void usbd_print_setup(struct usb_setup_packet *setup)
 {
     USB_LOG_INFO("Setup: "
-                  "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
-                  setup->bmRequestType,
-                  setup->bRequest,
-                  setup->wValue,
-                  setup->wIndex,
-                  setup->wLength);
+                 "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
+                 setup->bmRequestType,
+                 setup->bRequest,
+                 setup->wValue,
+                 setup->wIndex,
+                 setup->wLength);
 }
 
 /**
@@ -200,7 +200,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
     USB_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
-                  ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
+                 ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
     usbd_ep_open(&ep_cfg);
     usbd_core_cfg.configured = true;
@@ -226,7 +226,7 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
     USB_LOG_INFO("Close endpoint:0x%x type:%u\r\n",
-                  ep_cfg.ep_addr, ep_cfg.ep_type);
+                 ep_cfg.ep_addr, ep_cfg.ep_type);
 
     usbd_ep_close(ep_cfg.ep_addr);
 
@@ -429,7 +429,7 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
                 }
 
                 USB_LOG_DBG("Current iface %u alt setting %u",
-                             cur_iface, cur_alt_setting);
+                            cur_iface, cur_alt_setting);
                 break;
 
             case USB_DESCRIPTOR_TYPE_ENDPOINT:
@@ -982,7 +982,7 @@ static void usbd_send_to_host(uint16_t len)
          * last chunk is wMaxPacketSize long, to indicate the last
          * packet.
          */
-        if(!usbd_core_cfg.ep0_data_buf_residue && (len > usbd_core_cfg.ep0_data_buf_len) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)){
+        if (!usbd_core_cfg.ep0_data_buf_residue && (len > usbd_core_cfg.ep0_data_buf_len) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
             /* Transfers a zero-length packet next*/
             usbd_core_cfg.zlp_flag = true;
         }
