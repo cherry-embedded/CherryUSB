@@ -67,10 +67,6 @@
 #define usb_ehci_physramaddr(a) (a)
 #define usb_ehci_virtramaddr(a) (a)
 
-/* Port numbers */
-// #define RHPNDX(rh) (rh)
-// #define RHPORT(rh) (RHPNDX(rh) + 1)
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -176,6 +172,16 @@ static uint32_t usb_ehci_swap32(uint32_t value);
 #define usb_ehci_swap32(value) (value)
 #endif
 
+#ifdef CONFIG_USB_DCACHE_ENABLE
+void usb_ehci_dcache_clean(uintptr_t addr, uint32_t len);
+void usb_ehci_dcache_invalidate(uintptr_t addr, uint32_t len);
+void usb_ehci_dcache_clean_invalidate(uintptr_t addr, uint32_t len);
+#else
+#define usb_ehci_dcache_clean(addr, len)
+#define usb_ehci_dcache_invalidate(addr, len)
+#define usb_ehci_dcache_clean_invalidate(addr, len)
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -200,22 +206,22 @@ static struct usb_ehci_s g_ehci;
 
 /* The head of the asynchronous queue */
 
-USB_NOCACHE_RAM_SECTION struct usb_ehci_qh_s g_asynchead __attribute__((aligned(32)));
+static struct usb_ehci_qh_s g_asynchead __attribute__((aligned(32)));
 
 /* The head of the periodic queue */
 
-USB_NOCACHE_RAM_SECTION struct usb_ehci_qh_s g_intrhead __attribute__((aligned(32)));
+static struct usb_ehci_qh_s g_intrhead __attribute__((aligned(32)));
 
 /* Queue Head (QH) pool */
 
-USB_NOCACHE_RAM_SECTION struct usb_ehci_qh_s g_qhpool[CONFIG_USB_EHCI_QH_NUM] __attribute__((aligned(32)));
+static struct usb_ehci_qh_s g_qhpool[CONFIG_USB_EHCI_QH_NUM] __attribute__((aligned(32)));
 
 /* Queue Element Transfer Descriptor (qTD) pool */
 
-USB_NOCACHE_RAM_SECTION struct usb_ehci_qtd_s g_qtdpool[CONFIG_USB_EHCI_QTD_NUM] __attribute__((aligned(32)));
+static struct usb_ehci_qtd_s g_qtdpool[CONFIG_USB_EHCI_QTD_NUM] __attribute__((aligned(32)));
 
 /* The frame list */
-USB_NOCACHE_RAM_SECTION uint32_t g_framelist[FRAME_LIST_SIZE] __attribute__((aligned(4096)));
+static uint32_t g_framelist[FRAME_LIST_SIZE] __attribute__((aligned(4096)));
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -592,7 +598,6 @@ static int usb_ehci_qh_discard(struct usb_ehci_qh_s *qh)
 
     ret = usb_ehci_qtd_foreach(qh, usb_ehci_qtd_discard, NULL);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_QTDFOREACH_FAILED, -ret);
     }
 
     /* Then free the QH itself */
@@ -600,7 +605,54 @@ static int usb_ehci_qh_discard(struct usb_ehci_qh_s *qh)
     usb_ehci_qh_free(qh);
     return ret;
 }
+#ifdef CONFIG_USB_DCACHE_ENABLE
+/****************************************************************************
+ * Name: usb_ehci_qtd_flush
+ *
+ * Description:
+ *   This is a callback from usb_ehci_qtd_foreach.  It simply flushes D-cache
+ *   for address range of the qTD entry.
+ *
+ ****************************************************************************/
 
+static int usb_ehci_qtd_flush(struct usb_ehci_qtd_s *qtd, uint32_t **bp, void *arg)
+{
+    /* Flush the D-Cache, i.e., make the contents of the memory match the
+    * contents of the D-Cache in the specified address range and invalidate
+    * the D-Cache to force re-loading of the data from memory when next
+    * accessed.
+    */
+
+    usb_ehci_dcache_clean_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
+
+    return 0;
+}
+
+/****************************************************************************
+ * Name: usb_ehci_qh_flush
+ *
+ * Description:
+ *   Invalidate the Queue Head and all qTD entries in the queue.
+ *
+ ****************************************************************************/
+
+static int usb_ehci_qh_flush(struct usb_ehci_qh_s *qh)
+{
+    /* Flush the QH first.  This will write the contents of the D-cache to RAM
+    * and invalidate the contents of the D-cache so that the next access will
+    * be reloaded from D-Cache.
+    */
+
+    usb_ehci_dcache_clean_invalidate((uintptr_t)&qh->hw, sizeof(struct usb_ehci_qh_s));
+
+    /* Then flush all of the qTD entries in the queue */
+
+    return usb_ehci_qtd_foreach(qh, usb_ehci_qtd_flush, NULL);
+}
+#else
+#define usb_ehci_qtd_flush(qtd, bp, arg)
+#define usb_ehci_qtd_flush(qh)
+#endif
 /****************************************************************************
  * Name: usb_ehci_speed
  *
@@ -635,7 +687,6 @@ static struct usb_ehci_qh_s *usb_ehci_qh_create(struct usb_ehci_epinfo_s *epinfo
 
     qh = usb_ehci_qh_alloc();
     if (qh == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_QHALLOC_FAILED, 0);
         return NULL;
     }
 
@@ -722,6 +773,7 @@ static int usb_ehci_qtd_addbpl(struct usb_ehci_qtd_s *qtd, const void *buffer, s
     uint32_t next;
     int ndx;
 
+    usb_ehci_dcache_clean_invalidate((uintptr_t)buffer, buflen);
     /* Loop, adding the aligned physical addresses of the buffer to the buffer
     * page list.  Only the first entry need not be aligned (because only the
     * first entry has the offset field). The subsequent entries must begin on
@@ -766,7 +818,6 @@ static int usb_ehci_qtd_addbpl(struct usb_ehci_qtd_s *qtd, const void *buffer, s
     /* Handle the case of a huge buffer > 4*4KB = 16KB */
 
     if (ndx >= 5) {
-        //usbhost_trace1(EHCI_TRACE1_BUFTOOBIG, buflen);
         return -EFBIG;
     }
 
@@ -783,7 +834,6 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_setupphase(struct usb_ehci_epinfo_s *
 
     qtd = usb_ehci_qtd_alloc();
     if (qtd == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_REQQTDALLOC_FAILED, 0);
         return NULL;
     }
 
@@ -816,7 +866,6 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_setupphase(struct usb_ehci_epinfo_s *
     /* Add the buffer data */
     ret = usb_ehci_qtd_addbpl(qtd, (uint8_t *)setup, 8);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_ADDBPL_FAILED, -ret);
         usb_ehci_qtd_free(qtd);
         return NULL;
     }
@@ -837,7 +886,6 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_dataphase(struct usb_ehci_epinfo_s *e
 
     qtd = usb_ehci_qtd_alloc();
     if (qtd == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_DATAQTDALLOC_FAILED, 0);
         return NULL;
     }
 
@@ -869,7 +917,6 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_dataphase(struct usb_ehci_epinfo_s *e
 
     ret = usb_ehci_qtd_addbpl(qtd, buffer, buflen);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_ADDBPL_FAILED, -ret);
         usb_ehci_qtd_free(qtd);
         return NULL;
     }
@@ -889,7 +936,6 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_statusphase(uint32_t tokenbits)
 
     qtd = usb_ehci_qtd_alloc();
     if (qtd == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_REQQTDALLOC_FAILED, 0);
         return NULL;
     }
 
@@ -931,7 +977,6 @@ static void usb_ehci_qh_enqueue(struct usb_ehci_qh_s *qhead, struct usb_ehci_qh_
     */
 
     qh->fqp = qh->hw.overlay.nqp;
-    //usb_ehci_qh_dump(qh, NULL, NULL);
 
     /* Add the new QH to the head of the asynchronous queue list.
     *
@@ -940,11 +985,12 @@ static void usb_ehci_qh_enqueue(struct usb_ehci_qh_s *qhead, struct usb_ehci_qh_
     */
 
     qh->hw.hlp = qhead->hw.hlp;
-
+    usb_ehci_qh_flush(qh);
     /* Then set the new QH as the first QH in the asynchronous queue */
 
     physaddr = (uintptr_t)usb_ehci_physramaddr((uintptr_t)qh);
     qhead->hw.hlp = usb_ehci_swap32(physaddr | QH_HLP_TYP_QH);
+    usb_ehci_dcache_clean((uintptr_t)&qhead->hw, sizeof(struct usb_ehci_qh_s));
 }
 
 static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
@@ -962,7 +1008,6 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
     /* Create and initialize a Queue Head (QH) structure for this transfer */
     qh = usb_ehci_qh_create(epinfo);
     if (qh == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_QHCREATE_FAILED, 0);
         return -ENOMEM;
     }
 
@@ -987,7 +1032,6 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
     {
         qtd = usb_ehci_qtd_setupphase(epinfo, setup);
         if (qtd == NULL) {
-            //usbhost_trace1(EHCI_TRACE1_QTDSETUP_FAILED, 0);
             ret = -ENOMEM;
             goto errout_with_qh;
         }
@@ -1034,7 +1078,6 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
 
         qtd = usb_ehci_qtd_dataphase(epinfo, buffer, buflen, tokenbits);
         if (qtd == NULL) {
-            //usbhost_trace1(EHCI_TRACE1_QTDDATA_FAILED, 0);
             ret = -ENOMEM;
             goto errout_with_qh;
         }
@@ -1079,7 +1122,6 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
         */
         qtd = usb_ehci_qtd_statusphase(tokenbits);
         if (qtd == NULL) {
-            //usbhost_trace1(EHCI_TRACE1_QTDSTATUS_FAILED, 0);
             ret = -ENOMEM;
             goto errout_with_qh;
         }
@@ -1119,7 +1161,6 @@ static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
     /* Create and initialize a Queue Head (QH) structure for this transfer */
     qh = usb_ehci_qh_create(epinfo);
     if (qh == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_QHCREATE_FAILED, 0);
         return -ENOMEM;
     }
 
@@ -1143,7 +1184,6 @@ static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
 
         qtd = usb_ehci_qtd_dataphase(epinfo, buffer, buflen, tokenbits);
         if (qtd == NULL) {
-            //usbhost_trace1(EHCI_TRACE1_QTDDATA_FAILED, 0);
             ret = -ENOMEM;
             goto errout_with_qh;
         }
@@ -1174,7 +1214,6 @@ static int usb_ehci_intr_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
     /* Create and initialize a Queue Head (QH) structure for this transfer */
     qh = usb_ehci_qh_create(epinfo);
     if (qh == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_QHCREATE_FAILED, 0);
         return -ENOMEM;
     }
 
@@ -1196,7 +1235,6 @@ static int usb_ehci_intr_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
 
     qtd = usb_ehci_qtd_dataphase(epinfo, buffer, buflen, tokenbits);
     if (qtd == NULL) {
-        //usbhost_trace1(EHCI_TRACE1_QTDDATA_FAILED, 0);
         ret = -ENOMEM;
         goto errout_with_qh;
     }
@@ -1426,7 +1464,6 @@ static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo)
     /* Did epinfo->result or usb_osal_mutex_take() report an error? */
 
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_TRANSFER_FAILED, -ret);
         epinfo->iocwait = false;
         return ret;
     }
@@ -1451,7 +1488,7 @@ static int usb_ehci_qtd_ioccheck(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)arg;
     DEBUGASSERT(qtd && epinfo);
 
-    //usb_ehci_qtd_print(qtd);
+    usb_ehci_dcache_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
 
     /* Remove the qTD from the list
     *
@@ -1499,7 +1536,7 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
 
     DEBUGASSERT(qh && bp);
 
-    //usb_ehci_qh_print(qh);
+    usb_ehci_dcache_invalidate((uintptr_t)&qh->hw, sizeof(struct ehci_qh_s));
 
     /* Get the endpoint info pointer from the extended QH data.  Only the
     * g_asynchead QH can have a NULL epinfo field.
@@ -1522,7 +1559,6 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
     /* Is the qTD still active? */
 
     token = usb_ehci_swap32(qh->hw.overlay.token);
-    //usbhost_vtrace2(EHCI_VTRACE2_IOCCHECK, epinfo->epno, token);
 
     if ((token & QH_TOKEN_ACTIVE) != 0) {
         /* Yes... we cannot process the QH while it is still active.  Return
@@ -1535,7 +1571,6 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
     /* Remove all active, attached qTD structures from the inactive QH */
     ret = usb_ehci_qtd_foreach(qh, usb_ehci_qtd_ioccheck, (void *)qh->epinfo);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_QTDFOREACH_FAILED, -ret);
     }
     /* If there is no longer anything attached to the QH, then remove it from
     * the asynchronous queue.
@@ -1547,7 +1582,7 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
         */
 
         **bp = qh->hw.hlp;
-
+        usb_ehci_dcache_clean((uintptr_t)*bp, sizeof(uint32_t));
         /* Check for errors, update the data toggle */
 
         if ((token & QH_TOKEN_ERRORS) == 0) {
@@ -1559,6 +1594,7 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
 
             epinfo->status = 0;
             epinfo->result = 0;
+
         } else {
             /* An error occurred */
 
@@ -1576,16 +1612,14 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
                     QH_TOKEN_HALTED &&
                 (token & QH_TOKEN_CERR_MASK) != 0) {
                 /* It is a stall,  Note that the data toggle is reset
-               * after the stall.
-               */
+                * after the stall.
+                */
 
-                //usbhost_trace2(EHCI_TRACE2_EPSTALLED, epinfo->epno, token);
                 epinfo->result = -EPERM;
                 epinfo->toggle = 0;
             } else {
                 /* Otherwise, it is some kind of data transfer error */
 
-                //usbhost_trace2(EHCI_TRACE2_EPIOERROR, epinfo->epno, token);
                 epinfo->result = -EIO;
             }
         }
@@ -1594,12 +1628,6 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
         if (epinfo->iocwait) {
             /* Yes... wake it up */
             epinfo->iocwait = false;
-            /* TODO */
-            // clang-format off
-            for (size_t i = 0; i < 3200; i++) {
-                __asm volatile("nop" ::: "memory");
-            }
-            // clang-format on
             usb_osal_sem_give(epinfo->iocsem);
         }
 #ifdef CONFIG_USBHOST_ASYNCH
@@ -1611,7 +1639,6 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
             usb_ehci_asynch_completion(epinfo);
         }
 #endif
-
         /* Then release this QH by returning it to the free list */
         usb_ehci_qh_free(qh);
     } else {
@@ -1638,7 +1665,7 @@ static int usb_ehci_qtd_cancel(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
 {
     DEBUGASSERT(qtd != NULL && bp != NULL);
 
-    //usb_ehci_qtd_print(qtd);
+    usb_ehci_dcache_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
 
     /* Remove the qTD from the list
     *
@@ -1676,7 +1703,7 @@ static int usb_ehci_qh_cancel(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg
 
     DEBUGASSERT(qh != NULL && bp != NULL && epinfo != NULL);
 
-    //usb_ehci_qh_print(qh);
+    usb_ehci_dcache_invalidate((uintptr_t)&qh->hw, sizeof(struct usb_ehci_qh_s));
 
     /* Check if this is the QH that we are looking for */
 
@@ -1703,7 +1730,7 @@ static int usb_ehci_qh_cancel(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg
     */
 
     **bp = qh->hw.hlp;
-
+    usb_ehci_dcache_clean((uintptr_t)*bp, sizeof(uint32_t));
     /* Re-enable the schedules (if they were enabled before. */
 
     usb_ehci_putreg(regval, &HCOR->usbcmd);
@@ -1712,7 +1739,6 @@ static int usb_ehci_qh_cancel(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg
 
     ret = usb_ehci_qtd_foreach(qh, usb_ehci_qtd_cancel, NULL);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_QTDFOREACH_FAILED, -ret);
     }
 
     /* Then release this QH by returning it to the free list.  Return 1
@@ -1729,6 +1755,7 @@ static inline void usb_ehci_ioc_bottomhalf(void)
     uint32_t *bp;
     int ret;
 
+    usb_ehci_dcache_invalidate((uintptr_t)&g_asynchead.hw, sizeof(struct usb_ehci_qh_s));
     /* Set the back pointer to the forward qTD pointer of the asynchronous
     * queue head.
     */
@@ -1749,6 +1776,7 @@ static inline void usb_ehci_ioc_bottomhalf(void)
 #ifndef CONFIG_USBHOST_INT_DISABLE
     /* Check the Interrupt Queue */
 
+    usb_ehci_dcache_invalidate((uintptr_t)&g_intrhead.hw, sizeof(struct usb_ehci_qh_s));
     /* Set the back pointer to the forward qTD pointer of the asynchronous
     * queue head.
     */
@@ -1763,7 +1791,6 @@ static inline void usb_ehci_ioc_bottomhalf(void)
 
         ret = usb_ehci_qh_foreach(qh, &bp, usb_ehci_qh_ioccheck, NULL);
         if (ret < 0) {
-            //usbhost_trace1(EHCI_TRACE1_QHFOREACH_FAILED, -ret);
         }
     }
 #endif
@@ -1802,14 +1829,10 @@ static inline void usb_ehci_portsc_bottomhalf(void)
     for (rhpndx = 0; rhpndx < CONFIG_USBHOST_RHPORTS; rhpndx++) {
         portsc = usb_ehci_getreg(&HCOR->portsc[rhpndx]);
 
-        //usbhost_vtrace2(EHCI_VTRACE2_PORTSC, rhpndx + 1, portsc);
-
         /* Handle port connection status change (CSC) events */
         if ((portsc & EHCI_PORTSC_CSC) != 0) {
-            //usbhost_vtrace1(EHCI_VTRACE1_PORTSC_CSC, portsc);
-
             /* Check current connect status */
-            if ((portsc & EHCI_PORTSC_CCS) != 0) {
+            if ((portsc & (EHCI_PORTSC_CCS | EHCI_PORTSC_PE)) != 0) {
                 /* Connected ... Did we just become connected? */
                 if (!g_ehci.connected) {
                     g_ehci.connected = 1;
@@ -1921,7 +1944,6 @@ static int usb_ehci_reset(void)
     /* Is the EHCI still running?  Did we timeout? */
 
     if ((regval & EHCI_USBSTS_HALTED) == 0) {
-        //usbhost_trace1(EHCI_TRACE1_HCHALTED_TIMEOUT, regval);
         return -ETIMEDOUT;
     }
 
@@ -1980,7 +2002,6 @@ static int usb_ehci_wait_usbsts(uint32_t maskbits, uint32_t donebits, unsigned i
 
         regval = usb_ehci_getreg(&HCOR->usbsts);
         if ((regval & EHCI_INT_SYSERROR) != 0) {
-            //usbhost_trace1(EHCI_TRACE1_SYSTEMERROR, regval);
             return -EIO;
         }
 
@@ -2000,11 +2021,7 @@ static int usb_ehci_wait_usbsts(uint32_t maskbits, uint32_t donebits, unsigned i
     return (regval == donebits) ? 0 : -ETIMEDOUT;
 }
 
-__WEAK void usb_ehci_pre_hw_init(void)
-{
-}
-
-__WEAK void usb_ehci_last_hw_init(void)
+__WEAK void usb_hc_low_level_init(void)
 {
 }
 
@@ -2054,7 +2071,7 @@ int usb_hc_init(void)
     g_asynchead.hw.overlay.token = usb_ehci_swap32(QH_TOKEN_HALTED);
     g_asynchead.fqp = usb_ehci_swap32(QTD_NQP_T);
 
-    g_ehci.exclsem = usb_osal_mutex_create();
+    usb_ehci_dcache_clean((uintptr_t)&g_asynchead.hw, sizeof(struct usb_ehci_qh_s));
 
     /* Initialize the head of the periodic list.  Since Isochronous
     * endpoints are not not yet supported, each element of the
@@ -2070,7 +2087,6 @@ int usb_hc_init(void)
     g_intrhead.hw.epcaps = usb_ehci_swap32(QH_EPCAPS_SSMASK(1));
 
     /* Attach the periodic QH to Period Frame List */
-
     physaddr2 = usb_ehci_physramaddr((uintptr_t)&g_intrhead);
     for (uint32_t i = 0; i < FRAME_LIST_SIZE; i++) {
         g_framelist[i] = usb_ehci_swap32(physaddr2) | PFL_TYP_QH;
@@ -2079,13 +2095,17 @@ int usb_hc_init(void)
     /* Set the Periodic Frame List Base Address. */
     physaddr2 = usb_ehci_physramaddr((uintptr_t)g_framelist);
 
-    usb_ehci_pre_hw_init();
+    usb_ehci_dcache_clean((uintptr_t)&g_intrhead.hw, sizeof(struct usb_ehci_qh_s));
+    usb_ehci_dcache_clean((uintptr_t)g_framelist, FRAME_LIST_SIZE * sizeof(uint32_t));
+
+    g_ehci.exclsem = usb_osal_mutex_create();
+
+    usb_hc_low_level_init();
     /* Host Controller Initialization. Paragraph 4.1 */
 
     /* Reset the EHCI hardware */
     ret = usb_ehci_reset();
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_RESET_FAILED, -ret);
         return -1;
     }
 
@@ -2155,7 +2175,6 @@ int usb_hc_init(void)
     /* Wait for the EHCI to run (i.e., no longer report halted) */
     ret = usb_ehci_wait_usbsts(EHCI_USBSTS_HALTED, 0, 100 * 1000);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_RUN_FAILED, usb_ehci_getreg(&HCOR->usbsts));
         return -2;
     }
 
@@ -2164,7 +2183,6 @@ int usb_hc_init(void)
     */
     usb_ehci_putreg(EHCI_HANDLED_INTS, &HCOR->usbintr);
 
-    usb_ehci_last_hw_init();
     return ret;
 }
 
@@ -2324,7 +2342,6 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     /* Set the request for the IOC event well BEFORE initiating the transfer. */
     ret = usb_ehci_ioc_setup(epinfo);
     if (ret != 0) {
-        //usbhost_trace1(EHCI_TRACE1_DEVDISCONNECTED, -ret);
         goto errout_with_sem;
     }
 
@@ -2361,7 +2378,6 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
 
     ret = usb_ehci_ioc_setup(epinfo);
     if (ret != 0) {
-        //usbhost_trace1(EHCI_TRACE1_DEVDISCONNECTED, -ret);
         goto errout_with_sem;
     }
 
@@ -2399,7 +2415,6 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
     ret = usb_ehci_ioc_setup(epinfo);
 
     if (ret != 0) {
-        //usbhost_trace1(EHCI_TRACE1_DEVDISCONNECTED, -ret);
         goto errout_with_sem;
     }
 
@@ -2628,12 +2643,8 @@ int usb_ep_cancel(usbh_epinfo_t ep)
         } break;
 #endif
 
-#ifndef CONFIG_USBHOST_ISOC_DISABLE
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-#warning "Isochronous endpoint support not emplemented"
-#endif
         default:
-            //usbhost_trace1(EHCI_TRACE1_BADXFRTYPE, epinfo->xfrtype);
             ret = -ENOSYS;
             goto errout_with_sem;
     }
@@ -2651,7 +2662,6 @@ int usb_ep_cancel(usbh_epinfo_t ep)
 
     ret = usb_ehci_qh_foreach(qh, &bp, usb_ehci_qh_cancel, epinfo);
     if (ret < 0) {
-        //usbhost_trace1(EHCI_TRACE1_QTDFOREACH_FAILED, -ret);
     }
 
     /* Was there a pending synchronous transfer? */
@@ -2698,64 +2708,58 @@ static void usb_ehci_bottomhalf(void *arg)
 
     /* Handle all unmasked interrupt sources */
     /* USB Interrupt (USBINT)
-        *
-        *  "The Host Controller sets this bit to 1 on the completion of a USB
-        *   transaction, which results in the retirement of a Transfer Descriptor
-        *   that had its IOC bit set.
-        *
-        *  "The Host Controller also sets this bit to 1 when a short packet is
-        *   detected (actual number of bytes received was less than the expected
-        *   number of bytes)."
-        *
-        * USB Error Interrupt (USBERRINT)
-        *
-        *  "The Host Controller sets this bit to 1 when completion of a USB
-        *   transaction results in an error condition (e.g., error counter
-        *   underflow). If the TD on which the error interrupt occurred also
-        *   had its IOC bit set, both this bit and USBINT bit are set. ..."
-        *
-        * We do the same thing in either case:  Traverse the asynchronous queue
-        * and remove all of the transfers that are no longer active.
-        */
+    *
+    *  "The Host Controller sets this bit to 1 on the completion of a USB
+    *   transaction, which results in the retirement of a Transfer Descriptor
+    *   that had its IOC bit set.
+    *
+    *  "The Host Controller also sets this bit to 1 when a short packet is
+    *   detected (actual number of bytes received was less than the expected
+    *   number of bytes)."
+    *
+    * USB Error Interrupt (USBERRINT)
+    *
+    *  "The Host Controller sets this bit to 1 when completion of a USB
+    *   transaction results in an error condition (e.g., error counter
+    *   underflow). If the TD on which the error interrupt occurred also
+    *   had its IOC bit set, both this bit and USBINT bit are set. ..."
+    *
+    * We do the same thing in either case:  Traverse the asynchronous queue
+    * and remove all of the transfers that are no longer active.
+    */
     if ((pending & (EHCI_INT_USBINT | EHCI_INT_USBERRINT)) != 0) {
-        if ((pending & EHCI_INT_USBERRINT) != 0) {
-            //usbhost_trace1(EHCI_TRACE1_USBERR_INTR, pending);
-        } else {
-            //usbhost_vtrace1(EHCI_VTRACE1_USBINTR, pending);
-        }
-
         usb_ehci_ioc_bottomhalf();
     }
     /* Port Change Detect
-        *
-        *  "The Host Controller sets this bit to a one when any port for which
-        *   the Port Owner bit is set to zero ... has a change bit transition
-        *   from a zero to a one or a Force Port Resume bit transition from a zero
-        *   to a one as a result of a J-K transition detected on a suspended port.
-        *   This bit will also be set as a result of the Connect Status Change
-        *   being set to a one after system software has relinquished ownership
-        *    of a connected port by writing a one to a port's Port Owner bit...
-        *
-        *  "This bit is allowed to be maintained in the Auxiliary power well.
-        *   Alternatively, it is also acceptable that on a D3 to D0 transition
-        *   of the EHCI HC device, this bit is loaded with the OR of all of the
-        *   PORTSC change bits (including: Force port resume, over-current change,
-        *   enable/disable change and connect status change)."
-        */
+    *
+    *  "The Host Controller sets this bit to a one when any port for which
+    *   the Port Owner bit is set to zero ... has a change bit transition
+    *   from a zero to a one or a Force Port Resume bit transition from a zero
+    *   to a one as a result of a J-K transition detected on a suspended port.
+    *   This bit will also be set as a result of the Connect Status Change
+    *   being set to a one after system software has relinquished ownership
+    *    of a connected port by writing a one to a port's Port Owner bit...
+    *
+    *  "This bit is allowed to be maintained in the Auxiliary power well.
+    *   Alternatively, it is also acceptable that on a D3 to D0 transition
+    *   of the EHCI HC device, this bit is loaded with the OR of all of the
+    *   PORTSC change bits (including: Force port resume, over-current change,
+    *   enable/disable change and connect status change)."
+    */
     if ((pending & EHCI_INT_PORTSC) != 0) {
         usb_ehci_portsc_bottomhalf();
     }
     /* Frame List Rollover
-        *
-        *  "The Host Controller sets this bit to a one when the Frame List Index
-        *   ... rolls over from its maximum value to zero. The exact value at
-        *   which the rollover occurs depends on the frame list size. For example,
-        *   if the frame list size (as programmed in the Frame List Size field of
-        *   the USBCMD register) is 1024, the Frame Index Register rolls over
-        *   every time FRINDEX[13] toggles. Similarly, if the size is 512, the
-        *   Host Controller sets this bit to a one every time FRINDEX[12]
-        *   toggles."
-        */
+    *
+    *  "The Host Controller sets this bit to a one when the Frame List Index
+    *   ... rolls over from its maximum value to zero. The exact value at
+    *   which the rollover occurs depends on the frame list size. For example,
+    *   if the frame list size (as programmed in the Frame List Size field of
+    *   the USBCMD register) is 1024, the Frame Index Register rolls over
+    *   every time FRINDEX[13] toggles. Similarly, if the size is 512, the
+    *   Host Controller sets this bit to a one every time FRINDEX[12]
+    *   toggles."
+    */
 
 #if 0 /* Not used */
         if ((pending & EHCI_INT_FLROLL) != 0)
@@ -2764,28 +2768,26 @@ static void usb_ehci_bottomhalf(void *arg)
             }
 #endif
     /* Host System Error
-        *
-        *  "The Host Controller sets this bit to 1 when a serious error occurs
-        *   during a host system access involving the Host Controller module. ...
-        *   When this error occurs, the Host Controller clears the Run/Stop bit
-        *   in the Command register to prevent further execution of the scheduled
-        *   TDs."
-        */
+    *
+    *  "The Host Controller sets this bit to 1 when a serious error occurs
+    *   during a host system access involving the Host Controller module. ...
+    *   When this error occurs, the Host Controller clears the Run/Stop bit
+    *   in the Command register to prevent further execution of the scheduled
+    *   TDs."
+    */
 
     if ((pending & EHCI_INT_SYSERROR) != 0) {
-        //usbhost_trace1(EHCI_TRACE1_SYSERR_INTR, 0);
     }
     /* Interrupt on Async Advance
-        *
-        *  "System software can force the host controller to issue an interrupt
-        *   the next time the host controller advances the asynchronous schedule
-        *   by writing a one to the Interrupt on Async Advance Doorbell bit in
-        *   the USBCMD register. This status bit indicates the assertion of that
-        *   interrupt source."
-        */
+    *
+    *  "System software can force the host controller to issue an interrupt
+    *   the next time the host controller advances the asynchronous schedule
+    *   by writing a one to the Interrupt on Async Advance Doorbell bit in
+    *   the USBCMD register. This status bit indicates the assertion of that
+    *   interrupt source."
+    */
 
     if ((pending & EHCI_INT_AAINT) != 0) {
-        //usbhost_vtrace1(EHCI_VTRACE1_AAINTR, 0);
     }
     /* Re-enable relevant EHCI interrupts.  Interrupts should still be enabled
     * at the level of the interrupt controller.
