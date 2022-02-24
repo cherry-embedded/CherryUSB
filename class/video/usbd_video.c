@@ -1,5 +1,6 @@
 /**
  * @file usbd_video.c
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -23,14 +24,20 @@
 #include "usbd_video.h"
 
 struct usbd_video_cfg_priv {
-    struct video_probe_and_commit_controls *probe;
-    struct video_probe_and_commit_controls *commit;
+    struct video_probe_and_commit_controls probe;
+    struct video_probe_and_commit_controls commit;
     uint8_t power_mode;
     uint8_t error_code;
     uint8_t vcintf;
     uint8_t vsintf;
-    usb_slist_t entity_info_list;
-} usbd_video_cfg = { .vcintf = 0xff, .vsintf = 0xff };
+    struct video_entity_info info[3];
+} usbd_video_cfg = {
+    .vcintf = 0xff,
+    .vsintf = 0xff,
+    .info[0] = { .bDescriptorSubtype = VIDEO_VC_INPUT_TERMINAL_DESCRIPTOR_SUBTYPE, .bEntityId = 0x01, .wTerminalType = VIDEO_ITT_CAMERA },
+    .info[1] = { .bDescriptorSubtype = VIDEO_VC_OUTPUT_TERMINAL_DESCRIPTOR_SUBTYPE, .bEntityId = 0x03, .wTerminalType = 0x00 },
+    .info[2] = { .bDescriptorSubtype = VIDEO_VC_PROCESSING_UNIT_DESCRIPTOR_SUBTYPE, .bEntityId = 0x02, .wTerminalType = 0x00 },
+};
 
 static int usbd_video_control_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
@@ -77,10 +84,8 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
     uint8_t entity_id = (uint8_t)(setup->wIndex >> 8);
     uint8_t control_selector = (uint8_t)(setup->wValue >> 8);
 
-    usb_slist_t *i;
-    usb_slist_for_each(i, &usbd_video_cfg.entity_info_list)
-    {
-        struct video_entity_info *entity_info = usb_slist_entry(i, struct video_entity_info, list);
+    for (uint8_t i = 0; i < 3; i++) {
+        struct video_entity_info *entity_info = &usbd_video_cfg.info[i];
         if (entity_info->bEntityId == entity_id) {
             switch (entity_info->bDescriptorSubtype) {
                 case VIDEO_VC_HEADER_DESCRIPTOR_SUBTYPE:
@@ -589,7 +594,7 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
                     //memcpy((uint8_t *)usbd_video_cfg.probe, *data, setup->wLength);
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    *data = (uint8_t *)usbd_video_cfg.probe;
+                    *data = (uint8_t *)&usbd_video_cfg.probe;
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -597,7 +602,7 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    *data = (uint8_t *)usbd_video_cfg.probe;
+                    *data = (uint8_t *)&usbd_video_cfg.probe;
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_LEN:
@@ -621,14 +626,14 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
                     //memcpy((uint8_t *)usbd_video_cfg.commit, *data, setup->wLength);
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    *data = (uint8_t *)usbd_video_cfg.commit;
+                    *data = (uint8_t *)&usbd_video_cfg.commit;
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_MIN:
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    *data = (uint8_t *)usbd_video_cfg.commit;
+                    *data = (uint8_t *)&usbd_video_cfg.commit;
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -735,16 +740,74 @@ void usbd_video_add_interface(usbd_class_t *class, usbd_interface_t *intf)
     }
 }
 
-void usbd_video_set_probe_and_commit_controls(struct video_probe_and_commit_controls *probe,
-                                              struct video_probe_and_commit_controls *commit)
+void usbd_video_probe_and_commit_controls_init(uint32_t dwFrameInterval, uint32_t dwMaxVideoFrameSize, uint32_t dwMaxPayloadTransferSize)
 {
-    usbd_video_cfg.probe = probe;
-    usbd_video_cfg.commit = commit;
+    usbd_video_cfg.probe.hintUnion.bmHint = 0x01;
+    usbd_video_cfg.probe.hintUnion1.bmHint = 0;
+    usbd_video_cfg.probe.bFormatIndex = 1;
+    usbd_video_cfg.probe.bFrameIndex = 1;
+    usbd_video_cfg.probe.dwFrameInterval = dwFrameInterval;
+    usbd_video_cfg.probe.wKeyFrameRate = 0;
+    usbd_video_cfg.probe.wPFrameRate = 0;
+    usbd_video_cfg.probe.wCompQuality = 0;
+    usbd_video_cfg.probe.wCompWindowSize = 0;
+    usbd_video_cfg.probe.wDelay = 0;
+    usbd_video_cfg.probe.dwMaxVideoFrameSize = dwMaxVideoFrameSize;
+    usbd_video_cfg.probe.dwMaxPayloadTransferSize = dwMaxPayloadTransferSize;
+    usbd_video_cfg.probe.dwClockFrequency = 0;
+    usbd_video_cfg.probe.bmFramingInfo = 0;
+    usbd_video_cfg.probe.bPreferedVersion = 0;
+    usbd_video_cfg.probe.bMinVersion = 0;
+    usbd_video_cfg.probe.bMaxVersion = 0;
+
+    usbd_video_cfg.commit.hintUnion.bmHint = 0x01;
+    usbd_video_cfg.commit.hintUnion1.bmHint = 0;
+    usbd_video_cfg.commit.bFormatIndex = 1;
+    usbd_video_cfg.commit.bFrameIndex = 1;
+    usbd_video_cfg.commit.dwFrameInterval = dwFrameInterval;
+    usbd_video_cfg.commit.wKeyFrameRate = 0;
+    usbd_video_cfg.commit.wPFrameRate = 0;
+    usbd_video_cfg.commit.wCompQuality = 0;
+    usbd_video_cfg.commit.wCompWindowSize = 0;
+    usbd_video_cfg.commit.wDelay = 0;
+    usbd_video_cfg.commit.dwMaxVideoFrameSize = dwMaxVideoFrameSize;
+    usbd_video_cfg.commit.dwMaxPayloadTransferSize = dwMaxPayloadTransferSize;
+    usbd_video_cfg.commit.dwClockFrequency = 0;
+    usbd_video_cfg.commit.bmFramingInfo = 0;
+    usbd_video_cfg.commit.bPreferedVersion = 0;
+    usbd_video_cfg.commit.bMinVersion = 0;
+    usbd_video_cfg.commit.bMaxVersion = 0;
 }
 
-void usbd_video_add_entity_info(struct video_entity_info *info)
+uint32_t usbd_video_mjpeg_payload_fill(uint8_t *input, uint32_t input_len, uint8_t *output, uint32_t *out_len)
 {
-    usb_slist_add_tail(&usbd_video_cfg.entity_info_list, &info->list);
+    uint32_t packets;
+    uint32_t last_packet_size;
+    uint32_t picture_pos = 0;
+
+    packets = input_len / usbd_video_cfg.probe.dwMaxPayloadTransferSize + 1;
+    last_packet_size = input_len - ((packets - 1) * (usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2)) + 2;
+
+    for (size_t i = 0; i < packets; i++) {
+        output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i] = 0x02;
+        output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i + 1] ^= 0x01;
+        if (i == (packets - 1)) {
+            memcpy(&output[2 + usbd_video_cfg.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], last_packet_size - 2);
+        } else {
+            memcpy(&output[2 + usbd_video_cfg.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2);
+            picture_pos += usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2;
+        }
+    }
+
+    *out_len = (input_len + 2 * packets);
+    return packets;
+}
+
+void usbd_video_mjpeg_payload_header_toggle(uint8_t *output, uint32_t packets)
+{
+    for (size_t i = 0; i < packets; i++) {
+        output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i + 1] ^= 0x01;
+    }
 }
 
 __WEAK void usbd_video_sof_callback(void)

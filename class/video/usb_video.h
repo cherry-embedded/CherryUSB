@@ -1059,7 +1059,8 @@ struct video_entity_info {
     USB_DEVICE_CLASS_VIDEO,                                                                                                                                                        \
     VIDEO_SC_VIDEO_INTERFACE_COLLECTION,                                                                                                                                           \
     0x00,                                                                                                                                                                          \
-    0x00,                                                                                            /* VideoControl Interface Descriptor */                                       \
+    0x00,
+    /* VideoControl Interface Descriptor */                                       \
     0x09,                                                                                            /* bLength */                                                                 \
     USB_DESCRIPTOR_TYPE_INTERFACE,                                                                   /* bDescriptorType */                                                         \
     0x00,                                                                                            /* bInterfaceNumber */                                                        \
@@ -1068,7 +1069,7 @@ struct video_entity_info {
     USB_DEVICE_CLASS_VIDEO,                                                                          /* bInterfaceClass : CC_VIDEO */                                              \
     VIDEO_SC_VIDEOCONTROL,                                                                           /* bInterfaceSubClass : SC_VIDEOCONTROL */                                    \
     VIDEO_PC_PROTOCOL_UNDEFINED,                                                                     /* bInterfaceProtocol : PC_PROTOCOL_UNDEFINED */                              \
-    stridx, /* iInterface:Index to string descriptor that contains the string <Your Product Name> */ \
+    stridx,                                                                                          /* iInterface:Index to string descriptor that contains the string <Your Product Name> */ \
     /*Class-specific VideoControl Interface Descriptor */                         \
     0x0d,                                                                                            /* bLength */                                                                 \
     0x24,                                                                                            /* bDescriptorType : CS_INTERFACE */                                          \
@@ -1077,7 +1078,7 @@ struct video_entity_info {
     WBVAL(wTotalLength),                                                                             /* wTotalLength  */                                                           \
     DBVAL(dwClockFrequency),                                                                         /* dwClockFrequency : 0x005b8d80 -> 6,000,000 == 6MHz*/                       \
     0x01,                                                                                            /* bInCollection : Number of streaming interfaces. */                         \
-    0x01, /* baInterfaceNr(1) : VideoStreaming interface 1 belongs to this VideoControl interface.*/ \
+    0x01,                                                                                            /* baInterfaceNr(1) : VideoStreaming interface 1 belongs to this VideoControl interface.*/ \
     /* Input Terminal 1 -> Processing Unit 2 -> Output Terminal 3 */              \
     0x12,                                                                                                                                                                          \
     0x24,                                                                                                                                                                          \
@@ -1124,7 +1125,7 @@ struct video_entity_info {
     0x00, /* bTriggerSupport : Hardware trigger supported for still image capture */                    \
     0x00, /* bTriggerUsage : Hardware trigger should initiate a still image capture. */                 \
     0x01, /* bControlSize : Size of the bmaControls field */                                            \
-    0x00, 0x04, 0x00 /* bmaControls : No VideoStreaming specific controls are supported.*/              \
+    0x00, 0x00, 0x00 /* bmaControls : No VideoStreaming specific controls are supported.*/              \
 
 #define VIDEO_VS_FRAME_UNCOMPRESSED_DESCRIPTOR_INIT(bFrameIndex, wWidth, wHeight, dwMinBitRate, dwMaxBitRate,           \
                                                     dwMaxVideoFrameBufferSize, dwDefaultFrameInterval, dwFrameInterval) \
