@@ -1,5 +1,6 @@
 /**
  * @file usbh_hid.c
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -22,8 +23,7 @@
 #include "usbh_core.h"
 #include "usbh_hid.h"
 
-#define DEV_FORMAT  "/dev/input%d"
-#define DEV_NAMELEN 16
+#define DEV_FORMAT "/dev/input%d"
 
 static uint32_t g_devinuse = 0;
 
@@ -74,25 +74,12 @@ static void usbh_hid_devno_free(struct usbh_hid *priv)
     }
 }
 
-/****************************************************************************
- * Name: usbh_hid_mkdevname
- *
- * Description:
- *   Format a /dev/hid[n] device name given a minor number.
- *
- ****************************************************************************/
-
-static inline void usbh_hid_mkdevname(struct usbh_hid *priv, char *devname)
-{
-    snprintf(devname, DEV_NAMELEN, DEV_FORMAT, priv->minor);
-}
-
 int usbh_hid_get_report_descriptor(struct usbh_hubport *hport, uint8_t intf, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
     struct usbh_hid *hid_class = (struct usbh_hid *)hport->config.intf[intf].priv;
 
-    setup = hid_class->setup;
+    setup = hport->setup;
 
     if (hid_class->intf != intf) {
         return -1;
@@ -113,7 +100,7 @@ int usbh_hid_set_idle(struct usbh_hubport *hport, uint8_t intf, uint8_t report_i
     struct usb_setup_packet *setup;
     struct usbh_hid *hid_class = (struct usbh_hid *)hport->config.intf[intf].priv;
 
-    setup = hid_class->setup;
+    setup = hport->setup;
 
     if (hid_class->intf != intf) {
         return -1;
@@ -139,7 +126,7 @@ int usbh_hid_get_idle(struct usbh_hubport *hport, uint8_t intf, uint8_t *buffer)
     struct usb_setup_packet *setup;
     struct usbh_hid *hid_class = (struct usbh_hid *)hport->config.intf[intf].priv;
 
-    setup = hid_class->setup;
+    setup = hport->setup;
 
     if (hid_class->intf != intf) {
         return -1;
@@ -159,26 +146,10 @@ int usbh_hid_get_idle(struct usbh_hubport *hport, uint8_t intf, uint8_t *buffer)
     return 0;
 }
 
-USB_NOCACHE_RAM_SECTION uint8_t hid_buffer[128];
-
-void usbh_hid_callback(void *arg, int nbytes)
-{
-    struct usbh_hid *hid_class = (struct usbh_hid *)arg;
-
-    if (nbytes > 0) {
-        for (size_t i = 0; i < nbytes; i++) {
-            printf("0x%02x ", hid_buffer[i]);
-        }
-    }
-
-    printf("nbytes:%d\r\n", nbytes);
-}
-
 int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
-    char devname[DEV_NAMELEN];
     int ret;
 
     struct usbh_hid *hid_class = usb_malloc(sizeof(struct usbh_hid));
@@ -186,18 +157,13 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         USB_LOG_ERR("Fail to alloc hid_class\r\n");
         return -ENOMEM;
     }
+
     memset(hid_class, 0, sizeof(struct usbh_hid));
 
     usbh_hid_devno_alloc(hid_class);
-    usbh_hid_mkdevname(hid_class, devname);
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hid_class->minor);
 
     hport->config.intf[intf].priv = hid_class;
-
-    hid_class->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
-    if (hid_class->setup == NULL) {
-        USB_LOG_ERR("Fail to alloc setup\r\n");
-        return -ENOMEM;
-    }
     hid_class->intf = intf;
 
     ret = usbh_hid_set_idle(hport, intf, 0, 0);
@@ -205,10 +171,13 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         return ret;
     }
 
-    ret = usbh_hid_get_report_descriptor(hport, intf, hid_buffer);
+    uint8_t *report_buffer = usb_iomalloc(128);
+    ret = usbh_hid_get_report_descriptor(hport, intf, report_buffer);
     if (ret < 0) {
+        usb_iofree(report_buffer);
         return ret;
     }
+    usb_iofree(report_buffer);
 
     for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].ep[i].ep_desc;
@@ -224,33 +193,21 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    USB_LOG_INFO("Register HID Class:%s\r\n", devname);
+    USB_LOG_INFO("Register HID Class:%s\r\n", hport->config.intf[intf].devname);
 
-#if 1
-    ret = usbh_ep_intr_async_transfer(hid_class->intin, hid_buffer, 128, usbh_hid_callback, hid_class);
-    if (ret < 0) {
-        return ret;
-    }
-#else
-    ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128);
-    if (ret < 0) {
-        return ret;
-    }
-    USB_LOG_INFO("recv len:%d\r\n", ret);
-#endif
+    extern int hid_test();
+    hid_test();
     return 0;
 }
 
 int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
-    char devname[DEV_NAMELEN];
     int ret = 0;
 
     struct usbh_hid *hid_class = (struct usbh_hid *)hport->config.intf[intf].priv;
 
     if (hid_class) {
         usbh_hid_devno_free(hid_class);
-        usbh_hid_mkdevname(hid_class, devname);
 
         if (hid_class->intin) {
             ret = usb_ep_cancel(hid_class->intin);
@@ -265,13 +222,13 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
             }
             usbh_ep_free(hid_class->intout);
         }
-        if (hid_class->setup)
-            usb_iofree(hid_class->setup);
 
         usb_free(hid_class);
-        hport->config.intf[intf].priv = NULL;
 
-        USB_LOG_INFO("Unregister HID Class:%s\r\n", devname);
+        USB_LOG_INFO("Unregister HID Class:%s\r\n", hport->config.intf[intf].devname);
+
+        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
+        hport->config.intf[intf].priv = NULL;
     }
 
     return ret;

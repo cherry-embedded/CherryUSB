@@ -1,5 +1,6 @@
 /**
  * @file usbh_core.c
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -299,8 +300,9 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
     }
     return 0;
 }
-#if 0
-static int parse_string_descriptor(struct usbh_hubport *hport, struct usb_string_descriptor *desc, uint8_t str_idx, uint16_t length)
+
+#ifdef CONFIG_USBHOST_GET_STRING_DESC
+static int parse_string_descriptor(struct usbh_hubport *hport, struct usb_string_descriptor *desc, uint8_t str_idx)
 {
     uint8_t string[64 + 1] = { 0 };
     uint8_t *p = (uint8_t *)desc;
@@ -314,7 +316,15 @@ static int parse_string_descriptor(struct usbh_hubport *hport, struct usb_string
             string[i] = *p;
             p += 2;
         }
-        USB_LOG_DBG("string:%s\r\n", string);
+        if (str_idx == USB_STRING_MFC_INDEX) {
+            USB_LOG_INFO("Manufacturer :%s\r\n", string);
+        } else if (str_idx == USB_STRING_PRODUCT_INDEX) {
+            USB_LOG_INFO("Product :%s\r\n", string);
+
+        } else if (str_idx == USB_STRING_SERIAL_INDEX) {
+            USB_LOG_INFO("SerialNumber :%s\r\n", string);
+        } else {
+        }
     }
     return 0;
 }
@@ -384,11 +394,15 @@ static int usbh_enumerate(struct usbh_hubport *hport)
 
 #define USB_REQUEST_BUFFER_SIZE 256
     /* Allocate buffer for setup and data buffer */
-    setup = usb_iomalloc(sizeof(struct usb_setup_packet));
-    if (setup == NULL) {
-        USB_LOG_ERR("Fail to alloc setup\r\n");
-        return -ENOMEM;
+    if (hport->setup == NULL) {
+        hport->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
+        if (hport->setup == NULL) {
+            USB_LOG_ERR("Fail to alloc setup\r\n");
+            return -ENOMEM;
+        }
     }
+
+    setup = hport->setup;
 
     ep0_buffer = usb_iomalloc(USB_REQUEST_BUFFER_SIZE);
     if (ep0_buffer == NULL) {
@@ -521,6 +535,52 @@ static int usbh_enumerate(struct usbh_hubport *hport)
 
     parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_buffer, wTotalLength);
 
+#ifdef CONFIG_USBHOST_GET_STRING_DESC
+    /* Get Manufacturer string */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | USB_STRING_MFC_INDEX);
+    setup->wIndex = 0x0409;
+    setup->wLength = 255;
+
+    ret = usbh_control_transfer(hport->ep0, setup, ep0_buffer);
+    if (ret < 0) {
+        USB_LOG_ERR("Failed to get Manufacturer string,errorcode:%d\r\n", ret);
+        goto errout;
+    }
+
+    parse_string_descriptor(hport, (struct usb_string_descriptor *)ep0_buffer, USB_STRING_MFC_INDEX);
+
+    /* Get Product string */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | USB_STRING_PRODUCT_INDEX);
+    setup->wIndex = 0x0409;
+    setup->wLength = 255;
+
+    ret = usbh_control_transfer(hport->ep0, setup, ep0_buffer);
+    if (ret < 0) {
+        USB_LOG_ERR("Failed to get get Product string,errorcode:%d\r\n", ret);
+        goto errout;
+    }
+
+    parse_string_descriptor(hport, (struct usb_string_descriptor *)ep0_buffer, USB_STRING_PRODUCT_INDEX);
+
+    /* Get SerialNumber string */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | USB_STRING_SERIAL_INDEX);
+    setup->wIndex = 0x0409;
+    setup->wLength = 255;
+
+    ret = usbh_control_transfer(hport->ep0, setup, ep0_buffer);
+    if (ret < 0) {
+        USB_LOG_ERR("Failed to get get SerialNumber string,errorcode:%d\r\n", ret);
+        goto errout;
+    }
+
+    parse_string_descriptor(hport, (struct usb_string_descriptor *)ep0_buffer, USB_STRING_SERIAL_INDEX);
+#endif
     /* Select device configuration 1 */
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_SET_CONFIGURATION;
@@ -565,9 +625,6 @@ errout:
         usbh_hport_deactivate(hport);
     }
 
-    if (setup) {
-        usb_iofree(setup);
-    }
     if (ep0_buffer) {
         usb_iofree(ep0_buffer);
     }
@@ -626,7 +683,6 @@ static void usbh_portchange_detect_thread(void *argument)
         usbh_core_cfg.rhport[port - 1].devgen.next = 1;
         usbh_hport_activate(&usbh_core_cfg.rhport[port - 1].hport);
     }
-
     usb_osal_leave_critical_section(flags);
 
     while (1) {
@@ -639,9 +695,9 @@ static void usbh_portchange_detect_thread(void *argument)
                 usb_osal_msleep(200);
                 /* Get the current device speed */
                 hport->speed = usbh_get_port_speed(hport->port);
-                USB_LOG_INFO("Bus %u, Port %u connected, %s\r\n", 1, hport->port, speed_table[hport->speed]);
+                USB_LOG_INFO("Hub %u, Port %u connected, %s\r\n", 1, hport->port, speed_table[hport->speed]);
             } else {
-                USB_LOG_INFO("Bus %u, Port %u connected, %s\r\n", hport->parent->index, hport->port, speed_table[hport->speed]);
+                USB_LOG_INFO("Hub %u, Port %u connected, %s\r\n", hport->parent->index, hport->port, speed_table[hport->speed]);
             }
             usb_osal_thread_suspend(g_lpworkq.thread);
             usbh_enumerate(hport);
@@ -657,9 +713,9 @@ static void usbh_portchange_detect_thread(void *argument)
             hport->config.config_desc.bNumInterfaces = 0;
 
             if (ROOTHUB(hport)) {
-                USB_LOG_INFO("Bus %u,Port:%u disconnected\r\n", 1, hport->port);
+                USB_LOG_INFO("Hub %u,Port:%u disconnected\r\n", 1, hport->port);
             } else {
-                USB_LOG_INFO("Bus %u,Port:%u disconnected\r\n", hport->parent->index, hport->port);
+                USB_LOG_INFO("Hub %u,Port:%u disconnected\r\n", hport->parent->index, hport->port);
             }
         }
     }
@@ -732,6 +788,11 @@ void usbh_hport_deactivate(struct usbh_hubport *hport)
     }
     /* Free the device address if one has been assigned */
     usbh_devaddr_destroy(hport, hport->dev_addr);
+
+    if (hport->setup)
+        usb_iofree(hport->setup);
+
+    hport->setup = NULL;
     hport->dev_addr = 0;
 
     usb_osal_leave_critical_section(flags);
@@ -816,7 +877,7 @@ int lsusb(int argc, char **argv)
     if (strcmp(argv[1], "-t") == 0) {
         for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             if (usbh_core_cfg.rhport[port - 1].hport.connected) {
-                printf("/: Bus %02u,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
+                printf("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
 
                 for (uint8_t i = 0; i < usbh_core_cfg.rhport[port - 1].hport.config.config_desc.bNumInterfaces; i++) {
                     if (usbh_core_cfg.rhport[port - 1].hport.config.intf[i].class_driver->driver_name) {
@@ -832,7 +893,7 @@ int lsusb(int argc, char **argv)
 
             for (port = USBH_HUB_PORT_START_INDEX; port <= hub_class->nports; port++) {
                 if (hub_class->child[port - 1].connected) {
-                    printf("/: Bus %02u,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
+                    printf("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
 
                     for (uint8_t i = 0; i < hub_class->child[port - 1].config.config_desc.bNumInterfaces; i++) {
                         if (hub_class->child[port - 1].config.intf[i].class_driver->driver_name) {
@@ -846,7 +907,7 @@ int lsusb(int argc, char **argv)
     } else if (strcmp(argv[1], "-v") == 0) {
         for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             if (usbh_core_cfg.rhport[port - 1].hport.connected) {
-                printf("Bus %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
+                printf("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
                        usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
                 usbh_print_hubport_info(&usbh_core_cfg.rhport[port - 1].hport);
             }
@@ -858,7 +919,7 @@ int lsusb(int argc, char **argv)
 
             for (port = USBH_HUB_PORT_START_INDEX; port <= hub_class->nports; port++) {
                 if (hub_class->child[port - 1].connected) {
-                    printf("Bus %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
+                    printf("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
                            hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
                     usbh_print_hubport_info(&hub_class->child[port - 1]);
                 }
@@ -869,7 +930,7 @@ int lsusb(int argc, char **argv)
     return 0;
 }
 
-struct usbh_hubport *usbh_get_hubport(uint8_t dev_addr)
+struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
 {
     usb_slist_t *hub_list;
     uint8_t port;
@@ -896,17 +957,18 @@ struct usbh_hubport *usbh_get_hubport(uint8_t dev_addr)
     return NULL;
 }
 
-void *usbh_get_class(uint8_t dev_addr, uint8_t intf)
+void *usbh_find_class_instance(const char *devname)
 {
     usb_slist_t *hub_list;
+    struct usbh_hubport *hport;
     uint8_t port;
 
     for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
-        if (usbh_core_cfg.rhport[port - 1].hport.connected) {
-            if (usbh_core_cfg.rhport[port - 1].hport.dev_addr == dev_addr) {
-                if (usbh_core_cfg.rhport[port - 1].hport.config.intf[intf].priv) {
-                    return usbh_core_cfg.rhport[port - 1].hport.config.intf[intf].priv;
-                }
+        hport = &usbh_core_cfg.rhport[port - 1].hport;
+        if (hport->connected) {
+            for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
+                if (strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0)
+                    return hport->config.intf[itf].priv;
             }
         }
     }
@@ -915,11 +977,11 @@ void *usbh_get_class(uint8_t dev_addr, uint8_t intf)
         usbh_hub_t *hub_class = usb_slist_entry(hub_list, struct usbh_hub, list);
 
         for (port = USBH_HUB_PORT_START_INDEX; port <= hub_class->nports; port++) {
-            if (hub_class->child[port - 1].connected) {
-                if (hub_class->child[port - 1].dev_addr == dev_addr) {
-                    if (hub_class->child[port - 1].config.intf[intf].priv) {
-                        return hub_class->child[port - 1].config.intf[intf].priv;
-                    }
+            hport = &hub_class->child[port - 1];
+            if (hport->connected) {
+                for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
+                    if (strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0)
+                        return hport->config.intf[itf].priv;
                 }
             }
         }

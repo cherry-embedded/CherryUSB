@@ -1,5 +1,6 @@
 /**
  * @file usbh_hub.c
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -22,8 +23,7 @@
 #include "usbh_core.h"
 #include "usbh_hub.h"
 
-#define DEV_FORMAT  "/dev/hub%d"
-#define DEV_NAMELEN 16
+#define DEV_FORMAT "/dev/hub%d"
 
 static uint32_t g_devinuse = 0;
 
@@ -94,24 +94,11 @@ static void usbh_hub_devno_free(struct usbh_hub *hub)
     }
 }
 
-/****************************************************************************
- * Name: usbh_hub_mkdevname
- *
- * Description:
- *   Format a /dev/hub[n] device name given a minor number.
- *
- ****************************************************************************/
-
-static inline void usbh_hub_mkdevname(struct usbh_hub *hub, char *devname)
-{
-    snprintf(devname, DEV_NAMELEN, DEV_FORMAT, hub->index);
-}
-
 int usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
@@ -126,7 +113,7 @@ int usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = HUB_REQUEST_GET_STATUS;
@@ -141,7 +128,7 @@ int usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct hub_port_
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_GET_STATUS;
@@ -156,7 +143,7 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_SET_FEATURE;
@@ -171,7 +158,7 @@ int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_CLEAR_FEATURE;
@@ -208,36 +195,30 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
-    char devname[DEV_NAMELEN];
     int ret;
-    uint8_t *hub_desc_buffer;
-    struct usbh_hub *hub_class;
 
-    hub_class = usb_malloc(sizeof(struct usbh_hub));
+    struct usbh_hub *hub_class = usb_malloc(sizeof(struct usbh_hub));
     if (hub_class == NULL) {
         USB_LOG_ERR("Fail to alloc hub_class\r\n");
         return -ENOMEM;
     }
+
     memset(hub_class, 0, sizeof(struct usbh_hub));
-    hub_class->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
-    if (hub_class->setup == NULL) {
-        USB_LOG_ERR("Fail to alloc setup\r\n");
-        return -ENOMEM;
-    }
+
     hub_class->port_status = usb_iomalloc(sizeof(struct hub_port_status));
     if (hub_class->port_status == NULL) {
         USB_LOG_ERR("Fail to alloc port_status\r\n");
         return -ENOMEM;
     }
 
-    hub_desc_buffer = usb_iomalloc(32);
-
     usbh_hub_devno_alloc(hub_class);
-    usbh_hub_mkdevname(hub_class, devname);
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hub_class->index);
 
+    hport->config.intf[intf].priv = hub_class;
     hub_class->dev_addr = hport->dev_addr;
     hub_class->parent = hport;
-    hport->config.intf[0].priv = hub_class;
+
+    uint8_t *hub_desc_buffer = usb_iomalloc(32);
 
     ret = usbh_hub_get_hub_descriptor(hub_class, hub_desc_buffer);
     if (ret != 0) {
@@ -286,7 +267,7 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    USB_LOG_INFO("Register HUB Class:%s\r\n", devname);
+    USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
     ret = usbh_ep_intr_async_transfer(hub_class->intin, hub_class->int_buffer, USBH_HUB_INTIN_BUFSIZE, usbh_external_hub_callback, hub_class);
     return 0;
@@ -295,14 +276,12 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_hubport *child;
-    char devname[DEV_NAMELEN];
     int ret = 0;
 
     struct usbh_hub *hub_class = (struct usbh_hub *)hport->config.intf[intf].priv;
 
     if (hub_class) {
         usbh_hub_devno_free(hub_class);
-        usbh_hub_mkdevname(hub_class, devname);
 
         if (hub_class->intin) {
             ret = usb_ep_cancel(hub_class->intin);
@@ -311,8 +290,6 @@ int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_ep_free(hub_class->intin);
         }
 
-        if (hub_class->setup)
-            usb_iofree(hub_class->setup);
         if (hub_class->port_status)
             usb_iofree(hub_class->port_status);
 
@@ -331,9 +308,11 @@ int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         usbh_hub_unregister(hub_class);
         usb_free(hub_class);
-        hport->config.intf[intf].priv = NULL;
 
-        USB_LOG_INFO("Unregister HUB Class:%s\r\n", devname);
+        USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
+
+        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
+        hport->config.intf[intf].priv = NULL;
     }
     return ret;
 }
@@ -445,7 +424,7 @@ static void usbh_extern_hub_psc_event(void *arg)
 
             if (status & HUB_PORT_STATUS_CONNECTION) {
                 /* Device connected to a port on the hub */
-                //USB_LOG_INFO("Connection on port:%d\n", port);
+                USB_LOG_DBG("Connection on port:%d\n", port);
 
                 ret = usbh_hub_set_feature(hub_class, port, HUB_PORT_FEATURE_RESET);
                 if (ret < 0) {

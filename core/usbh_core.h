@@ -1,5 +1,6 @@
 /**
  * @file usbh_core.h
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -44,8 +45,8 @@ extern "C" {
 #define ROOTHUB(hport) true
 #endif
 
-#define CLASS_CONNECT(hport,i) ((hport)->config.intf[i].class_driver->connect(hport, i))
-#define CLASS_DISCONNECT(hport,i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
+#define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
+#define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
 
 enum usbh_event_type {
     USBH_EVENT_ATTACHED,
@@ -75,6 +76,7 @@ typedef struct usbh_endpoint {
 typedef struct usbh_interface {
     struct usb_interface_descriptor intf_desc;
     struct usbh_endpoint ep[CONFIG_USBHOST_EP_NUM];
+    char devname[CONFIG_USBHOST_DEV_NAMELEN];
     struct usbh_class_driver *class_driver;
     void *priv;
 } usbh_interface_t;
@@ -96,6 +98,7 @@ typedef struct usbh_hubport {
 #if 0
     uint8_t* config_desc;
 #endif
+    struct usb_setup_packet *setup;
     struct usbh_hub *parent; /*if NULL, is roothub*/
 } usbh_hubport_t;
 
@@ -106,7 +109,6 @@ typedef struct usbh_hub {
     uint8_t dev_addr; /* Hub device address */
     usbh_epinfo_t intin;
     uint8_t *int_buffer;
-    struct usb_setup_packet *setup;
     struct hub_port_status *port_status;
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_EHPORTS];
@@ -117,9 +119,11 @@ typedef struct usbh_hub {
 void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
 
 int usbh_initialize(void);
+int usbh_lock(void);
+void usbh_unlock(void);
 int lsusb(int argc, char **argv);
-struct usbh_hubport *usbh_get_hubport(uint8_t dev_addr);
-void *usbh_get_class(uint8_t dev_addr, uint8_t intf);
+struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
+void *usbh_find_class_instance(const char *devname);
 
 #ifdef __cplusplus
 }

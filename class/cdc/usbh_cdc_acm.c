@@ -1,5 +1,6 @@
 /**
  * @file usbh_cdc_acm.c
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -22,8 +23,7 @@
 #include "usbh_core.h"
 #include "usbh_cdc_acm.h"
 
-#define DEV_FORMAT  "/dev/ttyACM%d"
-#define DEV_NAMELEN 16
+#define DEV_FORMAT "/dev/ttyACM%d"
 
 static uint32_t g_devinuse = 0;
 
@@ -74,26 +74,13 @@ static void usbh_cdc_acm_devno_free(struct usbh_cdc_acm *priv)
     }
 }
 
-/****************************************************************************
- * Name: usbh_cdc_acm_mkdevname
- *
- * Description:
- *   Format a /dev/ttyACM[n] device name given a minor number.
- *
- ****************************************************************************/
-
-static inline void usbh_cdc_acm_mkdevname(struct usbh_cdc_acm *priv, char *devname)
-{
-    snprintf(devname, DEV_NAMELEN, DEV_FORMAT, priv->minor);
-}
-
 int usbh_cdc_acm_set_line_coding(struct usbh_hubport *hport, uint8_t intf, struct cdc_line_coding *line_coding)
 {
     int ret;
     struct usb_setup_packet *setup;
     struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)hport->config.intf[intf].priv;
 
-    setup = cdc_acm_class->setup;
+    setup = hport->setup;
 
     if (cdc_acm_class->ctrl_intf != intf) {
         return -1;
@@ -119,7 +106,7 @@ int usbh_cdc_acm_get_line_coding(struct usbh_hubport *hport, uint8_t intf, struc
     struct usb_setup_packet *setup;
     struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)hport->config.intf[intf].priv;
 
-    setup = cdc_acm_class->setup;
+    setup = hport->setup;
 
     if (cdc_acm_class->ctrl_intf != intf) {
         return -1;
@@ -145,7 +132,7 @@ int usbh_cdc_acm_set_line_state(struct usbh_hubport *hport, uint8_t intf, bool d
     struct usb_setup_packet *setup;
     struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)hport->config.intf[intf].priv;
 
-    setup = cdc_acm_class->setup;
+    setup = hport->setup;
 
     if (cdc_acm_class->ctrl_intf != intf) {
         return -1;
@@ -168,26 +155,10 @@ int usbh_cdc_acm_set_line_state(struct usbh_hubport *hport, uint8_t intf, bool d
     return 0;
 }
 
-USB_NOCACHE_RAM_SECTION uint8_t cdc_buffer[4096];
-
-void usbh_cdc_acm_callback(void *arg, int nbytes)
-{
-    struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)arg;
-
-    if (nbytes > 0) {
-        for (size_t i = 0; i < nbytes; i++) {
-            printf("0x%02x ", cdc_buffer[i]);
-        }
-    }
-
-    printf("nbytes:%d\r\n", nbytes);
-}
-
 int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
-    char devname[DEV_NAMELEN];
     int ret;
 
     struct usbh_cdc_acm *cdc_acm_class = usb_malloc(sizeof(struct usbh_cdc_acm));
@@ -199,16 +170,11 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
 
     usbh_cdc_acm_devno_alloc(cdc_acm_class);
-    usbh_cdc_acm_mkdevname(cdc_acm_class, devname);
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, cdc_acm_class->minor);
 
     hport->config.intf[intf].priv = cdc_acm_class;
-    hport->config.intf[intf + 1].priv = cdc_acm_class;
+    hport->config.intf[intf + 1].priv = NULL;
 
-    cdc_acm_class->setup = usb_iomalloc(sizeof(struct usb_setup_packet));
-    if (cdc_acm_class->setup == NULL) {
-        USB_LOG_ERR("Fail to alloc setup\r\n");
-        return -ENOMEM;
-    }
     cdc_acm_class->linecoding = usb_iomalloc(sizeof(struct cdc_line_coding));
     if (cdc_acm_class->linecoding == NULL) {
         USB_LOG_ERR("Fail to alloc linecoding\r\n");
@@ -231,7 +197,7 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
         return ret;
     }
 
-#if 0
+#ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
     ep_desc = &hport->config.intf[intf].ep[0].ep_desc;
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
     ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
@@ -256,56 +222,21 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    USB_LOG_INFO("Register CDC ACM Class:%s\r\n", devname);
+    USB_LOG_INFO("Register CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
 
-    memset(cdc_buffer, 0, 512);
-    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512);
-    if (ret < 0) {
-        printf("bulk in error\r\n");
-        return ret;
-    }
-    printf("recv over:%d\r\n", ret);
-    for (size_t i = 0; i < ret; i++) {
-        printf("0x%02x ", cdc_buffer[i]);
-    }
-    printf("\r\n");
-    const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
-
-    memcpy(cdc_buffer, data1, 8);
-    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkout, cdc_buffer, 8);
-    if (ret < 0) {
-        printf("bulk out error\r\n");
-        return ret;
-    }
-    printf("send over:%d\r\n", ret);
-
-#if 0
-    usbh_ep_bulk_async_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, usbh_cdc_acm_callback, cdc_acm_class);
-#else
-    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512);
-    if (ret < 0) {
-        printf("bulk in error\r\n");
-        return ret;
-    }
-    printf("recv over:%d\r\n", ret);
-    for (size_t i = 0; i < ret; i++) {
-        printf("0x%02x ", cdc_buffer[i]);
-    }
-    printf("\r\n");
-#endif
+    extern int cdc_acm_test();
+    cdc_acm_test();
     return ret;
 }
 
 int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
-    char devname[DEV_NAMELEN];
     int ret = 0;
 
     struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)hport->config.intf[intf].priv;
 
     if (cdc_acm_class) {
         usbh_cdc_acm_devno_free(cdc_acm_class);
-        usbh_cdc_acm_mkdevname(cdc_acm_class, devname);
 
         if (cdc_acm_class->bulkin) {
             ret = usb_ep_cancel(cdc_acm_class->bulkin);
@@ -320,17 +251,17 @@ int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
             }
             usbh_ep_free(cdc_acm_class->bulkout);
         }
-        if (cdc_acm_class->setup)
-            usb_iofree(cdc_acm_class->setup);
+
         if (cdc_acm_class->linecoding)
             usb_iofree(cdc_acm_class->linecoding);
 
         usb_free(cdc_acm_class);
 
+        USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
+        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
+
         hport->config.intf[intf].priv = NULL;
         hport->config.intf[intf + 1].priv = NULL;
-
-        USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", devname);
     }
 
     return ret;

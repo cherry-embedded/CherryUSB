@@ -1,5 +1,6 @@
 /**
  * @file usbh_hub.h
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *

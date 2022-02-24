@@ -1,5 +1,6 @@
 /**
  * @file usbh_msc.h
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -26,7 +27,6 @@
 #include "usb_scsi.h"
 
 struct usbh_msc {
-    struct usb_setup_packet *setup;
     uint8_t intf; /* Data interface number */
     uint8_t sdchar;
     usbh_epinfo_t bulkin;  /* Bulk IN endpoint */
@@ -37,6 +37,9 @@ struct usbh_msc {
 };
 
 extern const struct usbh_class_driver msc_class_driver;
+
+int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors);
+int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors);
 
 #ifdef __cplusplus
 extern "C" {

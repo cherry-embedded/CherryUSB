@@ -1,5 +1,6 @@
 /**
  * @file usbh_hid.h
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -25,7 +26,6 @@
 #include "usb_hid.h"
 
 struct usbh_hid {
-    struct usb_setup_packet *setup;
     uint8_t intf; /* interface number */
     uint8_t minor;
     usbh_epinfo_t intin;  /* INTR IN endpoint */

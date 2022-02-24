@@ -1,5 +1,6 @@
 /**
  * @file usbh_cdc_acm.h
+ * @brief
  *
  * Copyright (c) 2022 sakumisu
  *
@@ -25,7 +26,6 @@
 #include "usb_cdc.h"
 
 struct usbh_cdc_acm {
-    struct usb_setup_packet *setup;
     struct cdc_line_coding *linecoding;
     uint8_t ctrl_intf; /* Control interface number */
     uint8_t data_intf; /* Data interface number */
@@ -34,7 +34,7 @@ struct usbh_cdc_acm {
     uint8_t minor;
     usbh_epinfo_t bulkin;  /* Bulk IN endpoint */
     usbh_epinfo_t bulkout; /* Bulk OUT endpoint */
-#ifdef HAVE_INTIN_ENDPOINT
+#ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
     usbh_epinfo_t intin; /* Interrupt IN endpoint (optional) */
 #endif
 };
