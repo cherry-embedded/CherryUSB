@@ -196,7 +196,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     struct usbd_endpoint_cfg ep_cfg;
 
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
+    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
     ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
 
     USB_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
