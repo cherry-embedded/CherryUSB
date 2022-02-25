@@ -1095,7 +1095,7 @@ struct video_autoexposure_mode {
     VIDEO_VC_PROCESSING_UNIT_DESCRIPTOR_SUBTYPE,                                                                                                                                   \
     0x02,       /* bUnitID  */                                                                                                                                                     \
     0x01,       /* bSourceID */                                                                                                                                                    \
-    0x00, 0x40, /* wMaxMultiplier  */                                                                                                                                              \
+    0x00, 0x00, /* wMaxMultiplier  */                                                                                                                                              \
     0x02,       /* bControlSize   */                                                                                                                                               \
     0x00, 0x00, /* bmControls */                                                                                                                                                   \
     0x00,       /* iProcessing */                                                                                                                                                  \
@@ -1107,57 +1107,6 @@ struct video_autoexposure_mode {
     WBVAL(VIDEO_TT_STREAMING),                                                                                                                                                     \
     0x00, /* bAssocTerminal   */                                                                                                                                                   \
     0x02, /* bSourceID   */                                                                                                                                                        \
-    0x00  /* iTerminal   */
-
-#define VIDEO_VC_DESCRIPTOR_INIT_V2(bFirstInterface, bNumEndpoints, bcdUVC, wTotalLength, dwClockFrequency, stridx)                                                                \
-    /* Interface Association Descriptor */                                                                                                                                         \
-    0x08,                                                                                                                                                                          \
-    USB_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION,                                                                                                                                     \
-    bFirstInterface,                                                                                                                                                               \
-    0x02,                                                                                                                                                                          \
-    USB_DEVICE_CLASS_VIDEO,                                                                                                                                                        \
-    VIDEO_SC_VIDEO_INTERFACE_COLLECTION,                                                                                                                                           \
-    0x00,                                                                                                                                                                          \
-    0x00,                                                                                                                                                                          \
-    /* VideoControl Interface Descriptor */                                       \
-    0x09,                                                                                            /* bLength */                                                                 \
-    USB_DESCRIPTOR_TYPE_INTERFACE,                                                                   /* bDescriptorType */                                                         \
-    0x00,                                                                                            /* bInterfaceNumber */                                                        \
-    0x00,                                                                                            /* bAlternateSetting */                                                       \
-    0x00,                                                                                            /* bNumEndpoints:1 endpoint (interrupt endpoint) */                           \
-    USB_DEVICE_CLASS_VIDEO,                                                                          /* bInterfaceClass : CC_VIDEO */                                              \
-    VIDEO_SC_VIDEOCONTROL,                                                                           /* bInterfaceSubClass : SC_VIDEOCONTROL */                                    \
-    VIDEO_PC_PROTOCOL_UNDEFINED,                                                                     /* bInterfaceProtocol : PC_PROTOCOL_UNDEFINED */                              \
-    stridx,                                                                                          /* iInterface:Index to string descriptor that contains the string <Your Product Name> */ \
-    /*Class-specific VideoControl Interface Descriptor */                         \
-    0x0d,                                                                                            /* bLength */                                                                 \
-    0x24,                                                                                            /* bDescriptorType : CS_INTERFACE */                                          \
-    VIDEO_VC_HEADER_DESCRIPTOR_SUBTYPE,                                                              /* bDescriptorSubType : VC_HEADER subtype */                                  \
-    WBVAL(bcdUVC),                                                                                   /* bcdUVC : Revision of class specification that this device is based upon.*/ \
-    WBVAL(wTotalLength),                                                                             /* wTotalLength  */                                                           \
-    DBVAL(dwClockFrequency),                                                                         /* dwClockFrequency : 0x005b8d80 -> 6,000,000 == 6MHz*/                       \
-    0x01,                                                                                            /* bInCollection : Number of streaming interfaces. */                         \
-    0x01,                                                                                            /* baInterfaceNr(1) : VideoStreaming interface 1 belongs to this VideoControl interface.*/ \
-    /* Input Terminal 1 -> Output Terminal 2 */              \
-    0x12,                                                                                                                                                                          \
-    0x24,                                                                                                                                                                          \
-    VIDEO_VC_INPUT_TERMINAL_DESCRIPTOR_SUBTYPE,                                                                                                                                    \
-    0x01,                    /* bTerminalID */                                                                                                                                     \
-    WBVAL(VIDEO_ITT_CAMERA), /* wTerminalType : 0x0201 Camera Sensor*/                                                                                                             \
-    0x00,                    /* bAssocTerminal */                                                                                                                                  \
-    0x00,                    /* iTerminal */                                                                                                                                       \
-    WBVAL(0x0000),           /* wObjectiveFocalLengthMin */                                                                                                                        \
-    WBVAL(0x0000),           /* wObjectiveFocalLengthMax */                                                                                                                        \
-    WBVAL(0x0000),           /* wOcularFocalLength */                                                                                                                              \
-    0x03,                    /* bControlSize */                                                                                                                                    \
-    0x00, 0x00, 0x00,        /* bmControls */                                                                                                                                      \
-    0x09,                                                                                                                                                                          \
-    0x24,                                                                                                                                                                          \
-    VIDEO_VC_OUTPUT_TERMINAL_DESCRIPTOR_SUBTYPE,                                                                                                                                   \
-    0x02, /* bTerminalID */                                                                                                                                                        \
-    WBVAL(VIDEO_TT_STREAMING),                                                                                                                                                     \
-    0x00, /* bAssocTerminal   */                                                                                                                                                   \
-    0x01, /* bSourceID   */                                                                                                                                                        \
     0x00  /* iTerminal   */
 
 #define VIDEO_VS_DESCRIPTOR_INIT(bInterfaceNumber, bAlternateSetting, bNumEndpoints)        \
@@ -1174,22 +1123,6 @@ struct video_autoexposure_mode {
 
 #define VIDEO_VS_HEADER_DESCRIPTOR_INIT(bNumFormats, wTotalLength, bEndpointAddress)                    \
     /*Class-specific VideoStream Header Descriptor (Input) */                                           \
-    0x10,                                                                                               \
-    0x24,                                                                                               \
-    VIDEO_VS_INPUT_HEADER_DESCRIPTOR_SUBTYPE,                                                           \
-    bNumFormats, /* bNumFormats : One format descriptor follows. */                                     \
-    WBVAL(wTotalLength),                                                                                \
-    bEndpointAddress,                                                                                   \
-    0x00, /* bmInfo : No dynamic format change supported. */                                            \
-    0x03, /* bTerminalLink : This VideoStreaming interface supplies terminal ID 3 (Output Terminal). */ \
-    0x00, /* bStillCaptureMethod : Device supports still image capture method 0. */                     \
-    0x00, /* bTriggerSupport : Hardware trigger supported for still image capture */                    \
-    0x00, /* bTriggerUsage : Hardware trigger should initiate a still image capture. */                 \
-    0x01, /* bControlSize : Size of the bmaControls field */                                            \
-    0x00, 0x00, 0x00 /* bmaControls : No VideoStreaming specific controls are supported.*/              \
-
-#define VIDEO_VS_HEADER_DESCRIPTOR_INIT_V2(bNumFormats, wTotalLength, bEndpointAddress)                 \
-    /*Class-specific VideoStream Header Descriptor (Input) */                                           \
     0x0e,                                                                                               \
     0x24,                                                                                               \
     VIDEO_VS_INPUT_HEADER_DESCRIPTOR_SUBTYPE,                                                           \
@@ -1197,12 +1130,12 @@ struct video_autoexposure_mode {
     WBVAL(wTotalLength),                                                                                \
     bEndpointAddress,                                                                                   \
     0x00, /* bmInfo : No dynamic format change supported. */                                            \
-    0x02, /* bTerminalLink : This VideoStreaming interface supplies terminal ID 2 (Output Terminal). */ \
+    0x03, /* bTerminalLink : This VideoStreaming interface supplies terminal ID 2 (Output Terminal). */ \
     0x00, /* bStillCaptureMethod : Device supports still image capture method 0. */                     \
     0x00, /* bTriggerSupport : Hardware trigger supported for still image capture */                    \
     0x00, /* bTriggerUsage : Hardware trigger should initiate a still image capture. */                 \
     0x01, /* bControlSize : Size of the bmaControls field */                                            \
-    0x00  /* bmaControls : No VideoStreaming specific controls are supported.*/
+    0x00,  /* bmaControls : No VideoStreaming specific controls are supported.*/
 
 #define VIDEO_VS_FORMAT_UNCOMPRESSED_DESCRIPTOR_INIT(bFormatIndex, bNumFrameDescriptors, GUIDFormat)                                                              \
     /*Payload Format(UNCOMPRESSED) Descriptor */                                                                                                                  \
@@ -1266,5 +1199,22 @@ struct video_autoexposure_mode {
     DBVAL(dwMinFrameInterval1),              /* dwMinFrameInterval : 1,000,000 ns  *100ns -> 10 FPS,Shortest frame interval supported (at highest frame rate), in 100 ns units  */              \
     DBVAL(dwMinFrameInterval2)               /* dwMaxFrameInterval : 1,000,000 ns  *100ns -> 10 FPS,Longest frame interval supported (at lowest frame rate), in 100 ns units  */
 
+#define VIDEO_VS_FRAME_MJPEG_DESCRIPTOR_INIT_V2(bFrameIndex, wWidth, wHeight, dwMinBitRate, dwMaxBitRate,                                                                                       \
+                                             dwMaxVideoFrameBufferSize, dwDefaultFrameInterval, dwMinFrameInterval1, dwMinFrameInterval2)                                                       \
+    0x26,                                    /* bLength */                                                                                                                                      \
+    0x24,                                    /* bDescriptorType : CS_INTERFACE */                                                                                                               \
+    VIDEO_VS_FRAME_MJPEG_DESCRIPTOR_SUBTYPE, /* bDescriptorSubType : VS_FRAME_MJPEG */                                                                                                          \
+    bFrameIndex,                             /* bFrameIndex : First (and only) frame descriptor */                                                                                              \
+    0x00,                                    /* bmCapabilities : Still images using capture method 0 are supported at this frame setting.D1: Fixed frame-rate. */                               \
+    WBVAL(wWidth),                           /* wWidth (2bytes): Width of frame is 128 pixels. */                                                                                               \
+    WBVAL(wHeight),                          /* wHeight (2bytes): Height of frame is 64 pixels. */                                                                                              \
+    DBVAL(dwMinBitRate),                     /* dwMinBitRate (4bytes): Min bit rate in bits/s  */                                                                                               \
+    DBVAL(dwMaxBitRate),                     /* dwMaxBitRate (4bytes): Max bit rate in bits/s  */                                                                                               \
+    DBVAL(dwMaxVideoFrameBufferSize),        /* dwMaxVideoFrameBufSize (4bytes): Maximum video or still frame size, in bytes. */                                                                \
+    DBVAL(dwDefaultFrameInterval),           /* dwDefaultFrameInterval : 1,000,000 * 100ns -> 10 FPS */                                                                                         \
+    0x00,                                    /* bFrameIntervalType : Indicates how the frame interval can be programmed. 0: Continuous frame interval 1..255: The number of discrete frame   */ \
+    DBVAL(dwMinFrameInterval1),              /* dwMinFrameInterval : 1,000,000 ns  *100ns -> 10 FPS,Shortest frame interval supported (at highest frame rate), in 100 ns units  */              \
+    DBVAL(dwMinFrameInterval2),              /* dwMaxFrameInterval : 1,000,000 ns  *100ns -> 10 FPS,Longest frame interval supported (at lowest frame rate), in 100 ns units  */                \
+    0x00, 0x00, 0x00, 0x00                   /* dwFrameIntervalStep : No frame interval step supported. */
 // clang-format on
 #endif /* USB_VIDEO_H_ */
