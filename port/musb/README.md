@@ -2,9 +2,17 @@
 
 ## Support Chip List
 
-- MM32F10x
-- MM32L0xx
-- MM32L3xx
+### ES32
+
+- ES32F3xx
+
+### TI
+
+- MSP432E4x
+
+### AllwinnerTech
+
+- F1Cxxx
 
 ## Before Use
 
