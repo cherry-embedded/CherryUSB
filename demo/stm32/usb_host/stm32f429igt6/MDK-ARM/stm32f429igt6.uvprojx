@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS_IN_FULL,CONFIG_USBHOST_HUB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hub;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hub;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F;..\..\..\..\..\third_party\fatfs-0.14\source</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -413,6 +413,11 @@
               <FileName>stm32f4xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_host.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\usb_host.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -567,7 +572,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>usb_stack</GroupName>
+          <GroupName>CherryUSB</GroupName>
           <Files>
             <File>
               <FileName>usbh_core.c</FileName>
@@ -608,6 +613,36 @@
               <FileName>usb_hc_synopsys.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\port\synopsys\usb_hc_synopsys.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>fatfs</GroupName>
+          <Files>
+            <File>
+              <FileName>diskio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\third_party\fatfs-0.14\source\diskio.c</FilePath>
+            </File>
+            <File>
+              <FileName>ff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\third_party\fatfs-0.14\source\ff.c</FilePath>
+            </File>
+            <File>
+              <FileName>ffsystem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\third_party\fatfs-0.14\source\ffsystem.c</FilePath>
+            </File>
+            <File>
+              <FileName>ffunicode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\third_party\fatfs-0.14\source\ffunicode.c</FilePath>
+            </File>
+            <File>
+              <FileName>fatfs_usbh.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\third_party\fatfs-0.14\source\port\fatfs_usbh.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,3 +1,4 @@
+#include "ff.h"
 #include "diskio.h"
 #include "usbh_core.h"
 #include "usbh_msc.h"

@@ -15,7 +15,11 @@
 #define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
 #define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
-
+int USB_disk_status(void);
+int USB_disk_initialize(void);
+int USB_disk_read(BYTE *buff, LBA_t sector, UINT count);
+int USB_disk_write(const BYTE *buff, LBA_t sector, UINT count);
+int USB_disk_ioctl(BYTE cmd, void *buff);
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -29,14 +33,14 @@ DSTATUS disk_status (
 
 	switch (pdrv) {
 	case DEV_RAM :
-		result = RAM_disk_status();
+		//result = RAM_disk_status();
 
 		// translate the reslut code here
 
 		return stat;
 
 	case DEV_MMC :
-		result = MMC_disk_status();
+		//result = MMC_disk_status();
 
 		// translate the reslut code here
 
@@ -67,14 +71,14 @@ DSTATUS disk_initialize (
 
 	switch (pdrv) {
 	case DEV_RAM :
-		result = RAM_disk_initialize();
+		//result = RAM_disk_initialize();
 
 		// translate the reslut code here
 
 		return stat;
 
 	case DEV_MMC :
-		result = MMC_disk_initialize();
+		//result = MMC_disk_initialize();
 
 		// translate the reslut code here
 
@@ -110,7 +114,7 @@ DRESULT disk_read (
 	case DEV_RAM :
 		// translate the arguments here
 
-		result = RAM_disk_read(buff, sector, count);
+		//result = RAM_disk_read(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -119,7 +123,7 @@ DRESULT disk_read (
 	case DEV_MMC :
 		// translate the arguments here
 
-		result = MMC_disk_read(buff, sector, count);
+		//result = MMC_disk_read(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -160,7 +164,7 @@ DRESULT disk_write (
 	case DEV_RAM :
 		// translate the arguments here
 
-		result = RAM_disk_write(buff, sector, count);
+		//result = RAM_disk_write(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -169,7 +173,7 @@ DRESULT disk_write (
 	case DEV_MMC :
 		// translate the arguments here
 
-		result = MMC_disk_write(buff, sector, count);
+		//result = MMC_disk_write(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -220,7 +224,7 @@ DRESULT disk_ioctl (
 	case DEV_USB :
 
 		// Process of the command the USB drive
-
+        USB_disk_ioctl(cmd,buff);
 		return res;
 	}
 
