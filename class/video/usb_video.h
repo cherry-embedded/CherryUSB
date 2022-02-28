@@ -1135,7 +1135,7 @@ struct video_autoexposure_mode {
     0x00, /* bTriggerSupport : Hardware trigger supported for still image capture */                    \
     0x00, /* bTriggerUsage : Hardware trigger should initiate a still image capture. */                 \
     0x01, /* bControlSize : Size of the bmaControls field */                                            \
-    0x00,  /* bmaControls : No VideoStreaming specific controls are supported.*/
+    0x00  /* bmaControls : No VideoStreaming specific controls are supported.*/
 
 #define VIDEO_VS_FORMAT_UNCOMPRESSED_DESCRIPTOR_INIT(bFormatIndex, bNumFrameDescriptors, GUIDFormat)                                                              \
     /*Payload Format(UNCOMPRESSED) Descriptor */                                                                                                                  \
