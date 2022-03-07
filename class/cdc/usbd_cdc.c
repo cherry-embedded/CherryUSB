@@ -36,12 +36,6 @@ struct cdc_acm_cfg_priv {
     uint8_t serial_state;
     /* CDC ACM notification sent status */
     uint8_t notification_sent;
-    /* CDC ACM configured flag */
-    bool configured;
-    /* CDC ACM suspended flag */
-    bool suspended;
-    uint32_t uart_first_init_flag;
-
 } usbd_cdc_acm_cfg;
 
 static void usbd_cdc_acm_reset(void)
@@ -50,8 +44,6 @@ static void usbd_cdc_acm_reset(void)
     usbd_cdc_acm_cfg.line_coding.bDataBits = 8;
     usbd_cdc_acm_cfg.line_coding.bParityType = 0;
     usbd_cdc_acm_cfg.line_coding.bCharFormat = 0;
-    usbd_cdc_acm_cfg.configured = false;
-    usbd_cdc_acm_cfg.uart_first_init_flag = 0;
 }
 
 /**
@@ -89,11 +81,6 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             /*                                        4 - Space                            */
             /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
             /*******************************************************************************/
-            if (usbd_cdc_acm_cfg.uart_first_init_flag == 0) {
-                usbd_cdc_acm_cfg.uart_first_init_flag = 1;
-                return 0;
-            }
-
             memcpy(&usbd_cdc_acm_cfg.line_coding, *data, sizeof(usbd_cdc_acm_cfg.line_coding));
             USB_LOG_DBG("CDC_SET_LINE_CODING <%d %d %s %s>\r\n",
                          usbd_cdc_acm_cfg.line_coding.dwDTERate,
