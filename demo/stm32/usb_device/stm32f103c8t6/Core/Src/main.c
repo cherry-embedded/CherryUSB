@@ -114,8 +114,6 @@ int main(void)
     extern void cdc_acm_init(void);
     cdc_acm_init();
 
-    usb_dc_init();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
