@@ -100,11 +100,9 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
-![lsusb](docs/lsusb.png)
-
 ## CherryUSB 文档教程
 
-CherryUSB 快速入门、API 手册以及 Class 知识点和例程，参考 [CherryUSB 文档教程](https://htmlpreview.github.io/?https://raw.githubusercontent.com/sakumisu/CherryUSB/master/docs/_build/html/index.html)
+CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和例程，参考 [CherryUSB 文档教程](https://cherryusb.readthedocs.io/)
 
 ## CherryUSB 视频教程
 
