@@ -7,12 +7,16 @@
 #ifndef _USB_MIDI_H_
 #define _USB_MIDI_H_
 
-/* MIDI Streaming class specific interfaces */
-#define MIDI_IN_JACK  0x02
-#define MIDI_OUT_JACK 0x03
+/* bDescriptorSubType */
+#define MIDI_VC_HEADER_DESCRIPTOR_SUBTYPE     0x01U
+#define MIDI_MS_HEADER_DESCRIPTOR_SUBTYPE     0x01U
+#define MIDI_MS_GENERAL_DESCRIPTOR_SUBTYPE    0x01U
+#define MIDI_MIDI_IN_JACK_DESCRIPTOR_SUBTYPE  0x02U
+#define MIDI_MIDI_OUT_JACK_DESCRIPTOR_SUBTYPE 0x03U
 
-#define MIDI_JACK_EMBEDDED 0x01
-#define MIDI_JACK_EXTERNAL 0x02
+/* bJackType */
+#define MIDI_JACK_TYPE_EMBEDDED 0x01
+#define MIDI_JACK_TYPE_EXTERNAL 0x02
 
 #define MIDI_CHANNEL_OMNI 0
 #define MIDI_CHANNEL_OFF  17
@@ -120,27 +124,43 @@ enum MidiControlChangeNumber {
     PolyModeOn = 127
 };
 
-struct midi_cs_interface_descriptor {
+struct midi_cs_if_ac_header_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
-    uint8_t SubType;
+    uint8_t bDescriptorSubType;
     uint16_t bcdADC;
+    uint16_t wTotalLength;
+    uint8_t bInCollection;
+    uint8_t baInterfaceNr[];
+} __PACKED;
+
+#define MIDI_SIZEOF_AC_HEADER_DESC(n) (8 + n)
+
+struct midi_cs_if_ms_header_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint16_t bcdMSC;
     uint16_t wTotalLength;
 } __PACKED;
 
-struct midi_in_jack_descriptor {
+#define MIDI_SIZEOF_MS_HEADER_DESC (7)
+
+struct midi_cs_if_in_jack_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
-    uint8_t SubType;
+    uint8_t bDescriptorSubType;
     uint8_t bJackType;
     uint8_t bJackId;
     uint8_t iJack;
 } __PACKED;
 
-struct midi_out_jack_descriptor {
+#define MIDI_SIZEOF_IN_JACK_DESC (6)
+
+struct midi_cs_if_out_jack_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
-    uint8_t SubType;
+    uint8_t bDescriptorSubType;
     uint8_t bJackType;
     uint8_t bJackId;
     uint8_t bNrInputPins;
@@ -149,26 +169,46 @@ struct midi_out_jack_descriptor {
     uint8_t iJack;
 } __PACKED;
 
-#define MIDI_ADAPTER_AC_INTERFACE_DESCRIPTOR_SIZE(num) (8 + num)
-#define MIDI_ADAPTER_AC_INTERFACE_DESCRIPTOR(num) \
-    struct midi_adapter_ac_interface_descriptor { \
-        uint8_t bLength;                          \
-        uint8_t bDescriptorType;                  \
-        uint8_t SubType;                          \
-        uint16_t bcdADC;                          \
-        uint16_t wTotalLength;                    \
-        uint8_t bInCollection;                    \
-        uint8_t baInterfaceNr[num];               \
-    } __PACKED
+#define MIDI_SIZEOF_OUT_JACK_DESC (9)
 
-#define MIDI_CS_BULK_ENDPOINT_DESCRIPTOR_SIZE(num) (4 + num)
-#define MIDI_CS_BULK_ENDPOINT_DESCRIPTOR(num) \
-    struct midi_cs_bulk_descriptor {          \
-        uint8_t bLength;                      \
-        uint8_t bDescriptorType;              \
-        uint8_t SubType;                      \
-        uint8_t bNumEmbMIDIJack;              \
-        uint8_t baAssocJackID[num];           \
-    } __PACKED
+struct midi_cs_ep_ms_general_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bNumEmbMIDIJack;
+    uint8_t baAssocJackID[];
+} __PACKED;
+
+#define MIDI_SIZEOF_MS_GENERAL_DESC(n) (4 + n)
+
+// clang-format off
+#define MIDI_IN_JACK_DESCRIPTOR_INIT(bJackType, bJackID) \
+    0x06,                                                \
+    0x24,                                                \
+    MIDI_MIDI_IN_JACK_DESCRIPTOR_SUBTYPE,                \
+    bJackType,                                           \
+    bJackID,                                             \
+    0x00
+
+#define MIDI_OUT_JACK_DESCRIPTOR_INIT(bJackType, bJackID, baSourceID) \
+    0x09,                                                             \
+    0x24,                                                             \
+    MIDI_MIDI_OUT_JACK_DESCRIPTOR_SUBTYPE,                            \
+    bJackType,                                                        \
+    bJackID,                                                          \
+    0x01,                                                             \
+    baSourceID,                                                       \
+    0x01,                                                             \
+    0x00
+
+#define MIDI_JACK_DESCRIPTOR_INIT(bJackFirstID)                                                     \
+    MIDI_IN_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EMBEDDED, bJackFirstID),                            \
+    MIDI_IN_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, (bJackFirstID + 1)),                      \
+    MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EMBEDDED, (bJackFirstID + 2), (bJackFirstID + 1)), \
+    MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, (bJackFirstID + 3), (bJackFirstID))
+
+#define MIDI_SIZEOF_JACK_DESC (6 + 6 + 9 + 9)
+
+// clang-format on
 
 #endif /* _USB_MIDI_H_ */
