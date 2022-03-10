@@ -90,6 +90,11 @@ struct usbd_endpoint_cfg {
  */
 
 /**
+ * @brief init device controller registers.
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_init(void);
+/**
  * @brief Set USB device address
  *
  * @param[in] addr Device address
@@ -172,10 +177,11 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
 /**
  * @brief Read data from the specified endpoint
  *
- * This is similar to usb_dc_ep_read, the difference being that, it doesn't
- * clear the endpoint NAKs so that the consumer is not bogged down by further
- * upcalls till he is done with the processing of the data. The caller should
- * reactivate ep by setting max_data_len 0 do so.
+ * This function is called by the endpoint handler function, after an OUT
+ * interrupt has been received for that EP. The application must only call this
+ * function through the supplied usbd_ep_callback function. This function clears
+ * the ENDPOINT NAK when max_data_len is 0, if all data in the endpoint FIFO has been read,
+ * so as to accept more data from host.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table

@@ -1297,3 +1297,9 @@ bool usb_device_is_configured(void)
 {
     return usbd_core_cfg.configured;
 }
+
+int usbd_initialize(void)
+{
+    usb_dc_init();
+    return 0;
+}
