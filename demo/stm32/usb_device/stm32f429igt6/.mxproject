@@ -12,17 +12,17 @@ CDefines=USE_HAL_DRIVER;STM32F429xx;USE_HAL_DRIVER;USE_HAL_DRIVER;
 [PreviousGenFiles]
 AdvancedFolderStructure=true
 HeaderFileListSize=3
-HeaderFiles#0=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Inc/stm32f4xx_it.h
-HeaderFiles#1=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Inc/stm32f4xx_hal_conf.h
-HeaderFiles#2=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Inc/main.h
+HeaderFiles#0=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Inc/stm32f4xx_it.h
+HeaderFiles#1=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Inc/stm32f4xx_hal_conf.h
+HeaderFiles#2=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Inc/main.h
 HeaderFolderListSize=1
-HeaderPath#0=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Inc
+HeaderPath#0=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Inc
 HeaderFiles=;
 SourceFileListSize=3
-SourceFiles#0=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Src/stm32f4xx_it.c
-SourceFiles#1=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Src/stm32f4xx_hal_msp.c
-SourceFiles#2=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Src/main.c
+SourceFiles#0=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Src/stm32f4xx_it.c
+SourceFiles#1=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Src/stm32f4xx_hal_msp.c
+SourceFiles#2=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Src/main.c
 SourceFolderListSize=1
-SourcePath#0=C:/Users/lvjiazhen/Desktop/usb_stack/demo/stm32/usb_device/stm32f429igt6/Core/Src
+SourcePath#0=C:/Users/lvjiazhen/Desktop/CherryUSB/demo/stm32/usb_device/stm32f429igt6/Core/Src
 SourceFiles=;
 
