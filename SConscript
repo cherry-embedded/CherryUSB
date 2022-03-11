@@ -40,7 +40,7 @@ if GetDepend(['PKG_CHERRYUSB_USING_DEVICE']):
             src += Glob('port/fsdev/usb_dc_fsdev.c')
         else:
             src += Glob('port/synopsys/usb_dc_synopsys.c')
-            if GetDepend(['SOC_SERIES_STM32H7']):
+            if GetDepend(['SOC_SERIES_STM32H7']) and GetDepend(['PKG_CHERRYUSB_USING_FS']):
                 CPPDEFINES += ['USB_BASE=0x40080000UL']
 
 # USB HOST
