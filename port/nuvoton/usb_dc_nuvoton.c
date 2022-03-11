@@ -250,7 +250,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         }
         buf8 = (uint8_t *)buf32;
         for (uint8_t i = 0; i < buflen8; i++) {
-            USBD->EP[ep_idx - 1].ep.EPDAT_BYTE = data[i];
+            USBD->EP[ep_idx - 1].ep.EPDAT_BYTE = *buf8;
             buf8++;
         }
         USBD->EP[ep_idx - 1].EPTXCNT = data_len;
