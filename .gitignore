@@ -7,6 +7,8 @@
 **/MDK-ARM/stm32h743vbt6/**
 **/obj/**
 **/RET/**
+**/Listings/**
+**/Objects/**
 *.map
 *.lst
 *.uvguix.*
