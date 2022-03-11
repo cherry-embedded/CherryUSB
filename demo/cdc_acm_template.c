@@ -142,8 +142,7 @@ void cdc_acm_init(void)
     usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
     usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
 
-    extern int usb_dc_init(void);
-    usb_dc_init();
+    usbd_initialize();
 }
 
 volatile uint8_t dtr_enable = 0;

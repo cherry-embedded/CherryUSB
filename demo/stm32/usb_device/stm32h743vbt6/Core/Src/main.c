@@ -223,7 +223,6 @@ void usb_dc_low_level_init(void)
 
     /* USER CODE END USB_OTG_FS_MspInit 1 */
 }
-extern void usb_dc_init(void);
 
 volatile uint8_t dtr_enable = 0;
 
@@ -277,7 +276,7 @@ int main(void)
     usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
     usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
 
-    usb_dc_init();
+    usbd_initialize();
 
     while (!usb_device_is_configured()) {
     }

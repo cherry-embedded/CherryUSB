@@ -277,10 +277,9 @@ static usbd_class_t video_class;
 static usbd_interface_t video_control_intf;
 static usbd_interface_t video_stream_intf;
 
-volatile uint8_t ios_complete = 0;
 void usbd_video_iso_callback(uint8_t ep)
 {
-    ios_complete = 1;
+
 }
 
 static usbd_endpoint_t video_in_ep = {
@@ -296,6 +295,8 @@ void video_init()
     usbd_interface_add_endpoint(&video_stream_intf, &video_in_ep);
 
     usbd_video_probe_and_commit_controls_init(CAM_FPS, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE);
+
+    usbd_initialize();
 }
 
 uint8_t packet_buffer[10 * 1024];
@@ -303,12 +304,11 @@ uint8_t packet_buffer[10 * 1024];
 void video_test()
 {
     uint32_t out_len;
-    uint32_t packets = usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
 
     while (1) {
         if (tx_flag) {
+            usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
             usbd_ep_write(0x81, packet_buffer, out_len, NULL);
-            usbd_video_mjpeg_payload_header_toggle(packet_buffer, packets);
         }
     }
 }

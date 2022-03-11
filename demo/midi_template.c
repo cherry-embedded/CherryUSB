@@ -156,12 +156,11 @@ usbd_endpoint_t midi_in_ep = {
 void midi_init(void)
 {
     usbd_desc_register(midi_descriptor);
-    
+
     usbd_class_add_interface(&midi_class, &midi_cmd_intf);
     usbd_class_add_interface(&midi_class, &midi_data_intf);
     usbd_interface_add_endpoint(&midi_data_intf, &midi_out_ep);
     usbd_interface_add_endpoint(&midi_data_intf, &midi_in_ep);
 
-    extern int usb_dc_init(void);
-    usb_dc_init();
+    usbd_initialize();
 }

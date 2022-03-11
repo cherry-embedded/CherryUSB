@@ -381,8 +381,7 @@ void hid_custom_keyboard_init(void)
     /*!< register report descriptor interface 1 */
     usbd_hid_report_descriptor_register(1, hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE);
 
-    extern int usb_dc_init(void);
-    usb_dc_init();
+    usbd_initialize();
 }
 
 /**

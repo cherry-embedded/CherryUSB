@@ -192,6 +192,5 @@ void hid_keyboard_init(void)
     usbd_interface_add_endpoint(&hid_intf, &hid_in_ep);
     usbd_hid_report_descriptor_register(0, hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE);
 
-    extern int usb_dc_init(void);
-    usb_dc_init();
+    usbd_initialize();
 }

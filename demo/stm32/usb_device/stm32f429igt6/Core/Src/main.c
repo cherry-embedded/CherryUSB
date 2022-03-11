@@ -208,9 +208,6 @@ void usb_dc_low_level_init(void)
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
 }
 
-
-extern void usb_dc_init(void);
-
 volatile uint8_t dtr_enable = 0;
 
 void usbd_cdc_acm_set_dtr(bool dtr)
@@ -262,7 +259,7 @@ int main(void)
   usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
   usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
 
-  usb_dc_init();
+  usbd_initialize();
 
   /* USER CODE END 2 */
 

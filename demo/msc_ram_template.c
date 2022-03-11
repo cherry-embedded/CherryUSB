@@ -130,6 +130,5 @@ void msc_ram_init(void)
     usbd_desc_register(msc_ram_descriptor);
     usbd_msc_class_init(MSC_OUT_EP, MSC_IN_EP);
 
-    extern int usb_dc_init(void);
-    usb_dc_init();
+    usbd_initialize();
 }

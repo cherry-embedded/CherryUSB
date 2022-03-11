@@ -234,8 +234,8 @@ void hid_mouse_init(void)
     /*!< register report descriptor */
     usbd_hid_report_descriptor_register(0, hid_mouse_report_desc, HID_MOUSE_REPORT_DESC_SIZE);
 
-    extern int usb_dc_init(void);
-    usb_dc_init();
+    usbd_initialize();
+
     /*!< init mouse report data */
     mouse_cfg.buttons = 0;
     mouse_cfg.wheel = 0;
