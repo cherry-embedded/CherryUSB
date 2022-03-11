@@ -509,11 +509,6 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     return 0;
 }
 
-/**
-  * @brief  This function handles PCD interrupt request.
-  * @param  hpcd PCD handle
-  * @retval HAL status
-  */
 void USBD_IRQHandler(void)
 {
     USB_OTG_GlobalTypeDef *USBx = usb_dc_cfg.Instance;

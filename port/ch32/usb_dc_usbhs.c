@@ -1,6 +1,10 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbhs_reg.h"
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler USBHS_IRQHandler //use actual usb irq name instead
+#endif
+
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
 #endif
@@ -33,7 +37,7 @@ __attribute__ ((aligned(4))) uint8_t EP2_DatabufHD[512+512];  //ep2_out(64)+ep2_
 void USBHS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 volatile uint8_t mps_over_flag = 0;
-volatile uint8_t USBHS_Dev_Endp0_Tog = 0x01; /* USB2.0¸ßËÙÉè±¸¶Ëµã0Í¬²½±êÖ¾ */
+volatile uint8_t USBHS_Dev_Endp0_Tog = 0x01; /* USB2.0ï¿½ï¿½ï¿½ï¿½ï¿½è±¸ï¿½Ëµï¿½0Í¬ï¿½ï¿½ï¿½ï¿½Ö¾ */
 
 __WEAK void usb_dc_low_level_init(void)
 {
@@ -380,14 +384,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     return 0;
 }
 
-/*********************************************************************
- * @fn      USBHS_IRQHandler
- *
- * @brief   This function handles OTG_FS exception.
- *
- * @return  none
- */
-void USBHS_IRQHandler(void)
+void USBD_IRQHandler(void)
 {
     uint32_t end_num, rx_token;
     uint8_t intflag = 0;
@@ -411,7 +408,7 @@ void USBHS_IRQHandler(void)
         } else if (end_num == 1) {
             if (rx_token == PID_IN) {
                 //USBHS_Endp1_Up_Flag = 0x00;
-                /* Ä¬ÈÏ»ØNAK */
+                /* Ä¬ï¿½Ï»ï¿½NAK */
                 USBHS_DEVICE->UEP1_TX_CTRL = (USBHS_DEVICE->UEP1_TX_CTRL & ~(USBHS_EP_T_RES_MASK | USBHS_EP_T_TOG_MASK)) | USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0;
             } else if (rx_token == PID_OUT) {
             }

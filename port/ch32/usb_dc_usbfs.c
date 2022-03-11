@@ -1,6 +1,10 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbfs_reg.h"
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler OTG_FS_IRQHandler //use actual usb irq name instead
+#endif
+
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
 #endif
@@ -33,7 +37,7 @@ __attribute__((aligned(4))) uint8_t EP5_DatabufHD[64 + 64]; //ep5_out(64)+ep5_in
 __attribute__((aligned(4))) uint8_t EP6_DatabufHD[64 + 64]; //ep6_out(64)+ep6_in(64)
 __attribute__((aligned(4))) uint8_t EP7_DatabufHD[64 + 64]; //ep7_out(64)+ep7_in(64)
 
-void OTG_FS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void USBD_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 volatile uint8_t mps_over_flag = 0;
 
@@ -435,14 +439,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     return 0;
 }
 
-/*********************************************************************
- * @fn      OTG_FS_IRQHandler
- *
- * @brief   This function handles OTG_FS exception.
- *
- * @return  none
- */
-void OTG_FS_IRQHandler(void)
+void USBD_IRQHandler(void)
 {
     uint8_t intflag = 0;
 

@@ -1,6 +1,14 @@
 #include "usbd_core.h"
 #include "usb_mm32_reg.h"
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler USB_HP_CAN1_TX_IRQHandler //use actual usb irq name instead
+#endif
+
+#ifndef USB_NUM_BIDIR_ENDPOINTS
+#define USB_NUM_BIDIR_ENDPOINTS 5
+#endif
+
 #define USB_GET_EPX_INT_STATE(ep_idx)      (*(volatile uint32_t *)(&USB->rEP1_INT_STATE + (ep_idx - 1)))
 #define USB_SET_EPX_INT_STATE(ep_idx, val) (*(volatile uint32_t *)(&USB->rEP1_INT_STATE + (ep_idx - 1)) = val)
 #define USB_SET_EP_INT(ep_idx, val)        (*(volatile uint32_t *)(&USB->rEP1_INT_EN + (ep_idx - 1)) = val)
@@ -9,14 +17,6 @@
 #define USB_SET_EP_CTRL(ep_idx, val)       (*(volatile uint32_t *)(&USB->rEP0_CTRL + ep_idx) = val)
 #define USB_GET_EP_FIFO(ep_idx)            (*(volatile uint32_t *)(&USB->rEP0_FIFO + ep_idx))
 #define USB_SET_EP_FIFO(ep_idx, val)       (*(volatile uint32_t *)(&USB->rEP0_FIFO + ep_idx) = val)
-
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_HP_CAN1_TX_IRQHandler //use actual usb irq name instead
-#endif
-
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 5
-#endif
 
 /* Endpoint state */
 struct usb_dc_ep_state {
@@ -204,11 +204,6 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     return 0;
 }
 
-/**
-  * @brief  This function handles PCD interrupt request.
-  * @param  hpcd PCD handle
-  * @retval HAL status
-  */
 void USBD_IRQHandler(void)
 {
     uint32_t int_status;

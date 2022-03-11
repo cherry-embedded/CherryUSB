@@ -524,11 +524,7 @@ static void handle_ep0(void)
             break;
     }
 }
-/**
-  * @brief  This function handles PCD interrupt request.
-  * @param  hpcd PCD handle
-  * @retval HAL status
-  */
+
 void USBD_IRQHandler(void)
 {
     uint32_t is;
