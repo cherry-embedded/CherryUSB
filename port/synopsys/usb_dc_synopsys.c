@@ -1,20 +1,13 @@
 #include "usbd_core.h"
 #include "usb_synopsys_reg.h"
 
-/*!< USB registers base address */
-#define USB_OTG_HS_PERIPH_BASE 0x40040000UL
-#ifndef STM32H7
-#define USB_OTG_FS_PERIPH_BASE 0x50000000UL
-#else
-#define USB_OTG_FS_PERIPH_BASE 0x40080000UL
-#endif
-
-#define USB_OTG_FS ((USB_OTG_GlobalTypeDef *)USB_OTG_FS_PERIPH_BASE)
-#define USB_OTG_HS ((USB_OTG_GlobalTypeDef *)USB_OTG_HS_PERIPH_BASE)
-
 #if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler OTG_HS_IRQHandler
+#endif
+
+#ifndef USB_BASE
+#define USB_BASE (0x40040000UL)
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
@@ -28,6 +21,10 @@
 #else
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler OTG_FS_IRQHandler
+#endif
+
+#ifndef USB_BASE
+#define USB_BASE (0x50000000UL)
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
@@ -124,11 +121,8 @@ int usb_dc_init(void)
 
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
 
-#if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
-    usb_dc_cfg.Instance = USB_OTG_HS;
-#else
-    usb_dc_cfg.Instance = USB_OTG_FS;
-#endif
+    usb_dc_cfg.Instance = (USB_OTG_GlobalTypeDef *)USB_BASE;
+
     USB_OTG_GlobalTypeDef *USBx = usb_dc_cfg.Instance;
 
     usb_dc_low_level_init();
@@ -285,7 +279,7 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
     USB_OTG_GlobalTypeDef *USBx = usb_dc_cfg.Instance;
     uint32_t USBx_BASE = (uint32_t)USBx;
@@ -307,6 +301,8 @@ void usb_dc_deinit(void)
     usb_flush_rxfifo(USBx);
 
     USBx_DEVICE->DCTL |= USB_OTG_DCTL_SDIS;
+
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)

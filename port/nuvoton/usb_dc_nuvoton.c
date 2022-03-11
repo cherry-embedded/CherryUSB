@@ -1,15 +1,19 @@
 #include "usbd_core.h"
 #include "usb_nuvoton_reg.h"
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler USBD_IRQHandler
+#endif
+
 #ifndef USB_BASE
 #define USB_BASE (0x40000000 + 0x19000)
 #endif
 
-#define USBD ((USBD_T *)USB_BASE)
-
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 13
 #endif
+
+#define USBD ((USBD_T *)USB_BASE)
 
 #define USBD_ENABLE_USB()              ((uint32_t)(USBD->PHYCTL |= (USBD_PHYCTL_PHYEN_Msk | USBD_PHYCTL_DPPUEN_Msk)))                     /*!<Enable USB  \hideinitializer */
 #define USBD_DISABLE_USB()             ((uint32_t)(USBD->PHYCTL &= ~USBD_PHYCTL_DPPUEN_Msk))                                              /*!<Disable USB  \hideinitializer */
@@ -95,8 +99,9 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)

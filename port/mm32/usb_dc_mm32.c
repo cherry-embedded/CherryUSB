@@ -48,9 +48,9 @@ int usb_dc_init(void)
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
 
     usb_dc_cfg.out_ep[0].ep_mps = USB_CTRL_EP_MPS;
-    usb_dc_cfg.out_ep[0].ep_type = USBD_EP_TYPE_CTRL;
+    usb_dc_cfg.out_ep[0].ep_type = 0x00;
     usb_dc_cfg.in_ep[0].ep_mps = USB_CTRL_EP_MPS;
-    usb_dc_cfg.in_ep[0].ep_type = USBD_EP_TYPE_CTRL;
+    usb_dc_cfg.in_ep[0].ep_type = 0x00;
 
     usb_dc_low_level_init();
 
@@ -84,9 +84,10 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
     usb_dc_low_level_deinit();
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)

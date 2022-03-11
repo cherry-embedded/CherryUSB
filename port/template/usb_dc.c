@@ -42,8 +42,9 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)
@@ -94,7 +95,6 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     }
 
     if (!data_len) {
-
         return 0;
     }
 
@@ -131,5 +131,4 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 
 void USBD_IRQHandler(void)
 {
-
 }

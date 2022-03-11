@@ -6,9 +6,7 @@
 #endif
 
 #ifndef USB_BASE
-/* USB device FS */
-#define USB_BASE    (0x40005C00UL)       /*!< USB_IP Peripheral Registers base address */
-#define USB_PMAADDR (USB_BASE + 0x400UL) /*!< USB_IP Packet Memory Area base address */
+#define USB_BASE (0x40005C00UL) /*!< USB_IP Peripheral Registers base address */
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
@@ -90,7 +88,7 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
     /* disable all interrupts and force USB reset */
     USB->CNTR = (uint16_t)USB_CNTR_FRES;
@@ -102,6 +100,7 @@ void usb_dc_deinit(void)
     USB->CNTR = (uint16_t)(USB_CNTR_FRES | USB_CNTR_PDWN);
 
     usb_dc_low_level_deinit();
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)

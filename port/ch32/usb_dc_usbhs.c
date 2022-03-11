@@ -165,8 +165,9 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)

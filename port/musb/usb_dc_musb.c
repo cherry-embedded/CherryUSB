@@ -1,16 +1,16 @@
 #include "usbd_core.h"
 #include "usb_musb_reg.h"
 
+#ifndef USBD_IRQHandler
+#define USBD_IRQHandler USB_INT_Handler //use actual usb irq name instead
+#endif
+
 #ifndef USB_BASE
 #define USB_BASE (0x40080000UL + 0x6400)
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
-#endif
-
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_INT_Handler //use actual usb irq name instead
 #endif
 
 #define USB ((USB0_Type *)USB_BASE)
@@ -159,9 +159,9 @@ int usb_dc_init(void)
     memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
 
     usb_dc_cfg.out_ep[0].ep_mps = USB_CTRL_EP_MPS;
-    usb_dc_cfg.out_ep[0].ep_type = USBD_EP_TYPE_CTRL;
+    usb_dc_cfg.out_ep[0].ep_type = 0x00;
     usb_dc_cfg.in_ep[0].ep_mps = USB_CTRL_EP_MPS;
-    usb_dc_cfg.in_ep[0].ep_type = USBD_EP_TYPE_CTRL;
+    usb_dc_cfg.in_ep[0].ep_type = 0x00;
     usb_dc_cfg.fifo_size_offset = USB_CTRL_EP_MPS;
 
     usb_dc_low_level_init();
@@ -183,8 +183,9 @@ int usb_dc_init(void)
     return 0;
 }
 
-void usb_dc_deinit(void)
+int usb_dc_deinit(void)
 {
+    return 0;
 }
 
 int usbd_set_address(const uint8_t addr)
