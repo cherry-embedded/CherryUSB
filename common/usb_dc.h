@@ -30,40 +30,6 @@ extern "C" {
 #endif
 
 /**
- * USB endpoint direction and number.
- */
-#define USB_EP_DIR_MASK 0x80U
-#define USB_EP_DIR_IN   0x80U
-#define USB_EP_DIR_OUT  0x00U
-
-/** Get endpoint index (number) from endpoint address */
-#define USB_EP_GET_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
-/** Get direction from endpoint address */
-#define USB_EP_GET_DIR(ep) ((ep)&USB_EP_DIR_MASK)
-/** Get endpoint address from endpoint index and direction */
-#define USB_EP_GET_ADDR(idx, dir) ((idx) | ((dir)&USB_EP_DIR_MASK))
-/** True if the endpoint is an IN endpoint */
-#define USB_EP_DIR_IS_IN(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_IN)
-/** True if the endpoint is an OUT endpoint */
-#define USB_EP_DIR_IS_OUT(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT)
-
-/* Default USB control EP, always 0 and 0x80 */
-#define USB_CONTROL_OUT_EP0 0
-#define USB_CONTROL_IN_EP0  0x80
-
-/**< maximum packet size (MPS) for EP 0 */
-#define USB_CTRL_EP_MPS 64
-
-/**
- * USB endpoint Transfer Type mask.
- */
-#define USBD_EP_TYPE_CTRL 0
-#define USBD_EP_TYPE_ISOC 1
-#define USBD_EP_TYPE_BULK 2
-#define USBD_EP_TYPE_INTR 3
-#define USBD_EP_TYPE_MASK 3
-
-/**
  * @brief USB Endpoint Configuration.
  *
  * Structure containing the USB endpoint configuration.
@@ -94,6 +60,34 @@ struct usbd_endpoint_cfg {
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_init(void);
+
+/**
+ * @brief deinit device controller registers.
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_deinit(void);
+
+/**
+ * @brief Attach USB for device connection
+ *
+ * Function to attach USB for device connection. Upon success, the USB PLL
+ * is enabled, and the USB device is now capable of transmitting and receiving
+ * on the USB bus and of generating interrupts.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_attach(void);
+
+/**
+ * @brief Detach the USB device
+ *
+ * Function to detach the USB device. Upon success, the USB hardware PLL
+ * is powered down and USB communication is disabled.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_detach(void);
+
 /**
  * @brief Set USB device address
  *
@@ -114,6 +108,7 @@ int usbd_set_address(const uint8_t addr);
  * @return true if successfully configured and enabled
  */
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
+
 /**
  * @brief Disable the selected endpoint
  *
@@ -127,6 +122,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_close(const uint8_t ep);
+
 /**
  * @brief Set stall condition for the selected endpoint
  *
@@ -136,6 +132,7 @@ int usbd_ep_close(const uint8_t ep);
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_set_stall(const uint8_t ep);
+
 /**
  * @brief Clear stall condition for the selected endpoint
  *
@@ -145,6 +142,7 @@ int usbd_ep_set_stall(const uint8_t ep);
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_clear_stall(const uint8_t ep);
+
 /**
  * @brief Check if the selected endpoint is stalled
  *
@@ -155,6 +153,7 @@ int usbd_ep_clear_stall(const uint8_t ep);
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled);
+
 /**
  * @brief Write data to the specified endpoint
  *
@@ -174,6 +173,7 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled);
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes);
+
 /**
  * @brief Read data from the specified endpoint
  *

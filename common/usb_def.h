@@ -39,6 +39,13 @@
 /* Maximum number of devices per controller */
 #define USB_MAX_DEVICES (127)
 
+/* Default USB control EP, always 0 and 0x80 */
+#define USB_CONTROL_OUT_EP0 0
+#define USB_CONTROL_IN_EP0  0x80
+
+/**< maximum packet size (MPS) for EP 0 */
+#define USB_CTRL_EP_MPS 64
+
 // USB PID Types
 #define USB_PID_OUT   (0x01) /* Tokens */
 #define USB_PID_IN    (0x09)
@@ -200,6 +207,24 @@
 #define USB_ENDPOINT_DIRECTION_MASK 0x80
 #define USB_ENDPOINT_OUT(addr)      ((addr) | 0x00)
 #define USB_ENDPOINT_IN(addr)       ((addr) | 0x80)
+
+/**
+ * USB endpoint direction and number.
+ */
+#define USB_EP_DIR_MASK 0x80U
+#define USB_EP_DIR_IN   0x80U
+#define USB_EP_DIR_OUT  0x00U
+
+/** Get endpoint index (number) from endpoint address */
+#define USB_EP_GET_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
+/** Get direction from endpoint address */
+#define USB_EP_GET_DIR(ep) ((ep)&USB_EP_DIR_MASK)
+/** Get endpoint address from endpoint index and direction */
+#define USB_EP_GET_ADDR(idx, dir) ((idx) | ((dir)&USB_EP_DIR_MASK))
+/** True if the endpoint is an IN endpoint */
+#define USB_EP_DIR_IS_IN(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_IN)
+/** True if the endpoint is an OUT endpoint */
+#define USB_EP_DIR_IS_OUT(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT)
 
 /* bmAttributes in Endpoint Descriptor */
 #define USB_ENDPOINT_TYPE_SHIFT       0

@@ -197,7 +197,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
 
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
+    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
 
     USB_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
                  ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
@@ -222,8 +222,8 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     struct usbd_endpoint_cfg ep_cfg;
 
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USBD_EP_TYPE_MASK;
+    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
 
     USB_LOG_INFO("Close endpoint:0x%x type:%u\r\n",
                  ep_cfg.ep_addr, ep_cfg.ep_type);
@@ -1199,7 +1199,7 @@ void usbd_event_notify_handler(uint8_t event, void *arg)
             usbd_core_cfg.configuration = 0;
             struct usbd_endpoint_cfg ep0_cfg;
             ep0_cfg.ep_mps = USB_CTRL_EP_MPS;
-            ep0_cfg.ep_type = USBD_EP_TYPE_CTRL;
+            ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
             ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
             /*set USB_CONTROL_IN_EP0 nak*/
             usbd_ep_open(&ep0_cfg);
