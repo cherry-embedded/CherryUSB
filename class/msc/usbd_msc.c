@@ -71,12 +71,18 @@ static bool memOK;
 
 static void usbd_msc_reset(void)
 {
-    memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
-    usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
+    uint8_t *buf = NULL;
 
     if (usbd_msc_cfg.block_buffer == NULL) {
         usbd_msc_cfg.block_buffer = usb_iomalloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
     }
+
+    buf = usbd_msc_cfg.block_buffer;
+
+    memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
+    usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
+
+    usbd_msc_cfg.block_buffer = buf;
 }
 
 /**
