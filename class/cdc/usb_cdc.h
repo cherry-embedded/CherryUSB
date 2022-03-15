@@ -335,7 +335,7 @@ struct cdc_ecm_descriptor {
     0x05,                                                  /* bLength */                       \
     CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
     CDC_FUNC_DESC_CALL_MANAGEMENT,                         /* bDescriptorSubtype */            \
-    bFirstInterface,                                       /* bmCapabilities */                \
+    0x00,                                                  /* bmCapabilities */                \
     (uint8_t)(bFirstInterface + 1),                        /* bDataInterface */                \
     0x04,                                                  /* bLength */                       \
     CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
@@ -400,7 +400,7 @@ struct cdc_ecm_descriptor {
     0x05,                                                  /* bLength */                       \
     CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
     CDC_FUNC_DESC_CALL_MANAGEMENT,                         /* bDescriptorSubtype */            \
-    bFirstInterface,                                       /* bmCapabilities */                \
+    0x00,                                                  /* bmCapabilities */                \
     (uint8_t)(bFirstInterface + 1),                        /* bDataInterface */                \
     0x04,                                                  /* bLength */                       \
     CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
