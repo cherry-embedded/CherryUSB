@@ -6,7 +6,7 @@
 #endif
 
 #ifndef USB_BASE
-#define USB_BASE (0x40080000UL + 0x6400)
+#define USB_BASE (0x40086400UL)
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
@@ -80,29 +80,35 @@ static void usb_musb_data_send(uint8_t ep_idx, bool bIsLastPacket)
     }
 }
 
-static int usb_musb_write_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
+static void usb_musb_write_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
 {
     uint32_t *buf32;
     uint8_t *buf8;
     uint32_t count32;
     uint32_t count8;
+    int i;
 
-    buf32 = (uint32_t *)buffer;
+    if ((uint32_t)buffer & 0x03) {
+        buf8 = buffer;
+        for (i = 0; i < len; i++) {
+            HWREGB(USB_FIFO_BASE(ep_idx)) = *buf8++;
+        }
+    } else {
+        count32 = len >> 2;
+        count8 = len & 0x03;
 
-    count32 = len >> 2;
-    count8 = len & 0x03;
+        buf32 = (uint32_t *)buffer;
 
-    while (count32--) {
-        HWREG(USB_FIFO_BASE(ep_idx)) = *buf32++;
+        while (count32--) {
+            HWREG(USB_FIFO_BASE(ep_idx)) = *buf32++;
+        }
+
+        buf8 = (uint8_t *)buf32;
+
+        while (count8--) {
+            HWREGB(USB_FIFO_BASE(ep_idx)) = *buf8++;
+        }
     }
-
-    buf8 = (uint8_t *)buf32;
-
-    while (count8--) {
-        HWREGB(USB_FIFO_BASE(ep_idx)) = *buf8++;
-    }
-
-    return 0;
 }
 
 static void usb_musb_read_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
@@ -111,20 +117,28 @@ static void usb_musb_read_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
     uint8_t *buf8;
     uint32_t count32;
     uint32_t count8;
+    int i;
 
-    buf32 = (uint32_t *)buffer;
+    if ((uint32_t)buffer & 0x03) {
+        buf8 = buffer;
+        for (i = 0; i < len; i++) {
+            *buf8++ = HWREGB(USB_FIFO_BASE(ep_idx));
+        }
+    } else {
+        count32 = len >> 2;
+        count8 = len & 0x03;
 
-    count32 = len >> 2;
-    count8 = len & 0x03;
+        buf32 = (uint32_t *)buffer;
 
-    while (count32--) {
-        *buf32++ = HWREG(USB_FIFO_BASE(ep_idx));
-    }
+        while (count32--) {
+            *buf32++ = HWREG(USB_FIFO_BASE(ep_idx));
+        }
 
-    buf8 = (uint8_t *)buf32;
+        buf8 = (uint8_t *)buf32;
 
-    while (count8--) {
-        *buf8++ = HWREGB(USB_FIFO_BASE(ep_idx));
+        while (count8--) {
+            *buf8++ = HWREGB(USB_FIFO_BASE(ep_idx));
+        }
     }
 }
 
@@ -170,10 +184,13 @@ int usb_dc_init(void)
     USB->POWER &= ~USB_POWER_HSENAB;
 #endif
 
+    USB->EPIDX = 0;
+    USB->FADDR = 0;
+
     USB->DEVCTL |= USB_DEVCTL_SESSION;
 
     /* Enable USB interrupts */
-    USB->IE = USB_IE_RESET | USB_IE_SUSPND;
+    USB->IE = USB_IE_RESET;
     USB->TXIE = USB_TXIE_EP0;
     USB->RXIE = 0;
 
@@ -375,7 +392,6 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 
 int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
-    int ret = 0;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t timeout = 0xffffff;
 
@@ -413,7 +429,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         data_len = usb_dc_cfg.in_ep[ep_idx].ep_mps;
     }
 
-    ret = usb_musb_write_packet(ep_idx, (uint8_t *)data, data_len);
+    usb_musb_write_packet(ep_idx, (uint8_t *)data, data_len);
 
     if (ep_idx != 0) {
         usb_musb_data_send(ep_idx, true);
@@ -422,7 +438,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         *ret_bytes = data_len;
     }
 
-    return ret;
+    return 0;
 }
 
 int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
@@ -560,7 +576,7 @@ void USBD_IRQHandler(void)
     /* Receive a reset signal from the USB bus */
     if (is & USB_IS_RESET) {
         usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
-        USB->TXIE = 1;
+        USB->TXIE = USB_TXIE_EP0;
         USB->RXIE = 0;
 
         for (uint8_t i = 1; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
@@ -573,8 +589,6 @@ void USBD_IRQHandler(void)
         usb_dc_cfg.fifo_size_offset = USB_CTRL_EP_MPS;
     }
 
-    if (is & USB_IS_DISCON) {
-    }
     if (is & USB_IS_SOF) {
     }
 
@@ -593,8 +607,11 @@ void USBD_IRQHandler(void)
 
     while (txis) {
         uint8_t ep_idx = __builtin_ctz(txis);
-        if (HWREGB(USB_TXCSRLx_BASE(ep_idx)) == 0)
-            usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (void *)(0x80 | ep_idx));
+
+        if (HWREGB(USB_TXCSRLx_BASE(ep_idx)) & USB_TXCSRL1_UNDRN) {
+            HWREGB(USB_TXCSRLx_BASE(ep_idx)) &= ~USB_TXCSRL1_UNDRN;
+        }
+        usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (void *)(0x80 | ep_idx));
         txis &= ~(1 << ep_idx);
     }
 
