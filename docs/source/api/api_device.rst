@@ -478,18 +478,6 @@ usbd_video_mjpeg_payload_fill
 - **out_len** 输出实际要发送的长度大小
 - **return** 返回 usb 按照 ``dwMaxPayloadTransferSize`` 大小要发多少帧
 
-usbd_video_mjpeg_payload_header_toggle
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-``usbd_video_mjpeg_payload_header_toggle``  用来对每一帧图像数据要发送时进行翻转，并保持到一帧图像数据发送完成。
-
-.. code-block:: C
-
-    void usbd_video_mjpeg_payload_header_toggle(uint8_t *output, uint32_t packets);
-
-- **output** 要翻转的 usb 缓冲区，该缓冲区是 ``usbd_video_mjpeg_payload_fill`` 中的 ``output``
-- **packets** USB 发送的帧个数
-
 DFU
 -----------------
 
