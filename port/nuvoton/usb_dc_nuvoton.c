@@ -6,7 +6,7 @@
 #endif
 
 #ifndef USB_BASE
-#define USB_BASE (0x40000000 + 0x19000)
+#define USB_BASE (0x40019000UL)
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
@@ -60,6 +60,114 @@ struct usb_dc_config_priv {
     struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } usb_dc_cfg;
+
+static void usb_fifo_write(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
+{
+    uint32_t *buf32;
+    uint8_t *buf8;
+    uint32_t count32;
+    uint32_t count8;
+    int i;
+
+    if ((uint32_t)buffer & 0x03) {
+        buf8 = buffer;
+        if (ep_idx == 0) {
+            for (i = 0; i < len; i++) {
+                USBD->cep.CEPDAT_BYTE = *buf8;
+                buf8++;
+            }
+
+        } else {
+            for (i = 0; i < len; i++) {
+                USBD->EP[ep_idx - 1].ep.EPDAT_BYTE = *buf8;
+                buf8++;
+            }
+        }
+    } else {
+        count32 = len >> 2;
+        count8 = len & 0x03;
+
+        buf32 = (uint32_t *)buffer;
+
+        if (ep_idx == 0) {
+            while (count32--) {
+                USBD->cep.CEPDAT = *buf32;
+                buf32++;
+            }
+
+            buf8 = (uint8_t *)buf32;
+
+            while (count8--) {
+                USBD->cep.CEPDAT_BYTE = *buf8;
+                buf8++;
+            }
+        } else {
+            while (count32--) {
+                USBD->EP[ep_idx - 1].ep.EPDAT = *buf32;
+                buf32++;
+            }
+            buf8 = (uint8_t *)buf32;
+            while (count8--) {
+                USBD->EP[ep_idx - 1].ep.EPDAT_BYTE = *buf8;
+                buf8++;
+            }
+        }
+    }
+}
+
+static void usb_fifo_read(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
+{
+    uint32_t *buf32;
+    uint8_t *buf8;
+    uint32_t count32;
+    uint32_t count8;
+    int i;
+
+    if ((uint32_t)buffer & 0x03) {
+        buf8 = buffer;
+        if (ep_idx == 0) {
+            for (i = 0; i < len; i++) {
+                *buf8 = USBD->cep.CEPDAT_BYTE;
+                buf8++;
+            }
+        } else {
+            for (i = 0; i < len; i++) {
+                *buf8 = USBD->EP[ep_idx - 1].ep.EPDAT_BYTE;
+                buf8++;
+            }
+        }
+    } else {
+        count32 = len >> 2;
+        count8 = len & 0x03;
+
+        buf32 = (uint32_t *)buffer;
+
+        if (ep_idx == 0) {
+            while (count32--) {
+                *buf32 = USBD->cep.CEPDAT;
+                buf32++;
+            }
+
+            buf8 = (uint8_t *)buf32;
+
+            while (count8--) {
+                *buf8 = USBD->cep.CEPDAT_BYTE;
+                buf8++;
+            }
+
+        } else {
+            while (count32--) {
+                *buf32 = USBD->EP[ep_idx - 1].ep.EPDAT;
+                buf32++;
+            }
+            buf8 = (uint8_t *)buf32;
+            while (count8--) {
+                *buf8 = USBD->EP[ep_idx - 1].ep.EPDAT_BYTE;
+                buf8++;
+            }
+        }
+    }
+}
 
 __WEAK void usb_dc_low_level_init(void)
 {
@@ -199,11 +307,6 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 
 int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
-    uint32_t *buf32;
-    uint8_t buflen32;
-    uint8_t *buf8;
-    uint8_t buflen8;
-
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
     if (!data && data_len) {
@@ -223,36 +326,14 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         data_len = usb_dc_cfg.in_ep[ep_idx].ep_mps;
     }
 
-    buflen32 = data_len / 4;
-    buflen8 = data_len % 4;
-
-    buf32 = (uint32_t *)data;
-
     if (ep_idx == 0x00) {
-        for (uint8_t i = 0; i < buflen32; i++) {
-            USBD->cep.CEPDAT = *buf32;
-            buf32++;
-        }
-        buf8 = (uint8_t *)buf32;
-        for (uint8_t i = 0; i < buflen8; i++) {
-            USBD->cep.CEPDAT_BYTE = *buf8;
-            buf8++;
-        }
-
+        usb_fifo_write(0, (uint8_t *)data, data_len);
         USBD->CEPTXCNT = data_len;
         USBD->CEPCTL = USB_CEPCTL_NAKCLR;
     } else {
         while (USBD->EP[ep_idx - 1].EPDATCNT != 0) {
         }
-        for (uint8_t i = 0; i < buflen32; i++) {
-            USBD->EP[ep_idx - 1].ep.EPDAT = *buf32;
-            buf32++;
-        }
-        buf8 = (uint8_t *)buf32;
-        for (uint8_t i = 0; i < buflen8; i++) {
-            USBD->EP[ep_idx - 1].ep.EPDAT_BYTE = *buf8;
-            buf8++;
-        }
+        usb_fifo_write(ep_idx, (uint8_t *)data, data_len);
         USBD->EP[ep_idx - 1].EPTXCNT = data_len;
         USBD->EP[ep_idx - 1].EPRSPCTL = USB_EP_RSPCTL_SHORTTXEN;
     }
@@ -267,10 +348,6 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t read_count;
-    uint32_t *buf32;
-    uint8_t buflen32;
-    uint8_t *buf8;
-    uint8_t buflen8;
 
     if (!data && max_data_len) {
         return -1;
@@ -289,28 +366,14 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
         } else {
             read_count = USBD->CEPRXCNT & 0xFFFFUL;
             read_count = MIN(read_count, max_data_len);
-            for (uint8_t i = 0; i < read_count; i++) {
-                data[i] = USBD->cep.CEPDAT_BYTE;
-            }
+
+            usb_fifo_read(0, data, read_count);
         }
     } else {
         read_count = USBD->EP[ep_idx - 1].EPDATCNT & 0xFFFFUL;
         read_count = MIN(read_count, max_data_len);
 
-        buflen32 = read_count / 4;
-        buflen8 = read_count % 4;
-
-        buf32 = (uint32_t *)data;
-
-        for (uint8_t i = 0; i < buflen32; i++) {
-            *buf32 = USBD->EP[ep_idx - 1].ep.EPDAT;
-            buf32++;
-        }
-        buf8 = (uint8_t *)buf32;
-        for (uint8_t i = 0; i < buflen8; i++) {
-            *buf8 = USBD->EP[ep_idx - 1].ep.EPDAT_BYTE;
-            buf8++;
-        }
+        usb_fifo_read(ep_idx, data, read_count);
     }
     if (read_bytes) {
         *read_bytes = read_count;
