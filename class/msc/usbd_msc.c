@@ -73,15 +73,11 @@ static void usbd_msc_reset(void)
 {
     uint8_t *buf = NULL;
 
-    if (usbd_msc_cfg.block_buffer == NULL) {
-        usbd_msc_cfg.block_buffer = usb_iomalloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
-    }
-
     buf = usbd_msc_cfg.block_buffer;
 
     memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
-    usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
 
+    usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
     usbd_msc_cfg.block_buffer = buf;
 }
 
@@ -984,4 +980,11 @@ void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep)
 
     usbd_interface_add_endpoint(&msc_intf, &mass_ep_data[0]);
     usbd_interface_add_endpoint(&msc_intf, &mass_ep_data[1]);
+
+    memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
+
+    usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
+    if (usbd_msc_cfg.block_buffer == NULL) {
+        usbd_msc_cfg.block_buffer = usb_iomalloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
+    }
 }
