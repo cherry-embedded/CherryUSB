@@ -29,7 +29,7 @@ static uint32_t g_devinuse = 0;
 
 usb_slist_t hub_class_head = USB_SLIST_OBJECT_INIT(hub_class_head);
 
-USB_NOCACHE_RAM_SECTION uint8_t int_buffer[6][USBH_HUB_INTIN_BUFSIZE];
+USB_MEM_ALIGN32 uint8_t int_buffer[6][USBH_HUB_INTIN_BUFSIZE];
 extern void usbh_external_hport_connect(struct usbh_hubport *hport);
 extern void usbh_external_hport_disconnect(struct usbh_hubport *hport);
 extern void usbh_hport_activate(struct usbh_hubport *hport);
@@ -326,7 +326,6 @@ static void usbh_extern_hub_psc_event(void *arg)
     uint16_t change;
     uint16_t mask;
     uint16_t feat;
-    uint32_t flags;
     int ret;
 
     hub_class = (struct usbh_hub *)arg;
@@ -484,11 +483,10 @@ static void usbh_extern_hub_psc_event(void *arg)
         /* Hub status changed */
         USB_LOG_WRN("Hub status changed, not handled\n");
     }
-    flags = usb_osal_enter_critical_section();
+
     if (hub_class->parent->connected) {
         ret = usbh_ep_intr_async_transfer(hub_class->intin, hub_class->int_buffer, USBH_HUB_INTIN_BUFSIZE, usbh_external_hub_callback, hub_class);
     }
-    usb_osal_leave_critical_section(flags);
 }
 
 static void usbh_external_hub_callback(void *arg, int nbytes)

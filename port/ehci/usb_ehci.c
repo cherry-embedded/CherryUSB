@@ -750,7 +750,7 @@ static struct usb_ehci_qh_s *usb_ehci_qh_create(struct usb_ehci_epinfo_s *epinfo
 
 #ifndef CONFIG_USBHOST_INT_DISABLE
     if (epinfo->xfrtype == USB_ENDPOINT_TYPE_INTERRUPT) {
-        regval |= ((uint32_t)epinfo->interval << QH_EPCAPS_SSMASK_SHIFT);
+        regval |= ((uint32_t)1 << QH_EPCAPS_SSMASK_SHIFT);
     }
 #endif
 
@@ -1831,8 +1831,11 @@ static inline void usb_ehci_portsc_bottomhalf(void)
 
         /* Handle port connection status change (CSC) events */
         if ((portsc & EHCI_PORTSC_CSC) != 0) {
-            /* Check current connect status */
-            if ((portsc & (EHCI_PORTSC_CCS | EHCI_PORTSC_PE)) != 0) {
+            /* Debounce */
+            usb_osal_msleep(25);
+            /* Check current connect status*/
+            portsc = usb_ehci_getreg(&HCOR->portsc[rhpndx]);
+            if ((portsc & EHCI_PORTSC_CCS) == EHCI_PORTSC_CCS) {
                 /* Connected ... Did we just become connected? */
                 if (!g_ehci.connected) {
                     g_ehci.connected = 1;
@@ -2032,7 +2035,12 @@ int usb_hc_init(void)
     uintptr_t physaddr1;
     uintptr_t physaddr2;
 
-    memset(&g_ehci, 0, sizeof(struct usb_ehci_s));
+    g_ehci.connected = 0;
+    g_ehci.qhfree = NULL;
+    g_ehci.qtdfree = NULL;
+
+    usb_slist_init(&g_ehci.epinfo_list);
+
     /* Initialize the list of free Queue Head (QH) structures */
 
     for (uint8_t i = 0; i < CONFIG_USB_EHCI_QH_NUM; i++) {
@@ -2257,21 +2265,16 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
 
 int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 {
-    int ret;
     struct usb_ehci_epinfo_s *epinfo;
     struct usbh_hubport *hport;
 
     DEBUGASSERT(ep_cfg != NULL && ep_cfg->hport != NULL);
 
-    ret = usb_osal_mutex_take(g_ehci.exclsem);
-    if (ret < 0) {
-        return ret;
-    }
-
     hport = ep_cfg->hport;
 
     /* new roothub ep info */
     if (((ep_cfg->ep_type & USB_ENDPOINT_TYPE_MASK) == USB_ENDPOINT_TYPE_CONTROL) && (hport->parent == NULL)) {
+        memset(&g_ehci.ep0, 0, sizeof(struct usb_ehci_epinfo_s));
         epinfo = &g_ehci.ep0[hport->port - 1];
     } else {
         /* new exteranl hub ep info */
@@ -2294,28 +2297,21 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     epinfo->hport = hport;
 
     epinfo->iocsem = usb_osal_sem_create(0);
+    usb_slist_add_tail(&g_ehci.epinfo_list, &epinfo->list);
 
     *ep = epinfo;
-    usb_slist_add_tail(&g_ehci.epinfo_list, &epinfo->list);
-    usb_osal_mutex_give(g_ehci.exclsem);
+
     return 0;
 }
 
 int usbh_ep_free(usbh_epinfo_t ep)
 {
-    int ret;
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)ep;
-
-    ret = usb_osal_mutex_take(g_ehci.exclsem);
-    if (ret < 0) {
-        return ret;
-    }
 
     usb_osal_sem_delete(epinfo->iocsem);
     usb_slist_remove(&g_ehci.epinfo_list, &epinfo->list);
     usb_free(epinfo);
 
-    usb_osal_mutex_give(g_ehci.exclsem);
     return 0;
 }
 

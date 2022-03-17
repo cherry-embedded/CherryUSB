@@ -119,8 +119,6 @@ typedef struct usbh_hub {
 void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
 
 int usbh_initialize(void);
-int usbh_lock(void);
-void usbh_unlock(void);
 int lsusb(int argc, char **argv);
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
 void *usbh_find_class_instance(const char *devname);

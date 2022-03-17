@@ -28,8 +28,6 @@
 static const char *speed_table[] = { "error speed", "low speed", "full speed", "high speed" };
 
 static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subcalss, uint8_t protocol, uint16_t vid, uint16_t pid);
-void usbh_hport_activate(struct usbh_hubport *hport);
-void usbh_hport_deactivate(struct usbh_hubport *hport);
 
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
@@ -152,6 +150,44 @@ static int usbh_devaddr_destroy(struct usbh_hubport *hport, uint8_t dev_addr)
     rhport = usbh_find_roothub_port(hport);
 
     return usbh_free_devaddr(&rhport->devgen, dev_addr);
+}
+
+void usbh_hport_activate(struct usbh_hubport *hport)
+{
+    struct usbh_endpoint_cfg ep0_cfg;
+
+    memset(&ep0_cfg, 0, sizeof(struct usbh_endpoint_cfg));
+
+    ep0_cfg.ep_addr = 0x00;
+    ep0_cfg.ep_interval = 0x00;
+    ep0_cfg.ep_mps = 0x08;
+    ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
+    ep0_cfg.hport = hport;
+    /* Allocate memory for roothub port control endpoint */
+    usbh_ep_alloc(&hport->ep0, &ep0_cfg);
+}
+
+void usbh_hport_deactivate(struct usbh_hubport *hport)
+{
+    uint32_t flags;
+
+    /* Don't free the control pipe of root hub ports! */
+    if (hport->parent != NULL && hport->ep0 != NULL) {
+        usb_ep_cancel(hport->ep0);
+        usbh_ep_free(hport->ep0);
+        hport->ep0 = NULL;
+    }
+
+    flags = usb_osal_enter_critical_section();
+    /* Free the device address if one has been assigned */
+    usbh_devaddr_destroy(hport, hport->dev_addr);
+    hport->dev_addr = 0;
+    usb_osal_leave_critical_section(flags);
+
+    if (hport->setup)
+        usb_iofree(hport->setup);
+
+    hport->setup = NULL;
 }
 
 static int parse_device_descriptor(struct usbh_hubport *hport, struct usb_device_descriptor *desc, uint16_t length)
@@ -673,17 +709,14 @@ static int usbh_portchange_wait(struct usbh_hubport **hport)
 static void usbh_portchange_detect_thread(void *argument)
 {
     struct usbh_hubport *hport = NULL;
-    uint32_t flags;
-
-    flags = usb_osal_enter_critical_section();
-    usb_hc_init();
 
     for (uint8_t port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
         usbh_core_cfg.rhport[port - 1].hport.port = port;
         usbh_core_cfg.rhport[port - 1].devgen.next = 1;
         usbh_hport_activate(&usbh_core_cfg.rhport[port - 1].hport);
     }
-    usb_osal_leave_critical_section(flags);
+
+    usb_hc_init();
 
     while (1) {
         usbh_portchange_wait(&hport);
@@ -699,9 +732,7 @@ static void usbh_portchange_detect_thread(void *argument)
             } else {
                 USB_LOG_INFO("Hub %u, Port %u connected, %s\r\n", hport->parent->index, hport->port, speed_table[hport->speed]);
             }
-            usb_osal_thread_suspend(g_lpworkq.thread);
             usbh_enumerate(hport);
-            usb_osal_thread_resume(g_lpworkq.thread);
         } else {
             usbh_hport_deactivate(hport);
             for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
@@ -734,7 +765,9 @@ void usbh_external_hport_connect(struct usbh_hubport *hport)
 
     if (usbh_core_cfg.pscwait) {
         usbh_core_cfg.pscwait = false;
+        usb_osal_leave_critical_section(flags);
         usb_osal_sem_give(usbh_core_cfg.pscsem);
+        return;
     }
 
     usb_osal_leave_critical_section(flags);
@@ -750,50 +783,10 @@ void usbh_external_hport_disconnect(struct usbh_hubport *hport)
 
     if (usbh_core_cfg.pscwait) {
         usbh_core_cfg.pscwait = false;
+        usb_osal_leave_critical_section(flags);
         usb_osal_sem_give(usbh_core_cfg.pscsem);
+        return;
     }
-
-    usb_osal_leave_critical_section(flags);
-}
-
-void usbh_hport_activate(struct usbh_hubport *hport)
-{
-    struct usbh_endpoint_cfg ep0_cfg;
-    uint32_t flags;
-
-    flags = usb_osal_enter_critical_section();
-    memset(&ep0_cfg, 0, sizeof(struct usbh_endpoint_cfg));
-
-    ep0_cfg.ep_addr = 0x00;
-    ep0_cfg.ep_interval = 0x00;
-    ep0_cfg.ep_mps = 0x08;
-    ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
-    ep0_cfg.hport = hport;
-    /* Allocate memory for roothub port control endpoint */
-    usbh_ep_alloc(&hport->ep0, &ep0_cfg);
-
-    usb_osal_leave_critical_section(flags);
-}
-
-void usbh_hport_deactivate(struct usbh_hubport *hport)
-{
-    uint32_t flags;
-
-    flags = usb_osal_enter_critical_section();
-    /* Don't free the control pipe of root hub ports! */
-    if (hport->parent != NULL && hport->ep0 != NULL) {
-        usb_ep_cancel(hport->ep0);
-        usbh_ep_free(hport->ep0);
-        hport->ep0 = NULL;
-    }
-    /* Free the device address if one has been assigned */
-    usbh_devaddr_destroy(hport, hport->dev_addr);
-
-    if (hport->setup)
-        usb_iofree(hport->setup);
-
-    hport->setup = NULL;
-    hport->dev_addr = 0;
 
     usb_osal_leave_critical_section(flags);
 }

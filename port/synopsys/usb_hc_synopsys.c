@@ -73,7 +73,6 @@ struct usb_synopsys_priv {
  *   Allocate a channel.
  *
  ****************************************************************************/
-
 static int usb_synopsys_chan_alloc(struct usb_synopsys_priv *priv)
 {
     int chidx;
@@ -119,7 +118,6 @@ static void usb_synopsys_chan_free(struct usb_synopsys_priv *priv, int chidx)
  *   Free all channels.
  *
  ****************************************************************************/
-
 static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
 {
     uint8_t chidx;
@@ -145,7 +143,6 @@ static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
  *   started.
  *
  ****************************************************************************/
-
 static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
                                        struct usb_synopsys_chan *chan)
 {
@@ -189,7 +186,6 @@ static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
  *   Might be called from the level of an interrupt handler
  *
  ****************************************************************************/
-
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
                                          struct usb_synopsys_chan *chan,
@@ -221,7 +217,7 @@ static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
 #endif
 
 /****************************************************************************
- * Name: stm32_chan_wait
+ * Name: usb_synopsys_chan_wait
  *
  * Description:
  *   Wait for a transfer on a channel to complete.
@@ -230,7 +226,6 @@ static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
  *   Called from a normal thread context
  *
  ****************************************************************************/
-
 static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_synopsys_chan *chan)
 {
     int ret;
@@ -254,7 +249,7 @@ static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_syn
 }
 
 /****************************************************************************
- * Name: stm32_chan_wakeup
+ * Name: usb_synopsys_chan_wakeup
  *
  * Description:
  *   A channel transfer has completed... wakeup any threads waiting for the
@@ -265,7 +260,6 @@ static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_syn
  *   the channel.  Interrupts are disabled.
  *
  ****************************************************************************/
-
 static void usb_synopsys_chan_wakeup(struct usb_synopsys_priv *priv, struct usb_synopsys_chan *chan)
 {
     usbh_asynch_callback_t callback;
@@ -323,7 +317,9 @@ __WEAK void usb_hc_low_level_init(void)
 
 int usb_hc_init(void)
 {
-    memset(&g_usbhost, 0, sizeof(struct usb_synopsys_priv));
+    g_usbhost.sof_timer = 0;
+    g_usbhost.connected = 0;
+    g_usbhost.pscwait = 0;
 #if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
     g_usbhost.handle = &hhcd_USB_OTG_HS;
     g_usbhost.handle->Instance = USB_OTG_HS;
@@ -333,15 +329,6 @@ int usb_hc_init(void)
 #endif
 
     g_usbhost.exclsem = usb_osal_mutex_create();
-
-    for (uint8_t i = 0; i < CONFIG_USBHOST_CHANNELS; i++) {
-        struct usb_synopsys_chan *chan = &g_usbhost.chan[i];
-
-        /* The waitsem semaphore is used for signaling and, hence, should not
-       * have priority inheritance enabled.
-       */
-        chan->waitsem = usb_osal_sem_create(0);
-    }
 
     g_usbhost.handle->Init.Host_channels = CONFIG_USBHOST_CHANNELS;
     g_usbhost.handle->Init.speed = HCD_SPEED_FULL;
@@ -405,13 +392,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     struct usb_synopsys_ctrlinfo *ep0;
     struct usbh_hubport *hport;
     int chidx;
-    int ret;
     uint8_t speed;
-
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
-    if (ret < 0) {
-        return ret;
-    }
 
     hport = ep_cfg->hport;
 
@@ -419,18 +400,24 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         speed = 1;
     } else if (hport->speed == USB_SPEED_LOW) {
         speed = 2;
+    } else if (hport->speed == USB_SPEED_HIGH) {
+        speed = 0;
     }
 
     if (ep_cfg->ep_type == USB_ENDPOINT_TYPE_CONTROL) {
         ep0 = usb_malloc(sizeof(struct usb_synopsys_ctrlinfo));
+        memset(ep0, 0, sizeof(struct usb_synopsys_ctrlinfo));
 
         ep0->outndx = usb_synopsys_chan_alloc(&g_usbhost);
         ep0->inndx = usb_synopsys_chan_alloc(&g_usbhost);
 
         chan = &priv->chan[ep0->outndx];
-        chan->interval = 0;
+        memset(chan, 0, sizeof(struct usb_synopsys_chan));
+        chan->waitsem = usb_osal_sem_create(0);
+
         chan = &priv->chan[ep0->inndx];
-        chan->interval = 0;
+        memset(chan, 0, sizeof(struct usb_synopsys_chan));
+        chan->waitsem = usb_osal_sem_create(0);
 
         HAL_HCD_HC_Init(g_usbhost.handle, ep0->outndx, 0x00, hport->dev_addr, speed, USB_ENDPOINT_TYPE_CONTROL, ep_cfg->ep_mps);
         HAL_HCD_HC_Init(g_usbhost.handle, ep0->inndx, 0x80, hport->dev_addr, speed, USB_ENDPOINT_TYPE_CONTROL, ep_cfg->ep_mps);
@@ -441,7 +428,9 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         chidx = usb_synopsys_chan_alloc(&g_usbhost);
 
         chan = &priv->chan[chidx];
+        memset(chan, 0, sizeof(struct usb_synopsys_chan));
         chan->interval = ep_cfg->ep_interval;
+        chan->waitsem = usb_osal_sem_create(0);
 
         HAL_HCD_HC_Init(g_usbhost.handle, chidx, ep_cfg->ep_addr, hport->dev_addr, speed, ep_cfg->ep_type, ep_cfg->ep_mps);
 
@@ -450,27 +439,22 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
         *ep = (usbh_epinfo_t)chidx;
     }
-    usb_osal_mutex_give(g_usbhost.exclsem);
     return 0;
 }
 
 int usbh_ep_free(usbh_epinfo_t ep)
 {
-    int ret;
-
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
-    if (ret < 0) {
-        return ret;
-    }
     if ((uintptr_t)ep < CONFIG_USBHOST_CHANNELS) {
         usb_synopsys_chan_free(&g_usbhost, (int)ep);
+        usb_osal_sem_delete(g_usbhost.chan[ep].waitsem);
     } else {
         struct usb_synopsys_ctrlinfo *ep0 = (struct usb_synopsys_ctrlinfo *)ep;
         usb_synopsys_chan_free(&g_usbhost, ep0->inndx);
         usb_synopsys_chan_free(&g_usbhost, ep0->outndx);
+        usb_osal_sem_delete(g_usbhost.chan[ep0->inndx].waitsem);
+        usb_osal_sem_delete(g_usbhost.chan[ep0->outndx].waitsem);
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem);
     return 0;
 }
 
@@ -770,6 +754,10 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     uint32_t flags;
     struct usb_synopsys_chan *chan;
     struct usb_synopsys_priv *priv = &g_usbhost;
+#ifdef CONFIG_USBHOST_ASYNCH
+    usbh_asynch_callback_t callback;
+    void *arg;
+#endif
 
     uint8_t chidx = (uint8_t)ep;
 
@@ -778,6 +766,16 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     flags = usb_osal_enter_critical_section();
 
     chan->result = -ESHUTDOWN;
+#ifdef CONFIG_USBHOST_ASYNCH
+    /* Extract the callback information */
+    callback = chan->callback;
+    arg = chan->arg;
+    chan->callback = NULL;
+    chan->arg = NULL;
+    chan->xfrd = 0;
+#endif
+    usb_osal_leave_critical_section(flags);
+
     /* Is there a thread waiting for this transfer to complete? */
 
     if (chan->waiter) {
@@ -786,29 +784,12 @@ int usb_ep_cancel(usbh_epinfo_t ep)
         usb_osal_sem_give(chan->waitsem);
     }
 #ifdef CONFIG_USBHOST_ASYNCH
-    /* No.. is an asynchronous callback expected when the transfer
-   * completes?
-   */
-
-    else if (chan->callback) {
-        usbh_asynch_callback_t callback;
-        void *arg;
-
-        /* Extract the callback information */
-
-        callback = chan->callback;
-        arg = chan->arg;
-
-        chan->callback = NULL;
-        chan->arg = NULL;
-        chan->xfrd = 0;
-
+    /* No.. is an asynchronous callback expected when the transfer completes? */
+    else if (callback) {
         /* Then perform the callback */
-
         callback(arg, -ESHUTDOWN);
     }
 #endif
-    usb_osal_leave_critical_section(flags);
     return 0;
 }
 
