@@ -26,7 +26,7 @@
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
     rt_thread_t htask;
-    htask = rt_thread_create(name, entry, args, stack_size, RT_THREAD_PRIORITY_MAX - 1 - prio, 10);
+    htask = rt_thread_create(name, entry, args, stack_size, prio, 10);
     rt_thread_startup(htask);
     return (usb_osal_thread_t)htask;
 }
@@ -46,14 +46,19 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     return (usb_osal_sem_t)rt_sem_create("usbh_sem", initial_count, RT_IPC_FLAG_FIFO);
 }
 
+void usb_osal_sem_delete(usb_osal_sem_t sem)
+{
+    rt_sem_delete((rt_sem_t)sem);
+}
+
 int usb_osal_sem_take(usb_osal_sem_t sem)
 {
-    return (int)rt_sem_take(sem, RT_WAITING_FOREVER);
+    return (int)rt_sem_take((rt_sem_t)sem, RT_WAITING_FOREVER);
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
 {
-    return (int)rt_sem_release(sem);
+    return (int)rt_sem_release((rt_sem_t)sem);
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)
@@ -63,12 +68,12 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
 
 int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 {
-    return (int)rt_mutex_take(mutex, RT_WAITING_FOREVER);
+    return (int)rt_mutex_take((rt_mutex_t)mutex, RT_WAITING_FOREVER);
 }
 
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
-    return (int)rt_mutex_release(mutex);
+    return (int)rt_mutex_release((rt_mutex_t)mutex);
 }
 
 uint32_t usb_osal_enter_critical_section(void)
