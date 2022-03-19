@@ -168,6 +168,7 @@ int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
+    cdc_acm_class->hport = hport;
 
     usbh_cdc_acm_devno_alloc(cdc_acm_class);
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, cdc_acm_class->minor);

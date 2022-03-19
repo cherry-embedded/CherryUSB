@@ -26,6 +26,8 @@
 #include "usb_cdc.h"
 
 struct usbh_cdc_acm {
+    struct usbh_hubport *hport;
+
     struct cdc_line_coding *linecoding;
     uint8_t ctrl_intf; /* Control interface number */
     uint8_t data_intf; /* Data interface number */
