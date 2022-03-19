@@ -159,6 +159,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(hid_class, 0, sizeof(struct usbh_hid));
+    hid_class->hport = hport;
 
     usbh_hid_devno_alloc(hid_class);
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hid_class->minor);

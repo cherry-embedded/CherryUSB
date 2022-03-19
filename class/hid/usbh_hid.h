@@ -26,6 +26,8 @@
 #include "usb_hid.h"
 
 struct usbh_hid {
+    struct usbh_hubport *hport;
+
     uint8_t intf; /* interface number */
     uint8_t minor;
     usbh_epinfo_t intin;  /* INTR IN endpoint */

@@ -27,6 +27,8 @@
 #include "usb_scsi.h"
 
 struct usbh_msc {
+    struct usbh_hubport *hport;
+
     uint8_t intf; /* Data interface number */
     uint8_t sdchar;
     usbh_epinfo_t bulkin;  /* Bulk IN endpoint */

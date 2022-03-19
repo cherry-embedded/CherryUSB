@@ -338,6 +338,7 @@ int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(msc_class, 0, sizeof(struct usbh_msc));
+    msc_class->hport = hport;
 
     usbh_msc_devno_alloc(msc_class);
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
