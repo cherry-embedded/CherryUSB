@@ -73,6 +73,7 @@ struct usb_synopsys_priv {
  *   Allocate a channel.
  *
  ****************************************************************************/
+
 static int usb_synopsys_chan_alloc(struct usb_synopsys_priv *priv)
 {
     int chidx;
@@ -118,6 +119,7 @@ static void usb_synopsys_chan_free(struct usb_synopsys_priv *priv, int chidx)
  *   Free all channels.
  *
  ****************************************************************************/
+
 static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
 {
     uint8_t chidx;
@@ -143,6 +145,7 @@ static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
  *   started.
  *
  ****************************************************************************/
+
 static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
                                        struct usb_synopsys_chan *chan)
 {
@@ -186,6 +189,7 @@ static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
  *   Might be called from the level of an interrupt handler
  *
  ****************************************************************************/
+
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
                                          struct usb_synopsys_chan *chan,
@@ -226,6 +230,7 @@ static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
  *   Called from a normal thread context
  *
  ****************************************************************************/
+
 static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_synopsys_chan *chan)
 {
     int ret;
@@ -260,6 +265,7 @@ static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_syn
  *   the channel.  Interrupts are disabled.
  *
  ****************************************************************************/
+
 static void usb_synopsys_chan_wakeup(struct usb_synopsys_priv *priv, struct usb_synopsys_chan *chan)
 {
     usbh_asynch_callback_t callback;
@@ -317,9 +323,9 @@ __WEAK void usb_hc_low_level_init(void)
 
 int usb_hc_init(void)
 {
-    g_usbhost.sof_timer = 0;
     g_usbhost.connected = 0;
     g_usbhost.pscwait = 0;
+    g_usbhost.sof_timer = 0;
 #if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
     g_usbhost.handle = &hhcd_USB_OTG_HS;
     g_usbhost.handle->Instance = USB_OTG_HS;
@@ -377,6 +383,8 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
         speed = 1;
     } else if (speed == USB_SPEED_LOW) {
         speed = 2;
+    } else if (speed == USB_SPEED_HIGH) {
+        speed = 0;
     }
 
     ret = HAL_HCD_HC_Init(g_usbhost.handle, ep0info->outndx, 0x00, dev_addr, speed, USB_ENDPOINT_TYPE_CONTROL, ep_mps);
@@ -413,10 +421,12 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
         chan = &priv->chan[ep0->outndx];
         memset(chan, 0, sizeof(struct usb_synopsys_chan));
+        chan->inuse = true;
         chan->waitsem = usb_osal_sem_create(0);
 
         chan = &priv->chan[ep0->inndx];
         memset(chan, 0, sizeof(struct usb_synopsys_chan));
+        chan->inuse = true;
         chan->waitsem = usb_osal_sem_create(0);
 
         HAL_HCD_HC_Init(g_usbhost.handle, ep0->outndx, 0x00, hport->dev_addr, speed, USB_ENDPOINT_TYPE_CONTROL, ep_cfg->ep_mps);
@@ -429,7 +439,10 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
         chan = &priv->chan[chidx];
         memset(chan, 0, sizeof(struct usb_synopsys_chan));
+        chan->inuse = true;
         chan->interval = ep_cfg->ep_interval;
+        chan->in = ep_cfg->ep_addr & 0x80 ? 1 : 0;
+
         chan->waitsem = usb_osal_sem_create(0);
 
         HAL_HCD_HC_Init(g_usbhost.handle, chidx, ep_cfg->ep_addr, hport->dev_addr, speed, ep_cfg->ep_type, ep_cfg->ep_mps);
@@ -439,6 +452,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
         *ep = (usbh_epinfo_t)chidx;
     }
+
     return 0;
 }
 
@@ -446,7 +460,7 @@ int usbh_ep_free(usbh_epinfo_t ep)
 {
     if ((uintptr_t)ep < CONFIG_USBHOST_CHANNELS) {
         usb_synopsys_chan_free(&g_usbhost, (int)ep);
-        usb_osal_sem_delete(g_usbhost.chan[ep].waitsem);
+        usb_osal_sem_delete(g_usbhost.chan[(int)ep].waitsem);
     } else {
         struct usb_synopsys_ctrlinfo *ep0 = (struct usb_synopsys_ctrlinfo *)ep;
         usb_synopsys_chan_free(&g_usbhost, ep0->inndx);
