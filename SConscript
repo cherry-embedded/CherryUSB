@@ -4,6 +4,7 @@ cwd = GetCurrentDir()
 path = [cwd]
 path += [cwd + '/common']
 path += [cwd + '/core']
+src = []
 
 CPPDEFINES = []
 if GetDepend(['PKG_CHERRYUSB_USING_HS']):
@@ -13,7 +14,7 @@ elif GetDepend(['PKG_CHERRYUSB_USING_HS_IN_FULL']):
 
 # USB DEVICE
 if GetDepend(['PKG_CHERRYUSB_USING_DEVICE']):
-    src = Glob('core/usbd_core.c')
+    src += Glob('core/usbd_core.c')
     if GetDepend(['PKG_CHERRYUSB_USING_CDC']):
         path += [cwd + '/class/cdc']
         src += Glob('class/cdc/usbd_cdc.c')
@@ -42,10 +43,14 @@ if GetDepend(['PKG_CHERRYUSB_USING_DEVICE']):
             src += Glob('port/synopsys/usb_dc_synopsys.c')
             if GetDepend(['SOC_SERIES_STM32H7']) and GetDepend(['PKG_CHERRYUSB_USING_FS']):
                 CPPDEFINES += ['USB_BASE=0x40080000UL']
+    if GetDepend(['CHERRYUSB_USING_MUSB']):
+        src += Glob('port/musb/usb_dc_musb.c')
+	if GetDepend(['CHERRYUSB_USING_CDC_DEMO']):
+        src += Glob('demo/cdc_acm_template.c')
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
-    src = Glob('core/usbh_core.c')
+    src += Glob('core/usbh_core.c')
     path += [cwd + '/osal']
     src += Glob('osal/usb_osal_rtthread.c')
     src += Glob('osal/usb_workq.c')
@@ -57,10 +62,14 @@ if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
     src += Glob('class/msc/usbh_msc.c')
     path += [cwd + '/class/hub']
     src += Glob('class/hub/usbh_hub.c')
-    
+
     CPPDEFINES += ['CONFIG_USBHOST_HUB']
     if GetDepend(['SOC_FAMILY_STM32']):
         src += Glob('port/synopsys/usb_hc_synopsys.c')
+    if GetDepend(['CHERRYUSB_USING_MUSB']):
+        src += Glob('port/musb/usb_hc_musb.c')
+    if GetDepend(['CHERRYUSB_USING_HOST_DEMO']):
+        src += Glob('demo/usb_host.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 
