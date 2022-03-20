@@ -8,6 +8,146 @@
 /**
   * @brief Register map for USB0 peripheral (USB0)
   */
+#ifdef USB_MUSB_SUNXI
+
+typedef __PACKED_STRUCT {                                    /*!< USB0 Structure                                                        */
+  union {
+    __IO uint8_t   FIFO0_BYTE;                      /*!< USB FIFO Endpoint 0                                                   */
+    __IO uint16_t  FIFO0_HALF;                      /*!< USB FIFO Endpoint 0                                                   */
+    __IO uint32_t  FIFO0_WORD;                      /*!< USB FIFO Endpoint 0                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO1_BYTE;                      /*!< USB FIFO Endpoint 1                                                   */
+    __IO uint16_t  FIFO1_HALF;                      /*!< USB FIFO Endpoint 1                                                   */
+    __IO uint32_t  FIFO1_WORD;                      /*!< USB FIFO Endpoint 1                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO2_BYTE;                      /*!< USB FIFO Endpoint 2                                                   */
+    __IO uint16_t  FIFO2_HALF;                      /*!< USB FIFO Endpoint 2                                                   */
+    __IO uint32_t  FIFO2_WORD;                      /*!< USB FIFO Endpoint 2                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO3_BYTE;                      /*!< USB FIFO Endpoint 3                                                   */
+    __IO uint16_t  FIFO3_HALF;                      /*!< USB FIFO Endpoint 3                                                   */
+    __IO uint32_t  FIFO3_WORD;                      /*!< USB FIFO Endpoint 3                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO4_BYTE;                      /*!< USB FIFO Endpoint 4                                                   */
+    __IO uint16_t  FIFO4_HALF;                      /*!< USB FIFO Endpoint 4                                                   */
+    __IO uint32_t  FIFO4_WORD;                      /*!< USB FIFO Endpoint 4                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO5_BYTE;                      /*!< USB FIFO Endpoint 5                                                   */
+    __IO uint16_t  FIFO5_HALF;                      /*!< USB FIFO Endpoint 5                                                   */
+    __IO uint32_t  FIFO5_WORD;                      /*!< USB FIFO Endpoint 5                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO6_BYTE;                      /*!< USB FIFO Endpoint 6                                                   */
+    __IO uint16_t  FIFO6_HALF;                      /*!< USB FIFO Endpoint 6                                                   */
+    __IO uint32_t  FIFO6_WORD;                      /*!< USB FIFO Endpoint 6                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO7_BYTE;                      /*!< USB FIFO Endpoint 7                                                   */
+    __IO uint16_t  FIFO7_HALF;                      /*!< USB FIFO Endpoint 7                                                   */
+    __IO uint32_t  FIFO7_WORD;                      /*!< USB FIFO Endpoint 7                                                   */
+  };
+  union {
+    __IO uint8_t   FIFO_BYTE;                      /*!< USB FIFO Endpoint 7                                                   */
+    __IO uint16_t  FIFO_HALF;                      /*!< USB FIFO Endpoint 7                                                   */
+    __IO uint32_t  FIFO_WORD;                      /*!< USB FIFO Endpoint 7                                                   */
+  } FIFO_RESERVED[8];
+
+    // 0x40
+  __IO uint8_t   POWER;                             /*!< USB Power                                                             */
+  __IO uint8_t   DEVCTL;                            /*!< USB Device Control                                                    */
+  __IO uint8_t   EPIDX;                             /*!< USB Endpoint Index                                                    */
+  __IO uint8_t   VEND0;
+// 0x44
+  __IO uint16_t  TXIS;                              /*!< USB Transmit Interrupt Status                                         */
+  __IO uint16_t  RXIS;                              /*!< USB Receive Interrupt Status                                          */
+  // 0x48
+  __IO uint16_t  TXIE;                              /*!< USB Transmit Interrupt Enable                                         */
+  __IO uint16_t  RXIE;                              /*!< USB Receive Interrupt Enable                                          */
+// 0x4c
+  __IO uint8_t   IS;                                /*!< USB General Interrupt Status                                          */
+  __I uint8_t   IS_RESERVED[3];
+
+  __IO  uint8_t   IE;                                /*!< USB Interrupt Enable                                                  */
+  __I  uint8_t   IE_RESERVED[3];
+
+  __IO uint16_t  FRAME;                             /*!< USB Frame Value                                                       */
+  __I  uint8_t   FRAME_RESERVED[34];
+
+  __IO uint8_t   EPINFO;                            /*!< USB Endpoint Information                                              */
+  __IO uint8_t   RAMINFO;                           /*!< USB RAM Information                                                   */
+  __IO uint8_t   LINKINFO;
+  __IO uint8_t   VPLEN;                             /*!< USB OTG VBUS Pulse Timing                                             */
+// 0x7c
+  __IO uint8_t   HSEOF;                             /*!< USB High-Speed Last Transaction to End of Frame Timing                */
+  __IO uint8_t   FSEOF;                             /*!< USB Full-Speed Last Transaction to End of Frame Timing                */
+  __IO uint8_t   LSEOF;                             /*!< USB Low-Speed Last Transaction to End of Frame Timing                 */
+  __I  uint8_t   RESERVED7F;
+
+// 0x80
+  __IO uint16_t  TXMAXP1;                           /*!< USB Maximum Transmit Data Endpoint 1                                  */
+  __PACKED_UNION
+  {
+    __IO uint8_t   CSRL0;
+    __IO uint8_t   TXCSRL1;                           /*!< USB Transmit Control and Status Endpoint 1 Low                        */
+  } ;
+
+  __PACKED_UNION
+  {
+    __O  uint8_t   CSRH0;                             /*!< USB Control and Status Endpoint 0 High                                */
+    __IO uint8_t   TXCSRH1;                           /*!< USB Transmit Control and Status Endpoint 1 High                       */
+  } ;
+// 0x84
+  __IO uint16_t  RXMAXP1;                           /*!< USB Maximum Receive Data Endpoint 1                                   */
+  __IO uint8_t   RXCSRL1;                           /*!< USB Receive Control and Status Endpoint 1 Low                         */
+  __IO uint8_t   RXCSRH1;                           /*!< USB Receive Control and Status Endpoint 1 High                        */
+
+  __PACKED_UNION
+  {
+    __IO uint16_t  COUNT0;
+    __IO uint16_t  RXCOUNT1;                          /*!< USB Receive Byte Count Endpoint 1                                     */
+  } ;
+  // 0x8A
+  __IO uint8_t   TYPE0;                             /*!< USB Type Endpoint 0                                                   */
+  __IO uint8_t   NAKLMT;                            /*!< USB NAK Limit                                                         */
+  // 0x8C
+  __IO uint8_t   TXTYPE1;                           /*!< USB Host Transmit Configure Type Endpoint 1                           */
+  __IO uint8_t   TXINTERVAL1;                       /*!< USB Host Transmit Interval Endpoint 1                                 */
+  __IO uint8_t   RXTYPE1;                           /*!< USB Host Configure Receive Type Endpoint 1                            */
+  __IO uint8_t   RXINTERVAL1;                       /*!< USB Host Receive Polling Interval Endpoint 1                          */
+// 0x90
+  __IO uint8_t   TXFIFOSZ;                          /*!< USB Transmit Dynamic FIFO Sizing                                      */
+  __I  uint8_t   RESERVED91;
+  __IO uint16_t  TXFIFOADD;                         /*!< USB Transmit FIFO Start Address                                       */
+// 0x94
+  __IO uint8_t   RXFIFOSZ;                          /*!< USB Receive Dynamic FIFO Sizing                                       */
+  __I  uint8_t   RESERVED95;
+  __IO uint16_t  RXFIFOADD;                         /*!< USB Receive FIFO Start Address                                        */
+
+/* "bus control"/target registers, for host side multipoint (external hubs) */
+// 0x98
+  __PACKED_UNION
+  {
+    __IO  uint8_t   FADDR;
+    __IO  uint8_t   TXFUNCADDR0;
+  };
+
+  __I uint8_t    RESERVERD99;
+// 0x9A
+  __IO uint8_t TXHUBADDR0;
+  __IO uint8_t TXHUBPORT0;
+// 0x9c
+  __IO uint8_t RXFUNCADDR0;
+  __I uint8_t RESERVED9d;
+  __IO uint8_t RXHUBADDR0;
+  __IO uint8_t RXHUBPORT0;
+} USB0_Type;
+
+#else
 
 typedef struct {                                    /*!< USB0 Structure                                                        */
   __IO uint8_t   FADDR;                             /*!< USB Device Functional Address                                         */
@@ -325,6 +465,8 @@ typedef struct {                                    /*!< USB0 Structure         
   __IO uint32_t  PC;                                /*!< USB Peripheral Configuration                                          */
   __IO uint32_t  CC;                                /*!< USB Clock Configuration                                               */
 } USB0_Type;
+
+#endif // USB_MUSB_SUNXI
 
 //*****************************************************************************
 //
