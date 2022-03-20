@@ -196,7 +196,7 @@ static int parse_device_descriptor(struct usbh_hubport *hport, struct usb_device
         USB_LOG_ERR("invalid device bLength 0x%02x\r\n", desc->bLength);
         return -EINVAL;
     } else if (desc->bDescriptorType != USB_DESCRIPTOR_TYPE_DEVICE) {
-        USB_LOG_ERR("unexpected descriptor 0x%02x\r\n", desc->bDescriptorType);
+        USB_LOG_ERR("unexpected device descriptor 0x%02x\r\n", desc->bDescriptorType);
         return -EINVAL;
     } else {
         if (length <= 8) {
@@ -244,10 +244,10 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
     uint8_t intf_num = 0;
     uint8_t *p = (uint8_t *)desc;
     if (desc->bLength != USB_SIZEOF_CONFIG_DESC) {
-        USB_LOG_ERR("invalid device bLength 0x%02x\r\n", desc->bLength);
+        USB_LOG_ERR("invalid config bLength 0x%02x\r\n", desc->bLength);
         return -EINVAL;
     } else if (desc->bDescriptorType != USB_DESCRIPTOR_TYPE_CONFIGURATION) {
-        USB_LOG_ERR("unexpected descriptor 0x%02x\r\n", desc->bDescriptorType);
+        USB_LOG_ERR("unexpected config descriptor 0x%02x\r\n", desc->bDescriptorType);
         return -EINVAL;
     } else {
         if (length <= USB_SIZEOF_CONFIG_DESC) {
@@ -344,7 +344,7 @@ static int parse_string_descriptor(struct usbh_hubport *hport, struct usb_string
     uint8_t *p = (uint8_t *)desc;
 
     if (desc->bDescriptorType != USB_DESCRIPTOR_TYPE_STRING) {
-        USB_LOG_ERR("unexpected descriptor 0x%02x\r\n", desc->bDescriptorType);
+        USB_LOG_ERR("unexpected string descriptor 0x%02x\r\n", desc->bDescriptorType);
         return -2;
     } else {
         p += 2;
