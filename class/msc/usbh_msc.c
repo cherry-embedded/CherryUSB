@@ -345,7 +345,7 @@ int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 
     hport->config.intf[intf].priv = msc_class;
 
-    msc_class->tx_buffer = usb_iomalloc(32);
+    msc_class->tx_buffer = usb_iomalloc(64);
     if (msc_class->tx_buffer == NULL) {
         USB_LOG_ERR("Fail to alloc tx_buffer\r\n");
         return -ENOMEM;
