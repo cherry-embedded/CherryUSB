@@ -57,8 +57,7 @@ struct usbh_roothubport_priv {
 struct usbh_core_priv {
     struct usbh_roothubport_priv rhport[CONFIG_USBHOST_RHPORTS];
     volatile struct usbh_hubport *active_hport; /* Used to pass external hub port events */
-    volatile bool pscwait;                      /* TRUE: Thread is waiting for port status change event */
-    usb_osal_sem_t pscsem;                      /* Semaphore to wait for a port event */
+    usb_osal_event_t pscevent;                  /* Semaphore to wait for a port event */
 } usbh_core_cfg;
 
 static inline struct usbh_roothubport_priv *usbh_find_roothub_port(struct usbh_hubport *hport)
@@ -671,23 +670,46 @@ errout:
 static int usbh_portchange_wait(struct usbh_hubport **hport)
 {
     struct usbh_hubport *connport = NULL;
+    uint32_t recved_event;
     uint32_t flags;
     int ret;
 
     /* Loop until a change in connection state is detected */
     while (1) {
-        /* Check for a change in the connection state on any root hub port */
+        ret = usb_osal_event_recv(usbh_core_cfg.pscevent, USBH_EVENT_CONNECTED | USBH_EVENT_DISCONNECTED, &recved_event);
+        if (ret < 0) {
+            continue;
+        }
         flags = usb_osal_enter_critical_section();
         for (uint8_t port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
+            /* Check for a change in the connection state on any root hub port */
             connport = &usbh_core_cfg.rhport[port - 1].hport;
-
             if (connport->port_change) {
                 connport->port_change = false;
-                *hport = connport;
-                usb_osal_leave_critical_section(flags);
-                return 0;
+                /* debounce for port,in order to keep port connect status stability*/
+                usb_osal_msleep(25);
+                if (recved_event & USBH_EVENT_CONNECTED) {
+                    if (usbh_get_port_connect_status(port)) {
+                        if (!connport->connected) {
+                            connport->connected = true;
+                            *hport = connport;
+                            usb_osal_leave_critical_section(flags);
+                            return 0;
+                        }
+                    }
+                } else if (recved_event & USBH_EVENT_DISCONNECTED) {
+                    if (!usbh_get_port_connect_status(port)) {
+                        if (connport->connected) {
+                            connport->connected = false;
+                            *hport = connport;
+                            usb_osal_leave_critical_section(flags);
+                            return 0;
+                        }
+                    }
+                }
             }
         }
+#ifdef CONFIG_USBHOST_HUB
         /* Is a device connected to an external hub? */
         if (usbh_core_cfg.active_hport) {
             connport = (struct usbh_hubport *)usbh_core_cfg.active_hport;
@@ -696,13 +718,8 @@ static int usbh_portchange_wait(struct usbh_hubport **hport)
             usb_osal_leave_critical_section(flags);
             return 0;
         }
-        /* No changes on any port. Wait for a connection/disconnection event and check again */
-        usbh_core_cfg.pscwait = true;
+#endif
         usb_osal_leave_critical_section(flags);
-        ret = usb_osal_sem_take(usbh_core_cfg.pscsem);
-        if (ret < 0) {
-            return ret;
-        }
     }
 }
 
@@ -762,15 +779,9 @@ void usbh_external_hport_connect(struct usbh_hubport *hport)
 
     hport->connected = true;
     usbh_core_cfg.active_hport = hport;
-
-    if (usbh_core_cfg.pscwait) {
-        usbh_core_cfg.pscwait = false;
-        usb_osal_leave_critical_section(flags);
-        usb_osal_sem_give(usbh_core_cfg.pscsem);
-        return;
-    }
-
     usb_osal_leave_critical_section(flags);
+
+    usb_osal_event_send(usbh_core_cfg.pscevent, USBH_EVENT_CONNECTED);
 }
 
 void usbh_external_hport_disconnect(struct usbh_hubport *hport)
@@ -778,45 +789,18 @@ void usbh_external_hport_disconnect(struct usbh_hubport *hport)
     uint32_t flags;
 
     flags = usb_osal_enter_critical_section();
+
     hport->connected = false;
     usbh_core_cfg.active_hport = hport;
 
-    if (usbh_core_cfg.pscwait) {
-        usbh_core_cfg.pscwait = false;
-        usb_osal_leave_critical_section(flags);
-        usb_osal_sem_give(usbh_core_cfg.pscsem);
-        return;
-    }
-
     usb_osal_leave_critical_section(flags);
+    usb_osal_event_send(usbh_core_cfg.pscevent, USBH_EVENT_DISCONNECTED);
 }
 
 void usbh_event_notify_handler(uint8_t event, uint8_t rhport)
 {
-    switch (event) {
-        case USBH_EVENT_ATTACHED:
-            if (!usbh_core_cfg.rhport[rhport - 1].hport.connected) {
-                usbh_core_cfg.rhport[rhport - 1].hport.connected = true;
-                usbh_core_cfg.rhport[rhport - 1].hport.port_change = true;
-                if (usbh_core_cfg.pscwait) {
-                    usbh_core_cfg.pscwait = false;
-                    usb_osal_sem_give(usbh_core_cfg.pscsem);
-                }
-            }
-            break;
-        case USBH_EVENT_REMOVED:
-            if (usbh_core_cfg.rhport[rhport - 1].hport.connected) {
-                usbh_core_cfg.rhport[rhport - 1].hport.connected = false;
-                usbh_core_cfg.rhport[rhport - 1].hport.port_change = true;
-                if (usbh_core_cfg.pscwait) {
-                    usbh_core_cfg.pscwait = false;
-                    usb_osal_sem_give(usbh_core_cfg.pscsem);
-                }
-            }
-            break;
-        default:
-            break;
-    }
+    usbh_core_cfg.rhport[rhport - 1].hport.port_change = true;
+    usb_osal_event_send(usbh_core_cfg.pscevent, event);
 }
 
 int usbh_initialize(void)
@@ -824,11 +808,11 @@ int usbh_initialize(void)
     usb_osal_thread_t usb_thread;
 
     memset(&usbh_core_cfg, 0, sizeof(struct usbh_core_priv));
-
+#ifdef CONFIG_USBHOST_HUB
     usbh_workq_initialize();
-
-    usbh_core_cfg.pscsem = usb_osal_sem_create(0);
-    if (usbh_core_cfg.pscsem == NULL) {
+#endif
+    usbh_core_cfg.pscevent = usb_osal_event_create();
+    if (usbh_core_cfg.pscevent == NULL) {
         return -1;
     }
 
@@ -880,6 +864,7 @@ int lsusb(int argc, char **argv)
                 }
             }
         }
+#ifdef CONFIG_USBHOST_HUB
         usb_slist_for_each(hub_list, &hub_class_head)
         {
             usbh_hub_t *hub_class = usb_slist_entry(hub_list, struct usbh_hub, list);
@@ -897,6 +882,7 @@ int lsusb(int argc, char **argv)
                 }
             }
         }
+#endif
     } else if (strcmp(argv[1], "-v") == 0) {
         for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             if (usbh_core_cfg.rhport[port - 1].hport.connected) {
@@ -905,7 +891,7 @@ int lsusb(int argc, char **argv)
                 usbh_print_hubport_info(&usbh_core_cfg.rhport[port - 1].hport);
             }
         }
-
+#ifdef CONFIG_USBHOST_HUB
         usb_slist_for_each(hub_list, &hub_class_head)
         {
             usbh_hub_t *hub_class = usb_slist_entry(hub_list, struct usbh_hub, list);
@@ -918,6 +904,7 @@ int lsusb(int argc, char **argv)
                 }
             }
         }
+#endif
     }
 
     return 0;

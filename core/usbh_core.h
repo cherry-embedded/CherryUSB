@@ -27,8 +27,10 @@
 #include "usb_def.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
+#ifdef CONFIG_USBHOST_HUB
 #include "usb_workq.h"
 #include "usbh_hub.h"
+#endif
 #include "usb_config.h"
 
 #ifdef __cplusplus
@@ -49,11 +51,12 @@ extern "C" {
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
 
 enum usbh_event_type {
-    USBH_EVENT_ATTACHED,
-    USBH_EVENT_REMOVED,
+    USBH_EVENT_CONNECTED = (1 << 0),
+    USBH_EVENT_DISCONNECTED = (1 << 1),
 };
 
 struct usbh_class_info {
+    uint8_t match_flags;
     uint8_t class;    /* Base device class code */
     uint8_t subclass; /* Sub-class, depends on base class. Eg. */
     uint8_t protocol; /* Protocol, depends on base class. Eg. */

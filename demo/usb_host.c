@@ -30,7 +30,7 @@ int cdc_acm_test(void)
     }
 
     memset(cdc_buffer, 0, 512);
-    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512);
+    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, 3000);
     if (ret < 0) {
         printf("bulk in error\r\n");
         return ret;
@@ -43,7 +43,7 @@ int cdc_acm_test(void)
     const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
 
     memcpy(cdc_buffer, data1, 8);
-    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkout, cdc_buffer, 8);
+    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkout, cdc_buffer, 8, 3000);
     if (ret < 0) {
         printf("bulk out error\r\n");
         return ret;
@@ -53,7 +53,7 @@ int cdc_acm_test(void)
 #if 0
     usbh_ep_bulk_async_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, usbh_cdc_acm_callback, cdc_acm_class);
 #else
-    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512);
+    ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, 3000);
     if (ret < 0) {
         printf("bulk in error\r\n");
         return ret;
@@ -67,7 +67,6 @@ int cdc_acm_test(void)
     return ret;
 #endif
 }
-
 
 #include "ff.h"
 
@@ -130,13 +129,12 @@ int msc_test(void)
         /*unmount*/
         f_mount(NULL, "2:", 1);
     } else {
-        printf("open error:%d\r\n",res_sd);
+        printf("open error:%d\r\n", res_sd);
     }
     usb_iofree(ReadBuffer);
 #endif
     return ret;
 }
-
 
 uint8_t hid_buffer[128];
 
@@ -167,7 +165,7 @@ int hid_test(void)
         return ret;
     }
 #else
-    ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128);
+    ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128, 1000);
     if (ret < 0) {
         return ret;
     }

@@ -67,6 +67,15 @@ struct usbh_endpoint_cfg {
 int usb_hc_init(void);
 
 /**
+ * @brief get port connect status
+ *
+ * @param port
+ * @return true
+ * @return false
+ */
+bool usbh_get_port_connect_status(const uint8_t port);
+
+/**
  * @brief reset roothub port
  *
  * @param port port index
@@ -130,6 +139,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
  * @param ep The IN or OUT endpoint descriptor for the device endpoint on which to perform the transfer.
  * @param buffer A buffer containing the data to be sent (OUT endpoint) or received (IN endpoint).
  * @param buflen The length of the data to be sent or received.
+ * @param timeout Timeout for transfer, unit is ms.
  * @return On success, a non-negative value is returned that indicates the number
  *   of bytes successfully transferred.  On a failure, a negated errno value
  *   is returned that indicates the nature of the failure:
@@ -141,7 +151,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
  *     EPIPE  - Overrun errors
  *
  */
-int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen);
+int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
 
 /**
  * @brief  Process a request to handle a transfer descriptor.  This method will
@@ -151,6 +161,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen);
  * @param ep The IN or OUT endpoint descriptor for the device endpoint on which to perform the transfer.
  * @param buffer A buffer containing the data to be sent (OUT endpoint) or received (IN endpoint).
  * @param buflen The length of the data to be sent or received.
+ * @param timeout Timeout for transfer, unit is ms.
  * @return On success, a non-negative value is returned that indicates the number
  *   of bytes successfully transferred.  On a failure, a negated errno value
  *   is returned that indicates the nature of the failure:
@@ -162,7 +173,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen);
  *     EPIPE  - Overrun errors
  *
  */
-int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen);
+int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
 
 /**
  * @brief Process a request to handle a transfer asynchronously.  This method

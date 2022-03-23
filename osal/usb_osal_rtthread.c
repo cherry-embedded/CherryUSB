@@ -51,9 +51,9 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
     rt_sem_delete((rt_sem_t)sem);
 }
 
-int usb_osal_sem_take(usb_osal_sem_t sem)
+int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    return (int)rt_sem_take((rt_sem_t)sem, RT_WAITING_FOREVER);
+    return (int)rt_sem_take((rt_sem_t)sem, rt_tick_from_millisecond(timeout));
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -66,6 +66,11 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
     return (usb_osal_mutex_t)rt_mutex_create("usbh_mutex", RT_IPC_FLAG_FIFO);
 }
 
+void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
+{
+    rt_mutex_delete((rt_mutex_t)mutex);
+}
+
 int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 {
     return (int)rt_mutex_take((rt_mutex_t)mutex, RT_WAITING_FOREVER);
@@ -76,18 +81,37 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
     return (int)rt_mutex_release((rt_mutex_t)mutex);
 }
 
+usb_osal_event_t usb_osal_event_create(void)
+{
+    return (usb_osal_event_t)rt_event_create("psc_event", RT_IPC_FLAG_FIFO);
+}
+
+void usb_osal_event_delete(usb_osal_event_t event)
+{
+    rt_event_delete((rt_event_t)event);
+}
+
+int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
+{
+    rt_event_recv((rt_event_t)event, set, RT_EVENT_FLAG_OR, RT_WAITING_FOREVER, recved);
+}
+
+int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
+{
+    rt_event_send((rt_event_t)event, set);
+}
+
 uint32_t usb_osal_enter_critical_section(void)
 {
-    rt_enter_critical();
-    return 1;
+    return rt_hw_interrupt_disable();
 }
 
 void usb_osal_leave_critical_section(uint32_t flag)
 {
-    rt_exit_critical();
+    rt_hw_interrupt_enable(flag);
 }
 
 void usb_osal_msleep(uint32_t delay)
 {
-    rt_thread_mdelay(delay);
+    rt_thread_mdelay(rt_tick_from_millisecond(delay));
 }

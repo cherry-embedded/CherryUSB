@@ -23,6 +23,8 @@
 #include "usb_osal.h"
 #include <FreeRTOS.h>
 #include "semphr.h"
+#include "timers.h"
+#include "event_groups.h"
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
@@ -52,9 +54,9 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
     vSemaphoreDelete((SemaphoreHandle_t)sem);
 }
 
-int usb_osal_sem_take(usb_osal_sem_t sem)
+int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    return (xSemaphoreTake((SemaphoreHandle_t)sem, portMAX_DELAY) == pdPASS) ? 0 : -1;
+    return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -1;
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -101,6 +103,34 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
     return (xSemaphoreGive((SemaphoreHandle_t)mutex) == pdPASS) ? 0 : -1;
 }
 
+usb_osal_event_t usb_osal_event_create(void)
+{
+    return (usb_osal_event_t)xEventGroupCreate();
+}
+
+void usb_osal_event_delete(usb_osal_event_t event)
+{
+    vEventGroupDelete((EventGroupHandle_t)event);
+}
+
+int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
+{
+    *recved = xEventGroupWaitBits((EventGroupHandle_t)event, set, pdTRUE, pdFALSE, portMAX_DELAY);
+    return 0;
+}
+
+int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    ret = xEventGroupSetBitsFromISR((EventGroupHandle_t)event, set, &xHigherPriorityTaskWoken);
+    if (ret == pdPASS) {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+    return (ret == pdPASS) ? 0 : -1;
+}
+
 uint32_t usb_osal_enter_critical_section(void)
 {
     taskENTER_CRITICAL();
@@ -115,9 +145,4 @@ void usb_osal_leave_critical_section(uint32_t flag)
 void usb_osal_msleep(uint32_t delay)
 {
     vTaskDelay(pdMS_TO_TICKS(delay));
-}
-
-uint32_t usb_osal_get_tick(void)
-{
-    return xTaskGetTickCount();
 }
