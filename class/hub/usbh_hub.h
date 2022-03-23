@@ -29,9 +29,9 @@
 /* Maximum size of an interrupt IN transfer */
 #define USBH_HUB_INTIN_BUFSIZE ((USBH_HUB_MAX_PORTS + 8) >> 3)
 
-extern const struct usbh_class_driver hub_class_driver;
+extern const struct usbh_class_info hub_class_info;
 extern usb_slist_t hub_class_head;
-extern usb_osal_thread_t hub_thread;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

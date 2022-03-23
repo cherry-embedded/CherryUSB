@@ -338,6 +338,7 @@ int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(msc_class, 0, sizeof(struct usbh_msc));
+    msc_class->hport = hport;
 
     usbh_msc_devno_alloc(msc_class);
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
@@ -427,4 +428,14 @@ const struct usbh_class_driver msc_class_driver = {
     .driver_name = "msc",
     .connect = usbh_msc_connect,
     .disconnect = usbh_msc_disconnect
+};
+
+CLASS_INFO_DEFINE const struct usbh_class_info msc_class_info = {
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+    .class = USB_DEVICE_CLASS_MASS_STORAGE,
+    .subclass = MSC_SUBCLASS_SCSI,
+    .protocol = MSC_PROTOCOL_BULK_ONLY,
+    .vid = 0x00,
+    .pid = 0x00,
+    .class_driver = &msc_class_driver
 };

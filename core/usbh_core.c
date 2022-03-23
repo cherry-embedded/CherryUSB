@@ -25,6 +25,12 @@
 #include "usbh_hid.h"
 #include "usbh_msc.h"
 
+extern uint32_t _usbh_class_info_start;
+extern uint32_t _usbh_class_info_end;
+
+struct usbh_class_info *usbh_class_info_table_begin = NULL;
+struct usbh_class_info *usbh_class_info_table_end = NULL;
+
 static const char *speed_table[] = { "error speed", "low speed", "full speed", "high speed" };
 
 static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subcalss, uint8_t protocol, uint16_t vid, uint16_t pid);
@@ -808,6 +814,9 @@ int usbh_initialize(void)
     usb_osal_thread_t usb_thread;
 
     memset(&usbh_core_cfg, 0, sizeof(struct usbh_core_priv));
+
+    usbh_class_info_table_begin = (struct usbh_class_info *)&_usbh_class_info_start;
+    usbh_class_info_table_end = (struct usbh_class_info *)&_usbh_class_info_end;
 #ifdef CONFIG_USBHOST_HUB
     usbh_workq_initialize();
 #endif
@@ -922,6 +931,7 @@ struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
             }
         }
     }
+#ifdef CONFIG_USBHOST_HUB
     usb_slist_for_each(hub_list, &hub_class_head)
     {
         usbh_hub_t *hub_class = usb_slist_entry(hub_list, struct usbh_hub, list);
@@ -934,6 +944,7 @@ struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
             }
         }
     }
+#endif
     return NULL;
 }
 
@@ -952,6 +963,7 @@ void *usbh_find_class_instance(const char *devname)
             }
         }
     }
+#ifdef CONFIG_USBHOST_HUB
     usb_slist_for_each(hub_list, &hub_class_head)
     {
         usbh_hub_t *hub_class = usb_slist_entry(hub_list, struct usbh_hub, list);
@@ -966,67 +978,44 @@ void *usbh_find_class_instance(const char *devname)
             }
         }
     }
+#endif
     return NULL;
 }
 
-const struct usbh_class_info class_info_table[] = {
-
-    { .class = USB_DEVICE_CLASS_CDC,
-      .subclass = CDC_ABSTRACT_CONTROL_MODEL,
-      .protocol = CDC_COMMON_PROTOCOL_AT_COMMANDS,
-      .vid = 0x00,
-      .pid = 0x00,
-      .class_driver = &cdc_acm_class_driver },
-    { .class = USB_DEVICE_CLASS_HID,
-      .subclass = HID_SUBCLASS_BOOTIF,
-      .protocol = HID_PROTOCOL_KEYBOARD,
-      .vid = 0x00,
-      .pid = 0x00,
-      .class_driver = &hid_class_driver },
-    { .class = USB_DEVICE_CLASS_HID,
-      .subclass = HID_SUBCLASS_BOOTIF,
-      .protocol = HID_PROTOCOL_MOUSE,
-      .vid = 0x00,
-      .pid = 0x00,
-      .class_driver = &hid_class_driver },
-    { .class = USB_DEVICE_CLASS_MASS_STORAGE,
-      .subclass = MSC_SUBCLASS_SCSI,
-      .protocol = MSC_PROTOCOL_BULK_ONLY,
-      .vid = 0x00,
-      .pid = 0x00,
-      .class_driver = &msc_class_driver },
-#ifdef CONFIG_USBHOST_HUB
-    { .class = USB_DEVICE_CLASS_HUB,
-      .subclass = 0,
-      .protocol = 0,
-      .vid = 0x00,
-      .pid = 0x00,
-      .class_driver = &hub_class_driver },
-    { .class = USB_DEVICE_CLASS_HUB,
-      .subclass = 0,
-      .protocol = 1,
-      .vid = 0x00,
-      .pid = 0x00,
-      .class_driver = &hub_class_driver },
-#endif
+const struct usbh_class_info *class_info_table[] = {
+    &cdc_acm_class_info,
+    &hid_keyboard_class_info,
+    &hid_mouse_class_info,
+    &msc_class_info,
+    &hub_class_info,
 };
 
-static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subcalss, uint8_t protocol, uint16_t vid, uint16_t pid)
+static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subclass, uint8_t protocol, uint16_t vid, uint16_t pid)
 {
-    for (uint8_t i = 0; i < sizeof(class_info_table) / sizeof(class_info_table[0]); i++) {
-        if (class == class_info_table[i].class &&
-            subcalss == class_info_table[i].subclass &&
-            protocol == class_info_table[i].protocol) {
-            /* If this is a vendor-specific class ID, then the VID and PID have to match as well. */
-            if (class == USB_DEVICE_CLASS_VEND_SPECIFIC) {
-                if (vid == class_info_table[i].vid &&
-                    pid == class_info_table[i].pid) {
-                    return class_info_table[i].class_driver;
-                }
+    struct usbh_class_info *index = NULL;
+
+    for (index = usbh_class_info_table_begin; index < usbh_class_info_table_end; index++) {
+        if ((index->match_flags & (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) ==
+            (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) {
+            if (index->vid == vid && index->pid == pid &&
+                index->class == class && index->subclass == subclass && index->protocol == protocol) {
+                return index->class_driver;
             }
-            return class_info_table[i].class_driver;
+        } else if ((index->match_flags & (USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) ==
+                   (USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) {
+            if (index->class == class && index->subclass == subclass && index->protocol == protocol) {
+                return index->class_driver;
+            }
+        } else if ((index->match_flags & (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS)) ==
+                   (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS)) {
+            if (index->vid == vid && index->pid == pid && index->class == class) {
+                return index->class_driver;
+            }
+        } else if (index->match_flags & (USB_CLASS_MATCH_INTF_CLASS)) {
+            if (index->class == class) {
+                return index->class_driver;
+            }
         }
     }
-
     return NULL;
 }

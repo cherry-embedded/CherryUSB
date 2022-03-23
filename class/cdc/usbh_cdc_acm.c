@@ -273,3 +273,13 @@ const struct usbh_class_driver cdc_acm_class_driver = {
     .connect = usbh_cdc_acm_connect,
     .disconnect = usbh_cdc_acm_disconnect
 };
+
+CLASS_INFO_DEFINE const struct usbh_class_info cdc_acm_class_info = {
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+    .class = USB_DEVICE_CLASS_CDC,
+    .subclass = CDC_ABSTRACT_CONTROL_MODEL,
+    .protocol = CDC_COMMON_PROTOCOL_AT_COMMANDS,
+    .vid = 0x00,
+    .pid = 0x00,
+    .class_driver = &cdc_acm_class_driver
+};
