@@ -67,9 +67,9 @@ int cdc_acm_test(void)
     return ret;
 #endif
 }
-
+#if 0
 #include "ff.h"
-
+#endif
 int msc_test(void)
 {
     int ret;
@@ -78,7 +78,7 @@ int msc_test(void)
         printf("do not find /dev/sda\r\n");
         return -1;
     }
-#if 0
+#if 1
     /* get the partition table */
     uint8_t *partition_table = usb_iomalloc(1024);
     ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
@@ -105,7 +105,7 @@ int msc_test(void)
     // printf("\r\n");
 #endif
 
-#if 1
+#if 0
 
     FATFS fs;
     FIL fnew;
