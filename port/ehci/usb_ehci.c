@@ -297,7 +297,7 @@ static inline uint32_t usb_ehci_getreg(volatile uint32_t *regaddr)
     return *regaddr;
 }
 
-static int usb_ehci_chan_alloc(struct usb_ehci_s *priv)
+static int usb_ehci_chan_alloc(void)
 {
     int chidx;
 
@@ -305,10 +305,10 @@ static int usb_ehci_chan_alloc(struct usb_ehci_s *priv)
 
     for (chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
         /* Is this channel available? */
-        if (!priv->chan[chidx].inuse) {
+        if (!g_ehci.chan[chidx].inuse) {
             /* Yes... make it "in use" and return the index */
 
-            priv->chan[chidx].inuse = true;
+            g_ehci.chan[chidx].inuse = true;
             return chidx;
         }
     }
@@ -2274,7 +2274,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
     hport = ep_cfg->hport;
 
-    chidx = usb_ehci_chan_alloc(&g_ehci);
+    chidx = usb_ehci_chan_alloc();
 
     epinfo = &g_ehci.chan[chidx];
     memset(epinfo, 0, sizeof(struct usb_ehci_epinfo_s));
