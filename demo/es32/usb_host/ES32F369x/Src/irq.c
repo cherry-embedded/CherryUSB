@@ -130,7 +130,7 @@ void DebugMon_Handler(void)
 //	/* Added thread switching operation */
 //	return;
 //}
-
+extern void xPortSysTickHandler( void );
 /**
   * @brief  SysTick IRQ handler
   * @retval None
@@ -139,9 +139,8 @@ void SysTick_Handler(void)
 {
     ald_inc_tick();
     if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED){
-	xPortSysTickHandler();
-}
-	return;
+        xPortSysTickHandler();
+    }
 }
 
 #ifdef ALD_DMA

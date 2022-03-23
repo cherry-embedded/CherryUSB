@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_ASSERT,ES32F36xx,USBD_CDC_HS</Define>
+              <Define>USE_ASSERT,ES32F36xx,</Define>
               <Undefine></Undefine>
               <IncludePath>..\Drivers\CMSIS\Include;..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM3</IncludePath>
             </VariousControls>

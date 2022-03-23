@@ -123,11 +123,6 @@ void usb_hc_low_level_init(void)
     usb_pin_init();
 }
 
-void delay(uint32_t delay_us)
-{
-    while (delay_us--) {
-    }
-}
 /**
   * @brief  Test main function
   * @retval Status.
@@ -147,9 +142,8 @@ int main()
     printf("\rSystem start...\r\n");
 
     usbh_initialize();
-   vTaskStartScheduler();
+    vTaskStartScheduler();
     while (1) {
-
     }
 }
 
@@ -160,15 +154,15 @@ int main()
   */
 static void vtask_led(void *pvParameters)
 {
-	TickType_t xlast_wake_time;
-	const TickType_t xfreq = 500;
-	
-	xlast_wake_time = xTaskGetTickCount();
+    TickType_t xlast_wake_time;
+    const TickType_t xfreq = 500;
 
-	while(1) {
+    xlast_wake_time = xTaskGetTickCount();
+
+    while (1) {
         printf("test\r\n");
-		vTaskDelayUntil(&xlast_wake_time, pdMS_TO_TICKS(xfreq));
-	}
+        vTaskDelayUntil(&xlast_wake_time, pdMS_TO_TICKS(xfreq));
+    }
 }
 /**
   * @}

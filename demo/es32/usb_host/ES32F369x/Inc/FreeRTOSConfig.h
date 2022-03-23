@@ -248,7 +248,7 @@
                 FreeRTOS与软件定时器有关的配置选项      
 **********************************************************************/
  //启用软件定时器
-#define configUSE_TIMERS				            0                              
+#define configUSE_TIMERS				            1                              
 //软件定时器优先级
 #define configTIMER_TASK_PRIORITY		        (configMAX_PRIORITIES-1)        
 //软件定时器队列长度
@@ -268,7 +268,7 @@
 #define INCLUDE_vTaskDelayUntil			         1
 #define INCLUDE_vTaskDelay				           1
 #define INCLUDE_eTaskGetState			           1
-#define INCLUDE_xTimerPendFunctionCall	     0
+#define INCLUDE_xTimerPendFunctionCall	     1
 //#define INCLUDE_xTaskGetCurrentTaskHandle       1
 //#define INCLUDE_uxTaskGetStackHighWaterMark     0
 //#define INCLUDE_xTaskGetIdleTaskHandle          0
