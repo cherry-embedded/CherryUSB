@@ -26,10 +26,8 @@
 #include "usb_def.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
-#ifdef CONFIG_USBHOST_HUB
 #include "usb_workq.h"
 #include "usbh_hub.h"
-#endif
 #include "usb_config.h"
 
 #ifdef __cplusplus

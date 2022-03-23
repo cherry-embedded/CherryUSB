@@ -25,9 +25,6 @@
 #include "usbh_hid.h"
 #include "usbh_msc.h"
 
-extern uint32_t _usbh_class_info_start;
-extern uint32_t _usbh_class_info_end;
-
 struct usbh_class_info *usbh_class_info_table_begin = NULL;
 struct usbh_class_info *usbh_class_info_table_end = NULL;
 
@@ -686,6 +683,7 @@ static int usbh_portchange_wait(struct usbh_hubport **hport)
         if (ret < 0) {
             continue;
         }
+
         flags = usb_osal_enter_critical_section();
         for (uint8_t port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             /* Check for a change in the connection state on any root hub port */
@@ -815,8 +813,17 @@ int usbh_initialize(void)
 
     memset(&usbh_core_cfg, 0, sizeof(struct usbh_core_priv));
 
+#if defined(__CC_ARM) || (__ARMCC_VERSION >= 6010050) /* ARM C Compiler */
+    extern const int usbh_class_info$$Base;
+    extern const int usbh_class_info$$Limit;
+    usbh_class_info_table_begin = (struct usbh_class_info *)&usbh_class_info$$Base;
+    usbh_class_info_table_end = (struct usbh_class_info *)&usbh_class_info$$Limit;
+#elif defined(__GNUC__)
+    extern uint32_t _usbh_class_info_start;
+    extern uint32_t _usbh_class_info_end;
     usbh_class_info_table_begin = (struct usbh_class_info *)&_usbh_class_info_start;
     usbh_class_info_table_end = (struct usbh_class_info *)&_usbh_class_info_end;
+#endif
 #ifdef CONFIG_USBHOST_HUB
     usbh_workq_initialize();
 #endif
