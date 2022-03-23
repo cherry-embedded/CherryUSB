@@ -33,14 +33,15 @@ enum usb_synopsys_transfer_state {
  */
 
 struct usb_synopsys_chan {
-    usb_osal_sem_t waitsem; /* Channel wait semaphore */
-    volatile int result;    /* The result of the transfer */
-    bool inuse;             /* True: This channel is "in use" */
-    uint8_t interval;       /* Interrupt/isochronous EP polling interval */
-    uint8_t transfer_state; /* Interrupt/isochronous EP transfer state */
-    bool in;                /* True: IN endpoint */
-    volatile bool waiter;   /* True: Thread is waiting for a channel event */
-    volatile uint16_t xfrd; /* Bytes transferred (at end of transfer) */
+    bool inuse;               /* True: This channel is "in use" */
+    bool in;                  /* True: IN endpoint */
+    uint8_t interval;         /* Interrupt/isochronous EP polling interval */
+    uint8_t transfer_state;   /* Interrupt/isochronous EP transfer state */
+    volatile int result;      /* The result of the transfer */
+    volatile uint16_t xfrd;   /* Bytes transferred (at end of transfer) */
+    volatile bool waiter;     /* True: Thread is waiting for a channel event */
+    usb_osal_sem_t waitsem;   /* Channel wait semaphore */
+    usb_osal_mutex_t exclsem; /* Support mutually exclusive access */
 #ifdef CONFIG_USBHOST_ASYNCH
     usbh_asynch_callback_t callback; /* Transfer complete callback */
     void *arg;                       /* Argument that accompanies the callback */
@@ -61,8 +62,6 @@ struct usb_synopsys_priv {
     HCD_HandleTypeDef *handle;
     volatile uint64_t sof_timer;
     volatile bool connected; /* Connected to device */
-    volatile bool pscwait;   /* True: Thread is waiting for a port event */
-    usb_osal_sem_t exclsem;  /* Support mutually exclusive access */
     struct usb_synopsys_chan chan[CONFIG_USBHOST_CHANNELS];
 } g_usbhost;
 
@@ -74,7 +73,7 @@ struct usb_synopsys_priv {
  *
  ****************************************************************************/
 
-static int usb_synopsys_chan_alloc(struct usb_synopsys_priv *priv)
+static int usb_synopsys_chan_alloc(void)
 {
     int chidx;
 
@@ -82,10 +81,10 @@ static int usb_synopsys_chan_alloc(struct usb_synopsys_priv *priv)
 
     for (chidx = 0; chidx < CONFIG_USBHOST_CHANNELS; chidx++) {
         /* Is this channel available? */
-        if (!priv->chan[chidx].inuse) {
+        if (!g_usbhost.chan[chidx].inuse) {
             /* Yes... make it "in use" and return the index */
 
-            priv->chan[chidx].inuse = true;
+            g_usbhost.chan[chidx].inuse = true;
             return chidx;
         }
     }
@@ -103,13 +102,13 @@ static int usb_synopsys_chan_alloc(struct usb_synopsys_priv *priv)
  *
  ****************************************************************************/
 
-static void usb_synopsys_chan_free(struct usb_synopsys_priv *priv, int chidx)
+static void usb_synopsys_chan_free(int chidx)
 {
     /* Halt the channel */
-    HAL_HCD_HC_Halt(priv->handle, chidx);
+    HAL_HCD_HC_Halt(g_usbhost.handle, chidx);
     /* Mark the channel available */
 
-    priv->chan[chidx].inuse = false;
+    g_usbhost.chan[chidx].inuse = false;
 }
 
 /****************************************************************************
@@ -120,14 +119,14 @@ static void usb_synopsys_chan_free(struct usb_synopsys_priv *priv, int chidx)
  *
  ****************************************************************************/
 
-static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
+static inline void usb_synopsys_chan_freeall(void)
 {
     uint8_t chidx;
 
     /* Free all host channels */
 
     for (chidx = 2; chidx < CONFIG_USBHOST_CHANNELS; chidx++) {
-        usb_synopsys_chan_free(priv, chidx);
+        usb_synopsys_chan_free(chidx);
     }
 }
 
@@ -146,8 +145,7 @@ static inline void usb_synopsys_chan_freeall(struct usb_synopsys_priv *priv)
  *
  ****************************************************************************/
 
-static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
-                                       struct usb_synopsys_chan *chan)
+static int usb_synopsys_chan_waitsetup(struct usb_synopsys_chan *chan)
 {
     uint32_t flags;
     int ret = -ENODEV;
@@ -156,7 +154,7 @@ static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
 
     /* Is the device still connected? */
 
-    if (priv->connected) {
+    if (g_usbhost.connected) {
         /* Yes.. then set waiter to indicate that we expect to be informed
        * when either (1) the device is disconnected, or (2) the transfer
        * completed.
@@ -191,9 +189,7 @@ static int usb_synopsys_chan_waitsetup(struct usb_synopsys_priv *priv,
  ****************************************************************************/
 
 #ifdef CONFIG_USBHOST_ASYNCH
-static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
-                                         struct usb_synopsys_chan *chan,
-                                         usbh_asynch_callback_t callback, void *arg)
+static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_chan *chan, usbh_asynch_callback_t callback, void *arg)
 {
     uint32_t flags;
     int ret = -ENODEV;
@@ -201,7 +197,7 @@ static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
     flags = usb_osal_enter_critical_section();
     /* Is the device still connected? */
 
-    if (priv->connected) {
+    if (g_usbhost.connected) {
         /* Yes.. then set waiter to indicate that we expect to be informed
        * when either (1) the device is disconnected, or (2) the transfer
        * completed.
@@ -231,7 +227,7 @@ static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_priv *priv,
  *
  ****************************************************************************/
 
-static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_synopsys_chan *chan)
+static int usb_synopsys_chan_wait(struct usb_synopsys_chan *chan, uint32_t timeout)
 {
     int ret;
 
@@ -242,7 +238,7 @@ static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_syn
    */
 
     if (chan->waiter) {
-        ret = usb_osal_sem_take(chan->waitsem);
+        ret = usb_osal_sem_take(chan->waitsem, timeout);
         if (ret < 0) {
             return ret;
         }
@@ -250,7 +246,11 @@ static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_syn
 
     /* The transfer is complete re-enable interrupts and return the result */
     ret = chan->result;
-    return ret;
+
+    if (ret < 0) {
+        return ret;
+    }
+    return chan->xfrd;
 }
 
 /****************************************************************************
@@ -266,7 +266,7 @@ static int usb_synopsys_chan_wait(struct usb_synopsys_priv *priv, struct usb_syn
  *
  ****************************************************************************/
 
-static void usb_synopsys_chan_wakeup(struct usb_synopsys_priv *priv, struct usb_synopsys_chan *chan)
+static void usb_synopsys_chan_wakeup(struct usb_synopsys_chan *chan)
 {
     usbh_asynch_callback_t callback;
     void *arg;
@@ -324,7 +324,6 @@ __WEAK void usb_hc_low_level_init(void)
 int usb_hc_init(void)
 {
     g_usbhost.connected = 0;
-    g_usbhost.pscwait = 0;
     g_usbhost.sof_timer = 0;
 #if defined(CONFIG_USB_HS) || defined(CONFIG_USB_HS_IN_FULL)
     g_usbhost.handle = &hhcd_USB_OTG_HS;
@@ -333,8 +332,6 @@ int usb_hc_init(void)
     g_usbhost.handle = &hhcd_USB_OTG_FS;
     g_usbhost.handle->Instance = USB_OTG_FS;
 #endif
-
-    g_usbhost.exclsem = usb_osal_mutex_create();
 
     g_usbhost.handle->Init.Host_channels = CONFIG_USBHOST_CHANNELS;
     g_usbhost.handle->Init.speed = HCD_SPEED_FULL;
@@ -349,6 +346,21 @@ int usb_hc_init(void)
     }
     HAL_HCD_Start(g_usbhost.handle);
     return 0;
+}
+
+bool usbh_get_port_connect_status(const uint8_t port)
+{
+    USB_OTG_GlobalTypeDef *USBx = g_usbhost.handle->Instance;
+    uint32_t USBx_BASE = (uint32_t)USBx;
+    __IO uint32_t hprt0;
+
+    hprt0 = USBx_HPRT0;
+
+    if ((hprt0 & USB_OTG_HPRT_PCSTS) == USB_OTG_HPRT_PCSTS) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int usbh_reset_port(const uint8_t port)
@@ -369,12 +381,14 @@ uint8_t usbh_get_port_speed(const uint8_t port)
 
 int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
 {
+    struct usb_synopsys_chan *chan;
     struct usb_synopsys_ctrlinfo *ep0info;
     int ret;
 
     ep0info = (struct usb_synopsys_ctrlinfo *)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    chan = &g_usbhost.chan[ep0info->outndx];
+    ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
     }
@@ -389,7 +403,7 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
 
     ret = HAL_HCD_HC_Init(g_usbhost.handle, ep0info->outndx, 0x00, dev_addr, speed, USB_ENDPOINT_TYPE_CONTROL, ep_mps);
     ret = HAL_HCD_HC_Init(g_usbhost.handle, ep0info->inndx, 0x80, dev_addr, speed, USB_ENDPOINT_TYPE_CONTROL, ep_mps);
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
 
@@ -416,13 +430,14 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         ep0 = usb_malloc(sizeof(struct usb_synopsys_ctrlinfo));
         memset(ep0, 0, sizeof(struct usb_synopsys_ctrlinfo));
 
-        ep0->outndx = usb_synopsys_chan_alloc(&g_usbhost);
-        ep0->inndx = usb_synopsys_chan_alloc(&g_usbhost);
+        ep0->outndx = usb_synopsys_chan_alloc();
+        ep0->inndx = usb_synopsys_chan_alloc();
 
         chan = &priv->chan[ep0->outndx];
         memset(chan, 0, sizeof(struct usb_synopsys_chan));
         chan->inuse = true;
         chan->waitsem = usb_osal_sem_create(0);
+        chan->exclsem = usb_osal_mutex_create();
 
         chan = &priv->chan[ep0->inndx];
         memset(chan, 0, sizeof(struct usb_synopsys_chan));
@@ -435,7 +450,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         *ep = (usbh_epinfo_t)ep0;
 
     } else {
-        chidx = usb_synopsys_chan_alloc(&g_usbhost);
+        chidx = usb_synopsys_chan_alloc();
 
         chan = &priv->chan[chidx];
         memset(chan, 0, sizeof(struct usb_synopsys_chan));
@@ -444,6 +459,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         chan->in = ep_cfg->ep_addr & 0x80 ? 1 : 0;
 
         chan->waitsem = usb_osal_sem_create(0);
+        chan->exclsem = usb_osal_mutex_create();
 
         HAL_HCD_HC_Init(g_usbhost.handle, chidx, ep_cfg->ep_addr, hport->dev_addr, speed, ep_cfg->ep_type, ep_cfg->ep_mps);
 
@@ -459,14 +475,16 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 int usbh_ep_free(usbh_epinfo_t ep)
 {
     if ((uintptr_t)ep < CONFIG_USBHOST_CHANNELS) {
-        usb_synopsys_chan_free(&g_usbhost, (int)ep);
+        usb_synopsys_chan_free((int)ep);
         usb_osal_sem_delete(g_usbhost.chan[(int)ep].waitsem);
+        usb_osal_mutex_delete(g_usbhost.chan[(int)ep].exclsem);
     } else {
         struct usb_synopsys_ctrlinfo *ep0 = (struct usb_synopsys_ctrlinfo *)ep;
-        usb_synopsys_chan_free(&g_usbhost, ep0->inndx);
-        usb_synopsys_chan_free(&g_usbhost, ep0->outndx);
+        usb_synopsys_chan_free(ep0->inndx);
+        usb_synopsys_chan_free(ep0->outndx);
         usb_osal_sem_delete(g_usbhost.chan[ep0->inndx].waitsem);
         usb_osal_sem_delete(g_usbhost.chan[ep0->outndx].waitsem);
+        usb_osal_mutex_delete(g_usbhost.chan[ep0->outndx].exclsem);
     }
 
     return 0;
@@ -477,16 +495,15 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     int ret;
     uint32_t retries;
     struct usb_synopsys_chan *chan;
-    struct usb_synopsys_priv *priv = &g_usbhost;
     struct usb_synopsys_ctrlinfo *ep0info = (struct usb_synopsys_ctrlinfo *)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    chan = &g_usbhost.chan[ep0info->outndx];
+    ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
     }
 
-    chan = &priv->chan[ep0info->outndx];
-    usb_synopsys_chan_waitsetup(priv, chan);
+    usb_synopsys_chan_waitsetup(chan);
 
     ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                    ep0info->outndx,  /* Pipe index       */
@@ -497,15 +514,15 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                    8,                /* data length      */
                                    0);               /* do ping (HS Only)*/
 
-    ret = usb_synopsys_chan_wait(priv, chan);
+    ret = usb_synopsys_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
     if (ret < 0) {
         goto errout_with_mutex;
     }
 
     if (setup->wLength && buffer) {
         if (setup->bmRequestType & 0x80) {
-            chan = &priv->chan[ep0info->inndx];
-            usb_synopsys_chan_waitsetup(priv, chan);
+            chan = &g_usbhost.chan[ep0info->inndx];
+            usb_synopsys_chan_waitsetup(chan);
 
             ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                            ep0info->inndx, /* Pipe index       */
@@ -516,16 +533,16 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                            setup->wLength, /* data length      */
                                            0);             /* do ping (HS Only)*/
 
-            ret = usb_synopsys_chan_wait(priv, chan);
+            ret = usb_synopsys_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
             if (ret < 0) {
                 goto errout_with_mutex;
             }
 
-            chan = &priv->chan[ep0info->outndx];
+            chan = &g_usbhost.chan[ep0info->outndx];
 
             /* For ep0 out,we must retry more */
             for (retries = 0; retries < 10; retries++) {
-                usb_synopsys_chan_waitsetup(priv, chan);
+                usb_synopsys_chan_waitsetup(chan);
 
                 ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                                ep0info->outndx, /* Pipe index       */
@@ -536,7 +553,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                                0,               /* data length      */
                                                0);              /* do ping (HS Only)*/
 
-                ret = usb_synopsys_chan_wait(priv, chan);
+                ret = usb_synopsys_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
                 if (ret == -EAGAIN) {
                     continue;
                 } else if (ret < 0) {
@@ -551,11 +568,11 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
             }
 
         } else {
-            chan = &priv->chan[ep0info->outndx];
+            chan = &g_usbhost.chan[ep0info->outndx];
 
             /* For ep0 out,we must retry more */
             for (retries = 0; retries < CONFIG_CONTROL_RETRY_COUNT; retries++) {
-                usb_synopsys_chan_waitsetup(priv, chan);
+                usb_synopsys_chan_waitsetup(chan);
 
                 ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                                ep0info->outndx, /* Pipe index       */
@@ -566,7 +583,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                                setup->wLength,  /* data length      */
                                                0);              /* do ping (HS Only)*/
 
-                ret = usb_synopsys_chan_wait(priv, chan);
+                ret = usb_synopsys_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
                 if (ret == -EAGAIN) {
                     continue;
                 } else if (ret < 0) {
@@ -580,8 +597,8 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                 goto errout_with_mutex;
             }
 
-            chan = &priv->chan[ep0info->inndx];
-            usb_synopsys_chan_waitsetup(priv, chan);
+            chan = &g_usbhost.chan[ep0info->inndx];
+            usb_synopsys_chan_waitsetup(chan);
 
             ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                            ep0info->inndx, /* Pipe index       */
@@ -592,14 +609,14 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                            0,              /* data length      */
                                            0);             /* do ping (HS Only)*/
 
-            ret = usb_synopsys_chan_wait(priv, chan);
+            ret = usb_synopsys_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
             if (ret < 0) {
                 goto errout_with_mutex;
             }
         }
     } else {
-        chan = &priv->chan[ep0info->inndx];
-        usb_synopsys_chan_waitsetup(priv, chan);
+        chan = &g_usbhost.chan[ep0info->inndx];
+        usb_synopsys_chan_waitsetup(chan);
 
         ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                        ep0info->inndx, /* Pipe index       */
@@ -610,32 +627,35 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                                        0,              /* data length      */
                                        0);             /* do ping (HS Only)*/
 
-        ret = usb_synopsys_chan_wait(priv, chan);
+        ret = usb_synopsys_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
         if (ret < 0) {
             goto errout_with_mutex;
         }
     }
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    chan = &g_usbhost.chan[ep0info->outndx];
+    usb_osal_mutex_give(chan->exclsem);
     return 0;
 errout_with_mutex:
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    chan->waiter = false;
+    chan = &g_usbhost.chan[ep0info->outndx];
+    usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
 
-int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
+int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
     int ret;
     struct usb_synopsys_chan *chan;
     struct usb_synopsys_priv *priv = &g_usbhost;
     uint8_t chidx = (uint8_t)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    chan = &priv->chan[chidx];
+    ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
     }
 
-    chan = &priv->chan[chidx];
-    usb_synopsys_chan_waitsetup(priv, chan);
+    usb_synopsys_chan_waitsetup(chan);
 
     ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                    chidx,                                        /* Pipe index       */
@@ -646,35 +666,34 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
                                    buflen,                                       /* data length      */
                                    0);                                           /* do ping (HS Only)*/
 
-    ret = usb_synopsys_chan_wait(priv, chan);
+    ret = usb_synopsys_chan_wait(chan, timeout);
     if (ret < 0) {
         goto errout_with_mutex;
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    usb_osal_mutex_give(chan->exclsem);
     return g_usbhost.handle->hc[chidx].ep_is_in ? HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx) : buflen;
 errout_with_mutex:
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    chan->waiter = false;
+    usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
 
-int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
+int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
     uint32_t flags;
     uint32_t retries;
     int ret;
     struct usb_synopsys_chan *chan;
-    struct usb_synopsys_priv *priv = &g_usbhost;
     uint8_t chidx = (uint8_t)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    chan = &g_usbhost.chan[chidx];
+    ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
     }
 
-    chan = &priv->chan[chidx];
-
-    usb_synopsys_chan_waitsetup(priv, chan);
+    usb_synopsys_chan_waitsetup(chan);
     flags = usb_osal_enter_critical_section();
     chan->transfer_state = TRANSFER_BUSY;
 
@@ -688,15 +707,16 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen)
                                    0);                                           /* do ping (HS Only)*/
 
     usb_osal_leave_critical_section(flags);
-    ret = usb_synopsys_chan_wait(priv, chan);
+    ret = usb_synopsys_chan_wait(chan, timeout);
     if (ret < 0) {
         goto errout_with_mutex;
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    usb_osal_mutex_give(chan->exclsem);
     return g_usbhost.handle->hc[chidx].ep_is_in ? HAL_HCD_HC_GetXferCount(g_usbhost.handle, chidx) : buflen;
 errout_with_mutex:
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    chan->waiter = false;
+    usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
 
@@ -707,13 +727,13 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     struct usb_synopsys_priv *priv = &g_usbhost;
     uint8_t chidx = (uint8_t)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    chan = &g_usbhost.chan[chidx];
+    ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
     }
 
-    chan = &priv->chan[chidx];
-    usb_synopsys_chan_asynchsetup(priv, chan, callback, arg);
+    usb_synopsys_chan_asynchsetup(chan, callback, arg);
 
     ret = HAL_HCD_HC_SubmitRequest(g_usbhost.handle,
                                    chidx,                                        /* Pipe index       */
@@ -724,7 +744,7 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
                                    buflen,                                       /* data length      */
                                    0);                                           /* do ping (HS Only)*/
 
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    usb_osal_mutex_give(chan->exclsem);
 
     return ret;
 }
@@ -737,13 +757,13 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     struct usb_synopsys_priv *priv = &g_usbhost;
     uint8_t chidx = (uint8_t)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem);
+    chan = &priv->chan[chidx];
+    ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
     }
 
-    chan = &priv->chan[chidx];
-    usb_synopsys_chan_asynchsetup(priv, chan, callback, arg);
+    usb_synopsys_chan_asynchsetup(chan, callback, arg);
     flags = usb_osal_enter_critical_section();
     chan->transfer_state = TRANSFER_BUSY;
 
@@ -757,7 +777,7 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
                                    0);                                           /* do ping (HS Only)*/
 
     usb_osal_leave_critical_section(flags);
-    usb_osal_mutex_give(g_usbhost.exclsem);
+    usb_osal_mutex_give(chan->exclsem);
 
     return ret;
 }
@@ -812,7 +832,7 @@ void HAL_HCD_Connect_Callback(HCD_HandleTypeDef *hhcd)
     if (!g_usbhost.connected) {
         g_usbhost.connected = true;
         extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-        usbh_event_notify_handler(USBH_EVENT_ATTACHED, 1);
+        usbh_event_notify_handler(USBH_EVENT_CONNECTED, 1);
     }
 }
 
@@ -825,7 +845,7 @@ void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
 {
     if (g_usbhost.connected) {
         g_usbhost.connected = false;
-        usb_synopsys_chan_freeall(&g_usbhost);
+        usb_synopsys_chan_freeall();
 
         for (uint8_t chnum = 0; chnum < CONFIG_USBHOST_CHANNELS; chnum++) {
             {
@@ -836,8 +856,7 @@ void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
                 }
             }
 
-            extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-            usbh_event_notify_handler(USBH_EVENT_REMOVED, 1);
+            usbh_event_notify_handler(USBH_EVENT_DISCONNECTED, 1);
         }
     }
 }
@@ -860,7 +879,7 @@ void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum,
         chan->result = 0;
     }
     chan->in = g_usbhost.handle->hc[chnum].ep_is_in;
-    chan->xfrd = g_usbhost.handle->hc[chnum].ep_is_in ? HAL_HCD_HC_GetXferCount(g_usbhost.handle, chnum) : g_usbhost.handle->hc[chnum].xfer_len;
+    chan->xfrd += g_usbhost.handle->hc[chnum].ep_is_in ? HAL_HCD_HC_GetXferCount(g_usbhost.handle, chnum) : g_usbhost.handle->hc[chnum].xfer_len;
 
     if (g_usbhost.handle->hc[chnum].ep_type == 0x00 && (urb_state == URB_NOTREADY) && g_usbhost.handle->hc[chnum].ep_is_in) {
         return;
@@ -869,7 +888,7 @@ void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum,
         return;
     }
 
-    usb_synopsys_chan_wakeup(priv, chan);
+    usb_synopsys_chan_wakeup(chan);
 }
 
 void HAL_HCD_SOF_Callback(HCD_HandleTypeDef *hhcd)
