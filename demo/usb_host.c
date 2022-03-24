@@ -3,7 +3,7 @@
 #include "usbh_hid.h"
 #include "usbh_msc.h"
 
-uint8_t cdc_buffer[4096];
+uint8_t cdc_buffer[512];
 
 void usbh_cdc_acm_callback(void *arg, int nbytes)
 {
@@ -32,36 +32,38 @@ int cdc_acm_test(void)
     memset(cdc_buffer, 0, 512);
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, 3000);
     if (ret < 0) {
-        printf("bulk in error\r\n");
-        return ret;
+        printf("bulk in error,ret:%d\r\n", ret);
+    } else {
+        printf("recv over:%d\r\n", ret);
+        for (size_t i = 0; i < ret; i++) {
+            printf("0x%02x ", cdc_buffer[i]);
+        }
     }
-    printf("recv over:%d\r\n", ret);
-    for (size_t i = 0; i < ret; i++) {
-        printf("0x%02x ", cdc_buffer[i]);
-    }
+
     printf("\r\n");
     const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
 
     memcpy(cdc_buffer, data1, 8);
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkout, cdc_buffer, 8, 3000);
     if (ret < 0) {
-        printf("bulk out error\r\n");
-        return ret;
+        printf("bulk out error,ret:%d\r\n", ret);
+    } else {
+        printf("send over:%d\r\n", ret);
     }
-    printf("send over:%d\r\n", ret);
 
 #if 0
     usbh_ep_bulk_async_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, usbh_cdc_acm_callback, cdc_acm_class);
 #else
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, 3000);
     if (ret < 0) {
-        printf("bulk in error\r\n");
-        return ret;
+        printf("bulk in error,ret:%d\r\n", ret);
+    } else {
+        printf("recv over:%d\r\n", ret);
+        for (size_t i = 0; i < ret; i++) {
+            printf("0x%02x ", cdc_buffer[i]);
+        }
     }
-    printf("recv over:%d\r\n", ret);
-    for (size_t i = 0; i < ret; i++) {
-        printf("0x%02x ", cdc_buffer[i]);
-    }
+
     printf("\r\n");
 
     return ret;
@@ -82,7 +84,10 @@ int msc_test(void)
     /* get the partition table */
     uint8_t *partition_table = usb_iomalloc(1024);
     ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
-
+    if (ret < 0) {
+        printf("scsi_read10 error,ret:%d\r\n", ret);
+        return ret;
+    }
     for (uint32_t i = 0; i < 1024; i++) {
         if (i % 16 == 0) {
             printf("\r\n");
@@ -162,7 +167,7 @@ int hid_test(void)
 #if 1
     ret = usbh_ep_intr_async_transfer(hid_class->intin, hid_buffer, 128, usbh_hid_callback, hid_class);
     if (ret < 0) {
-        return ret;
+        printf("intr asnyc in error,ret:%d\r\n", ret);
     }
 #else
     ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128, 1000);
