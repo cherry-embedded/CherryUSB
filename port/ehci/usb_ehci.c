@@ -1803,8 +1803,6 @@ static inline void usb_ehci_ioc_bottomhalf(void)
 #endif
 }
 
-extern void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-
 /****************************************************************************
  * Name: usb_ehci_portsc_bottomhalf
  *
@@ -2342,13 +2340,13 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     }
 
     /* And wait for the transfer to complete */
-    nbytes = usb_ehci_transfer_wait(epinfo, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
-    if (nbytes < 0) {
+    ret = usb_ehci_transfer_wait(epinfo, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
+    if (ret < 0) {
         goto errout_with_iocwait;
     }
 
     usb_osal_mutex_give(epinfo->exclsem);
-    return nbytes;
+    return ret;
 
 errout_with_iocwait:
     epinfo->iocwait = false;
@@ -2359,7 +2357,6 @@ errout_with_sem:
 
 int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
-    int nbytes;
     int ret;
 
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)ep;
@@ -2372,7 +2369,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
 
     ret = usb_ehci_ioc_setup(epinfo);
-    if (ret != 0) {
+    if (ret < 0) {
         goto errout_with_sem;
     }
 
@@ -2382,12 +2379,12 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
 
     /* And wait for the transfer to complete */
-    nbytes = usb_ehci_transfer_wait(epinfo, timeout);
-    if (nbytes < 0) {
+    ret = usb_ehci_transfer_wait(epinfo, timeout);
+    if (ret < 0) {
         goto errout_with_iocwait;
     }
     usb_osal_mutex_give(epinfo->exclsem);
-    return nbytes;
+    return ret;
 
 errout_with_iocwait:
     epinfo->iocwait = false;
@@ -2398,7 +2395,6 @@ errout_with_sem:
 
 int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
-    int nbytes;
     int ret;
 
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)ep;
@@ -2421,12 +2417,12 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
 
     /* And wait for the transfer to complete */
-    nbytes = usb_ehci_transfer_wait(epinfo, timeout);
-    if (nbytes < 0) {
+    ret = usb_ehci_transfer_wait(epinfo, timeout);
+    if (ret < 0) {
         goto errout_with_iocwait;
     }
     usb_osal_mutex_give(epinfo->exclsem);
-    return nbytes;
+    return ret;
 
 errout_with_iocwait:
     epinfo->iocwait = false;
