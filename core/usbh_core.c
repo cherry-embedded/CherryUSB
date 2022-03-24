@@ -813,7 +813,7 @@ int usbh_initialize(void)
 
     memset(&usbh_core_cfg, 0, sizeof(struct usbh_core_priv));
 
-#if defined(__CC_ARM) || (__ARMCC_VERSION >= 6010050) /* ARM C Compiler */
+#ifdef __ARMCC_VERSION  /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
     extern const int usbh_class_info$$Limit;
     usbh_class_info_table_begin = (struct usbh_class_info *)&usbh_class_info$$Base;
