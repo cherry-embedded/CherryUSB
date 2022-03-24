@@ -135,6 +135,7 @@ struct usb_ehci_epinfo_s {
     void *arg;                       /* Argument that accompanies the callback */
 #endif
     struct usbh_hubport *hport;
+    struct usb_ehci_qh_s *qh;
 };
 
 /* This structure retains the overall state of the USB host controller */
@@ -1161,7 +1162,7 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
     }
     /* Add the new QH to the head of the asynchronous queue list */
     usb_ehci_qh_enqueue(&g_asynchead, qh);
-
+    epinfo->qh = qh;
     return 0;
 
 errout_with_qh:
@@ -1215,6 +1216,7 @@ static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
 
     /* Add the new QH to the head of the asynchronous queue list */
     usb_ehci_qh_enqueue(&g_asynchead, qh);
+    epinfo->qh = qh;
     return 0;
 
 errout_with_qh:
@@ -1274,6 +1276,7 @@ static int usb_ehci_intr_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
     /* Re-enable the periodic schedule */
     regval |= EHCI_USBCMD_PSEN;
     usb_ehci_putreg(regval, &HCOR->usbcmd);
+    epinfo->qh = qh;
     return 0;
 
 errout_with_qh:
@@ -1465,6 +1468,7 @@ static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo, uint32_t tim
     if (epinfo->iocwait) {
         ret = usb_osal_sem_take(epinfo->iocsem, timeout);
         if (ret < 0) {
+            usb_ehci_qh_discard(epinfo->qh);
             return ret;
         }
     }
@@ -2310,7 +2314,6 @@ int usbh_ep_free(usbh_epinfo_t ep)
 
 int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint8_t *buffer)
 {
-    int nbytes;
     int ret;
 
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)ep;
