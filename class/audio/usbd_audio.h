@@ -31,10 +31,10 @@ extern "C" {
 
 void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 
+void usbd_audio_open(uint8_t intf);
+void usbd_audio_close(uint8_t intf);
 void usbd_audio_set_mute(uint8_t mute);
 void usbd_audio_set_volume(uint8_t vol);
-void usbd_audio_sof_callback(void);
-void usbd_audio_set_interface_callback(uint8_t value);
 
 #ifdef __cplusplus
 }
