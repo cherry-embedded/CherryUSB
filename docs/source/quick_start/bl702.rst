@@ -1,6 +1,6 @@
-基于 BL702 开发指南
+基于 BL 系列开发指南
 =========================
 
-BL702 USB 的开发主要使用 bl_mcu_sdk，关于 bl_mcu_sdk 的环境搭建，参考 `bl_mcu_sdk 环境搭建 <https://dev.bouffalolab.com/media/doc/sdk/bl_mcu_sdk_zh/get_started/index.html>`_。
+BL 系列 USB 的开发主要使用 bl_mcu_sdk，关于 bl_mcu_sdk 的环境搭建，参考 `bl_mcu_sdk 环境搭建 <https://dev.bouffalolab.com/media/doc/sdk/bl_mcu_sdk_zh/get_started/index.html>`_。
 
 USB 的相关应用位于 `examples/usb` 目录下，环境搭建完成后，即可编译使用。
