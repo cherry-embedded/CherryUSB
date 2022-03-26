@@ -441,16 +441,14 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     uint8_t old_ep_idx;
 
     old_ep_idx = USBC_GetActiveEp();
-
+    USBC_SelectActiveEp(ep_idx);
     if (!data && data_len) {
         ret = -1;
         goto _RET;
     }
 
     if (ep_idx == 0x00) {
-        USBC_SelectActiveEp(ep_idx);
         while (HWREGB(USB_TXCSRLx_BASE) & USB_CSRL0_TXRDY) {
-            USBC_SelectActiveEp(ep_idx);
             if (HWREGB(USB_TXCSRLx_BASE) & USB_CSRL0_ERROR) {
                 ret = -2;
                 goto _RET;
@@ -461,9 +459,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
             }
         }
     } else {
-        USBC_SelectActiveEp(ep_idx);
         while (HWREGB(USB_TXCSRLx_BASE) & USB_TXCSRL1_TXRDY) {
-            USBC_SelectActiveEp(ep_idx);
             if ((HWREGB(USB_TXCSRLx_BASE) & USB_TXCSRL1_ERROR) || (HWREGB(USB_TXCSRLx_BASE) & USB_TXCSRL1_UNDRN)) {
                 ret = -2;
                 goto _RET;
@@ -489,7 +485,6 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     usb_musb_write_packet(ep_idx, (uint8_t *)data, data_len);
 
     if (ep_idx != 0) {
-        USBC_SelectActiveEp(ep_idx);
         HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
     }
     if (ret_bytes) {
@@ -509,13 +504,12 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     uint8_t old_ep_idx;
 
     old_ep_idx = USBC_GetActiveEp();
-
+    USBC_SelectActiveEp(ep_idx);
     if (!data && max_data_len) {
         ret = -1;
         goto _RET;
     }
 
-    USBC_SelectActiveEp(ep_idx);
     if (!max_data_len) {
         if (ep_idx != 0x00) {
             HWREGB(USB_RXCSRLx_BASE) &= ~(USB_RXCSRL1_RXRDY);

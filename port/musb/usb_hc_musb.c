@@ -107,7 +107,6 @@ struct usb_musb_chan {
     uint8_t interval; /* Polling interval */
     uint8_t *buffer;
     volatile uint32_t buflen;
-    volatile uint32_t once_outlen;
     volatile uint16_t xfrd;   /* Bytes transferred (at end of transfer) */
     volatile int result;      /* The result of the transfer */
     volatile bool waiter;     /* True: Thread is waiting for a channel event */
@@ -126,6 +125,7 @@ struct usb_musb_priv {
 } g_usbhost;
 
 volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
+volatile uint8_t ep0_outlen = 0;
 
 /* get current active ep */
 static uint8_t USBC_GetActiveEp(void)
@@ -257,7 +257,7 @@ static int usb_musb_chan_alloc(void)
 
     /* Search the table of channels */
 
-    for (chidx = 2; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
+    for (chidx = 1; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
         /* Is this channel available? */
         if (!g_usbhost.chan[chidx].inuse) {
             /* Yes... make it "in use" and return the index */
@@ -399,7 +399,7 @@ static int usb_musb_chan_wait(struct usb_musb_chan *chan, uint32_t timeout)
         }
     }
 
-    /* The transfer is complete re-enable interrupts and return the result */
+    /* The transfer is complete and return the result */
     ret = chan->result;
 
     if (ret < 0) {
@@ -491,6 +491,7 @@ int usb_hc_init(void)
     USB->TXIE = USB_TXIE_EP0;
     USB->RXIE = 0;
 
+    USB->POWER |= USB_POWER_HSENAB;
     USB->DEVCTL |= USB_DEVCTL_SESSION;
 
 #ifdef USB_MUSB_SUNXI
@@ -539,8 +540,8 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
         return ret;
     }
 
-    USBC_SelectActiveEp(ep0);
-    HWREGB(USB_TXADDR_BASE(ep0)) = dev_addr;
+    USBC_SelectActiveEp(0);
+    HWREGB(USB_TXADDR_BASE(0)) = dev_addr;
 
     if (speed == USB_SPEED_HIGH) {
         USB->TYPE0 = USB_TYPE0_SPEED_HIGH;
@@ -550,7 +551,6 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
         USB->TYPE0 = USB_TYPE0_SPEED_LOW;
     }
 
-    chan = &g_usbhost.chan[ep0];
     chan->mps = ep_mps;
 
     usb_osal_mutex_give(chan->exclsem);
@@ -702,7 +702,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     usb_musb_chan_waitsetup(chan);
 
     usb_musb_write_packet(0, (uint8_t *)setup, 8);
-    chan->once_outlen = 8;
+    ep0_outlen = 8;
     if (setup->wLength && buffer) {
         if (setup->bmRequestType & 0x80) {
             usb_ep0_state = USB_EP0_STATE_IN_DATA;
@@ -756,12 +756,9 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
             buflen = chan->mps;
         }
 
-        usb_musb_write_packet(chidx, (uint8_t *)buffer, buflen);
+        usb_musb_write_packet(chidx, chan->buffer, buflen);
         USBC_SelectActiveEp(chidx);
         HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
-        chan->buffer += buflen;
-        chan->buflen -= buflen;
-        chan->xfrd += buflen;
     }
     ret = usb_musb_chan_wait(chan, timeout);
     if (ret < 0) {
@@ -771,6 +768,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     usb_osal_mutex_give(chan->exclsem);
     return ret;
 errout_with_mutex:
+    chan->waiter = false;
     usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
@@ -801,12 +799,9 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
             buflen = chan->mps;
         }
 
-        usb_musb_write_packet(chidx, (uint8_t *)buffer, buflen);
+        usb_musb_write_packet(chidx, chan->buffer, buflen);
         USBC_SelectActiveEp(chidx);
         HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
-        chan->buffer += buflen;
-        chan->buflen -= buflen;
-        chan->xfrd += buflen;
     }
     ret = usb_musb_chan_wait(chan, timeout);
     if (ret < 0) {
@@ -816,6 +811,7 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     usb_osal_mutex_give(chan->exclsem);
     return ret;
 errout_with_mutex:
+    chan->waiter = false;
     usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
@@ -830,6 +826,25 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
+    }
+
+    usb_musb_chan_asynchsetup(chan, callback, arg);
+
+    if (chan->in) {
+        chan->buffer = buffer;
+        chan->buflen = buflen;
+        USBC_SelectActiveEp(chidx);
+        HWREGB(USB_RXCSRLx_BASE) = USB_RXCSRL1_REQPKT;
+    } else {
+        chan->buffer = buffer;
+        chan->buflen = buflen;
+        if (buflen > chan->mps) {
+            buflen = chan->mps;
+        }
+
+        usb_musb_write_packet(chidx, chan->buffer, buflen);
+        USBC_SelectActiveEp(chidx);
+        HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
     }
 
     usb_osal_mutex_give(chan->exclsem);
@@ -848,31 +863,88 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
         return ret;
     }
 
+    usb_musb_chan_asynchsetup(chan, callback, arg);
+
+    if (chan->in) {
+        chan->buffer = buffer;
+        chan->buflen = buflen;
+        USBC_SelectActiveEp(chidx);
+        HWREGB(USB_RXCSRLx_BASE) = USB_RXCSRL1_REQPKT;
+    } else {
+        chan->buffer = buffer;
+        chan->buflen = buflen;
+        if (buflen > chan->mps) {
+            buflen = chan->mps;
+        }
+
+        usb_musb_write_packet(chidx, chan->buffer, buflen);
+        USBC_SelectActiveEp(chidx);
+        HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
+    }
+
     usb_osal_mutex_give(chan->exclsem);
     return ret;
 }
 
 int usb_ep_cancel(usbh_epinfo_t ep)
 {
+    int ret;
+    uint32_t flags;
+    struct usb_musb_chan *chan;
+    uint8_t chidx = (uint8_t)ep;
+#ifdef CONFIG_USBHOST_ASYNCH
+    usbh_asynch_callback_t callback;
+    void *arg;
+#endif
+    chan = &g_usbhost.chan[chidx];
+
+    flags = usb_osal_enter_critical_section();
+
+    chan->result = -ESHUTDOWN;
+#ifdef CONFIG_USBHOST_ASYNCH
+    /* Extract the callback information */
+    callback = chan->callback;
+    arg = chan->arg;
+    chan->callback = NULL;
+    chan->arg = NULL;
+    chan->xfrd = 0;
+#endif
+    usb_osal_leave_critical_section(flags);
+    /* Is there a thread waiting for this transfer to complete? */
+
+    if (chan->waiter) {
+        /* Wake'em up! */
+        chan->waiter = false;
+        usb_osal_sem_give(chan->waitsem);
+    }
+#ifdef CONFIG_USBHOST_ASYNCH
+    /* No.. is an asynchronous callback expected when the transfer completes? */
+    else if (callback) {
+        /* Then perform the callback */
+        callback(arg, -ESHUTDOWN);
+    }
+#endif
     return 0;
 }
 
 void handle_ep0(void)
 {
     uint8_t ep0_status = USB->CSRL0;
+    struct usb_musb_chan *chan;
 
+    chan = &g_usbhost.chan[0];
     if (ep0_status & USB_HOST_EP0_ERROR) {
         usb_musb_ep_status_clear(0, USB_HOST_EP0_ERROR);
         usb_musb_fifo_flush(0);
         usb_ep0_state = USB_EP0_STATE_SETUP;
-        g_usbhost.chan[0].result = -EIO;
+        chan->result = -EIO;
         goto chan_wait;
     }
 
     if (ep0_status & USB_HOST_EP0_RX_STALL) {
         usb_musb_ep_status_clear(0, ep0_status & USB_HOST_IN_STATUS);
         usb_ep0_state = USB_EP0_STATE_SETUP;
-        g_usbhost.chan[0].result = -EPERM;
+        chan->result = -EPERM;
         goto chan_wait;
     }
     switch (usb_ep0_state) {
@@ -881,61 +953,65 @@ void handle_ep0(void)
         case USB_EP0_STATE_IN_DATA:
             USB->CSRL0 = USB_RXCSRL1_REQPKT;
             usb_ep0_state = USB_EP0_STATE_IN_DATA_C;
-            g_usbhost.chan[0].xfrd += g_usbhost.chan[0].once_outlen;
+            chan->xfrd += 8;
             break;
         case USB_EP0_STATE_IN_DATA_C:
             if (USB->CSRL0 & USB_CSRL0_RXRDY) {
-                uint32_t size = g_usbhost.chan[0].buflen;
-                if (size > g_usbhost.chan[0].mps) {
-                    size = g_usbhost.chan[0].mps;
+                uint32_t size = chan->buflen;
+                if (size > chan->mps) {
+                    size = chan->mps;
                 }
 
                 size = MIN(size, USB->COUNT0);
 
-                usb_musb_read_packet(0, g_usbhost.chan[0].buffer, size);
+                usb_musb_read_packet(0, chan->buffer, size);
                 USB->CSRL0 &= ~USB_CSRL0_RXRDY;
 
-                g_usbhost.chan[0].buffer += size;
-                g_usbhost.chan[0].buflen -= size;
-                g_usbhost.chan[0].xfrd += size;
-                if ((size < g_usbhost.chan[0].mps) || (g_usbhost.chan[0].buflen == 0)) {
-                    usb_ep0_state = USB_EP0_STATE_IN_STATUS_C;
+                chan->buffer += size;
+                chan->buflen -= size;
+                chan->xfrd += size;
+                if ((size < chan->mps) || (chan->buflen == 0)) {
+                    usb_ep0_state = USB_EP0_STATE_OUT_STATUS;
                     USB->CSRL0 = USB_CSRL0_TXRDY | USB_CSRL0_STATUS;
                 } else {
                     USB->CSRL0 = USB_RXCSRL1_REQPKT;
                 }
             }
             break;
+        case USB_EP0_STATE_OUT_STATUS:
+            usb_ep0_state = USB_EP0_STATE_SETUP;
+            chan->result = 0;
+            goto chan_wait;
         case USB_EP0_STATE_IN_STATUS_C:
             if (ep0_status & (USB_HOST_EP0_RXPKTRDY | USB_HOST_EP0_STATUS)) {
                 usb_musb_ep_status_clear(0, (USB_HOST_EP0_RXPKTRDY | USB_HOST_EP0_STATUS));
             }
 
             usb_ep0_state = USB_EP0_STATE_SETUP;
-            g_usbhost.chan[0].result = 0;
+            chan->result = 0;
             goto chan_wait;
 
             break;
         case USB_EP0_STATE_IN_STATUS:
             USB->CSRL0 = USB_CSRL0_REQPKT | USB_CSRL0_STATUS;
             usb_ep0_state = USB_EP0_STATE_IN_STATUS_C;
-            g_usbhost.chan[0].xfrd += g_usbhost.chan[0].once_outlen;
+            chan->xfrd += 8;
             break;
 
         case USB_EP0_STATE_OUT_DATA: {
-            g_usbhost.chan[0].xfrd += g_usbhost.chan[0].once_outlen;
-
-            uint32_t size = g_usbhost.chan[0].buflen;
-            if (size > g_usbhost.chan[0].mps) {
-                size = g_usbhost.chan[0].mps;
+            uint32_t size = chan->buflen;
+            if (size > chan->mps) {
+                size = chan->mps;
             }
 
-            usb_musb_write_packet(0, g_usbhost.chan[0].buffer, size);
+            chan->xfrd += ep0_outlen;
 
-            g_usbhost.chan[0].buffer += size;
-            g_usbhost.chan[0].buflen -= size;
-            g_usbhost.chan[0].once_outlen = size;
-            if (size == g_usbhost.chan[0].mps) {
+            usb_musb_write_packet(0, chan->buffer, size);
+
+            chan->buffer += size;
+            chan->buflen -= size;
+            ep0_outlen = size;
+            if (size == chan->mps) {
                 USB->CSRL0 = USB_CSRL0_TXRDY;
             } else {
                 USB->CSRL0 = USB_CSRL0_TXRDY;
@@ -947,7 +1023,7 @@ void handle_ep0(void)
     }
     return;
 chan_wait:
-    usb_musb_chan_wakeup(&g_usbhost.chan[0]);
+    usb_musb_chan_wakeup(chan);
 }
 void USBH_IRQHandler(void)
 {
@@ -1025,18 +1101,20 @@ void USBH_IRQHandler(void)
         } else {
             uint32_t size = chan->buflen;
 
-            if (size) {
-                if (size > chan->mps) {
-                    size = chan->mps;
-                }
-                usb_musb_write_packet(chidx, chan->buffer, size);
-                HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
-                chan->buffer += size;
-                chan->buflen -= size;
-                chan->xfrd += size;
-            } else {
+            if (size > chan->mps) {
+                size = chan->mps;
+            }
+
+            chan->buffer += size;
+            chan->buflen -= size;
+            chan->xfrd += size;
+
+            if (chan->buflen == 0) {
                 chan->result = 0;
                 usb_musb_chan_wakeup(chan);
+            } else {
+                usb_musb_write_packet(chidx, chan->buffer, size);
+                HWREGB(USB_TXCSRLx_BASE) = USB_TXCSRL1_TXRDY;
             }
         }
     }
