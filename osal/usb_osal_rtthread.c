@@ -93,12 +93,28 @@ void usb_osal_event_delete(usb_osal_event_t event)
 
 int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
 {
-    rt_event_recv((rt_event_t)event, set, RT_EVENT_FLAG_OR, RT_WAITING_FOREVER, recved);
+    int ret = 0;
+    rt_err_t result = RT_EOK;
+
+    result = rt_event_recv((rt_event_t)event, set, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, recved);
+    if (result != RT_EOK) {
+        ret = -1;
+    }
+
+    return ret;
 }
 
 int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
 {
-    rt_event_send((rt_event_t)event, set);
+    int ret = 0;
+    rt_err_t result = RT_EOK;
+
+    result = rt_event_send((rt_event_t)event, set);
+    if (result != RT_EOK) {
+        ret = -1;
+    }
+
+    return ret;
 }
 
 uint32_t usb_osal_enter_critical_section(void)
