@@ -558,7 +558,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                     continue;
                 } else if (ret < 0) {
                     goto errout_with_mutex;
-                } else if (ret == 0) {
+                } else {
                     break;
                 }
             }
@@ -588,7 +588,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
                     continue;
                 } else if (ret < 0) {
                     goto errout_with_mutex;
-                } else if (ret == 0) {
+                } else {
                     break;
                 }
             }
