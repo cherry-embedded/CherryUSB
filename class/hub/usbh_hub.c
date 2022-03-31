@@ -57,7 +57,7 @@ static inline void usbh_hub_unregister(struct usbh_hub *hub)
 
 static int usbh_hub_devno_alloc(struct usbh_hub *hub)
 {
-    uint32_t flags;
+    size_t flags;
     int devno;
 
     flags = usb_osal_enter_critical_section();
@@ -88,7 +88,7 @@ static void usbh_hub_devno_free(struct usbh_hub *hub)
     int devno = hub->index;
 
     if (devno >= 2 && devno < 32) {
-        uint32_t flags = usb_osal_enter_critical_section();
+        size_t flags = usb_osal_enter_critical_section();
         g_devinuse &= ~(1 << devno);
         usb_osal_leave_critical_section(flags);
     }

@@ -117,17 +117,17 @@ int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
     return ret;
 }
 
-uint32_t usb_osal_enter_critical_section(void)
+size_t usb_osal_enter_critical_section(void)
 {
     return rt_hw_interrupt_disable();
 }
 
-void usb_osal_leave_critical_section(uint32_t flag)
+void usb_osal_leave_critical_section(size_t flag)
 {
     rt_hw_interrupt_enable(flag);
 }
 
 void usb_osal_msleep(uint32_t delay)
 {
-    rt_thread_mdelay(rt_tick_from_millisecond(delay));
+    rt_thread_mdelay(delay);
 }

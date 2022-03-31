@@ -1299,7 +1299,7 @@ errout_with_qh:
 
 static int usb_ehci_ioc_setup(struct usb_ehci_epinfo_s *epinfo)
 {
-    uint32_t flags;
+    size_t flags;
     int ret = -ENODEV;
 
     DEBUGASSERT(rhport && epinfo && !epinfo->iocwait);
@@ -1353,7 +1353,7 @@ static int usb_ehci_ioc_setup(struct usb_ehci_epinfo_s *epinfo)
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_ehci_ioc_async_setup(struct usb_ehci_epinfo_s *epinfo, usbh_asynch_callback_t callback, void *arg)
 {
-    uint32_t flags;
+    size_t flags;
     int ret = -ENODEV;
 
     DEBUGASSERT(rhport && epinfo && !epinfo->iocwait);
@@ -2536,7 +2536,7 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     void *arg;
 #endif
     uint32_t *bp;
-    uint32_t flags;
+    size_t flags;
     bool iocwait;
     int ret;
 

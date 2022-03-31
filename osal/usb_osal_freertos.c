@@ -131,13 +131,13 @@ int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
     return (ret == pdPASS) ? 0 : -1;
 }
 
-uint32_t usb_osal_enter_critical_section(void)
+size_t usb_osal_enter_critical_section(void)
 {
     taskENTER_CRITICAL();
     return 1;
 }
 
-void usb_osal_leave_critical_section(uint32_t flag)
+void usb_osal_leave_critical_section(size_t flag)
 {
     taskEXIT_CRITICAL();
 }

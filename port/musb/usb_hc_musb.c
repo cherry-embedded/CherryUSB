@@ -302,7 +302,7 @@ static void usb_musb_chan_free(struct usb_musb_chan *chan)
 
 static int usb_musb_chan_waitsetup(struct usb_musb_chan *chan)
 {
-    uint32_t flags;
+    size_t flags;
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
@@ -346,7 +346,7 @@ static int usb_musb_chan_waitsetup(struct usb_musb_chan *chan)
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_musb_chan_asynchsetup(struct usb_musb_chan *chan, usbh_asynch_callback_t callback, void *arg)
 {
-    uint32_t flags;
+    size_t flags;
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
@@ -890,7 +890,7 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
 int usb_ep_cancel(usbh_epinfo_t ep)
 {
     int ret;
-    uint32_t flags;
+    size_t flags;
     struct usb_musb_chan *chan;
     uint8_t chidx = (uint8_t)ep;
 #ifdef CONFIG_USBHOST_ASYNCH
