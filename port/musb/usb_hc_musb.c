@@ -564,10 +564,11 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     uint32_t chidx;
     uint16_t used = 0;
     uint8_t fifo_size;
+    uint8_t old_ep_index;
 
     hport = ep_cfg->hport;
 
-    uint32_t old_index = USBC_GetActiveEp();
+    old_ep_index  = USBC_GetActiveEp();
 
     if (ep_cfg->ep_type == USB_ENDPOINT_TYPE_CONTROL) {
         if (hport->parent == NULL) {
