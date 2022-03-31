@@ -171,7 +171,7 @@ void usbh_hport_activate(struct usbh_hubport *hport)
 
 void usbh_hport_deactivate(struct usbh_hubport *hport)
 {
-    uint32_t flags;
+    size_t flags;
 
     /* Don't free the control pipe of root hub ports! */
     if (hport->parent != NULL && hport->ep0 != NULL) {
@@ -674,7 +674,7 @@ static int usbh_portchange_wait(struct usbh_hubport **hport)
 {
     struct usbh_hubport *connport = NULL;
     uint32_t recved_event;
-    uint32_t flags;
+    size_t flags;
     int ret;
 
     /* Loop until a change in connection state is detected */
@@ -775,7 +775,7 @@ static void usbh_portchange_detect_thread(void *argument)
 
 void usbh_external_hport_connect(struct usbh_hubport *hport)
 {
-    uint32_t flags;
+    size_t flags;
 
     usbh_hport_activate(hport);
 
@@ -790,7 +790,7 @@ void usbh_external_hport_connect(struct usbh_hubport *hport)
 
 void usbh_external_hport_disconnect(struct usbh_hubport *hport)
 {
-    uint32_t flags;
+    size_t flags;
 
     flags = usb_osal_enter_critical_section();
 

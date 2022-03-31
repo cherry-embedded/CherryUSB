@@ -51,8 +51,8 @@ void usb_osal_event_delete(usb_osal_event_t event);
 int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved);
 int usb_osal_event_send(usb_osal_event_t event, uint32_t set);
 
-uint32_t usb_osal_enter_critical_section(void);
-void usb_osal_leave_critical_section(uint32_t flag);
+size_t usb_osal_enter_critical_section(void);
+void usb_osal_leave_critical_section(size_t flag);
 
 void usb_osal_msleep(uint32_t delay);
 

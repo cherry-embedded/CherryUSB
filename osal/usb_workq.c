@@ -27,7 +27,7 @@
 
 void usb_workqueue_submit(struct usb_workqueue *queue, struct usb_work *work, usb_worker_t worker, void *arg, uint32_t ticks)
 {
-    uint32_t flags;
+    size_t flags;
     flags = usb_osal_enter_critical_section();
     usb_dlist_remove(&work->list);
     work->worker = worker;
@@ -47,7 +47,7 @@ struct usb_workqueue g_lpworkq = { NULL };
 static void usbh_hpwork_thread(void *argument)
 {
     struct usb_work *work;
-    uint32_t flags;
+    size_t flags;
     int ret;
     struct usb_workqueue *queue = (struct usb_workqueue *)argument;
     while (1) {
@@ -70,7 +70,7 @@ static void usbh_hpwork_thread(void *argument)
 static void usbh_lpwork_thread(void *argument)
 {
     struct usb_work *work;
-    uint32_t flags;
+    size_t flags;
     int ret;
     struct usb_workqueue *queue = (struct usb_workqueue *)argument;
     while (1) {

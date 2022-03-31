@@ -37,7 +37,7 @@ static uint32_t g_devinuse = 0;
 
 static int usbh_cdc_acm_devno_alloc(struct usbh_cdc_acm *priv)
 {
-    uint32_t flags;
+    size_t flags;
     int devno;
 
     flags = usb_osal_enter_critical_section();
@@ -68,7 +68,7 @@ static void usbh_cdc_acm_devno_free(struct usbh_cdc_acm *priv)
     int devno = priv->minor;
 
     if (devno >= 0 && devno < 32) {
-        uint32_t flags = usb_osal_enter_critical_section();
+        size_t flags = usb_osal_enter_critical_section();
         g_devinuse &= ~(1 << devno);
         usb_osal_leave_critical_section(flags);
     }

@@ -45,7 +45,7 @@ if GetDepend(['PKG_CHERRYUSB_USING_DEVICE']):
                 CPPDEFINES += ['USB_BASE=0x40080000UL']
     if GetDepend(['CHERRYUSB_USING_MUSB']):
         src += Glob('port/musb/usb_dc_musb.c')
-	if GetDepend(['CHERRYUSB_USING_CDC_DEMO']):
+    if GetDepend(['CHERRYUSB_USING_CDC_DEMO']):
         src += Glob('demo/cdc_acm_template.c')
 
 # USB HOST

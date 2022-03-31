@@ -147,7 +147,7 @@ static inline void usb_synopsys_chan_freeall(void)
 
 static int usb_synopsys_chan_waitsetup(struct usb_synopsys_chan *chan)
 {
-    uint32_t flags;
+    size_t flags;
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
@@ -191,7 +191,7 @@ static int usb_synopsys_chan_waitsetup(struct usb_synopsys_chan *chan)
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_synopsys_chan_asynchsetup(struct usb_synopsys_chan *chan, usbh_asynch_callback_t callback, void *arg)
 {
-    uint32_t flags;
+    size_t flags;
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
@@ -681,7 +681,7 @@ errout_with_mutex:
 
 int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
-    uint32_t flags;
+    size_t flags;
     uint32_t retries;
     int ret;
     struct usb_synopsys_chan *chan;
@@ -752,7 +752,7 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
 int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, usbh_asynch_callback_t callback, void *arg)
 {
     int ret;
-    uint32_t flags;
+    size_t flags;
     struct usb_synopsys_chan *chan;
     struct usb_synopsys_priv *priv = &g_usbhost;
     uint8_t chidx = (uint8_t)ep;
@@ -785,7 +785,7 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
 int usb_ep_cancel(usbh_epinfo_t ep)
 {
     int ret;
-    uint32_t flags;
+    size_t flags;
     struct usb_synopsys_chan *chan;
     struct usb_synopsys_priv *priv = &g_usbhost;
 #ifdef CONFIG_USBHOST_ASYNCH
