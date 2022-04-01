@@ -24,6 +24,7 @@
 #define _USB_OSAL_H
 
 #include <stdint.h>
+#include <string.h>
 
 typedef void *usb_osal_thread_t;
 typedef void *usb_osal_sem_t;
