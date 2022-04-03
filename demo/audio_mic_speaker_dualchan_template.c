@@ -28,11 +28,11 @@
 #define USB_AUDIO_CONFIG_DESC_SIZ (unsigned long)(9 +                                    \
                                                   AUDIO_AC_DESCRIPTOR_INIT_LEN(2) +      \
                                                   AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +  \
+                                                  AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2) + \
+                                                  AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC + \
                                                   AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +  \
-                                                  AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC + \
-                                                  AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC + \
                                                   AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2) + \
-                                                  AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2) + \
+                                                  AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC + \
                                                   AUDIO_AS_DESCRIPTOR_INIT_LEN(1) +      \
                                                   AUDIO_AS_DESCRIPTOR_INIT_LEN(1))
 
@@ -41,11 +41,11 @@ const uint8_t audio_descriptor[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_AUDIO_CONFIG_DESC_SIZ, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x03, 0x0100, 0x0046, 0x00, 0x02, 0x01, 0x02),
     AUDIO_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x01, AUDIO_INTERM_MIC, 0x02, 0x0001),
-    AUDIO_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x02, AUDIO_TERMINAL_STREAMING, 0x02, 0x0001),
-    AUDIO_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x03, AUDIO_OUTTERM_SPEAKER, 0x05),
-    AUDIO_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x04, AUDIO_TERMINAL_STREAMING, 0x06),
-    AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x05, 0x02, 0x02, 0x03, 0x00),
-    AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x06, 0x01, 0x02, 0x03, 0x00),
+    AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x02, 0x01, 0x02, 0x03, 0x00),
+    AUDIO_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x03, AUDIO_TERMINAL_STREAMING, 0x02),
+    AUDIO_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x04, AUDIO_TERMINAL_STREAMING, 0x02, 0x0001),
+    AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x05, 0x04, 0x02, 0x03, 0x00),
+    AUDIO_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x06, AUDIO_OUTTERM_SPEAKER, 0x05),
     AUDIO_AS_DESCRIPTOR_INIT(0x01, 0x02, 0x02, AUDIO_OUT_EP, AUDIO_OUT_PACKET, EP_INTERVAL, 0x01, AUDIO_SAMPLE_FREQ(AUDIO_FREQ)),
     AUDIO_AS_DESCRIPTOR_INIT(0x02, 0x04, 0x02, AUDIO_IN_EP, AUDIO_IN_PACKET, EP_INTERVAL, 0x01, AUDIO_SAMPLE_FREQ(AUDIO_FREQ)),
     ///////////////////////////////////////
