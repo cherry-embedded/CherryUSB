@@ -274,16 +274,17 @@
  * CYAN     36
  * WHITE    37
  */
-#define _USB_DBG_COLOR(n) printf("\033[" #n "m")
+#define _USB_PRINTF printf
+#define _USB_DBG_COLOR(n) _USB_PRINTF("\033[" #n "m")
 #define _USB_DBG_LOG_HDR(lvl_name, color_n) \
-    printf("\033[" #color_n "m[" lvl_name "/" USB_DBG_TAG "] ")
+    _USB_PRINTF("\033[" #color_n "m[" lvl_name "/" USB_DBG_TAG "] ")
 #define _USB_DBG_LOG_X_END \
-    printf("\033[0m")
+    _USB_PRINTF("\033[0m")
 
 #define usb_dbg_log_line(lvl, color_n, fmt, ...) \
     do {                                         \
         _USB_DBG_LOG_HDR(lvl, color_n);          \
-        printf(fmt, ##__VA_ARGS__);              \
+        _USB_PRINTF(fmt, ##__VA_ARGS__);              \
         _USB_DBG_LOG_X_END;                      \
     } while (0)
 
@@ -310,6 +311,8 @@
 #else
 #define USB_LOG_ERR(...)
 #endif
+
+#define USB_LOG_RAW _USB_PRINTF
 
 void usb_assert(const char *filename, int linenum);
 #define USB_ASSERT(f)                       \

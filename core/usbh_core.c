@@ -370,52 +370,52 @@ static int parse_string_descriptor(struct usbh_hubport *hport, struct usb_string
 
 static void usbh_print_hubport_info(struct usbh_hubport *hport)
 {
-    printf("Device Descriptor:\r\n");
-    printf("bLength: 0x%02x           \r\n", hport->device_desc.bLength);
-    printf("bDescriptorType: 0x%02x   \r\n", hport->device_desc.bDescriptorType);
-    printf("bcdUSB: 0x%04x            \r\n", hport->device_desc.bcdUSB);
-    printf("bDeviceClass: 0x%02x      \r\n", hport->device_desc.bDeviceClass);
-    printf("bDeviceSubClass: 0x%02x   \r\n", hport->device_desc.bDeviceSubClass);
-    printf("bDeviceProtocol: 0x%02x   \r\n", hport->device_desc.bDeviceProtocol);
-    printf("bMaxPacketSize0: 0x%02x   \r\n", hport->device_desc.bMaxPacketSize0);
-    printf("idVendor: 0x%04x          \r\n", hport->device_desc.idVendor);
-    printf("idProduct: 0x%04x         \r\n", hport->device_desc.idProduct);
-    printf("bcdDevice: 0x%04x         \r\n", hport->device_desc.bcdDevice);
-    printf("iManufacturer: 0x%02x     \r\n", hport->device_desc.iManufacturer);
-    printf("iProduct: 0x%02x          \r\n", hport->device_desc.iProduct);
-    printf("iSerialNumber: 0x%02x     \r\n", hport->device_desc.iSerialNumber);
-    printf("bNumConfigurations: 0x%02x\r\n", hport->device_desc.bNumConfigurations);
+    USB_LOG_RAW("Device Descriptor:\r\n");
+    USB_LOG_RAW("bLength: 0x%02x           \r\n", hport->device_desc.bLength);
+    USB_LOG_RAW("bDescriptorType: 0x%02x   \r\n", hport->device_desc.bDescriptorType);
+    USB_LOG_RAW("bcdUSB: 0x%04x            \r\n", hport->device_desc.bcdUSB);
+    USB_LOG_RAW("bDeviceClass: 0x%02x      \r\n", hport->device_desc.bDeviceClass);
+    USB_LOG_RAW("bDeviceSubClass: 0x%02x   \r\n", hport->device_desc.bDeviceSubClass);
+    USB_LOG_RAW("bDeviceProtocol: 0x%02x   \r\n", hport->device_desc.bDeviceProtocol);
+    USB_LOG_RAW("bMaxPacketSize0: 0x%02x   \r\n", hport->device_desc.bMaxPacketSize0);
+    USB_LOG_RAW("idVendor: 0x%04x          \r\n", hport->device_desc.idVendor);
+    USB_LOG_RAW("idProduct: 0x%04x         \r\n", hport->device_desc.idProduct);
+    USB_LOG_RAW("bcdDevice: 0x%04x         \r\n", hport->device_desc.bcdDevice);
+    USB_LOG_RAW("iManufacturer: 0x%02x     \r\n", hport->device_desc.iManufacturer);
+    USB_LOG_RAW("iProduct: 0x%02x          \r\n", hport->device_desc.iProduct);
+    USB_LOG_RAW("iSerialNumber: 0x%02x     \r\n", hport->device_desc.iSerialNumber);
+    USB_LOG_RAW("bNumConfigurations: 0x%02x\r\n", hport->device_desc.bNumConfigurations);
 
-    printf("Config Descriptor:\r\n");
-    printf("bLength: 0x%02x             \r\n", hport->config.config_desc.bLength);
-    printf("bDescriptorType: 0x%02x     \r\n", hport->config.config_desc.bDescriptorType);
-    printf("wTotalLength: 0x%04x        \r\n", hport->config.config_desc.wTotalLength);
-    printf("bNumInterfaces: 0x%02x      \r\n", hport->config.config_desc.bNumInterfaces);
-    printf("bConfigurationValue: 0x%02x \r\n", hport->config.config_desc.bConfigurationValue);
-    printf("iConfiguration: 0x%02x      \r\n", hport->config.config_desc.iConfiguration);
-    printf("bmAttributes: 0x%02x        \r\n", hport->config.config_desc.bmAttributes);
-    printf("bMaxPower: 0x%02x           \r\n", hport->config.config_desc.bMaxPower);
+    USB_LOG_RAW("Config Descriptor:\r\n");
+    USB_LOG_RAW("bLength: 0x%02x             \r\n", hport->config.config_desc.bLength);
+    USB_LOG_RAW("bDescriptorType: 0x%02x     \r\n", hport->config.config_desc.bDescriptorType);
+    USB_LOG_RAW("wTotalLength: 0x%04x        \r\n", hport->config.config_desc.wTotalLength);
+    USB_LOG_RAW("bNumInterfaces: 0x%02x      \r\n", hport->config.config_desc.bNumInterfaces);
+    USB_LOG_RAW("bConfigurationValue: 0x%02x \r\n", hport->config.config_desc.bConfigurationValue);
+    USB_LOG_RAW("iConfiguration: 0x%02x      \r\n", hport->config.config_desc.iConfiguration);
+    USB_LOG_RAW("bmAttributes: 0x%02x        \r\n", hport->config.config_desc.bmAttributes);
+    USB_LOG_RAW("bMaxPower: 0x%02x           \r\n", hport->config.config_desc.bMaxPower);
 
     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
-        printf("Interface Descriptor:\r\n");
-        printf("bLength: 0x%02x            \r\n", hport->config.intf[i].intf_desc.bLength);
-        printf("bDescriptorType: 0x%02x    \r\n", hport->config.intf[i].intf_desc.bDescriptorType);
-        printf("bInterfaceNumber: 0x%02x   \r\n", hport->config.intf[i].intf_desc.bInterfaceNumber);
-        printf("bAlternateSetting: 0x%02x  \r\n", hport->config.intf[i].intf_desc.bAlternateSetting);
-        printf("bNumEndpoints: 0x%02x      \r\n", hport->config.intf[i].intf_desc.bNumEndpoints);
-        printf("bInterfaceClass: 0x%02x    \r\n", hport->config.intf[i].intf_desc.bInterfaceClass);
-        printf("bInterfaceSubClass: 0x%02x \r\n", hport->config.intf[i].intf_desc.bInterfaceSubClass);
-        printf("bInterfaceProtocol: 0x%02x \r\n", hport->config.intf[i].intf_desc.bInterfaceProtocol);
-        printf("iInterface: 0x%02x         \r\n", hport->config.intf[i].intf_desc.iInterface);
+        USB_LOG_RAW("Interface Descriptor:\r\n");
+        USB_LOG_RAW("bLength: 0x%02x            \r\n", hport->config.intf[i].intf_desc.bLength);
+        USB_LOG_RAW("bDescriptorType: 0x%02x    \r\n", hport->config.intf[i].intf_desc.bDescriptorType);
+        USB_LOG_RAW("bInterfaceNumber: 0x%02x   \r\n", hport->config.intf[i].intf_desc.bInterfaceNumber);
+        USB_LOG_RAW("bAlternateSetting: 0x%02x  \r\n", hport->config.intf[i].intf_desc.bAlternateSetting);
+        USB_LOG_RAW("bNumEndpoints: 0x%02x      \r\n", hport->config.intf[i].intf_desc.bNumEndpoints);
+        USB_LOG_RAW("bInterfaceClass: 0x%02x    \r\n", hport->config.intf[i].intf_desc.bInterfaceClass);
+        USB_LOG_RAW("bInterfaceSubClass: 0x%02x \r\n", hport->config.intf[i].intf_desc.bInterfaceSubClass);
+        USB_LOG_RAW("bInterfaceProtocol: 0x%02x \r\n", hport->config.intf[i].intf_desc.bInterfaceProtocol);
+        USB_LOG_RAW("iInterface: 0x%02x         \r\n", hport->config.intf[i].intf_desc.iInterface);
 
         for (uint8_t j = 0; j < hport->config.intf[i].intf_desc.bNumEndpoints; j++) {
-            printf("Endpoint Descriptor:\r\n");
-            printf("bLength: 0x%02x          \r\n", hport->config.intf[i].ep[j].ep_desc.bLength);
-            printf("bDescriptorType: 0x%02x  \r\n", hport->config.intf[i].ep[j].ep_desc.bDescriptorType);
-            printf("bEndpointAddress: 0x%02x \r\n", hport->config.intf[i].ep[j].ep_desc.bEndpointAddress);
-            printf("bmAttributes: 0x%02x     \r\n", hport->config.intf[i].ep[j].ep_desc.bmAttributes);
-            printf("wMaxPacketSize: 0x%04x   \r\n", hport->config.intf[i].ep[j].ep_desc.wMaxPacketSize);
-            printf("bInterval: 0x%02x        \r\n", hport->config.intf[i].ep[j].ep_desc.bInterval);
+            USB_LOG_RAW("Endpoint Descriptor:\r\n");
+            USB_LOG_RAW("bLength: 0x%02x          \r\n", hport->config.intf[i].ep[j].ep_desc.bLength);
+            USB_LOG_RAW("bDescriptorType: 0x%02x  \r\n", hport->config.intf[i].ep[j].ep_desc.bDescriptorType);
+            USB_LOG_RAW("bEndpointAddress: 0x%02x \r\n", hport->config.intf[i].ep[j].ep_desc.bEndpointAddress);
+            USB_LOG_RAW("bmAttributes: 0x%02x     \r\n", hport->config.intf[i].ep[j].ep_desc.bmAttributes);
+            USB_LOG_RAW("wMaxPacketSize: 0x%04x   \r\n", hport->config.intf[i].ep[j].ep_desc.wMaxPacketSize);
+            USB_LOG_RAW("bInterval: 0x%02x        \r\n", hport->config.intf[i].ep[j].ep_desc.bInterval);
         }
     }
 }
@@ -846,20 +846,20 @@ int lsusb(int argc, char **argv)
     uint8_t port;
 
     if (argc < 2) {
-        printf("Usage: lsusb [options]...\r\n");
-        printf("List USB devices\r\n");
-        printf("  -v, --verbose\r\n");
-        printf("      Increase verbosity (show descriptors)\r\n");
-        printf("  -s [[bus]:[devnum]]\r\n");
-        printf("      Show only devices with specified device and/or bus numbers (in decimal)\r\n");
-        printf("  -d vendor:[product]\r\n");
-        printf("      Show only devices with the specified vendor and product ID numbers (in hexadecimal)\r\n");
-        printf("  -t, --tree\r\n");
-        printf("      Dump the physical USB device hierachy as a tree\r\n");
-        printf("  -V, --version\r\n");
-        printf("      Show version of program\r\n");
-        printf("  -h, --help\r\n");
-        printf("      Show usage and help\r\n");
+        USB_LOG_RAW("Usage: lsusb [options]...\r\n");
+        USB_LOG_RAW("List USB devices\r\n");
+        USB_LOG_RAW("  -v, --verbose\r\n");
+        USB_LOG_RAW("      Increase verbosity (show descriptors)\r\n");
+        USB_LOG_RAW("  -s [[bus]:[devnum]]\r\n");
+        USB_LOG_RAW("      Show only devices with specified device and/or bus numbers (in decimal)\r\n");
+        USB_LOG_RAW("  -d vendor:[product]\r\n");
+        USB_LOG_RAW("      Show only devices with the specified vendor and product ID numbers (in hexadecimal)\r\n");
+        USB_LOG_RAW("  -t, --tree\r\n");
+        USB_LOG_RAW("      Dump the physical USB device hierachy as a tree\r\n");
+        USB_LOG_RAW("  -V, --version\r\n");
+        USB_LOG_RAW("      Show version of program\r\n");
+        USB_LOG_RAW("  -h, --help\r\n");
+        USB_LOG_RAW("      Show usage and help\r\n");
         return 0;
     }
 
@@ -870,11 +870,11 @@ int lsusb(int argc, char **argv)
     if (strcmp(argv[1], "-t") == 0) {
         for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             if (usbh_core_cfg.rhport[port - 1].hport.connected) {
-                printf("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
+                USB_LOG_RAW("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
 
                 for (uint8_t i = 0; i < usbh_core_cfg.rhport[port - 1].hport.config.config_desc.bNumInterfaces; i++) {
                     if (usbh_core_cfg.rhport[port - 1].hport.config.intf[i].class_driver->driver_name) {
-                        printf("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n", usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
+                        USB_LOG_RAW("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n", usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
                                i, usbh_core_cfg.rhport[port - 1].hport.config.intf[i].class_driver->driver_name);
                     }
                 }
@@ -887,11 +887,11 @@ int lsusb(int argc, char **argv)
 
             for (port = USBH_HUB_PORT_START_INDEX; port <= hub_class->nports; port++) {
                 if (hub_class->child[port - 1].connected) {
-                    printf("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
+                    USB_LOG_RAW("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
 
                     for (uint8_t i = 0; i < hub_class->child[port - 1].config.config_desc.bNumInterfaces; i++) {
                         if (hub_class->child[port - 1].config.intf[i].class_driver->driver_name) {
-                            printf("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n", hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
+                            USB_LOG_RAW("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n", hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
                                    i, hub_class->child[port - 1].config.intf[i].class_driver->driver_name);
                         }
                     }
@@ -902,7 +902,7 @@ int lsusb(int argc, char **argv)
     } else if (strcmp(argv[1], "-v") == 0) {
         for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             if (usbh_core_cfg.rhport[port - 1].hport.connected) {
-                printf("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
+                USB_LOG_RAW("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
                        usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
                 usbh_print_hubport_info(&usbh_core_cfg.rhport[port - 1].hport);
             }
@@ -914,7 +914,7 @@ int lsusb(int argc, char **argv)
 
             for (port = USBH_HUB_PORT_START_INDEX; port <= hub_class->nports; port++) {
                 if (hub_class->child[port - 1].connected) {
-                    printf("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
+                    USB_LOG_RAW("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
                            hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
                     usbh_print_hubport_info(&hub_class->child[port - 1]);
                 }
