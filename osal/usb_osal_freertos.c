@@ -21,6 +21,7 @@
  *
  */
 #include "usb_osal.h"
+#include "usb_errno.h"
 #include <FreeRTOS.h>
 #include "semphr.h"
 #include "timers.h"
@@ -56,7 +57,7 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -1;
+    return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -80,7 +81,7 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
         }
     }
 
-    return (ret == pdPASS) ? 0 : -1;
+    return (ret == pdPASS) ? 0 : -EINVAL;
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)
@@ -95,12 +96,12 @@ void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
 
 int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 {
-    return (xSemaphoreTake((SemaphoreHandle_t)mutex, portMAX_DELAY) == pdPASS) ? 0 : -1;
+    return (xSemaphoreTake((SemaphoreHandle_t)mutex, portMAX_DELAY) == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
-    return (xSemaphoreGive((SemaphoreHandle_t)mutex) == pdPASS) ? 0 : -1;
+    return (xSemaphoreGive((SemaphoreHandle_t)mutex) == pdPASS) ? 0 : -EINVAL;
 }
 
 usb_osal_event_t usb_osal_event_create(void)
@@ -128,7 +129,7 @@ int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
     if (ret == pdPASS) {
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
-    return (ret == pdPASS) ? 0 : -1;
+    return (ret == pdPASS) ? 0 : -EINVAL;
 }
 
 size_t usb_osal_enter_critical_section(void)

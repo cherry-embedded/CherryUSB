@@ -21,7 +21,9 @@
  *
  */
 #include "usb_osal.h"
+#include "usb_errno.h"
 #include <rtthread.h>
+#include <rthw.h>
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
@@ -53,7 +55,19 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    return (int)rt_sem_take((rt_sem_t)sem, rt_tick_from_millisecond(timeout));
+    int ret = 0;
+    rt_err_t result = RT_EOK;
+
+    result = rt_sem_take((rt_sem_t)sem, rt_tick_from_millisecond(timeout));
+    if (result == RT_ETIMEOUT) {
+        ret = -ETIMEDOUT;
+    } else if (result == RT_ERROR) {
+        ret = -EINVAL;
+    } else {
+        ret = 0;
+    }
+
+    return (int)ret;
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -96,9 +110,13 @@ int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
     int ret = 0;
     rt_err_t result = RT_EOK;
 
-    result = rt_event_recv((rt_event_t)event, set, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, recved);
-    if (result != RT_EOK) {
-        ret = -1;
+    result = rt_event_recv((rt_event_t)event, set, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, (rt_uint32_t *)recved);
+    if (result == RT_ETIMEOUT) {
+        ret = -ETIMEDOUT;
+    } else if (result == RT_ERROR) {
+        ret = -EINVAL;
+    } else {
+        ret = 0;
     }
 
     return ret;
@@ -111,7 +129,7 @@ int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
 
     result = rt_event_send((rt_event_t)event, set);
     if (result != RT_EOK) {
-        ret = -1;
+        ret = -EINVAL;
     }
 
     return ret;
