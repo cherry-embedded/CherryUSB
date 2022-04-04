@@ -34,9 +34,6 @@ struct usbh_hid {
     usbh_epinfo_t intout; /* INTR OUT endpoint */
 };
 
-extern const struct usbh_class_info hid_keyboard_class_info;
-extern const struct usbh_class_info hid_mouse_class_info;
-
 #ifdef __cplusplus
 extern "C" {
 #endif

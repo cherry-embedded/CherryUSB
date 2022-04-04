@@ -21,12 +21,26 @@
  *
  */
 #include "usbh_core.h"
-#include "usbh_cdc_acm.h"
-#include "usbh_hid.h"
-#include "usbh_msc.h"
 
 struct usbh_class_info *usbh_class_info_table_begin = NULL;
 struct usbh_class_info *usbh_class_info_table_end = NULL;
+
+#ifdef CONFIG_USBHOST_CLASS_DRIVER_EXPORT_DISBALE
+extern const struct usbh_class_info cdc_acm_class_info;
+extern const struct usbh_class_info hid_keyboard_class_info;
+extern const struct usbh_class_info hid_mouse_class_info;
+extern const struct usbh_class_info msc_class_info;
+extern const struct usbh_class_info hub_class_info;
+const struct usbh_class_info *class_info_table[] = {
+    &cdc_acm_class_info,
+    &hid_keyboard_class_info,
+    &hid_mouse_class_info,
+    &msc_class_info,
+#ifdef CONFIG_USBHOST_HUB
+    &hub_class_info,
+#endif
+};
+#endif
 
 static const char *speed_table[] = { "error speed", "low speed", "full speed", "high speed" };
 
@@ -813,7 +827,8 @@ int usbh_initialize(void)
 
     memset(&usbh_core_cfg, 0, sizeof(struct usbh_core_priv));
 
-#ifdef __ARMCC_VERSION  /* ARM C Compiler */
+#ifndef CONFIG_USBHOST_CLASS_DRIVER_EXPORT_DISBALE
+#ifdef __ARMCC_VERSION /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
     extern const int usbh_class_info$$Limit;
     usbh_class_info_table_begin = (struct usbh_class_info *)&usbh_class_info$$Base;
@@ -824,6 +839,11 @@ int usbh_initialize(void)
     usbh_class_info_table_begin = (struct usbh_class_info *)&_usbh_class_info_start;
     usbh_class_info_table_end = (struct usbh_class_info *)&_usbh_class_info_end;
 #endif
+#else
+    usbh_class_info_table_begin = (struct usbh_class_info *)class_info_table[0];
+    usbh_class_info_table_end = (struct usbh_class_info *)(class_info_table[0] + (sizeof(class_info_table) / sizeof(class_info_table[0])));
+#endif
+
 #ifdef CONFIG_USBHOST_HUB
     usbh_workq_initialize();
 #endif
@@ -988,14 +1008,6 @@ void *usbh_find_class_instance(const char *devname)
 #endif
     return NULL;
 }
-
-const struct usbh_class_info *class_info_table[] = {
-    &cdc_acm_class_info,
-    &hid_keyboard_class_info,
-    &hid_mouse_class_info,
-    &msc_class_info,
-    &hub_class_info,
-};
 
 static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subclass, uint8_t protocol, uint16_t vid, uint16_t pid)
 {

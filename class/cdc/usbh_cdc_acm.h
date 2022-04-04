@@ -41,8 +41,6 @@ struct usbh_cdc_acm {
 #endif
 };
 
-extern const struct usbh_class_info cdc_acm_class_info;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
