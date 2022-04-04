@@ -9,13 +9,14 @@ CherryUSB 使用指南
 CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 USB 主从协议栈。
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :caption: 快速上手
 
    quick_start/bl702
    quick_start/stm32f429
    quick_start/es32f369
    quick_start/rt-thread/rt-thread_zh
+   quick_start/other_chip
 
 .. toctree::
    :maxdepth: 1
