@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_ASSERT,ES32F36xx,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Drivers\CMSIS\Include;..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM3</IncludePath>
+              <IncludePath>..\Drivers\CMSIS\Include;..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\class\wireless;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM3</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -493,6 +493,11 @@
               <FileName>usbh_hub.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\hub\usbh_hub.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbh_rndis.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\wireless\usbh_rndis.c</FilePath>
             </File>
             <File>
               <FileName>usb_osal_freertos.c</FileName>
