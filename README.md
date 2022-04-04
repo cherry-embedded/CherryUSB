@@ -22,9 +22,11 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 ├── core
 ├── demo
 │   ├── bouffalolab
-│   └── stm32
-│   └── mm32
 │   └── ch32
+│   └── es32
+│   └── mm32
+│   └── nuvoton
+│   └── stm32
 ├── docs
 ├── osal
 ├── packet capture
@@ -35,8 +37,9 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
     ├── ehci
     ├── fsdev
     ├── mm32
-    ├── synopsys
     ├── musb
+    ├── nuvoton
+    ├── synopsys
     └── template
 ```
 
@@ -45,7 +48,7 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 |class          |  usb class driver           |
 |common         |  usb spec macros and utils  |
 |core           |  usb core implementation  |
-|demo           |  different chip demo     |
+|demo           |  different chips demo     |
 |osal           |  os wrapper              |
 |docs           |  doc for guiding         |
 |packet capture |  packet capture file     |
@@ -59,18 +62,19 @@ CherryUSB Device Stack has the following functions：
 
 - Support USB2.0 full and high speed
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
-- Support Compound and Composite Device
+- Support Composite Device
 - Support Communication Device Class (CDC)
 - Support Human Interface Device (HID)
 - Support Custom human Interface Device (HID)
 - Support Mass Storage Class (MSC)
-- Support USB VIDEO CLASS (UVC)
-- Support USB AUDIO CLASS (UAC)
+- Support USB VIDEO CLASS (UVC1.0、UVC1.5)
+- Support USB AUDIO CLASS (UAC1.0、UAC2.0)
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
 - Support Test and Measurement CLASS (TMC)
+- Support Remote NDIS (RNDIS)
+- Support WINUSB1.0、WINUSB2.0(with BOS)
 - Support Vendor class
-- Support WINUSB1.0、WINUSB2.0
 
 CherryUSB Device Stack resource usage：
 
@@ -91,13 +95,13 @@ CherryUSB Host Stack has the following functions：
 
 - Automatic loading of supported Class drivers
 - Support blocking transfers and asynchronous transfers
-- Support Compound and Composite Device
+- Support Composite Device
 - Multi-level HUB support, expandable up to 7 levels
 - Support Communication Device Class (CDC)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
+- Support Remote NDIS (RNDIS)
 - Support Vendor class
-- Support Andriod AOA Communication
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 

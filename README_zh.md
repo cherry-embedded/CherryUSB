@@ -22,9 +22,11 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 ├── core
 ├── demo
 │   ├── bouffalolab
-│   └── stm32
-│   └── mm32
 │   └── ch32
+│   └── es32
+│   └── mm32
+│   └── nuvoton
+│   └── stm32
 ├── docs
 ├── osal
 ├── packet capture
@@ -35,8 +37,9 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
     ├── ehci
     ├── fsdev
     ├── mm32
-    ├── synopsys
     ├── musb
+    ├── nuvoton
+    ├── synopsys
     └── template
 ```
 
@@ -59,18 +62,19 @@ CherryUSB Device 协议栈当前实现以下功能：
 
 - 支持 USB2.0 全速和高速设备
 - 支持端点中断注册功能，porting 给用户自己处理中断里的数据
-- 支持复合设备和组合设备
+- 支持复合设备
 - 支持 Communication Device Class (CDC)
 - 支持 Human Interface Device (HID)
 - 支持 Custom human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
-- 支持 USB VIDEO CLASS (UVC)
-- 支持 USB AUDIO CLASS (UAC)
+- 支持 USB VIDEO CLASS (UVC1.0、UVC1.5)
+- 支持 USB AUDIO CLASS (UAC1.0、UAC2.0)
 - 支持 Device Firmware Upgrade CLASS (DFU)
 - 支持 USB MIDI CLASS (MIDI)
 - 支持 Test and Measurement CLASS (TMC)
+- 支持 Remote NDIS (RNDIS)
+- 支持 WINUSB1.0、WINUSB2.0(带 BOS )
 - 支持 Vendor 类 class
-- 支持 WINUSB1.0、WINUSB2.0
 
 CherryUSB Device 协议栈资源占用说明：
 
@@ -91,12 +95,13 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 - 自动加载支持的Class 驱动
 - 支持阻塞式传输和异步传输
-- 支持复合设备和组合设备
+- 支持复合设备
 - 支持多级 HUB,最高可拓展到 7 级
 - 支持 Communication Device Class (CDC)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
-- 支持安卓 AOA Communication
+- 支持 Remote NDIS (RNDIS)
+- 支持 Vendor 类 class
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
