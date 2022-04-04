@@ -36,7 +36,7 @@ static uint32_t g_devinuse = 0;
  *
  ****************************************************************************/
 
-static int usbh_msc_devno_alloc(struct usbh_msc *priv)
+static int usbh_msc_devno_alloc(struct usbh_msc *msc_class)
 {
     size_t flags;
     int devno;
@@ -46,7 +46,7 @@ static int usbh_msc_devno_alloc(struct usbh_msc *priv)
         uint32_t bitno = 1 << devno;
         if ((g_devinuse & bitno) == 0) {
             g_devinuse |= bitno;
-            priv->sdchar = 'a' + devno;
+            msc_class->sdchar = 'a' + devno;
             usb_osal_leave_critical_section(flags);
             return 0;
         }
@@ -64,9 +64,9 @@ static int usbh_msc_devno_alloc(struct usbh_msc *priv)
  *
  ****************************************************************************/
 
-static void usbh_msc_devno_free(struct usbh_msc *priv)
+static void usbh_msc_devno_free(struct usbh_msc *msc_class)
 {
-    int devno = priv->sdchar - 'a';
+    int devno = msc_class->sdchar - 'a';
 
     if (devno >= 0 && devno < 26) {
         size_t flags = usb_osal_enter_critical_section();
@@ -75,24 +75,18 @@ static void usbh_msc_devno_free(struct usbh_msc *priv)
     }
 }
 
-static int usbh_msc_get_maxlun(struct usbh_hubport *hport, uint8_t intf, uint8_t *buffer)
+static int usbh_msc_get_maxlun(struct usbh_msc *msc_class, uint8_t *buffer)
 {
-    struct usb_setup_packet *setup;
-    struct usbh_msc *msc_class = (struct usbh_msc *)hport->config.intf[intf].priv;
-
-    setup = hport->setup;
-
-    if (msc_class->intf != intf) {
-        return -1;
-    }
+    struct usb_setup_packet *setup = msc_class->hport->setup;
+    int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = MSC_REQUEST_GET_MAX_LUN;
     setup->wValue = 0;
-    setup->wIndex = intf;
+    setup->wIndex = msc_class->intf;
     setup->wLength = 1;
 
-    return usbh_control_transfer(hport->ep0, setup, buffer);
+    return usbh_control_transfer(msc_class->hport->ep0, setup, buffer);
 }
 
 static void usbh_msc_cbw_dump(struct CBW *cbw)
@@ -325,7 +319,7 @@ int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, cons
     return nbytes < 0 ? (int)nbytes : 0;
 }
 
-int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
@@ -339,7 +333,8 @@ int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 
     memset(msc_class, 0, sizeof(struct usbh_msc));
     msc_class->hport = hport;
-
+    msc_class->intf = intf;
+    
     usbh_msc_devno_alloc(msc_class);
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
 
@@ -351,7 +346,7 @@ int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    ret = usbh_msc_get_maxlun(hport, intf, msc_class->tx_buffer);
+    ret = usbh_msc_get_maxlun(msc_class, msc_class->tx_buffer);
     if (ret < 0) {
         return ret;
     }
@@ -387,7 +382,7 @@ int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 

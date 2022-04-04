@@ -45,6 +45,10 @@ struct usbh_cdc_acm {
 extern "C" {
 #endif
 
+int usbh_cdc_acm_set_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_line_coding *line_coding);
+int usbh_cdc_acm_get_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_line_coding *line_coding);
+int usbh_cdc_acm_set_line_state(struct usbh_cdc_acm *cdc_acm_class, bool dtr, bool rts);
+
 #ifdef __cplusplus
 }
 #endif

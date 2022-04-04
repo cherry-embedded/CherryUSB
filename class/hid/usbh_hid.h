@@ -38,6 +38,9 @@ struct usbh_hid {
 extern "C" {
 #endif
 
+int usbh_hid_set_idle(struct usbh_hid *hid_class, uint8_t report_id, uint8_t duration);
+int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer);
+
 #ifdef __cplusplus
 }
 #endif

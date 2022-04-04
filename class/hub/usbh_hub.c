@@ -37,14 +37,14 @@ extern void usbh_hport_deactivate(struct usbh_hubport *hport);
 
 static void usbh_external_hub_callback(void *arg, int nbytes);
 
-static inline void usbh_hub_register(struct usbh_hub *hub)
+static inline void usbh_hub_register(struct usbh_hub *hub_class)
 {
-    usb_slist_add_tail(&hub_class_head, &hub->list);
+    usb_slist_add_tail(&hub_class_head, &hub_class->list);
 }
 
-static inline void usbh_hub_unregister(struct usbh_hub *hub)
+static inline void usbh_hub_unregister(struct usbh_hub *hub_class)
 {
-    usb_slist_remove(&hub_class_head, &hub->list);
+    usb_slist_remove(&hub_class_head, &hub_class->list);
 }
 
 /****************************************************************************
@@ -55,7 +55,7 @@ static inline void usbh_hub_unregister(struct usbh_hub *hub)
  *
  ****************************************************************************/
 
-static int usbh_hub_devno_alloc(struct usbh_hub *hub)
+static int usbh_hub_devno_alloc(struct usbh_hub *hub_class)
 {
     size_t flags;
     int devno;
@@ -65,7 +65,7 @@ static int usbh_hub_devno_alloc(struct usbh_hub *hub)
         uint32_t bitno = 1 << devno;
         if ((g_devinuse & bitno) == 0) {
             g_devinuse |= bitno;
-            hub->index = devno;
+            hub_class->index = devno;
             usb_osal_leave_critical_section(flags);
             return 0;
         }
@@ -83,9 +83,9 @@ static int usbh_hub_devno_alloc(struct usbh_hub *hub)
  *
  ****************************************************************************/
 
-static void usbh_hub_devno_free(struct usbh_hub *hub)
+static void usbh_hub_devno_free(struct usbh_hub *hub_class)
 {
-    int devno = hub->index;
+    int devno = hub_class->index;
 
     if (devno >= 2 && devno < 32) {
         size_t flags = usb_osal_enter_critical_section();
@@ -94,11 +94,11 @@ static void usbh_hub_devno_free(struct usbh_hub *hub)
     }
 }
 
-int usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
+static int usbh_hub_get_hub_descriptor(struct usbh_hub *hub_class, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->parent->setup;
+    setup = hub_class->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
@@ -106,14 +106,14 @@ int usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
     setup->wIndex = 0;
     setup->wLength = USB_SIZEOF_HUB_DESC;
 
-    return usbh_control_transfer(hub->parent->ep0, setup, buffer);
+    return usbh_control_transfer(hub_class->parent->ep0, setup, buffer);
 }
 
-int usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
+static int usbh_hub_get_status(struct usbh_hub *hub_class, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->parent->setup;
+    setup = hub_class->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = HUB_REQUEST_GET_STATUS;
@@ -121,14 +121,14 @@ int usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
     setup->wIndex = 0;
     setup->wLength = 2;
 
-    return usbh_control_transfer(hub->parent->ep0, setup, buffer);
+    return usbh_control_transfer(hub_class->parent->ep0, setup, buffer);
 }
 
-int usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct hub_port_status *port_status)
+static int usbh_hub_get_portstatus(struct usbh_hub *hub_class, uint8_t port, struct hub_port_status *port_status)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->parent->setup;
+    setup = hub_class->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_GET_STATUS;
@@ -136,14 +136,14 @@ int usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct hub_port_
     setup->wIndex = port;
     setup->wLength = 4;
 
-    return usbh_control_transfer(hub->parent->ep0, setup, (uint8_t *)port_status);
+    return usbh_control_transfer(hub_class->parent->ep0, setup, (uint8_t *)port_status);
 }
 
-int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
+static int usbh_hub_set_feature(struct usbh_hub *hub_class, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->parent->setup;
+    setup = hub_class->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_SET_FEATURE;
@@ -151,14 +151,14 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
     setup->wIndex = port;
     setup->wLength = 0;
 
-    return usbh_control_transfer(hub->parent->ep0, setup, NULL);
+    return usbh_control_transfer(hub_class->parent->ep0, setup, NULL);
 }
 
-int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
+static int usbh_hub_clear_feature(struct usbh_hub *hub_class, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet *setup;
 
-    setup = hub->parent->setup;
+    setup = hub_class->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_CLEAR_FEATURE;
@@ -166,7 +166,7 @@ int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
     setup->wIndex = port;
     setup->wLength = 0;
 
-    return usbh_control_transfer(hub->parent->ep0, setup, NULL);
+    return usbh_control_transfer(hub_class->parent->ep0, setup, NULL);
 }
 
 static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length)
@@ -191,7 +191,7 @@ static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length
     return 0;
 }
 
-int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
@@ -204,6 +204,8 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(hub_class, 0, sizeof(struct usbh_hub));
+    hub_class->dev_addr = hport->dev_addr;
+    hub_class->parent = hport;
 
     hub_class->port_status = usb_iomalloc(sizeof(struct hub_port_status));
     if (hub_class->port_status == NULL) {
@@ -215,8 +217,6 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hub_class->index);
 
     hport->config.intf[intf].priv = hub_class;
-    hub_class->dev_addr = hport->dev_addr;
-    hub_class->parent = hport;
 
     uint8_t *hub_desc_buffer = usb_iomalloc(32);
 
@@ -273,7 +273,7 @@ int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     return 0;
 }
 
-int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_hubport *child;
     int ret = 0;
