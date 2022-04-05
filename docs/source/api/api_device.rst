@@ -1,6 +1,14 @@
 设备协议栈
 =========================
 
+关于设备协议栈 API 的实现过程，有兴趣的可以看我的 B 站视频。设备协议栈的 API 使用了大量的链表，如何使用相关 API,参考下面一张图，并且总结如下：
+
+- 有多少个 class 就调用多少次 `usbd_class_register`
+- 每个 class 有多少个接口就调用多少次 `usbd_class_add_interface`，已经支持的 class 接口就调用对应的 `usbd_xxx_class_add_interface`
+- 每个接口有多少个端点就调用多少次 `usbd_interface_add_endpoint`
+
+.. figure:: img/api_device1.png
+
 CORE
 -----------------
 
@@ -19,7 +27,9 @@ CORE
 
 - **list** 端点的链表节点
 - **ep_addr** 端点地址（带方向）
-- **ep_cb** 端点中断回调函数
+- **ep_cb** 端点中断回调函数。
+
+.. note:: 注册 IN 方向则表示发送完成后触发，注册 OUT 中断则表示有数据就触发。
 
 接口结构体
 """"""""""""""""""""""""""""""""""""
@@ -192,7 +202,7 @@ usbd_class_add_interface
 - **devclass**  USB 设备类的句柄
 - **intf**   USB 设备接口的句柄
 
-**usbd_interface_add_endpoint**
+usbd_interface_add_endpoint
 """"""""""""""""""""""""""""""""""""
 
 ``usbd_interface_add_endpoint`` 用来给 USB 接口增加端点，并将端点信息挂载在接口的链表上。
@@ -205,7 +215,16 @@ usbd_class_add_interface
 - **intf**  USB 设备接口的句柄
 - **ep**    USB 设备端点的句柄
 
-**usb_device_is_configured**
+usbd_initialize
+""""""""""""""""""""""""""""""""""""
+
+``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。
+
+.. code-block:: C
+
+    int usbd_initialize(void);
+
+usb_device_is_configured
 """"""""""""""""""""""""""""""""""""
 
 ``usb_device_is_configured`` 用来检查 USB 设备是否被配置（枚举）。
@@ -424,16 +443,27 @@ usbd_audio_set_volume
 
 - **vol** 音量，从 0-100
 
-usbd_audio_set_interface_callback
+usbd_audio_open
 """"""""""""""""""""""""""""""""""""
 
-``usbd_audio_set_interface_callback``  用来开关音频数据传输。
+``usbd_audio_open``  用来开启音频数据传输。
 
 .. code-block:: C
 
-    void usbd_audio_set_interface_callback(uint8_t value);
+    void usbd_audio_open(uint8_t intf);
 
-- **value** 为1 表示开启 stream 传输，为0 相反
+- **intf** 开启的接口号
+
+usbd_audio_close
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_close``  用来关闭音频数据传输。
+
+.. code-block:: C
+
+    void usbd_audio_close(uint8_t intf);
+
+- **intf** 关闭的接口号
 
 UVC
 -----------------
@@ -455,13 +485,35 @@ usbd_video_add_interface
 usbd_video_probe_and_commit_controls_init
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-``usbd_video_probe_and_commit_controls_init``  用来开关视频数据传输。
+``usbd_video_probe_and_commit_controls_init``  初始化视频传输每帧最大传输长度。
 
 .. code-block:: C
 
     void usbd_video_probe_and_commit_controls_init(uint32_t dwFrameInterval, uint32_t dwMaxVideoFrameSize, uint32_t dwMaxPayloadTransferSize);
 
 - **value** 为1 表示开启 stream 传输，为0 相反
+
+usbd_video_open
+""""""""""""""""""""""""""""""""""""
+
+``usbd_video_open``  用来开启视频数据传输。
+
+.. code-block:: C
+
+    void usbd_video_open(uint8_t intf);
+
+- **intf** 开启的接口号
+
+usbd_video_close
+""""""""""""""""""""""""""""""""""""
+
+``usbd_video_close``  用来关闭视频数据传输。
+
+.. code-block:: C
+
+    void usbd_video_open(uint8_t intf);
+
+- **intf** 关闭的接口号
 
 usbd_video_mjpeg_payload_fill
 """"""""""""""""""""""""""""""""""""

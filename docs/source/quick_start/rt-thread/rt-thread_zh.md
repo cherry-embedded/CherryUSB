@@ -139,9 +139,9 @@ int main(void)
 ![CDC Device Demo](img/rtt_cdc_demo.png)
 - host demo
 
-![USB Host Demo1](img/1.png)
-![USB Host Demo2](img/2.png)
-![USB Host Demo3](img/3.png)
+![USB Host Demo1](img/demo1.png)
+![USB Host Demo2](img/demo2.png)
+![USB Host Demo3](img/demo3.png)
 
 ### 视频教程
 
