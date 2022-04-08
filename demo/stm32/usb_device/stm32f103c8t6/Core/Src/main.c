@@ -76,7 +76,7 @@ void usb_dc_low_level_init(void)
     HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
 
 }
-extern void usb_dc_init(void);
+
 /* USER CODE END 0 */
 
 /**
