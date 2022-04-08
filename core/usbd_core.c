@@ -39,9 +39,8 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-#define USB_REQUEST_BUFFER_SIZE 256
-#define USB_EP_OUT_NUM          8
-#define USB_EP_IN_NUM           8
+#define USB_EP_OUT_NUM 8
+#define USB_EP_IN_NUM  8
 
 struct usbd_core_cfg_priv {
     /** Setup packet */
@@ -57,7 +56,7 @@ struct usbd_core_cfg_priv {
     /** Pointer to registered descriptors */
     const uint8_t *descriptors;
     /* Buffer used for storing standard, class and vendor request data */
-    USB_MEM_ALIGN32 uint8_t req_data[USB_REQUEST_BUFFER_SIZE];
+    USB_MEM_ALIGN32 uint8_t req_data[CONFIG_USBDEV_REQUEST_BUFFER_LEN];
 
 #if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_ARR_SEARCH
     usbd_endpoint_callback in_ep_cb[USB_EP_IN_NUM];
@@ -69,7 +68,6 @@ struct usbd_core_cfg_priv {
     uint8_t configuration;
     /** Remote wakeup feature status */
     uint16_t remote_wakeup;
-    uint8_t reserved;
 } usbd_core_cfg;
 
 static usb_slist_t usbd_class_head = USB_SLIST_OBJECT_INIT(usbd_class_head);
@@ -77,6 +75,10 @@ static struct usb_msosv1_descriptor *msosv1_desc;
 static struct usb_msosv2_descriptor *msosv2_desc;
 static struct usb_bos_descriptor *bos_desc;
 
+#if CONFIG_USBDEV_TEST_MODE
+void usbd_set_feature(uint16_t index, uint16_t value);
+void usbd_clear_feature(uint16_t index, uint16_t value);
+#endif
 /**
  * @brief print the contents of a setup packet
  *
@@ -203,7 +205,6 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
                  ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
     usbd_ep_open(&ep_cfg);
-    usbd_core_cfg.configured = true;
 
     return true;
 }
@@ -470,7 +471,9 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
 static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint16_t value = setup->wValue;
-    // uint16_t index = setup->wIndex;
+#if CONFIG_USBDEV_TEST_MODE
+    uint16_t index = setup->wIndex;
+#endif
     bool ret = true;
 
     switch (setup->bRequest) {
@@ -485,28 +488,26 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
 
         case USB_REQUEST_CLEAR_FEATURE:
             USB_LOG_DBG("REQ_CLEAR_FEATURE\r\n");
-            ret = false;
-
+#if CONFIG_USBDEV_TEST_MODE
+            /* process for feature */
+            usbd_clear_feature(index, value);
+#endif
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
                 usbd_core_cfg.remote_wakeup = 0;
                 usbd_event_notify_handler(USBD_EVENT_CLEAR_REMOTE_WAKEUP, NULL);
-                ret = true;
             }
 
             break;
 
         case USB_REQUEST_SET_FEATURE:
             USB_LOG_DBG("REQ_SET_FEATURE\r\n");
-            ret = false;
-
+#if CONFIG_USBDEV_TEST_MODE
+            /* process for feature */
+            usbd_set_feature(index, value);
+#endif
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
                 usbd_core_cfg.remote_wakeup = 1;
                 usbd_event_notify_handler(USBD_EVENT_SET_REMOTE_WAKEUP, NULL);
-                ret = true;
-            }
-
-            if (value == USB_FEATURE_TEST_MODE) {
-                /* put TEST_MODE code here */
             }
 
             break;
@@ -545,6 +546,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
                  * update current configuration
                  */
                 usbd_core_cfg.configuration = value;
+                usbd_core_cfg.configured = true;
                 usbd_event_notify_handler(USBD_EVENT_CONFIGURED, NULL);
             }
 
@@ -604,7 +606,7 @@ static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
              * support alternative interfaces handles GET_INTERFACE
              * in custom_handler.
              */
-            *data = (uint8_t *)&usbd_core_cfg.reserved;
+            (*data)[0] = 0;
 
             *len = 1;
             break;
@@ -672,6 +674,7 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
                  */
                 if (((ep & 0x7f) == 0) || is_device_configured()) {
                     USB_LOG_ERR("ep:%x clear halt\r\n", ep);
+
                     usbd_ep_clear_stall(ep);
                     usbd_event_notify_handler(USBD_EVENT_CLEAR_HALT, NULL);
                     break;
@@ -693,6 +696,7 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
                 if (((ep & 0x7f) == 0) || is_device_configured()) {
                     /* set HALT by stalling */
                     USB_LOG_ERR("ep:%x set halt\r\n", ep);
+
                     usbd_ep_set_stall(ep);
                     usbd_event_notify_handler(USBD_EVENT_SET_HALT, NULL);
                     break;
@@ -778,22 +782,33 @@ static int usbd_standard_request_handler(struct usb_setup_packet *setup, uint8_t
 static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("bRequest 0x%02x, wIndex 0x%04x\r\n", setup->bRequest, setup->wIndex);
-
-    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_RECIPIENT_INTERFACE) {
-        return -1;
-    }
-
     usb_slist_t *i, *j;
-    usb_slist_for_each(i, &usbd_class_head)
-    {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
-
-        usb_slist_for_each(j, &devclass->intf_list)
+    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_INTERFACE) {
+        usb_slist_for_each(i, &usbd_class_head)
         {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
+            usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-            if (intf->class_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
-                return intf->class_handler(setup, data, len);
+            usb_slist_for_each(j, &devclass->intf_list)
+            {
+                usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
+
+                if (intf->class_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
+                    return intf->class_handler(setup, data, len);
+                }
+            }
+        }
+    } else if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_ENDPOINT) {
+        usb_slist_for_each(i, &usbd_class_head)
+        {
+            usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+
+            usb_slist_for_each(j, &devclass->intf_list)
+            {
+                usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
+
+                if (intf->custom_handler && (intf->intf_num == ((setup->wIndex >> 8) & 0xFF))) {
+                    return intf->custom_handler(setup, data, len);
+                }
             }
         }
     }
@@ -935,19 +950,19 @@ static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t *
 
     if (type == USB_REQUEST_STANDARD) {
         if (usbd_standard_request_handler(setup, data, len) < 0) {
-            USB_LOG_ERR("Handler Error %d\r\n", type);
+            USB_LOG_ERR("standard request error\r\n");
             usbd_print_setup(setup);
             return false;
         }
     } else if (type == USB_REQUEST_CLASS) {
         if (usbd_class_request_handler(setup, data, len) < 0) {
-            USB_LOG_ERR("Handler Error %d\r\n", type);
+            USB_LOG_ERR("class request error\r\n");
             usbd_print_setup(setup);
             return false;
         }
     } else if (type == USB_REQUEST_VENDOR) {
         if (usbd_vendor_request_handler(setup, data, len) < 0) {
-            USB_LOG_ERR("Handler Error %d\r\n", type);
+            USB_LOG_ERR("vendor request error\r\n");
             usbd_print_setup(setup);
             return false;
         }
@@ -1013,7 +1028,7 @@ static void usbd_ep0_setup_handler(void)
 
     //usbd_print_setup(setup);
 
-    if (setup->wLength > USB_REQUEST_BUFFER_SIZE) {
+    if (setup->wLength > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
         if ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT) {
             USB_LOG_ERR("Request buffer too small\r\n");
             usbd_ep_set_stall(USB_CONTROL_IN_EP0);
@@ -1021,7 +1036,7 @@ static void usbd_ep0_setup_handler(void)
         }
     }
 
-    // usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
+    usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
     usbd_core_cfg.ep0_data_buf_residue = setup->wLength;
     usbd_core_cfg.ep0_data_buf_len = setup->wLength;
     usbd_core_cfg.zlp_flag = false;
@@ -1067,8 +1082,6 @@ static void usbd_ep0_out_handler(void)
         return;
     }
 
-    usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
-
     /* OUT transfer, data packets */
     if (usbd_ep_read(USB_CONTROL_OUT_EP0,
                      usbd_core_cfg.ep0_data_buf,
@@ -1094,7 +1107,6 @@ static void usbd_ep0_out_handler(void)
         /*Send status to host*/
         usbd_send_to_host(setup->wLength);
     } else {
-        USB_LOG_ERR("ep0_data_buf_residue is not zero\r\n");
     }
 }
 
@@ -1303,3 +1315,13 @@ int usbd_initialize(void)
     usb_dc_init();
     return 0;
 }
+
+#if CONFIG_USBDEV_TEST_MODE
+__WEAK void usbd_set_feature(uint16_t index, uint16_t value)
+{
+}
+
+__WEAK void usbd_clear_feature(uint16_t index, uint16_t value)
+{
+}
+#endif

@@ -29,6 +29,7 @@ extern "C" {
 #include "usb_util.h"
 #include "usb_def.h"
 #include "usb_dc.h"
+#include "usb_config.h"
 
 enum usbd_event_type {
     /** USB error reported by the controller */
@@ -130,7 +131,6 @@ void usbd_class_register(usbd_class_t *devclass);
 void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep);
 bool usb_device_is_configured(void);
-
 int usbd_initialize(void);
 
 #ifdef __cplusplus
