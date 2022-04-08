@@ -97,15 +97,15 @@ int usb_dc_detach(void);
  */
 int usbd_set_address(const uint8_t addr);
 
-/*
- * @brief configure and enable endpoint
+/**
+ * @brief configure and enable endpoint.
  *
- * This function sets endpoint configuration according to one specified in USB
+ * This function sets endpoint configuration according to one specified in USB.
  * endpoint descriptor and then enables it for data transfers.
  *
- * @param [in]  ep_desc Endpoint descriptor byte array
+ * @param [in]  ep_desc Endpoint descriptor byte array.
  *
- * @return true if successfully configured and enabled
+ * @return true if successfully configured and enabled.
  */
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
 
@@ -155,7 +155,7 @@ int usbd_ep_clear_stall(const uint8_t ep);
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled);
 
 /**
- * @brief Write data to the specified endpoint
+ * @brief Write data to the specified endpoint with poll mode.
  *
  * This function is called to write data to the specified endpoint. The
  * supplied usbd_endpoint_callback function will be called when data is transmitted
@@ -194,6 +194,31 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes);
+
+/**
+ * @brief Write data to the specified endpoint with async mode.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to write
+ * @param[in]  data_len  Length of the data requested to write. This may
+ *                       be zero for a zero length status packet.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usbd_ep_write_async(const uint8_t ep, const uint8_t *data, uint32_t data_len);
+
+/**
+ * @brief Read data from the specified endpoint with async mode.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @param[in]  data         Pointer to data buffer to write to
+ * @param[in]  data_len     Max length of data to read
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usbd_ep_read_async(const uint8_t ep, uint8_t *data, uint32_t data_len);
 
 /**
  * @}
