@@ -12,7 +12,7 @@
 #define EP_INTERVAL 0x01
 #endif
 
-#define AUDIO_OUT_EP 0x01
+#define AUDIO_IN_EP 0x01
 
 #define AUDIO_FREQ 96000
 /* AudioFreq * DataSize (2 bytes) * NumChannels (Stereo: 2) */
@@ -29,14 +29,14 @@
 
 #define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                 \
                                    AUDIO_V2_AC_DESCRIPTOR_INIT_LEN +                   \
-                                   AUDIO_SIZEOF_AC_CLOCK_SOURCE_DESC +                 \
+                                   AUDIO_V2_SIZEOF_AC_CLOCK_SOURCE_DESC +              \
                                    AUDIO_V2_SIZEOF_AC_INPUT_TERMINAL_DESC +            \
                                    AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(CHANNEL_NUM) + \
                                    AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC +           \
                                    AUDIO_V2_AS_DESCRIPTOR_INIT_LEN)
 
 #define AUDIO_AC_SIZ (AUDIO_V2_SIZEOF_AC_HEADER_DESC +                    \
-                      AUDIO_SIZEOF_AC_CLOCK_SOURCE_DESC +                 \
+                      AUDIO_V2_SIZEOF_AC_CLOCK_SOURCE_DESC +              \
                       AUDIO_V2_SIZEOF_AC_INPUT_TERMINAL_DESC +            \
                       AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(CHANNEL_NUM) + \
                       AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC)
@@ -44,12 +44,12 @@
 const uint8_t audio_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_AUDIO_CONFIG_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    AUDIO_V2_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, AUDIO_CATEGORY_SPEAKER, 0x00, 0x00),
+    AUDIO_V2_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, AUDIO_CATEGORY_MICROPHONE, 0x00, 0x00),
     AUDIO_V2_AC_CLOCK_SOURCE_DESCRIPTOR_INIT(0x01, 0x03, 0x07),
-    AUDIO_V2_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x02, AUDIO_TERMINAL_STREAMING, 0x01, CHANNEL_NUM, 0x00000003, 0x0000),
+    AUDIO_V2_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x02, AUDIO_INTERM_MIC, 0x01, CHANNEL_NUM, 0x00000003, 0x0000),
     AUDIO_V2_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x03, 0x02, DBVAL(BMCONTROL), DBVAL(BMCONTROL)),
-    AUDIO_V2_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x04, AUDIO_OUTTERM_SPEAKER, 0x03, 0x01, 0x0000),
-    AUDIO_V2_AS_DESCRIPTOR_INIT(0x01, 0x02, CHANNEL_NUM, 0x00000003, HALF_WORD_BYTES, SAMPLE_BITS, AUDIO_OUT_EP, AUDIO_OUT_PACKET, EP_INTERVAL),
+    AUDIO_V2_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x04, AUDIO_TERMINAL_STREAMING, 0x03, 0x01, 0x0000),
+    AUDIO_V2_AS_DESCRIPTOR_INIT(0x01, 0x04, CHANNEL_NUM, 0x00000003, HALF_WORD_BYTES, SAMPLE_BITS, AUDIO_IN_EP, AUDIO_IN_PACKET, EP_INTERVAL),
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -105,7 +105,7 @@ const uint8_t audio_descriptor[] = {
     '1', 0x00,                  /* wcChar6 */
     '0', 0x00,                  /* wcChar7 */
     '0', 0x00,                  /* wcChar8 */
-    '3', 0x00,                  /* wcChar9 */
+    '4', 0x00,                  /* wcChar9 */
 #ifdef CONFIG_USB_HS
     ///////////////////////////////////////
     /// device qualifier descriptor
@@ -123,17 +123,17 @@ const uint8_t audio_descriptor[] = {
 #endif
     0x00
 };
-volatile bool rx_flag = 0;
+volatile bool tx_flag = 0;
 
 void usbd_audio_open(uint8_t intf)
 {
-    rx_flag = 1;
+    tx_flag = 1;
     printf("OPEN\r\n");
 }
 void usbd_audio_close(uint8_t intf)
 {
     printf("CLOSE\r\n");
-    rx_flag = 0;
+    tx_flag = 0;
 }
 
 static usbd_class_t audio_class;
@@ -146,7 +146,7 @@ void usbd_audio_iso_callback(uint8_t ep)
 
 static usbd_endpoint_t audio_in_ep = {
     .ep_cb = usbd_audio_iso_callback,
-    .ep_addr = AUDIO_OUT_EP
+    .ep_addr = AUDIO_IN_EP
 };
 
 void audio_init()
@@ -164,7 +164,7 @@ void audio_init()
 void audio_test()
 {
     while (1) {
-        if (rx_flag) {
+        if (tx_flag) {
         }
     }
 }

@@ -23,6 +23,7 @@
 #include "usbd_core.h"
 #include "usbd_audio.h"
 
+#if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
 struct usbd_audio_volume_info {
     uint16_t vol_min;
     uint16_t vol_max;
@@ -30,12 +31,12 @@ struct usbd_audio_volume_info {
     uint16_t vol_current;
 };
 
-struct usbd_audio_v1_feature_unit_control {
+struct usbd_audio_attribute_control {
     struct usbd_audio_volume_info volume[CONFIG_USBDEV_AUDIO_MAX_CHANNEL];
     uint8_t mute[CONFIG_USBDEV_AUDIO_MAX_CHANNEL];
     uint8_t automatic_gain[CONFIG_USBDEV_AUDIO_MAX_CHANNEL];
 };
-
+#else
 struct audio_v2_control_range2_param_block_default {
     uint16_t wNumSubRanges;
     struct
@@ -46,13 +47,14 @@ struct audio_v2_control_range2_param_block_default {
     } subrange[CONFIG_USBDEV_AUDIO_MAX_CHANNEL];
 } __PACKED;
 
-struct usbd_audio_v2_feature_unit_control {
+struct usbd_audio_attribute_control {
     uint32_t volume_bCUR;
     uint32_t mute_bCUR;
     struct audio_v2_control_range2_param_block_default volume;
     uint8_t mute[CONFIG_USBDEV_AUDIO_MAX_CHANNEL];
+    uint32_t sampling_freq[CONFIG_USBDEV_AUDIO_MAX_CHANNEL];
 };
-
+#endif
 struct audio_entity_info {
     usb_slist_t list;
     uint8_t bDescriptorSubtype;
@@ -62,11 +64,39 @@ struct audio_entity_info {
 
 static usb_slist_t usbd_audio_entity_info_head = USB_SLIST_OBJECT_INIT(usbd_audio_entity_info_head);
 
+const uint8_t default_sampling_freq_table[] = {
+    AUDIO_SAMPLE_FREQ_NUM(8),
+    AUDIO_SAMPLE_FREQ_4B(8000),
+    AUDIO_SAMPLE_FREQ_4B(8000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(16000),
+    AUDIO_SAMPLE_FREQ_4B(16000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(32000),
+    AUDIO_SAMPLE_FREQ_4B(32000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(48000),
+    AUDIO_SAMPLE_FREQ_4B(48000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(96000),
+    AUDIO_SAMPLE_FREQ_4B(96000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(44100),
+    AUDIO_SAMPLE_FREQ_4B(44100),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(88200),
+    AUDIO_SAMPLE_FREQ_4B(88200),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(192000),
+    AUDIO_SAMPLE_FREQ_4B(192000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+};
+
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
 static int audio_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint8_t control_selector;
-    uint32_t sampling_freq;
+    uint32_t sampling_freq = 0;
     uint8_t pitch_enable;
     uint8_t ep;
 
@@ -78,7 +108,7 @@ static int audio_custom_request_handler(struct usb_setup_packet *setup, uint8_t 
             case AUDIO_REQUEST_SET_CUR:
                 switch (control_selector) {
                     case AUDIO_EP_CONTROL_SAMPLING_FEQ:
-                        memcpy(&sampling_freq, *data, *len);
+                        memcpy((uint8_t *)&sampling_freq, *data, *len);
                         USB_LOG_INFO("Set ep %02x %d Hz\r\n", ep, (int)sampling_freq);
                         usbd_audio_set_sampling_freq(ep, sampling_freq);
                         return 0;
@@ -107,6 +137,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                 setup->bRequest);
 
     struct audio_entity_info *current_entity_info = NULL;
+    struct usbd_audio_attribute_control *current_control = NULL;
     usb_slist_t *i;
     uint8_t entity_id;
     uint8_t control_selector;
@@ -136,10 +167,10 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
         return -2;
     }
 
+    current_control = (struct usbd_audio_attribute_control *)current_entity_info->priv;
+
     if (current_entity_info->bDescriptorSubtype == AUDIO_CONTROL_FEATURE_UNIT) {
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
-        struct usbd_audio_v1_feature_unit_control *current_control = (struct usbd_audio_v1_feature_unit_control *)current_entity_info->priv;
-
         float volume2db = 0.0;
 
         switch (control_selector) {
@@ -204,14 +235,12 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                 break;
         }
 #else
-        struct usbd_audio_v2_feature_unit_control *control = (struct usbd_audio_v2_feature_unit_control *)current_entity_info->priv;
-
         switch (setup->bRequest) {
             case AUDIO_REQUEST_CUR:
                 switch (control_selector) {
                     case AUDIO_FU_CONTROL_MUTE:
                         if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                            (*data)[0] = control->mute_bCUR;
+                            (*data)[0] = current_control->mute_bCUR;
                             *len = 1;
                         } else {
                             mute = (*data)[0];
@@ -221,12 +250,12 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                         break;
                     case AUDIO_FU_CONTROL_VOLUME:
                         if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                            (*data)[0] = control->volume_bCUR & 0XFF;
-                            (*data)[1] = (control->volume_bCUR >> 8) & 0xff;
+                            (*data)[0] = current_control->volume_bCUR & 0XFF;
+                            (*data)[1] = (current_control->volume_bCUR >> 8) & 0xff;
                             *len = 2;
                         } else {
                             volume = (((uint16_t)(*data)[1] << 8) | ((uint16_t)(*data)[0]));
-                            control->volume_bCUR = volume;
+                            current_control->volume_bCUR = volume;
                             USB_LOG_INFO("Set ch[%d] %d dB\r\n", ch, volume);
                             usbd_audio_set_volume(ch, volume);
                         }
@@ -240,10 +269,10 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                 switch (control_selector) {
                     case AUDIO_FU_CONTROL_VOLUME:
                         if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                            *((uint16_t *)(*data + 0)) = control->volume.wNumSubRanges;
-                            *((uint16_t *)(*data + 2)) = control->volume.subrange[ch].wMin;
-                            *((uint16_t *)(*data + 4)) = control->volume.subrange[ch].wMax;
-                            *((uint16_t *)(*data + 6)) = control->volume.subrange[ch].wRes;
+                            *((uint16_t *)(*data + 0)) = current_control->volume.wNumSubRanges;
+                            *((uint16_t *)(*data + 2)) = current_control->volume.subrange[ch].wMin;
+                            *((uint16_t *)(*data + 4)) = current_control->volume.subrange[ch].wMax;
+                            *((uint16_t *)(*data + 6)) = current_control->volume.subrange[ch].wRes;
                             *len = 8;
                         } else {
                         }
@@ -267,17 +296,13 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                 switch (control_selector) {
                     case AUDIO_CS_CONTROL_SAM_FREQ:
                         if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                            uint8_t param_block[] = {
-                                0x80,
-                                0xbb,
-                                0x00,
-                                0x00
-                            };
-                            memcpy(*data, param_block, sizeof(param_block));
+                            uint32_t current_sampling_freq = current_control->sampling_freq[ch];
+                            memcpy(*data, &current_sampling_freq, sizeof(uint32_t));
                             *len = 4;
                         } else {
                             uint32_t sampling_freq;
                             memcpy(&sampling_freq, *data, setup->wLength);
+                            current_control->sampling_freq[ch] = sampling_freq;
                             USB_LOG_INFO("Set ch[%d] %d Hz\r\n", ch, (int)sampling_freq);
                             usbd_audio_set_sampling_freq(ch, sampling_freq);
                         }
@@ -298,29 +323,13 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                 switch (control_selector) {
                     case AUDIO_CS_CONTROL_SAM_FREQ:
                         if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                            uint8_t param_block[] = {
-                                AUDIO_SAMPLE_FREQ_NUM(6),
-                                AUDIO_SAMPLE_FREQ_4B(16000),
-                                AUDIO_SAMPLE_FREQ_4B(16000),
-                                AUDIO_SAMPLE_FREQ_4B(0x00),
-                                AUDIO_SAMPLE_FREQ_4B(48000),
-                                AUDIO_SAMPLE_FREQ_4B(48000),
-                                AUDIO_SAMPLE_FREQ_4B(0x00),
-                                AUDIO_SAMPLE_FREQ_4B(96000),
-                                AUDIO_SAMPLE_FREQ_4B(96000),
-                                AUDIO_SAMPLE_FREQ_4B(0x00),
-                                AUDIO_SAMPLE_FREQ_4B(44100),
-                                AUDIO_SAMPLE_FREQ_4B(44100),
-                                AUDIO_SAMPLE_FREQ_4B(0x00),
-                                AUDIO_SAMPLE_FREQ_4B(8000),
-                                AUDIO_SAMPLE_FREQ_4B(8000),
-                                AUDIO_SAMPLE_FREQ_4B(0x00),
-                                AUDIO_SAMPLE_FREQ_4B(32000),
-                                AUDIO_SAMPLE_FREQ_4B(32000),
-                                AUDIO_SAMPLE_FREQ_4B(0x00),
-                            };
-                            memcpy(*data, param_block, sizeof(param_block));
-                            *len = sizeof(param_block);
+                            uint8_t *sampling_freq_table = NULL;
+                            uint16_t num;
+
+                            usbd_audio_get_sampling_freq_table(&sampling_freq_table);
+                            num = (uint16_t)((uint16_t)(sampling_freq_table[1] << 8) | ((uint16_t)sampling_freq_table[0]));
+                            *data = sampling_freq_table;
+                            *len = (12 * num + 2);
                         } else {
                         }
                         break;
@@ -395,8 +404,8 @@ void usbd_audio_add_entity(uint8_t entity_id, uint16_t bDescriptorSubtype)
 
     if (bDescriptorSubtype == AUDIO_CONTROL_FEATURE_UNIT) {
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
-        struct usbd_audio_v1_feature_unit_control *control = malloc(sizeof(struct usbd_audio_v1_feature_unit_control));
-        memset(control, 0, sizeof(struct usbd_audio_v1_feature_unit_control));
+        struct usbd_audio_attribute_control *control = malloc(sizeof(struct usbd_audio_attribute_control));
+        memset(control, 0, sizeof(struct usbd_audio_attribute_control));
         for (uint8_t ch = 0; ch < CONFIG_USBDEV_AUDIO_MAX_CHANNEL; ch++) {
             control->volume[ch].vol_min = 0xdb00;
             control->volume[ch].vol_max = 0x0000;
@@ -406,14 +415,15 @@ void usbd_audio_add_entity(uint8_t entity_id, uint16_t bDescriptorSubtype)
             control->automatic_gain[ch] = 0;
         }
 #else
-        struct usbd_audio_v2_feature_unit_control *control = malloc(sizeof(struct usbd_audio_v2_feature_unit_control));
-        memset(control, 0, sizeof(struct usbd_audio_v2_feature_unit_control));
+        struct usbd_audio_attribute_control *control = malloc(sizeof(struct usbd_audio_attribute_control));
+        memset(control, 0, sizeof(struct usbd_audio_attribute_control));
         for (uint8_t ch = 0; ch < CONFIG_USBDEV_AUDIO_MAX_CHANNEL; ch++) {
             control->volume.wNumSubRanges = 1;
             control->volume.subrange[ch].wMin = 0;
             control->volume.subrange[ch].wMax = 100;
             control->volume.subrange[ch].wRes = 1;
             control->mute[ch] = 0;
+            control->sampling_freq[ch] = 16000;
             control->volume_bCUR = 50;
             control->mute_bCUR = 0;
         }
@@ -435,6 +445,11 @@ __WEAK void usbd_audio_set_mute(uint8_t ch, uint8_t enable)
 
 __WEAK void usbd_audio_set_sampling_freq(uint8_t ep_ch, uint32_t sampling_freq)
 {
+}
+
+__WEAK void usbd_audio_get_sampling_freq_table(uint8_t **sampling_freq_table)
+{
+    *sampling_freq_table = (uint8_t *)default_sampling_freq_table;
 }
 
 __WEAK void usbd_audio_set_pitch(uint8_t ep, bool enable)
