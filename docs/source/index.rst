@@ -8,6 +8,10 @@ CherryUSB 使用指南
 
 CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 USB 主从协议栈。
 
+- 从机协议栈视频教程：https://www.bilibili.com/video/BV1Ef4y1t73d
+- 主机协议栈视频教程：TODO
+- github ：https://github.com/sakumisu/CherryUSB
+
 .. toctree::
    :maxdepth: 1
    :caption: 快速上手

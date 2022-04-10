@@ -7,7 +7,7 @@ USB转串口即实现计算机USB接口到通用串口之间的转换。为没�
 - 有 UART 外设
 - 有 USB DEVICE 外设
 
-接下来，我们就可以愉快的进行代码的编写了。USB 转串口我们采用的是 CDC ACM 类。
+接下来，我们就可以愉快的进行代码的编写了。USB 转串口我们采用的是 CDC ACM 类。第一步我们先让 USB 能正常收发。
 
 - 首先是实现 `usbd_cdc_acm_set_line_coding` 函数，这个函数的作用就是当我们点击电脑上的串口软件设置串口相关信息时（如下图所示），主机会通过 USB 发送设置串口的命令给设备，对设备上的串口进行配置，所以这边我们需要根据形参来配置串口。
 
@@ -98,7 +98,7 @@ USB转串口即实现计算机USB接口到通用串口之间的转换。为没�
 
 .. caution:: 注意数组最后的结束符，不要遗漏
 
-- cdc acm 一共需要两个接口，一个控制接口，一个数据接口，由于我们只有一个 cdc acm，所以只需要注册一个 class + 两个接口。其中控制接口需要一个中断端点，数据接口需要两个中断端点，由于接口驱动我们已经支持，所以调用 cdc acm 相关的添加接口的 API 即可。那么代码就如下：
+- cdc acm 一共需要两个接口，一个控制接口，一个数据接口，由于我们只有一个 cdc acm，所以只需要注册一个 class + 两个接口。其中控制接口需要一个中断端点，数据接口需要两个 bulk 端点，由于接口驱动我们已经支持，所以调用 cdc acm 相关的添加接口的 API 即可。代码如下：
 
 .. code-block:: C
 
@@ -108,6 +108,31 @@ USB转串口即实现计算机USB接口到通用串口之间的转换。为没�
     usbd_interface_t cdc_cmd_intf;
     /*!< interface two */
     usbd_interface_t cdc_data_intf;
+
+    /*!< endpoint call back */
+    usbd_endpoint_t cdc_out_ep = {
+        .ep_addr = CDC_OUT_EP,
+        .ep_cb = usbd_cdc_acm_out
+    };
+
+    usbd_endpoint_t cdc_in_ep = {
+        .ep_addr = CDC_IN_EP,
+        .ep_cb = usbd_cdc_acm_in
+    };
+
+    usbd_desc_register(cdc_descriptor);
+    /*!< add interface */
+    usbd_cdc_add_acm_interface(&cdc_class, &cdc_cmd_intf);
+    usbd_cdc_add_acm_interface(&cdc_class, &cdc_data_intf);
+    /*!< interface add endpoint */
+    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
+    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
+
+    usbd_initialize();
+
+- 最后调用 `usbd_initialize` 初始化 usb。
+
+.. code-block:: C
 
     /* function ------------------------------------------------------------------*/
     void usbd_cdc_acm_out(uint8_t ep)
@@ -129,32 +154,35 @@ USB转串口即实现计算机USB接口到通用串口之间的转换。为没�
         printf("in\r\n");
     }
 
-    /*!< endpoint call back */
-    usbd_endpoint_t cdc_out_ep = {
-        .ep_addr = CDC_OUT_EP,
-        .ep_cb = usbd_cdc_acm_out
-    };
+    volatile uint8_t dtr_enable = 0;
 
-    usbd_endpoint_t cdc_in_ep = {
-        .ep_addr = CDC_IN_EP,
-        .ep_cb = usbd_cdc_acm_in
-    };
+    void usbd_cdc_acm_set_dtr(bool dtr)
+    {
+        if (dtr) {
+            dtr_enable = 1;
+        } else {
+            dtr_enable = 0;
+        }
+    }
 
-    usbd_desc_register(cdc_descriptor);
-    /*!< add interface */
-    usbd_cdc_add_acm_interface(&cdc_class, &cdc_cmd_intf);
-    usbd_cdc_add_acm_interface(&cdc_class, &cdc_data_intf);
-    /*!< interface add endpoint */
-    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
-    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
+    void cdc_acm_data_send_with_dtr_test(void)
+    {
+        if (dtr_enable) {
+            uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
+            usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
+        }
+    }
+
+-  out 中断中我们将接收的数据进行打印，in 中断则是当 `usbd_ep_write` 发送完成后，进行打印
+- 实现 `usbd_cdc_acm_set_dtr` 进行流控
 
 .. caution:: 注意端点接收中断中，接收 buf 的大小根据全速和高速来定，并且尽量不要在中断中开辟这么大的 buf
 
-- 最后调用 `usbd_initialize` 初始化 usb。
-- 此时，插上电脑可以枚举出一个 USB 设备，名称为 **USB 串行设备（COMx）**，然后我们可以打开枚举的串口，发一些数据，然后看调试口是否有数据，有的话，证明 USB 方面是通的。
+
+- 此时，插上电脑可以枚举出一个 USB 设备，名称为 **USB 串行设备（COMx）**，然后我们可以打开枚举的串口，发一些数据，然后看调试口是否有数据，有的话，证明 USB 方面是通的，那上面测试的一些代码就可以删删了。
 
 
-上面完成后，接下来就是跟 UART 配合使用了，那怎么完成最终的 USB 转串口呢？首先我们需要梳理一下，整个的数据传输。
+上面完成后，第二步，则是跟 UART 配合使用了，那怎么完成最终的 USB 转串口呢？首先我们需要梳理一下，整个的数据传输。
 
 - 首先是 USB 发数据给设备，设备接收到数据以后，通过 UART TX 发送出去
 - 其次是 UART RX 接收的数据，通过 USB 发送给主机
@@ -166,3 +194,5 @@ USB转串口即实现计算机USB接口到通用串口之间的转换。为没�
 - USB out 中断中读取数据并存入 Ringbuffer A 中
 - while（1） 中从 Ringbuffer A 中读取数据，并使用 UART 发送函数发出去
 - UART RX 中断中接收数据，并存入 Ringbuffer B 中，while（1）中从 Ringbuffer B 中读取数据，并使用 USB 发送函数发出去
+
+代码参考 ：https://github.com/bouffalolab/bl_mcu_sdk/tree/master/examples/usb/usb2uart

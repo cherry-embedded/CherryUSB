@@ -289,6 +289,21 @@ usbd_cdc_acm_set_rts
 
 - **rts** rts 为1表示拉低电平，为0表示拉高电平
 
+CDC_ACM_DESCRIPTOR_INIT
+""""""""""""""""""""""""""""""""""""
+
+``CDC_ACM_DESCRIPTOR_INIT`` 配置了默认的 cdc acm 需要的描述符以及参数，方便用户使用。总长度为 `CDC_ACM_DESCRIPTOR_LEN` 。
+
+.. code-block:: C
+
+    CDC_ACM_DESCRIPTOR_INIT(bFirstInterface, int_ep, out_ep, in_ep, str_idx);
+
+- **bFirstInterface** 表示该 cdc acm 第一个接口所在所有接口的偏移
+- **int_ep** 表示中断端点地址（带方向）
+- **out_ep** 表示 bulk out 端点地址（带方向）
+- **in_ep** 表示 bulk in 端点地址（带方向）
+- **str_idx** 控制接口对应的字符串 id
+
 HID
 -----------------
 
@@ -421,28 +436,6 @@ usbd_audio_add_interface
 - **class** 类的句柄
 - **intf**  接口句柄
 
-usbd_audio_set_mute
-""""""""""""""""""""""""""""""""""""
-
-``usbd_audio_set_mute``  用来设置静音。
-
-.. code-block:: C
-
-    void usbd_audio_set_mute(uint8_t mute);
-
-- **mute** 为1 表示静音，0相反
-
-usbd_audio_set_volume
-""""""""""""""""""""""""""""""""""""
-
-``usbd_audio_set_volume``  用来设置音量。
-
-.. code-block:: C
-
-    void usbd_audio_set_volume(uint8_t vol);
-
-- **vol** 音量，从 0-100
-
 usbd_audio_open
 """"""""""""""""""""""""""""""""""""
 
@@ -464,6 +457,77 @@ usbd_audio_close
     void usbd_audio_close(uint8_t intf);
 
 - **intf** 关闭的接口号
+
+usbd_audio_add_entity
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_add_entity``  用来添加 unit 相关控制，例如 feature unit、clock source。
+
+.. code-block:: C
+
+    void usbd_audio_add_entity(uint8_t entity_id, uint16_t bDescriptorSubtype);
+
+- **entity_id** 要添加的 unit id
+- **bDescriptorSubtype** entity_id 的描述符子类型
+
+usbd_audio_set_mute
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_set_mute``  用来设置静音。
+
+.. code-block:: C
+
+    void usbd_audio_set_mute(uint8_t ch, uint8_t enable);
+
+- **ch** 要设置静音的通道
+- **enable** 为1 表示静音，0相反
+
+usbd_audio_set_volume
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_set_volume``  用来设置音量。
+
+.. code-block:: C
+
+    void usbd_audio_set_volume(uint8_t ch, float dB);
+
+- **ch** 要设置音量的通道
+- **dB** 要设置音量的分贝，其中 UAC1.0范围从 -127 ~ +127dB，UAC2.0 从 0 ~ 256dB
+
+usbd_audio_set_sampling_freq
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_set_sampling_freq``  用来设置设备上音频模块的采样率
+
+.. code-block:: C
+
+    void usbd_audio_set_sampling_freq(uint8_t ep_ch, uint32_t sampling_freq);
+
+- **ch** 要设置采样率的端点或者通道，UAC1.0为端点，UAC2.0 为通道
+- **dB** 要设置的采样率
+
+usbd_audio_get_sampling_freq_table
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_get_sampling_freq_table``  用来获取支持的采样率列表，如果函数没有实现，则使用默认采样率列表。
+
+.. code-block:: C
+
+    void usbd_audio_get_sampling_freq_table(uint8_t **sampling_freq_table);
+
+- **sampling_freq_table** 采样率列表地址，格式参考默认采样率列表
+
+usbd_audio_set_pitch
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_set_pitch``  用来设置音频音调，仅 UAC1.0 有这功能。
+
+.. code-block:: C
+
+    void usbd_audio_set_pitch(uint8_t ep, bool enable);
+
+- **ep** 要设置音调的端点
+- **enable** 开启或关闭音调
 
 UVC
 -----------------
