@@ -497,11 +497,15 @@ static bool SCSI_inquiry(uint8_t **data, uint32_t *len)
         0x00,
         0x00,
         0x00,
-        'B', 'o', 'u', 'f', 'f', 'a', 'l', 'o', /* Manufacturer : 8 bytes */
-        'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 Bytes */
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', /* Product      : 16 Bytes */
         ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        '0', '.', '0', '1' /* Version      : 4 Bytes */
+        ' ', ' ', ' ', ' ' /* Version      : 4 Bytes */
     };
+
+    memcpy(&inquiry[8], CONFIG_USBDEV_MSC_MANUFACTURER_STRING, strlen(CONFIG_USBDEV_MSC_MANUFACTURER_STRING));
+    memcpy(&inquiry[16], CONFIG_USBDEV_MSC_PRODUCT_STRING, strlen(CONFIG_USBDEV_MSC_PRODUCT_STRING));
+    memcpy(&inquiry[32], CONFIG_USBDEV_MSC_VERSION_STRING, strlen(CONFIG_USBDEV_MSC_VERSION_STRING));
 
     if (usbd_msc_cfg.cbw.dDataLength == 0U) {
         SCSI_SetSenseData(SCSI_KCQIR_INVALIDCOMMAND);
