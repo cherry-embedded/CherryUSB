@@ -15,13 +15,10 @@
 #define AUDIO_IN_EP 0x01
 
 #define AUDIO_FREQ 96000
-/* AudioFreq * DataSize (2 bytes) * NumChannels (Stereo: 2) */
-/* 16bit(2 Bytes) 双声道(Mono:2) */
-
-#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * 2 * 2) / 1000))
-
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
+
+#define AUDIO_IN_PACKET ((uint32_t)((AUDIO_FREQ * 2 * HALF_WORD_BYTES) / 1000))
 
 #define CHANNEL_NUM 2
 
