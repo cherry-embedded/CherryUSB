@@ -15,24 +15,25 @@
 #define AUDIO_OUT_EP 0x02
 #define AUDIO_IN_EP 0x81
 
-#define AUDIO_FREQ 96000
+#define AUDIO_FREQ 48000
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
-
-#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * 2 * HALF_WORD_BYTES) / 1000))
-#define AUDIO_IN_PACKET ((uint32_t)((AUDIO_FREQ * 2 * HALF_WORD_BYTES) / 1000))
 
 #if 1
 #define OUT_CHANNEL_NUM 2
 #define IN_CHANNEL_NUM  2
-#define INPUT_CTRL DBVAL(BMCONTROL),DBVAL(BMCONTROL)
+#define INPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define INPUT_CH_ENABLE 0x00000003
 #else
 #define OUT_CHANNEL_NUM 2
 #define IN_CHANNEL_NUM  6
-#define INPUT_CTRL DBVAL(BMCONTROL),DBVAL(BMCONTROL),DBVAL(BMCONTROL),DBVAL(BMCONTROL),DBVAL(BMCONTROL),DBVAL(BMCONTROL)
+#define INPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define INPUT_CH_ENABLE 0x0000001F
 #endif
+
+/* AudioFreq * DataSize (2 bytes) * NumChannels */
+#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
+#define AUDIO_IN_PACKET  ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * IN_CHANNEL_NUM) / 1000))
 
 #define BMCONTROL (AUDIO_V2_FU_CONTROL_MUTE | AUDIO_V2_FU_CONTROL_VOLUME)
 
@@ -173,11 +174,13 @@ void usbd_audio_close(uint8_t intf)
 
 void usbd_audio_set_sampling_freq(uint8_t entity_id, uint8_t ep_ch, uint32_t sampling_freq)
 {
-    uint16_t packet_size = ((sampling_freq * 2 * 2) / 1000);
+    uint16_t packet_size = 0;
     if (entity_id == 1) {
+        packet_size = ((sampling_freq * 2 * OUT_CHANNEL_NUM) / 1000);
         audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 11] = packet_size;
         audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 10] = packet_size >> 8;
     } else if (entity_id == 5) {
+        packet_size = ((sampling_freq * 2 * IN_CHANNEL_NUM) / 1000);
         audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 11] = packet_size;
         audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 10] = packet_size >> 8;
     }

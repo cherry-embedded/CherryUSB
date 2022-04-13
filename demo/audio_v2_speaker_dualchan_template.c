@@ -14,13 +14,13 @@
 
 #define AUDIO_OUT_EP 0x01
 
-#define AUDIO_FREQ 96000
+#define AUDIO_FREQ 48000
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
 
-#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * 2 * HALF_WORD_BYTES) / 1000))
-
 #define CHANNEL_NUM 2
+
+#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * CHANNEL_NUM) / 1000))
 
 #define BMCONTROL (AUDIO_V2_FU_CONTROL_MUTE | AUDIO_V2_FU_CONTROL_VOLUME)
 
