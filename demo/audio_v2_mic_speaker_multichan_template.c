@@ -59,7 +59,7 @@
                       AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(IN_CHANNEL_NUM) +  \
                       AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC)
 
-const uint8_t audio_descriptor[] = {
+uint8_t audio_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_AUDIO_CONFIG_DESC_SIZ, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     AUDIO_V2_AC_DESCRIPTOR_INIT(0x00, 0x03, AUDIO_AC_SIZ, AUDIO_CATEGORY_UNDEF, 0x00, 0x00),
@@ -168,6 +168,18 @@ void usbd_audio_close(uint8_t intf)
     } else {
         tx_flag = 0;
         MSG("CLOSE2\r\n");
+    }
+}
+
+void usbd_audio_set_sampling_freq(uint8_t entity_id, uint8_t ep_ch, uint32_t sampling_freq)
+{
+    uint16_t packet_size = ((sampling_freq * 2 * 2) / 1000);
+    if (entity_id == 1) {
+        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 11] = packet_size;
+        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 10] = packet_size >> 8;
+    } else if (entity_id == 5) {
+        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 11] = packet_size;
+        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 10] = packet_size >> 8;
     }
 }
 
