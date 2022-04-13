@@ -53,6 +53,7 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 |docs           |  doc for guiding         |
 |packet capture |  packet capture file     |
 |port           |  usb dcd and hcd porting |
+|tools           |  tool used url          |
 
 ## CherryUSB Device Stack Overview
 
@@ -112,3 +113,7 @@ Quickly start, USB basic concepts, API manual, Class basic concepts and examples
 ## CherryUSB Video Tutorial
 
 USB basic concepts and how the CherryUSB Device stack is implemented, see [CherryUSB Device Stack Tutorial](https://www.bilibili.com/video/BV1Ef4y1t73d).
+
+## CherryUSB Graphical Config Tool
+
+[chryusb_configurator](https://github.com/Egahp/chryusb_configurator) is written in **electron + vite2 + ts** framework，currently used to automate the generation of descriptor arrays, with additional functionality to be added later.

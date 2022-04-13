@@ -53,6 +53,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 |osal           |  os 封装层                       |
 |packet capture |  抓包文件（需要使用力科软件打开）|
 |port           |  usb 主从需要实现的 porting 接口 |
+|tools           |  工具链接                       |
 
 ## CherryUSB Device 协议栈简介
 
@@ -112,3 +113,7 @@ CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和�
 ## CherryUSB 视频教程
 
 USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [CherryUSB Device 协议栈教程](https://www.bilibili.com/video/BV1Ef4y1t73d).
+
+## CherryUSB 图形化界面配置工具
+
+[chryusb_configurator](https://github.com/Egahp/chryusb_configurator) 采用 **electron + vite2 + ts** 框架编写，当前用于自动化生成描述符数组，后续会增加其他功能。
