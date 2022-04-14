@@ -1190,14 +1190,10 @@ static void usbd_class_event_notify_handler(uint8_t event, void *arg)
     usb_slist_for_each(i, &usbd_class_head)
     {
         usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+        usbd_interface_t *intf = usb_slist_first_entry(&devclass->intf_list, struct usbd_interface, list);
 
-        usb_slist_for_each(j, &devclass->intf_list)
-        {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-            if (intf->notify_handler) {
-                intf->notify_handler(event, arg);
-            }
+        if (intf->notify_handler) {
+            intf->notify_handler(event, arg);
         }
     }
 }
