@@ -75,6 +75,7 @@ typedef enum {
     USB_EP0_STATE_IN_STATUS = 0x2,  /**< IN status*/
     USB_EP0_STATE_OUT_DATA = 0x3,   /**< OUT DATA */
     USB_EP0_STATE_OUT_STATUS = 0x4, /**< OUT status */
+    USB_EP0_STATE_STALL = 0x5,      /**< STALL status */
 } ep0_state_t;
 
 /* Endpoint state */
@@ -380,12 +381,14 @@ int usbd_ep_set_stall(const uint8_t ep)
 
     if (USB_EP_DIR_IS_OUT(ep)) {
         if (ep_idx == 0x00) {
+            usb_ep0_state = USB_EP0_STATE_STALL;
             HWREGB(USB_TXCSRLx_BASE) |= (USB_CSRL0_STALL | USB_CSRL0_RXRDYC);
         } else {
             HWREGB(USB_RXCSRLx_BASE) |= USB_RXCSRL1_STALL;
         }
     } else {
         if (ep_idx == 0x00) {
+            usb_ep0_state = USB_EP0_STATE_STALL;
             HWREGB(USB_TXCSRLx_BASE) |= (USB_CSRL0_STALL | USB_CSRL0_RXRDYC);
         } else {
             HWREGB(USB_TXCSRLx_BASE) |= USB_TXCSRL1_STALL;
@@ -547,6 +550,7 @@ static void handle_ep0(void)
 
     if (ep0_status & USB_CSRL0_STALLED) {
         USB->CSRL0 &= ~USB_CSRL0_STALLED;
+        usb_ep0_state = USB_EP0_STATE_SETUP;
         return;
     }
 
@@ -577,21 +581,23 @@ static void handle_ep0(void)
 
                 usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
 
-                if (usb_dc_cfg.setup.wLength) {
-                    if (usb_dc_cfg.setup.bmRequestType & 0x80) {
-                        usb_ep0_state = USB_EP0_STATE_IN_DATA;
-                        if (ep0_last_size > usb_dc_cfg.in_ep[0].ep_mps) {
-                            HWREGB(USB_TXCSRLx_BASE) = USB_CSRL0_TXRDY;
+                if (usb_ep0_state != USB_EP0_STATE_STALL) {
+                    if (usb_dc_cfg.setup.wLength) {
+                        if (usb_dc_cfg.setup.bmRequestType & 0x80) {
+                            usb_ep0_state = USB_EP0_STATE_IN_DATA;
+                            if (ep0_last_size > usb_dc_cfg.in_ep[0].ep_mps) {
+                                HWREGB(USB_TXCSRLx_BASE) = USB_CSRL0_TXRDY;
+                            } else {
+                                HWREGB(USB_TXCSRLx_BASE) = USB_CSRL0_TXRDY | USB_CSRL0_DATAEND;
+                                usb_ep0_state = USB_EP0_STATE_OUT_STATUS;
+                            }
                         } else {
-                            HWREGB(USB_TXCSRLx_BASE) = USB_CSRL0_TXRDY | USB_CSRL0_DATAEND;
-                            usb_ep0_state = USB_EP0_STATE_OUT_STATUS;
+                            usb_ep0_state = USB_EP0_STATE_OUT_DATA;
                         }
                     } else {
-                        usb_ep0_state = USB_EP0_STATE_OUT_DATA;
+                        HWREGB(USB_TXCSRLx_BASE) = USB_CSRL0_TXRDY | USB_CSRL0_DATAEND;
+                        usb_ep0_state = USB_EP0_STATE_IN_STATUS;
                     }
-                } else {
-                    HWREGB(USB_TXCSRLx_BASE) = USB_CSRL0_TXRDY | USB_CSRL0_DATAEND;
-                    usb_ep0_state = USB_EP0_STATE_IN_STATUS;
                 }
             }
             break;
