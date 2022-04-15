@@ -1,7 +1,7 @@
 #include "usbh_core.h"
 #include "usb_musb_reg.h"
 
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
 
 #define SUNXI_SRAMC_BASE 0x01c00000
 #define SUNXI_USB0_BASE  0x01c13000
@@ -74,7 +74,7 @@ void USBH_IRQHandler(int, void *);
 #define USB_TXINTERVALx_BASE  (USB_BASE + MUSB_IND_TXINTERVAL_OFFSET)
 #define USB_RXINTERVALx_BASE  (USB_BASE + MUSB_IND_RXINTERVAL_OFFSET)
 
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
 #define USB_TXADDR_BASE(ep_idx)    (&USB->TXFUNCADDR0)
 #define USB_TXHUBADDR_BASE(ep_idx) (&USB->TXHUBADDR0)
 #define USB_TXHUBPORT_BASE(ep_idx) (&USB->TXHUBPORT0)
@@ -477,7 +477,7 @@ int usb_hc_init(void)
     USB->POWER |= USB_POWER_HSENAB;
     USB->DEVCTL |= USB_DEVCTL_SESSION;
 
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
     USB->CSRL0 = USB_CSRL0_TXRDY;
 #endif
     return 0;
@@ -1097,7 +1097,7 @@ chan_wait:
     usb_musb_chan_wakeup(chan);
 }
 
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
 void USBH_IRQHandler(int irq, void *arg)
 #else
 void USBH_IRQHandler(void)

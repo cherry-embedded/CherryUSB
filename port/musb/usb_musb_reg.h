@@ -8,7 +8,7 @@
 /**
   * @brief Register map for USB0 peripheral (USB0)
   */
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
 
 typedef __PACKED_STRUCT {                                    /*!< USB0 Structure                                                        */
   union {
@@ -466,7 +466,7 @@ typedef struct {                                    /*!< USB0 Structure         
   __IO uint32_t  CC;                                /*!< USB Clock Configuration                                               */
 } USB0_Type;
 
-#endif // USB_MUSB_SUNXI
+#endif // CONFIG_USB_MUSB_SUNXI
 
 //*****************************************************************************
 //

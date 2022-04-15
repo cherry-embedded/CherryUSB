@@ -40,7 +40,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_USING_HUB']):
         path += [cwd + '/class/hub']
         src += Glob('class/hub/usbd_hub.c')
-        
+
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_TEMPLATE']):
         src += Glob('demo/cdc_acm_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HID_MOUSE_TEMPLATE']):
@@ -55,7 +55,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/audio_v2_mic_speaker_multichan_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_VIDEO_TEMPLATE']):
         src += Glob('demo/video_hs_mjpeg_template.c')
-        
+
     if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_STM32']):
         src += Glob('port/fsdev/usb_dc_fsdev.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_SYNOPSYS_STM32']):
@@ -63,7 +63,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB']):
         src += Glob('port/musb/usb_dc_musb.c')
         if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_SUNXI']):
-            CPPDEFINES += ['USB_MUSB_SUNXI']
+            CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
@@ -71,7 +71,7 @@ if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
     path += [cwd + '/osal']
     src += Glob('osal/usb_osal_rtthread.c')
     src += Glob('osal/usb_workq.c')
-    
+
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC']):
         path += [cwd + '/class/cdc']
         src += Glob('class/cdc/usbh_cdc_acm.c')
@@ -91,7 +91,7 @@ if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB']):
         src += Glob('port/musb/usb_hc_musb.c')
         if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SUNXI']):
-            CPPDEFINES += ['USB_MUSB_SUNXI']
+            CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
         src += Glob('demo/usb_host.c')

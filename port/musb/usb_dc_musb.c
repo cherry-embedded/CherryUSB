@@ -1,7 +1,7 @@
 #include "usbd_core.h"
 #include "usb_musb_reg.h"
 
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
 #define SUNXI_SRAMC_BASE 0x01c00000
 #define SUNXI_USB0_BASE  0x01c13000
 
@@ -45,7 +45,7 @@ void USBD_IRQHandler(int, void *);
 #define MUSB_IND_RXCOUNT_OFFSET 0x18
 #define MUSB_FIFO_OFFSET        0x20
 
-#endif // USB_MUSB_SUNXI
+#endif // CONFIG_USB_MUSB_SUNXI
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
@@ -631,7 +631,7 @@ static void handle_ep0(void)
     }
 }
 
-#ifdef USB_MUSB_SUNXI
+#ifdef CONFIG_USB_MUSB_SUNXI
 void USBD_IRQHandler(int irq, void *args)
 #else
 void USBD_IRQHandler(void)
