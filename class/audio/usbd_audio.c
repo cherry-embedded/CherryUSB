@@ -415,7 +415,7 @@ void usbd_audio_add_entity(uint8_t entity_id, uint16_t bDescriptorSubtype)
             control->automatic_gain[ch] = 0;
         }
 #else
-        struct usbd_audio_attribute_control *control = malloc(sizeof(struct usbd_audio_attribute_control));
+        struct usbd_audio_attribute_control *control = usb_malloc(sizeof(struct usbd_audio_attribute_control));
         memset(control, 0, sizeof(struct usbd_audio_attribute_control));
         for (uint8_t ch = 0; ch < CONFIG_USBDEV_AUDIO_MAX_CHANNEL; ch++) {
             control->volume.wNumSubRanges = 1;
