@@ -1186,7 +1186,7 @@ static void usbd_ep_in_handler(uint8_t ep)
 
 static void usbd_class_event_notify_handler(uint8_t event, void *arg)
 {
-    usb_slist_t *i, *j;
+    usb_slist_t *i;
     usb_slist_for_each(i, &usbd_class_head)
     {
         usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
