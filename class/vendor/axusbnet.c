@@ -454,6 +454,388 @@ out:
     return ret;
 }
 
+static void rt_thread_axusbnet_entry(void *parameter)
+{
+    int ret;
+    struct usbh_hubport *hport;
+    uint8_t intf;
+    uint8_t buf[2+8];
+
+    USB_LOG_INFO("%s L%d\r\n", __FUNCTION__, __LINE__);
+    rt_thread_delay(200);
+    USB_LOG_INFO("%s L%d\r\n\r\n\r\n\r\n", __FUNCTION__, __LINE__);
+
+    const char *dname = "/dev/u0";
+    struct usbh_axusbnet *class = (struct usbh_axusbnet *)usbh_find_class_instance(dname);
+    if (class == NULL) {
+        USB_LOG_ERR("do not find %s\r\n", dname);
+        return;
+    }
+    USB_LOG_INFO("axusbnet=%p\r\n", dname);
+
+    usbh_axusbnet_eth_device.class = class;
+
+    struct usbnet *dev = &usbh_axusbnet_eth_device;
+
+	ret = ax8817x_read_cmd(dev, AX_CMD_SW_PHY_STATUS,
+			       0, 0, 1, buf);
+    if (ret < 0) {
+        USB_LOG_ERR("AX_CMD_SW_PHY_STATUS ret=%d\r\n", ret);
+        return;
+    }
+    u8 tempphyselect = buf[0];
+    if (tempphyselect == AX_PHYSEL_SSRMII) {
+        USB_LOG_ERR("%s L%d AX_PHYSEL_SSRMII\r\n", __FUNCTION__, __LINE__);
+        dev->internalphy = false;
+        return;
+        // dev->OperationMode = OPERATION_MAC_MODE;
+        // dev->PhySelect = 0x00;
+    } else if (tempphyselect == AX_PHYSEL_SSRRMII) {
+        USB_LOG_ERR("%s L%d AX_PHYSEL_SSRRMII\r\n", __FUNCTION__, __LINE__);
+        dev->internalphy = true;
+        return;
+        // dev->OperationMode = OPERATION_PHY_MODE;
+        // dev->PhySelect = 0x00;
+    } else if (tempphyselect == AX_PHYSEL_SSMII) {
+        USB_LOG_INFO("%s L%d internalphy AX_PHYSEL_SSMII & OPERATION_MAC_MODE\r\n", __FUNCTION__, __LINE__);
+        dev->internalphy = true;
+        dev->OperationMode = OPERATION_MAC_MODE;
+        dev->PhySelect = 0x01;
+    } else {
+        // deverr(dev, "Unknown MII type\n");
+        USB_LOG_INFO("%s L%d Unknown MII type\r\n", __FUNCTION__, __LINE__);
+        return;
+    }
+
+    /* reload eeprom data */
+	ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_GPIOS, AXGPIOS_RSE, 0, 0, NULL);
+    if (ret < 0) {
+        USB_LOG_ERR("reload eeprom data ret=%d\r\n", ret);
+        return;
+    }
+
+	/* Get the EEPROM data: power saving configuration*/
+	ret = ax8817x_read_cmd(dev, AX_CMD_READ_EEPROM, 0x18, 0, 2, buf);
+	if (ret < 0) {
+		USB_LOG_ERR("read SROM address 18h failed: %d\r\n", ret);
+		goto err_out;
+	}
+    USB_LOG_INFO("reading AX88772C psc: %02x %02x\r\n", buf[0], buf[1]);
+	// le16_to_cpus(tmp16);
+	// ax772b_data->psc = *tmp16 & 0xFF00;
+	/* End of get EEPROM data */
+
+	ret = ax8817x_get_mac(dev, buf);
+	if (ret < 0) {
+		USB_LOG_ERR("Get HW address failed: %d\r\n", ret);
+		return;
+	}
+    dump_hex(buf, ETH_ALEN);
+    memcpy(dev->dev_addr, buf, ETH_ALEN);
+
+    uint16_t chipcode = 0xFFFF;
+    {
+        uint16_t smsr;
+        // asix_read_cmd(dev, AX_CMD_STATMNGSTS_REG, 0, 0, 1, &chipcode, 0);
+        ax8817x_read_cmd(dev, AX_CMD_READ_STATMNGSTS_REG, 0, 0, 1, &chipcode);
+        USB_LOG_ERR("AX_CMD_READ_STATMNGSTS_REG ret: %d %04X\r\n", ret, chipcode);
+
+// #define AX_CHIPCODE_MASK		0x70
+// #define AX_AX88772_CHIPCODE		0x00
+// #define AX_AX88772A_CHIPCODE		0x10
+// #define AX_AX88772B_CHIPCODE		0x20
+// #define AX_HOST_EN			0x01
+
+        chipcode &= 0x70;//AX_CHIPCODE_MASK; AX_AX88772_CHIPCODE
+        if(chipcode == 0x00)
+        {
+            USB_LOG_ERR("AX_CMD_READ_STATMNGSTS_REG AX_AX88772_CHIPCODE\r\n");
+        }
+        else if(chipcode == 0x10)
+        {
+            USB_LOG_ERR("AX_CMD_READ_STATMNGSTS_REG AX_AX88772A_CHIPCODE\r\n");
+        }
+        else if(chipcode == 0x20)
+        {
+            USB_LOG_ERR("AX_CMD_READ_STATMNGSTS_REG AX_AX88772B_CHIPCODE\r\n");
+        }
+    }
+
+    /* Get the PHY id: E0 10 */
+    ret = ax8817x_read_cmd(dev, AX_CMD_READ_PHY_ID, 0, 0, 2, buf);
+    if (ret < 0) {
+        USB_LOG_ERR("Error reading PHY ID: %02x\r\n", ret);
+        return;
+    }
+    if (dev->internalphy) {
+        dev->mii.phy_id = *((u8 *)buf + 1);
+    } else {
+        dev->mii.phy_id = *((u8 *)buf);
+    }
+    USB_LOG_INFO("reading %s PHY ID: %02x\r\n", dev->internalphy?"internal":"external", dev->mii.phy_id);
+
+    ret = ax8817x_write_cmd(dev, AX_CMD_SW_PHY_SELECT, dev->PhySelect, 0, 0, NULL);
+    if (ret < 0) {
+        USB_LOG_ERR("Select PHY #1 failed: %d", ret);
+        return;
+    }
+
+	ret = ax88772a_phy_powerup(dev);
+	if (ret < 0) {
+        USB_LOG_ERR("ax88772a_phy_powerup failed: %d", ret);
+        return;
+    }
+
+	/* stop MAC operation */
+	ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_RX_CTL,
+				AX_RX_CTL_STOP, 0, 0, NULL);
+	if (ret < 0) {
+		USB_LOG_ERR("Reset RX_CTL failed: %d", ret);
+		goto err_out;
+	}
+
+	/* make sure the driver can enable sw mii operation */
+	ret = ax8817x_write_cmd(dev, AX_CMD_SET_SW_MII, 0, 0, 0, NULL);
+	if (ret < 0) {
+		USB_LOG_ERR("Enabling software MII failed: %d\r\n", ret);
+		goto err_out;
+	}
+
+    if ((dev->OperationMode == OPERATION_MAC_MODE) &&
+        (dev->PhySelect == 0x00)) {
+        USB_LOG_ERR("not support the external phy\r\n");
+        goto err_out;
+    }
+
+    if (dev->OperationMode == OPERATION_PHY_MODE) {
+        ax8817x_mdio_write_le(dev, dev->mii.phy_id, MII_BMCR, 0x3900);
+    }
+
+    if (dev->mii.phy_id != 0x10)
+    {
+        USB_LOG_ERR("not support phy_id != 0x10\r\n");
+		// ax8817x_mdio_write_le(dev->net, 0x10, MII_BMCR, 0x3900);
+    }
+
+    if (dev->mii.phy_id == 0x10 && dev->OperationMode != OPERATION_PHY_MODE) {
+        u16 tmp16 = ax8817x_mdio_read_le(dev, dev->mii.phy_id, 0x12);
+        ax8817x_mdio_write_le(dev, dev->mii.phy_id, 0x12, ((tmp16 & 0xFF9F) | 0x0040));
+    }
+
+	ax8817x_mdio_write_le(dev, dev->mii.phy_id, MII_ADVERTISE,
+			ADVERTISE_ALL | ADVERTISE_CSMA | ADVERTISE_PAUSE_CAP);
+
+    // mii_nway_restart(&dev->mii);
+    {
+        /* if autoneg is off, it's an error */
+        uint16_t bmcr = ax8817x_mdio_read_le(dev, dev->mii.phy_id, MII_BMCR);
+        if (bmcr & BMCR_ANENABLE) {
+            bmcr |= BMCR_ANRESTART;
+            USB_LOG_ERR("BMCR_ANENABLE ==> BMCR_ANRESTART\r\n");
+            ax8817x_mdio_write_le(dev, dev->mii.phy_id, MII_BMCR, bmcr);
+        } else
+        {
+            USB_LOG_ERR("not BMCR_ANENABLE BMCR=%04X\r\n", bmcr);
+        }
+    }
+
+    ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_MEDIUM_MODE, 0, 0, 0, NULL);
+    if (ret < 0) {
+		USB_LOG_ERR("Failed to write medium mode: %d", ret);
+		goto err_out;
+	}
+
+	ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_IPG0,
+			AX88772A_IPG0_DEFAULT | AX88772A_IPG1_DEFAULT << 8,
+			AX88772A_IPG2_DEFAULT, 0, NULL);
+	if (ret < 0) {
+		USB_LOG_ERR("Failed to write interframe gap: %d", ret);
+		goto err_out;
+	}
+
+	memset(buf, 0, 4);
+	ret = ax8817x_read_cmd(dev, AX_CMD_READ_IPG012, 0, 0, 3, buf);
+	*((u8 *)buf + 3) = 0x00;
+	if (ret < 0) {
+		USB_LOG_ERR("Failed to read IPG,IPG1,IPG2 failed: %d", ret);
+		goto err_out;
+	} else {
+		uint32_t tmp32 = *((u32*)buf);
+		le32_to_cpus(&tmp32);
+		if (tmp32 != (AX88772A_IPG2_DEFAULT << 16 |
+			AX88772A_IPG1_DEFAULT << 8 | AX88772A_IPG0_DEFAULT)) {
+			USB_LOG_ERR("Non-authentic ASIX product\nASIX does not support it\n");
+			// ret = -ENODEV;		
+			goto err_out;
+		}
+	}
+
+    // TODO: optimized  for high speed.
+    ret = ax8817x_write_cmd(dev, 0x2A, 0x8000, 0x8001, 0, NULL);
+    if (ret < 0) {
+        USB_LOG_ERR("Reset RX_CTL failed: %d", ret);
+        goto err_out;
+    }
+
+    ret = ax88772b_reset(dev);
+    if (ret < 0) {
+        USB_LOG_ERR("ax88772b_reset failed: %d", ret);
+        goto err_out;
+    }
+
+    // OUT 29  0   0 0   AX_CMD_WRITE_MONITOR_MODE
+    ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_MONITOR_MODE, 0, 0, 0, NULL);
+    if (ret < 0) {
+        deverr(dev, "AX_CMD_WRITE_MONITOR_MODE failed: %d", ret);
+    }
+
+	/* Set the MAC address */
+    ret = ax8817x_write_cmd(dev, AX88772_CMD_WRITE_NODE_ID,
+                            0, 0, ETH_ALEN, dev->dev_addr);
+    if (ret < 0) {
+        deverr(dev, "set MAC address failed: %d", ret);
+    }
+
+    // update Multicast AX_CMD_WRITE_MULTI_FILTER.
+    const uint8_t multi_filter[] = {0x00, 0x00, 0x20, 0x80, 0x00, 0x00, 0x00, 0x40};
+    ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_MULTI_FILTER, 0, 0, AX_MCAST_FILTER_SIZE, (void *)multi_filter);
+    if (ret < 0) {
+        USB_LOG_ERR("Reset RX_CTL failed: %d", ret);
+        goto err_out;
+    }
+
+    /* Configure RX header type */
+    // u16 rx_reg = (AX_RX_CTL_PRO | AX_RX_CTL_AMALL | AX_RX_CTL_START | AX_RX_CTL_AB | AX_RX_HEADER_DEFAULT);
+    u16 rx_reg = (AX_RX_CTL_AB | AX_RX_CTL_AM | AX_RX_CTL_START);
+    ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_RX_CTL, rx_reg, 0, 0, NULL);
+    if (ret < 0) {
+        USB_LOG_ERR("Reset RX_CTL failed: %d", ret);
+        goto err_out;
+    }
+
+    /* set the embedded Ethernet PHY in power-up state */
+    // ax772b_data->psc = *tmp16 & 0xFF00;
+    // psc: 15 5a AX88772C psc: %02x %02x\r\n", buf[0], buf[1]);
+    ret = ax8817x_write_cmd(dev, AX_CMD_SW_RESET, AX_SWRESET_IPRL | (0x5a00 & 0x7FFF),
+                            0, 0, NULL);
+    if (ret < 0) {
+        deverr(dev, "Failed to reset PHY: %d", ret);
+        // return ret;
+    }
+
+    rt_thread_delay(1000);
+    u16 mode = AX88772_MEDIUM_DEFAULT;
+    ret = ax8817x_write_cmd(dev, AX_CMD_WRITE_MEDIUM_MODE, mode, 0, 0, NULL);
+    if (ret < 0) {
+        USB_LOG_ERR("AX_CMD_WRITE_MEDIUM_MODE failed: %d", ret);
+        goto err_out;
+    }
+
+    // check link status.
+    {
+        u16 bmcr = ax8817x_mdio_read_le(dev, dev->mii.phy_id, MII_BMCR);
+        u16 mode = AX88772_MEDIUM_DEFAULT;
+
+        USB_LOG_ERR("%s L%d MII_BMCR=%04X\r\n", __FUNCTION__, __LINE__, bmcr);
+		if (!(bmcr & BMCR_FULLDPLX))
+        {
+			mode &= ~AX88772_MEDIUM_FULL_DUPLEX;
+            USB_LOG_ERR("%s L%d not AX88772_MEDIUM_FULL_DUPLEX\r\n", __FUNCTION__, __LINE__);
+        }
+		if (!(bmcr & BMCR_SPEED100))
+        {
+			mode &= ~AX88772_MEDIUM_100MB;	
+            USB_LOG_ERR("%s L%d not AX88772_MEDIUM_100MB\r\n", __FUNCTION__, __LINE__);
+        }
+		ax8817x_write_cmd(dev, AX_CMD_WRITE_MEDIUM_MODE, mode, 0, 0, NULL);
+    }
+
+    while (1)
+    {
+        // USB_LOG_INFO("%s L%d\r\n", __FUNCTION__, __LINE__);
+
+        ret = usbh_ep_bulk_transfer(class->bulkin, class->bulkin_buf, sizeof(class->bulkin_buf), 1000);
+        if (ret < 0) {
+            if (ret != -2) {
+                USB_LOG_ERR("%s L%d bulk in error ret=%d\r\n", __FUNCTION__, __LINE__, ret);
+            }
+            continue;
+        }
+
+        {
+            const uint8_t *data = class->bulkin_buf;
+            uint16_t len1, len2;
+
+            len1 = data[0] | ((uint16_t)(data[1])<<8);
+            len2 = data[2] | ((uint16_t)(data[3])<<8);
+
+            // USB_LOG_INFO("transfer bulkin len1:%04X, len2:%04X, len2':%04X.\r\n", len1, len2, ~len2);
+
+            len1 &= 0x07ff;
+
+            if (data[0] != ((uint8_t)(~data[2]))) {
+                USB_LOG_ERR("transfer bulkin len1:%04X, len2:%04X, len2':%04X.\r\n", len1, len2, ~len2);
+
+                dump_hex(data, 32);
+                continue;
+            }
+
+            {
+                static uint32_t count = 0;
+                USB_LOG_INFO("recv: #%d, len=%d\r\n", count, ret);
+                dump_hex(data+4, 32);
+
+                if ((count % 10) == 0) {
+                    // 192.168.89.14 ==> 255.255.255.255:7 echo hello world!
+                    const uint8_t packet_bytes[] = {
+                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
+                        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x45, 0x00,
+                        0x00, 0x36, 0xb0, 0xfd, 0x00, 0x00, 0x80, 0x11,
+                        0x00, 0x00, 0xc0, 0xa8, 0x59, 0x0e, 0xff, 0xff,
+                        0xff, 0xff, 0x00, 0x07, 0x00, 0x07, 0x00, 0x22,
+                        0x53, 0x06, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20,
+                        0x77, 0x6f, 0x72, 0x6c, 0x64, 0x20, 0x66, 0x72,
+                        0x6f, 0x6d, 0x20, 0x41, 0x58, 0x38, 0x38, 0x37,
+                        0x37, 0x32, 0x43, 0x2e
+                    };
+
+                    uint8_t *send_buf = (uint8_t *)class->bulkin_buf;
+                    send_buf[0] = sizeof(packet_bytes);
+                    send_buf[1] = sizeof(packet_bytes) >> 8;
+                    send_buf[2] = ~send_buf[0];
+                    send_buf[3] = ~send_buf[1];
+                    memcpy(send_buf+4, packet_bytes, sizeof(packet_bytes));
+                    memcpy(send_buf+4+6, dev->dev_addr, 6);// update src mac.
+
+                    ret = usbh_ep_bulk_transfer(class->bulkout, send_buf, 4 + sizeof(packet_bytes), 500);
+                    USB_LOG_INFO("bulkout, ret=%d\r\n", ret);
+                    dump_hex(send_buf, 64);
+                }
+
+                count++;
+            }
+        }
+    } // while (1)
+
+err_out:
+out2:
+
+    return;
+}
+
+static int axusbnet_startup(void)
+{
+    const char *tname = "axusbnet";
+    usb_osal_thread_t usb_thread;
+
+    usb_thread = usb_osal_thread_create(tname, 1024 * 6, CONFIG_USBHOST_PSC_PRIO, rt_thread_axusbnet_entry, NULL);
+    if (usb_thread == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
 static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
@@ -512,6 +894,8 @@ static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
             usbh_ep_alloc(&class->int_notify, &ep_cfg);
         }
     }
+
+    axusbnet_startup();
 
     return ret;
 }
