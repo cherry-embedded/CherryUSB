@@ -1,5 +1,20 @@
+/*
+ * Change Logs
+ * Date           Author       Notes
+ * 2022-04-17     aozima       the first version for CherryUSB.
+ */
+
 #ifndef	__LINUX_USBNET_ASIX_H
 #define	__LINUX_USBNET_ASIX_H
+
+// #define __BIG_ENDIAN_BITFIELD
+#define __LITTLE_ENDIAN_BITFIELD
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+
+#define KERNEL_VERSION(...)	(0)
+#define LINUX_VERSION_CODE	(1)
 
 /*
  * Turn on this flag if the implementation of your USB host controller
@@ -434,6 +449,7 @@ enum watchdog_state {
 	AX_CHK_AUTODETACH,
 };
 
+#if 0
 struct ax88772b_data {
 	struct usbnet *dev;
 	struct workqueue_struct *ax_work;
@@ -451,11 +467,13 @@ struct ax88772b_data {
 	u32 ext_phy_oui;
 	u8  ext_phy_model;
 };
+#endif
 
 /* define for MAC or PHY mode */
 #define OPERATION_MAC_MODE			0
 #define OPERATION_PHY_MODE			1
 
+#if 0
 struct ax88772a_data {
 	struct usbnet *dev;
 	struct workqueue_struct *ax_work;
@@ -481,10 +499,12 @@ struct ax88772_data {
 	u16 presvd_phy_advertise;
 	u16 presvd_phy_bmcr;
 };
+#endif
 
 #define AX_RX_CHECKSUM		1
 #define AX_TX_CHECKSUM		2
 
+#if 0
 /* This structure cannot exceed sizeof(unsigned long [5]) AKA 20 bytes */
 struct ax8817x_data {
 	u8 multi_filter[AX_MCAST_FILTER_SIZE];
@@ -496,6 +516,7 @@ struct ax8817x_data {
 					u32 message);
 #endif
 };
+#endif
 
 struct ax88172_int_data {
 	u16 res1;
