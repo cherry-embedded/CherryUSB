@@ -11,6 +11,17 @@
 
 static const char *DEV_FORMAT = "/dev/u%d";
 
+#define USE_RTTHREAD    (1)
+// #define RX_DUMP
+// #define TX_DUMP
+// #define DUMP_RAW
+
+#if USE_RTTHREAD
+#include <rtthread.h>
+
+#include <netif/ethernetif.h>
+#include <netdev.h>
+#endif /* USE_RTTHREAD */
 
 #define MAX_ADDR_LEN            6
 #define ETH_ALEN                MAX_ADDR_LEN
@@ -89,6 +100,11 @@ struct mii_if_info {
 
 struct usbnet
 {
+#if USE_RTTHREAD
+    /* inherit from ethernet device */
+    struct eth_device parent;
+#endif /* USE_RTTHREAD */
+
     struct usbh_axusbnet *class;
 
     uint8_t   dev_addr[MAX_ADDR_LEN];
@@ -131,6 +147,75 @@ static void dump_hex(const void *ptr, uint32_t buflen)
         printf("\n");
     }
 }
+
+#if defined(RX_DUMP) ||  defined(TX_DUMP)
+static void packet_dump(const char * msg, const struct pbuf* p)
+{
+    rt_uint8_t header[6 + 6 + 2];
+    rt_uint16_t type;
+
+    pbuf_copy_partial(p, header, sizeof(header), 0);
+    type = (header[12] << 8) | header[13];
+
+    rt_kprintf("%02X:%02X:%02X:%02X:%02X:%02X <== %02X:%02X:%02X:%02X:%02X:%02X ",
+               header[0], header[1], header[2], header[3], header[4], header[5],
+               header[6], header[7], header[8], header[9], header[10], header[11]);
+
+    switch (type)
+    {
+    case 0x0800:
+        rt_kprintf("IPv4. ");
+        break;
+
+    case 0x0806:
+        rt_kprintf("ARP.  ");
+        break;
+
+    case 0x86DD:
+        rt_kprintf("IPv6. ");
+        break;
+
+    default:
+        rt_kprintf("%04X. ", type);
+        break;
+    }
+
+    rt_kprintf("%s %d byte. \n", msg, p->tot_len);
+#ifdef DUMP_RAW    
+    const struct pbuf* q;
+    rt_uint32_t i,j;
+    rt_uint8_t *ptr;
+
+    // rt_kprintf("%s %d byte\n", msg, p->tot_len);
+
+    i=0;
+    for(q=p; q != RT_NULL; q= q->next)
+    {
+        ptr = q->payload;
+
+        for(j=0; j<q->len; j++)
+        {
+            if( (i%8) == 0 )
+            {
+                rt_kprintf("  ");
+            }
+            if( (i%16) == 0 )
+            {
+                rt_kprintf("\r\n");
+            }
+            rt_kprintf("%02X ", *ptr);
+
+            i++;
+            ptr++;
+        }
+    }
+
+    rt_kprintf("\n\n");
+#endif /* DUMP_RAW */
+}
+#else
+#define packet_dump(...)
+#endif /* dump */
 
 static int ax8817x_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 			    u16 size, void *data)
@@ -454,6 +539,143 @@ out:
     return ret;
 }
 
+#if USE_RTTHREAD
+static rt_err_t rt_rndis_eth_init(rt_device_t dev)
+{
+    return RT_EOK;
+}
+
+static rt_err_t rt_rndis_eth_open(rt_device_t dev, rt_uint16_t oflag)
+{
+    return RT_EOK;
+}
+
+static rt_err_t rt_rndis_eth_close(rt_device_t dev)
+{
+    return RT_EOK;
+}
+
+static rt_size_t rt_rndis_eth_read(rt_device_t dev, rt_off_t pos, void* buffer, rt_size_t size)
+{
+    rt_set_errno(-RT_ENOSYS);
+    return 0;
+}
+
+static rt_size_t rt_rndis_eth_write (rt_device_t dev, rt_off_t pos, const void* buffer, rt_size_t size)
+{
+    rt_set_errno(-RT_ENOSYS);
+    return 0;
+}
+static rt_err_t rt_rndis_eth_control(rt_device_t dev, int cmd, void *args)
+{
+    usbnet_t rndis_eth_dev = (usbnet_t)dev;
+
+    USB_LOG_INFO("%s L%d\r\n", __FUNCTION__, __LINE__);
+    switch(cmd)
+    {
+    case NIOCTL_GADDR:
+        /* get mac address */
+        if(args)
+        { 
+            USB_LOG_INFO("%s L%d NIOCTL_GADDR\r\n", __FUNCTION__, __LINE__);
+            rt_memcpy(args, rndis_eth_dev->dev_addr, MAX_ADDR_LEN);
+        }    
+        else
+        { 
+            return -RT_ERROR;
+        }    
+        break;
+    default :
+        break;
+    }
+
+    return RT_EOK;
+}
+
+/* reception packet. */
+static struct pbuf *rt_rndis_eth_rx(rt_device_t dev)
+{
+    struct pbuf* p = RT_NULL;
+
+    // USB_LOG_INFO("%s L%d\r\n", __FUNCTION__, __LINE__);
+
+    return p;
+}
+
+/* transmit packet. */
+static rt_err_t rt_rndis_eth_tx(rt_device_t dev, struct pbuf* p)
+{
+    int ret = 0;
+    rt_err_t result = RT_EOK;
+    uint8_t *tmp_buf = RT_NULL;
+    usbnet_t rndis_eth = (usbnet_t)dev;
+    struct usbh_axusbnet *class = rndis_eth->class;
+    rt_tick_t tick_start, tick_end;
+    uint8_t int_notify_buf[8];
+
+#ifdef TX_DUMP
+    packet_dump("TX", p);
+#endif /* TX_DUMP */
+
+    tmp_buf = (uint8_t *)rt_malloc(16 + p->tot_len );
+    if (!tmp_buf) {
+        USB_LOG_INFO("[%s L%d], no memory for pbuf, len=%d.", __FUNCTION__, __LINE__, p->tot_len);
+        goto _exit;
+    }
+
+    uint32_t slen = p->tot_len;
+
+    uint32_t head = slen;
+    head = ((head ^ 0x0000ffff) << 16) + (head);
+
+    tmp_buf[0] = head & 0xFF;
+    tmp_buf[1] = (head >> 8) & 0xFF;
+    tmp_buf[2] = (head >> 16) & 0xFF;
+    tmp_buf[3] = (head >> 24) & 0xFF;
+    slen += 4;
+
+    int padlen = ((p->tot_len + 4) % 512) ? 0 : 4;
+    if (padlen) {
+        tmp_buf[4 + slen + 0] = 0x00;
+        tmp_buf[4 + slen + 1] = 0x00;
+        tmp_buf[4 + slen + 2] = 0xFF;
+        tmp_buf[4 + slen + 3] = 0xFF;
+        slen += 4;
+    }
+
+    pbuf_copy_partial(p, tmp_buf + 4, p->tot_len, 0);
+
+    tick_start = rt_tick_get();
+    ret = usbh_ep_bulk_transfer(class->bulkout, tmp_buf, slen, 500);
+    if (ret < 0) {
+        result = -RT_EIO;
+        USB_LOG_ERR("%s L%d send over ret:%d\r\n", __FUNCTION__, __LINE__, ret);
+        goto _exit;
+    }
+    tick_end = rt_tick_get();
+
+_exit:
+    if(tmp_buf)
+    {
+        rt_free(tmp_buf);
+    }
+
+    return result;
+}
+
+#ifdef RT_USING_DEVICE_OPS
+const static struct rt_device_ops rndis_device_ops =
+{
+    rt_rndis_eth_init,
+    rt_rndis_eth_open,
+    rt_rndis_eth_close,
+    rt_rndis_eth_read,
+    rt_rndis_eth_write,
+    rt_rndis_eth_control
+}
+#endif /* RT_USING_DEVICE_OPS */
+#endif /* USE_RTTHREAD */
+
 static void rt_thread_axusbnet_entry(void *parameter)
 {
     int ret;
@@ -731,6 +953,27 @@ static void rt_thread_axusbnet_entry(void *parameter)
         goto err_out;
     }
 
+#if USE_RTTHREAD
+#ifdef RT_USING_DEVICE_OPS
+    usbh_axusbnet_eth_device.parent.parent.ops           = &rndis_device_ops;
+#else
+    usbh_axusbnet_eth_device.parent.parent.init          = rt_rndis_eth_init;
+    usbh_axusbnet_eth_device.parent.parent.open          = rt_rndis_eth_open;
+    usbh_axusbnet_eth_device.parent.parent.close         = rt_rndis_eth_close;
+    usbh_axusbnet_eth_device.parent.parent.read          = rt_rndis_eth_read;
+    usbh_axusbnet_eth_device.parent.parent.write         = rt_rndis_eth_write;
+    usbh_axusbnet_eth_device.parent.parent.control       = rt_rndis_eth_control;
+#endif
+    usbh_axusbnet_eth_device.parent.parent.user_data     = RT_NULL;
+
+    usbh_axusbnet_eth_device.parent.eth_rx               = rt_rndis_eth_rx;
+    usbh_axusbnet_eth_device.parent.eth_tx               = rt_rndis_eth_tx;
+
+    usbh_axusbnet_eth_device.class = class;
+
+    eth_device_init(&usbh_axusbnet_eth_device.parent, "u0");
+    eth_device_linkchange(&usbh_axusbnet_eth_device.parent, RT_FALSE);
+#endif /* USE_RTTHREAD */
     // check link status.
     {
         u16 bmcr = ax8817x_mdio_read_le(dev, dev->mii.phy_id, MII_BMCR);
@@ -780,6 +1023,7 @@ static void rt_thread_axusbnet_entry(void *parameter)
                 continue;
             }
 
+#if !USE_RTTHREAD
             {
                 static uint32_t count = 0;
                 USB_LOG_INFO("recv: #%d, len=%d\r\n", count, ret);
@@ -814,6 +1058,39 @@ static void rt_thread_axusbnet_entry(void *parameter)
 
                 count++;
             }
+#endif /* RT-Thread */
+
+#if USE_RTTHREAD
+            {
+                static uint32_t count = 0;
+
+                if (count == 0) {
+                    eth_device_linkchange(&usbh_axusbnet_eth_device.parent, RT_TRUE);
+                }
+
+                count++;
+            }
+
+            /* allocate buffer */
+            struct pbuf *p = RT_NULL;
+            p = pbuf_alloc(PBUF_LINK, len1, PBUF_RAM);
+            if (p != NULL) {
+                pbuf_take(p, data + 4, len1);
+
+#ifdef RX_DUMP
+                packet_dump("RX", p);
+#endif /* RX_DUMP */
+                struct eth_device *eth_dev = &usbh_axusbnet_eth_device.parent;
+                if ((eth_dev->netif->input(p, eth_dev->netif)) != ERR_OK) {
+                    USB_LOG_INFO("F:%s L:%d IP input error\r\n", __FUNCTION__, __LINE__);
+                    pbuf_free(p);
+                    p = RT_NULL;
+                }
+                // USB_LOG_INFO("%s L%d input OK\r\n", __FUNCTION__, __LINE__);
+            } else {
+                USB_LOG_ERR("%s L%d pbuf_alloc NULL\r\n", __FUNCTION__, __LINE__);
+            }
+#endif /* RT-Thread */
         }
     } // while (1)
 
