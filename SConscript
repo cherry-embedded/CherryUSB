@@ -66,12 +66,13 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
 
 # USB HOST
-if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
-    src += Glob('core/usbh_core.c')
+if GetDepend(['PKG_CHERRYUSB_HOST']):
     path += [cwd + '/osal']
+    path += [cwd + '/class/hub']
+    src += Glob('core/usbh_core.c')
     src += Glob('osal/usb_osal_rtthread.c')
     src += Glob('osal/usb_workq.c')
-
+    
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC']):
         path += [cwd + '/class/cdc']
         src += Glob('class/cdc/usbh_cdc_acm.c')
@@ -82,7 +83,6 @@ if GetDepend(['PKG_CHERRYUSB_USING_HOST']):
         path += [cwd + '/class/msc']
         src += Glob('class/msc/usbh_msc.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_HUB']):
-        path += [cwd + '/class/hub']
         src += Glob('class/hub/usbh_hub.c')
         CPPDEFINES += ['CONFIG_USBHOST_HUB']
 
