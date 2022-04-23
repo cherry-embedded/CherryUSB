@@ -3,10 +3,7 @@
 
 #ifdef CONFIG_USB_MUSB_SUNXI
 
-#define SUNXI_SRAMC_BASE 0x01c00000
 #define SUNXI_USB0_BASE  0x01c13000
-
-#define USBC_REG_o_PHYCTL 0x0404
 
 #ifndef USB_BASE
 #define USB_BASE (SUNXI_USB0_BASE)
@@ -131,7 +128,7 @@ struct usb_musb_priv {
     usb_osal_mutex_t exclsem[CONIFG_USB_MUSB_EP_NUM]; /* Support mutually exclusive access */
 } g_usbhost;
 
-volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
+static volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
 volatile uint8_t ep0_outlen = 0;
 
 /* get current active ep */

@@ -2,10 +2,8 @@
 #include "usb_musb_reg.h"
 
 #ifdef CONFIG_USB_MUSB_SUNXI
-#define SUNXI_SRAMC_BASE 0x01c00000
-#define SUNXI_USB0_BASE  0x01c13000
 
-#define USBC_REG_o_PHYCTL 0x0404
+#define SUNXI_USB0_BASE  0x01c13000
 
 #ifndef USB_BASE
 #define USB_BASE (SUNXI_USB0_BASE)
@@ -98,7 +96,7 @@ struct usb_dc_config_priv {
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } usb_dc_cfg;
 
-volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
+static volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
 volatile uint16_t ep0_last_size = 0;
 
 /* get current active ep */
@@ -503,7 +501,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 {
     int ret = 0;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    uint32_t read_count;
+    uint32_t read_count = 0;
     uint8_t old_ep_idx;
 
     old_ep_idx = USBC_GetActiveEp();
