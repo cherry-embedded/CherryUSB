@@ -81,3 +81,4 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    :caption: Porting 说明
 
    porting
+   porting_usbip
