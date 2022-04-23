@@ -5,6 +5,7 @@
 
 .. figure:: img/env1.png
 
+.. note:: 协议栈默认使用 printf，而 rt-thread 对这个支持并不是很好，所以推荐添加一个 cflag 在你的工程中： `-Dprintf=rt_kprintf`。
 
 从机配置
 --------------------------
@@ -17,7 +18,7 @@
 
 .. figure:: img/env3.png
 
-* 其次第二个配置则是选择 USB device ip，不清楚自己芯片是哪个 ip的可以参考 **port** 目录下对应的 readme。
+* 其次第二个配置则是选择 USB device ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。
 
 .. figure:: img/env4.png
 
@@ -60,3 +61,7 @@
 然后将 `stm32xxxx_hal_msp.c` 中的 `HAL_PCD_MspInit` 或者是 `HAL_HCD_MspInit` 中的内容复制到 `usb_dc_low_level_init` 和 `usb_hc_low_level_init` 函数中，举例如下：
 
 .. figure:: img/stm32_init.png
+
+其他小伙伴的移植笔记
+-------------------------
+- @kylongmu `stm32h743-st-nucleo移植CherryUSB- CDC串口 <https://club.rt-thread.org/ask/article/3719.html>`_。
