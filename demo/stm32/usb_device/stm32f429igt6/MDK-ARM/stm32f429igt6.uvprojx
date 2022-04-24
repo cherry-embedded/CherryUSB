@@ -578,7 +578,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>usb_stack</GroupName>
+          <GroupName>CherryUSB</GroupName>
           <Files>
             <File>
               <FileName>usbd_cdc.c</FileName>
