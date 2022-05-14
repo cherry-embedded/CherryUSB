@@ -2,6 +2,7 @@ USB 基本概念
 ===========================
 
 本文主要对 USB 官方手册 `usb2.0.pdf <https://www.usb.org/document-library/usb-20-specification>`_ 中提供的第五章、第七章、第八章、第九章进行讲解。
+如果是初学 usb 的同学，推荐先不要看本节，而是将示例 demo 能够跑通了，熟悉了使用，再来看。
 
 简介
 ---------

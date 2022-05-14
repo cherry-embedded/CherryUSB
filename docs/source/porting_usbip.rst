@@ -7,7 +7,7 @@ USB IP 差别说明
 FSDEV
 --------------------------
 
-这个 ip 不同厂家基本没有对标准的寄存器地址进行修改，所以，用户使用时，仅需要修改 `USBD_IRQHandler` 和 `USB_BASE` 即可。
+这个 ip 不同厂家基本都是基于标准的 usb 寄存器，所以，用户使用时，仅需要修改 `USBD_IRQHandler` 、 `USB_NUM_BIDIR_ENDPOINTS` 、 `USB_BASE` 即可。
 
 MUSB
 --------------------------

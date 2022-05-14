@@ -14,6 +14,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 - 标准化的 porting 接口
 - 设备协议栈的使用简化到类如 uart 、dma 的使用，主机协议栈的使用简化到文件的使用
 - 协议栈实现代码简短，并且从上往下看完就能理清 usb 枚举过程和 class 加载机制
+- Api 少，并且分为三类：dcd/hcd api、注册 api、命令回调 api
 
 其他相关链接：
 
@@ -39,13 +40,16 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    usb/usb_desc
    usb/usb_request
    usb/usb_enum
+
 .. toctree::
    :maxdepth: 1
    :caption: API 手册
 
    api/api_device
    api/api_host
+   api/api_port
    api/api_common
+   api/api_config
 
 .. toctree::
    :maxdepth: 1

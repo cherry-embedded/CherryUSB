@@ -1,6 +1,11 @@
 主机协议栈
 =========================
 
+关于主机协议栈中结构体的命名、分类、成员组成，参考下面这两张图：
+
+.. figure:: img/api_host1.png
+.. figure:: img/api_host2.png
+
 CORE
 -----------------
 
@@ -94,7 +99,7 @@ hub 结构体
 usbh_event_notify_handler
 """"""""""""""""""""""""""""""""""""
 
-``usbh_event_notify_handler`` 是 USB 中断中的核心，用于处理不同的中断标志。包括复位、端点0 IN/OUT/SETUP、其他端点 IN/OUT 、SUSPEND、RESUME、SOF 中断等等。用于需要在 porting 接口中的 USB中断中调用该接口。
+``usbh_event_notify_handler`` 是 USB 中断中的核心，主要用于处理 **设备连接** 和 **设备断开** 中断，从而唤醒线程去执行枚举。
 
 .. code-block:: C
 
@@ -115,7 +120,7 @@ usbh_event_notify_handler
 usbh_initialize
 """"""""""""""""""""""""""""""""""""
 
-``usbh_initialize`` 用来初始化 usb 主机协议栈，包括：创建插拔检测用的信号量和枚举线程、高低工作队列、初始化 roothub端点0 配置，初始化 usb 主机控制器。
+``usbh_initialize`` 用来初始化 usb 主机协议栈，包括：创建插拔检测用的信号量和枚举线程、高低工作队列、初始化 roothub 端点0 配置，初始化 usb 主机控制器。
 
 .. code-block:: C
 
@@ -151,11 +156,8 @@ HID
 MSC
 -----------------
 
-UAC
+RNDIS
 -----------------
 
-UVC
------------------
-
-PORTING
+PRINTER
 -----------------

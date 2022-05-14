@@ -1,7 +1,7 @@
 芯片通用移植指南
 =========================
 
-本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在往下看之前，需要你准备好一个可以打印 helloworld 的基本工程，并且实现了 `printf` 、 `malloc`、 `free`。如果是主机，需要准备好可以打印 helloworld 的带 OS 的工程。
+本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在往下看之前，需要 **你准备好一个可以打印 helloworld 的基本工程** ，并且实现了 `printf` 、 `malloc`、 `free`。如果是主机，需要 **准备好可以打印 helloworld 的带 OS 的工程**。
 
 USB Device 移植要点
 -----------------------
@@ -15,7 +15,7 @@ USB Device 移植要点
 - 编译使用。各个 class 如何使用，参考 demo 下的 template
 
 
-.. note:: device 移植要点其实就三个，实现 `usb_dc_low_level_init` ，改 `USBD_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` 、 `USB_NUM_BIDIR_ENDPOINTS=x`，改 `usb_config.h` 中的内容
+.. note:: device 移植要点其实就三个，实现 `usb_dc_low_level_init` ;改 `USBD_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` 、 `USB_NUM_BIDIR_ENDPOINTS=x`;改 `usb_config.h` 中的内容
 
 USB Host 移植要点
 -----------------------
@@ -37,8 +37,8 @@ USB Host 移植要点
 
 - 编译使用。各个 class 如何使用，参考 demo 下的 `usb_host.c` 文件
 
-.. note:: device 移植要点其实就三个，实现 `usb_hc_low_level_init` ，改 `USBH_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` ，改 `usb_config.h` 中的内容
+.. note:: device 移植要点其实就三个，实现 `usb_hc_low_level_init` ; 改 `USBH_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` ; 改 `usb_config.h` 中的内容
 
 .. note:: 使用 host 时，推荐添加除了 hub 以外的所有适配的 class 驱动，达到自动加载驱动的目的。当然，如果不用，那就不添加。
 
-.. caution:: 如果主从 ip 共用一个中断，推荐设置 `USBD_IRQHandler=USBD_IRQHandler` 、 `USBH_IRQHandler=USBH_IRQHandler` ，然后由真正的中断函数根据主从模式调用这两个函数。
+.. caution:: 如果主从 ip 共用一个中断，设置 `USBD_IRQHandler=USBD_IRQHandler` 、 `USBH_IRQHandler=USBH_IRQHandler` ，然后由真正的中断函数根据主从模式调用这两个函数。

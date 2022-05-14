@@ -260,8 +260,9 @@ usbd_cdc_acm_set_line_coding
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_line_coding(uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits);
+    void usbd_cdc_acm_set_line_coding(uint8_t intf, uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits);
 
+- **intf** 控制接口号
 - **baudrate** 波特率
 - **databits**  数据位
 - **parity**  校验位
@@ -274,8 +275,9 @@ usbd_cdc_acm_set_dtr
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_dtr(bool dtr);
+    void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr);
 
+- **intf** 控制接口号
 - **dtr** dtr 为1表示拉低电平，为0表示拉高电平
 
 usbd_cdc_acm_set_rts
@@ -285,8 +287,9 @@ usbd_cdc_acm_set_rts
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_rts(bool rts);
+    void usbd_cdc_acm_set_rts(uint8_t intf, bool rts);
 
+- **intf** 控制接口号
 - **rts** rts 为1表示拉低电平，为0表示拉高电平
 
 CDC_ACM_DESCRIPTOR_INIT
@@ -597,5 +600,8 @@ usbd_video_mjpeg_payload_fill
 DFU
 -----------------
 
-PORTING
+PRINTER
+-----------------
+
+MTP
 -----------------
