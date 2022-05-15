@@ -5,6 +5,9 @@
 #define USBD_IRQHandler USB_HP_CAN1_TX_IRQHandler //use actual usb irq name instead
 #endif
 
+#define USB_BASE ((uint32_t)0x40005C00)
+#define USB      ((USB_TypeDef *)USB_BASE)
+
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 5
 #endif

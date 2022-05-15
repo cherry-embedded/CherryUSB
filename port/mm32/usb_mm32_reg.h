@@ -156,9 +156,6 @@ typedef struct
     __IO uint32_t  rPOWER;				/*!           Address offset: 0x1C0 */
 } USB_TypeDef;
 
-#define USB_BASE          	  ((uint32_t)0x40005C00)
-#define USB				    ((USB_TypeDef*) USB_BASE )
-
 /******************************************************************************/
 /*                                                                            */
 /*                                   USB                                      */
