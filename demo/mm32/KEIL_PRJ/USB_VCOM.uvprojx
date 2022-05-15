@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\bsp\usblib;..\bsp;..\SYSTEM\delay;..\SYSTEM\uart;..\SYSTEM\sys;..\bsp\test;..\HARDWARE\UART;..\bsp\usblib;..\..\..\class\cdc;..\..\..\common;..\..\..\core;..\Device\MM32L3xx\HAL_lib\inc;..\Device\CMSIS\KEIL_CORE</IncludePath>
+              <IncludePath>..\bsp;..\SYSTEM\delay;..\SYSTEM\uart;..\SYSTEM\sys;..\..\..\class\msc;..\..\..\class\cdc;..\..\..\common;..\..\..\core;..\Device\MM32L3xx\HAL_lib\inc;..\Device\CMSIS\KEIL_CORE</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -436,7 +436,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>usb_stack</GroupName>
+          <GroupName>CherryUSB</GroupName>
           <Files>
             <File>
               <FileName>usbd_cdc.c</FileName>
