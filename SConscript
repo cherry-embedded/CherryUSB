@@ -1,8 +1,7 @@
 from building import *
 
 cwd = GetCurrentDir()
-path = [cwd]
-path += [cwd + '/common']
+path = [cwd + '/common']
 path += [cwd + '/core']
 src = []
 
