@@ -5,7 +5,7 @@ path = [cwd + '/common']
 path += [cwd + '/core']
 src = []
 
-CPPDEFINES = []
+CPPDEFINES = ['-Dprintf=rt_kprintf']
 
 # USB DEVICE
 if GetDepend(['PKG_CHERRYUSB_DEVICE']):
@@ -71,7 +71,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     src += Glob('core/usbh_core.c')
     src += Glob('osal/usb_osal_rtthread.c')
     src += Glob('osal/usb_workq.c')
-    
+
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC']):
         path += [cwd + '/class/cdc']
         src += Glob('class/cdc/usbh_cdc_acm.c')
@@ -81,6 +81,9 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
         path += [cwd + '/class/msc']
         src += Glob('class/msc/usbh_msc.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_RNDIS']):
+        src += Glob('class/wireless/usbh_rndis.c')
+
     if GetDepend(['PKG_CHERRYUSB_HOST_HUB']):
         src += Glob('class/hub/usbh_hub.c')
         CPPDEFINES += ['CONFIG_USBHOST_HUB']
