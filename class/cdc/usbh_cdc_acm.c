@@ -147,12 +147,10 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
+    usbh_cdc_acm_devno_alloc(cdc_acm_class);
     cdc_acm_class->hport = hport;
     cdc_acm_class->ctrl_intf = intf;
     cdc_acm_class->data_intf = intf + 1;
-
-    usbh_cdc_acm_devno_alloc(cdc_acm_class);
-    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, cdc_acm_class->minor);
 
     hport->config.intf[intf].priv = cdc_acm_class;
     hport->config.intf[intf + 1].priv = NULL;
@@ -169,11 +167,13 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     cdc_acm_class->linecoding->bCharFormat = 0;
     ret = usbh_cdc_acm_set_line_coding(cdc_acm_class, cdc_acm_class->linecoding);
     if (ret < 0) {
+        USB_LOG_ERR("Fail to set linecoding\r\n");
         return ret;
     }
 
     ret = usbh_cdc_acm_set_line_state(cdc_acm_class, true, true);
     if (ret < 0) {
+        USB_LOG_ERR("Fail to set line state\r\n");
         return ret;
     }
 
@@ -201,6 +201,8 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
             usbh_ep_alloc(&cdc_acm_class->bulkout, &ep_cfg);
         }
     }
+
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, cdc_acm_class->minor);
 
     USB_LOG_INFO("Register CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
 
@@ -237,9 +239,10 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         usb_free(cdc_acm_class);
 
-        USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
+        if (hport->config.intf[intf].devname[0] != '\0')
+            USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
 
+        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
         hport->config.intf[intf].priv = NULL;
         hport->config.intf[intf + 1].priv = NULL;
     }

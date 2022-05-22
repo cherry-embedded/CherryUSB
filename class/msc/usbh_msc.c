@@ -332,11 +332,9 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(msc_class, 0, sizeof(struct usbh_msc));
+    usbh_msc_devno_alloc(msc_class);
     msc_class->hport = hport;
     msc_class->intf = intf;
-    
-    usbh_msc_devno_alloc(msc_class);
-    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
 
     hport->config.intf[intf].priv = msc_class;
 
@@ -368,14 +366,33 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    USB_LOG_INFO("Register MSC Class:%s\r\n", hport->config.intf[intf].devname);
-
     ret = usbh_msc_scsi_testunitready(msc_class);
+    if (ret < 0) {
+        USB_LOG_ERR("Fail to scsi_testunitready\r\n");
+        return ret;
+    }
     ret = usbh_msc_scsi_inquiry(msc_class);
+    if (ret < 0) {
+        USB_LOG_ERR("Fail to scsi_inquiry\r\n");
+        return ret;
+    }
     ret = usbh_msc_scsi_readcapacity10(msc_class);
+    if (ret < 0) {
+        USB_LOG_ERR("Fail to scsi_readcapacity10\r\n");
+        return ret;
+    }
 
-    USB_LOG_INFO("Capacity info:\r\n");
-    USB_LOG_INFO("Block num:%d,block size:%d\r\n", (unsigned int)msc_class->blocknum, (unsigned int)msc_class->blocksize);
+    if (msc_class->blocksize) {
+        USB_LOG_INFO("Capacity info:\r\n");
+        USB_LOG_INFO("Block num:%d,block size:%d\r\n", (unsigned int)msc_class->blocknum, (unsigned int)msc_class->blocksize);
+    } else {
+        USB_LOG_ERR("Fail to read capacity10\r\n");
+        return -ERANGE;
+    }
+
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
+
+    USB_LOG_INFO("Register MSC Class:%s\r\n", hport->config.intf[intf].devname);
 
     extern int msc_test();
     msc_test();
@@ -410,7 +427,8 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         usb_free(msc_class);
 
-        USB_LOG_INFO("Unregister MSC Class:%s\r\n", hport->config.intf[intf].devname);
+        if (hport->config.intf[intf].devname[0] != '\0')
+            USB_LOG_INFO("Unregister MSC Class:%s\r\n", hport->config.intf[intf].devname);
 
         memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
         hport->config.intf[intf].priv = NULL;

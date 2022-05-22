@@ -139,11 +139,9 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(hid_class, 0, sizeof(struct usbh_hid));
+    usbh_hid_devno_alloc(hid_class);
     hid_class->hport = hport;
     hid_class->intf = intf;
-    
-    usbh_hid_devno_alloc(hid_class);
-    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hid_class->minor);
 
     hport->config.intf[intf].priv = hid_class;
 
@@ -173,6 +171,8 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
             usbh_ep_alloc(&hid_class->intout, &ep_cfg);
         }
     }
+
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hid_class->minor);
 
     USB_LOG_INFO("Register HID Class:%s\r\n", hport->config.intf[intf].devname);
 
@@ -206,7 +206,8 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         usb_free(hid_class);
 
-        USB_LOG_INFO("Unregister HID Class:%s\r\n", hport->config.intf[intf].devname);
+        if (hport->config.intf[intf].devname[0] != '\0')
+            USB_LOG_INFO("Unregister HID Class:%s\r\n", hport->config.intf[intf].devname);
 
         memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
         hport->config.intf[intf].priv = NULL;

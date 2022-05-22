@@ -221,7 +221,6 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
 
     hport->config.intf[intf].priv = rndis_class;
     hport->config.intf[intf + 1].priv = NULL;
-    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
 #ifdef CONFIG_USBHOST_RNDIS_NOTIFY
     ep_desc = &hport->config.intf[intf].ep[0].ep_desc;
@@ -333,6 +332,8 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     }
     USB_LOG_INFO("rndis set OID_802_3_MULTICAST_LIST success\r\n");
 
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+
     USB_LOG_INFO("Register RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
     return ret;
 query_errorout:
@@ -364,7 +365,8 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         usb_free(rndis_class);
 
-        USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
+        if (hport->config.intf[intf].devname[0] != '\0')
+            USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
         memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
 
         hport->config.intf[intf].priv = NULL;

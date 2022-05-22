@@ -204,6 +204,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(hub_class, 0, sizeof(struct usbh_hub));
+    usbh_hub_devno_alloc(hub_class);
     hub_class->dev_addr = hport->dev_addr;
     hub_class->parent = hport;
 
@@ -212,9 +213,6 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         USB_LOG_ERR("Fail to alloc port_status\r\n");
         return -ENOMEM;
     }
-
-    usbh_hub_devno_alloc(hub_class);
-    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hub_class->index);
 
     hport->config.intf[intf].priv = hub_class;
 
@@ -267,6 +265,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hub_class->index);
     USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
     ret = usbh_ep_intr_async_transfer(hub_class->intin, hub_class->int_buffer, USBH_HUB_INTIN_BUFSIZE, usbh_external_hub_callback, hub_class);
@@ -309,7 +308,8 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
         usbh_hub_unregister(hub_class);
         usb_free(hub_class);
 
-        USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
+        if (hport->config.intf[intf].devname[0] != '\0')
+            USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
         memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
         hport->config.intf[intf].priv = NULL;
