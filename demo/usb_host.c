@@ -72,6 +72,9 @@ int cdc_acm_test(void)
 #if 0
 #include "ff.h"
 #endif
+
+uint8_t partition_table[512];
+
 int msc_test(void)
 {
     int ret;
@@ -82,13 +85,12 @@ int msc_test(void)
     }
 #if 1
     /* get the partition table */
-    uint8_t *partition_table = usb_iomalloc(1024);
     ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
     if (ret < 0) {
         printf("scsi_read10 error,ret:%d\r\n", ret);
         return ret;
     }
-    for (uint32_t i = 0; i < 1024; i++) {
+    for (uint32_t i = 0; i < 512; i++) {
         if (i % 16 == 0) {
             printf("\r\n");
         }
@@ -98,14 +100,14 @@ int msc_test(void)
 #endif
 
 #if 0
-    uint8_t *partition_table = usb_iomalloc(8192);
-    ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 16);
-    usb_iofree(partition_table);
+    uint8_t *msc_buffer = usb_iomalloc(8192);
+    ret = usbh_msc_scsi_read10(msc_class, 0, msc_buffer, 16);
+    usb_iofree(msc_buffer);
     // for (uint32_t i = 0; i < 1024; i++) {
     //     if (i % 16 == 0) {
     //         printf("\r\n");
     //     }
-    //     printf("%02x ", partition_table[i]);
+    //     printf("%02x ", msc_buffer[i]);
     // }
     // printf("\r\n");
 #endif
