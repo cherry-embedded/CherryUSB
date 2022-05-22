@@ -70,7 +70,7 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
 
     ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&cmd);
     if (ret < 0) {
-        USB_LOG_ERR("oid:%08x send error, ret: %d\r\n", oid, ret);
+        USB_LOG_ERR("oid:%08x send error, ret: %d\r\n", (unsigned int)oid, ret);
         return ret;
     }
 
@@ -89,7 +89,7 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
 
     ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)resp);
     if (ret < 0) {
-        USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", oid, ret);
+        USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", (unsigned int)oid, ret);
         goto error_out;
     }
 
@@ -132,7 +132,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
 
     ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)cmd);
     if (ret < 0) {
-        USB_LOG_ERR("oid:%08x send error, ret: %d\r\n", oid, ret);
+        USB_LOG_ERR("oid:%08x send error, ret: %d\r\n", (unsigned int)oid, ret);
         goto error_out;
     }
 
@@ -146,7 +146,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
 
     ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&resp);
     if (ret < 0) {
-        USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", oid, ret);
+        USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", (unsigned int)oid, ret);
         goto error_out;
     }
 
@@ -203,8 +203,8 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
     uint32_t *oid_support_list;
-    uint32_t oid;
-    uint32_t oid_num;
+    unsigned int oid = 0;
+    unsigned int oid_num = 0;
     uint32_t data_len;
 
     struct usbh_rndis *rndis_class = usb_malloc(sizeof(struct usbh_rndis));
