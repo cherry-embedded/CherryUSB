@@ -1,0 +1,1 @@
+Please do not modify main.c and xxx_it.c when generating code with cubemx.
