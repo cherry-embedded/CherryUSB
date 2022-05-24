@@ -1107,33 +1107,6 @@ typedef struct
 
 #define USB_COUNT7_RX_1_BLSIZE_1                0x80000000U                    /*!< BLock SIZE (high) */
 
-/** @defgroup USB_LL_EP0_MPS USB Low Layer EP0 MPS
-  * @{
-  */
-#define EP_MPS_64                              0U
-#define EP_MPS_32                              1U
-#define EP_MPS_16                              2U
-#define EP_MPS_8                               3U
-/**
-  * @}
-  */
-
-/** @defgroup USB_LL_EP_Type USB Low Layer EP Type
-  * @{
-  */
-#define EP_TYPE_CTRL                           0U
-#define EP_TYPE_ISOC                           1U
-#define EP_TYPE_BULK                           2U
-#define EP_TYPE_INTR                           3U
-#define EP_TYPE_MSK                            3U
-/**
-  * @}
-  */
-
-/** @defgroup USB_LL Device Speed
-  * @{
-  */
-#define USBD_FS_SPEED                          2U
 /**
   * @}
   */

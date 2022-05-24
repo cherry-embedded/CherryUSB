@@ -126,19 +126,19 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 
     /* initialize Endpoint */
     switch (ep_cfg->ep_type) {
-        case EP_TYPE_CTRL:
+        case USB_ENDPOINT_TYPE_CONTROL:
             wEpRegVal = USB_EP_CONTROL;
             break;
 
-        case EP_TYPE_BULK:
+        case USB_ENDPOINT_TYPE_BULK:
             wEpRegVal = USB_EP_BULK;
             break;
 
-        case EP_TYPE_INTR:
+        case USB_ENDPOINT_TYPE_INTERRUPT:
             wEpRegVal = USB_EP_INTERRUPT;
             break;
 
-        case EP_TYPE_ISOC:
+        case USB_ENDPOINT_TYPE_ISOCHRONOUS:
             wEpRegVal = USB_EP_ISOCHRONOUS;
             break;
 
@@ -183,7 +183,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         }
 
         PCD_CLEAR_TX_DTOG(USB, ep_idx);
-        if (ep_cfg->ep_type != EP_TYPE_ISOC) {
+        if (ep_cfg->ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             /* Configure NAK status for the Endpoint */
             PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
         } else {
@@ -231,7 +231,7 @@ int usbd_ep_clear_stall(const uint8_t ep)
     if (USB_EP_DIR_IS_OUT(ep)) {
         PCD_CLEAR_TX_DTOG(USB, ep_idx);
 
-        if (usb_dc_cfg.in_ep[ep_idx].ep_type != EP_TYPE_ISOC) {
+        if (usb_dc_cfg.in_ep[ep_idx].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             /* Configure NAK status for the Endpoint */
             PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
         }
@@ -257,6 +257,9 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
 
     if (!data && data_len) {
         return -1;
+    }
+
+    while (PCD_GET_EP_TX_STATUS(USB, ep_idx) == USB_EP_TX_VALID) {
     }
 
     if (!data_len) {
