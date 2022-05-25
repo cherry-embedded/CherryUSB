@@ -2,47 +2,32 @@
 
 [中文版](./README_zh.md)
 
-CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system.
+CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system with USB ip.
 
 ![CherryUSB](./docs/asserts/usb_outline.png)
 
-## CherryUSB Directoy Structure
+## Why choose
+
+- Ip-oriented programming, the same usb ip driver does not need to be written repeatedly, only the parts that are not the same need to be implemented
+- Code tree writing makes it easier for users to understand usb concept, enumeration process, class driver loading
+- Templating the Class driver makes it easier to use composite device and add custom drivers
+- Simplifying the complex transfer of usb makes it easier for users to use usb as easily as uart and dma
+- Fewer directory structures, fewer apis, fewer codesize, extreme usb bandwidth
+
+## Directoy Structure
 
 ```
 .
 ├── class
-│   ├── audio
-│   ├── cdc
-│   ├── dfu
-│   ├── hid
-│   ├── hub
-│   ├── midi
-│   ├── msc
-│   ├── tmc
-│   └── video
 ├── common
 ├── core
 ├── demo
-│   ├── bouffalolab
-│   └── ch32
-│   └── es32
-│   └── mm32
-│   └── nuvoton
-│   └── stm32
 ├── docs
 ├── osal
 ├── packet capture
 └── port
-    ├── bouffalolab
-    │   └── bl702
-    ├── ch32
-    ├── ehci
-    ├── fsdev
-    ├── mm32
-    ├── musb
-    ├── nuvoton
-    ├── synopsys
-    └── template
+└── tools
+
 ```
 
 |   Directory       |  Description            |
@@ -57,7 +42,7 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 |port           |  usb dcd and hcd porting |
 |tools           |  tool used url          |
 
-## CherryUSB Device Stack Overview
+## Device Stack Overview
 
 CherryUSB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests. The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.
 
@@ -79,7 +64,7 @@ CherryUSB Device Stack has the following functions：
 - Support WINUSB1.0、WINUSB2.0(with BOS)
 - Support Vendor class
 
-CherryUSB Device Stack resource usage：
+CherryUSB Device Stack resource usage (GCC 10.2 with -O2)：
 
 |   file      |  FLASH (Byte)  |  RAM (Byte)  |
 |:-----------:|:--------------:|:------------:|
@@ -90,7 +75,7 @@ CherryUSB Device Stack resource usage：
 |usbd_audio.c |  438           | 14           |
 |usbd_video.c |  402           | 4            |
 
-## CherryUSB Host Stack Overview
+## Host Stack Overview
 
 The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for the different Class to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the protocol stack is managed using os, and provides osal to make a adaptation to different os.
 
@@ -108,14 +93,14 @@ CherryUSB Host Stack has the following functions：
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 
-## CherryUSB Documentation Tutorial
+## Documentation Tutorial
 
 Quickly start, USB basic concepts, API manual, Class basic concepts and examples, see [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/)
 
-## CherryUSB Video Tutorial
+## Video Tutorial
 
 USB basic concepts and how the CherryUSB Device stack is implemented, see [CherryUSB Device Stack Tutorial](https://www.bilibili.com/video/BV1Ef4y1t73d).
 
-## CherryUSB Graphical Config Tool
+## Graphical Config Tool
 
 [chryusb_configurator](https://github.com/Egahp/chryusb_configurator) is written in **electron + vite2 + ts** framework，currently used to automate the generation of descriptor arrays, with additional functionality to be added later.

@@ -2,47 +2,31 @@
 
 [English](./README.md)
 
-CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 USB 主从协议栈。
+CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带 USB ip)的 USB 主从协议栈。
 
 ![CherryUSB](./docs/asserts/usb_outline.png)
 
-## CherryUSB 目录结构
+## 为什么选择
+
+- 面向 ip 编程，相同 usb ip 驱动无需重复编写，仅需实现不相同的部分
+- 代码树状化编写，轻松理解 usb 概念、枚举过程、class 驱动加载
+- Class 驱动模板化，轻松实现复合设备和自定义添加驱动
+- 将 usb 的复杂传输简单化，使得用户能够像 uart、dma 一样轻松使用 usb
+- 少量的目录结构，少量的 api，少量的 codesize，极致的 usb 带宽
+
+## 目录结构
 
 ```
 .
 ├── class
-│   ├── audio
-│   ├── cdc
-│   ├── dfu
-│   ├── hid
-│   ├── hub
-│   ├── midi
-│   ├── msc
-│   ├── tmc
-│   └── video
 ├── common
 ├── core
 ├── demo
-│   ├── bouffalolab
-│   └── ch32
-│   └── es32
-│   └── mm32
-│   └── nuvoton
-│   └── stm32
 ├── docs
 ├── osal
 ├── packet capture
 └── port
-    ├── bouffalolab
-    │   └── bl702
-    ├── ch32
-    ├── ehci
-    ├── fsdev
-    ├── mm32
-    ├── musb
-    ├── nuvoton
-    ├── synopsys
-    └── template
+└── tools
 ```
 
 |   目录名       |  描述                          |
@@ -57,7 +41,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 |port           |  usb 主从需要实现的 porting 接口 |
 |tools           |  工具链接                       |
 
-## CherryUSB Device 协议栈简介
+## Device 协议栈简介
 
 CherryUSB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求以及 custom 特殊请求规范了一套统一的函数框架，采用面向对象和链表的方式，能够使得用户快速上手复合设备，不用管底层的逻辑。同时，规范了一套标准的 dcd porting 接口，用于适配不同的 USB IP，达到面向 ip 编程。
 
@@ -79,7 +63,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 WINUSB1.0、WINUSB2.0(带 BOS )
 - 支持 Vendor 类 class
 
-CherryUSB Device 协议栈资源占用说明：
+CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
 |   file      |  FLASH (Byte)  |  RAM (Byte)  |
 |:-----------:|:--------------:|:------------:|
@@ -90,7 +74,7 @@ CherryUSB Device 协议栈资源占用说明：
 |usbd_audio.c |  438           | 14           |
 |usbd_video.c |  402           | 4            |
 
-## CherryUSB Host 协议栈简介
+## Host 协议栈简介
 
 CherryUSB Host 协议栈对挂载在 roothub、外部 hub 上的设备规范了一套标准的枚举实现，对不同的 Class 类也规范了一套标准接口，用来指示在枚举后和断开连接后该 Class 驱动需要做的事情。同时，规范了一套标准的 hcd porting 接口，用于适配不同的 USB IP，达到面向 IP 编程。最后，协议栈使用 OS 管理，并提供了 osal 用来适配不同的 os。
 
@@ -108,14 +92,14 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
-## CherryUSB 文档教程
+## 文档教程
 
 CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和例程，参考 [CherryUSB 文档教程](https://cherryusb.readthedocs.io/)
 
-## CherryUSB 视频教程
+## 视频教程
 
 USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [CherryUSB Device 协议栈教程](https://www.bilibili.com/video/BV1Ef4y1t73d).
 
-## CherryUSB 图形化界面配置工具
+## 图形化界面配置工具
 
 [chryusb_configurator](https://github.com/Egahp/chryusb_configurator) 采用 **electron + vite2 + ts** 框架编写，当前用于自动化生成描述符数组，后续会增加其他功能。
