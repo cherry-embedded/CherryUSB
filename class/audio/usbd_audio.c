@@ -109,24 +109,31 @@ static int audio_custom_request_handler(struct usb_setup_packet *setup, uint8_t 
                 switch (control_selector) {
                     case AUDIO_EP_CONTROL_SAMPLING_FEQ:
                         memcpy((uint8_t *)&sampling_freq, *data, *len);
-                        USB_LOG_INFO("Set ep:%02x %d Hz\r\n", ep, (int)sampling_freq);
+                        USB_LOG_DBG("Set ep:%02x %d Hz\r\n", ep, (int)sampling_freq);
                         usbd_audio_set_sampling_freq(0, ep, sampling_freq);
-                        return 0;
+                        break;
                     case AUDIO_EP_CONTROL_PITCH:
                         pitch_enable = (*data)[0];
                         usbd_audio_set_pitch(ep, pitch_enable);
-                        return 0;
+                        break;
                     default:
                         USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
-                        break;
+                        return -1;
                 }
+                break;
+            case AUDIO_REQUEST_GET_CUR:
+                sampling_freq = 16000;
+                memcpy(*data, &sampling_freq, 4);
+                *len = 4;
                 break;
             default:
                 USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x\r\n", setup->bRequest);
-                break;
+                return -1;
         }
+    } else {
+        return -1;
     }
-    return -1;
+    return 0;
 }
 #endif
 
@@ -150,6 +157,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
     control_selector = HI_BYTE(setup->wValue);
     ch = LO_BYTE(setup->wValue);
 
+    ARG_UNUSED(mute_string);
     if (ch > (CONFIG_USBDEV_AUDIO_MAX_CHANNEL - 1)) {
         return -2;
     }
@@ -179,7 +187,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                     case AUDIO_REQUEST_SET_CUR:
                         mute = (*data)[0];
                         current_control->mute[ch] = mute;
-                        USB_LOG_INFO("Set UnitId:%d ch[%d] mute %s\r\n", entity_id, ch, mute_string[mute]);
+                        USB_LOG_DBG("Set UnitId:%d ch[%d] mute %s\r\n", entity_id, ch, mute_string[mute]);
                         usbd_audio_set_mute(entity_id, ch, mute);
                         break;
                     case AUDIO_REQUEST_GET_CUR:
@@ -203,7 +211,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                             volume2db = -0.00390625 * (0xffff - volume + 1);
                         }
 
-                        USB_LOG_INFO("Set UnitId:%d ch[%d] %0.4f dB\r\n", entity_id, ch, volume2db);
+                        USB_LOG_DBG("Set UnitId:%d ch[%d] %0.4f dB\r\n", entity_id, ch, volume2db);
                         usbd_audio_set_volume(entity_id, ch, volume2db);
                         break;
                     case AUDIO_REQUEST_GET_CUR:
@@ -225,6 +233,11 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                         memcpy(*data, &current_control->volume[ch].vol_res, 2);
                         *len = 2;
                         break;
+
+                    case AUDIO_REQUEST_SET_RES:
+                        memcpy(&current_control->volume[ch].vol_res, *data, 2);
+                        *len = 2;
+                        break;
                     default:
                         USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x\r\n", setup->bRequest);
                         return -1;
@@ -232,7 +245,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                 break;
             default:
                 USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
-                break;
+                return -1;
         }
 #else
         switch (setup->bRequest) {
@@ -244,7 +257,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                             *len = 1;
                         } else {
                             mute = (*data)[0];
-                            USB_LOG_INFO("Set UnitId:%d ch[%d] mute %s\r\n", entity_id, ch, mute_string[mute]);
+                            USB_LOG_DBG("Set UnitId:%d ch[%d] mute %s\r\n", entity_id, ch, mute_string[mute]);
                             usbd_audio_set_mute(entity_id, ch, mute);
                         }
                         break;
@@ -256,13 +269,13 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                         } else {
                             volume = (((uint16_t)(*data)[1] << 8) | ((uint16_t)(*data)[0]));
                             current_control->volume_bCUR = volume;
-                            USB_LOG_INFO("Set UnitId:%d ch[%d] %d dB\r\n", entity_id, ch, volume);
+                            USB_LOG_DBG("Set UnitId:%d ch[%d] %d dB\r\n", entity_id, ch, volume);
                             usbd_audio_set_volume(entity_id, ch, volume);
                         }
                         break;
                     default:
                         USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
-                        break;
+                        return -1;
                 }
                 break;
             case AUDIO_REQUEST_RANGE:
@@ -279,7 +292,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                         break;
                     default:
                         USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
-                        break;
+                        return -1;
                 }
 
                 break;
@@ -303,7 +316,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                             uint32_t sampling_freq;
                             memcpy(&sampling_freq, *data, setup->wLength);
                             current_control->sampling_freq[ch] = sampling_freq;
-                            USB_LOG_INFO("Set ClockId:%d ch[%d] %d Hz\r\n", entity_id, ch, (int)sampling_freq);
+                            USB_LOG_DBG("Set ClockId:%d ch[%d] %d Hz\r\n", entity_id, ch, (int)sampling_freq);
                             usbd_audio_set_sampling_freq(entity_id, ch, sampling_freq);
                         }
                         break;
@@ -316,7 +329,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                         break;
                     default:
                         USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
-                        break;
+                        return -1;
                 }
                 break;
             case AUDIO_REQUEST_RANGE:
@@ -335,7 +348,7 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
                         break;
                     default:
                         USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
-                        break;
+                        return -1;
                 }
 
                 break;
@@ -345,6 +358,9 @@ static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t *
         }
     }
 #endif
+    else {
+        return -1;
+    }
     return 0;
 }
 
