@@ -103,3 +103,19 @@ USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [Ch
 ## 图形化界面配置工具
 
 [chryusb_configurator](https://github.com/Egahp/chryusb_configurator) 采用 **electron + vite2 + ts** 框架编写，当前用于自动化生成描述符数组，后续会增加其他功能。
+
+## 示例仓库
+
+|   厂商       |  代表芯片    | USB IP| 仓库链接 |
+|:-------------:|:----------:|:----------:|:----------:|
+|bouffalolab    |  BL702 | bouffalolab|[bl_mcu_sdk](https://github.com/bouffalolab/bl_mcu_sdk/tree/master/examples/usb)|
+|ES32    |  ES32F369x | musb |[es32f369_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/es32)|
+|AllwinnerTech    |  F1C100S | musb |[cherryusb_rtt_f1c100s](https://github.com/CherryUSB/cherryusb_rtt_f1c100s)|
+|STM32    |  STM32F103C8T6 | fsdev |[stm32f103_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/stm32/usb_device/stm32f103c8t6)|
+|STM32    |  STM32F429IGT6 | synopsys/dwc2 |[stm32f429_device_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/stm32/usb_device/stm32f429igt6)   [stm32f429_host_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/stm32/usb_host/stm32f429igt6)|
+|CH32    |  CH32V307 | ch32 |[ch32v307_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/ch32/usb_device/CH32V307VCT6)|
+|CH32    |  CH57x | ch32 |[ch57x_repo](https://github.com/CherryUSB/cherryusb_ch57x)|
+|Nuvoton    |  nuc442 | nuvoton |[nuc442_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/nuvoton/usb_device/nuc442)|
+|Nordicsemi    |  nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|
+|APM32    |  apm32exx | fsdev |[apm32_repo](https://github.com/CherryUSB/cherryusb_apm32)|
+|MM32    |  mm32l3xx | mm32 |[mm32_repo](https://github.com/CherryUSB/cherryusb_mm32)|
