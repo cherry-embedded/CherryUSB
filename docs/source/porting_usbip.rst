@@ -1,51 +1,154 @@
 USB IP 差别说明
 ==============================
 
-本节主要对常见的 USB IP 在不同芯片上实现时，列出需要注意的一些差别说明。
-
+本节主要对已经支持的 USB IP 在不同厂家上的一些差别说明并进行校对。欢迎补充。
 
 FSDEV
 --------------------------
 
-这个 ip 不同厂家基本都是基于标准的 usb 寄存器，所以，用户使用时，仅需要修改 `USBD_IRQHandler` 、 `USB_NUM_BIDIR_ENDPOINTS` 、 `USB_BASE` 即可。
+FSDEV 仅支持从机。这个 ip 不同厂家基本都是基于标准的 usb 寄存器，所以用户使用时，仅需要修改 `USBD_IRQHandler` 、 `USB_BASE` 、 `USB_NUM_BIDIR_ENDPOINTS` 即可。有些芯片可能还需要配置 `PMA_ACCESS` 的值，默认为2。下表为具体芯片相关宏的修改值：
+
+.. list-table::
+    :widths: 30 20 30 30 30
+    :header-rows: 1
+
+    * - 芯片
+      - USBD_IRQHandler
+      - USB_BASE
+      - USB_NUM_BIDIR_ENDPOINTS
+      - PMA_ACCESS
+    * - STM32F0
+      - USB_IRQHandler
+      - 0x40005C00
+      - 8
+      - 2
+    * - STM32F1
+      - USB_LP_CAN1_RX0_IRQHandler
+      - 同上
+      - 同上
+      - 同上
+    * - STM32F3
+      - USB_LP_CAN_RX0_IRQHandler
+      - 同上
+      - 同上
+      - 同上
+    * - STM32L0
+      - USB_IRQHandler
+      - 同上
+      - 同上
+      - 同上
+    * - STM32L1
+      - USB_LP_IRQHandler
+      - 同上
+      - 同上
+      - 同上
+    * - STM32L4
+      - USB_IRQHandler
+      - 同上
+      - 同上
+      - 同上
 
 MUSB
 --------------------------
 
-- ES32 和 MSP432 走的标准的寄存器，所以，用户使用时，仅需要修改 `USBD_IRQHandler` 和 `USB_BASE` 即可。
-- 全志不同系列芯片都魔改了 musb 的寄存器，包括寄存器的偏移，所以除了修改 `USBD_IRQHandler` 和 `USB_BASE` ，还需要实现对应的 `寄存器结构体 <https://github.com/sakumisu/CherryUSB/blob/master/port/musb/usb_musb_reg.h>`_ 。以及寄存器偏移地址，举例如下：
+MUSB IP 支持主从，并且由 **mentor** 定义了一套标准的寄存器偏移，所以如果是走的标准，则从机仅需要修改 `USBD_IRQHandler` 、 `USB_BASE` 、 `USB_NUM_BIDIR_ENDPOINTS` ，主机仅需要修改 `USBH_IRQHandler` 、 `USB_BASE` 以及 `CONIFG_USB_MUSB_EP_NUM` 即可。如果非标准，则需要实现以下宏的偏移，以标准为例：
 
 .. code-block:: C
 
-    #define USB_TXMAPx_BASE       (USB_BASE + MUSB_IND_TXMAP_OFFSET)
-    #define USB_RXMAPx_BASE       (USB_BASE + MUSB_IND_RXMAP_OFFSET)
-    #define USB_TXCSRLx_BASE      (USB_BASE + MUSB_IND_TXCSRL_OFFSET)
-    #define USB_RXCSRLx_BASE      (USB_BASE + MUSB_IND_RXCSRL_OFFSET)
-    #define USB_TXCSRHx_BASE      (USB_BASE + MUSB_IND_TXCSRH_OFFSET)
-    #define USB_RXCSRHx_BASE      (USB_BASE + MUSB_IND_RXCSRH_OFFSET)
-    #define USB_RXCOUNTx_BASE     (USB_BASE + MUSB_IND_RXCOUNT_OFFSET)
-    #define USB_FIFO_BASE(ep_idx) (USB_BASE + MUSB_FIFO_OFFSET + 0x4 * ep_idx)
-    #define USB_TXTYPEx_BASE      (USB_BASE + MUSB_IND_TXTYPE_OFFSET)
-    #define USB_RXTYPEx_BASE      (USB_BASE + MUSB_IND_RXTYPE_OFFSET)
-    #define USB_TXINTERVALx_BASE  (USB_BASE + MUSB_IND_TXINTERVAL_OFFSET)
-    #define USB_RXINTERVALx_BASE  (USB_BASE + MUSB_IND_RXINTERVAL_OFFSET)
+    #define MUSB_FADDR_OFFSET 0x00
+    #define MUSB_POWER_OFFSET 0x01
+    #define MUSB_TXIS_OFFSET  0x02
+    #define MUSB_RXIS_OFFSET  0x04
+    #define MUSB_TXIE_OFFSET  0x06
+    #define MUSB_RXIE_OFFSET  0x08
+    #define MUSB_IS_OFFSET    0x0A
+    #define MUSB_IE_OFFSET    0x0B
 
-    #ifdef CONFIG_USB_MUSB_SUNXI
-    #define USB_TXADDR_BASE(ep_idx)    (&USB->TXFUNCADDR0)
-    #define USB_TXHUBADDR_BASE(ep_idx) (&USB->TXHUBADDR0)
-    #define USB_TXHUBPORT_BASE(ep_idx) (&USB->TXHUBPORT0)
-    #define USB_RXADDR_BASE(ep_idx)    (&USB->RXFUNCADDR0)
-    #define USB_RXHUBADDR_BASE(ep_idx) (&USB->RXHUBADDR0)
-    #define USB_RXHUBPORT_BASE(ep_idx) (&USB->RXHUBPORT0)
-    #else
-    #define USB_TXADDR_BASE(ep_idx)    (&USB->TXFUNCADDR0 + 0x8 * ep_idx)
-    #define USB_TXHUBADDR_BASE(ep_idx) (&USB->TXFUNCADDR0 + 0x8 * ep_idx + 2)
-    #define USB_TXHUBPORT_BASE(ep_idx) (&USB->TXFUNCADDR0 + 0x8 * ep_idx + 3)
-    #define USB_RXADDR_BASE(ep_idx)    (&USB->TXFUNCADDR0 + 0x8 * ep_idx + 4)
-    #define USB_RXHUBADDR_BASE(ep_idx) (&USB->TXFUNCADDR0 + 0x8 * ep_idx + 6)
-    #define USB_RXHUBPORT_BASE(ep_idx) (&USB->TXFUNCADDR0 + 0x8 * ep_idx + 7)
-    #endif
+    #define MUSB_EPIDX_OFFSET 0x0E
 
+    #define MUSB_IND_TXMAP_OFFSET      0x10
+    #define MUSB_IND_TXCSRL_OFFSET     0x12
+    #define MUSB_IND_TXCSRH_OFFSET     0x13
+    #define MUSB_IND_RXMAP_OFFSET      0x14
+    #define MUSB_IND_RXCSRL_OFFSET     0x16
+    #define MUSB_IND_RXCSRH_OFFSET     0x17
+    #define MUSB_IND_RXCOUNT_OFFSET    0x18
+    #define MUSB_IND_TXTYPE_OFFSET     0x1A
+    #define MUSB_IND_TXINTERVAL_OFFSET 0x1B
+    #define MUSB_IND_RXTYPE_OFFSET     0x1C
+    #define MUSB_IND_RXINTERVAL_OFFSET 0x1D
+
+    #define MUSB_FIFO_OFFSET 0x20
+
+    #define MUSB_DEVCTL_OFFSET 0x60
+
+    #define MUSB_TXFIFOSZ_OFFSET  0x62
+    #define MUSB_RXFIFOSZ_OFFSET  0x63
+    #define MUSB_TXFIFOADD_OFFSET 0x64
+    #define MUSB_RXFIFOADD_OFFSET 0x66
+
+    #define MUSB_TXFUNCADDR0_OFFSET 0x80
+    #define MUSB_TXHUBADDR0_OFFSET  0x82
+    #define MUSB_TXHUBPORT0_OFFSET  0x83
+    #define MUSB_TXFUNCADDRx_OFFSET 0x88
+    #define MUSB_TXHUBADDRx_OFFSET  0x8A
+    #define MUSB_TXHUBPORTx_OFFSET  0x8B
+    #define MUSB_RXFUNCADDRx_OFFSET 0x8C
+    #define MUSB_RXHUBADDRx_OFFSET  0x8E
+    #define MUSB_RXHUBPORTx_OFFSET  0x8F
+
+    #define USB_TXADDR_BASE(ep_idx)    (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx)
+    #define USB_TXHUBADDR_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 2)
+    #define USB_TXHUBPORT_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 3)
+    #define USB_RXADDR_BASE(ep_idx)    (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 4)
+    #define USB_RXHUBADDR_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 6)
+    #define USB_RXHUBPORT_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 7)
+
+下表为具体芯片从机相关宏的修改值：
+
+.. list-table::
+    :widths: 30 30 30 30
+    :header-rows: 1
+
+    * - 芯片
+      - USBD_IRQHandler
+      - USB_BASE
+      - USB_NUM_BIDIR_ENDPOINTS
+    * - ES32F3xx
+      - USB_INT_Handler
+      - 0x40086400
+      - 5
+    * - MSP432Ex
+      - 同上
+      - 0x40050000
+      - 同上
+    * - F1C100S
+      - USB_INT_Handler
+      - 0x01c13000
+      - 4
+
+下表为具体芯片主机相关宏的修改值：
+
+.. list-table::
+    :widths: 30 30 30 30
+    :header-rows: 1
+
+    * - 芯片
+      - USBH_IRQHandler
+      - USB_BASE
+      - CONIFG_USB_MUSB_EP_NUM
+    * - ES32F3xx
+      - USB_INT_Handler
+      - 0x40086400
+      - 5
+    * - MSP432Ex
+      - 同上
+      - 0x40050000
+      - 同上
+    * - F1C100S
+      - USB_INT_Handler
+      - 0x01c13000
+      - 4
 
 SYNOPSYS
 --------------------------

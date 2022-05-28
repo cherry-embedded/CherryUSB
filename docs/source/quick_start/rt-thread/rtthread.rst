@@ -3,15 +3,14 @@
 
 本节主要介绍使用 RT-Thread 提供的软件包管理器来配置工程，以 env 作为演示。本节操作不同芯片都一样，后续不再重复讲解。打开 env 以后使用 menuconfig 进入包管理器，并在如图所示路径中选择 CherryUSB。
 
-.. figure:: img/env1.png
-
-.. note:: 协议栈默认使用 printf，而 rt-thread 对这个支持并不是很好，所以推荐添加一个 cflag 在你的工程中： `-Dprintf=rt_kprintf`。
+.. figure:: img/env0.png
 
 从机配置
 --------------------------
 
 * 选择 Enable usb device mode 并敲回车进入。
 
+.. figure:: img/env1.png
 .. figure:: img/env2.png
 
 * 首先第一个配置是配置 USB 的速度，分为 **FS、HIGH_IN_FULL、HS**,。其中， **HIGH_IN_FULL**  表示设备使用支持高速的 USB IP，但是工作在全速模式下，这里仅使用 **synopsys ip** 时使用。
@@ -61,6 +60,10 @@
 然后将 `stm32xxxx_hal_msp.c` 中的 `HAL_PCD_MspInit` 或者是 `HAL_HCD_MspInit` 中的内容复制到 `usb_dc_low_level_init` 和 `usb_hc_low_level_init` 函数中，举例如下：
 
 .. figure:: img/stm32_init.png
+
+其次将 `main.c` 中的 `SystemClock_Config` 替换掉 `board.c` 中的配置
+
+.. figure:: img/stm32_init2.png
 
 其他小伙伴的移植笔记
 -------------------------
