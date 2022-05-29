@@ -470,25 +470,14 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     uint32_t timeout = 0xffffff;
     uint8_t old_ep_idx;
 
-    old_ep_idx = USBC_GetActiveEp();
-    USBC_SelectActiveEp(ep_idx);
     if (!data && data_len) {
-        ret = -1;
-        goto _RET;
+        return -1;
     }
 
-    if (ep_idx == 0x00) {
-        while (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_CSRL0_TXRDY) {
-            if (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_CSRL0_ERROR) {
-                ret = -2;
-                goto _RET;
-            }
-            if (!(timeout--)) {
-                ret = -3;
-                goto _RET;
-            }
-        }
-    } else {
+    old_ep_idx = USBC_GetActiveEp();
+    USBC_SelectActiveEp(ep_idx);
+
+    if (ep_idx != 0x00) {
         while (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_TXRDY) {
             if ((HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_ERROR) || (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_UNDRN)) {
                 ret = -2;
@@ -502,7 +491,11 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     }
 
     if (!data_len) {
-        ret = 0;
+        if (ep == 0x00) {
+            HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_CSRL0_TXRDY;
+        } else {
+            HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
+        }
         goto _RET;
     }
 
@@ -514,9 +507,12 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
 
     usb_musb_write_packet(ep_idx, (uint8_t *)data, data_len);
 
-    if (ep_idx != 0) {
+    if (ep == 0x00) {
+        HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_CSRL0_TXRDY;
+    } else {
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
     }
+
     if (ret_bytes) {
         *ret_bytes = data_len;
     }
@@ -533,18 +529,16 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     uint32_t read_count = 0;
     uint8_t old_ep_idx;
 
-    old_ep_idx = USBC_GetActiveEp();
-    USBC_SelectActiveEp(ep_idx);
     if (!data && max_data_len) {
-        ret = -1;
-        goto _RET;
+        return -1;
     }
 
+    old_ep_idx = USBC_GetActiveEp();
+    USBC_SelectActiveEp(ep_idx);
+
     if (!max_data_len) {
-        if (ep_idx != 0x00) {
+        if (ep_idx != 0x00)
             HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~(USB_RXCSRL1_RXRDY);
-        }
-        ret = 0;
         goto _RET;
     }
 
