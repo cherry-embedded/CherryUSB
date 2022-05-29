@@ -1,0 +1,34 @@
+Import('ES32_SDK_ROOT')
+from building import *
+Import('esconfig')
+
+#目的1：首先生成group_ald（对应project里面的ald）
+cwd = GetCurrentDir()
+src =[]
+
+#获取Source中.c文件后将其转换成字符串
+clist=Glob('Source/*.c')
+cstr=""
+for i in clist:
+	cstr=cstr.__add__(str(i))
+	
+
+#判断conf内的.h文件在Source中有没有对应的.c文件，有.c则添加，没有.c则不添加
+if esconfig.ald_lib_src:
+    for i in set(esconfig.ald_lib_src):
+		if i in cstr:
+			src.append('Source/' + i)
+else:
+    src = Glob('Source/*.c')
+	
+#将md_.c添加进md中，将所有md_.h都include在魔法棒c/c++里面的include paths里，将USE_ASSERT加入到魔法棒c/c++里面的define中
+include_path = [cwd + '/Include']
+group_ald = DefineGroup('ald', src, depend = [''], CPPPATH = include_path,CPPDEFINES = ['USE_ASSERT','ES32F36xx'])
+
+
+#2.生成group_bsp（对应project里面的bsp）
+srcb=[]
+group_bsp = DefineGroup('bsp', srcb, depend = [''])
+
+#返回group_bsp，group_ald
+Return('group_ald','group_bsp')

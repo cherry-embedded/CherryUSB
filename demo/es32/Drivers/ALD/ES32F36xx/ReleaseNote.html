@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>ReleaseNote</title></head>
+<body><h1>ES32F36xx ALD Release Note</h1>
+<h2>V1.00 2019-12-16</h2>
+<ol start='' >
+<li>First release</li>
+
+</ol>
+<h2>V1.01 2020-05-07</h2>
+<ol start='' >
+<li>Delete invalid member variables in can_filter_t-&gt;bank_number</li>
+<li>Support FIFO0/FIFO1 receiving in CAN module</li>
+<li>Add parameter check in ald_trng_init()</li>
+<li>Add ping-pong, scatter-gather modes in DMA module</li>
+<li>Add automatic control function of flash read waiting cycle</li>
+
+</ol>
+<h2>V1.02 2020-05-20</h2>
+<ol start='' >
+<li>Modify the ADC module structure member variables</li>
+<li>Update ADC module driver</li>
+<li>Support ADC1 in PIS module</li>
+<li>Add get_hclk2_clock() API in ald_cmu.h</li>
+
+</ol>
+<h2>V1.03 2020-08-24</h2>
+<ol start='' >
+<li>Add API: ald_cmu_current_clock_source_get()</li>
+<li>Add &quot;Set/Read HCLK2 Bus Frequency Division&quot; interface</li>
+<li>Modify the API related to DMA in the TIMER module</li>
+<li>Optimize the control logic of the discontinuous-scan-mode in ADC module</li>
+<li>Optimize FIFO function in UART module</li>
+<li>Add API: ald_dma_descriptor_cplt_get() in DMA module</li>
+<li>Optimize ald_dma_config_sg_per() in DMA module</li>
+<li>Fixed bug in md_usart_set_smartcard_psc()</li>
+<li>Add API to get UID/CHIPID in utils.h</li>
+<li>Add LDO12/LDO18 configure function in PMU module</li>
+<li>Delete the operation of writing SSEC register in RTC module</li>
+<li>Make the code comply with &quot;C-STAT(STDCHECKS)&quot; specification</li>
+<li>Fixed a bug in ald_can.c</li>
+<li>Fixed a bug in ald_uart.c</li>
+<li>Optimize I2S module library functions</li>
+
+</ol>
+<p>&nbsp;</p>
+</body>
+</html>

@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_ASSERT,ES32F36xx,USBD_CDC_HS</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Drivers\CMSIS\Include;..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc</IncludePath>
+              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -387,7 +387,7 @@
             <File>
               <FileName>startup_es32f36xx.s</FileName>
               <FileType>2</FileType>
-              <FilePath>..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Startup\keil\startup_es32f36xx.s</FilePath>
+              <FilePath>..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Startup\keil\startup_es32f36xx.s</FilePath>
             </File>
           </Files>
         </Group>
@@ -397,52 +397,52 @@
             <File>
               <FileName>ald_bkpc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_bkpc.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_bkpc.c</FilePath>
             </File>
             <File>
               <FileName>ald_cmu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_cmu.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_cmu.c</FilePath>
             </File>
             <File>
               <FileName>ald_dma.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_dma.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_dma.c</FilePath>
             </File>
             <File>
               <FileName>ald_gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>ald_pmu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_pmu.c</FilePath>
-            </File>
-            <File>
-              <FileName>ald_rmu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_rmu.c</FilePath>
-            </File>
-            <File>
-              <FileName>ald_uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>ald_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_usb.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_gpio.c</FilePath>
             </File>
             <File>
               <FileName>ald_iap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\ald_iap.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_iap.c</FilePath>
+            </File>
+            <File>
+              <FileName>ald_pmu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_pmu.c</FilePath>
+            </File>
+            <File>
+              <FileName>ald_rmu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_rmu.c</FilePath>
+            </File>
+            <File>
+              <FileName>ald_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>ald_usb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_usb.c</FilePath>
             </File>
             <File>
               <FileName>utils.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Drivers\ALD\ES32F36xx\Source\utils.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\utils.c</FilePath>
             </File>
           </Files>
         </Group>

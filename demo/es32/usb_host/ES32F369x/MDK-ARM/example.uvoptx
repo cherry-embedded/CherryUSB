@@ -103,7 +103,7 @@
         <bEvRecOn>1</bEvRecOn>
         <bSchkAxf>0</bSchkAxf>
         <bTchkAxf>0</bTchkAxf>
-        <nTsel>6</nTsel>
+        <nTsel>3</nTsel>
         <sDll></sDll>
         <sDllPa></sDllPa>
         <sDlgDll></sDlgDll>
@@ -114,7 +114,7 @@
         <tDlgDll></tDlgDll>
         <tDlgPa></tDlgPa>
         <tIfile></tIfile>
-        <pMon>STLink\ST-LINKIII-KEIL_SWO.dll</pMon>
+        <pMon>BIN\CMSIS_AGDI.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
         <SetRegEntry>
@@ -130,7 +130,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>(105=-1,-1,-1,-1,0)</Name>
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -163,56 +163,7 @@
           <Name>-T0</Name>
         </SetRegEntry>
       </TargetDriverDllRegistry>
-      <Breakpoint>
-        <Bp>
-          <Number>0</Number>
-          <Type>0</Type>
-          <LineNumber>155</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\..\..\..\..\class\hid\usbh_hid.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>1</Number>
-          <Type>0</Type>
-          <LineNumber>175</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\..\..\..\..\class\hid\usbh_hid.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>2</Number>
-          <Type>0</Type>
-          <LineNumber>88</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\..\..\..\..\class\hid\usbh_hid.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-      </Breakpoint>
+      <Breakpoint/>
       <WatchWindow1>
         <Ww>
           <count>0</count>
@@ -320,7 +271,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Startup\keil\startup_es32f36xx.s</PathWithFileName>
+      <PathWithFileName>..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Startup\keil\startup_es32f36xx.s</PathWithFileName>
       <FilenameWithoutPath>startup_es32f36xx.s</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -329,7 +280,7 @@
 
   <Group>
     <GroupName>ald</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -340,7 +291,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_bkpc.c</PathWithFileName>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_bkpc.c</PathWithFileName>
       <FilenameWithoutPath>ald_bkpc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -352,7 +303,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_cmu.c</PathWithFileName>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_cmu.c</PathWithFileName>
       <FilenameWithoutPath>ald_cmu.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -364,7 +315,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_dma.c</PathWithFileName>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_dma.c</PathWithFileName>
       <FilenameWithoutPath>ald_dma.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -376,7 +327,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_gpio.c</PathWithFileName>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_gpio.c</PathWithFileName>
       <FilenameWithoutPath>ald_gpio.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -388,8 +339,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_pmu.c</PathWithFileName>
-      <FilenameWithoutPath>ald_pmu.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_iap.c</PathWithFileName>
+      <FilenameWithoutPath>ald_iap.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -400,8 +351,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_rmu.c</PathWithFileName>
-      <FilenameWithoutPath>ald_rmu.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_pmu.c</PathWithFileName>
+      <FilenameWithoutPath>ald_pmu.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -412,8 +363,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_uart.c</PathWithFileName>
-      <FilenameWithoutPath>ald_uart.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_rmu.c</PathWithFileName>
+      <FilenameWithoutPath>ald_rmu.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -424,8 +375,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_usb.c</PathWithFileName>
-      <FilenameWithoutPath>ald_usb.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_uart.c</PathWithFileName>
+      <FilenameWithoutPath>ald_uart.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -436,8 +387,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\ald_iap.c</PathWithFileName>
-      <FilenameWithoutPath>ald_iap.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_usb.c</PathWithFileName>
+      <FilenameWithoutPath>ald_usb.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -448,7 +399,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Drivers\ALD\ES32F36xx\Source\utils.c</PathWithFileName>
+      <PathWithFileName>..\..\..\Drivers\ALD\ES32F36xx\Source\utils.c</PathWithFileName>
       <FilenameWithoutPath>utils.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -457,7 +408,7 @@
 
   <Group>
     <GroupName>app</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
