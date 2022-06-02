@@ -1112,7 +1112,10 @@ typedef struct
   */
 
 #define BTABLE_ADDRESS                         0x000U
+
+#ifndef PMA_ACCESS
 #define PMA_ACCESS                             2U
+#endif
 /********************  Bit definition for USB_COUNTn_RX register  *************/
 #define USB_CNTRX_NBLK_MSK                    (0x1FU << 10)
 #define USB_CNTRX_BLSIZE                      (0x1U << 15)

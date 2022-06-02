@@ -382,8 +382,9 @@ void USBD_IRQHandler(void)
         }
     }
     if (wIstr & USB_ISTR_RESET) {
-        usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
+        memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
         usb_dc_cfg.pma_offset = USB_BTABLE_SIZE;
+        usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
         USB->ISTR &= (uint16_t)(~USB_ISTR_RESET);
     }
     if (wIstr & USB_ISTR_PMAOVR) {
