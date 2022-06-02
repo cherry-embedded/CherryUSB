@@ -275,11 +275,18 @@
  * WHITE    37
  */
 #define _USB_PRINTF printf
+#ifdef  _USB_PRINTF_COLOR_ENABLE
 #define _USB_DBG_COLOR(n) _USB_PRINTF("\033[" #n "m")
 #define _USB_DBG_LOG_HDR(lvl_name, color_n) \
     _USB_PRINTF("\033[" #color_n "m[" lvl_name "/" USB_DBG_TAG "] ")
 #define _USB_DBG_LOG_X_END \
     _USB_PRINTF("\033[0m")
+#else
+#define _USB_DBG_COLOR(n)
+#define _USB_DBG_LOG_HDR(lvl_name, color_n) \
+    _USB_PRINTF("[" lvl_name "/" USB_DBG_TAG "] ")
+#define _USB_DBG_LOG_X_END 
+#endif
 
 #define usb_dbg_log_line(lvl, color_n, fmt, ...) \
     do {                                         \
