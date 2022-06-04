@@ -123,16 +123,16 @@ void usbd_cdc_acm_bulk_out(uint8_t ep)
 
     usbd_ep_read(ep, data, 64, &read_byte);
     for (uint8_t i = 0; i < read_byte; i++) {
-        printf("%02x ", data[i]);
+        USB_LOG_RAW("%02x ", data[i]);
     }
-    printf("\r\n");
-    printf("read len:%d\r\n", read_byte);
+    USB_LOG_RAW("\r\n");
+    USB_LOG_RAW("read len:%d\r\n", read_byte);
     usbd_ep_read(ep, NULL, 0, NULL);
 }
 
 void usbd_cdc_acm_bulk_in(uint8_t ep)
 {
-    printf("in\r\n");
+    USB_LOG_RAW("in\r\n");
 }
 
 /*!< endpoint call back */
@@ -196,7 +196,7 @@ usbd_endpoint_t cdc_in_ep4 = {
 void cdc_acm_multi_init(void)
 {
     usbd_desc_register(cdc_descriptor);
-    
+
     usbd_cdc_add_acm_interface(&cdc_class1, &cdc_cmd_intf1);
     usbd_cdc_add_acm_interface(&cdc_class1, &cdc_data_intf1);
     usbd_interface_add_endpoint(&cdc_data_intf1, &cdc_out_ep1);

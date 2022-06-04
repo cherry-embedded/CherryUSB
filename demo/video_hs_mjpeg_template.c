@@ -134,11 +134,11 @@ volatile bool tx_flag = 0;
 void usbd_video_open(uint8_t intf)
 {
     tx_flag = 1;
-    MSG("OPEN\r\n");
+    USB_LOG_RAW("OPEN\r\n");
 }
 void usbd_video_close(uint8_t intf)
 {
-    MSG("CLOSE\r\n");
+    USB_LOG_RAW("CLOSE\r\n");
     tx_flag = 0;
 }
 

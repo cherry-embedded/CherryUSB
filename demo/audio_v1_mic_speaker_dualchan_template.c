@@ -171,7 +171,7 @@ uint32_t actual_read_length = 0;
 void usbd_audio_out_callback(uint8_t ep)
 {
     if (usbd_ep_read(ep, out_buffer, AUDIO_OUT_EP_MPS, &actual_read_length) < 0) {
-        printf("Read DATA Packet failed\r\n");
+        USB_LOG_RAW("Read DATA Packet failed\r\n");
         usbd_ep_set_stall(ep);
         return;
     }
@@ -201,7 +201,7 @@ void audio_init()
     usbd_interface_add_endpoint(&audio_stream_intf2, &audio_out_ep);
     usbd_audio_add_entity(0x02, AUDIO_CONTROL_FEATURE_UNIT);
     usbd_audio_add_entity(0x05, AUDIO_CONTROL_FEATURE_UNIT);
-    
+
     usbd_initialize();
 }
 

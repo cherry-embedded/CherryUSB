@@ -199,20 +199,20 @@ void usbd_audio_open(uint8_t intf)
 {
     if (intf == 1) {
         rx_flag = 1;
-        MSG("OPEN1\r\n");
+        USB_LOG_RAW("OPEN1\r\n");
     } else {
         tx_flag = 1;
-        MSG("OPEN2\r\n");
+        USB_LOG_RAW("OPEN2\r\n");
     }
 }
 void usbd_audio_close(uint8_t intf)
 {
     if (intf == 1) {
         rx_flag = 1;
-        MSG("CLOSE1\r\n");
+        USB_LOG_RAW("CLOSE1\r\n");
     } else {
         tx_flag = 0;
-        MSG("CLOSE2\r\n");
+        USB_LOG_RAW("CLOSE2\r\n");
     }
 }
 
@@ -256,7 +256,7 @@ void audio_init()
     usbd_audio_add_entity(0x05, AUDIO_CONTROL_CLOCK_SOURCE);
     usbd_audio_add_entity(0x07, AUDIO_CONTROL_FEATURE_UNIT);
 
-    
+
     usbd_initialize();
 }
 

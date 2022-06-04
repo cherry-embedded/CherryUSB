@@ -11,11 +11,11 @@ void usbh_cdc_acm_callback(void *arg, int nbytes)
 
     if (nbytes > 0) {
         for (size_t i = 0; i < nbytes; i++) {
-            printf("0x%02x ", cdc_buffer[i]);
+            USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
         }
     }
 
-    printf("nbytes:%d\r\n", nbytes);
+    USB_LOG_RAW("nbytes:%d\r\n", nbytes);
 }
 
 int cdc_acm_test(void)
@@ -25,30 +25,30 @@ int cdc_acm_test(void)
     struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0");
 
     if (cdc_acm_class == NULL) {
-        printf("do not find /dev/ttyACM0\r\n");
+        USB_LOG_RAW("do not find /dev/ttyACM0\r\n");
         return -1;
     }
 
     memset(cdc_buffer, 0, 512);
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, 3000);
     if (ret < 0) {
-        printf("bulk in error,ret:%d\r\n", ret);
+        USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
     } else {
-        printf("recv over:%d\r\n", ret);
+        USB_LOG_RAW("recv over:%d\r\n", ret);
         for (size_t i = 0; i < ret; i++) {
-            printf("0x%02x ", cdc_buffer[i]);
+            USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
         }
     }
 
-    printf("\r\n");
+    USB_LOG_RAW("\r\n");
     const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
 
     memcpy(cdc_buffer, data1, 8);
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkout, cdc_buffer, 8, 3000);
     if (ret < 0) {
-        printf("bulk out error,ret:%d\r\n", ret);
+        USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
     } else {
-        printf("send over:%d\r\n", ret);
+        USB_LOG_RAW("send over:%d\r\n", ret);
     }
 
 #if 0
@@ -56,15 +56,15 @@ int cdc_acm_test(void)
 #else
     ret = usbh_ep_bulk_transfer(cdc_acm_class->bulkin, cdc_buffer, 512, 3000);
     if (ret < 0) {
-        printf("bulk in error,ret:%d\r\n", ret);
+        USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
     } else {
-        printf("recv over:%d\r\n", ret);
+        USB_LOG_RAW("recv over:%d\r\n", ret);
         for (size_t i = 0; i < ret; i++) {
-            printf("0x%02x ", cdc_buffer[i]);
+            USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
         }
     }
 
-    printf("\r\n");
+    USB_LOG_RAW("\r\n");
 
     return ret;
 #endif
@@ -80,23 +80,23 @@ int msc_test(void)
     int ret;
     struct usbh_msc *msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
     if (msc_class == NULL) {
-        printf("do not find /dev/sda\r\n");
+        USB_LOG_RAW("do not find /dev/sda\r\n");
         return -1;
     }
 #if 1
     /* get the partition table */
     ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
     if (ret < 0) {
-        printf("scsi_read10 error,ret:%d\r\n", ret);
+        USB_LOG_RAW("scsi_read10 error,ret:%d\r\n", ret);
         return ret;
     }
     for (uint32_t i = 0; i < 512; i++) {
         if (i % 16 == 0) {
-            printf("\r\n");
+            USB_LOG_RAW("\r\n");
         }
-        printf("%02x ", partition_table[i]);
+        USB_LOG_RAW("%02x ", partition_table[i]);
     }
-    printf("\r\n");
+    USB_LOG_RAW("\r\n");
 #endif
 
 #if 0
@@ -105,11 +105,11 @@ int msc_test(void)
     usb_iofree(msc_buffer);
     // for (uint32_t i = 0; i < 1024; i++) {
     //     if (i % 16 == 0) {
-    //         printf("\r\n");
+    //         USB_LOG_RAW("\r\n");
     //     }
-    //     printf("%02x ", msc_buffer[i]);
+    //     USB_LOG_RAW("%02x ", msc_buffer[i]);
     // }
-    // printf("\r\n");
+    // USB_LOG_RAW("\r\n");
 #endif
 
 #if 0
@@ -127,16 +127,16 @@ int msc_test(void)
         res_sd = f_read(&fnew, ReadBuffer, 512, &fnum);
         for (uint32_t i = 0; i < fnum; i++) {
             if (i % 16 == 0) {
-                printf("\r\n");
+                USB_LOG_RAW("\r\n");
             }
-            printf("%02x ", ReadBuffer[i]);
+            USB_LOG_RAW("%02x ", ReadBuffer[i]);
         }
-        printf("\r\n");
+        USB_LOG_RAW("\r\n");
         f_close(&fnew);
         /*unmount*/
         f_mount(NULL, "2:", 1);
     } else {
-        printf("open error:%d\r\n", res_sd);
+        USB_LOG_RAW("open error:%d\r\n", res_sd);
     }
     usb_iofree(ReadBuffer);
 #endif
@@ -151,11 +151,11 @@ void usbh_hid_callback(void *arg, int nbytes)
 
     if (nbytes > 0) {
         for (size_t i = 0; i < nbytes; i++) {
-            printf("0x%02x ", hid_buffer[i]);
+            USB_LOG_RAW("0x%02x ", hid_buffer[i]);
         }
     }
 
-    printf("nbytes:%d\r\n", nbytes);
+    USB_LOG_RAW("nbytes:%d\r\n", nbytes);
 }
 
 int hid_test(void)
@@ -163,20 +163,20 @@ int hid_test(void)
     int ret;
     struct usbh_hid *hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0");
     if (hid_class == NULL) {
-        printf("do not find /dev/input0\r\n");
+        USB_LOG_RAW("do not find /dev/input0\r\n");
         return -1;
     }
 #if 1
     ret = usbh_ep_intr_async_transfer(hid_class->intin, hid_buffer, 128, usbh_hid_callback, hid_class);
     if (ret < 0) {
-        printf("intr asnyc in error,ret:%d\r\n", ret);
+        USB_LOG_RAW("intr asnyc in error,ret:%d\r\n", ret);
     }
 #else
     ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128, 1000);
     if (ret < 0) {
         return ret;
     }
-    printf("recv len:%d\r\n", ret);
+    USB_LOG_RAW("recv len:%d\r\n", ret);
 #endif
     return ret;
 }

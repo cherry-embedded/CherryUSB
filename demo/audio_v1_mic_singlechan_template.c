@@ -120,11 +120,11 @@ volatile bool tx_flag = 0;
 void usbd_audio_open(uint8_t intf)
 {
     tx_flag = 1;
-    printf("OPEN\r\n");
+    USB_LOG_RAW("OPEN\r\n");
 }
 void usbd_audio_close(uint8_t intf)
 {
-    printf("CLOSE\r\n");
+    USB_LOG_RAW("CLOSE\r\n");
     tx_flag = 0;
 }
 
@@ -148,7 +148,7 @@ void audio_init()
     usbd_audio_add_interface(&audio_class, &audio_stream_intf);
     usbd_interface_add_endpoint(&audio_stream_intf, &audio_in_ep);
     usbd_audio_add_entity(0x02, AUDIO_CONTROL_FEATURE_UNIT);
-    
+
     usbd_initialize();
 }
 
