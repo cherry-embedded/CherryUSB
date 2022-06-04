@@ -153,7 +153,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         usb_dc_cfg.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         usb_dc_cfg.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
         if (usb_dc_cfg.out_ep[ep_idx].ep_mps > usb_dc_cfg.out_ep[ep_idx].ep_pma_buf_len) {
-            if (usb_dc_cfg.pma_offset + usb_dc_cfg.out_ep[ep_idx].ep_mps >= 512) {
+            if (usb_dc_cfg.pma_offset + usb_dc_cfg.out_ep[ep_idx].ep_mps >= USB_RAM_SIZE) {
                 return -1;
             }
             usb_dc_cfg.out_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
@@ -229,16 +229,16 @@ int usbd_ep_clear_stall(const uint8_t ep)
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
     if (USB_EP_DIR_IS_OUT(ep)) {
+        PCD_CLEAR_RX_DTOG(USB, ep_idx);
+        /* Configure VALID status for the Endpoint */
+        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
+    } else {
         PCD_CLEAR_TX_DTOG(USB, ep_idx);
 
         if (usb_dc_cfg.in_ep[ep_idx].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             /* Configure NAK status for the Endpoint */
             PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
         }
-    } else {
-        PCD_CLEAR_RX_DTOG(USB, ep_idx);
-        /* Configure VALID status for the Endpoint */
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
     }
     return 0;
 }
@@ -293,16 +293,15 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     }
 
     if (!max_data_len) {
-        if (ep_idx != 0x00)
+        if (ep_idx != 0x00) {
             PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
-
+        }
         return 0;
     }
 
     read_count = PCD_GET_EP_RX_CNT(USB, ep_idx);
     read_count = MIN(read_count, max_data_len);
-    USB_ReadPMA(USB, (uint8_t *)data,
-                usb_dc_cfg.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
+    USB_ReadPMA(USB, (uint8_t *)data, usb_dc_cfg.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
 
     if (read_bytes) {
         *read_bytes = read_count;
