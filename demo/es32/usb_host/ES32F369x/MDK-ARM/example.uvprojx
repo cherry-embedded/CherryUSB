@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_ASSERT,ES32F36xx,</Define>
+              <Define>ES32F36xx,</Define>
               <Undefine></Undefine>
               <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\class\wireless;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM3</IncludePath>
             </VariousControls>
@@ -433,11 +433,6 @@
               <FileName>ald_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>ald_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_usb.c</FilePath>
             </File>
             <File>
               <FileName>utils.c</FileName>

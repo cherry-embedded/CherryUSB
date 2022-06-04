@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_ASSERT,ES32F36xx,USBD_CDC_HS</Define>
+              <Define>ES32F36xx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc</IncludePath>
+              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\video;..\..\..\..\..\demo</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -415,11 +415,6 @@
               <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_gpio.c</FilePath>
             </File>
             <File>
-              <FileName>ald_iap.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_iap.c</FilePath>
-            </File>
-            <File>
               <FileName>ald_pmu.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_pmu.c</FilePath>
@@ -435,9 +430,9 @@
               <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_uart.c</FilePath>
             </File>
             <File>
-              <FileName>ald_usb.c</FileName>
+              <FileName>ald_iap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_usb.c</FilePath>
+              <FilePath>..\..\..\Drivers\ALD\ES32F36xx\Source\ald_iap.c</FilePath>
             </File>
             <File>
               <FileName>utils.c</FileName>
