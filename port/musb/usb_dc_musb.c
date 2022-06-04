@@ -15,9 +15,7 @@
 #endif
 
 #ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_INT_Handler //use actual usb irq name instead
-
-void USBD_IRQHandler(int, void *);
+#define USBD_IRQHandler USBD_IRQHandler //use actual usb irq name instead
 #endif
 
 #define MUSB_FADDR_OFFSET 0x98
@@ -652,11 +650,7 @@ static void handle_ep0(void)
     }
 }
 
-#ifdef CONFIG_USB_MUSB_SUNXI
-void USBD_IRQHandler(int irq, void *args)
-#else
 void USBD_IRQHandler(void)
-#endif
 {
     uint32_t is;
     uint32_t txis;
