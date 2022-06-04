@@ -4,8 +4,20 @@
 
 #define VIDEO_IN_EP 0x81
 
-#define MAX_PAYLOAD_SIZE  2048
-#define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 2)) | (0x01 << 11))
+#ifdef CONFIG_USB_HS
+#define MAX_PAYLOAD_SIZE  1024 // for high speed with one transcations every one micro frame
+#define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 1)) | (0x00 << 11))
+
+// #define MAX_PAYLOAD_SIZE  2048 // for high speed with two transcations every one micro frame
+// #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 2)) | (0x01 << 11))
+
+// #define MAX_PAYLOAD_SIZE  3072 // for high speed with three transcations every one micro frame
+// #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 3)) | (0x02 << 11))
+
+#else
+#define MAX_PAYLOAD_SIZE  256
+#define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 1)) | (0x00 << 11))
+#endif
 
 #define WIDTH  (unsigned int)(640)
 #define HEIGHT (unsigned int)(480)
@@ -142,7 +154,6 @@ void usbd_video_close(uint8_t intf)
     tx_flag = 0;
 }
 
-
 static usbd_class_t video_class;
 static usbd_interface_t video_control_intf;
 static usbd_interface_t video_stream_intf;
@@ -173,11 +184,17 @@ uint8_t packet_buffer[10 * 1024];
 void video_test()
 {
     uint32_t out_len;
-
+    uint32_t packets;
     while (1) {
         if (tx_flag) {
-            usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
-            usbd_ep_write(0x81, packet_buffer, out_len, NULL);
+            packets = usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
+            for (uint32_t i = 0; i < packets; i++) {
+                if (i == (packets - 1)) {
+                    usbd_ep_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], out_len - (packets - 1) * MAX_PAYLOAD_SIZE, NULL);
+                } else {
+                    usbd_ep_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE, NULL);
+                }
+            }
         }
     }
 }

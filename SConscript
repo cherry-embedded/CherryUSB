@@ -53,7 +53,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V2_TEMPLATE']):
         src += Glob('demo/audio_v2_mic_speaker_multichan_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_VIDEO_TEMPLATE']):
-        src += Glob('demo/video_hs_mjpeg_template.c')
+        src += Glob('demo/video_static_mjpeg_template.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_STM32']):
         src += Glob('port/fsdev/usb_dc_fsdev.c')
