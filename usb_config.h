@@ -1,6 +1,17 @@
 #ifndef _USB_CONFIG_H
 #define _USB_CONFIG_H
 
+/* USB common Configuration */
+#ifndef CONFIG_USB_DBG_LEVEL
+#define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
+#endif
+
+#ifndef CONFIG_USB_PRINTF
+#define CONFIG_USB_PRINTF printf
+#endif
+
+#define CONFIG_USB_PRINTF_COLOR_ENABLE
+
 /* USB DEVICE Configuration */
 /* core */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN

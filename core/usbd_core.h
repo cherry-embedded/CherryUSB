@@ -26,10 +26,19 @@
 extern "C" {
 #endif
 
-#include "usb_util.h"
-#include "usb_def.h"
-#include "usb_dc.h"
+#include <stdbool.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "usb_config.h"
+#include "usb_util.h"
+#include "usb_errno.h"
+#include "usb_def.h"
+#include "usb_list.h"
+#include "usb_mem.h"
+#include "usb_log.h"
+#include "usb_dc.h"
 
 enum usbd_event_type {
     /** USB error reported by the controller */

@@ -22,13 +22,22 @@
 #ifndef _USBH_CORE_H
 #define _USBH_CORE_H
 
+#include <stdbool.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "usb_config.h"
 #include "usb_util.h"
+#include "usb_errno.h"
 #include "usb_def.h"
+#include "usb_list.h"
+#include "usb_mem.h"
+#include "usb_log.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
 #include "usb_workq.h"
 #include "usbh_hub.h"
-#include "usb_config.h"
 
 #ifdef __cplusplus
 extern "C" {
