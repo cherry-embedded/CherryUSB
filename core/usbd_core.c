@@ -204,9 +204,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     USB_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
                  ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
-    usbd_ep_open(&ep_cfg);
-
-    return true;
+    return usbd_ep_open(&ep_cfg) == 0 ? true : false;
 }
 /**
  * @brief Disable endpoint for transferring data
@@ -229,9 +227,7 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     USB_LOG_INFO("Close endpoint:0x%x type:%u\r\n",
                  ep_cfg.ep_addr, ep_cfg.ep_type);
 
-    usbd_ep_close(ep_cfg.ep_addr);
-
-    return true;
+    return usbd_ep_close(ep_cfg.ep_addr) == 0 ? true : false;
 }
 
 /**
