@@ -8,9 +8,9 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 
 ## Why choose
 
-- Ip-oriented programming, the same usb ip driver does not need to be written repeatedly, only the parts that are not the same need to be implemented
-- Code tree writing makes it easier for users to understand usb concept, enumeration process, class driver loading
-- Templating the Class driver makes it easier to use composite device and add custom drivers
+- Ip-oriented programming means the same usb ip's driver has no need to be written repeatedly, only the parts(such as `usb_xx_low_level_init`：including usb clock, usb gpio and usb irq configuration)that are not the same have to be implemented,
+- Tree-based coding makes it easier for users to understand usb concept, enumeration process and class driver loading process
+- Templating the class drivers makes it easier to use composite device and add custom drivers
 - Simplifying the complex transfer of usb makes it easier for users to use usb as easily as uart and dma
 - Fewer directory structures, fewer apis, fewer codesize, extreme usb bandwidth
 
@@ -53,7 +53,6 @@ CherryUSB Device Stack has the following functions：
 - Support Composite Device
 - Support Communication Device Class (CDC)
 - Support Human Interface Device (HID)
-- Support Custom human Interface Device (HID)
 - Support Mass Storage Class (MSC)
 - Support USB VIDEO CLASS (UVC1.0、UVC1.5)
 - Support USB AUDIO CLASS (UAC1.0、UAC2.0)
@@ -77,7 +76,7 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2)：
 
 ## Host Stack Overview
 
-The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for the different Class to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the protocol stack is managed using os, and provides osal to make a adaptation to different os.
+The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for different Classes to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the host stack is managed using os, and provides osal to make a adaptation for different os.
 
 CherryUSB Host Stack has the following functions：
 
@@ -120,3 +119,7 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 |Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|
 |Geehy    |  APM32E10x APM32F0xx| fsdev |[apm32_repo](https://github.com/CherryUSB/cherryusb_apm32)|
 |Mindmotion    |  MM32L3xx | mm32 |[mm32_repo](https://github.com/CherryUSB/cherryusb_mm32)|
+
+## Contact
+
+QQ group: 642693751

@@ -8,7 +8,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带
 
 ## 为什么选择
 
-- 面向 ip 编程，相同 usb ip 驱动无需重复编写，仅需实现不相同的部分
+- 面向 ip 编程，使得相同的 usb ip 驱动无需重复编写，仅需实现不相同的部分(例如实现 `usb_xx_low_level_init`：包含 usb 时钟、usb gpio、usb 中断)
 - 代码树状化编写，轻松理解 usb 概念、枚举过程、class 驱动加载
 - Class 驱动模板化，轻松实现复合设备和自定义添加驱动
 - 将 usb 的复杂传输简单化，使得用户能够像 uart、dma 一样轻松使用 usb
@@ -52,7 +52,6 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持复合设备
 - 支持 Communication Device Class (CDC)
 - 支持 Human Interface Device (HID)
-- 支持 Custom human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
 - 支持 USB VIDEO CLASS (UVC1.0、UVC1.5)
 - 支持 USB AUDIO CLASS (UAC1.0、UAC2.0)
@@ -119,3 +118,7 @@ USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [Ch
 |Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|
 |Geehy    |  APM32E10x APM32F0xx| fsdev |[apm32_repo](https://github.com/CherryUSB/cherryusb_apm32)|
 |Mindmotion    |  MM32L3xx | mm32 |[mm32_repo](https://github.com/CherryUSB/cherryusb_mm32)|
+
+## Contact
+
+QQ 群:642693751
