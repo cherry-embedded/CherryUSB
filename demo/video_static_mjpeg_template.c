@@ -15,7 +15,7 @@
 // #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 3)) | (0x02 << 11))
 
 #else
-#define MAX_PAYLOAD_SIZE  256
+#define MAX_PAYLOAD_SIZE  1023
 #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 1)) | (0x00 << 11))
 #endif
 
