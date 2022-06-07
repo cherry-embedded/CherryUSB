@@ -767,7 +767,7 @@ static bool SCSI_readCapacity10(uint8_t **data, uint32_t *len)
         (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 0) & 0xff),
     };
 
-    memcpy(*data, (uint8_t *)&capacity10, SCSIRESP_READCAPACITY10_SIZEOF);
+    memcpy(*data, (uint8_t *)capacity10, SCSIRESP_READCAPACITY10_SIZEOF);
     *len = SCSIRESP_READCAPACITY10_SIZEOF;
     return true;
 }
