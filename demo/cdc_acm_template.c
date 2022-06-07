@@ -100,13 +100,19 @@ usbd_interface_t cdc_cmd_intf;
 /*!< interface two */
 usbd_interface_t cdc_data_intf;
 
+#ifdef CONFIG_USB_HS
+#define CDC_BULK_SIZE 512
+#else
+#define CDC_BULK_SIZE 64
+#endif
+
 /* function ------------------------------------------------------------------*/
 void usbd_cdc_acm_out(uint8_t ep)
 {
-    uint8_t data[64];
+    uint8_t data[CDC_BULK_SIZE];
     uint32_t read_byte;
 
-    usbd_ep_read(ep, data, 64, &read_byte);
+    usbd_ep_read(ep, data, CDC_BULK_SIZE, &read_byte);
     for (uint8_t i = 0; i < read_byte; i++) {
         USB_LOG_RAW("%02x ", data[i]);
     }
@@ -159,7 +165,10 @@ void usbd_cdc_acm_set_dtr(bool dtr)
 void cdc_acm_data_send_with_dtr_test(void)
 {
     if (dtr_enable) {
-        uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
-        usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
+        uint8_t data_buffer[CDC_BULK_SIZE] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
+        memset(&data_buffer[10],'a',CDC_BULK_SIZE - 10);
+        data_buffer[63] = 'b';
+        usbd_ep_write(CDC_IN_EP, data_buffer, CDC_BULK_SIZE, NULL);// test if zlp is work.
+        usbd_ep_write(CDC_IN_EP, NULL, 0, NULL);
     }
 }
