@@ -1251,11 +1251,11 @@ void usbd_event_notify_handler(uint8_t event, void *arg)
             break;
 
         case USBD_EVENT_EP_IN_NOTIFY:
-            usbd_ep_in_handler((uint32_t)arg);
+            usbd_ep_in_handler((uint8_t)arg);
             break;
 
         case USBD_EVENT_EP_OUT_NOTIFY:
-            usbd_ep_out_handler((uint32_t)arg);
+            usbd_ep_out_handler((uint8_t)arg);
             break;
 
         default:
