@@ -1,6 +1,17 @@
 #ifndef _USB_CONFIG_H
 #define _USB_CONFIG_H
 
+/* USB common Configuration */
+#ifndef CONFIG_USB_DBG_LEVEL
+#define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
+#endif
+
+#ifndef CONFIG_USB_PRINTF
+#define CONFIG_USB_PRINTF printf
+#endif
+
+#define CONFIG_USB_PRINTF_COLOR_ENABLE
+
 /* USB DEVICE Configuration */
 /* core */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
@@ -15,6 +26,9 @@
 #define CONFIG_USBDEV_TEST_MODE 0
 #endif
 
+/* cdc class */
+// #define CONFIG_USBDEV_CDC_ACM_UART
+
 /* msc class */
 #ifndef CONFIG_USBDEV_MSC_MANUFACTURER_STRING
 #define CONFIG_USBDEV_MSC_MANUFACTURER_STRING ""
@@ -26,6 +40,18 @@
 
 #ifndef CONFIG_USBDEV_MSC_VERSION_STRING
 #define CONFIG_USBDEV_MSC_VERSION_STRING "0.01"
+#endif
+
+// #define CONFIG_USBDEV_MSC_THREAD
+
+#ifdef CONFIG_USBDEV_MSC_THREAD
+#ifndef CONFIG_USBDEV_MSC_STACKSIZE
+#define CONFIG_USBDEV_MSC_STACKSIZE 2048
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_PRIO
+#define CONFIG_USBDEV_MSC_PRIO 4
+#endif
 #endif
 
 /* audio class */
