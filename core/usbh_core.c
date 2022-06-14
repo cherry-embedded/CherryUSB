@@ -745,13 +745,15 @@ static void usbh_portchange_detect_thread(void *argument)
 {
     struct usbh_hubport *hport = NULL;
 
+    usb_hc_sw_init();
+    
     for (uint8_t port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
         usbh_core_cfg.rhport[port - 1].hport.port = port;
         usbh_core_cfg.rhport[port - 1].devgen.next = 1;
         usbh_hport_activate(&usbh_core_cfg.rhport[port - 1].hport);
     }
 
-    usb_hc_init();
+    usb_hc_hw_init();
 
     while (1) {
         usbh_portchange_wait(&hport);
@@ -844,9 +846,8 @@ int usbh_initialize(void)
     usbh_class_info_table_end = (struct usbh_class_info *)(class_info_table[0] + (sizeof(class_info_table) / sizeof(class_info_table[0])));
 #endif
 
-#ifdef CONFIG_USBHOST_HUB
     usbh_workq_initialize();
-#endif
+
     usbh_core_cfg.pscevent = usb_osal_event_create();
     if (usbh_core_cfg.pscevent == NULL) {
         return -1;

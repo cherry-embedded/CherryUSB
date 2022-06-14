@@ -60,11 +60,18 @@ struct usbh_endpoint_cfg {
  */
 
 /**
+ * @brief usb host software init, used for global reset.
+ *
+ * @return int
+ */
+int usb_hc_sw_init(void);
+
+/**
  * @brief usb host controller hardware init.
  *
  * @return int
  */
-int usb_hc_init(void);
+int usb_hc_hw_init(void);
 
 /**
  * @brief get port connect status
@@ -144,11 +151,12 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
  *   of bytes successfully transferred.  On a failure, a negated errno value
  *   is returned that indicates the nature of the failure:
  *
- *     EAGAIN - If devices NAKs the transfer (or NYET or other error where
+ *     -EAGAIN - If devices NAKs the transfer (or NYET or other error where
  *              it may be appropriate to restart the entire transaction).
- *     EPERM  - If the endpoint stalls
- *     EIO    - On a TX or data toggle error
- *     EPIPE  - Overrun errors
+ *     -EPERM  - If the endpoint stalls
+ *     -EIO    - On a TX or data toggle error
+ *     -EPIPE  - Overrun errors
+ *     -ETIMEDOUT  - Sem wait timeout
  *
  */
 int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
@@ -166,11 +174,12 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
  *   of bytes successfully transferred.  On a failure, a negated errno value
  *   is returned that indicates the nature of the failure:
  *
- *     EAGAIN - If devices NAKs the transfer (or NYET or other error where
+ *     -EAGAIN - If devices NAKs the transfer (or NYET or other error where
  *              it may be appropriate to restart the entire transaction).
- *     EPERM  - If the endpoint stalls
- *     EIO    - On a TX or data toggle error
- *     EPIPE  - Overrun errors
+ *     -EPERM  - If the endpoint stalls
+ *     -EIO    - On a TX or data toggle error
+ *     -EPIPE  - Overrun errors
+ *     -ETIMEDOUT  - Sem wait timeout
  *
  */
 int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
