@@ -13,7 +13,7 @@
 .. figure:: img/env1.png
 .. figure:: img/env2.png
 
-* 首先第一个配置是配置 USB 的速度，分为 **FS、HIGH_IN_FULL、HS**,。其中， **HIGH_IN_FULL**  表示设备使用支持高速的 USB IP，但是工作在全速模式下，这里仅使用 **synopsys ip** 时使用。
+* 首先第一个配置是配置 USB 的速度，分为 **FS、HS**，表示使用全速还是高速功能。
 
 .. figure:: img/env3.png
 
@@ -30,8 +30,12 @@
 .. figure:: img/env6.png
 
 * 最后退出保存即可。
-* 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。最后使用芯片能够接受的编译方式进行编译。
+* 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
+* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容：
 
+.. figure:: img/config_file.png
+
+* 使用 `scons --target=mdk` 或者 `scons` 进行编译
 
 主机配置
 --------------------------
@@ -40,11 +44,19 @@
 
 .. figure:: img/env7.png
 
-* 和 device 配置一样，需要选择对应的 host ip，以及使用对应 ip 的芯片，如果没找到自己的芯片，可以手动在 `usb_hc_xxx.c` 中修改。
-* 默认使用除了 hub 之外的所有 class 驱动。
+* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。选择好 USB host ip 以后，还需要选择是哪款芯片，第二个箭头则是用来选择芯片，选择以后会帮忙配置相对应的 ip 的一些信息，比如 `USB_BASE` 、 `USBH_Handler` 以及特殊的一些配置等等，如果没找到自己的芯片，可以手动在 `usb_dc_xxx.c` 中修改。
+
+.. figure:: img/env8.png
+
+* 默认使能除了 hub 之外的所有 class 驱动。
 * 设置 psc 线程的线程栈以及线程优先级。
 * 最后退出保存即可。
-* 退出以后不急着编译，需要在代码中实现 `usb_hc_low_level_init` 函数。最后使用芯片能够接受的编译方式进行编译。
+* 退出以后不急着编译，需要在代码中实现 `usb_hc_low_level_init` 函数。
+* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容：
+
+.. figure:: img/config_file.png
+
+* 使用 `scons --target=mdk` 或者 `scons` 进行编译
 
 
 借助 STM32CubeMX 生成 USB 初始化
