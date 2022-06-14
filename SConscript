@@ -5,15 +5,12 @@ path = [cwd + '/common']
 path += [cwd + '/core']
 src = []
 
-CPPDEFINES = ['-Dprintf=rt_kprintf']
-
 # USB DEVICE
 if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     src += Glob('core/usbd_core.c')
+
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
-    elif GetDepend(['PKG_CHERRYUSB_DEVICE_HS_IN_FULL']):
-        CPPDEFINES += ['CONFIG_USB_HS_IN_FULL']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC']):
         path += [cwd + '/class/cdc']
@@ -49,16 +46,20 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC_TEMPLATE']):
         src += Glob('demo/msc_ram_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V1_TEMPLATE']):
-        src += Glob('demo/audio_v1_mic_speaker_dualchan_template.c')
+        src += Glob('demo/audio_v1_mic_speaker_multichan_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V2_TEMPLATE']):
         src += Glob('demo/audio_v2_mic_speaker_multichan_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_VIDEO_TEMPLATE']):
         src += Glob('demo/video_static_mjpeg_template.c')
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_STM32']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV']):
         src += Glob('port/fsdev/usb_dc_fsdev.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_SYNOPSYS_STM32']):
-        src += Glob('port/synopsys/usb_dc_synopsys.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2']):
+        src += Glob('port/synopsys/usb_dc_dwc2.c')
+        if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_PORT_FS']):
+            CPPDEFINES += ['CONFIG_USB_DWC2_PORT=FS_PORT']
+        elif GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_PORT_HS']):
+            CPPDEFINES += ['CONFIG_USB_DWC2_PORT=HS_PORT']
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB']):
         src += Glob('port/musb/usb_dc_musb.c')
         if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_SUNXI']):
@@ -88,8 +89,9 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/hub/usbh_hub.c')
         CPPDEFINES += ['CONFIG_USBHOST_HUB']
 
-    if GetDepend(['PKG_CHERRYUSB_HOST_SYNOPSYS_STM32']):
-        src += Glob('port/synopsys/usb_hc_synopsys.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
+        src += Glob('port/synopsys/usb_hc_dwc2.c')
+        CPPDEFINES += ['CONFIG_USBHOST_HIGH_WORKQ']
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB']):
         src += Glob('port/musb/usb_hc_musb.c')
         if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SUNXI']):

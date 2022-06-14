@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>3</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS_IN_FULL,CONFIG_USBHOST_HUB</Define>
+              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USBHOST_HIGH_WORKQ</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hub;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F;..\..\..\..\..\third_party\fatfs-0.14\source</IncludePath>
             </VariousControls>
@@ -595,24 +595,19 @@
               <FilePath>..\..\..\..\..\class\hid\usbh_hid.c</FilePath>
             </File>
             <File>
-              <FileName>usbh_hub.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\class\hub\usbh_hub.c</FilePath>
-            </File>
-            <File>
               <FileName>usb_osal_freertos.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\osal\usb_osal_freertos.c</FilePath>
             </File>
             <File>
+              <FileName>usb_hc_dwc2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\port\dwc2\usb_hc_dwc2.c</FilePath>
+            </File>
+            <File>
               <FileName>usb_workq.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\osal\usb_workq.c</FilePath>
-            </File>
-            <File>
-              <FileName>usb_hc_synopsys.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\port\synopsys\usb_hc_synopsys.c</FilePath>
             </File>
           </Files>
         </Group>

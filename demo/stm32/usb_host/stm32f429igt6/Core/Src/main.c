@@ -45,7 +45,7 @@
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart1;
 
-//HCD_HandleTypeDef hhcd_USB_OTG_HS;
+HCD_HandleTypeDef hhcd_USB_OTG_HS;
 
 /* USER CODE BEGIN PV */
 
@@ -68,6 +68,27 @@ int fputc(int ch, FILE *f)
   return ch;
 }
 
+void usb_hc_low_level_init(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    /**USB_OTG_HS GPIO Configuration
+    PB14     ------> USB_OTG_HS_DM
+    PB15     ------> USB_OTG_HS_DP
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_OTG_HS_FS;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* Peripheral clock enable */
+    __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
+    /* USB_OTG_HS interrupt Init */
+    HAL_NVIC_SetPriority(OTG_HS_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
+}
 /* USER CODE END 0 */
 
 /**
@@ -209,19 +230,19 @@ static void MX_USB_OTG_HS_HCD_Init(void)
   /* USER CODE BEGIN USB_OTG_HS_Init 1 */
 
   /* USER CODE END USB_OTG_HS_Init 1 */
-//  hhcd_USB_OTG_HS.Instance = USB_OTG_HS;
-//  hhcd_USB_OTG_HS.Init.Host_channels = 12;
-//  hhcd_USB_OTG_HS.Init.speed = HCD_SPEED_FULL;
-//  hhcd_USB_OTG_HS.Init.dma_enable = DISABLE;
-//  hhcd_USB_OTG_HS.Init.phy_itface = USB_OTG_EMBEDDED_PHY;
-//  hhcd_USB_OTG_HS.Init.Sof_enable = DISABLE;
-//  hhcd_USB_OTG_HS.Init.low_power_enable = DISABLE;
-//  hhcd_USB_OTG_HS.Init.vbus_sensing_enable = DISABLE;
-//  hhcd_USB_OTG_HS.Init.use_external_vbus = DISABLE;
-//  if (HAL_HCD_Init(&hhcd_USB_OTG_HS) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
+  hhcd_USB_OTG_HS.Instance = USB_OTG_HS;
+  hhcd_USB_OTG_HS.Init.Host_channels = 12;
+  hhcd_USB_OTG_HS.Init.speed = HCD_SPEED_FULL;
+  hhcd_USB_OTG_HS.Init.dma_enable = DISABLE;
+  hhcd_USB_OTG_HS.Init.phy_itface = USB_OTG_EMBEDDED_PHY;
+  hhcd_USB_OTG_HS.Init.Sof_enable = DISABLE;
+  hhcd_USB_OTG_HS.Init.low_power_enable = DISABLE;
+  hhcd_USB_OTG_HS.Init.vbus_sensing_enable = DISABLE;
+  hhcd_USB_OTG_HS.Init.use_external_vbus = DISABLE;
+  if (HAL_HCD_Init(&hhcd_USB_OTG_HS) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN USB_OTG_HS_Init 2 */
 
   /* USER CODE END USB_OTG_HS_Init 2 */

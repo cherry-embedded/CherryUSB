@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_HS_IN_FULL</Define>
+              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_DWC2_PORT=HS_PORT</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;  ../Drivers/CMSIS/Include;  ..\..\..\..\..\class\cdc;  ..\..\..\..\..\core;  ..\..\..\..\..\common</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\class\cdc;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\class\video;..\..\..\..\..\class\msc;..\..\..\..\..\class\audio</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -550,21 +550,6 @@
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c</FilePath>
             </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -591,9 +576,9 @@
               <FilePath>..\..\..\..\..\core\usbd_core.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc_synopsys.c</FileName>
+              <FileName>usb_dc_dwc2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\port\synopsys\usb_dc_synopsys.c</FilePath>
+              <FilePath>..\..\..\..\..\port\dwc2\usb_dc_dwc2.c</FilePath>
             </File>
           </Files>
         </Group>
