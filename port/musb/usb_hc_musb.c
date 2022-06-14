@@ -143,7 +143,7 @@ typedef enum {
     USB_EP0_STATE_IN_STATUS_C, /**< IN DATA */
 } ep0_state_t;
 
-struct usb_musb_chan {
+struct musb_pipe {
     uint8_t ep_idx;
     bool inuse; /* True: This channel is "in use" */
     bool in;    /* True: IN endpoint */
@@ -154,20 +154,20 @@ struct usb_musb_chan {
     volatile uint32_t buflen;
     volatile uint16_t xfrd; /* Bytes transferred (at end of transfer) */
     volatile int result;    /* The result of the transfer */
-    struct usbh_hubport *hport;
     volatile bool waiter;   /* True: Thread is waiting for a channel event */
     usb_osal_sem_t waitsem; /* Channel wait semaphore */
 #ifdef CONFIG_USBHOST_ASYNCH
     usbh_asynch_callback_t callback; /* Transfer complete callback */
     void *arg;                       /* Argument that accompanies the callback */
 #endif
+    struct usbh_hubport *hport;
 };
 
-struct usb_musb_priv {
-    struct usb_musb_chan chan[CONIFG_USB_MUSB_EP_NUM][CONFIG_USBHOST_PIPE_NUM];
-    volatile struct usb_musb_chan *active_chan[CONIFG_USB_MUSB_EP_NUM];
+struct musb_hcd {
+    struct musb_pipe chan[CONIFG_USB_MUSB_EP_NUM][CONFIG_USBHOST_PIPE_NUM];
+    volatile struct musb_pipe *active_chan[CONIFG_USB_MUSB_EP_NUM];
     usb_osal_mutex_t exclsem[CONIFG_USB_MUSB_EP_NUM]; /* Support mutually exclusive access */
-} g_usbhost;
+} g_musb_hcd;
 
 static volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
 volatile uint8_t ep0_outlen = 0;
@@ -264,13 +264,13 @@ static void usb_musb_read_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
 }
 
 /****************************************************************************
- * Name: usb_synopsys_chan_alloc
+ * Name: musb_pipe_alloc
  *
  * Description:
  *   Allocate a channel.
  *
  ****************************************************************************/
-static int usb_musb_chan_alloc(uint8_t ep_idx)
+static int musb_pipe_alloc(uint8_t ep_idx)
 {
     int chidx;
 
@@ -278,10 +278,10 @@ static int usb_musb_chan_alloc(uint8_t ep_idx)
 
     for (chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
         /* Is this channel available? */
-        if (!g_usbhost.chan[ep_idx][chidx].inuse) {
+        if (!g_musb_hcd.chan[ep_idx][chidx].inuse) {
             /* Yes... make it "in use" and return the index */
 
-            g_usbhost.chan[ep_idx][chidx].inuse = true;
+            g_musb_hcd.chan[ep_idx][chidx].inuse = true;
             return chidx;
         }
     }
@@ -292,20 +292,20 @@ static int usb_musb_chan_alloc(uint8_t ep_idx)
 }
 
 /****************************************************************************
- * Name: usb_synopsys_chan_free
+ * Name: musb_pipe_free
  *
  * Description:
  *   Free a previoiusly allocated channel.
  *
  ****************************************************************************/
-static void usb_musb_chan_free(struct usb_musb_chan *chan)
+static void musb_pipe_free(struct musb_pipe *chan)
 {
     /* Mark the channel available */
     chan->inuse = false;
 }
 
 /****************************************************************************
- * Name: usb_musb_chan_waitsetup
+ * Name: musb_pipe_waitsetup
  *
  * Description:
  *   Set the request for the transfer complete event well BEFORE enabling
@@ -319,7 +319,7 @@ static void usb_musb_chan_free(struct usb_musb_chan *chan)
  *
  ****************************************************************************/
 
-static int usb_musb_chan_waitsetup(struct usb_musb_chan *chan)
+static int musb_pipe_waitsetup(struct musb_pipe *chan)
 {
     size_t flags;
     int ret = -ENODEV;
@@ -333,7 +333,7 @@ static int usb_musb_chan_waitsetup(struct usb_musb_chan *chan)
        * when either (1) the device is disconnected, or (2) the transfer
        * completed.
        */
-        g_usbhost.active_chan[chan->ep_idx] = chan;
+        g_musb_hcd.active_chan[chan->ep_idx] = chan;
         chan->waiter = true;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -348,7 +348,7 @@ static int usb_musb_chan_waitsetup(struct usb_musb_chan *chan)
 }
 
 /****************************************************************************
- * Name: usb_musb_chan_asynchsetup
+ * Name: musb_pipe_asynchsetup
  *
  * Description:
  *   Set the request for the transfer complete event well BEFORE enabling
@@ -363,7 +363,7 @@ static int usb_musb_chan_waitsetup(struct usb_musb_chan *chan)
  ****************************************************************************/
 
 #ifdef CONFIG_USBHOST_ASYNCH
-static int usb_musb_chan_asynchsetup(struct usb_musb_chan *chan, usbh_asynch_callback_t callback, void *arg)
+static int musb_pipe_asynchsetup(struct musb_pipe *chan, usbh_asynch_callback_t callback, void *arg)
 {
     size_t flags;
     int ret = -ENODEV;
@@ -376,7 +376,7 @@ static int usb_musb_chan_asynchsetup(struct usb_musb_chan *chan, usbh_asynch_cal
        * when either (1) the device is disconnected, or (2) the transfer
        * completed.
        */
-        g_usbhost.active_chan[chan->ep_idx] = chan;
+        g_musb_hcd.active_chan[chan->ep_idx] = chan;
         chan->waiter = false;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -391,7 +391,7 @@ static int usb_musb_chan_asynchsetup(struct usb_musb_chan *chan, usbh_asynch_cal
 #endif
 
 /****************************************************************************
- * Name: usb_musb_chan_wait
+ * Name: musb_pipe_wait
  *
  * Description:
  *   Wait for a transfer on a channel to complete.
@@ -401,7 +401,7 @@ static int usb_musb_chan_asynchsetup(struct usb_musb_chan *chan, usbh_asynch_cal
  *
  ****************************************************************************/
 
-static int usb_musb_chan_wait(struct usb_musb_chan *chan, uint32_t timeout)
+static int musb_pipe_wait(struct musb_pipe *chan, uint32_t timeout)
 {
     int ret;
 
@@ -429,7 +429,7 @@ static int usb_musb_chan_wait(struct usb_musb_chan *chan, uint32_t timeout)
 }
 
 /****************************************************************************
- * Name: usb_musb_chan_wakeup
+ * Name: musb_pipe_wakeup
  *
  * Description:
  *   A channel transfer has completed... wakeup any threads waiting for the
@@ -441,13 +441,13 @@ static int usb_musb_chan_wait(struct usb_musb_chan *chan, uint32_t timeout)
  *
  ****************************************************************************/
 
-static void usb_musb_chan_wakeup(struct usb_musb_chan *chan)
+static void musb_pipe_wakeup(struct musb_pipe *chan)
 {
     usbh_asynch_callback_t callback;
     void *arg;
     int nbytes;
 
-    g_usbhost.active_chan[chan->ep_idx] = NULL;
+    g_musb_hcd.active_chan[chan->ep_idx] = NULL;
 
     /* Is the transfer complete? */
     if (chan->waiter) {
@@ -478,7 +478,17 @@ __WEAK void usb_hc_low_level_init(void)
 {
 }
 
-int usb_hc_init(void)
+int usb_hc_sw_init(void)
+{
+    memset(&g_musb_hcd, 0, sizeof(struct musb_hcd));
+    for (uint8_t i = 0; i < CONIFG_USB_MUSB_EP_NUM; i++) {
+        g_musb_hcd.exclsem[i] = usb_osal_mutex_create();
+    }
+
+    return 0;
+}
+
+int usb_hc_hw_init(void)
 {
     uint8_t regval;
     uint32_t fifo_offset = 0;
@@ -500,10 +510,6 @@ int usb_hc_init(void)
         HWREGB(USB_BASE + MUSB_RXFIFOSZ_OFFSET) = USB_TXFIFOSZ_SIZE_512;
         HWREGH(USB_BASE + MUSB_RXFIFOADD_OFFSET) = fifo_offset;
         fifo_offset += 512;
-    }
-
-    for (uint8_t i = 0; i < CONIFG_USB_MUSB_EP_NUM; i++) {
-        g_usbhost.exclsem[i] = usb_osal_mutex_create();
     }
 
     /* Enable USB interrupts */
@@ -562,9 +568,9 @@ uint8_t usbh_get_port_speed(const uint8_t port)
 int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
 {
     int ret;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem[0]);
+    ret = usb_osal_mutex_take(g_musb_hcd.exclsem[0]);
     if (ret < 0) {
         return ret;
     }
@@ -580,14 +586,14 @@ int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uin
         chan->speed = USB_TYPE0_SPEED_LOW;
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem[0]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[0]);
     return ret;
 }
 
 int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 {
     struct usbh_hubport *hport;
-    struct usb_musb_chan *chan;
+    struct musb_pipe *chan;
     uint32_t chidx;
     uint8_t ep_idx = 0;
     uint8_t old_ep_index;
@@ -599,9 +605,9 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     USBC_SelectActiveEp(ep_idx);
 
     if (ep_cfg->ep_type == USB_ENDPOINT_TYPE_CONTROL) {
-        chidx = usb_musb_chan_alloc(0);
-        chan = &g_usbhost.chan[0][chidx];
-        memset(chan, 0, sizeof(struct usb_musb_chan));
+        chidx = musb_pipe_alloc(0);
+        chan = &g_musb_hcd.chan[0][chidx];
+        memset(chan, 0, sizeof(struct musb_pipe));
         chan->inuse = true;
         chan->ep_idx = 0;
         chan->interval = 0;
@@ -612,10 +618,10 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
         *ep = (usbh_epinfo_t)chan;
     } else {
-        chidx = usb_musb_chan_alloc(ep_idx);
+        chidx = musb_pipe_alloc(ep_idx);
 
-        chan = &g_usbhost.chan[ep_idx][chidx];
-        memset(chan, 0, sizeof(struct usb_musb_chan));
+        chan = &g_musb_hcd.chan[ep_idx][chidx];
+        memset(chan, 0, sizeof(struct musb_pipe));
         chan->inuse = true;
         chan->in = ep_cfg->ep_addr & 0x80 ? 1 : 0;
         chan->ep_idx = ep_idx;
@@ -649,8 +655,8 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
 int usbh_ep_free(usbh_epinfo_t ep)
 {
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
-    usb_musb_chan_free(chan);
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
+    musb_pipe_free(chan);
     usb_osal_sem_delete(chan->waitsem);
     return 0;
 }
@@ -659,14 +665,14 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
 {
     int ret;
     uint32_t old_ep_index;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem[0]);
+    ret = usb_osal_mutex_take(g_musb_hcd.exclsem[0]);
     if (ret < 0) {
         return ret;
     }
 
-    ret = usb_musb_chan_waitsetup(chan);
+    ret = musb_pipe_waitsetup(chan);
     if (ret < 0) {
         goto errout_with_mutex;
     }
@@ -701,16 +707,16 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_CSRL0_TXRDY | USB_CSRL0_SETUP;
     USBC_SelectActiveEp(old_ep_index);
 
-    ret = usb_musb_chan_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
+    ret = musb_pipe_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
     if (ret < 0) {
         goto errout_with_mutex;
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem[0]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[0]);
     return ret;
 errout_with_mutex:
     chan->waiter = false;
-    usb_osal_mutex_give(g_usbhost.exclsem[0]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[0]);
     return ret;
 }
 
@@ -718,14 +724,14 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 {
     int ret;
     uint32_t old_ep_index;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem[chan->ep_idx]);
+    ret = usb_osal_mutex_take(g_musb_hcd.exclsem[chan->ep_idx]);
     if (ret < 0) {
         return ret;
     }
 
-    ret = usb_musb_chan_waitsetup(chan);
+    ret = musb_pipe_waitsetup(chan);
     if (ret < 0) {
         goto errout_with_mutex;
     }
@@ -774,16 +780,16 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
     USBC_SelectActiveEp(old_ep_index);
 
-    ret = usb_musb_chan_wait(chan, timeout);
+    ret = musb_pipe_wait(chan, timeout);
     if (ret < 0) {
         goto errout_with_mutex;
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 errout_with_mutex:
     chan->waiter = false;
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 }
 
@@ -791,14 +797,14 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 {
     int ret;
     uint32_t old_ep_index;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem[chan->ep_idx]);
+    ret = usb_osal_mutex_take(g_musb_hcd.exclsem[chan->ep_idx]);
     if (ret < 0) {
         return ret;
     }
 
-    ret = usb_musb_chan_waitsetup(chan);
+    ret = musb_pipe_waitsetup(chan);
     if (ret < 0) {
         goto errout_with_mutex;
     }
@@ -847,16 +853,16 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
     USBC_SelectActiveEp(old_ep_index);
 
-    ret = usb_musb_chan_wait(chan, timeout);
+    ret = musb_pipe_wait(chan, timeout);
     if (ret < 0) {
         goto errout_with_mutex;
     }
 
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 errout_with_mutex:
     chan->waiter = false;
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 }
 
@@ -864,18 +870,18 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
 {
     int ret;
     uint32_t old_ep_index;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 
-    if (g_usbhost.active_chan[chan->ep_idx]) {
+    if (g_musb_hcd.active_chan[chan->ep_idx]) {
         return -EINVAL;
     }
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem[chan->ep_idx]);
+    ret = usb_osal_mutex_take(g_musb_hcd.exclsem[chan->ep_idx]);
     if (ret < 0) {
         return ret;
     }
 
-    ret = usb_musb_chan_asynchsetup(chan, callback, arg);
+    ret = musb_pipe_asynchsetup(chan, callback, arg);
     if (ret < 0) {
         goto errout_with_mutex;
     }
@@ -924,11 +930,11 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     }
     USBC_SelectActiveEp(old_ep_index);
 
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 errout_with_mutex:
-    g_usbhost.active_chan[chan->ep_idx] = NULL;
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    g_musb_hcd.active_chan[chan->ep_idx] = NULL;
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 }
 
@@ -936,18 +942,18 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
 {
     int ret;
     uint32_t old_ep_index;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 
-    if (g_usbhost.active_chan[chan->ep_idx]) {
+    if (g_musb_hcd.active_chan[chan->ep_idx]) {
         return -EINVAL;
     }
 
-    ret = usb_osal_mutex_take(g_usbhost.exclsem[chan->ep_idx]);
+    ret = usb_osal_mutex_take(g_musb_hcd.exclsem[chan->ep_idx]);
     if (ret < 0) {
         return ret;
     }
 
-    ret = usb_musb_chan_asynchsetup(chan, callback, arg);
+    ret = musb_pipe_asynchsetup(chan, callback, arg);
     if (ret < 0) {
         goto errout_with_mutex;
     }
@@ -996,18 +1002,18 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     }
     USBC_SelectActiveEp(old_ep_index);
 
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 errout_with_mutex:
-    g_usbhost.active_chan[chan->ep_idx] = NULL;
-    usb_osal_mutex_give(g_usbhost.exclsem[chan->ep_idx]);
+    g_musb_hcd.active_chan[chan->ep_idx] = NULL;
+    usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 }
 
 int usb_ep_cancel(usbh_epinfo_t ep)
 {
     size_t flags;
-    struct usb_musb_chan *chan = (struct usb_musb_chan *)ep;
+    struct musb_pipe *chan = (struct musb_pipe *)ep;
 #ifdef CONFIG_USBHOST_ASYNCH
     usbh_asynch_callback_t callback;
     void *arg;
@@ -1025,7 +1031,7 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     chan->xfrd = 0;
 #endif
 
-    g_usbhost.active_chan[chan->ep_idx] = NULL;
+    g_musb_hcd.active_chan[chan->ep_idx] = NULL;
     usb_osal_leave_critical_section(flags);
     /* Is there a thread waiting for this transfer to complete? */
 
@@ -1047,10 +1053,10 @@ int usb_ep_cancel(usbh_epinfo_t ep)
 void handle_ep0(void)
 {
     uint8_t ep0_status;
-    struct usb_musb_chan *chan;
+    struct musb_pipe *chan;
     int result = 0;
 
-    chan = (struct usb_musb_chan *)g_usbhost.active_chan[0];
+    chan = (struct musb_pipe *)g_musb_hcd.active_chan[0];
 
     USBC_SelectActiveEp(0);
     ep0_status = HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET);
@@ -1155,7 +1161,7 @@ void handle_ep0(void)
 chan_wait:
     if (chan) {
         chan->result = result;
-        usb_musb_chan_wakeup(chan);
+        musb_pipe_wakeup(chan);
     }
 }
 
@@ -1166,7 +1172,7 @@ void USBH_IRQHandler(void)
     uint32_t rxis;
     uint8_t ep_csrl_status;
     // uint8_t ep_csrh_status;
-    struct usb_musb_chan *chan;
+    struct musb_pipe *chan;
     uint8_t ep_idx;
     uint8_t old_ep_idx;
     int result = 0;
@@ -1188,10 +1194,10 @@ void USBH_IRQHandler(void)
     if (is & USB_IS_DISCON) {
         if (usbh_get_port_connect_status(0) == false) {
             for (uint8_t ep_index = 0; ep_index < CONIFG_USB_MUSB_EP_NUM; ep_index++) {
-                if (g_usbhost.active_chan[ep_index]) {
-                    chan = (struct usb_musb_chan *)g_usbhost.active_chan[ep_index];
+                if (g_musb_hcd.active_chan[ep_index]) {
+                    chan = (struct musb_pipe *)g_musb_hcd.active_chan[ep_index];
                     chan->result = -ENXIO;
-                    usb_musb_chan_wakeup(chan);
+                    musb_pipe_wakeup(chan);
                 }
             }
 
@@ -1230,7 +1236,7 @@ void USBH_IRQHandler(void)
         txis &= ~(1 << ep_idx);
         HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << ep_idx);
 
-        chan = (struct usb_musb_chan *)g_usbhost.active_chan[ep_idx];
+        chan = (struct musb_pipe *)g_musb_hcd.active_chan[ep_idx];
 
         USBC_SelectActiveEp(ep_idx);
 
@@ -1275,7 +1281,7 @@ void USBH_IRQHandler(void)
         rxis &= ~(1 << ep_idx);
         HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << ep_idx); // clear isr flag
 
-        chan = (struct usb_musb_chan *)g_usbhost.active_chan[ep_idx];
+        chan = (struct musb_pipe *)g_musb_hcd.active_chan[ep_idx];
 
         USBC_SelectActiveEp(ep_idx);
 
@@ -1322,6 +1328,6 @@ chan_wait:
     USBC_SelectActiveEp(old_ep_idx);
     if (chan) {
         chan->result = result;
-        usb_musb_chan_wakeup(chan);
+        musb_pipe_wakeup(chan);
     }
 }

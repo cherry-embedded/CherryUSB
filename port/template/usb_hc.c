@@ -4,20 +4,25 @@
 #define USBH_IRQHandler OTG_FS_IRQHandler
 #endif
 
-struct usb_xxx_priv {
+struct xxx_hcd {
     volatile bool connected; /* Connected to device */
     volatile bool pscwait;   /* True: Thread is waiting for a port event */
     usb_osal_sem_t exclsem;  /* Support mutually exclusive access */
-} g_usbhost;
+} g_xxx_hcd;
 
 __WEAK void usb_hc_low_level_init(void)
 {
 }
 
-int usb_hc_init(void)
+int usb_hc_sw_init(void)
 {
-    memset(&g_usbhost, 0, sizeof(struct usb_xxx_priv));
+    memset(&g_usbhost, 0, sizeof(struct xxx_hcd));
 
+    return 0;
+}
+
+int usb_hc_hw_init(void)
+{
     usb_hc_low_level_init();
 
     return 0;

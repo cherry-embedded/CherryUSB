@@ -20,11 +20,11 @@ struct usb_dc_ep_state {
 };
 
 /* Driver state */
-struct usb_dc_config_priv {
+struct xxx_udc {
     volatile uint8_t dev_addr;
     struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
-} usb_dc_cfg;
+} g_xxx_udc;
 
 __WEAK void usb_dc_low_level_init(void)
 {
@@ -36,7 +36,7 @@ __WEAK void usb_dc_low_level_deinit(void)
 
 int usb_dc_init(void)
 {
-    memset(&usb_dc_cfg, 0, sizeof(struct usb_dc_config_priv));
+    memset(&g_xxx_udc, 0, sizeof(struct xxx_udc));
 
     usb_dc_low_level_init();
     return 0;
@@ -57,11 +57,11 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
 
     if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        usb_dc_cfg.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        usb_dc_cfg.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_xxx_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
+        g_xxx_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
     } else {
-        usb_dc_cfg.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        usb_dc_cfg.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_xxx_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
+        g_xxx_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
     }
     return 0;
 }
@@ -98,8 +98,8 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         return 0;
     }
 
-    if (data_len > usb_dc_cfg.in_ep[ep_idx].ep_mps) {
-        data_len = usb_dc_cfg.in_ep[ep_idx].ep_mps;
+    if (data_len > g_xxx_udc.in_ep[ep_idx].ep_mps) {
+        data_len = g_xxx_udc.in_ep[ep_idx].ep_mps;
     }
 
     if (ret_bytes) {
