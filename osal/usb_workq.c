@@ -92,6 +92,7 @@ static void usbh_lpwork_thread(void *argument)
 
 int usbh_workq_initialize(void)
 {
+#ifdef CONFIG_USBHOST_HIGH_WORKQ
     g_hpworkq.sem = usb_osal_sem_create(0);
     if (g_hpworkq.sem == NULL) {
         return -1;
@@ -100,7 +101,8 @@ int usbh_workq_initialize(void)
     if (g_hpworkq.thread == NULL) {
         return -1;
     }
-
+#endif
+#ifdef CONFIG_USBHOST_LOW_WORKQ
     g_lpworkq.sem = usb_osal_sem_create(0);
     if (g_lpworkq.sem == NULL) {
         return -1;
@@ -110,5 +112,6 @@ int usbh_workq_initialize(void)
     if (g_lpworkq.thread == NULL) {
         return -1;
     }
+#endif
     return 0;
 }
