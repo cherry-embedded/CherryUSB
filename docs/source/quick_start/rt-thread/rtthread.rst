@@ -44,7 +44,7 @@
 
 .. figure:: img/env7.png
 
-* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。选择好 USB host ip 以后，还需要选择是哪款芯片，第二个箭头则是用来选择芯片，选择以后会帮忙配置相对应的 ip 的一些信息，比如 `USB_BASE` 、 `USBH_Handler` 以及特殊的一些配置等等，如果没找到自己的芯片，可以手动在 `usb_dc_xxx.c` 中修改。
+* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。选择好 USB host ip 以后，还需要选择是哪款芯片，第二个箭头则是用来选择芯片，选择以后会帮忙配置相对应的 ip 的一些信息，比如 `USB_BASE` 、 `USBH_Handler` 以及特殊的一些配置等等，如果没找到自己的芯片，可以手动在 `usb_hc_xxx.c` 中修改。
 
 .. figure:: img/env8.png
 

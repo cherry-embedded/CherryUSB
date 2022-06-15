@@ -150,17 +150,43 @@ MUSB IP 支持主从，并且由 **mentor** 定义了一套标准的寄存器偏
       - 0x01c13000
       - 4
 
-SYNOPSYS
+DWC2
 --------------------------
 
-- STM32 芯片中，H7 的 FS 控制器（使用 PA11/PA12）基地址(**0x40080000UL**)与其他芯片 FS 控制器基地址(**0x50000000UL**)不一样， HS 基地址都是一样的。其次是关于 **VBUS_SENSE** 的控制，虽然寄存器相同，但是个别芯片对该 bit 操作 0 和操作 1 是相反的（估计是硬件设计问题），此问题会影响枚举，所以需要根据芯片控制是否使能 **CONFIG_USB_SYNOPSYS_NOVBUSSEN**。
-不可靠的统计是新款 F4、F7、H7、L4 都是需要使能的。
+DWC2 IP 支持主从，并且由 **synopsys** 定义了一套标准的寄存器偏移。大部分厂家都使用标准的寄存器偏移，所以如果是从机仅需要修改 `USBD_IRQHandler` 、 `USB_BASE` 、 `USB_NUM_BIDIR_ENDPOINTS` ，主机仅需要修改 `USBH_IRQHandler` 、 `USB_BASE`  即可。
 
-.. code-block:: C
+.. caution:: 主机 port 仅支持有高速功能的 dwc2 ip, 因为他支持 dma 模式，如果厂家买的 ip 不支持 dma 模式，则无法使用。
 
-    /* Deactivate VBUS Sensing B */
-    USBx->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
+下表为具体芯片从机相关宏的修改值：
 
-    USBx->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+.. list-table::
+    :widths: 30 30 30 30
+    :header-rows: 1
 
-    两者都是关闭作用，并且其中 USB_OTG_GCCFG_NOVBUSSENS 和 USB_OTG_GCCFG_VBDEN 都是 21 bit
+    * - 芯片
+      - USBH_IRQHandler
+      - USB_BASE
+      - USB_NUM_BIDIR_ENDPOINTS
+    * - STM32 非 H7
+      - OTG_FS_IRQHandler/OTG_HS_IRQHandler
+      - 0x50000000UL/0x40040000UL
+      - 5
+    * - STM32 H7
+      - 同上
+      - 0x40080000UL/0x40040000UL
+      - 9
+
+下表为具体芯片主机相关宏的修改值：
+
+.. list-table::
+    :widths: 30 30 30 30
+    :header-rows: 1
+
+    * - 芯片
+      - USBH_IRQHandler
+      - USB_BASE
+      - CONFIG_USB_DWC2_PIPE_NUM
+    * - STM32 全系列
+      - OTG_HS_IRQHandler
+      - 0x40040000UL
+      - 12
