@@ -25,23 +25,6 @@
 struct usbh_class_info *usbh_class_info_table_begin = NULL;
 struct usbh_class_info *usbh_class_info_table_end = NULL;
 
-#ifdef CONFIG_USBHOST_CLASS_DRIVER_EXPORT_DISBALE
-extern const struct usbh_class_info cdc_acm_class_info;
-extern const struct usbh_class_info hid_keyboard_class_info;
-extern const struct usbh_class_info hid_mouse_class_info;
-extern const struct usbh_class_info msc_class_info;
-extern const struct usbh_class_info hub_class_info;
-const struct usbh_class_info *class_info_table[] = {
-    &cdc_acm_class_info,
-    &hid_keyboard_class_info,
-    &hid_mouse_class_info,
-    &msc_class_info,
-#ifdef CONFIG_USBHOST_HUB
-    &hub_class_info,
-#endif
-};
-#endif
-
 static const char *speed_table[] = { "error speed", "low speed", "full speed", "high speed" };
 
 static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subcalss, uint8_t protocol, uint16_t vid, uint16_t pid);
@@ -746,7 +729,7 @@ static void usbh_portchange_detect_thread(void *argument)
     struct usbh_hubport *hport = NULL;
 
     usb_hc_sw_init();
-    
+
     for (uint8_t port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
         usbh_core_cfg.rhport[port - 1].hport.port = port;
         usbh_core_cfg.rhport[port - 1].devgen.next = 1;
@@ -829,7 +812,6 @@ int usbh_initialize(void)
 
     memset(&usbh_core_cfg, 0, sizeof(struct usbh_core_priv));
 
-#ifndef CONFIG_USBHOST_CLASS_DRIVER_EXPORT_DISBALE
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
     extern const int usbh_class_info$$Limit;
@@ -840,10 +822,6 @@ int usbh_initialize(void)
     extern uint32_t _usbh_class_info_end;
     usbh_class_info_table_begin = (struct usbh_class_info *)&_usbh_class_info_start;
     usbh_class_info_table_end = (struct usbh_class_info *)&_usbh_class_info_end;
-#endif
-#else
-    usbh_class_info_table_begin = (struct usbh_class_info *)class_info_table[0];
-    usbh_class_info_table_end = (struct usbh_class_info *)(class_info_table[0] + (sizeof(class_info_table) / sizeof(class_info_table[0])));
 #endif
 
     usbh_workq_initialize();
