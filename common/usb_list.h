@@ -58,7 +58,7 @@ static inline void usb_slist_init(usb_slist_t *l)
 static inline void usb_slist_add_head(usb_slist_t *l, usb_slist_t *n)
 {
     n->next = l->next;
-    l->next = n;
+    l->next = NULL;
 }
 
 static inline void usb_slist_add_tail(usb_slist_t *l, usb_slist_t *n)
