@@ -91,7 +91,6 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
         src += Glob('port/synopsys/usb_hc_dwc2.c')
-        CPPDEFINES += ['CONFIG_USBHOST_HIGH_WORKQ']
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB']):
         src += Glob('port/musb/usb_hc_musb.c')
         if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SUNXI']):
