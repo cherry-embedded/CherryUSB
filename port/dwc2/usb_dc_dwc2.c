@@ -126,7 +126,7 @@ struct dwc2_udc {
     struct dwc2_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_dwc2_udc;
 
-static int usb_dwc2_reset(void)
+static inline int dwc2_reset(void)
 {
     uint32_t count = 0U;
 
@@ -150,7 +150,7 @@ static int usb_dwc2_reset(void)
     return 0;
 }
 
-static inline int usb_dwc2_core_init(void)
+static inline int dwc2_core_init(void)
 {
     int ret;
 #if defined(CONFIG_USB_HS)
@@ -160,7 +160,7 @@ static inline int usb_dwc2_core_init(void)
     USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_PHYSEL;
 #endif
     /* Reset after a PHY select */
-    ret = usb_dwc2_reset();
+    ret = dwc2_reset();
 
     /* Activate the USB Transceiver */
     USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_PWRDWN;
@@ -168,7 +168,7 @@ static inline int usb_dwc2_core_init(void)
     return ret;
 }
 
-static void usb_dwc2_set_mode(uint8_t mode)
+static inline void dwc2_set_mode(uint8_t mode)
 {
     USB_OTG_GLB->GUSBCFG &= ~(USB_OTG_GUSBCFG_FHMOD | USB_OTG_GUSBCFG_FDMOD);
 
@@ -179,7 +179,37 @@ static void usb_dwc2_set_mode(uint8_t mode)
     }
 }
 
-static void usb_dwc2_set_turnaroundtime(uint32_t hclk, uint8_t speed)
+static inline int dwc2_flush_rxfifo(void)
+{
+    uint32_t count = 0;
+
+    USB_OTG_GLB->GRSTCTL = USB_OTG_GRSTCTL_RXFFLSH;
+
+    do {
+        if (++count > 200000U) {
+            return -1;
+        }
+    } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH);
+
+    return 0;
+}
+
+static inline int dwc2_flush_txfifo(uint32_t num)
+{
+    uint32_t count = 0U;
+
+    USB_OTG_GLB->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (num << 6));
+
+    do {
+        if (++count > 200000U) {
+            return -1;
+        }
+    } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
+
+    return 0;
+}
+
+static void dwc2_set_turnaroundtime(uint32_t hclk, uint8_t speed)
 {
     uint32_t UsbTrd;
 
@@ -230,37 +260,7 @@ static void usb_dwc2_set_turnaroundtime(uint32_t hclk, uint8_t speed)
     USB_OTG_GLB->GUSBCFG |= (uint32_t)((UsbTrd << 10) & USB_OTG_GUSBCFG_TRDT);
 }
 
-static int usb_dwc2_flush_rxfifo(void)
-{
-    uint32_t count = 0;
-
-    USB_OTG_GLB->GRSTCTL = USB_OTG_GRSTCTL_RXFFLSH;
-
-    do {
-        if (++count > 200000U) {
-            return -1;
-        }
-    } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH);
-
-    return 0;
-}
-
-static int usb_dwc2_flush_txfifo(uint32_t num)
-{
-    uint32_t count = 0U;
-
-    USB_OTG_GLB->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (num << 6));
-
-    do {
-        if (++count > 200000U) {
-            return -1;
-        }
-    } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
-
-    return 0;
-}
-
-static void usb_set_txfifo(uint8_t fifo, uint16_t size)
+static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
 {
     uint8_t i;
     uint32_t Tx_Offset;
@@ -290,7 +290,7 @@ static void usb_set_txfifo(uint8_t fifo, uint16_t size)
     }
 }
 
-static uint8_t usb_dwc2_get_devspeed(void)
+static uint8_t dwc2_get_devspeed(void)
 {
     uint8_t speed;
     uint32_t DevEnumSpeed = USB_OTG_DEV->DSTS & USB_OTG_DSTS_ENUMSPD;
@@ -308,10 +308,10 @@ static uint8_t usb_dwc2_get_devspeed(void)
 }
 
 /**
-  * @brief  USB_ReadInterrupts: return the global USB interrupt status
+  * @brief  dwc2_get_glb_intstatus: return the global USB interrupt status
   * @retval status
   */
-static inline uint32_t usb_dwc2_get_glb_intstatus(void)
+static inline uint32_t dwc2_get_glb_intstatus(void)
 {
     uint32_t tmpreg;
 
@@ -322,10 +322,10 @@ static inline uint32_t usb_dwc2_get_glb_intstatus(void)
 }
 
 /**
-  * @brief  usb_dwc2_get_outeps_intstatus: return the USB device OUT endpoints interrupt status
+  * @brief  dwc2_get_outeps_intstatus: return the USB device OUT endpoints interrupt status
   * @retval status
   */
-static inline uint32_t usb_dwc2_get_outeps_intstatus(void)
+static inline uint32_t dwc2_get_outeps_intstatus(void)
 {
     uint32_t tmpreg;
 
@@ -336,10 +336,10 @@ static inline uint32_t usb_dwc2_get_outeps_intstatus(void)
 }
 
 /**
-  * @brief  usb_dwc2_get_ineps_intstatus: return the USB device IN endpoints interrupt status
+  * @brief  dwc2_get_ineps_intstatus: return the USB device IN endpoints interrupt status
   * @retval status
   */
-static inline uint32_t usb_dwc2_get_ineps_intstatus(void)
+static inline uint32_t dwc2_get_ineps_intstatus(void)
 {
     uint32_t tmpreg;
 
@@ -355,7 +355,7 @@ static inline uint32_t usb_dwc2_get_ineps_intstatus(void)
   *          This parameter can be a value from 0 to 15
   * @retval Device OUT EP Interrupt register
   */
-static inline uint32_t usb_dwc2_get_outep_intstatus(uint8_t epnum)
+static inline uint32_t dwc2_get_outep_intstatus(uint8_t epnum)
 {
     uint32_t tmpreg;
 
@@ -371,7 +371,7 @@ static inline uint32_t usb_dwc2_get_outep_intstatus(uint8_t epnum)
   *          This parameter can be a value from 0 to 15
   * @retval Device IN EP Interrupt register
   */
-static inline uint32_t usb_dwc2_get_inep_intstatus(uint8_t epnum)
+static inline uint32_t dwc2_get_inep_intstatus(uint8_t epnum)
 {
     uint32_t tmpreg, msk, emp;
 
@@ -409,10 +409,10 @@ int usb_dc_init(void)
         //    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_DMAEN;
     }
 
-    ret = usb_dwc2_core_init();
+    ret = dwc2_core_init();
 
     /* Force Device Mode*/
-    usb_dwc2_set_mode(USB_OTG_MODE_DEVICE);
+    dwc2_set_mode(USB_OTG_MODE_DEVICE);
 
     for (uint8_t i = 0U; i < 15U; i++) {
         USB_OTG_GLB->DIEPTXF[i] = 0U;
@@ -461,8 +461,8 @@ int usb_dc_init(void)
     USB_OTG_DEV->DCFG |= USB_OTG_SPEED_FULL;
 #endif
 
-    ret = usb_dwc2_flush_txfifo(0x10U);
-    ret = usb_dwc2_flush_rxfifo();
+    ret = dwc2_flush_txfifo(0x10U);
+    ret = dwc2_flush_rxfifo();
 
     for (uint8_t i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
         if ((USB_OTG_INEP(i)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) == USB_OTG_DIEPCTL_EPENA) {
@@ -519,15 +519,15 @@ int usb_dc_init(void)
 
     USB_OTG_GLB->GRXFSIZ = (CONFIG_USB_DWC2_RX_FIFO_SIZE / 4);
 
-    usb_set_txfifo(0, CONFIG_USB_DWC2_TX0_FIFO_SIZE / 4);
-    usb_set_txfifo(1, CONFIG_USB_DWC2_TX1_FIFO_SIZE / 4);
-    usb_set_txfifo(2, CONFIG_USB_DWC2_TX2_FIFO_SIZE / 4);
-    usb_set_txfifo(3, CONFIG_USB_DWC2_TX3_FIFO_SIZE / 4);
+    dwc2_set_txfifo(0, CONFIG_USB_DWC2_TX0_FIFO_SIZE / 4);
+    dwc2_set_txfifo(1, CONFIG_USB_DWC2_TX1_FIFO_SIZE / 4);
+    dwc2_set_txfifo(2, CONFIG_USB_DWC2_TX2_FIFO_SIZE / 4);
+    dwc2_set_txfifo(3, CONFIG_USB_DWC2_TX3_FIFO_SIZE / 4);
 #if USB_NUM_BIDIR_ENDPOINTS > 4
-    usb_set_txfifo(4, CONFIG_USB_DWC2_TX4_FIFO_SIZE / 4);
+    dwc2_set_txfifo(4, CONFIG_USB_DWC2_TX4_FIFO_SIZE / 4);
 #endif
 #if USB_NUM_BIDIR_ENDPOINTS > 5
-    usb_set_txfifo(5, CONFIG_USB_DWC2_TX5_FIFO_SIZE / 4);
+    dwc2_set_txfifo(5, CONFIG_USB_DWC2_TX5_FIFO_SIZE / 4);
 #endif
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
     USB_OTG_DEV->DCTL &= ~USB_OTG_DCTL_SDIS;
@@ -550,8 +550,8 @@ int usb_dc_deinit(void)
     USB_OTG_DEV->DAINTMSK = 0U;
 
     /* Flush the FIFO */
-    usb_dwc2_flush_txfifo(0x10U);
-    usb_dwc2_flush_rxfifo();
+    dwc2_flush_txfifo(0x10U);
+    dwc2_flush_rxfifo();
 
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
@@ -794,7 +794,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 void USBD_IRQHandler(void)
 {
     uint32_t gint_status, temp, epnum, ep_intr, epint;
-    gint_status = usb_dwc2_get_glb_intstatus();
+    gint_status = dwc2_get_glb_intstatus();
 
     if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_DEVICE) {
         /* Avoid spurious interrupt */
@@ -828,10 +828,10 @@ void USBD_IRQHandler(void)
 
         if (gint_status & USB_OTG_GINTSTS_OEPINT) {
             epnum = 0;
-            ep_intr = usb_dwc2_get_outeps_intstatus();
+            ep_intr = dwc2_get_outeps_intstatus();
             while (ep_intr != 0U) {
                 if ((ep_intr & 0x1U) != 0U) {
-                    epint = usb_dwc2_get_outep_intstatus(epnum);
+                    epint = dwc2_get_outep_intstatus(epnum);
                     USB_OTG_OUTEP(epnum)->DOEPINT = epint;
 
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
@@ -853,10 +853,10 @@ void USBD_IRQHandler(void)
         }
         if (gint_status & USB_OTG_GINTSTS_IEPINT) {
             epnum = 0U;
-            ep_intr = usb_dwc2_get_ineps_intstatus();
+            ep_intr = dwc2_get_ineps_intstatus();
             while (ep_intr != 0U) {
                 if ((ep_intr & 0x1U) != 0U) {
-                    epint = usb_dwc2_get_inep_intstatus(epnum);
+                    epint = dwc2_get_inep_intstatus(epnum);
                     USB_OTG_INEP(epnum)->DIEPINT = epint;
 
                     if ((epint & USB_OTG_DIEPINT_XFRC) == USB_OTG_DIEPINT_XFRC) {
@@ -875,8 +875,8 @@ void USBD_IRQHandler(void)
             USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_USBRST;
             USB_OTG_DEV->DCTL &= ~USB_OTG_DCTL_RWUSIG;
 
-            usb_dwc2_flush_txfifo(0x10U);
-            usb_dwc2_flush_rxfifo();
+            dwc2_flush_txfifo(0x10U);
+            dwc2_flush_rxfifo();
             for (uint8_t i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
                 USB_OTG_INEP(i)->DIEPINT = 0xFB7FU;
                 USB_OTG_INEP(i)->DIEPCTL &= ~USB_OTG_DIEPCTL_STALL;
@@ -897,7 +897,7 @@ void USBD_IRQHandler(void)
         }
         if (gint_status & USB_OTG_GINTSTS_ENUMDNE) {
             USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_ENUMDNE;
-            usb_dwc2_set_turnaroundtime(SystemCoreClock, usb_dwc2_get_devspeed());
+            dwc2_set_turnaroundtime(SystemCoreClock, dwc2_get_devspeed());
             USB_OTG_DEV->DCTL |= USB_OTG_DCTL_CGINAK;
         }
         if (gint_status & USB_OTG_GINTSTS_SOF) {

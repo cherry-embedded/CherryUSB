@@ -21,8 +21,8 @@
 
 #define USB_BTABLE_SIZE (8 * USB_NUM_BIDIR_ENDPOINTS)
 
-static void USB_WritePMA(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
-static void USB_ReadPMA(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
+static void fsdev_write_pma(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
+static void fsdev_read_pma(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
 
 /* Endpoint state */
 struct fsdev_ep_state {
@@ -39,8 +39,8 @@ struct fsdev_ep_state {
 
 /* Driver state */
 struct fsdev_udc {
-    volatile uint8_t dev_addr;                              /*!< USB Address */
-    volatile uint32_t pma_offset;                           /*!< pma offset */
+    volatile uint8_t dev_addr;                             /*!< USB Address */
+    volatile uint32_t pma_offset;                          /*!< pma offset */
     struct fsdev_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct fsdev_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_fsdev_udc;
@@ -272,7 +272,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         data_len = g_fsdev_udc.in_ep[ep_idx].ep_mps;
     }
 
-    USB_WritePMA(USB, (uint8_t *)data, g_fsdev_udc.in_ep[ep_idx].ep_pma_addr, (uint16_t)data_len);
+    fsdev_write_pma(USB, (uint8_t *)data, g_fsdev_udc.in_ep[ep_idx].ep_pma_addr, (uint16_t)data_len);
     PCD_SET_EP_TX_CNT(USB, ep_idx, (uint16_t)data_len);
     PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_VALID);
 
@@ -301,7 +301,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 
     read_count = PCD_GET_EP_RX_CNT(USB, ep_idx);
     read_count = MIN(read_count, max_data_len);
-    USB_ReadPMA(USB, (uint8_t *)data, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
+    fsdev_read_pma(USB, (uint8_t *)data, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
 
     if (read_bytes) {
         *read_bytes = read_count;
@@ -439,7 +439,7 @@ void USBD_IRQHandler(void)
     }
 }
 
-static void USB_WritePMA(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
+static void fsdev_write_pma(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
     uint32_t n = ((uint32_t)wNBytes + 1U) >> 1;
     uint32_t BaseAddr = (uint32_t)USBx;
@@ -472,7 +472,7 @@ static void USB_WritePMA(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufA
   * @param   wNBytes no. of bytes to be copied.
   * @retval None
   */
-static void USB_ReadPMA(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
+static void fsdev_read_pma(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
     uint32_t n = (uint32_t)wNBytes >> 1;
     uint32_t BaseAddr = (uint32_t)USBx;

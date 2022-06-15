@@ -1696,9 +1696,9 @@ typedef struct
 
 #define USB_MASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)     ((__INSTANCE__)->GINTMSK &= ~(__INTERRUPT__))
 #define USB_UNMASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)   ((__INSTANCE__)->GINTMSK |= (__INTERRUPT__))
-#define USB_MASK_HALT_HC_INT(chnum)                         (USBx_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_CHHM)
-#define USB_UNMASK_HALT_HC_INT(chnum)                       (USBx_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_CHHM)
 #define CLEAR_IN_EP_INTR(__EPNUM__, __INTERRUPT__)          (USBx_INEP(__EPNUM__)->DIEPINT = (__INTERRUPT__))
 #define CLEAR_OUT_EP_INTR(__EPNUM__, __INTERRUPT__)         (USBx_OUTEP(__EPNUM__)->DOEPINT = (__INTERRUPT__))
-#define CLEAR_HC_INT(chnum, __INTERRUPT__)                  (USBx_HC(chnum)->HCINT = (__INTERRUPT__))
+#define USB_MASK_HALT_HC_INT(chnum)                         (USB_OTG_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_CHHM)
+#define USB_UNMASK_HALT_HC_INT(chnum)                       (USB_OTG_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_CHHM)
+#define CLEAR_HC_INT(chnum, __INTERRUPT__)                  (USB_OTG_HC(chnum)->HCINT = (__INTERRUPT__))
 #endif
