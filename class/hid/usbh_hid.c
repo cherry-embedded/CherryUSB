@@ -77,7 +77,6 @@ static void usbh_hid_devno_free(struct usbh_hid *hid_class)
 static int usbh_hid_get_report_descriptor(struct usbh_hid *hid_class, uint8_t *buffer)
 {
     struct usb_setup_packet *setup = hid_class->hport->setup;
-    int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;

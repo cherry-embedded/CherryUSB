@@ -78,7 +78,6 @@ static void usbh_msc_devno_free(struct usbh_msc *msc_class)
 static int usbh_msc_get_maxlun(struct usbh_msc *msc_class, uint8_t *buffer)
 {
     struct usb_setup_packet *setup = msc_class->hport->setup;
-    int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = MSC_REQUEST_GET_MAX_LUN;

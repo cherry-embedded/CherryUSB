@@ -554,7 +554,6 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 {
     struct usbh_hubport *hport;
     struct musb_pipe *chan;
-    uint32_t chidx;
     uint8_t ep_idx = 0;
     uint8_t old_ep_index;
 
@@ -615,7 +614,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
 int usbh_ep_free(usbh_epinfo_t ep)
 {
-    struct musb_pipe *chan = (struct musb_pipe *)ep;
+    //struct musb_pipe *chan = (struct musb_pipe *)ep;
     return 0;
 }
 
@@ -1156,7 +1155,7 @@ void USBH_IRQHandler(void)
 
     if (is & USB_IS_DISCON) {
         if (usbh_get_port_connect_status(0) == false) {
-            for (uint8_t ep_idx = 0; ep_idx < CONIFG_USB_MUSB_PIPE_NUM; ep_idx++) {
+            for (ep_idx = 0; ep_idx < CONIFG_USB_MUSB_PIPE_NUM; ep_idx++) {
                 for (uint8_t j = 0; j < 2; j++) {
                     chan = &g_musb_hcd.chan[ep_idx][j];
 
@@ -1197,7 +1196,7 @@ void USBH_IRQHandler(void)
         handle_ep0();
     }
 
-    for (uint32_t ep_idx = 1; ep_idx < CONIFG_USB_MUSB_PIPE_NUM; ep_idx++) {
+    for (ep_idx = 1; ep_idx < CONIFG_USB_MUSB_PIPE_NUM; ep_idx++) {
         if (txis & (1 << ep_idx)) {
             HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << ep_idx);
 
@@ -1242,7 +1241,7 @@ void USBH_IRQHandler(void)
     }
 
     rxis &= HWREGH(USB_BASE + MUSB_RXIE_OFFSET);
-    for (uint32_t ep_idx = 1; ep_idx < CONIFG_USB_MUSB_PIPE_NUM; ep_idx++) {
+    for (ep_idx = 1; ep_idx < CONIFG_USB_MUSB_PIPE_NUM; ep_idx++) {
         if (rxis & (1 << ep_idx)) {
             HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << ep_idx); // clear isr flag
 

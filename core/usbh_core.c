@@ -841,7 +841,9 @@ int usbh_initialize(void)
 
 int lsusb(int argc, char **argv)
 {
+#ifdef CONFIG_USBHOST_HUB
     usb_slist_t *hub_list;
+#endif
     uint8_t port;
 
     if (argc < 2) {
@@ -927,7 +929,9 @@ int lsusb(int argc, char **argv)
 
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
 {
+#ifdef CONFIG_USBHOST_HUB
     usb_slist_t *hub_list;
+#endif
     uint8_t port;
 
     for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
@@ -956,7 +960,9 @@ struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
 
 void *usbh_find_class_instance(const char *devname)
 {
+#ifdef CONFIG_USBHOST_HUB
     usb_slist_t *hub_list;
+#endif
     struct usbh_hubport *hport;
     uint8_t port;
 
