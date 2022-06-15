@@ -29,7 +29,7 @@ const char *parity_name[] = { "N", "O", "E", "M", "S" };
 /* Device data structure */
 struct cdc_acm_cfg_priv {
     /* CDC ACM line coding properties. LE order */
-    USB_MEM_ALIGN32 struct cdc_line_coding line_coding;
+    struct cdc_line_coding line_coding;
     /* CDC ACM line state bitmap, DTE side */
     uint8_t line_state;
     /* CDC ACM serial state bitmap, DCE side */

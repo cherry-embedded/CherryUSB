@@ -1054,6 +1054,14 @@ static void usbd_ep0_setup_handler(void)
     /* Send smallest of requested and offered length */
     usbd_core_cfg.ep0_data_buf_residue = MIN(usbd_core_cfg.ep0_data_buf_len,
                                              setup->wLength);
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    /* check if the data buf addr uses usbd_core_cfg.req_data */
+    if (((uint32_t)usbd_core_cfg.ep0_data_buf) != ((uint32_t)usbd_core_cfg.req_data)) {
+        /*copy data buf from misalign32 addr to align32 addr*/
+        memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
+        usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
+    }
+#endif
     /*Send data or status to host*/
     usbd_send_to_host(setup->wLength);
 }
