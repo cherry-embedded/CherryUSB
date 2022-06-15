@@ -35,8 +35,8 @@ struct dwc2_pipe {
     uint8_t data_pid;
     bool inuse;               /* True: This channel is "in use" */
     uint8_t interval;         /* Interrupt/isochronous EP polling interval */
+    uint16_t num_packets;      /* for HCTSIZx*/
     uint32_t xferlen;         /* for HCTSIZx*/
-    uint8_t num_packets;      /* for HCTSIZx*/
     volatile int result;      /* The result of the transfer */
     volatile uint32_t xfrd;   /* Bytes transferred (at end of transfer) */
     volatile bool waiter;     /* True: Thread is waiting for a channel event */
