@@ -5,6 +5,8 @@ path = [cwd + '/common']
 path += [cwd + '/core']
 src = []
 
+CPPDEFINES = []
+
 # USB DEVICE
 if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     src += Glob('core/usbd_core.c')
