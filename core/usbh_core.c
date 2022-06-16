@@ -698,7 +698,8 @@ static int usbh_portchange_wait(struct usbh_hubport **hport)
                             return 0;
                         }
                     }
-                } else if (recved_event & USBH_EVENT_DISCONNECTED) {
+                }
+                if (recved_event & USBH_EVENT_DISCONNECTED) {
                     if (!usbh_get_port_connect_status(port)) {
                         if (connport->connected) {
                             connport->connected = false;
@@ -876,7 +877,7 @@ int lsusb(int argc, char **argv)
                 for (uint8_t i = 0; i < usbh_core_cfg.rhport[port - 1].hport.config.config_desc.bNumInterfaces; i++) {
                     if (usbh_core_cfg.rhport[port - 1].hport.config.intf[i].class_driver->driver_name) {
                         USB_LOG_RAW("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n", usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
-                               i, usbh_core_cfg.rhport[port - 1].hport.config.intf[i].class_driver->driver_name);
+                                    i, usbh_core_cfg.rhport[port - 1].hport.config.intf[i].class_driver->driver_name);
                     }
                 }
             }
@@ -893,7 +894,7 @@ int lsusb(int argc, char **argv)
                     for (uint8_t i = 0; i < hub_class->child[port - 1].config.config_desc.bNumInterfaces; i++) {
                         if (hub_class->child[port - 1].config.intf[i].class_driver->driver_name) {
                             USB_LOG_RAW("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n", hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
-                                   i, hub_class->child[port - 1].config.intf[i].class_driver->driver_name);
+                                        i, hub_class->child[port - 1].config.intf[i].class_driver->driver_name);
                         }
                     }
                 }
@@ -904,7 +905,7 @@ int lsusb(int argc, char **argv)
         for (port = USBH_HUB_PORT_START_INDEX; port <= CONFIG_USBHOST_RHPORTS; port++) {
             if (usbh_core_cfg.rhport[port - 1].hport.connected) {
                 USB_LOG_RAW("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", USBH_ROOT_HUB_INDEX, usbh_core_cfg.rhport[port - 1].hport.port, usbh_core_cfg.rhport[port - 1].hport.dev_addr,
-                       usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
+                            usbh_core_cfg.rhport[port - 1].hport.device_desc.idVendor, usbh_core_cfg.rhport[port - 1].hport.device_desc.idProduct);
                 usbh_print_hubport_info(&usbh_core_cfg.rhport[port - 1].hport);
             }
         }
@@ -916,7 +917,7 @@ int lsusb(int argc, char **argv)
             for (port = USBH_HUB_PORT_START_INDEX; port <= hub_class->nports; port++) {
                 if (hub_class->child[port - 1].connected) {
                     USB_LOG_RAW("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n", hub_class->index, hub_class->child[port - 1].port, hub_class->child[port - 1].dev_addr,
-                           hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
+                                hub_class->child[port - 1].device_desc.idVendor, hub_class->child[port - 1].device_desc.idProduct);
                     usbh_print_hubport_info(&hub_class->child[port - 1]);
                 }
             }
