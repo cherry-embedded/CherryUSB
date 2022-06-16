@@ -1,6 +1,10 @@
 #include "usbh_core.h"
 #include "usb_ehci.h"
 
+#ifndef USBH_IRQHandler
+#define USBH_IRQHandler USBH_IRQHandler
+#endif
+
 #define DEBUGASSERT(f)
 
 /* Configurable number of Queue Head (QH) structures.  The default is one per
@@ -120,14 +124,14 @@ struct usb_ehci_epinfo_s {
 #ifndef CONFIG_USBHOST_INT_DISABLE
     uint8_t interval; /* Polling interval */
 #endif
-    uint8_t status;          /* Retained token status bits (for debug purposes) */
-    volatile bool iocwait;   /* TRUE: Thread is waiting for transfer completion */
-    uint16_t maxpacket : 11; /* Maximum packet size */
-    uint16_t xfrtype   : 2;  /* See USB_EP_ATTR_XFER_* definitions in usb.h */
-    uint16_t speed     : 2;  /* See USB_*_SPEED definitions in ehci.h */
-    int result;              /* The result of the transfer */
-    uint32_t xfrd;           /* On completion, will hold the number of bytes transferred */
     bool inuse;
+    uint8_t status;           /* Retained token status bits (for debug purposes) */
+    uint16_t maxpacket : 11;  /* Maximum packet size */
+    uint16_t xfrtype   : 2;   /* See USB_EP_ATTR_XFER_* definitions in usb.h */
+    uint16_t speed     : 2;   /* See USB_*_SPEED definitions in ehci.h */
+    int result;               /* The result of the transfer */
+    uint32_t xfrd;            /* On completion, will hold the number of bytes transferred */
+    volatile bool iocwait;    /* TRUE: Thread is waiting for transfer completion */
     usb_osal_sem_t iocsem;    /* Semaphore used to wait for transfer completion */
     usb_osal_mutex_t exclsem; /* Support mutually exclusive access */
 #ifdef CONFIG_USBHOST_ASYNCH
@@ -140,9 +144,11 @@ struct usb_ehci_epinfo_s {
 
 /* This structure retains the overall state of the USB host controller */
 
-struct usb_ehci_s {
-    struct usb_ehci_list_s *qhfree;  /* List of free Queue Head (QH) structures */
-    struct usb_ehci_list_s *qtdfree; /* List of free Queue Element Transfer Descriptor (qTD) */
+struct ehci_hcd {
+    struct usb_ehci_list_s *qhfree;                                                      /* List of free Queue Head (QH) structures */
+    struct usb_ehci_list_s *qtdfree;                                                     /* List of free Queue Element Transfer Descriptor (qTD) */
+    __attribute__((aligned(32))) struct usb_ehci_qh_s qhpool[CONFIG_USB_EHCI_QH_NUM];    /* Queue Head (QH) pool */
+    __attribute__((aligned(32))) struct usb_ehci_qtd_s qtdpool[CONFIG_USB_EHCI_QTD_NUM]; /* Queue Element Transfer Descriptor (qTD) pool */
     struct usb_ehci_epinfo_s chan[CONFIG_USBHOST_PIPE_NUM];
 };
 
@@ -197,7 +203,7 @@ static const uint8_t g_ehci_speed[4] = {
  * global instance.
  */
 
-static struct usb_ehci_s g_ehci;
+static struct ehci_hcd g_ehci_hcd;
 
 /* The head of the asynchronous queue */
 
@@ -206,14 +212,6 @@ static struct usb_ehci_qh_s g_asynchead __attribute__((aligned(32)));
 /* The head of the periodic queue */
 
 static struct usb_ehci_qh_s g_intrhead __attribute__((aligned(32)));
-
-/* Queue Head (QH) pool */
-
-static struct usb_ehci_qh_s g_qhpool[CONFIG_USB_EHCI_QH_NUM] __attribute__((aligned(32)));
-
-/* Queue Element Transfer Descriptor (qTD) pool */
-
-static struct usb_ehci_qtd_s g_qtdpool[CONFIG_USB_EHCI_QTD_NUM] __attribute__((aligned(32)));
 
 /* The frame list */
 static uint32_t g_framelist[FRAME_LIST_SIZE] __attribute__((aligned(4096)));
@@ -306,10 +304,10 @@ static int usb_ehci_chan_alloc(void)
 
     for (chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
         /* Is this channel available? */
-        if (!g_ehci.chan[chidx].inuse) {
+        if (!g_ehci_hcd.chan[chidx].inuse) {
             /* Yes... make it "in use" and return the index */
 
-            g_ehci.chan[chidx].inuse = true;
+            g_ehci_hcd.chan[chidx].inuse = true;
             return chidx;
         }
     }
@@ -340,9 +338,9 @@ static struct usb_ehci_qh_s *usb_ehci_qh_alloc(void)
 
     /* Remove the QH structure from the freelist */
 
-    qh = (struct usb_ehci_qh_s *)g_ehci.qhfree;
+    qh = (struct usb_ehci_qh_s *)g_ehci_hcd.qhfree;
     if (qh) {
-        g_ehci.qhfree = ((struct usb_ehci_list_s *)qh)->flink;
+        g_ehci_hcd.qhfree = ((struct usb_ehci_list_s *)qh)->flink;
         memset(qh, 0, sizeof(struct usb_ehci_qh_s));
     }
 
@@ -365,8 +363,8 @@ static void usb_ehci_qh_free(struct usb_ehci_qh_s *qh)
 
     /* Put the QH structure back into the free list */
 
-    entry->flink = g_ehci.qhfree;
-    g_ehci.qhfree = entry;
+    entry->flink = g_ehci_hcd.qhfree;
+    g_ehci_hcd.qhfree = entry;
 }
 
 /****************************************************************************
@@ -386,9 +384,9 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_alloc(void)
 
     /* Remove the qTD from the freelist */
 
-    qtd = (struct usb_ehci_qtd_s *)g_ehci.qtdfree;
+    qtd = (struct usb_ehci_qtd_s *)g_ehci_hcd.qtdfree;
     if (qtd) {
-        g_ehci.qtdfree = ((struct usb_ehci_list_s *)qtd)->flink;
+        g_ehci_hcd.qtdfree = ((struct usb_ehci_list_s *)qtd)->flink;
         memset(qtd, 0, sizeof(struct usb_ehci_qtd_s));
     }
 
@@ -412,8 +410,8 @@ static void usb_ehci_qtd_free(struct usb_ehci_qtd_s *qtd)
 
     /* Put the qTD back into the free list */
 
-    entry->flink = g_ehci.qtdfree;
-    g_ehci.qtdfree = entry;
+    entry->flink = g_ehci_hcd.qtdfree;
+    g_ehci_hcd.qtdfree = entry;
 }
 
 /****************************************************************************
@@ -1014,7 +1012,7 @@ static void usb_ehci_qh_enqueue(struct usb_ehci_qh_s *qhead, struct usb_ehci_qh_
     usb_ehci_dcache_clean((uintptr_t)&qhead->hw, sizeof(struct usb_ehci_qh_s));
 }
 
-static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
+static int usb_ehci_control_init(struct usb_ehci_epinfo_s *epinfo, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
 {
     struct usb_ehci_qh_s *qh;
     struct usb_ehci_qtd_s *qtd;
@@ -1024,7 +1022,6 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
     uint32_t *alt;
     uint32_t toggle;
     bool dirin = false;
-    int ret;
 
     /* Create and initialize a Queue Head (QH) structure for this transfer */
     qh = usb_ehci_qh_create(epinfo);
@@ -1032,13 +1029,13 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
         return -ENOMEM;
     }
 
+    epinfo->qh = qh;
     /* Initialize the QH link and get the next data toggle (not used for SETUP
     * transfers)
     */
 
     flink = &qh->hw.overlay.nqp;
     toggle = (uint32_t)epinfo->toggle << QTD_TOKEN_TOGGLE_SHIFT;
-    ret = -EIO;
 
     /* Is there an EP0 SETUP request?  If so, we will queue two or three qTDs:
     *
@@ -1053,8 +1050,7 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
     {
         qtd = usb_ehci_qtd_setupphase(epinfo, setup);
         if (qtd == NULL) {
-            ret = -ENOMEM;
-            goto errout_with_qh;
+            return -ENOMEM;
         }
         /* Link the new qTD to the QH head. */
 
@@ -1099,8 +1095,7 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
 
         qtd = usb_ehci_qtd_dataphase(epinfo, buffer, buflen, tokenbits);
         if (qtd == NULL) {
-            ret = -ENOMEM;
-            goto errout_with_qh;
+            return -ENOMEM;
         }
 
         /* Link the new qTD to either QH head of the SETUP qTD. */
@@ -1143,8 +1138,7 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
         */
         qtd = usb_ehci_qtd_statusphase(tokenbits);
         if (qtd == NULL) {
-            ret = -ENOMEM;
-            goto errout_with_qh;
+            return -ENOMEM;
         }
 
         /* Link the new qTD to either the SETUP or data qTD. */
@@ -1162,22 +1156,15 @@ static int usb_ehci_control_setup(struct usb_ehci_epinfo_s *epinfo, struct usb_s
     }
     /* Add the new QH to the head of the asynchronous queue list */
     usb_ehci_qh_enqueue(&g_asynchead, qh);
-    epinfo->qh = qh;
     return 0;
-
-errout_with_qh:
-    /* Clean-up after an error */
-    usb_ehci_qh_discard(qh);
-    return ret;
 }
 
-static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer, uint32_t buflen)
+static int usb_ehci_bulk_init(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer, uint32_t buflen)
 {
     struct usb_ehci_qh_s *qh;
     struct usb_ehci_qtd_s *qtd;
     uint32_t tokenbits;
     uintptr_t physaddr;
-    int ret;
 
     /* Create and initialize a Queue Head (QH) structure for this transfer */
     qh = usb_ehci_qh_create(epinfo);
@@ -1185,9 +1172,10 @@ static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
         return -ENOMEM;
     }
 
+    epinfo->qh = qh;
+
     /* Initialize the QH link and get the next data toggle */
     tokenbits = (uint32_t)epinfo->toggle << QTD_TOKEN_TOGGLE_SHIFT;
-    ret = -EIO;
 
     if (buffer != NULL && buflen > 0) {
         /* Get the direction from the epinfo structure.  Since this is not an EP0 SETUP request,
@@ -1205,8 +1193,7 @@ static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
 
         qtd = usb_ehci_qtd_dataphase(epinfo, buffer, buflen, tokenbits);
         if (qtd == NULL) {
-            ret = -ENOMEM;
-            goto errout_with_qh;
+            return -ENOMEM;
         }
 
         /* Link the new qTD to the QH. */
@@ -1216,28 +1203,24 @@ static int usb_ehci_bulk_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
 
     /* Add the new QH to the head of the asynchronous queue list */
     usb_ehci_qh_enqueue(&g_asynchead, qh);
-    epinfo->qh = qh;
     return 0;
-
-errout_with_qh:
-    usb_ehci_qh_discard(qh);
-    return ret;
 }
 
-static int usb_ehci_intr_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer, uint32_t buflen)
+static int usb_ehci_intr_init(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer, uint32_t buflen)
 {
     struct usb_ehci_qh_s *qh;
     struct usb_ehci_qtd_s *qtd;
     uint32_t tokenbits;
     uintptr_t physaddr;
     uint32_t regval;
-    int ret;
 
     /* Create and initialize a Queue Head (QH) structure for this transfer */
     qh = usb_ehci_qh_create(epinfo);
     if (qh == NULL) {
         return -ENOMEM;
     }
+
+    epinfo->qh = qh;
 
     /* Initialize the QH link and get the next data toggle */
     tokenbits = (uint32_t)epinfo->toggle << QTD_TOKEN_TOGGLE_SHIFT;
@@ -1257,8 +1240,7 @@ static int usb_ehci_intr_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
 
     qtd = usb_ehci_qtd_dataphase(epinfo, buffer, buflen, tokenbits);
     if (qtd == NULL) {
-        ret = -ENOMEM;
-        goto errout_with_qh;
+        return -ENOMEM;
     }
 
     /* Link the new qTD to the QH. */
@@ -1276,12 +1258,7 @@ static int usb_ehci_intr_setup(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer
     /* Re-enable the periodic schedule */
     regval |= EHCI_USBCMD_PSEN;
     usb_ehci_putreg(regval, &HCOR->usbcmd);
-    epinfo->qh = qh;
     return 0;
-
-errout_with_qh:
-    usb_ehci_qh_discard(qh);
-    return ret;
 }
 
 /****************************************************************************
@@ -1299,7 +1276,7 @@ errout_with_qh:
 
 static int usb_ehci_ioc_setup(struct usb_ehci_epinfo_s *epinfo)
 {
-    size_t flags;
+    uint32_t flags;
     int ret = -ENODEV;
 
     DEBUGASSERT(rhport && epinfo && !epinfo->iocwait);
@@ -1353,7 +1330,7 @@ static int usb_ehci_ioc_setup(struct usb_ehci_epinfo_s *epinfo)
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_ehci_ioc_async_setup(struct usb_ehci_epinfo_s *epinfo, usbh_asynch_callback_t callback, void *arg)
 {
-    size_t flags;
+    uint32_t flags;
     int ret = -ENODEV;
 
     DEBUGASSERT(rhport && epinfo && !epinfo->iocwait);
@@ -1468,7 +1445,6 @@ static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo, uint32_t tim
     if (epinfo->iocwait) {
         ret = usb_osal_sem_take(epinfo->iocsem, timeout);
         if (ret < 0) {
-            usb_ehci_qh_discard(epinfo->qh);
             return ret;
         }
     }
@@ -1845,7 +1821,7 @@ static inline void usb_ehci_portsc_bottomhalf(void)
                 usbh_event_notify_handler(USBH_EVENT_CONNECTED, 1);
             } else {
                 for (uint8_t chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
-                    struct usb_ehci_epinfo_s *epinfo = &g_ehci.chan[chidx];
+                    struct usb_ehci_epinfo_s *epinfo = &g_ehci_hcd.chan[chidx];
                     if (epinfo->iocwait) {
                         epinfo->iocwait = false;
                         usb_osal_sem_give(epinfo->iocsem);
@@ -2025,30 +2001,41 @@ __WEAK void usb_hc_low_level_init(void)
 {
 }
 
-int usb_hc_init(void)
+int usb_hc_sw_init(void)
+{
+    memset(&g_ehci_hcd, 0, sizeof(struct ehci_hcd));
+
+    /* Initialize the list of free Queue Head (QH) structures */
+    for (uint8_t i = 0; i < CONFIG_USB_EHCI_QH_NUM; i++) {
+        /* Put the QH structure in a free list */
+
+        usb_ehci_qh_free(&g_ehci_hcd.qhpool[i]);
+    }
+
+    /* Initialize the list of free Queue Head (QH) structures */
+    for (uint8_t i = 0; i < CONFIG_USB_EHCI_QTD_NUM; i++) {
+        /* Put the QH structure in a free list */
+
+        usb_ehci_qtd_free(&g_ehci_hcd.qtdpool[i]);
+    }
+
+    for (uint8_t chidx = 0; chidx < CONFIG_USB_EHCI_QH_NUM; chidx++) {
+        struct usb_ehci_epinfo_s *epinfo;
+
+        epinfo = &g_ehci_hcd.chan[chidx];
+        epinfo->iocsem = usb_osal_sem_create(0);
+        epinfo->exclsem = usb_osal_mutex_create();
+    }
+
+    return 0;
+}
+
+int usb_hc_hw_init(void)
 {
     int ret;
     uint32_t regval;
     uintptr_t physaddr1;
     uintptr_t physaddr2;
-
-    g_ehci.qhfree = NULL;
-    g_ehci.qtdfree = NULL;
-
-    /* Initialize the list of free Queue Head (QH) structures */
-
-    for (uint8_t i = 0; i < CONFIG_USB_EHCI_QH_NUM; i++) {
-        /* Put the QH structure in a free list */
-
-        usb_ehci_qh_free(&g_qhpool[i]);
-    }
-    /* Initialize the list of free Queue Head (QH) structures */
-
-    for (uint8_t i = 0; i < CONFIG_USB_EHCI_QTD_NUM; i++) {
-        /* Put the QH structure in a free list */
-
-        usb_ehci_qtd_free(&g_qtdpool[i]);
-    }
 
     /* Initialize the head of the asynchronous queue/reclamation list.
     *
@@ -2270,6 +2257,8 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 {
     struct usb_ehci_epinfo_s *epinfo;
     struct usbh_hubport *hport;
+    usb_osal_sem_t iocsem;
+    usb_osal_mutex_t exclsem;
     int chidx;
 
     DEBUGASSERT(ep_cfg != NULL && ep_cfg->hport != NULL);
@@ -2278,10 +2267,13 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
     chidx = usb_ehci_chan_alloc();
 
-    epinfo = &g_ehci.chan[chidx];
+    epinfo = &g_ehci_hcd.chan[chidx];
+
+    iocsem = epinfo->iocsem;
+    exclsem = epinfo->exclsem;
+
     memset(epinfo, 0, sizeof(struct usb_ehci_epinfo_s));
 
-    epinfo->inuse = true;
     epinfo->epno = ep_cfg->ep_addr & 0x7f;
     epinfo->dirin = (ep_cfg->ep_addr & 0x80) ? 1 : 0;
     epinfo->devaddr = hport->dev_addr;
@@ -2293,8 +2285,10 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     epinfo->speed = hport->speed;
     epinfo->hport = hport;
 
-    epinfo->iocsem = usb_osal_sem_create(0);
-    epinfo->exclsem = usb_osal_mutex_create();
+    /* restore variable */
+    epinfo->inuse = true;
+    epinfo->iocsem = iocsem;
+    epinfo->exclsem = exclsem;
 
     *ep = (usbh_epinfo_t)epinfo;
 
@@ -2305,8 +2299,6 @@ int usbh_ep_free(usbh_epinfo_t ep)
 {
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)ep;
 
-    usb_osal_sem_delete(epinfo->iocsem);
-    usb_osal_mutex_delete(epinfo->exclsem);
     usb_ehci_chan_free(epinfo);
 
     return 0;
@@ -2334,10 +2326,10 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     /* Set the request for the IOC event well BEFORE initiating the transfer. */
     ret = usb_ehci_ioc_setup(epinfo);
     if (ret != 0) {
-        goto errout_with_sem;
+        goto errout_with_setup;
     }
 
-    ret = usb_ehci_control_setup(epinfo, setup, buffer, setup->wLength);
+    ret = usb_ehci_control_init(epinfo, setup, buffer, setup->wLength);
     if (ret < 0) {
         goto errout_with_iocwait;
     }
@@ -2353,7 +2345,12 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
 
 errout_with_iocwait:
     epinfo->iocwait = false;
-errout_with_sem:
+    /* Clean-up after an error */
+    if (epinfo->qh) {
+        usb_ehci_qh_discard(epinfo->qh);
+        epinfo->qh = NULL;
+    }
+errout_with_setup:
     usb_osal_mutex_give(epinfo->exclsem);
     return ret;
 }
@@ -2373,10 +2370,10 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 
     ret = usb_ehci_ioc_setup(epinfo);
     if (ret < 0) {
-        goto errout_with_sem;
+        goto errout_with_setup;
     }
 
-    ret = usb_ehci_bulk_setup(epinfo, buffer, buflen);
+    ret = usb_ehci_bulk_init(epinfo, buffer, buflen);
     if (ret < 0) {
         goto errout_with_iocwait;
     }
@@ -2391,7 +2388,12 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 
 errout_with_iocwait:
     epinfo->iocwait = false;
-errout_with_sem:
+    /* Clean-up after an error */
+    if (epinfo->qh) {
+        usb_ehci_qh_discard(epinfo->qh);
+        epinfo->qh = NULL;
+    }
+errout_with_setup:
     usb_osal_mutex_give(epinfo->exclsem);
     return ret;
 }
@@ -2411,10 +2413,10 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 
     ret = usb_ehci_ioc_setup(epinfo);
     if (ret < 0) {
-        goto errout_with_sem;
+        goto errout_with_setup;
     }
 
-    ret = usb_ehci_intr_setup(epinfo, buffer, buflen);
+    ret = usb_ehci_intr_init(epinfo, buffer, buflen);
     if (ret < 0) {
         goto errout_with_iocwait;
     }
@@ -2429,7 +2431,12 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 
 errout_with_iocwait:
     epinfo->iocwait = false;
-errout_with_sem:
+    /* Clean-up after an error */
+    if (epinfo->qh) {
+        usb_ehci_qh_discard(epinfo->qh);
+        epinfo->qh = NULL;
+    }
+errout_with_setup:
     usb_osal_mutex_give(epinfo->exclsem);
     return ret;
 }
@@ -2450,23 +2457,28 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     /* Set the request for the callback well BEFORE initiating the transfer. */
     ret = usb_ehci_ioc_async_setup(epinfo, callback, arg);
     if (ret != 0) {
-        goto errout_with_sem;
+        goto errout_with_setup;
     }
 
     /* Check for errors in the setup of the transfer */
-    ret = usb_ehci_bulk_setup(epinfo, buffer, buflen);
+    ret = usb_ehci_bulk_init(epinfo, buffer, buflen);
     if (ret < 0) {
-        goto errout_with_callback;
+        goto errout_with_qh;
     }
 
     /* The transfer is in progress */
     usb_osal_mutex_give(epinfo->exclsem);
     return 0;
 
-errout_with_callback:
+errout_with_qh:
+    /* Clean-up after an error */
+    if (epinfo->qh) {
+        usb_ehci_qh_discard(epinfo->qh);
+        epinfo->qh = NULL;
+    }
+errout_with_setup:
     epinfo->callback = NULL;
     epinfo->arg = NULL;
-errout_with_sem:
     usb_osal_mutex_give(epinfo->exclsem);
     return ret;
 }
@@ -2487,23 +2499,28 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     /* Set the request for the callback well BEFORE initiating the transfer. */
     ret = usb_ehci_ioc_async_setup(epinfo, callback, arg);
     if (ret != 0) {
-        goto errout_with_sem;
+        goto errout_with_setup;
     }
 
     /* Check for errors in the setup of the transfer */
-    ret = usb_ehci_intr_setup(epinfo, buffer, buflen);
+    ret = usb_ehci_intr_init(epinfo, buffer, buflen);
     if (ret < 0) {
-        goto errout_with_callback;
+        goto errout_with_qh;
     }
 
     /* The transfer is in progress */
     usb_osal_mutex_give(epinfo->exclsem);
     return 0;
 
-errout_with_callback:
+errout_with_qh:
+    /* Clean-up after an error */
+    if (epinfo->qh) {
+        usb_ehci_qh_discard(epinfo->qh);
+        epinfo->qh = NULL;
+    }
+errout_with_setup:
     epinfo->callback = NULL;
     epinfo->arg = NULL;
-errout_with_sem:
     usb_osal_mutex_give(epinfo->exclsem);
     return ret;
 }
@@ -2536,7 +2553,7 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     void *arg;
 #endif
     uint32_t *bp;
-    size_t flags;
+    uint32_t flags;
     bool iocwait;
     int ret;
 
@@ -2783,7 +2800,7 @@ static void usb_ehci_bottomhalf(void *arg)
     }
 }
 
-void usb_ehci_interrupt(void)
+void USBH_IRQHandler(void)
 {
     uint32_t usbsts;
     uint32_t pending;
