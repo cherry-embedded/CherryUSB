@@ -486,6 +486,10 @@ static int usbh_enumerate(struct usbh_hubport *hport)
 
     parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_buffer, descsize);
 
+    if ((hport->parent == NULL) && (hport->speed != USB_SPEED_HIGH)) {
+        usbh_reset_port(hport->port);
+    }
+
     /* Extract the correct max packetsize from the device descriptor */
     ep_mps = ((struct usb_device_descriptor *)ep0_buffer)->bMaxPacketSize0;
 
@@ -521,22 +525,24 @@ static int usbh_enumerate(struct usbh_hubport *hport)
     /* And reconfigure EP0 with the correct address */
     usbh_ep0_reconfigure(hport->ep0, dev_addr, ep_mps, hport->speed);
 
-    /* Read the full device descriptor if hport is not in high speed*/
-    if (descsize < USB_SIZEOF_DEVICE_DESC) {
-        setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-        setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-        setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
-        setup->wIndex = 0;
-        setup->wLength = USB_SIZEOF_DEVICE_DESC;
+    /* Read the full device descriptor */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
+    setup->wIndex = 0;
+    setup->wLength = USB_SIZEOF_DEVICE_DESC;
 
-        ret = usbh_control_transfer(hport->ep0, setup, ep0_buffer);
-        if (ret < 0) {
-            USB_LOG_ERR("Failed to get full device descriptor,errorcode:%d\r\n", ret);
-            goto errout;
-        }
-
-        parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_buffer, USB_SIZEOF_DEVICE_DESC);
+    ret = usbh_control_transfer(hport->ep0, setup, ep0_buffer);
+    if (ret < 0) {
+        USB_LOG_ERR("Failed to get full device descriptor,errorcode:%d\r\n", ret);
+        goto errout;
     }
+
+    parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_buffer, USB_SIZEOF_DEVICE_DESC);
+    USB_LOG_INFO("New device found,idVendor:%04x,idProduct:%04x,bcdDevice:%04x\r\n",
+                 ((struct usb_device_descriptor *)ep0_buffer)->idVendor,
+                 ((struct usb_device_descriptor *)ep0_buffer)->idProduct,
+                 ((struct usb_device_descriptor *)ep0_buffer)->bcdDevice);
 
     /* Read the first 9 bytes of the config descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
@@ -569,6 +575,7 @@ static int usbh_enumerate(struct usbh_hubport *hport)
     }
 
     parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_buffer, wTotalLength);
+    USB_LOG_INFO("The device has %d interfaces\r\n", ((struct usb_configuration_descriptor *)ep0_buffer)->bNumInterfaces);
 
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     /* Get Manufacturer string */
@@ -645,13 +652,11 @@ static int usbh_enumerate(struct usbh_hubport *hport)
             continue;
         }
         hport->config.intf[i].class_driver = class_driver;
-
-        if (hport->config.intf[i].class_driver->connect) {
-            ret = CLASS_CONNECT(hport, i);
-            if (ret < 0) {
-                ret = CLASS_DISCONNECT(hport, i);
-                goto errout;
-            }
+        USB_LOG_INFO("Loading %s class driver\r\n", class_driver->driver_name);
+        ret = CLASS_CONNECT(hport, i);
+        if (ret < 0) {
+            ret = CLASS_DISCONNECT(hport, i);
+            goto errout;
         }
     }
 
@@ -688,7 +693,7 @@ static int usbh_portchange_wait(struct usbh_hubport **hport)
             if (connport->port_change) {
                 connport->port_change = false;
                 /* debounce for port,in order to keep port connect status stability*/
-                usb_osal_msleep(25);
+                usb_osal_msleep(100);
                 if (recved_event & USBH_EVENT_CONNECTED) {
                     if (usbh_get_port_connect_status(port)) {
                         if (!connport->connected) {
