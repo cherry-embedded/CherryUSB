@@ -315,7 +315,7 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
         *data = p;
 
         /* get length from structure */
-        if (type == USB_DESCRIPTOR_TYPE_CONFIGURATION) {
+        if ((type == USB_DESCRIPTOR_TYPE_CONFIGURATION)||((type == USB_DESCRIPTOR_TYPE_OTHER_SPEED))){
             /* configuration descriptor is an
              * exception, length is at offset
              * 2 and 3
