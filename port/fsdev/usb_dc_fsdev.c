@@ -153,7 +153,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         g_fsdev_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_fsdev_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
         if (g_fsdev_udc.out_ep[ep_idx].ep_mps > g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len) {
-            if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps >= USB_RAM_SIZE) {
+            if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
                 return -1;
             }
             g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
@@ -172,7 +172,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         g_fsdev_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_fsdev_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
         if (g_fsdev_udc.in_ep[ep_idx].ep_mps > g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len) {
-            if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps >= USB_RAM_SIZE) {
+            if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
                 return -1;
             }
             g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
