@@ -57,7 +57,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV']):
         src += Glob('port/fsdev/usb_dc_fsdev.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2']):
-        src += Glob('port/synopsys/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
         if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_PORT_FS']):
             CPPDEFINES += ['CONFIG_USB_DWC2_PORT=FS_PORT']
         elif GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_PORT_HS']):
@@ -92,7 +92,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         CPPDEFINES += ['CONFIG_USBHOST_HUB']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
-        src += Glob('port/synopsys/usb_hc_dwc2.c')
+        src += Glob('port/dwc2/usb_hc_dwc2.c')
         CPPDEFINES += ['CONFIG_USBHOST_HIGH_WORKQ']
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB']):
         src += Glob('port/musb/usb_hc_musb.c')
