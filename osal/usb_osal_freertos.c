@@ -134,13 +134,13 @@ int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
 
 size_t usb_osal_enter_critical_section(void)
 {
-    taskENTER_CRITICAL();
+    taskDISABLE_INTERRUPTS();
     return 1;
 }
 
 void usb_osal_leave_critical_section(size_t flag)
 {
-    taskEXIT_CRITICAL();
+    taskENABLE_INTERRUPTS();
 }
 
 void usb_osal_msleep(uint32_t delay)
