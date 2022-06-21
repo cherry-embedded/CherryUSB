@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32H750xx,CONFIG_USB_SYNOPSYS_NOVBUSSEN,USB_BASE=0x40080000UL</Define>
+              <Define>USE_HAL_DRIVER,STM32H750xx,STM32H7,CONFIG_USB_DWC2_PORT=FS_PORT</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;  ../Drivers/STM32H7xx_HAL_Driver/Inc;  ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;  ../Drivers/CMSIS/Device/ST/STM32H7xx/Include;  ../Drivers/CMSIS/Include;  ..\..\..\..\..\class\cdc;  ..\..\..\..\..\common;  ..\..\..\..\..\core</IncludePath>
+              <IncludePath>../Core/Inc;   ../Drivers/STM32H7xx_HAL_Driver/Inc;   ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;   ../Drivers/CMSIS/Device/ST/STM32H7xx/Include;   ../Drivers/CMSIS/Include;   ..\..\..\..\..\class\cdc;   ..\..\..\..\..\common;   ..\..\..\..\..\core</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -395,6 +395,11 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
+              <FileName>cdc_acm_template.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\cdc_acm_template.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -408,11 +413,6 @@
               <FileName>stm32h7xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32h7xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>cdc_acm_template.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\cdc_acm_template.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -662,9 +662,9 @@
               <FilePath>..\..\..\..\..\class\cdc\usbd_cdc.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc_synopsys.c</FileName>
+              <FileName>usb_dc_dwc2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\port\synopsys\usb_dc_synopsys.c</FilePath>
+              <FilePath>..\..\..\..\..\port\dwc2\usb_dc_dwc2.c</FilePath>
             </File>
           </Files>
         </Group>

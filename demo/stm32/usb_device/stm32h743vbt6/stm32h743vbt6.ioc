@@ -1,6 +1,6 @@
 #MicroXplorer Configuration settings - do not modify
 File.Version=6
-GPIO.groupedBy=
+GPIO.groupedBy=Group By Peripherals
 KeepUserPlacement=false
 Mcu.Family=STM32H7
 Mcu.IP0=CORTEX_M7
@@ -39,8 +39,12 @@ NVIC.SysTick_IRQn=true\:0\:0\:false\:false\:true\:false\:true
 NVIC.UsageFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false
 PA10.Mode=Asynchronous
 PA10.Signal=USART1_RX
+PA11.GPIOParameters=GPIO_Speed
+PA11.GPIO_Speed=GPIO_SPEED_FREQ_VERY_HIGH
 PA11.Mode=Device_Only
 PA11.Signal=USB_OTG_FS_DM
+PA12.GPIOParameters=GPIO_Speed
+PA12.GPIO_Speed=GPIO_SPEED_FREQ_VERY_HIGH
 PA12.Mode=Device_Only
 PA12.Signal=USB_OTG_FS_DP
 PA9.Mode=Asynchronous

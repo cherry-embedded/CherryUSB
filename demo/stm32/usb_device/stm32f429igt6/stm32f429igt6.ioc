@@ -1,6 +1,6 @@
 #MicroXplorer Configuration settings - do not modify
 File.Version=6
-GPIO.groupedBy=
+GPIO.groupedBy=Group By Peripherals
 KeepUserPlacement=false
 Mcu.Family=STM32F4
 Mcu.IP0=NVIC
@@ -30,8 +30,6 @@ NVIC.ForceEnableDMAVector=true
 NVIC.HardFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false
 NVIC.MemoryManagement_IRQn=true\:0\:0\:false\:false\:true\:false\:false
 NVIC.NonMaskableInt_IRQn=true\:0\:0\:false\:false\:true\:false\:false
-NVIC.OTG_HS_EP1_IN_IRQn=true\:0\:0\:false\:false\:true\:true\:true
-NVIC.OTG_HS_EP1_OUT_IRQn=true\:0\:0\:false\:false\:true\:true\:true
 NVIC.OTG_HS_IRQn=true\:0\:0\:false\:false\:true\:true\:true
 NVIC.PendSV_IRQn=true\:0\:0\:false\:false\:true\:false\:false
 NVIC.PriorityGroup=NVIC_PRIORITYGROUP_4
