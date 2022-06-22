@@ -603,6 +603,8 @@ int usb_hc_hw_init(void)
     defined(STM32F7) || defined(STM32H7)
     /* Disable HW VBUS sensing */
     USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_VBDEN);
+    /* Disable Battery chargin detector */
+    USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_BCDEN);
 #else
     /*
      * Disable HW VBUS sensing. VBUS is internally considered to be always
