@@ -1,3 +1,0 @@
-- F103C8T6 测试 USB 版本
-- F429IGT6 测试 USB OTG HS 版本
-- H743VBT6 测试 USB OTG FS 版本
