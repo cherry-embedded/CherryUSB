@@ -3,7 +3,7 @@
 #include "usbh_hid.h"
 #include "usbh_msc.h"
 
-uint8_t cdc_buffer[512];
+USB_MEM_ALIGN32 uint8_t cdc_buffer[512];
 
 void usbh_cdc_acm_callback(void *arg, int nbytes)
 {
@@ -73,7 +73,7 @@ int cdc_acm_test(void)
 #include "ff.h"
 #endif
 
-uint8_t partition_table[512];
+USB_MEM_ALIGN32 uint8_t partition_table[512];
 
 int msc_test(void)
 {
@@ -143,7 +143,7 @@ int msc_test(void)
     return ret;
 }
 
-uint8_t hid_buffer[128];
+USB_MEM_ALIGN32 uint8_t hid_buffer[128];
 
 void usbh_hid_callback(void *arg, int nbytes)
 {
@@ -174,6 +174,7 @@ int hid_test(void)
 #else
     ret = usbh_ep_intr_transfer(hid_class->intin, hid_buffer, 128, 1000);
     if (ret < 0) {
+        USB_LOG_RAW("intr in error,ret:%d\r\n", ret);
         return ret;
     }
     USB_LOG_RAW("recv len:%d\r\n", ret);
