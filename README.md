@@ -63,7 +63,7 @@ CherryUSB Device Stack has the following functions：
 - Support WINUSB1.0、WINUSB2.0(with BOS)
 - Support Vendor class
 
-CherryUSB Device Stack resource usage (GCC 10.2 with -O2)：
+CherryUSB Device Stack resource usage (GCC 10.2 with -O2):
 
 |   file      |  FLASH (Byte)  |  RAM (Byte)  |
 |:-----------:|:--------------:|:------------:|
@@ -91,6 +91,16 @@ CherryUSB Host Stack has the following functions：
 - Support Vendor class
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
+
+CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
+
+|   file        |  FLASH (Byte)  |  RAM (Byte)  |
+|:-------------:|:--------------:|:------------:|
+|usbh_core.c    |  7992          | 472          |
+|usbh_cdc_acm.c |  1208          | 4            |
+|usbh_msc.c     |  2239          | 4            |
+|usbh_hid.c     |  930           | 4            |
+|usbh_hub.c     |  3878          | 14           |
 
 ## Documentation Tutorial
 

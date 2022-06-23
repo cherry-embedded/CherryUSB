@@ -91,6 +91,16 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
+CherryUSB Host 协议栈资源占用说明（GCC 10.2 with -O2）：
+
+|   file        |  FLASH (Byte)  |  RAM (Byte)  |
+|:-------------:|:--------------:|:------------:|
+|usbh_core.c    |  7992          | 472          |
+|usbh_cdc_acm.c |  1208          | 4            |
+|usbh_msc.c     |  2239          | 4            |
+|usbh_hid.c     |  930           | 4            |
+|usbh_hub.c     |  3878          | 14           |
+
 ## 文档教程
 
 CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和例程，参考 [CherryUSB 文档教程](https://cherryusb.readthedocs.io/)
