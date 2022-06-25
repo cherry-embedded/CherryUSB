@@ -311,7 +311,7 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
         *data = p;
 
         /* get length from structure */
-        if ((type == USB_DESCRIPTOR_TYPE_CONFIGURATION)||((type == USB_DESCRIPTOR_TYPE_OTHER_SPEED))){
+        if ((type == USB_DESCRIPTOR_TYPE_CONFIGURATION) || ((type == USB_DESCRIPTOR_TYPE_OTHER_SPEED))) {
             /* configuration descriptor is an
              * exception, length is at offset
              * 2 and 3
@@ -1056,7 +1056,7 @@ static void usbd_ep0_setup_handler(void)
                                              setup->wLength);
 #ifdef CONFIG_USB_DCACHE_ENABLE
     /* check if the data buf addr uses usbd_core_cfg.req_data */
-    if (((uint32_t)usbd_core_cfg.ep0_data_buf) != ((uint32_t)usbd_core_cfg.req_data)) {
+    if (((unsigned long)usbd_core_cfg.ep0_data_buf) != ((unsigned long)usbd_core_cfg.req_data)) {
         /*copy data buf from misalign32 addr to align32 addr*/
         memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
         usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
@@ -1251,11 +1251,11 @@ void usbd_event_notify_handler(uint8_t event, void *arg)
             break;
 
         case USBD_EVENT_EP_IN_NOTIFY:
-            usbd_ep_in_handler((uint8_t)arg);
+            usbd_ep_in_handler((uint8_t)(unsigned long)arg);
             break;
 
         case USBD_EVENT_EP_OUT_NOTIFY:
-            usbd_ep_out_handler((uint8_t)arg);
+            usbd_ep_out_handler((uint8_t)(unsigned long)arg);
             break;
 
         default:

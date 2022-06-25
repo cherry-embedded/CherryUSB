@@ -36,7 +36,7 @@
 #endif
 
 #define usb_malloc(size) malloc(size)
-#define usb_free(ptr) free(ptr)
+#define usb_free(ptr)    free(ptr)
 
 #ifdef CONFIG_USB_DCACHE_ENABLE
 static inline void *usb_iomalloc(size_t size)
@@ -60,14 +60,14 @@ static inline void *usb_iomalloc(size_t size)
     ptr = usb_malloc(align_size);
     if (ptr != NULL) {
         /* the allocated memory block is aligned */
-        if (((uint32_t)ptr & (align - 1)) == 0) {
-            align_ptr = (void *)((uint32_t)ptr + align);
+        if (((unsigned long)ptr & (align - 1)) == 0) {
+            align_ptr = (void *)((unsigned long)ptr + align);
         } else {
-            align_ptr = (void *)(((uint32_t)ptr + (align - 1)) & ~(align - 1));
+            align_ptr = (void *)(((unsigned long)ptr + (align - 1)) & ~(align - 1));
         }
 
         /* set the pointer before alignment pointer to the real pointer */
-        *((uint32_t *)((uint32_t)align_ptr - sizeof(void *))) = (uint32_t)ptr;
+        *((unsigned long *)((unsigned long)align_ptr - sizeof(void *))) = (unsigned long)ptr;
 
         ptr = align_ptr;
     }
@@ -79,12 +79,12 @@ static inline void usb_iofree(void *ptr)
 {
     void *real_ptr;
 
-    real_ptr = (void *)*(uint32_t *)((uint32_t)ptr - sizeof(void *));
+    real_ptr = (void *)*(unsigned long *)((unsigned long)ptr - sizeof(void *));
     usb_free(real_ptr);
 }
 #else
 #define usb_iomalloc(size) usb_malloc(size)
-#define usb_iofree(ptr) usb_free(ptr)
+#define usb_iofree(ptr)    usb_free(ptr)
 #endif
 
 #endif
