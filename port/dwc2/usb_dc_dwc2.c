@@ -746,10 +746,6 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
         return -1;
     }
 
-    if (((uint32_t)data) & 0x03) {
-        return -2;
-    }
-
     if (max_data_len > g_dwc2_udc.out_ep[ep_idx].ep_mps) {
         max_data_len = g_dwc2_udc.out_ep[ep_idx].ep_mps;
     }
