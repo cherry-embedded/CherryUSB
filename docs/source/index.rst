@@ -27,8 +27,8 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    :caption: 快速上手
 
    quick_start/bl702
-   quick_start/stm32f429
-   quick_start/es32f369
+   quick_start/stm32
+   quick_start/es32
    quick_start/rt-thread/rtthread
    quick_start/other_chip
 

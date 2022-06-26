@@ -406,7 +406,7 @@ usbd_msc_sector_read
 
 - **sector** 扇区偏移
 - **buffer** 存储读取的数据的指针
-- **length** 读取长度
+- **length** 读取长度，当前为1个扇区的大小
 
 
 usbd_msc_sector_write
@@ -420,7 +420,7 @@ usbd_msc_sector_write
 
 - **sector** 扇区偏移
 - **buffer** 写入数据指针
-- **length** 写入长度
+- **length** 写入长度，当前为1个扇区的大小
 
 UAC
 -----------------
