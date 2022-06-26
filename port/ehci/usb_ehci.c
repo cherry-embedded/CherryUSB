@@ -87,7 +87,11 @@ struct usb_ehci_qh_s {
 
     struct usb_ehci_epinfo_s *epinfo; /* Endpoint used for the transfer */
     uint32_t fqp;                     /* First qTD in the list (physical address) */
+#if (__riscv_xlen == 64)
+    uint8_t pad[4];                   /* Padding to assure 32-byte alignment */
+#else
     uint8_t pad[8];                   /* Padding to assure 32-byte alignment */
+#endif
 };
 
 /* Internal representation of the EHCI Queue Element Transfer Descriptor
