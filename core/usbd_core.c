@@ -1046,7 +1046,6 @@ static void usbd_ep0_setup_handler(void)
 
     /* Ask installed handler to process request */
     if (!usbd_setup_request_handler(setup, &usbd_core_cfg.ep0_data_buf, &usbd_core_cfg.ep0_data_buf_len)) {
-        USB_LOG_ERR("usbd_setup_request_handler failed\r\n");
         usbd_ep_set_stall(USB_CONTROL_IN_EP0);
         return;
     }
@@ -1103,7 +1102,6 @@ static void usbd_ep0_out_handler(void)
         usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
 
         if (!usbd_setup_request_handler(setup, &usbd_core_cfg.ep0_data_buf, &usbd_core_cfg.ep0_data_buf_len)) {
-            USB_LOG_ERR("usbd_setup_request_handler1 failed\r\n");
             usbd_ep_set_stall(USB_CONTROL_IN_EP0);
             return;
         }
