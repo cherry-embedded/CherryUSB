@@ -190,3 +190,23 @@ DWC2 IP 支持主从，并且由 **synopsys** 定义了一套标准的寄存器�
       - OTG_HS_IRQHandler
       - 0x40040000UL
       - 12
+
+EHCI
+--------------------------
+
+EHCI 是 intel 制定的标准主机控制器接口，任何厂家都必须实现 EHCI 中定义的寄存器以及寄存器的功能。EHCI 相关配置宏如下：
+
+.. code-block:: C
+
+  //Host Controller Capability Register BASE
+  #define CONFIG_USB_EHCI_HCCR_BASE (0xxx)
+  //Host Controller Operational Register BASE
+  #define CONFIG_USB_EHCI_HCOR_BASE (0xxx)
+  //是否打印 ehci 配置信息
+  #define CONFIG_USB_EHCI_INFO_ENABLE
+  //是否关闭保留寄存器的占位，默认保留 9 个双字的占位
+  #define CONFIG_USB_ECHI_HCOR_RESERVED_DISABLE
+  //是否使能 configflag 寄存器中的 bit0
+  #define CONFIG_USB_EHCI_CONFIGFLAG
+
+同时由于 EHCI 只是主机控制器，一般配合一个 device 控制器+ otg 控制器，而速度的获取一般是在 otg 寄存器中，所以需要用户实现 `usbh_get_port_speed` 函数。
