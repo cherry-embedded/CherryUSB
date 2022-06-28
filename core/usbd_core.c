@@ -75,7 +75,7 @@ static struct usb_msosv1_descriptor *msosv1_desc;
 static struct usb_msosv2_descriptor *msosv2_desc;
 static struct usb_bos_descriptor *bos_desc;
 
-#if CONFIG_USBDEV_TEST_MODE
+#ifdef CONFIG_USBDEV_TEST_MODE
 void usbd_set_feature(uint16_t index, uint16_t value);
 void usbd_clear_feature(uint16_t index, uint16_t value);
 #endif
@@ -467,7 +467,7 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
 static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint16_t value = setup->wValue;
-#if CONFIG_USBDEV_TEST_MODE
+#ifdef CONFIG_USBDEV_TEST_MODE
     uint16_t index = setup->wIndex;
 #endif
     bool ret = true;
@@ -484,7 +484,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
 
         case USB_REQUEST_CLEAR_FEATURE:
             USB_LOG_DBG("REQ_CLEAR_FEATURE\r\n");
-#if CONFIG_USBDEV_TEST_MODE
+#ifdef CONFIG_USBDEV_TEST_MODE
             /* process for feature */
             usbd_clear_feature(index, value);
 #endif
@@ -497,7 +497,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
 
         case USB_REQUEST_SET_FEATURE:
             USB_LOG_DBG("REQ_SET_FEATURE\r\n");
-#if CONFIG_USBDEV_TEST_MODE
+#ifdef CONFIG_USBDEV_TEST_MODE
             /* process for feature */
             usbd_set_feature(index, value);
 #endif
@@ -1021,9 +1021,9 @@ static void usbd_ep0_setup_handler(void)
         usbd_ep_set_stall(USB_CONTROL_IN_EP0);
         return;
     }
-
-    //usbd_print_setup(setup);
-
+#ifdef CONFIG_USBDEV_SETUP_LOG_PRINT
+    usbd_print_setup(setup);
+#endif
     if (setup->wLength > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
         if ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT) {
             USB_LOG_ERR("Request buffer too small\r\n");
@@ -1053,6 +1053,7 @@ static void usbd_ep0_setup_handler(void)
     /* Send smallest of requested and offered length */
     usbd_core_cfg.ep0_data_buf_residue = MIN(usbd_core_cfg.ep0_data_buf_len,
                                              setup->wLength);
+
 #ifdef CONFIG_USB_DCACHE_ENABLE
     /* check if the data buf addr uses usbd_core_cfg.req_data */
     if (((unsigned long)usbd_core_cfg.ep0_data_buf) != ((unsigned long)usbd_core_cfg.req_data)) {
@@ -1314,7 +1315,7 @@ int usbd_initialize(void)
     return 0;
 }
 
-#if CONFIG_USBDEV_TEST_MODE
+#ifdef CONFIG_USBDEV_TEST_MODE
 __WEAK void usbd_set_feature(uint16_t index, uint16_t value)
 {
 }
