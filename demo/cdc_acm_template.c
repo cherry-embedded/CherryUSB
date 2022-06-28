@@ -153,7 +153,7 @@ void cdc_acm_init(void)
 
 volatile uint8_t dtr_enable = 0;
 
-void usbd_cdc_acm_set_dtr(bool dtr)
+void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr)
 {
     if (dtr) {
         dtr_enable = 1;

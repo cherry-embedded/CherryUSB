@@ -31,9 +31,9 @@ extern "C" {
 
 void usbd_cdc_add_acm_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 
-void usbd_cdc_acm_set_line_coding(uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits);
-void usbd_cdc_acm_set_dtr(bool dtr);
-void usbd_cdc_acm_set_rts(bool rts);
+void usbd_cdc_acm_set_line_coding(uint8_t intf, uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits);
+void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr);
+void usbd_cdc_acm_set_rts(uint8_t intf, bool rts);
 
 #ifdef __cplusplus
 }
