@@ -1,5 +1,6 @@
 #include "usbd_core.h"
 #include "usb_dwc2_reg.h"
+#include "cmsis_compiler.h"
 
 #define FS_PORT 0
 #define HS_PORT 1
@@ -154,17 +155,27 @@ static inline int dwc2_core_init(void)
 {
     int ret;
 #if defined(CONFIG_USB_HS)
+    USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_PWRDWN);
 
+    /* Init The ULPI Interface */
+    USB_OTG_GLB->GUSBCFG &= ~(USB_OTG_GUSBCFG_TSDPS | USB_OTG_GUSBCFG_ULPIFSLS | USB_OTG_GUSBCFG_PHYSEL);
+
+    /* Select vbus source */
+    USB_OTG_GLB->GUSBCFG &= ~(USB_OTG_GUSBCFG_ULPIEVBUSD | USB_OTG_GUSBCFG_ULPIEVBUSI);
+
+    //USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_ULPIEVBUSD;
+
+    /* Reset after a PHY select */
+    ret = dwc2_reset();
 #else
     /* Select FS Embedded PHY */
     USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_PHYSEL;
-#endif
+
     /* Reset after a PHY select */
     ret = dwc2_reset();
-
     /* Activate the USB Transceiver */
     USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_PWRDWN;
-
+#endif
     return ret;
 }
 
@@ -672,6 +683,7 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint32_t *pdest = (uint32_t *)data;
     uint32_t len32b;
     uint32_t pktcnt;
 
@@ -724,7 +736,8 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     }
 
     for (uint8_t i = 0U; i < len32b; i++) {
-        USB_OTG_FIFO(ep_idx) = ((uint32_t *)data)[i];
+        USB_OTG_FIFO(ep_idx) = __UNALIGNED_UINT32_READ(pdest);
+        pdest++;
     }
 
     if (ret_bytes) {
@@ -739,8 +752,8 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t *pdest = (uint32_t *)data;
     uint32_t len32b;
+    //uint32_t pktcnt;
     uint32_t read_count;
-    uint32_t pktcnt;
 
     if (!data && max_data_len) {
         return -1;
@@ -756,11 +769,11 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
             * pktcnt = N
             * xfersize = N * maxpacket
             */
-            pktcnt = (uint16_t)((max_data_len + g_dwc2_udc.out_ep[ep_idx].ep_mps - 1U) / g_dwc2_udc.out_ep[ep_idx].ep_mps);
+            //pktcnt = (uint16_t)((max_data_len + g_dwc2_udc.out_ep[ep_idx].ep_mps - 1U) / g_dwc2_udc.out_ep[ep_idx].ep_mps);
             USB_OTG_OUTEP(ep_idx)->DOEPTSIZ &= ~(USB_OTG_DOEPTSIZ_PKTCNT);
             USB_OTG_OUTEP(ep_idx)->DOEPTSIZ &= ~(USB_OTG_DOEPTSIZ_XFRSIZ);
-            USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1 << 19));
-            USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & g_dwc2_udc.out_ep[ep_idx].ep_mps * pktcnt);
+            //USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1 << 19));
+            //USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & g_dwc2_udc.out_ep[ep_idx].ep_mps);
             /* EP enable */
             USB_OTG_OUTEP(ep_idx)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
         }
@@ -775,7 +788,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
     len32b = ((uint32_t)read_count + 3U) / 4U;
 
     for (uint8_t i = 0U; i < len32b; i++) {
-        *pdest = USB_OTG_FIFO(0U);
+        __UNALIGNED_UINT32_WRITE(pdest, USB_OTG_FIFO(0));
         pdest++;
     }
 
