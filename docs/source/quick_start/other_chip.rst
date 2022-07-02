@@ -15,7 +15,7 @@ USB Device 移植要点
 - 编译使用。各个 class 如何使用，参考 demo 下的 template
 
 
-.. note:: device 移植要点其实就三个，实现 `usb_dc_low_level_init` ;改 `USBD_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` 、 `USB_NUM_BIDIR_ENDPOINTS=x`;改 `usb_config.h` 中的内容
+.. note:: device 移植要点其实就三个，实现 `usb_dc_low_level_init` ;改 `USBD_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` 、 `USB_NUM_BIDIR_ENDPOINTS=x`;改 `usb_config.h` 中的内容。其中前面说到的3个宏也可以在 `usb_config.h` 添加
 
 USB Host 移植要点
 -----------------------
@@ -37,7 +37,7 @@ USB Host 移植要点
 
 - 编译使用。各个 class 如何使用，参考 demo 下的 `usb_host.c` 文件
 
-.. note:: device 移植要点其实就三个，实现 `usb_hc_low_level_init` ; 改 `USBH_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` ; 改 `usb_config.h` 中的内容
+.. note:: device 移植要点其实就三个，实现 `usb_hc_low_level_init` ; 改 `USBH_IRQHandler=xxxx` 、`USB_BASE=0xxxxx` ; 改 `usb_config.h` 中的内容。其中前面说到的2个宏也可以在 `usb_config.h` 添加
 
 .. note:: 使用 host 时，推荐添加除了 hub 以外的所有适配的 class 驱动，达到自动加载驱动的目的。当然，如果不用，那就不添加。
 

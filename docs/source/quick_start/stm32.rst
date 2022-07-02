@@ -87,6 +87,7 @@ USB Host 移植要点
 
 .. figure:: img/stm32_17.png
 
+- 如果使用 STM32H7 或者 F7 ，需要添加 `STM32H7` 或者 `STM32F7` 编译选项
 - 如果使用的是 F7/H7 这种带 cache功能的，由于 dma 原因，所以需要刷 cache，编译选项中需要添加 `CONFIG_USB_DCACHE_ENABLE`,并实现刷 cache的两个函数。当然，可以不开 dcahe功能，就不需要添加编译选项。
 并且需要搭配 MPU 使用，如果是新手，对 cache不了解，推荐关闭 cache功能。默认 cache 使用 Write Back 属性。
 
@@ -94,7 +95,7 @@ USB Host 移植要点
 .. figure:: img/stm32_17_2.png
 .. figure:: img/stm32_17_3.png
 
-.. note:: STM32 usb dma 访问的 ram 只能在 0x24000000 开始的地址，所以，推荐关闭 0x20000000开始的地址。
+.. note:: STM32 h7/f7 usb dma 访问的 ram 只能是从 0x24000000 开始的地址，所以，推荐关闭 0x20000000 开始的地址。
 
 .. figure:: img/stm32_17_4.png
 
@@ -104,14 +105,14 @@ USB Host 移植要点
 
 - 拷贝 **xxx_msp.c** 中的 **HAL_HCD_MspInit** 函数中的内容到 **usb_hc_low_level_init** 函数中，屏蔽 st 生成的 usb 中断函数和 usb 初始化
 
-.. figure:: img/stm32_12.png
+.. figure:: img/stm32_18.png
 .. figure:: img/stm32_13.png
 .. figure:: img/stm32_19.png
 
 - 调用 **usbh_initialize** 以及 os 需要的启动线程的函数即可使用
 
-.. figure:: img/stm32_18.png
+.. figure:: img/stm32_20.png
 
 - 如果使用 **msc**，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 **fatfs_usbh.c** 文件。
 
-.. figure:: img/stm32_20.png
+.. figure:: img/stm32_21.png
