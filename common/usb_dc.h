@@ -209,7 +209,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 int usbd_ep_write_async(const uint8_t ep, const uint8_t *data, uint32_t data_len);
 
 /**
- * @brief Read data from the specified endpoint with async mode.
+ * @brief Read data from the specified endpoint with async mode.Actually,this function is used for these endpoint transferring with dma mode.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
@@ -219,6 +219,33 @@ int usbd_ep_write_async(const uint8_t ep, const uint8_t *data, uint32_t data_len
  * @return 0 on success, negative errno code on fail.
  */
 int usbd_ep_read_async(const uint8_t ep, uint8_t *data, uint32_t data_len);
+
+/**
+ * @brief Get actual read len when ep transfers completely by usbd_ep_read_async.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @return Actual read len.
+ */
+uint32_t usbd_ep_get_read_len(const uint8_t ep);
+
+/**
+ * @brief Check if in ep transfers done.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @return true means transfer completely.Otherwise not.
+ */
+bool usbd_ep_is_complete(const uint8_t ep);
+
+/**
+ * @brief Get endpoint max packet size.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @return endpoint max packet size.
+ */
+uint16_t usbd_ep_get_mps(const uint8_t ep);
 
 /**
  * @}

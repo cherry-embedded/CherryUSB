@@ -145,6 +145,70 @@ usbd_ep_read
 - **ret_bytes** 实际接收的长度
 - **return** 返回 0 表示正确，其他表示错误
 
+usbd_ep_write_async
+""""""""""""""""""""""""""""""""""""
+
+``usbd_ep_write_async`` 向某个端点发送数据， 该函数为异步传输。 **此函数对用户开放**。
+
+.. code-block:: C
+
+    int usbd_ep_write_async(const uint8_t ep, const uint8_t *data, uint32_t data_len);
+
+- **ep** in 端点地址
+- **data** 要发送的数据缓冲区
+- **data_len** 发送长度，需要小于等于端点最大包长
+- **return** 返回 0 表示正确，其他表示错误
+
+usbd_ep_read_async
+""""""""""""""""""""""""""""""""""""
+
+``usbd_ep_read_async`` 启动某个端点接收，该函数配合 dma 使用，当 dma 完成时，会进入注册的 out 中断。如果硬件没有该功能，则无法使用。 **此函数对用户开放**。
+
+.. code-block:: C
+
+    int usbd_ep_read_async(const uint8_t ep, uint8_t *data, uint32_t max_data_len);
+
+- **ep** out 端点地址
+- **data** 要接收的数据缓冲区
+- **data_len** 接收长度，需要小于等于端点最大包长，推荐直接设置成最大包长。 **如果长度为 0 表示准备接收 0 包**
+- **return** 返回 0 表示正确，其他表示错误
+
+usbd_ep_get_read_len
+""""""""""""""""""""""""""""""""""""
+
+``usbd_ep_get_read_len`` 获取实际接收长度，此函数搭配 ``usbd_ep_read_async`` 使用。 **此函数对用户开放**。
+
+.. code-block:: C
+
+    uint32_t usbd_ep_get_read_len(const uint8_t ep);
+
+- **ep** out 端点地址
+- **return** 实际接收长度
+
+usbd_ep_is_complete
+""""""""""""""""""""""""""""""""""""
+
+``usbd_ep_is_complete`` 查询端点发送是否完成，搭配 ``usbd_ep_write_async`` 使用。 **此函数对用户开放**。
+
+.. code-block:: C
+
+    bool usbd_ep_is_complete(const uint8_t ep);
+
+- **ep** in 端点地址
+- **return** 返回 true 表示传输完成
+
+usbd_ep_get_mps
+""""""""""""""""""""""""""""""""""""
+
+``usbd_ep_get_mps`` 查询端点最大数据包长。 **此函数对用户开放**。
+
+.. code-block:: C
+
+    uint16_t usbd_ep_get_mps(const uint8_t ep);
+
+- **ep** 端点地址
+- **return** 返回端点最大数据包长
+
 host controller(hcd)
 ------------------------
 
