@@ -112,7 +112,7 @@ void usbd_cdc_acm_out(uint8_t ep)
     uint32_t read_byte;
 
     usbd_ep_read(ep, data, 64, &read_byte);
-    for (uint8_t i = 0; i < read_byte; i++) {
+    for (uint32_t i = 0; i < read_byte; i++) {
         USB_LOG_RAW("%02x ", data[i]);
     }
     USB_LOG_RAW("\r\n");
