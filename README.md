@@ -8,11 +8,12 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 
 ## Why choose
 
-- Ip-oriented programming means the same usb ip's driver has no need to be written repeatedly, only the parts(such as `usb_xx_low_level_init`：including usb clock, usb gpio and usb irq configuration)that are not the same have to be implemented,
-- Tree-based coding makes it easier for users to understand usb concept, enumeration process and class driver loading process
-- Templating the class drivers makes it easier to use composite device and add custom drivers
-- Simplifying the complex transfer of usb makes it easier for users to use usb as easily as uart and dma
-- Fewer directory structures, fewer apis, fewer codesize, extreme usb bandwidth
+- More comprehensive class drivers, and class drivers are all templated, easy to learn and add independently
+- Tree programming, easy to understand the relationship between class driver and interface, endpoint, the relationship between hub, port, class; code layer by layer, call relationship at a glance, easy to understand the usb enumeration process and class driver loading
+- The use of the device stack is simplified to the use of classes such as uart and dma, and the use of the host stack is simplified to the use of files
+- Standardized porting interface, as well as ip-oriented programming, eliminating the need to rewrite drivers for the same ip
+- Api less, clear classification: dcd/hcd api, registration api, command callback api
+- Streamlined code, minimal memory footprint, and the ability to achieve the maximum bandwidth that usb hardware can achieve
 
 ## Directoy Structure
 

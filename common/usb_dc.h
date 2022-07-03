@@ -230,15 +230,6 @@ int usbd_ep_read_async(const uint8_t ep, uint8_t *data, uint32_t data_len);
 uint32_t usbd_ep_get_read_len(const uint8_t ep);
 
 /**
- * @brief Check if in ep transfers done.
- *
- * @param[in]  ep           Endpoint address corresponding to the one
- *                          listed in the device configuration table
- * @return true means transfer completely.Otherwise not.
- */
-bool usbd_ep_is_complete(const uint8_t ep);
-
-/**
  * @brief Get endpoint max packet size.
  *
  * @param[in]  ep           Endpoint address corresponding to the one

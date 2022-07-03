@@ -241,7 +241,7 @@ CDC ACM
 usbd_cdc_add_acm_interface
 """"""""""""""""""""""""""""""""""""
 
-``usbd_cdc_add_acm_interface`` 用来给 USB CDC ACM 类添加接口，并实现该接口相关的函数：
+``usbd_cdc_add_acm_interface`` 用来给 USB CDC ACM 类添加接口，并实现该接口相关的函数。
 
 - ``cdc_acm_class_request_handler`` 用来处理 USB CDC ACM 类 Setup 请求。
 - ``cdc_notify_handler`` 用来处理 USB CDC 其他中断回调函数。
@@ -338,29 +338,6 @@ usbd_hid_report_descriptor_register
 - **intf_num** 当前 hid 报告描述符所在接口偏移
 - **desc** 报告描述符
 - **desc_len** 报告描述符长度
-
-usbd_hid_set_request_callback
-""""""""""""""""""""""""""""""""""""
-
-``usbd_hid_set_request_callback``  用来注册 hid 类请求命令的回调函数。
-
-.. code-block:: C
-
-    void usbd_hid_set_request_callback( uint8_t intf_num,
-                                        uint8_t (*get_report_callback)(uint8_t report_id, uint8_t report_type),
-                                        void (*set_report_callback)(uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len),
-                                        uint8_t (*get_idle_callback)(uint8_t report_id),
-                                        void (*set_idle_callback)(uint8_t report_id, uint8_t duration),
-                                        void (*set_protocol_callback)(uint8_t protocol),
-                                        uint8_t (*get_protocol_callback)(void));
-
-- **intf_num** 当前 hid 报告描述符所在接口偏移
-- **get_report_callback** get report命令处理回调函数
-- **set_report_callback** set report命令处理回调函数
-- **get_idle_callback** get idle命令处理回调函数
-- **set_idle_callback** set idle命令处理回调函数
-- **set_protocol_callback** set protocol命令处理回调函数
-- **get_protocol_callback** get protocol命令处理回调函数
 
 MSC
 -----------------
