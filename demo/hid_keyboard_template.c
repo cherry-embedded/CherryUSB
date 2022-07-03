@@ -177,8 +177,7 @@ static usbd_interface_t hid_intf;
 
 void usbd_hid_int_callback(uint8_t ep)
 {
-    uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KEY_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
-    usbd_ep_write(HID_INT_EP, sendbuffer, 8, NULL);
+
 }
 static usbd_endpoint_t hid_in_ep = {
     .ep_cb = usbd_hid_int_callback,
@@ -193,4 +192,10 @@ void hid_keyboard_init(void)
     usbd_hid_report_descriptor_register(0, hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE);
 
     usbd_initialize();
+}
+
+void hid_keyboard_test(void)
+{
+    uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KEY_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
+    usbd_ep_write(HID_INT_EP, sendbuffer, 8, NULL);
 }
