@@ -1,6 +1,10 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbfs_reg.h"
 
+#ifdef CONFIG_USB_HS
+#error "usb fs do not support hs"
+#endif
+
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler OTG_FS_IRQHandler //use actual usb irq name instead
 #endif
