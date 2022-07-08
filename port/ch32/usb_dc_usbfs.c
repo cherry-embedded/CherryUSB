@@ -106,9 +106,11 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK | USBFS_UEP_AUTO_TOG);
     } else {
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        USB_SET_TX_CTRL(ep_idx, USBFS_UEP_T_RES_NAK | USBFS_UEP_AUTO_TOG);
     }
     return 0;
 }
@@ -306,7 +308,7 @@ void USBD_IRQHandler(void)
         for (uint8_t ep_idx = 1; ep_idx < USB_NUM_BIDIR_ENDPOINTS; ep_idx++) {
             USB_SET_TX_LEN(ep_idx, 0);
             USB_SET_TX_CTRL(ep_idx, USBFS_UEP_T_RES_NAK | USBFS_UEP_AUTO_TOG);
-            USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK | USBFS_UEP_AUTO_TOG);
+            USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK | USBFS_UEP_AUTO_TOG);
         }
 
         usbd_event_notify_handler(USBD_EVENT_RESET, NULL);

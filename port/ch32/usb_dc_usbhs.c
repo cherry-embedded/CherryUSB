@@ -119,10 +119,12 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx + 16));
+        USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_RES_ACK | USBHS_EP_R_TOG_0 | USBHS_EP_R_AUTOTOG);
     } else {
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx));
+        USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0 | USBHS_EP_T_AUTOTOG);
     }
     USB_SET_MAX_LEN(ep_idx, ep_cfg->ep_mps);
     return 0;
@@ -185,7 +187,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         } else {
             USB_SET_TX_LEN(ep_idx, 0);
             USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBHS_EP_T_RES_MASK) | USBHS_EP_T_RES_ACK);
-            USB_SET_TX_CTRL(ep_idx, epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+            USB_SET_TX_CTRL(ep_idx, USB_GET_TX_CTRL(ep_idx) | epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
             epx_data_toggle[ep_idx - 1] ^= 1;
         }
         return 0;
@@ -206,7 +208,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         memcpy(&g_ch32_usbhs_udc.ep_databuf[ep_idx - 1][512], data, data_len);
 
         USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~(USBHS_EP_T_RES_MASK | USBHS_EP_T_TOG_MASK)) | USBHS_EP_T_RES_ACK);
-        USB_SET_TX_CTRL(ep_idx, epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+        USB_SET_TX_CTRL(ep_idx, USB_GET_TX_CTRL(ep_idx) | epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
         epx_data_toggle[ep_idx - 1] ^= 1;
     }
     if (ret_bytes) {
@@ -308,7 +310,7 @@ void USBD_IRQHandler(void)
         for (uint8_t ep_idx = 1; ep_idx < USB_NUM_BIDIR_ENDPOINTS; ep_idx++) {
             USB_SET_TX_LEN(ep_idx, 0);
             USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_AUTOTOG | USBHS_EP_T_RES_NAK); // autotog does not work
-            USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_AUTOTOG | USBHS_EP_R_RES_ACK);
+            USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_AUTOTOG | USBHS_EP_R_RES_NAK);
             epx_data_toggle[ep_idx - 1] = false;
         }
 
