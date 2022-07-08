@@ -162,7 +162,7 @@ usbd_ep_write_async
 usbd_ep_read_async
 """"""""""""""""""""""""""""""""""""
 
-``usbd_ep_read_async`` 启动某个端点接收，该函数配合 dma 使用，当 dma 完成时，会进入注册的 out 中断。如果硬件没有该功能，则无法使用。 **此函数对用户开放**。
+``usbd_ep_read_async`` 预先设置一块内存，并启动接收，通常配合 dma 使用，接收完成以后，触发注册的 out 中断。此函数一般在支持高速或者超高速的 ip 中使用，达到极致的带宽，如果 ip 没有该功能，则禁止使用。 **此函数对用户开放**。
 
 .. code-block:: C
 
@@ -184,18 +184,6 @@ usbd_ep_get_read_len
 
 - **ep** out 端点地址
 - **return** 实际接收长度
-
-usbd_ep_is_complete
-""""""""""""""""""""""""""""""""""""
-
-``usbd_ep_is_complete`` 查询端点发送是否完成，搭配 ``usbd_ep_write_async`` 使用。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    bool usbd_ep_is_complete(const uint8_t ep);
-
-- **ep** in 端点地址
-- **return** 返回 true 表示传输完成
 
 usbd_ep_get_mps
 """"""""""""""""""""""""""""""""""""
