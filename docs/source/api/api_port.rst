@@ -130,6 +130,8 @@ usbd_ep_write
 - **ret_bytes** 实际发送的长度，异步传输该参数无效。 **如果长度为 0，表示发送 0 长数据包（zero length packet）**
 - **return** 返回 0 表示正确，其他表示错误
 
+.. note:: 如果第一次在非中使用，该函数也是异步的哦，只有第二次调用会变成阻塞，所以可以配合完成中断当非阻塞用
+
 usbd_ep_read
 """"""""""""""""""""""""""""""""""""
 
@@ -145,7 +147,7 @@ usbd_ep_read
 - **ret_bytes** 实际接收的长度
 - **return** 返回 0 表示正确，其他表示错误
 
-usbd_ep_write_async
+usbd_ep_write_async(todo)
 """"""""""""""""""""""""""""""""""""
 
 ``usbd_ep_write_async`` 向某个端点发送数据， 该函数为异步传输。 **此函数对用户开放**。
@@ -159,7 +161,7 @@ usbd_ep_write_async
 - **data_len** 发送长度，需要小于等于端点最大包长
 - **return** 返回 0 表示正确，其他表示错误
 
-usbd_ep_read_async
+usbd_ep_read_async(todo)
 """"""""""""""""""""""""""""""""""""
 
 ``usbd_ep_read_async`` 预先设置一块内存，并启动接收，通常配合 dma 使用，接收完成以后，触发注册的 out 中断。此函数一般在支持高速或者超高速的 ip 中使用，达到极致的带宽，如果 ip 没有该功能，则禁止使用。 **此函数对用户开放**。
@@ -173,7 +175,7 @@ usbd_ep_read_async
 - **data_len** 接收长度，需要小于等于端点最大包长，推荐直接设置成最大包长。 **如果长度为 0 表示准备接收 0 包**
 - **return** 返回 0 表示正确，其他表示错误
 
-usbd_ep_get_read_len
+usbd_ep_get_read_len(todo)
 """"""""""""""""""""""""""""""""""""
 
 ``usbd_ep_get_read_len`` 获取实际接收长度，此函数搭配 ``usbd_ep_read_async`` 使用。 **此函数对用户开放**。
@@ -185,7 +187,7 @@ usbd_ep_get_read_len
 - **ep** out 端点地址
 - **return** 实际接收长度
 
-usbd_ep_get_mps
+usbd_ep_get_mps(todo)
 """"""""""""""""""""""""""""""""""""
 
 ``usbd_ep_get_mps`` 查询端点最大数据包长。 **此函数对用户开放**。
