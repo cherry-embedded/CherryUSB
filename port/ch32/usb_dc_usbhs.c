@@ -173,6 +173,7 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint32_t tmp;
 
     if (!data && data_len) {
         return -1;
@@ -186,14 +187,17 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
             USB_SET_TX_LEN(ep_idx, 0);
         } else {
             USB_SET_TX_LEN(ep_idx, 0);
-            USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBHS_EP_T_RES_MASK) | USBHS_EP_T_RES_ACK);
-            USB_SET_TX_CTRL(ep_idx, USB_GET_TX_CTRL(ep_idx) | epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+            tmp = USB_GET_TX_CTRL(ep_idx);
+            tmp &= ~(USBHS_EP_T_RES_MASK | USBHS_EP_T_TOG_MASK);
+            tmp |= USBHS_EP_T_RES_ACK;
+            tmp |= (epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+            USB_SET_TX_CTRL(ep_idx, tmp);
             epx_data_toggle[ep_idx - 1] ^= 1;
         }
         return 0;
     }
 
-    if (data_len > g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps) {
+    if (data_len >= g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps) {
         data_len = g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps;
         if (ep_idx == 0) {
             mps_over_flag = 1;
@@ -207,8 +211,11 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         USB_SET_TX_LEN(ep_idx, data_len);
         memcpy(&g_ch32_usbhs_udc.ep_databuf[ep_idx - 1][512], data, data_len);
 
-        USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~(USBHS_EP_T_RES_MASK | USBHS_EP_T_TOG_MASK)) | USBHS_EP_T_RES_ACK);
-        USB_SET_TX_CTRL(ep_idx, USB_GET_TX_CTRL(ep_idx) | epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+        tmp = USB_GET_TX_CTRL(ep_idx);
+        tmp &= ~(USBHS_EP_T_RES_MASK | USBHS_EP_T_TOG_MASK);
+        tmp |= USBHS_EP_T_RES_ACK;
+        tmp |= (epx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+        USB_SET_TX_CTRL(ep_idx, tmp);
         epx_data_toggle[ep_idx - 1] ^= 1;
     }
     if (ret_bytes) {

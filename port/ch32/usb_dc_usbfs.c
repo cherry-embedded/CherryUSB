@@ -180,7 +180,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         return 0;
     }
 
-    if (data_len > g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
+    if (data_len >= g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
         data_len = g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
 
         if (ep_idx == 0) {
