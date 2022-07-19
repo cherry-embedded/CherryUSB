@@ -87,10 +87,10 @@ struct usb_ehci_qh_s {
 
     struct usb_ehci_epinfo_s *epinfo; /* Endpoint used for the transfer */
     uint32_t fqp;                     /* First qTD in the list (physical address) */
-#if (__riscv_xlen == 64)
-    uint8_t pad[4];                   /* Padding to assure 32-byte alignment */
+#if (CONFIG_DCACHE_LINE_SIZE == 64)
+    uint8_t pad[4]; /* Padding to assure 64-byte alignment */
 #else
-    uint8_t pad[8];                   /* Padding to assure 32-byte alignment */
+    uint8_t pad[8]; /* Padding to assure 32-byte alignment */
 #endif
 };
 
@@ -2168,7 +2168,13 @@ int usb_hc_hw_init(void)
     if (ret < 0) {
         return -2;
     }
-
+#ifdef CONFIG_USB_EHCI_PORT_POWER
+    for (uint8_t port = 1; i <= CONFIG_USBHOST_RHPORTS; port++) {
+        regval = usb_ehci_getreg(&HCOR->portsc[port - 1]);
+        regval |= EHCI_PORTSC_PP;
+        usb_ehci_putreg(regval, &HCOR->portsc[port - 1]);
+    }
+#endif
     /* Enable EHCI interrupts.  Interrupts are still disabled at the level of
     * the interrupt controller.
     */
@@ -2228,11 +2234,11 @@ int usbh_reset_port(const uint8_t port)
     return 0;
 }
 
-__WEAK uint8_t usbh_get_port_speed(const uint8_t port)
-{
-    /* Defined by individual manufacturers */
-    return 0;
-}
+// __WEAK uint8_t usbh_get_port_speed(const uint8_t port)
+// {
+//     /* Defined by individual manufacturers */
+//     return 0;
+// }
 
 int usbh_ep0_reconfigure(usbh_epinfo_t ep, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
 {
