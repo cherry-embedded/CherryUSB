@@ -22,10 +22,6 @@
  */
 #include "usbd_core.h"
 
-#define USBD_EP_CALLBACK_LIST_SEARCH   0
-#define USBD_EP_CALLBACK_ARR_SEARCH    1
-#define USBD_EP_CALLBACK_SEARCH_METHOD USBD_EP_CALLBACK_ARR_SEARCH
-
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
 #define DESC_bDescriptorType 1 /** Descriptor type offset */
@@ -58,10 +54,9 @@ struct usbd_core_cfg_priv {
     /* Buffer used for storing standard, class and vendor request data */
     USB_MEM_ALIGN32 uint8_t req_data[CONFIG_USBDEV_REQUEST_BUFFER_LEN];
 
-#if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_ARR_SEARCH
     usbd_endpoint_callback in_ep_cb[USB_EP_IN_NUM];
     usbd_endpoint_callback out_ep_cb[USB_EP_OUT_NUM];
-#endif
+
     /** Variable to check whether the usb has been configured */
     bool configured;
     /** Currently selected configuration */
@@ -155,34 +150,7 @@ static bool is_ep_valid(uint8_t ep)
 
     return true;
 }
-#if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_ARR_SEARCH
-static void usbd_ep_callback_register(void)
-{
-    usb_slist_t *i, *j, *k;
-    usb_slist_for_each(i, &usbd_class_head)
-    {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
 
-        usb_slist_for_each(j, &devclass->intf_list)
-        {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-            usb_slist_for_each(k, &intf->ep_list)
-            {
-                usbd_endpoint_t *ept = usb_slist_entry(k, struct usbd_endpoint, list);
-
-                if (ept->ep_cb) {
-                    if (ept->ep_addr & 0x80) {
-                        usbd_core_cfg.in_ep_cb[ept->ep_addr & 0x7f] = ept->ep_cb;
-                    } else {
-                        usbd_core_cfg.out_ep_cb[ept->ep_addr & 0x7f] = ept->ep_cb;
-                    }
-                }
-            }
-        }
-    }
-}
-#endif
 /**
  * @brief configure and enable endpoint
  *
@@ -1127,64 +1095,16 @@ static void usbd_ep0_in_handler(void)
 
 static void usbd_ep_out_handler(uint8_t ep)
 {
-#if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_LIST_SEARCH
-    usb_slist_t *i, *j, *k;
-    usb_slist_for_each(i, &usbd_class_head)
-    {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
-
-        usb_slist_for_each(j, &devclass->intf_list)
-        {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-            usb_slist_for_each(k, &intf->ep_list)
-            {
-                usbd_endpoint_t *ept = usb_slist_entry(k, struct usbd_endpoint, list);
-
-                if ((ept->ep_addr == ep) && ept->ep_cb) {
-                    ept->ep_cb(ep);
-                }
-            }
-        }
-    }
-#else
-
     if (usbd_core_cfg.out_ep_cb[ep & 0x7f]) {
         usbd_core_cfg.out_ep_cb[ep & 0x7f](ep);
     }
-
-#endif
 }
 
 static void usbd_ep_in_handler(uint8_t ep)
 {
-#if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_LIST_SEARCH
-    usb_slist_t *i, *j, *k;
-    usb_slist_for_each(i, &usbd_class_head)
-    {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
-
-        usb_slist_for_each(j, &devclass->intf_list)
-        {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-            usb_slist_for_each(k, &intf->ep_list)
-            {
-                usbd_endpoint_t *ept = usb_slist_entry(k, struct usbd_endpoint, list);
-
-                if ((ept->ep_addr == ep) && ept->ep_cb) {
-                    ept->ep_cb(ep);
-                }
-            }
-        }
-    }
-#else
-
     if (usbd_core_cfg.in_ep_cb[ep & 0x7f]) {
         usbd_core_cfg.in_ep_cb[ep & 0x7f](ep);
     }
-
-#endif
 }
 
 static void usbd_class_event_notify_handler(uint8_t event, void *arg)
@@ -1218,9 +1138,6 @@ void usbd_event_notify_handler(uint8_t event, void *arg)
             ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
             /*set USB_CONTROL_OUT_EP0 ack to prepare receiving setup data*/
             usbd_ep_open(&ep0_cfg);
-#if USBD_EP_CALLBACK_SEARCH_METHOD == USBD_EP_CALLBACK_ARR_SEARCH
-            usbd_ep_callback_register();
-#endif
 
         case USBD_EVENT_ERROR:
         case USBD_EVENT_SOF:
@@ -1302,6 +1219,11 @@ void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep)
 {
     usb_slist_add_tail(&intf->ep_list, &ep->list);
+    if (ep->ep_addr & 0x80) {
+        usbd_core_cfg.in_ep_cb[ep->ep_addr & 0x7f] = ep->ep_cb;
+    } else {
+        usbd_core_cfg.out_ep_cb[ep->ep_addr & 0x7f] = ep->ep_cb;
+    }
 }
 
 bool usb_device_is_configured(void)
