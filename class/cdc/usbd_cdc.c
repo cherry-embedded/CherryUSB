@@ -105,6 +105,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             /*******************************************************************************/
             memcpy(&current_cdc_acm_class->line_coding, *data, setup->wLength);
             USB_LOG_DBG("Set intf:%d linecoding <%d %d %s %s>\r\n",
+                        intf,
                         current_cdc_acm_class->line_coding.dwDTERate,
                         current_cdc_acm_class->line_coding.bDataBits,
                         parity_name[current_cdc_acm_class->line_coding.bParityType],
@@ -117,7 +118,9 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             current_cdc_acm_class->dtr = (setup->wValue & 0x0001);
             current_cdc_acm_class->rts = (setup->wValue & 0x0002);
             USB_LOG_DBG("Set intf:%d DTR 0x%x,RTS 0x%x\r\n",
-                        current_cdc_acm_class->dtr, current_cdc_acm_class->rts);
+                        intf,
+                        current_cdc_acm_class->dtr,
+                        current_cdc_acm_class->rts);
             usbd_cdc_acm_set_dtr(intf, current_cdc_acm_class->dtr);
             usbd_cdc_acm_set_rts(intf, current_cdc_acm_class->rts);
         } break;
@@ -126,6 +129,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             *data = (uint8_t *)(&current_cdc_acm_class->line_coding);
             *len = 7;
             USB_LOG_DBG("Get intf:%d linecoding %d %d %d %d\r\n",
+                        intf,
                         current_cdc_acm_class->line_coding.dwDTERate,
                         current_cdc_acm_class->line_coding.bCharFormat,
                         current_cdc_acm_class->line_coding.bParityType,
