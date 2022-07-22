@@ -12,7 +12,8 @@
 
 #include "usb_dc.h"
 #include "usbd_core.h"
-#include "./usb_ch58x_reg.h"
+#include "usb_ch58x_reg.h"
+#include "CH58x_common.h"
 #include <stdlib.h>
 
 /**
@@ -447,6 +448,9 @@ int usb_dc_init(void)
   R8_UDEV_CTRL = RB_UD_PD_DIS | RB_UD_PORT_EN; /*!< Allow USB port */
   R8_USB_INT_EN = RB_UIE_SUSPEND | RB_UIE_BUS_RST | RB_UIE_TRANSFER;
 
+  DelayUs(100);
+  PFIC_EnableIRQ(USB_IRQn);
+
   return 0;
 }
 
@@ -456,7 +460,9 @@ int usb_dc_init(void)
  * @param[in]        None
  * @retval           None
  */
-void usb_isr_handler(void)
+__INTERRUPT
+__HIGH_CODE
+void USB_IRQHandler(void)
 {
   UINT8 intflag = 0;
   intflag = R8_USB_INT_FG;
