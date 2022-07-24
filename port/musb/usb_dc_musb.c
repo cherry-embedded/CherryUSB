@@ -489,7 +489,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
     }
 
     if (!data_len) {
-        if (ep == 0x00) {
+        if (ep_idx == 0x00) {
             HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_CSRL0_TXRDY;
         } else {
             HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
@@ -505,7 +505,7 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
 
     musb_write_packet(ep_idx, (uint8_t *)data, data_len);
 
-    if (ep == 0x00) {
+    if (ep_idx == 0x00) {
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_CSRL0_TXRDY;
     } else {
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
