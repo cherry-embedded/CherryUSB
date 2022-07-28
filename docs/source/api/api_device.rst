@@ -27,11 +27,9 @@ CORE
 
 - **list** 端点的链表节点
 - **ep_addr** 端点地址（带方向）
-- **ep_cb** 端点中断回调函数。
+- **ep_cb** 端点完成中断回调函数。
 
-.. note:: 总结就是注册 IN 方向则表示发送完成后触发，等价于 dma 完成中断。注册 OUT 中断则表示有数据就触发，等价于 fifo 不为空中断。
-
-.. note:: 如果 ip 支持 dma 接收功能，并启用了 dma 接收的宏，则 out 中断表示 dma 接收完成中断，而不是 fifo 不为空中断（0.4.1版本之前无此实现）
+.. note:: 总结一句话：in 回调函数等价于 dma 发送完成中断；out 回调函数等价于 dma 接收完成中断
 
 接口结构体
 """"""""""""""""""""""""""""""""""""
@@ -78,64 +76,6 @@ CORE
 - **list** 类的链表节点
 - **name** 类的名称
 - **intf_list** 接口的链表节点
-
-usbd_event_notify_handler
-""""""""""""""""""""""""""""""""""""
-
-``usbd_event_notify_handler`` 是 USB 中断中的核心，用于处理不同的中断标志。包括复位、端点0 IN/OUT/SETUP、其他端点 IN/OUT 、SUSPEND、RESUME、SOF 中断等等。用户需要在 porting 接口中的 USB中断中调用该接口。
-
-.. code-block:: C
-
-    void usbd_event_notify_handler(uint8_t event, void *arg);
-
-- **event**  中断事件
-- **arg**  端点号
-
-其中 ``event`` 有如下类型：
-
-.. code-block:: C
-
-    enum usbd_event_type {
-        /** USB error reported by the controller */
-        USBD_EVENT_ERROR,
-        /** USB reset */
-        USBD_EVENT_RESET,
-        /** Start of Frame received */
-        USBD_EVENT_SOF,
-        /** USB connection established, hardware enumeration is completed */
-        USBD_EVENT_CONNECTED,
-        /** USB configuration done */
-        USBD_EVENT_CONFIGURED,
-        /** USB connection suspended by the HOST */
-        USBD_EVENT_SUSPEND,
-        /** USB connection lost */
-        USBD_EVENT_DISCONNECTED,
-        /** USB connection resumed by the HOST */
-        USBD_EVENT_RESUME,
-
-        /** USB interface selected */
-        USBD_EVENT_SET_INTERFACE,
-        /** USB interface selected */
-        USBD_EVENT_SET_REMOTE_WAKEUP,
-        /** USB interface selected */
-        USBD_EVENT_CLEAR_REMOTE_WAKEUP,
-        /** Set Feature ENDPOINT_HALT received */
-        USBD_EVENT_SET_HALT,
-        /** Clear Feature ENDPOINT_HALT received */
-        USBD_EVENT_CLEAR_HALT,
-        /** setup packet received */
-        USBD_EVENT_SETUP_NOTIFY,
-        /** ep0 in packet received */
-        USBD_EVENT_EP0_IN_NOTIFY,
-        /** ep0 out packet received */
-        USBD_EVENT_EP0_OUT_NOTIFY,
-        /** ep in packet except ep0 received */
-        USBD_EVENT_EP_IN_NOTIFY,
-        /** ep out packet except ep0 received */
-        USBD_EVENT_EP_OUT_NOTIFY,
-        /** Initial USB connection status */
-        USBD_EVENT_UNKNOWN
-    };
 
 usbd_desc_register
 """"""""""""""""""""""""""""""""""""

@@ -4,6 +4,9 @@
 #ifdef CONFIG_USB_HS
 #error "usb fs do not support hs"
 #endif
+#ifndef CONFIG_USB_ALIGN32
+#error "usb hs dma must be align4"
+#endif
 
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler OTG_FS_IRQHandler //use actual usb irq name instead
@@ -13,6 +16,7 @@
 #define USB_NUM_BIDIR_ENDPOINTS 8
 #endif
 
+#define USB_SET_DMA(ep_idx, addr)    (*(volatile uint32_t *)((uint32_t)(&USBFS_DEVICE->UEP0_DMA) + 4 * ep_idx) = addr)
 #define USB_SET_TX_LEN(ep_idx, len)  (*(volatile uint16_t *)((uint32_t)(&USBFS_DEVICE->UEP0_TX_LEN) + 4 * ep_idx) = len)
 #define USB_GET_TX_LEN(ep_idx)       (*(volatile uint16_t *)((uint32_t)(&USBFS_DEVICE->UEP0_TX_LEN) + 4 * ep_idx))
 #define USB_SET_TX_CTRL(ep_idx, val) (*(volatile uint8_t *)((uint32_t)(&USBFS_DEVICE->UEP0_TX_CTRL) + 4 * ep_idx) = val)
@@ -22,29 +26,26 @@
 
 /* Endpoint state */
 struct ch32_usbfs_ep_state {
-    /** Endpoint max packet size */
-    uint16_t ep_mps;
-    /** Endpoint Transfer Type.
-     * May be Bulk, Interrupt, Control or Isochronous
-     */
-    uint8_t ep_type;
-    uint8_t ep_stalled; /** Endpoint stall flag */
+    uint16_t ep_mps;    /* Endpoint max packet size */
+    uint8_t ep_type;    /* Endpoint type */
+    uint8_t ep_stalled; /* Endpoint stall flag */
+    uint8_t *xfer_buf;
+    uint32_t xfer_len;
+    uint32_t actual_xfer_len;
 };
 
 /* Driver state */
 struct ch32_usbfs_udc {
+    __attribute__((aligned(4))) struct usb_setup_packet setup;
     volatile uint8_t dev_addr;
-    struct ch32_usbfs_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];                            /*!< IN endpoint parameters*/
-    struct ch32_usbfs_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS];                           /*!< OUT endpoint parameters */
-    __attribute__((aligned(4))) uint8_t ep_databuf[USB_NUM_BIDIR_ENDPOINTS - 1][64 + 64]; //epx_out(64)+epx_in(64)
+    struct ch32_usbfs_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
+    struct ch32_usbfs_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_ch32_usbfs_udc;
 
-/* Endpoint0 Buffer */
-__attribute__((aligned(4))) uint8_t EP0_DatabufHD[64]; //ep0(64)
+volatile bool ep0_rx_data_toggle;
+volatile bool ep0_tx_data_toggle;
 
 void USBD_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-
-volatile uint8_t mps_over_flag = 0;
 
 __WEAK void usb_dc_low_level_init(void)
 {
@@ -66,15 +67,6 @@ int usb_dc_init(void)
     USBFS_DEVICE->UEP2_3_MOD = USBFS_UEP2_RX_EN | USBFS_UEP2_TX_EN | USBFS_UEP3_RX_EN | USBFS_UEP3_TX_EN;
     USBFS_DEVICE->UEP5_6_MOD = USBFS_UEP5_RX_EN | USBFS_UEP5_TX_EN | USBFS_UEP6_RX_EN | USBFS_UEP6_TX_EN;
     USBFS_DEVICE->UEP7_MOD = USBFS_UEP7_RX_EN | USBFS_UEP7_TX_EN;
-
-    USBFS_DEVICE->UEP0_DMA = (uint32_t)EP0_DatabufHD;
-    USBFS_DEVICE->UEP1_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[0];
-    USBFS_DEVICE->UEP2_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[1];
-    USBFS_DEVICE->UEP3_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[2];
-    USBFS_DEVICE->UEP4_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[3];
-    USBFS_DEVICE->UEP5_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[4];
-    USBFS_DEVICE->UEP6_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[5];
-    USBFS_DEVICE->UEP7_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[6];
 
     USBFS_DEVICE->INT_FG = 0xFF;
     USBFS_DEVICE->INT_EN = USBFS_UIE_SUSPEND | USBFS_UIE_BUS_RST | USBFS_UIE_TRANSFER;
@@ -106,7 +98,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK | USBFS_UEP_AUTO_TOG);
+        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK | USBFS_UEP_AUTO_TOG);
     } else {
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
@@ -136,6 +128,10 @@ int usbd_ep_set_stall(const uint8_t ep)
         }
     }
 
+    if (ep_idx == 0) {
+        USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
+        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
+    }
     return 0;
 }
 
@@ -159,7 +155,52 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
     return 0;
 }
 
-int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
+int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint32_t tmp;
+
+    if (!data && data_len) {
+        return -1;
+    }
+
+    if ((uint32_t)data & 0x03) {
+        printf("data do not align4\r\n");
+        return -2;
+    }
+
+    g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len = data_len;
+    g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len = 0;
+
+    if (ep_idx == 0) {
+        if (data_len == 0) {
+            USB_SET_TX_LEN(ep_idx, 0);
+        } else {
+            data_len = MIN(data_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
+            USB_SET_TX_LEN(ep_idx, data_len);
+            USB_SET_DMA(ep_idx, (uint32_t)data);
+        }
+        if (ep0_tx_data_toggle) {
+            USB_SET_TX_CTRL(ep_idx, USBFS_UEP_T_TOG | USBFS_UEP_T_RES_ACK);
+        } else {
+            USB_SET_TX_CTRL(ep_idx, USBFS_UEP_T_RES_ACK);
+        }
+
+    } else {
+        if (data_len == 0) {
+            USB_SET_TX_LEN(ep_idx, 0);
+        } else {
+            data_len = MIN(data_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
+            USB_SET_TX_LEN(ep_idx, data_len);
+            USB_SET_DMA(ep_idx, (uint32_t)data);
+        }
+        USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
+    }
+    return 0;
+}
+
+int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -167,74 +208,29 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         return -1;
     }
 
-    while (((USB_GET_TX_CTRL(ep_idx) & USBFS_UEP_T_RES_MASK) == USBFS_UEP_T_RES_ACK) && (ep_idx != 0)) {
+    if ((uint32_t)data & 0x03) {
+        printf("data do not align4\r\n");
+        return -2;
     }
 
-    if (!data_len) {
-        if (ep_idx == 0) {
-            USB_SET_TX_LEN(ep_idx, 0);
-        } else {
-            USB_SET_TX_LEN(ep_idx, 0);
-            USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
-        }
-        return 0;
-    }
-
-    if (data_len >= g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
-        data_len = g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
-
-        if (ep_idx == 0) {
-            mps_over_flag = 1;
-        }
-    }
+    g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len = data_len;
+    g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len = 0;
 
     if (ep_idx == 0) {
-        memcpy(&EP0_DatabufHD[0], data, data_len);
-        USB_SET_TX_LEN(ep_idx, data_len);
-    } else {
-        memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], data, data_len);
-        USB_SET_TX_LEN(ep_idx, data_len);
-        USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
-    }
-    if (ret_bytes) {
-        *ret_bytes = data_len;
-    }
-
-    return 0;
-}
-
-int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
-{
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    uint32_t read_count;
-
-    if (!data && max_data_len) {
-        return -1;
-    }
-
-    if (!max_data_len) {
-        if (ep_idx) {
-            USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK);
+        if (data_len == 0) {
+        } else {
+            USB_SET_DMA(ep_idx, (uint32_t)data);
+        }
+        if (ep0_rx_data_toggle) {
+            USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_TOG | USBFS_UEP_R_RES_ACK);
+        } else {
+            USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
         }
         return 0;
-    }
-
-    read_count = USBFS_DEVICE->RX_LEN;
-    read_count = MIN(read_count, max_data_len);
-
-    if (ep_idx == 0x00) {
-        if ((max_data_len == 8) && !read_bytes) {
-            read_count = 8;
-            memcpy(data, &EP0_DatabufHD[0], 8);
-        } else {
-            memcpy(data, &EP0_DatabufHD[0], read_count);
-        }
     } else {
-        memcpy(data, &g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][0], read_count);
-    }
-
-    if (read_bytes) {
-        *read_bytes = read_count;
+        USB_SET_DMA(ep_idx, (uint32_t)data);
+        USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK);
     }
 
     return 0;
@@ -242,7 +238,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 
 void USBD_IRQHandler(void)
 {
-    uint32_t ep_idx, token;
+    uint32_t ep_idx, token, write_count, read_count;
     uint8_t intflag = 0;
 
     intflag = USBFS_DEVICE->INT_FG;
@@ -252,41 +248,96 @@ void USBD_IRQHandler(void)
         ep_idx = USBFS_DEVICE->INT_ST & USBFS_UIS_ENDP_MASK;
         switch (token) {
             case USBFS_UIS_TOKEN_SETUP:
-                USBFS_DEVICE->UEP0_TX_CTRL = USBFS_UEP_T_TOG | USBFS_UEP_T_RES_NAK;
-
-                usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
-
-                USBFS_DEVICE->UEP0_TX_CTRL = USBFS_UEP_T_TOG | USBFS_UEP_T_RES_ACK;
-                USBFS_DEVICE->UEP0_RX_CTRL = USBFS_UEP_R_TOG | USBFS_UEP_R_RES_ACK;
+                USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK);
+                usbd_event_ep0_setup_complete_handler((uint8_t *)&g_ch32_usbfs_udc.setup);
                 break;
 
             case USBFS_UIS_TOKEN_IN:
                 if (ep_idx == 0x00) {
-                    usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
+                    if (g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len > g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
+                        g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len -= g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
+                        g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
+                        ep0_tx_data_toggle ^= 1;
+                    } else {
+                        g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len;
+                        g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len = 0;
+                        ep0_tx_data_toggle = true;
+                    }
+
+                    usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len);
+
                     if (g_ch32_usbfs_udc.dev_addr > 0) {
                         USBFS_DEVICE->DEV_ADDR = (USBFS_DEVICE->DEV_ADDR & USBFS_UDA_GP_BIT) | g_ch32_usbfs_udc.dev_addr;
                         g_ch32_usbfs_udc.dev_addr = 0;
                     }
 
-                    if (mps_over_flag) {
-                        mps_over_flag = 0;
-                        USBFS_DEVICE->UEP0_TX_CTRL ^= USBFS_UEP_T_TOG;
-                    } else {
-                        USBFS_DEVICE->UEP0_TX_CTRL = USBFS_UEP_T_RES_NAK;
-                        USBFS_DEVICE->UEP0_RX_CTRL = USBFS_UEP_R_RES_ACK;
+                    if (g_ch32_usbfs_udc.setup.wLength && ((g_ch32_usbfs_udc.setup.bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
+                        /* In status, start reading setup */
+                        USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
+                        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
+                        ep0_tx_data_toggle = true;
+
+                    } else if (g_ch32_usbfs_udc.setup.wLength == 0) {
+                        /* In status, start reading setup */
+                        USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
+                        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
+                        ep0_tx_data_toggle = true;
                     }
                 } else {
                     USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_NAK);
-                    usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (void *)(ep_idx | 0x80));
+
+                    if (g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len > g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
+                        g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf += g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
+                        g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len -= g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
+                        g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
+
+                        write_count = MIN(g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
+                        USB_SET_TX_LEN(ep_idx, write_count);
+                        USB_SET_DMA(ep_idx, (uint32_t)g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf);
+
+                        USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
+                    } else {
+                        g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len;
+                        g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len = 0;
+                        usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len);
+                    }
                 }
                 break;
             case USBFS_UIS_TOKEN_OUT:
                 if (ep_idx == 0x00) {
-                    usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
+                    USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK);
+
+                    read_count = USBFS_DEVICE->RX_LEN;
+
+                    g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len += read_count;
+                    g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len -= read_count;
+
+                    usbd_event_ep_out_complete_handler(0x00, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
+
+                    if (read_count == 0) {
+                        /* Out status, start reading setup */
+                        USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
+                        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
+                        ep0_rx_data_toggle = true;
+                        ep0_tx_data_toggle = true;
+                    } else {
+                        ep0_rx_data_toggle ^= 1;
+                    }
                 } else {
                     if (USBFS_DEVICE->INT_ST & USBFS_UIS_TOG_OK) {
                         USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_NAK);
-                        usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (void *)(ep_idx));
+                        read_count = USBFS_DEVICE->RX_LEN;
+
+                        g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf += read_count;
+                        g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len += read_count;
+                        g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len -= read_count;
+
+                        if ((read_count < g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps) || (g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len == 0)) {
+                            usbd_event_ep_out_complete_handler(ep_idx, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
+                        } else {
+                            USB_SET_DMA(ep_idx, (uint32_t)g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf);
+                            USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK);
+                        }
                     }
                 }
                 break;
@@ -303,7 +354,7 @@ void USBD_IRQHandler(void)
     } else if (intflag & USBFS_UIF_BUS_RST) {
         USBFS_DEVICE->UEP0_TX_LEN = 0;
         USBFS_DEVICE->UEP0_TX_CTRL = USBFS_UEP_T_RES_NAK;
-        USBFS_DEVICE->UEP0_RX_CTRL = USBFS_UEP_R_RES_ACK;
+        USBFS_DEVICE->UEP0_RX_CTRL = USBFS_UEP_R_RES_NAK;
 
         for (uint8_t ep_idx = 1; ep_idx < USB_NUM_BIDIR_ENDPOINTS; ep_idx++) {
             USB_SET_TX_LEN(ep_idx, 0);
@@ -311,7 +362,12 @@ void USBD_IRQHandler(void)
             USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK | USBFS_UEP_AUTO_TOG);
         }
 
-        usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
+        ep0_tx_data_toggle = true;
+        ep0_rx_data_toggle = true;
+
+        usbd_event_reset_handler();
+        USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
+        USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
 
         USBFS_DEVICE->INT_FG |= USBFS_UIF_BUS_RST;
     } else if (intflag & USBFS_UIF_SUSPEND) {

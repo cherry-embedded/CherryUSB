@@ -14,9 +14,6 @@
 #define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
-/*!< hid state ! Data can be sent only when state is idle  */
-uint8_t hid_state = HID_STATE_IDLE;
-
 /*!< config descriptor size */
 #define USB_HID_CONFIG_DESC_SIZ 34
 /*!< report descriptor size */
@@ -200,8 +197,11 @@ static usbd_interface_t hid_intf;
 /*!< mouse report */
 static struct hid_mouse mouse_cfg;
 
+/*!< hid state ! Data can be sent only when state is idle  */
+uint8_t hid_state = HID_STATE_IDLE;
+
 /* function ------------------------------------------------------------------*/
-static void usbd_hid_int_callback(uint8_t ep)
+static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 {
     /*!< endpoint call back */
     /*!< transfer successfully */
@@ -254,5 +254,8 @@ void hid_mouse_test(void)
     /*!< move mouse pointer */
     mouse_cfg.x += 10;
     mouse_cfg.y = 0;
-    usbd_ep_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4, NULL);
+    hid_state = HID_STATE_BUSY;
+    usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+    while (hid_state == HID_STATE_BUSY) {
+    }
 }

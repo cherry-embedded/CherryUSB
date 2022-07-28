@@ -74,6 +74,7 @@ static struct usb_bos_descriptor *bos_desc;
 void usbd_set_feature(uint16_t index, uint16_t value);
 void usbd_clear_feature(uint16_t index, uint16_t value);
 #endif
+static void usbd_class_event_notify_handler(uint8_t event, void *arg);
 /**
  * @brief print the contents of a setup packet
  *
@@ -141,15 +142,15 @@ static bool is_interface_valid(uint8_t interface)
  *
  * @return true if endpoint exists - valid
  */
-static bool is_ep_valid(uint8_t ep)
-{
-    /* Check if its Endpoint 0 */
-    if ((ep & 0x7f) == 0) {
-        return true;
-    }
+// static bool is_ep_valid(uint8_t ep)
+// {
+//     /* Check if its Endpoint 0 */
+//     if ((ep & 0x7f) == 0) {
+//         return true;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 /**
  * @brief configure and enable endpoint
@@ -418,7 +419,7 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
         p += p[DESC_bLength];
     }
 
-    usbd_event_notify_handler(USBD_EVENT_SET_INTERFACE, (void *)if_desc);
+    usbd_class_event_notify_handler(USBD_EVENT_SET_INTERFACE, (void *)if_desc);
 
     return ret;
 }
@@ -442,7 +443,6 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
 
     switch (setup->bRequest) {
         case USB_REQUEST_GET_STATUS:
-            USB_LOG_DBG("REQ_GET_STATUS\r\n");
             /* bit 0: self-powered */
             /* bit 1: remote wakeup */
             *data = (uint8_t *)&usbd_core_cfg.remote_wakeup;
@@ -451,48 +451,42 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
             break;
 
         case USB_REQUEST_CLEAR_FEATURE:
-            USB_LOG_DBG("REQ_CLEAR_FEATURE\r\n");
 #ifdef CONFIG_USBDEV_TEST_MODE
             /* process for feature */
             usbd_clear_feature(index, value);
 #endif
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
                 usbd_core_cfg.remote_wakeup = 0;
-                usbd_event_notify_handler(USBD_EVENT_CLEAR_REMOTE_WAKEUP, NULL);
+                usbd_class_event_notify_handler(USBD_EVENT_CLEAR_REMOTE_WAKEUP, NULL);
             }
 
             break;
 
         case USB_REQUEST_SET_FEATURE:
-            USB_LOG_DBG("REQ_SET_FEATURE\r\n");
 #ifdef CONFIG_USBDEV_TEST_MODE
             /* process for feature */
             usbd_set_feature(index, value);
 #endif
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
                 usbd_core_cfg.remote_wakeup = 1;
-                usbd_event_notify_handler(USBD_EVENT_SET_REMOTE_WAKEUP, NULL);
+                usbd_class_event_notify_handler(USBD_EVENT_SET_REMOTE_WAKEUP, NULL);
             }
 
             break;
 
         case USB_REQUEST_SET_ADDRESS:
-            USB_LOG_DBG("REQ_SET_ADDRESS, addr 0x%x\r\n", value);
             usbd_set_address(value);
             break;
 
         case USB_REQUEST_GET_DESCRIPTOR:
-            USB_LOG_DBG("REQ_GET_DESCRIPTOR\r\n");
             ret = usbd_get_descriptor(value, data, len);
             break;
 
         case USB_REQUEST_SET_DESCRIPTOR:
-            USB_LOG_DBG("Device req 0x%02x not implemented\r\n", setup->bRequest);
             ret = false;
             break;
 
         case USB_REQUEST_GET_CONFIGURATION:
-            USB_LOG_DBG("REQ_GET_CONFIGURATION\r\n");
             /* indicate if we are configured */
             *data = (uint8_t *)&usbd_core_cfg.configuration;
             *len = 1;
@@ -500,7 +494,6 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
 
         case USB_REQUEST_SET_CONFIGURATION:
             value &= 0xFF;
-            USB_LOG_DBG("REQ_SET_CONFIGURATION, conf 0x%x\r\n", value);
 
             if (!usbd_set_configuration(value, 0)) {
                 USB_LOG_DBG("USB Set Configuration failed\r\n");
@@ -511,7 +504,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
                  */
                 usbd_core_cfg.configuration = value;
                 usbd_core_cfg.configured = true;
-                usbd_event_notify_handler(USBD_EVENT_CONFIGURED, NULL);
+                usbd_class_event_notify_handler(USBD_EVENT_CONFIGURED, NULL);
             }
 
             break;
@@ -576,7 +569,6 @@ static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
             break;
 
         case USB_REQUEST_SET_INTERFACE:
-            USB_LOG_DBG("REQ_SET_INTERFACE\r\n");
             usbd_set_interface(setup->wIndex, setup->wValue);
             break;
 
@@ -600,11 +592,6 @@ static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
 static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint8_t ep = (uint8_t)setup->wIndex;
-
-    /* Check if request addresses valid Endpoint */
-    if (!is_ep_valid(ep)) {
-        return false;
-    }
 
     switch (setup->bRequest) {
         case USB_REQUEST_GET_STATUS:
@@ -640,7 +627,7 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
                     USB_LOG_ERR("ep:%x clear halt\r\n", ep);
 
                     usbd_ep_clear_stall(ep);
-                    usbd_event_notify_handler(USBD_EVENT_CLEAR_HALT, NULL);
+                    usbd_class_event_notify_handler(USBD_EVENT_CLEAR_HALT, NULL);
                     break;
                 }
             }
@@ -662,7 +649,7 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
                     USB_LOG_ERR("ep:%x set halt\r\n", ep);
 
                     usbd_ep_set_stall(ep);
-                    usbd_event_notify_handler(USBD_EVENT_SET_HALT, NULL);
+                    usbd_class_event_notify_handler(USBD_EVENT_SET_HALT, NULL);
                     break;
                 }
             }
@@ -671,12 +658,6 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
             return false;
 
         case USB_REQUEST_SYNCH_FRAME:
-
-            /* For Synch Frame request the device must be configured */
-            if (is_device_configured()) {
-                /* Not supported, return false anyway */
-                USB_LOG_DBG("ep req 0x%02x not implemented\r\n", setup->bRequest);
-            }
 
             return false;
 
@@ -936,59 +917,65 @@ static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t *
 
     return true;
 }
-/**
- * @brief send data or status to host
- *
- * @return N/A
- */
-static void usbd_send_to_host(uint16_t len)
+
+static void usbd_class_event_notify_handler(uint8_t event, void *arg)
 {
-    uint32_t chunk = 0U;
+    usb_slist_t *i;
+    usb_slist_for_each(i, &usbd_class_head)
+    {
+        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+        usbd_interface_t *intf = usb_slist_first_entry(&devclass->intf_list, struct usbd_interface, list);
 
-    if (usbd_core_cfg.zlp_flag == false) {
-        chunk = usbd_core_cfg.ep0_data_buf_residue;
-
-        if (usbd_ep_write(USB_CONTROL_IN_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue, &chunk) < 0) {
-            USB_LOG_ERR("USB write data failed\r\n");
-            return;
-        }
-
-        usbd_core_cfg.ep0_data_buf += chunk;
-        usbd_core_cfg.ep0_data_buf_residue -= chunk;
-
-        /*
-         * Set ZLP flag when host asks for a bigger length and the
-         * last chunk is wMaxPacketSize long, to indicate the last
-         * packet.
-         */
-        if (!usbd_core_cfg.ep0_data_buf_residue && (len > usbd_core_cfg.ep0_data_buf_len) && !(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS)) {
-            /* Transfers a zero-length packet next*/
-            usbd_core_cfg.zlp_flag = true;
-        }
-    } else {
-        usbd_core_cfg.zlp_flag = false;
-        USB_LOG_DBG("send zlp\r\n");
-        if (usbd_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL) < 0) {
-            USB_LOG_ERR("USB write zlp failed\r\n");
-            return;
+        if (intf->notify_handler) {
+            intf->notify_handler(event, arg);
         }
     }
 }
 
-static void usbd_ep0_setup_handler(void)
+void usbd_event_connect_handler(void)
+{
+    usbd_class_event_notify_handler(USBD_EVENT_CONNECTED, NULL);
+}
+
+void usbd_event_disconnect_handler(void)
+{
+    usbd_class_event_notify_handler(USBD_EVENT_DISCONNECTED, NULL);
+}
+
+void usbd_event_resume_handler(void)
+{
+    usbd_class_event_notify_handler(USBD_EVENT_RESUME, NULL);
+}
+
+void usbd_event_suspend_handler(void)
+{
+    usbd_class_event_notify_handler(USBD_EVENT_SUSPEND, NULL);
+}
+
+void usbd_event_reset_handler(void)
+{
+    usbd_set_address(0);
+    usbd_core_cfg.configured = 0;
+    usbd_core_cfg.configuration = 0;
+
+    struct usbd_endpoint_cfg ep0_cfg;
+
+    ep0_cfg.ep_mps = USB_CTRL_EP_MPS;
+    ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
+    ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
+    usbd_ep_open(&ep0_cfg);
+
+    ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
+    usbd_ep_open(&ep0_cfg);
+
+    usbd_class_event_notify_handler(USBD_EVENT_RESET, NULL);
+}
+
+void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
 {
     struct usb_setup_packet *setup = &usbd_core_cfg.setup;
 
-    /*
-    * OUT transfer, Setup packet,
-    * reset request message state machine
-    */
-    if (usbd_ep_read(USB_CONTROL_OUT_EP0, (uint8_t *)setup,
-                     sizeof(struct usb_setup_packet), NULL) < 0) {
-        USB_LOG_ERR("Read Setup Packet failed\r\n");
-        usbd_ep_set_stall(USB_CONTROL_IN_EP0);
-        return;
-    }
+    memcpy(setup, psetup, 8);
 #ifdef CONFIG_USBDEV_SETUP_LOG_PRINT
     usbd_print_setup(setup);
 #endif
@@ -1006,9 +993,9 @@ static void usbd_ep0_setup_handler(void)
     usbd_core_cfg.zlp_flag = false;
 
     /* this maybe set code in class request code  */
-    if (setup->wLength &&
-        (setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT) {
-        USB_LOG_DBG("prepare to out data\r\n");
+    if (setup->wLength && ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
+        USB_LOG_DBG("Start reading %d bytes from ep0\r\n", setup->wLength);
+        usbd_ep_start_read(USB_CONTROL_OUT_EP0, usbd_core_cfg.ep0_data_buf, setup->wLength);
         return;
     }
 
@@ -1022,7 +1009,7 @@ static void usbd_ep0_setup_handler(void)
     usbd_core_cfg.ep0_data_buf_residue = MIN(usbd_core_cfg.ep0_data_buf_len,
                                              setup->wLength);
 
-#ifdef CONFIG_USB_DCACHE_ENABLE
+#if defined(CONFIG_USB_DCACHE_ENABLE) || defined(CONFIG_USB_ALIGN32)
     /* check if the data buf addr uses usbd_core_cfg.req_data */
     if (((unsigned long)usbd_core_cfg.ep0_data_buf) != ((unsigned long)usbd_core_cfg.req_data)) {
         /*copy data buf from misalign32 addr to align32 addr*/
@@ -1031,152 +1018,88 @@ static void usbd_ep0_setup_handler(void)
     }
 #endif
     /*Send data or status to host*/
-    usbd_send_to_host(setup->wLength);
+    usbd_ep_start_write(USB_CONTROL_IN_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
+    /*
+    * Set ZLP flag when host asks for a bigger length and the data size is multiplier of USB_CTRL_EP_MPS,
+    * to indicate the transfer done after zlp sent.
+    */
+    if ((setup->wLength > usbd_core_cfg.ep0_data_buf_len) && (!(usbd_core_cfg.ep0_data_buf_len % USB_CTRL_EP_MPS))) {
+        usbd_core_cfg.zlp_flag = true;
+        USB_LOG_DBG("EP0 Set zlp\r\n");
+    }
 }
 
-static void usbd_ep0_out_handler(void)
+void usbd_event_ep_in_complete_handler(uint8_t ep, uint32_t nbytes)
 {
-    uint32_t chunk = 0U;
-    struct usb_setup_packet *setup = &usbd_core_cfg.setup;
+    if (ep == USB_CONTROL_IN_EP0) {
+        struct usb_setup_packet *setup = &usbd_core_cfg.setup;
 
-    /* OUT transfer, status packets */
-    if (usbd_core_cfg.ep0_data_buf_residue == 0) {
-        /* absorb zero-length status message */
-        USB_LOG_DBG("recv status\r\n");
+        usbd_core_cfg.ep0_data_buf += nbytes;
+        usbd_core_cfg.ep0_data_buf_residue -= nbytes;
 
-        if (usbd_ep_read(USB_CONTROL_OUT_EP0,
-                         NULL,
-                         0, NULL) < 0) {
-            USB_LOG_ERR("Read DATA Packet failed\r\n");
-            usbd_ep_set_stall(USB_CONTROL_IN_EP0);
+        USB_LOG_DBG("EP0 send %d bytes, %d remained\r\n", nbytes, usbd_core_cfg.ep0_data_buf_residue);
+
+        if (usbd_core_cfg.ep0_data_buf_residue != 0) {
+            /* Start sending the remain data */
+            usbd_ep_start_write(USB_CONTROL_IN_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
+        } else {
+            if (usbd_core_cfg.zlp_flag == true) {
+                usbd_core_cfg.zlp_flag = false;
+                /*Send zlp to host*/
+                USB_LOG_DBG("EP0 Send zlp\r\n");
+                usbd_ep_start_write(USB_CONTROL_IN_EP0, NULL, 0);
+            } else {
+                /* Satisfying three conditions will jump here.
+                * 1. send status completely
+                * 2. send zlp completely
+                * 3. send last data completely.
+                */
+                if (setup->wLength && ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_IN)) {
+                    /* if all data has sent completely, start reading out status */
+                    usbd_ep_start_read(USB_CONTROL_OUT_EP0, NULL, 0);
+                }
+            }
         }
-
-        return;
-    }
-
-    /* OUT transfer, data packets */
-    if (usbd_ep_read(USB_CONTROL_OUT_EP0,
-                     usbd_core_cfg.ep0_data_buf,
-                     usbd_core_cfg.ep0_data_buf_residue, &chunk) < 0) {
-        USB_LOG_ERR("Read DATA Packet failed\r\n");
-        usbd_ep_set_stall(USB_CONTROL_IN_EP0);
-        return;
-    }
-
-    usbd_core_cfg.ep0_data_buf += chunk;
-    usbd_core_cfg.ep0_data_buf_residue -= chunk;
-
-    if (usbd_core_cfg.ep0_data_buf_residue == 0) {
-        /* Received all, send data to handler */
-        usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
-
-        if (!usbd_setup_request_handler(setup, &usbd_core_cfg.ep0_data_buf, &usbd_core_cfg.ep0_data_buf_len)) {
-            usbd_ep_set_stall(USB_CONTROL_IN_EP0);
-            return;
-        }
-
-        /*Send status to host*/
-        usbd_send_to_host(setup->wLength);
     } else {
-    }
-}
-
-static void usbd_ep0_in_handler(void)
-{
-    struct usb_setup_packet *setup = &usbd_core_cfg.setup;
-
-    /* Send more data if available */
-    if (usbd_core_cfg.ep0_data_buf_residue != 0 || usbd_core_cfg.zlp_flag == true) {
-        usbd_send_to_host(setup->wLength);
-    } else {
-        /*ep0 tx has completed,and no data to send,so do nothing*/
-    }
-}
-
-static void usbd_ep_out_handler(uint8_t ep)
-{
-    if (usbd_core_cfg.out_ep_cb[ep & 0x7f]) {
-        usbd_core_cfg.out_ep_cb[ep & 0x7f](ep);
-    }
-}
-
-static void usbd_ep_in_handler(uint8_t ep)
-{
-    if (usbd_core_cfg.in_ep_cb[ep & 0x7f]) {
-        usbd_core_cfg.in_ep_cb[ep & 0x7f](ep);
-    }
-}
-
-static void usbd_class_event_notify_handler(uint8_t event, void *arg)
-{
-    usb_slist_t *i;
-    usb_slist_for_each(i, &usbd_class_head)
-    {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
-        usbd_interface_t *intf = usb_slist_first_entry(&devclass->intf_list, struct usbd_interface, list);
-
-        if (intf->notify_handler) {
-            intf->notify_handler(event, arg);
+        if (usbd_core_cfg.in_ep_cb[ep & 0x7f]) {
+            usbd_core_cfg.in_ep_cb[ep & 0x7f](ep, nbytes);
         }
     }
 }
 
-void usbd_event_notify_handler(uint8_t event, void *arg)
+void usbd_event_ep_out_complete_handler(uint8_t ep, uint32_t nbytes)
 {
-    switch (event) {
-        case USBD_EVENT_RESET:
-            usbd_set_address(0);
-            usbd_core_cfg.configured = 0;
-            usbd_core_cfg.configuration = 0;
-            struct usbd_endpoint_cfg ep0_cfg;
-            ep0_cfg.ep_mps = USB_CTRL_EP_MPS;
-            ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
-            ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
-            /*set USB_CONTROL_IN_EP0 nak*/
-            usbd_ep_open(&ep0_cfg);
+    if (ep == USB_CONTROL_OUT_EP0) {
+        struct usb_setup_packet *setup = &usbd_core_cfg.setup;
 
-            ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
-            /*set USB_CONTROL_OUT_EP0 ack to prepare receiving setup data*/
-            usbd_ep_open(&ep0_cfg);
+        if (nbytes > 0) {
+            usbd_core_cfg.ep0_data_buf += nbytes;
+            usbd_core_cfg.ep0_data_buf_residue -= nbytes;
 
-        case USBD_EVENT_ERROR:
-        case USBD_EVENT_SOF:
-        case USBD_EVENT_CONNECTED:
-        case USBD_EVENT_CONFIGURED:
-        case USBD_EVENT_SUSPEND:
-        case USBD_EVENT_DISCONNECTED:
-        case USBD_EVENT_RESUME:
-        case USBD_EVENT_SET_INTERFACE:
-        case USBD_EVENT_SET_REMOTE_WAKEUP:
-        case USBD_EVENT_CLEAR_REMOTE_WAKEUP:
-        case USBD_EVENT_SET_HALT:
-        case USBD_EVENT_CLEAR_HALT:
-            usbd_class_event_notify_handler(event, arg);
-            break;
+            USB_LOG_DBG("EP0 recv %d bytes, %d remained\r\n", nbytes, usbd_core_cfg.ep0_data_buf_residue);
 
-        case USBD_EVENT_SETUP_NOTIFY:
-            usbd_ep0_setup_handler();
-            break;
+            if (usbd_core_cfg.ep0_data_buf_residue == 0) {
+                /* Received all, send data to handler */
+                usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
+                if (!usbd_setup_request_handler(setup, &usbd_core_cfg.ep0_data_buf, &usbd_core_cfg.ep0_data_buf_len)) {
+                    usbd_ep_set_stall(USB_CONTROL_IN_EP0);
+                    return;
+                }
 
-        case USBD_EVENT_EP0_IN_NOTIFY:
-            usbd_ep0_in_handler();
-            break;
-
-        case USBD_EVENT_EP0_OUT_NOTIFY:
-            usbd_ep0_out_handler();
-            break;
-
-        case USBD_EVENT_EP_IN_NOTIFY:
-            usbd_ep_in_handler((uint8_t)(unsigned long)arg);
-            break;
-
-        case USBD_EVENT_EP_OUT_NOTIFY:
-            usbd_ep_out_handler((uint8_t)(unsigned long)arg);
-            break;
-
-        default:
-            USB_LOG_ERR("USB unknown event: %d\r\n", event);
-            break;
+                /*Send status to host*/
+                usbd_ep_start_write(USB_CONTROL_IN_EP0, NULL, 0);
+            } else {
+                /* Start reading the remain data */
+                usbd_ep_start_read(USB_CONTROL_OUT_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
+            }
+        } else {
+            /* Read out status completely, do nothing */
+            USB_LOG_DBG("EP0 recv out status\r\n");
+        }
+    } else {
+        if (usbd_core_cfg.out_ep_cb[ep & 0x7f]) {
+            usbd_core_cfg.out_ep_cb[ep & 0x7f](ep, nbytes);
+        }
     }
 }
 
@@ -1184,6 +1107,7 @@ void usbd_desc_register(const uint8_t *desc)
 {
     usbd_core_cfg.descriptors = desc;
 }
+
 /* Register MS OS Descriptors version 1 */
 void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc)
 {

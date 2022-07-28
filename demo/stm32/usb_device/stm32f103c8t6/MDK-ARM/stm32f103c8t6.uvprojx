@@ -400,11 +400,6 @@
               <FilePath>../Core/Src/main.c</FilePath>
             </File>
             <File>
-              <FileName>cdc_acm_template.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\cdc_acm_template.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f1xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f1xx_it.c</FilePath>
@@ -413,6 +408,11 @@
               <FileName>stm32f1xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f1xx_hal_msp.c</FilePath>
+            </File>
+            <File>
+              <FileName>cdc_acm_msc_template.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\cdc_acm_msc_template.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -528,6 +528,11 @@
               <FileName>usbd_cdc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\cdc\usbd_cdc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\msc\usbd_msc.c</FilePath>
             </File>
             <File>
               <FileName>usb_dc_fsdev.c</FileName>

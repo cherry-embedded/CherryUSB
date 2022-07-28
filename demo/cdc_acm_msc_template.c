@@ -7,8 +7,8 @@
 #define CDC_OUT_EP 0x02
 #define CDC_INT_EP 0x83
 
-#define MSC_IN_EP  0x85
-#define MSC_OUT_EP 0x04
+#define MSC_IN_EP  0x84
+#define MSC_OUT_EP 0x05
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
@@ -58,8 +58,8 @@ static const uint8_t cdc_msc_descriptor[] = {
     'B', 0x00,                  /* wcChar8 */
     ' ', 0x00,                  /* wcChar9 */
     'C', 0x00,                  /* wcChar10 */
-    'D', 0x00,                  /* wcChar11 */
-    'C', 0x00,                  /* wcChar12 */
+    '-', 0x00,                  /* wcChar11 */
+    'M', 0x00,                  /* wcChar12 */
     ' ', 0x00,                  /* wcChar13 */
     'D', 0x00,                  /* wcChar14 */
     'E', 0x00,                  /* wcChar15 */
@@ -105,35 +105,51 @@ usbd_interface_t cdc_cmd_intf;
 /*!< interface two */
 usbd_interface_t cdc_data_intf;
 
-/* function ------------------------------------------------------------------*/
-void usbd_cdc_acm_out(uint8_t ep)
-{
-    uint8_t data[64];
-    uint32_t read_byte;
+uint8_t read_buffer[2048];
+uint8_t write_buffer[2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
 
-    usbd_ep_read(ep, data, 64, &read_byte);
-    for (uint32_t i = 0; i < read_byte; i++) {
-        USB_LOG_RAW("%02x ", data[i]);
-    }
-    USB_LOG_RAW("\r\n");
-    USB_LOG_RAW("read len:%d\r\n", read_byte);
-    usbd_ep_read(ep, NULL, 0, NULL);
+volatile bool ep_tx_busy_flag = false;
+
+#ifdef CONFIG_USB_HS
+#define CDC_MAX_MPS 512
+#else
+#define CDC_MAX_MPS 64
+#endif
+
+void usbd_cdc_acm_setup(void)
+{
+    /* setup first out ep read transfer */
+    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
 }
 
-void usbd_cdc_acm_in(uint8_t ep)
+void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("in\r\n");
+    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    /* setup next out ep read transfer */
+    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
+}
+
+void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
+{
+    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+
+    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+        /* send zlp */
+        usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+    } else {
+        ep_tx_busy_flag = false;
+    }
 }
 
 /*!< endpoint call back */
 usbd_endpoint_t cdc_out_ep = {
     .ep_addr = CDC_OUT_EP,
-    .ep_cb = usbd_cdc_acm_out
+    .ep_cb = usbd_cdc_acm_bulk_out
 };
 
 usbd_endpoint_t cdc_in_ep = {
     .ep_addr = CDC_IN_EP,
-    .ep_cb = usbd_cdc_acm_in
+    .ep_cb = usbd_cdc_acm_bulk_in
 };
 
 /* function ------------------------------------------------------------------*/
@@ -166,8 +182,11 @@ void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr)
 void cdc_acm_data_send_with_dtr_test(void)
 {
     if (dtr_enable) {
-        uint8_t data_buffer[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x31, 0x32, 0x33, 0x34, 0x35 };
-        usbd_ep_write(CDC_IN_EP, data_buffer, 10, NULL);
+        memset(&write_buffer[10], 'a', 2038);
+        ep_tx_busy_flag = true;
+        usbd_ep_start_write(CDC_IN_EP, write_buffer, 2048);
+        while (ep_tx_busy_flag) {
+        }
     }
 }
 

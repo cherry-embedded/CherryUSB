@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_DWC2_PORT=HS_PORT</Define>
+              <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_DWC2_PORT=HS_PORT,CONFIG_USB_ALIGN32</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\class\cdc;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\class\video;..\..\..\..\..\class\msc;..\..\..\..\..\class\audio</IncludePath>
             </VariousControls>
@@ -410,9 +410,9 @@
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
             </File>
             <File>
-              <FileName>cdc_acm_template.c</FileName>
+              <FileName>cdc_acm_msc_template.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\cdc_acm_template.c</FilePath>
+              <FilePath>..\..\..\..\cdc_acm_msc_template.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -569,6 +569,11 @@
               <FileName>usbd_cdc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\cdc\usbd_cdc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\msc\usbd_msc.c</FilePath>
             </File>
             <File>
               <FileName>usbd_core.c</FileName>

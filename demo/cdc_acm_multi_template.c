@@ -115,24 +115,43 @@ usbd_interface_t cdc_cmd_intf;
 /*!< interface two */
 usbd_interface_t cdc_data_intf;
 
-/* function ------------------------------------------------------------------*/
-void usbd_cdc_acm_bulk_out(uint8_t ep)
-{
-    uint8_t data[64];
-    uint32_t read_byte;
+uint8_t read_buffer[4][2048];
+uint8_t write_buffer[4][2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
 
-    usbd_ep_read(ep, data, 64, &read_byte);
-    for (uint32_t i = 0; i < read_byte; i++) {
-        USB_LOG_RAW("%02x ", data[i]);
-    }
-    USB_LOG_RAW("\r\n");
-    USB_LOG_RAW("read len:%d\r\n", read_byte);
-    usbd_ep_read(ep, NULL, 0, NULL);
+volatile bool ep_tx_busy_flag = false;
+
+#ifdef CONFIG_USB_HS
+#define CDC_MAX_MPS 512
+#else
+#define CDC_MAX_MPS 64
+#endif
+
+void usbd_cdc_acm_setup(void)
+{
+    /* setup first out ep read transfer */
+    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
+    usbd_ep_start_read(CDC_OUT_EP2, read_buffer, 2048);
+    usbd_ep_start_read(CDC_OUT_EP3, read_buffer, 2048);
+    usbd_ep_start_read(CDC_OUT_EP4, read_buffer, 2048);
 }
 
-void usbd_cdc_acm_bulk_in(uint8_t ep)
+void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("in\r\n");
+    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    /* setup next out ep read transfer */
+    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
+}
+
+void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
+{
+    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+
+    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+        /* send zlp */
+        usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+    } else {
+        ep_tx_busy_flag = false;
+    }
 }
 
 /*!< endpoint call back */

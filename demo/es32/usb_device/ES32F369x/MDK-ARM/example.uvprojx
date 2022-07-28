@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>ES32F36xx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\video;..\..\..\..\..\demo</IncludePath>
+              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\msc;..\..\..\..\..\demo</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -455,9 +455,9 @@
               <FilePath>..\Src\irq.c</FilePath>
             </File>
             <File>
-              <FileName>cdc_acm_template.c</FileName>
+              <FileName>cdc_acm_msc_template.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\cdc_acm_template.c</FilePath>
+              <FilePath>..\..\..\..\cdc_acm_msc_template.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -468,6 +468,11 @@
               <FileName>usbd_core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\core\usbd_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\msc\usbd_msc.c</FilePath>
             </File>
             <File>
               <FileName>usbd_cdc.c</FileName>

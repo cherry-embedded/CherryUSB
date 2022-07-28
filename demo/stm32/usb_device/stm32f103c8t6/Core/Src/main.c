@@ -111,8 +111,8 @@ int main(void)
   //MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
-    extern void cdc_acm_init(void);
-    cdc_acm_init();
+    extern void cdc_acm_msc_init(void);
+    cdc_acm_msc_init();
 
   /* USER CODE END 2 */
 

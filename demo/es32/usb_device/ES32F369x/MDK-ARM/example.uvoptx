@@ -414,8 +414,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\cdc_acm_template.c</PathWithFileName>
-      <FilenameWithoutPath>cdc_acm_template.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\..\cdc_acm_msc_template.c</PathWithFileName>
+      <FilenameWithoutPath>cdc_acm_msc_template.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -446,6 +446,18 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
+      <PathWithFileName>..\..\..\..\..\class\msc\usbd_msc.c</PathWithFileName>
+      <FilenameWithoutPath>usbd_msc.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>4</GroupNumber>
+      <FileNumber>16</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\..\..\class\cdc\usbd_cdc.c</PathWithFileName>
       <FilenameWithoutPath>usbd_cdc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
@@ -453,7 +465,7 @@
     </File>
     <File>
       <GroupNumber>4</GroupNumber>
-      <FileNumber>16</FileNumber>
+      <FileNumber>17</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>

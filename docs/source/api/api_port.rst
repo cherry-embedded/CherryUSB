@@ -13,7 +13,7 @@ usb_dc_init
 
     int usb_dc_init(void);
 
-- **return**
+- **return** 返回 0 表示正确，其他表示错误
 
 usb_dc_deinit
 """"""""""""""""""""""""""""""""""""
@@ -24,29 +24,7 @@ usb_dc_deinit
 
     int usb_dc_deinit(void);
 
-- **return**
-
-usb_dc_attach
-""""""""""""""""""""""""""""""""""""
-
-``usb_dc_attach`` 使能上拉或者下拉电阻，从而能够让设备被主机枚举。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    int usb_dc_attach(void);
-
-- **return**
-
-usb_dc_detach
-""""""""""""""""""""""""""""""""""""
-
-``usb_dc_detach``断开设备与主机的连接。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    int usb_dc_detach(void);
-
-- **return**
+- **return** 返回 0 表示正确，其他表示错误
 
 usbd_set_address
 """"""""""""""""""""""""""""""""""""
@@ -57,7 +35,7 @@ usbd_set_address
 
     int usbd_set_address(const uint8_t addr);
 
-- **return**
+- **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_open
 """"""""""""""""""""""""""""""""""""
@@ -68,7 +46,7 @@ usbd_ep_open
 
     int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
 
-- **return**
+- **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_close
 """"""""""""""""""""""""""""""""""""
@@ -80,6 +58,7 @@ usbd_ep_close
     int usbd_ep_close(const uint8_t ep);
 
 - **event**
+- **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_set_stall
 """"""""""""""""""""""""""""""""""""
@@ -91,6 +70,7 @@ usbd_ep_set_stall
     int usbd_ep_set_stall(const uint8_t ep);
 
 - **ep** 端点地址
+- **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_clear_stall
 """"""""""""""""""""""""""""""""""""
@@ -102,6 +82,7 @@ usbd_ep_clear_stall
     int usbd_ep_clear_stall(const uint8_t ep);
 
 - **ep** 端点地址
+- **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_is_stalled
 """"""""""""""""""""""""""""""""""""
@@ -115,89 +96,35 @@ usbd_ep_is_stalled
 - **ep** 端点地址
 - **return** 返回 1 表示 stalled，0 表示没有 stall
 
-usbd_ep_write
+usbd_ep_start_write
 """"""""""""""""""""""""""""""""""""
 
-``usbd_ep_write`` 向某个端点发送数据， **如果该函数在中断中使用则是异步传输，否则是阻塞传输**。 **此函数对用户开放**。
+``usbd_ep_start_write`` 启动端点发送，发送完成以后，会调用注册的 in 端点传输完成中断回调函数。该函数为异步发送。 **此函数对用户开放**。
 
 .. code-block:: C
 
-    int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes);
+    int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len);
 
 - **ep** in 端点地址
-- **data** 要发送的数据缓冲区
-- **data_len** 发送长度，需要小于等于端点最大包长
-- **ret_bytes** 实际发送的长度，异步传输该参数无效。 **如果长度为 0，表示发送 0 长数据包（zero length packet）**
+- **data** 发送数据缓冲区
+- **data_len** 发送长度，原则上无限长，推荐 16K 字节以内
 - **return** 返回 0 表示正确，其他表示错误
 
-.. note:: 如果第一次在非中使用，该函数也是异步的哦，只有第二次调用会变成阻塞，所以可以配合完成中断当非阻塞用
-
-usbd_ep_read
+usbd_ep_start_read
 """"""""""""""""""""""""""""""""""""
 
-``usbd_ep_read`` 从某个端点接收数据， **该函数仅能在 usb out 中断中使用**。 **此函数对用户开放**。
+``usbd_ep_start_read``  启动端点接收，接收完成以后，会调用注册的 out 端点传输完成中断回调函数。该函数为异步接收。 **此函数对用户开放**。
 
 .. code-block:: C
 
-    int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes);
+    int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len);
 
 - **ep** out 端点地址
-- **data** 要接收的数据缓冲区
-- **data_len** 接收长度，需要小于等于端点最大包长，推荐直接设置成最大包长。 **如果长度为 0 表示启动下次接收**
-- **ret_bytes** 实际接收的长度
+- **data** 接收数据缓冲区
+- **data_len** 接收长度，原则上无限长，推荐 16K 字节以内
 - **return** 返回 0 表示正确，其他表示错误
 
-usbd_ep_write_async(todo)
-""""""""""""""""""""""""""""""""""""
-
-``usbd_ep_write_async`` 向某个端点发送数据， 该函数为异步传输。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    int usbd_ep_write_async(const uint8_t ep, const uint8_t *data, uint32_t data_len);
-
-- **ep** in 端点地址
-- **data** 要发送的数据缓冲区
-- **data_len** 发送长度，需要小于等于端点最大包长
-- **return** 返回 0 表示正确，其他表示错误
-
-usbd_ep_read_async(todo)
-""""""""""""""""""""""""""""""""""""
-
-``usbd_ep_read_async`` 预先设置一块内存，并启动接收，通常配合 dma 使用，接收完成以后，触发注册的 out 中断。此函数一般在支持高速或者超高速的 ip 中使用，达到极致的带宽，如果 ip 没有该功能，则禁止使用。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    int usbd_ep_read_async(const uint8_t ep, uint8_t *data, uint32_t max_data_len);
-
-- **ep** out 端点地址
-- **data** 要接收的数据缓冲区
-- **data_len** 接收长度，需要小于等于端点最大包长，推荐直接设置成最大包长。 **如果长度为 0 表示准备接收 0 包**
-- **return** 返回 0 表示正确，其他表示错误
-
-usbd_ep_get_read_len(todo)
-""""""""""""""""""""""""""""""""""""
-
-``usbd_ep_get_read_len`` 获取实际接收长度，此函数搭配 ``usbd_ep_read_async`` 使用。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    uint32_t usbd_ep_get_read_len(const uint8_t ep);
-
-- **ep** out 端点地址
-- **return** 实际接收长度
-
-usbd_ep_get_mps(todo)
-""""""""""""""""""""""""""""""""""""
-
-``usbd_ep_get_mps`` 查询端点最大数据包长。 **此函数对用户开放**。
-
-.. code-block:: C
-
-    uint16_t usbd_ep_get_mps(const uint8_t ep);
-
-- **ep** 端点地址
-- **return** 返回端点最大数据包长
+.. note:: 启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包；2、接收总长度等于 data_len
 
 host controller(hcd)
 ------------------------

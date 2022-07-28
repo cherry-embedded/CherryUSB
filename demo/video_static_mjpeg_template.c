@@ -158,8 +158,11 @@ static usbd_class_t video_class;
 static usbd_interface_t video_control_intf;
 static usbd_interface_t video_stream_intf;
 
-void usbd_video_iso_callback(uint8_t ep)
+volatile bool iso_tx_busy = false;
+
+void usbd_video_iso_callback(uint8_t ep, uint32_t nbytes)
 {
+    iso_tx_busy = false;
 }
 
 static usbd_endpoint_t video_in_ep = {
@@ -188,13 +191,26 @@ void video_test()
     while (1) {
         if (tx_flag) {
             packets = usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
+#if 1
+            iso_tx_busy = true;
+            usbd_ep_start_write(VIDEO_IN_EP, packet_buffer, out_len);
+            while (iso_tx_busy) {
+            }
+#else
             for (uint32_t i = 0; i < packets; i++) {
                 if (i == (packets - 1)) {
-                    usbd_ep_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], out_len - (packets - 1) * MAX_PAYLOAD_SIZE, NULL);
+                    iso_tx_busy = true;
+                    usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], out_len - (packets - 1) * MAX_PAYLOAD_SIZE);
+                    while (iso_tx_busy) {
+                    }
                 } else {
-                    usbd_ep_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE, NULL);
+                    iso_tx_busy = true;
+                    usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE, NULL);
+                    while (iso_tx_busy) {
+                    }
                 }
             }
+#endif
         }
     }
 }

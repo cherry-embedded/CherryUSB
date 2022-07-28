@@ -143,13 +143,13 @@ int main()
     uart_pin_init();
     printf("\rSystem start...\r\n");
 
-    extern void cdc_acm_init(void);
-    cdc_acm_init();
+    extern void cdc_acm_msc_init(void);
+    cdc_acm_msc_init();
 
     while (1) {
         extern void cdc_acm_data_send_with_dtr_test(void);
         cdc_acm_data_send_with_dtr_test();
-        delay(0xfffffff);
+        ald_delay_ms(1000);
     }
 }
 

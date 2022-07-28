@@ -175,10 +175,22 @@ static const uint8_t hid_keyboard_report_desc[HID_KEYBOARD_REPORT_DESC_SIZE] = {
 static usbd_class_t hid_class;
 static usbd_interface_t hid_intf;
 
-void usbd_hid_int_callback(uint8_t ep)
-{
+#define HID_STATE_IDLE 0
+#define HID_STATE_BUSY 1
 
+/*!< hid state ! Data can be sent only when state is idle  */
+uint8_t hid_state = HID_STATE_IDLE;
+
+void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
+{
+    /*!< endpoint call back */
+    /*!< transfer successfully */
+    if (hid_state == HID_STATE_BUSY) {
+        /*!< update the state  */
+        hid_state = HID_STATE_IDLE;
+    }
 }
+
 static usbd_endpoint_t hid_in_ep = {
     .ep_cb = usbd_hid_int_callback,
     .ep_addr = 0x81
@@ -197,5 +209,8 @@ void hid_keyboard_init(void)
 void hid_keyboard_test(void)
 {
     uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KEY_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
-    usbd_ep_write(HID_INT_EP, sendbuffer, 8, NULL);
+    hid_state = HID_STATE_BUSY;
+    usbd_ep_start_write(HID_INT_EP, sendbuffer, 8);
+    while (hid_state == HID_STATE_BUSY) {
+    }
 }

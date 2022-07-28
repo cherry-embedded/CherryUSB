@@ -127,9 +127,9 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
     
-  extern void cdc_acm_init(void);
+  extern void cdc_acm_msc_init(void);
 
-  cdc_acm_init();
+  cdc_acm_msc_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */

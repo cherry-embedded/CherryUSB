@@ -85,7 +85,7 @@ enum usbd_event_type {
 /**
  * @brief Callback function signature for the USB Endpoint status
  */
-typedef void (*usbd_endpoint_callback)(uint8_t ep);
+typedef void (*usbd_endpoint_callback)(uint8_t ep, uint32_t nbytes);
 
 /**
  * @brief Callback function signature for class specific requests
@@ -99,7 +99,7 @@ typedef void (*usbd_endpoint_callback)(uint8_t ep);
  * data to be transmitted buffer respectively.
  */
 typedef int (*usbd_request_handler)(struct usb_setup_packet *setup,
-                                    uint8_t **data, uint32_t *transfer_len);
+                                    uint8_t **data, uint32_t *len);
 
 /* callback function pointer structure for Application to handle events */
 typedef void (*usbd_notify_handler)(uint8_t event, void *arg);
@@ -129,8 +129,6 @@ typedef struct usbd_class {
     const char *name;
     usb_slist_t intf_list;
 } usbd_class_t;
-
-void usbd_event_notify_handler(uint8_t event, void *arg);
 
 void usbd_desc_register(const uint8_t *desc);
 void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);

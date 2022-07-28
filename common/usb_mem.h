@@ -27,9 +27,12 @@
 #define CONFIG_DCACHE_LINE_SIZE 32
 #endif
 
-#ifdef CONFIG_USB_DCACHE_ENABLE
+#if defined(CONFIG_USB_DCACHE_ENABLE)
 #define USB_NOCACHE_RAM_SECTION __attribute__((section(".nocache_ram")))
 #define USB_MEM_ALIGN32         __attribute__((aligned(CONFIG_DCACHE_LINE_SIZE)))
+#elif defined(CONFIG_USB_ALIGN32)
+#define USB_NOCACHE_RAM_SECTION
+#define USB_MEM_ALIGN32 __attribute__((aligned(32)))
 #else
 #define USB_NOCACHE_RAM_SECTION
 #define USB_MEM_ALIGN32

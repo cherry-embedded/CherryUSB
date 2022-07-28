@@ -10,13 +10,12 @@
 
 /* Endpoint state */
 struct usb_dc_ep_state {
-    /** Endpoint max packet size */
-    uint16_t ep_mps;
-    /** Endpoint Transfer Type.
-     * May be Bulk, Interrupt, Control or Isochronous
-     */
-    uint8_t ep_type;
-    uint8_t ep_stalled; /** Endpoint stall flag */
+    uint16_t ep_mps;    /* Endpoint max packet size */
+    uint8_t ep_type;    /* Endpoint type */
+    uint8_t ep_stalled; /* Endpoint stall flag */
+    uint8_t *xfer_buf;
+    uint32_t xfer_len;
+    uint32_t actual_xfer_len;
 };
 
 /* Driver state */
@@ -86,7 +85,23 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
     return 0;
 }
 
-int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
+int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint32_t tmp;
+
+    if (!data && data_len) {
+        return -1;
+    }
+
+    g_xxx_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_xxx_udc.in_ep[ep_idx].xfer_len = data_len;
+    g_xxx_udc.in_ep[ep_idx].actual_xfer_len = 0;
+
+    return 0;
+}
+
+int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -94,37 +109,9 @@ int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint
         return -1;
     }
 
-    if (!data_len) {
-        return 0;
-    }
-
-    if (data_len > g_xxx_udc.in_ep[ep_idx].ep_mps) {
-        data_len = g_xxx_udc.in_ep[ep_idx].ep_mps;
-    }
-
-    if (ret_bytes) {
-        *ret_bytes = data_len;
-    }
-
-    return 0;
-}
-
-int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
-{
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    uint32_t read_count;
-
-    if (!data && max_data_len) {
-        return -1;
-    }
-
-    if (!max_data_len) {
-        return 0;
-    }
-
-    if (read_bytes) {
-        *read_bytes = read_count;
-    }
+    g_xxx_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_xxx_udc.out_ep[ep_idx].xfer_len = data_len;
+    g_xxx_udc.out_ep[ep_idx].actual_xfer_len = 0;
 
     return 0;
 }

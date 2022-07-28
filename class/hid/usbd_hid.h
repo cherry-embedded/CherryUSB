@@ -29,15 +29,23 @@
 extern "C" {
 #endif
 
+/* Register api */
+void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+
+/* Register desc api */
 void usbd_hid_descriptor_register(uint8_t intf_num, const uint8_t *desc);
 void usbd_hid_report_descriptor_register(uint8_t intf_num, const uint8_t *desc, uint32_t desc_len);
-void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+
+/* Setup request command callback api */
 uint8_t usbh_hid_get_report(uint8_t intf, uint8_t report_id, uint8_t report_type);
 uint8_t usbh_hid_get_idle(uint8_t intf, uint8_t report_id);
 uint8_t usbh_hid_get_protocol(uint8_t intf);
 void usbh_hid_set_report(uint8_t intf, uint8_t report_id, uint8_t report_type, uint8_t *report, uint8_t report_len);
 void usbh_hid_set_idle(uint8_t intf, uint8_t report_id, uint8_t duration);
 void usbh_hid_set_protocol(uint8_t intf, uint8_t protocol);
+
+/* Setup hid first rx transfer */
+void usbd_hid_setup(void);
 
 #ifdef __cplusplus
 }
