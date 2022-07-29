@@ -154,7 +154,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if (data_len != 0) {
         uint32_t align_len = USB_ALIGN(data_len, CONFIG_DCACHE_LINE_SIZE);
-        l1c_dc_flush((uint32_t)data, align_len);
+        l1c_dc_writeback((uint32_t)data, align_len);
     }
 #endif
     usb_device_edpt_xfer(handle, ep, data, data_len);
