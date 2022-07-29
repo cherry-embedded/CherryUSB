@@ -1,6 +1,6 @@
-#include "board.h"
-#include "hpm_usb_device.h"
 #include "usbd_core.h"
+#include "hpm_usb_device.h"
+#include "board.h"
 
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler USBD_IRQHandler // use actual usb irq name instead
@@ -9,6 +9,8 @@
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS USB_SOC_DCD_MAX_ENDPOINT_COUNT
 #endif
+
+#define USB_ALIGN(size, align) (((size) + (align)-1) & ~((align)-1))
 
 /* USBSTS, USBINTR */
 enum {
@@ -23,13 +25,12 @@ enum {
 
 /* Endpoint state */
 struct hpm_ep_state {
-    /** Endpoint max packet size */
-    uint16_t ep_mps;
-    /** Endpoint Transfer Type.
-   * May be Bulk, Interrupt, Control or Isochronous
-   */
-    uint8_t ep_type;
-    uint8_t ep_stalled; /** Endpoint stall flag */
+    uint16_t ep_mps;    /* Endpoint max packet size */
+    uint8_t ep_type;    /* Endpoint type */
+    uint8_t ep_stalled; /* Endpoint stall flag */
+    uint8_t *xfer_buf;
+    uint32_t xfer_len;
+    uint32_t actual_xfer_len;
 };
 
 /* Driver state */
@@ -146,6 +147,16 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         return -1;
     }
 
+    g_hpm_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_hpm_udc.in_ep[ep_idx].xfer_len = data_len;
+    g_hpm_udc.in_ep[ep_idx].actual_xfer_len = 0;
+
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if (data_len != 0) {
+        uint32_t align_len = USB_ALIGN(data_len, CONFIG_DCACHE_LINE_SIZE);
+        l1c_dc_flush((uint32_t)data, align_len);
+    }
+#endif
     usb_device_edpt_xfer(handle, ep, data, data_len);
 
     return 0;
@@ -159,6 +170,10 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     if (!data && data_len) {
         return -1;
     }
+
+    g_hpm_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_hpm_udc.out_ep[ep_idx].xfer_len = data_len;
+    g_hpm_udc.out_ep[ep_idx].actual_xfer_len = 0;
 
     usb_device_edpt_xfer(handle, ep, data, data_len);
 
@@ -234,6 +249,12 @@ void USBD_IRQHandler(void)
                         if (ep_addr & 0x80) {
                             usbd_event_ep_in_complete_handler(ep_addr, transfer_len);
                         } else {
+#ifdef CONFIG_USB_DCACHE_ENABLE
+                            if (transfer_len) {
+                                uint32_t align_len = USB_ALIGN(transfer_len, CONFIG_DCACHE_LINE_SIZE);
+                                l1c_dc_invalidate((uint32_t)g_hpm_udc.out_ep[ep_idx].xfer_buf, align_len);
+                            }
+#endif
                             usbd_event_ep_out_complete_handler(ep_addr, transfer_len);
                         }
                     }
