@@ -1,0 +1,38 @@
+## Script for hpmicro ##
+sdk_inc(common)
+sdk_inc(osal)
+sdk_inc(core)
+sdk_inc(class/cdc)
+sdk_inc(class/hid)
+sdk_inc(class/msc)
+sdk_inc(class/audio)
+sdk_inc(class/video)
+
+if(CONFIG_CHERRYUSB_DEVICE)
+sdk_src(core/usbd_core.c)
+sdk_src(port/hpm/usb_dc_hpm.c)
+sdk_compile_definitions(-DCONFIG_USB_ALIGN32 -DCONFIG_USB_HS)
+sdk_compile_definitions(-DCONFIG_DCACHE_LINE_SIZE=64 -DCONFIG_USB_DCACHE_ENABLE)
+if(CONFIG_CHERRYUSB_DEVICE_CDC)
+sdk_src(class/cdc/usbd_cdc.c)
+endif()
+if(CONFIG_CHERRYUSB_DEVICE_HID)
+sdk_src(class/hid/usbd_hid.c)
+endif()
+if(CONFIG_CHERRYUSB_DEVICE_MSC)
+sdk_src(class/msc/usbd_msc.c)
+endif()
+if(CONFIG_CHERRYUSB_DEVICE_AUDIO)
+sdk_src(class/audio/usbd_audio.c)
+endif()
+if(CONFIG_CHERRYUSB_DEVICE_VIDEO)
+sdk_src(class/video/usbd_video.c)
+endif()
+
+if(CONFIG_CHERRYUSB_DEVICE_DEMO_CDC)
+sdk_src(demo/cdc_acm_template.c)
+endif()
+
+endif()
+
+
