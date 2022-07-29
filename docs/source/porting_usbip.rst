@@ -21,7 +21,7 @@ FSDEV 仅支持从机。这个 ip 不同厂家基本都是基于标准的 usb �
       - USB_IRQHandler
       - 0x40005C00
       - 8
-      - 2
+      - 1
     * - STM32F1
       - USB_LP_CAN1_RX0_IRQHandler
       - 同上
@@ -31,22 +31,22 @@ FSDEV 仅支持从机。这个 ip 不同厂家基本都是基于标准的 usb �
       - USB_LP_CAN_RX0_IRQHandler
       - 同上
       - 同上
-      - 同上
+      - 1 or 2
     * - STM32L0
       - USB_IRQHandler
       - 同上
       - 同上
-      - 同上
+      - 1
     * - STM32L1
       - USB_LP_IRQHandler
       - 同上
       - 同上
-      - 同上
+      - 2
     * - STM32L4
       - USB_IRQHandler
       - 同上
       - 同上
-      - 同上
+      - 1
 
 MUSB
 --------------------------
@@ -208,5 +208,7 @@ EHCI 是 intel 制定的标准主机控制器接口，任何厂家都必须实�
   #define CONFIG_USB_ECHI_HCOR_RESERVED_DISABLE
   //是否使能 configflag 寄存器中的 bit0
   #define CONFIG_USB_EHCI_CONFIGFLAG
+  //是否使能 port power bit
+  #define CONFIG_USB_EHCI_PORT_POWER
 
 同时由于 EHCI 只是主机控制器，一般配合一个 device 控制器+ otg 控制器，而速度的获取一般是在 otg 寄存器中，所以需要用户实现 `usbh_get_port_speed` 函数。

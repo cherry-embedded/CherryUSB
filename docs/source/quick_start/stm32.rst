@@ -14,7 +14,7 @@
 默认提供以下 demo 工程：
 
 - F103 使用 fsdev ip
-- F429 主从使用 hs port
+- F429 主从使用 hs port,并且均用 dma 模式
 - H7 设备使用 fs port，主机使用 hs port，并且主机带 cache 支持
 
 
