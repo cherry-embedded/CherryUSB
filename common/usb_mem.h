@@ -23,23 +23,17 @@
 #ifndef _USB_MEM_H
 #define _USB_MEM_H
 
-#ifndef CONFIG_DCACHE_LINE_SIZE
-#define CONFIG_DCACHE_LINE_SIZE 32
-#endif
-
-#if defined(CONFIG_USB_DCACHE_ENABLE)
-#define USB_NOCACHE_RAM_SECTION __attribute__((section(".nocache_ram")))
-#define USB_MEM_ALIGN32         __attribute__((aligned(CONFIG_DCACHE_LINE_SIZE)))
-#elif defined(CONFIG_USB_ALIGN32)
-#define USB_NOCACHE_RAM_SECTION
-#define USB_MEM_ALIGN32 __attribute__((aligned(32)))
-#else
-#define USB_NOCACHE_RAM_SECTION
-#define USB_MEM_ALIGN32
-#endif
-
 #define usb_malloc(size) malloc(size)
 #define usb_free(ptr)    free(ptr)
+
+#ifndef CONFIG_USB_ALIGN_SIZE
+#define CONFIG_USB_ALIGN_SIZE 4
+#endif
+
+#ifndef USB_NOCACHE_RAM_SECTION
+#define USB_NOCACHE_RAM_SECTION
+#endif
+#define USB_MEM_ALIGNX __attribute__((aligned(CONFIG_USB_ALIGN_SIZE)))
 
 #ifdef CONFIG_USB_DCACHE_ENABLE
 static inline void *usb_iomalloc(size_t size)
@@ -48,7 +42,7 @@ static inline void *usb_iomalloc(size_t size)
     void *align_ptr;
     int uintptr_size;
     size_t align_size;
-    uint32_t align = CONFIG_DCACHE_LINE_SIZE;
+    uint32_t align = CONFIG_USB_ALIGN_SIZE;
 
     /* sizeof pointer */
     uintptr_size = sizeof(void *);
@@ -85,9 +79,18 @@ static inline void usb_iofree(void *ptr)
     real_ptr = (void *)*(unsigned long *)((unsigned long)ptr - sizeof(void *));
     usb_free(real_ptr);
 }
+
+void usb_dcache_clean(uintptr_t addr, uint32_t len);
+void usb_dcache_invalidate(uintptr_t addr, uint32_t len);
+void usb_dcache_clean_invalidate(uintptr_t addr, uint32_t len);
 #else
 #define usb_iomalloc(size) usb_malloc(size)
 #define usb_iofree(ptr)    usb_free(ptr)
+
+#define usb_dcache_clean(addr, len)
+#define usb_dcache_invalidate(addr, len)
+#define usb_dcache_clean_invalidate(addr, len)
+
 #endif
 
 #endif

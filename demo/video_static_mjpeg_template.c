@@ -182,7 +182,7 @@ void video_init()
     usbd_initialize();
 }
 
-uint8_t packet_buffer[10 * 1024];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[10 * 1024];
 
 void video_test()
 {

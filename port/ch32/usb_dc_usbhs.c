@@ -1,8 +1,8 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbhs_reg.h"
 
-#ifndef CONFIG_USB_ALIGN32
-#error "usb hs dma must be align4"
+#ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
+#error "ch32 ip must disable align check"
 #endif
 
 #ifndef USBD_IRQHandler

@@ -87,10 +87,12 @@ struct usb_ehci_qh_s {
 
     struct usb_ehci_epinfo_s *epinfo; /* Endpoint used for the transfer */
     uint32_t fqp;                     /* First qTD in the list (physical address) */
-#if (CONFIG_DCACHE_LINE_SIZE == 64)
+#if (CONFIG_USB_ALIGN_SIZE == 64)
     uint8_t pad[4]; /* Padding to assure 64-byte alignment */
-#else
+#elif (CONFIG_USB_ALIGN_SIZE == 32)
     uint8_t pad[8]; /* Padding to assure 32-byte alignment */
+#else
+#error "ehci align size must be 32 or 64"
 #endif
 };
 
@@ -149,10 +151,10 @@ struct usb_ehci_epinfo_s {
 /* This structure retains the overall state of the USB host controller */
 
 struct ehci_hcd {
-    struct usb_ehci_list_s *qhfree;                                                      /* List of free Queue Head (QH) structures */
-    struct usb_ehci_list_s *qtdfree;                                                     /* List of free Queue Element Transfer Descriptor (qTD) */
-    __attribute__((aligned(32))) struct usb_ehci_qh_s qhpool[CONFIG_USB_EHCI_QH_NUM];    /* Queue Head (QH) pool */
-    __attribute__((aligned(32))) struct usb_ehci_qtd_s qtdpool[CONFIG_USB_EHCI_QTD_NUM]; /* Queue Element Transfer Descriptor (qTD) pool */
+    struct usb_ehci_list_s *qhfree;                                        /* List of free Queue Head (QH) structures */
+    struct usb_ehci_list_s *qtdfree;                                       /* List of free Queue Element Transfer Descriptor (qTD) */
+    USB_MEM_ALIGNX struct usb_ehci_qh_s qhpool[CONFIG_USB_EHCI_QH_NUM];    /* Queue Head (QH) pool */
+    USB_MEM_ALIGNX struct usb_ehci_qtd_s qtdpool[CONFIG_USB_EHCI_QTD_NUM]; /* Queue Element Transfer Descriptor (qTD) pool */
     struct usb_ehci_epinfo_s chan[CONFIG_USBHOST_PIPE_NUM];
 };
 

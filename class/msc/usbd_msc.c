@@ -34,6 +34,10 @@
 #define MASS_STORAGE_BULK_EP_MPS 512
 #endif
 
+#ifndef CONFIG_USBDEV_MSC_BLOCK_SIZE
+#define CONFIG_USBDEV_MSC_BLOCK_SIZE 512
+#endif
+
 #define MSC_THREAD_OP_READ_MEM   1
 #define MSC_THREAD_OP_WRITE_MEM  2
 #define MSC_THREAD_OP_WRITE_DONE 3
@@ -54,11 +58,11 @@ enum Stage {
 };
 
 /* Device data structure */
-struct usbd_msc_cfg_priv {
+USB_NOCACHE_RAM_SECTION struct usbd_msc_cfg_priv {
     /* state of the bulk-only state machine */
     enum Stage stage;
-    USB_MEM_ALIGN32 struct CBW cbw;
-    USB_MEM_ALIGN32 struct CSW csw;
+    USB_MEM_ALIGNX struct CBW cbw;
+    USB_MEM_ALIGNX struct CSW csw;
 
     uint8_t sKey; /* Sense key */
     uint8_t ASC;  /* Additional Sense Code */
@@ -69,8 +73,7 @@ struct usbd_msc_cfg_priv {
 
     uint32_t scsi_blk_addr;
     uint32_t scsi_blk_len;
-    uint8_t *block_buffer;
-
+    uint8_t block_buffer[CONFIG_USBDEV_MSC_BLOCK_SIZE];
 } usbd_msc_cfg;
 
 /*memory OK (after a usbd_msc_memory_verify)*/
@@ -818,7 +821,7 @@ static bool SCSI_CBWDecode(uint32_t nbytes)
         SCSI_SetSenseData(SCSI_KCQIR_INVALIDCOMMAND);
         return false;
     } else {
-        USB_LOG_DBG("Decode CB:0x%02x\r\n",usbd_msc_cfg.cbw.CB[0]);
+        USB_LOG_DBG("Decode CB:0x%02x\r\n", usbd_msc_cfg.cbw.CB[0]);
         switch (usbd_msc_cfg.cbw.CB[0]) {
             case SCSI_CMD_TESTUNITREADY:
                 ret = SCSI_testUnitReady(&buf2send, &len2send);
@@ -873,7 +876,7 @@ static bool SCSI_CBWDecode(uint32_t nbytes)
     if (ret) {
         if (usbd_msc_cfg.stage == MSC_READ_CBW) {
             if (len2send) {
-                USB_LOG_DBG("Send info len:%d\r\n",len2send);
+                USB_LOG_DBG("Send info len:%d\r\n", len2send);
                 usbd_msc_send_info(buf2send, len2send);
             } else {
                 usbd_msc_send_csw(CSW_STATUS_CMD_PASSED);
@@ -995,10 +998,11 @@ void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep)
     memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
 
     usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
-    if (usbd_msc_cfg.block_buffer == NULL) {
-        usbd_msc_cfg.block_buffer = usb_iomalloc(usbd_msc_cfg.scsi_blk_size * sizeof(uint8_t));
-    }
 
+    if (usbd_msc_cfg.scsi_blk_size > CONFIG_USBDEV_MSC_BLOCK_SIZE) {
+        USB_LOG_ERR("no enough block buffer\r\n");
+        return;
+    }
 #ifdef CONFIG_USBDEV_MSC_THREAD
     msc_sem = usb_osal_sem_create(1);
     msc_thread = usb_osal_thread_create("usbd_msc", CONFIG_USBDEV_MSC_STACKSIZE, CONFIG_USBDEV_MSC_PRIO, usbd_msc_thread, NULL);

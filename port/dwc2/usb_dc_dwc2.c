@@ -75,13 +75,14 @@
 #if defined(STM32F7) || defined(STM32H7)
 #ifndef CONFIG_USB_DCACHE_ENABLE
 #warning "if you enable dcache,please enable this macro"
-#endif
 #else
-#ifndef CONFIG_USB_ALIGN32
-#error "dwc2 hs with dma, must enable align32"
+#if CONFIG_USB_ALIGN_SIZE != 32
+#error "dwc2 hs with dma and cache, must enable align32"
 #endif
 #endif
 #endif
+#endif
+
 /*FIFO sizes in bytes (total available memory for FIFOs is 4KB )*/
 #ifndef CONFIG_USB_DWC2_RX_FIFO_SIZE
 #define CONFIG_USB_DWC2_RX_FIFO_SIZE (1024)

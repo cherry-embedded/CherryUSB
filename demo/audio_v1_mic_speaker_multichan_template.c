@@ -165,7 +165,7 @@ static usbd_interface_t audio_stream_intf2;
 #define AUDIO_OUT_EP_MPS 64
 #endif
 
-USB_MEM_ALIGN32 uint8_t out_buffer[AUDIO_OUT_EP_MPS];
+USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
 uint32_t actual_read_length = 0;
 
 void usbd_audio_out_callback(uint8_t ep)

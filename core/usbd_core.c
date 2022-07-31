@@ -38,9 +38,9 @@
 #define USB_EP_OUT_NUM 8
 #define USB_EP_IN_NUM  8
 
-struct usbd_core_cfg_priv {
+USB_NOCACHE_RAM_SECTION struct usbd_core_cfg_priv {
     /** Setup packet */
-    USB_MEM_ALIGN32 struct usb_setup_packet setup;
+    USB_MEM_ALIGNX struct usb_setup_packet setup;
     /** Pointer to data buffer */
     uint8_t *ep0_data_buf;
     /** Remaining bytes in buffer */
@@ -52,7 +52,7 @@ struct usbd_core_cfg_priv {
     /** Pointer to registered descriptors */
     const uint8_t *descriptors;
     /* Buffer used for storing standard, class and vendor request data */
-    USB_MEM_ALIGN32 uint8_t req_data[CONFIG_USBDEV_REQUEST_BUFFER_LEN];
+    USB_MEM_ALIGNX uint8_t req_data[CONFIG_USBDEV_REQUEST_BUFFER_LEN];
 
     usbd_endpoint_callback in_ep_cb[USB_EP_IN_NUM];
     usbd_endpoint_callback out_ep_cb[USB_EP_OUT_NUM];
@@ -1009,12 +1009,14 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
     usbd_core_cfg.ep0_data_buf_residue = MIN(usbd_core_cfg.ep0_data_buf_len,
                                              setup->wLength);
 
-#if defined(CONFIG_USB_DCACHE_ENABLE) || defined(CONFIG_USB_ALIGN32)
-    /* check if the data buf addr uses usbd_core_cfg.req_data */
-    if (((unsigned long)usbd_core_cfg.ep0_data_buf) != ((unsigned long)usbd_core_cfg.req_data)) {
+    /* check if the data buf addr matches align size,if not, copy into align buf */
+#ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
+    if (((unsigned long)usbd_core_cfg.ep0_data_buf) & (CONFIG_USB_ALIGN_SIZE - 1)) {
+#endif
         /*copy data buf from misalign32 addr to align32 addr*/
         memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
         usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
+#ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
     }
 #endif
     /*Send data or status to host*/

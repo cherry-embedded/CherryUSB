@@ -29,7 +29,7 @@ static uint32_t g_devinuse = 0;
 
 usb_slist_t hub_class_head = USB_SLIST_OBJECT_INIT(hub_class_head);
 
-USB_MEM_ALIGN32 uint8_t int_buffer[6][USBH_HUB_INTIN_BUFSIZE];
+USB_MEM_ALIGNX uint8_t int_buffer[6][USBH_HUB_INTIN_BUFSIZE];
 extern void usbh_external_hport_connect(struct usbh_hubport *hport);
 extern void usbh_external_hport_disconnect(struct usbh_hubport *hport);
 extern void usbh_hport_activate(struct usbh_hubport *hport);

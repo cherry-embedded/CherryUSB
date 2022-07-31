@@ -10,6 +10,7 @@
 #define CONFIG_USB_PRINTF printf
 #endif
 
+//#define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable")))
 #define CONFIG_USB_PRINTF_COLOR_ENABLE
 
 /* USB DEVICE Configuration */

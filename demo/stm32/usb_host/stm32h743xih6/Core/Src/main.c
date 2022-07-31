@@ -225,12 +225,12 @@ void cpu_mpu_config(uint8_t Region, uint8_t Mode, uint32_t Address, uint32_t Siz
 
 }
 
-void usb_dwc2_dcache_clean(uintptr_t addr, uint32_t len)
+void usb_dcache_clean(uintptr_t addr, uint32_t len)
 {
     SCB_CleanDCache_by_Addr((uint32_t*)addr,len);
 }
 
-void usb_dwc2_dcache_invalidate(uintptr_t addr, uint32_t len)
+void usb_dcache_invalidate(uintptr_t addr, uint32_t len)
 {
     SCB_InvalidateDCache_by_Addr((uint32_t*)addr,len);
 }

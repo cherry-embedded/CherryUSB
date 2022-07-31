@@ -12,6 +12,7 @@
 
 #define CONFIG_USB_PRINTF_COLOR_ENABLE
 
+#define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable")))
 /* USB DEVICE Configuration */
 /* core */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN

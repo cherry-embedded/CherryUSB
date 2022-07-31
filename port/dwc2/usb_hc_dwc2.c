@@ -5,6 +5,16 @@
 #error "dwc2 host must use high workq"
 #endif
 
+#if defined(STM32F7) || defined(STM32H7)
+#ifndef CONFIG_USB_DCACHE_ENABLE
+#warning "if you enable dcache,please enable this macro"
+#else
+#if CONFIG_USB_ALIGN_SIZE != 32
+#error "dwc2 hs with dma and cache, must enable align32"
+#endif
+#endif
+#endif
+
 #ifndef USBH_IRQHandler
 #define USBH_IRQHandler OTG_HS_IRQHandler
 #endif
@@ -58,14 +68,6 @@ struct dwc2_hcd {
     struct usb_work work;
     struct dwc2_pipe chan[CONFIG_USB_DWC2_PIPE_NUM];
 } g_dwc2_hcd;
-
-#ifdef CONFIG_USB_DCACHE_ENABLE
-void usb_dwc2_dcache_clean(uintptr_t addr, uint32_t len);
-void usb_dwc2_dcache_invalidate(uintptr_t addr, uint32_t len);
-#else
-#define usb_dwc2_dcache_clean(addr, len)
-#define usb_dwc2_dcache_invalidate(addr, len)
-#endif
 
 static inline int dwc2_reset(void)
 {
@@ -821,7 +823,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     chan->waiter = true;
     chan->result = -EBUSY;
     chan->num_packets = dwc2_calculate_packet_num(8, chan->ep_addr, chan->ep_mps, &chan->xferlen);
-    usb_dwc2_dcache_clean((uintptr_t)setup, 8);
+    usb_dcache_clean((uintptr_t)setup, 8);
     dwc2_pipe_init(chidx, chan->dev_addr, 0x00, 0x00, chan->ep_mps, chan->speed);
     dwc2_pipe_transfer(chidx, 0x00, (uint32_t *)setup, chan->xferlen, chan->num_packets, HC_PID_SETUP);
     ret = dwc2_pipe_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
@@ -840,7 +842,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
             if (ret < 0) {
                 goto error_out;
             }
-            usb_dwc2_dcache_invalidate((uintptr_t)buffer, setup->wLength);
+            usb_dcache_invalidate((uintptr_t)buffer, setup->wLength);
             chan->waiter = true;
             chan->result = -EBUSY;
             chan->num_packets = dwc2_calculate_packet_num(0, 0x00, chan->ep_mps, &chan->xferlen);
@@ -854,7 +856,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
             chan->waiter = true;
             chan->result = -EBUSY;
             chan->num_packets = dwc2_calculate_packet_num(setup->wLength, 0x00, chan->ep_mps, &chan->xferlen);
-            usb_dwc2_dcache_clean((uintptr_t)buffer, setup->wLength);
+            usb_dcache_clean((uintptr_t)buffer, setup->wLength);
             dwc2_pipe_init(chidx, chan->dev_addr, 0x00, 0x00, chan->ep_mps, chan->speed);
             dwc2_pipe_transfer(chidx, 0x00, (uint32_t *)buffer, chan->xferlen, chan->num_packets, HC_PID_DATA1);
             ret = dwc2_pipe_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
@@ -921,7 +923,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     chan->num_packets = dwc2_calculate_packet_num(buflen, chan->ep_addr, chan->ep_mps, &chan->xferlen);
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((chan->ep_addr & 0x80) == 0x00) {
-        usb_dwc2_dcache_clean((uintptr_t)buffer, buflen);
+        usb_dcache_clean((uintptr_t)buffer, buflen);
     }
 #endif
     dwc2_pipe_transfer(chidx, chan->ep_addr, (uint32_t *)buffer, chan->xferlen, chan->num_packets, chan->data_pid);
@@ -931,7 +933,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((chan->ep_addr & 0x80) == 0x80) {
-        usb_dwc2_dcache_invalidate((uintptr_t)buffer, buflen);
+        usb_dcache_invalidate((uintptr_t)buffer, buflen);
     }
 #endif
     usb_osal_mutex_give(chan->exclsem);
@@ -974,7 +976,7 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     chan->num_packets = dwc2_calculate_packet_num(buflen, chan->ep_addr, chan->ep_mps, &chan->xferlen);
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((chan->ep_addr & 0x80) == 0x00) {
-        usb_dwc2_dcache_clean((uintptr_t)buffer, buflen);
+        usb_dcache_clean((uintptr_t)buffer, buflen);
     }
 #endif
     while (1) {
@@ -996,7 +998,7 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     }
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((chan->ep_addr & 0x80) == 0x80) {
-        usb_dwc2_dcache_invalidate((uintptr_t)buffer, buflen);
+        usb_dcache_invalidate((uintptr_t)buffer, buflen);
     }
 #endif
     usb_osal_mutex_give(chan->exclsem);
@@ -1038,7 +1040,7 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     chan->num_packets = dwc2_calculate_packet_num(buflen, chan->ep_addr, chan->ep_mps, &chan->xferlen);
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((chan->ep_addr & 0x80) == 0x00) {
-        usb_dwc2_dcache_clean((uintptr_t)buffer, buflen);
+        usb_dcache_clean((uintptr_t)buffer, buflen);
     }
 #endif
     dwc2_pipe_transfer(chidx, chan->ep_addr, (uint32_t *)buffer, chan->xferlen, chan->num_packets, chan->data_pid);

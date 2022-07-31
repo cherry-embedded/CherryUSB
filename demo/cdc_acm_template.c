@@ -120,6 +120,10 @@ void usbd_cdc_acm_setup(void)
 void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    // for (int i = 0; i < 100; i++) {
+    //     printf("%02x ", read_buffer[i]);
+    // }
+    // printf("\r\n");
     /* setup next out ep read transfer */
     usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
 }

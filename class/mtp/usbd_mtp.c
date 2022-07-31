@@ -25,7 +25,7 @@
 
 /* Device data structure */
 struct mtp_cfg_priv {
-    USB_MEM_ALIGN32 uint8_t device_status;
+    uint8_t device_status;
 } usbd_mtp_cfg;
 
 /* max USB packet size */
