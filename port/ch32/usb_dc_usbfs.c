@@ -38,8 +38,9 @@ struct ch32_usbfs_ep_state {
 struct ch32_usbfs_udc {
     __attribute__((aligned(4))) struct usb_setup_packet setup;
     volatile uint8_t dev_addr;
-    struct ch32_usbfs_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
-    struct ch32_usbfs_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
+    struct ch32_usbfs_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];                            /*!< IN endpoint parameters*/
+    struct ch32_usbfs_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS];                           /*!< OUT endpoint parameters */
+    __attribute__((aligned(4))) uint8_t ep_databuf[USB_NUM_BIDIR_ENDPOINTS - 1][64 + 64]; //epx_out(64)+epx_in(64)
 } g_ch32_usbfs_udc;
 
 volatile bool ep0_rx_data_toggle;
@@ -67,6 +68,14 @@ int usb_dc_init(void)
     USBFS_DEVICE->UEP2_3_MOD = USBFS_UEP2_RX_EN | USBFS_UEP2_TX_EN | USBFS_UEP3_RX_EN | USBFS_UEP3_TX_EN;
     USBFS_DEVICE->UEP5_6_MOD = USBFS_UEP5_RX_EN | USBFS_UEP5_TX_EN | USBFS_UEP6_RX_EN | USBFS_UEP6_TX_EN;
     USBFS_DEVICE->UEP7_MOD = USBFS_UEP7_RX_EN | USBFS_UEP7_TX_EN;
+
+    USBFS_DEVICE->UEP1_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[0];
+    USBFS_DEVICE->UEP2_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[1];
+    USBFS_DEVICE->UEP3_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[2];
+    USBFS_DEVICE->UEP4_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[3];
+    USBFS_DEVICE->UEP5_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[4];
+    USBFS_DEVICE->UEP6_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[5];
+    USBFS_DEVICE->UEP7_DMA = (uint32_t)g_ch32_usbfs_udc.ep_databuf[6];
 
     USBFS_DEVICE->INT_FG = 0xFF;
     USBFS_DEVICE->INT_EN = USBFS_UIE_SUSPEND | USBFS_UIE_BUS_RST | USBFS_UIE_TRANSFER;
@@ -150,6 +159,7 @@ int usbd_ep_clear_stall(const uint8_t ep)
     }
     return 0;
 }
+
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 {
     return 0;
@@ -158,7 +168,6 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    uint32_t tmp;
 
     if (!data && data_len) {
         return -1;
@@ -193,7 +202,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         } else {
             data_len = MIN(data_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
             USB_SET_TX_LEN(ep_idx, data_len);
-            USB_SET_DMA(ep_idx, (uint32_t)data);
+            memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], data, data_len);
         }
         USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
     }
@@ -229,7 +238,6 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
         }
         return 0;
     } else {
-        USB_SET_DMA(ep_idx, (uint32_t)data);
         USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK);
     }
 
@@ -238,7 +246,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 
 void USBD_IRQHandler(void)
 {
-    uint32_t ep_idx, token, write_count, read_count;
+    uint32_t ep_idx = 0, token, write_count, read_count;
     uint8_t intflag = 0;
 
     intflag = USBFS_DEVICE->INT_FG;
@@ -293,7 +301,7 @@ void USBD_IRQHandler(void)
 
                         write_count = MIN(g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
                         USB_SET_TX_LEN(ep_idx, write_count);
-                        USB_SET_DMA(ep_idx, (uint32_t)g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf);
+                        memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf, write_count);
 
                         USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
                     } else {
@@ -328,6 +336,8 @@ void USBD_IRQHandler(void)
                         USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_NAK);
                         read_count = USBFS_DEVICE->RX_LEN;
 
+                        memcpy(g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf, &g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][0], read_count);
+
                         g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf += read_count;
                         g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len += read_count;
                         g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len -= read_count;
@@ -335,7 +345,6 @@ void USBD_IRQHandler(void)
                         if ((read_count < g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps) || (g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len == 0)) {
                             usbd_event_ep_out_complete_handler(ep_idx, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
                         } else {
-                            USB_SET_DMA(ep_idx, (uint32_t)g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf);
                             USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK);
                         }
                     }
