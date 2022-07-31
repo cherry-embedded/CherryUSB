@@ -273,7 +273,7 @@ volatile bool ep_tx_busy_flag = false;
 #define CDC_MAX_MPS 64
 #endif
 
-void usbd_cdc_acm_setup(void)
+void usbd_configure_done_callback(void)
 {
     /* setup first out ep read transfer */
     usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);

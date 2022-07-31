@@ -138,6 +138,7 @@ void usbd_class_register(usbd_class_t *devclass);
 void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
 void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep);
 bool usb_device_is_configured(void);
+void usbd_configure_done_callback(void);
 int usbd_initialize(void);
 
 #ifdef __cplusplus

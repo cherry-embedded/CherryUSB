@@ -37,9 +37,6 @@ void usbd_cdc_acm_set_line_coding(uint8_t intf, uint32_t baudrate, uint8_t datab
 void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr);
 void usbd_cdc_acm_set_rts(uint8_t intf, bool rts);
 
-/* Setup cdc acm first rx transfer */
-void usbd_cdc_acm_setup(void);
-
 #ifdef __cplusplus
 }
 #endif

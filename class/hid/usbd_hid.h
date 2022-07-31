@@ -44,9 +44,6 @@ void usbh_hid_set_report(uint8_t intf, uint8_t report_id, uint8_t report_type, u
 void usbh_hid_set_idle(uint8_t intf, uint8_t report_id, uint8_t duration);
 void usbh_hid_set_protocol(uint8_t intf, uint8_t protocol);
 
-/* Setup hid first rx transfer */
-void usbd_hid_setup(void);
-
 #ifdef __cplusplus
 }
 #endif

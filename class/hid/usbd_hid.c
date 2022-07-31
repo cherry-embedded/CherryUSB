@@ -175,10 +175,6 @@ static void hid_notify_handler(uint8_t event, void *arg)
         case USBD_EVENT_RESET:
             usbd_hid_reset();
             break;
-        case USBD_EVENT_CONFIGURED:
-            usbd_hid_setup();
-            break;
-
         default:
             break;
     }
@@ -260,9 +256,5 @@ __WEAK void usbh_hid_set_idle(uint8_t intf, uint8_t report_id, uint8_t duration)
 }
 
 __WEAK void usbh_hid_set_protocol(uint8_t intf, uint8_t protocol)
-{
-}
-
-__WEAK void usbd_hid_setup(void)
 {
 }

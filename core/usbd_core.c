@@ -505,6 +505,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
                 usbd_core_cfg.configuration = value;
                 usbd_core_cfg.configured = true;
                 usbd_class_event_notify_handler(USBD_EVENT_CONFIGURED, NULL);
+                usbd_configure_done_callback();
             }
 
             break;

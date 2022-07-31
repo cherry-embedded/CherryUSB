@@ -152,10 +152,6 @@ static void cdc_notify_handler(uint8_t event, void *arg)
             usbd_cdc_acm_reset();
 #endif
             break;
-        case USBD_EVENT_CONFIGURED:
-            usbd_cdc_acm_setup();
-            break;
-
         default:
             break;
     }
@@ -208,9 +204,5 @@ __WEAK void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr)
 }
 
 __WEAK void usbd_cdc_acm_set_rts(uint8_t intf, bool rts)
-{
-}
-
-__WEAK void usbd_cdc_acm_setup(void)
 {
 }
