@@ -29,7 +29,7 @@ CORE
 - **ep_addr** 端点地址（带方向）
 - **ep_cb** 端点完成中断回调函数。
 
-.. note:: 总结一句话：in 回调函数等价于 dma 发送完成中断；out 回调函数等价于 dma 接收完成中断
+.. note:: 总结一句话：in 回调函数等价于 dma 发送完成中断回调函数；out 回调函数等价于 dma 接收完成中断回调函数
 
 接口结构体
 """"""""""""""""""""""""""""""""""""
@@ -157,15 +157,6 @@ usbd_interface_add_endpoint
 - **intf**  USB 设备接口的句柄
 - **ep**    USB 设备端点的句柄
 
-usbd_initialize
-""""""""""""""""""""""""""""""""""""
-
-``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。
-
-.. code-block:: C
-
-    int usbd_initialize(void);
-
 usb_device_is_configured
 """"""""""""""""""""""""""""""""""""
 
@@ -176,6 +167,26 @@ usb_device_is_configured
     bool usb_device_is_configured(void);
 
 - **return** 配置状态， 0 表示未配置， 1 表示配置成功
+
+usbd_configure_done_callback
+""""""""""""""""""""""""""""""""""""
+
+``usbd_configure_done_callback`` 在执行 set_configuration 命令后触发，表示配置完成，用户需要实现该函数， **此函数一般用作启动第一次数据接收**，如果没有使用到 out 端点，则函数为空即可。
+
+.. code-block:: C
+
+    bool usbd_configure_done_callback(void);
+
+.. warning:: msc 端点不需要在该函数中手动启动，协议栈会自动启动第一次接收
+
+usbd_initialize
+""""""""""""""""""""""""""""""""""""
+
+``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。
+
+.. code-block:: C
+
+    int usbd_initialize(void);
 
 CDC ACM
 -----------------
