@@ -36,7 +36,7 @@
                                                   AUDIO_AS_DESCRIPTOR_INIT_LEN(1) +         \
                                                   AUDIO_AS_DESCRIPTOR_INIT_LEN(1))
 
-#define AUDIO_AC_SIZ (AUDIO_SIZEOF_AC_HEADER_DESC(2) +         \
+#define AUDIO_AC_SIZ (AUDIO_SIZEOF_AC_HEADER_DESC(2) +          \
                       AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +     \
                       AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2, 1) + \
                       AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC +    \
@@ -166,18 +166,19 @@ static usbd_interface_t audio_stream_intf2;
 #endif
 
 USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
-uint32_t actual_read_length = 0;
 
-void usbd_audio_out_callback(uint8_t ep)
+void usbd_configure_done_callback(void)
 {
-    if (usbd_ep_read(ep, out_buffer, AUDIO_OUT_EP_MPS, &actual_read_length) < 0) {
-        USB_LOG_RAW("Read DATA Packet failed\r\n");
-        usbd_ep_set_stall(ep);
-        return;
-    }
+    /* setup first out ep read transfer */
+    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_EP_MPS);
 }
 
-void usbd_audio_in_callback(uint8_t ep)
+void usbd_audio_out_callback(uint8_t ep, uint32_t bytes)
+{
+
+}
+
+void usbd_audio_in_callback(uint8_t ep, uint32_t bytes)
 {
 }
 

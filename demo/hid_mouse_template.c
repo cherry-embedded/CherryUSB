@@ -200,6 +200,11 @@ static struct hid_mouse mouse_cfg;
 /*!< hid state ! Data can be sent only when state is idle  */
 static uint8_t hid_state = HID_STATE_IDLE;
 
+void usbd_configure_done_callback(void)
+{
+    /* no out ep, do nothing */
+}
+
 /* function ------------------------------------------------------------------*/
 static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 {

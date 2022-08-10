@@ -143,6 +143,11 @@ const uint8_t audio_descriptor[] = {
     0x00
 };
 
+void usbd_configure_done_callback(void)
+{
+    /* no out ep, do nothing */
+}
+
 volatile bool tx_flag = 0;
 
 void usbd_audio_open(uint8_t intf)
@@ -160,7 +165,7 @@ static usbd_class_t audio_class;
 static usbd_interface_t audio_control_intf;
 static usbd_interface_t audio_stream_intf;
 
-void usbd_audio_iso_callback(uint8_t ep)
+void usbd_audio_iso_callback(uint8_t ep, uint32_t nbytes)
 {
 }
 
@@ -182,7 +187,6 @@ void audio_init()
 
 void audio_test()
 {
-
     while (1) {
         if (tx_flag) {
         }

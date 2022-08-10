@@ -192,6 +192,12 @@ const uint8_t winusb_descriptor[] = {
 
 uint8_t read_buffer[2048];
 
+void usbd_configure_done_callback(void)
+{
+    /* setup first out ep read transfer */
+    usbd_ep_start_read(WINUSB_OUT_EP, read_buffer, 2048);
+}
+
 void usbd_winusb_out(uint8_t ep, uint32_t nbytes)
 {
 }

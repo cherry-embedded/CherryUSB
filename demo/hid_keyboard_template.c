@@ -172,6 +172,11 @@ static const uint8_t hid_keyboard_report_desc[HID_KEYBOARD_REPORT_DESC_SIZE] = {
     0xc0        // END_COLLECTION
 };
 
+void usbd_configure_done_callback(void)
+{
+    /* no out ep, do nothing */
+}
+
 static usbd_class_t hid_class;
 static usbd_interface_t hid_intf;
 
@@ -179,7 +184,7 @@ static usbd_interface_t hid_intf;
 #define HID_STATE_BUSY 1
 
 /*!< hid state ! Data can be sent only when state is idle  */
-uint8_t hid_state = HID_STATE_IDLE;
+static uint8_t hid_state = HID_STATE_IDLE;
 
 void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 {
