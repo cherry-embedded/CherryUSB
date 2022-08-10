@@ -1,5 +1,5 @@
 #include "usbh_core.h"
-#include "usb_ehci.h"
+#include "usb_hc_ehci.h"
 
 #ifndef USBH_IRQHandler
 #define USBH_IRQHandler USBH_IRQHandler
@@ -166,10 +166,6 @@ struct ehci_hcd {
 
 static uint16_t usb_ehci_read16(const uint8_t *addr);
 static uint32_t usb_ehci_read32(const uint8_t *addr);
-#if 0 /* Not used */
-static void usb_ehci_write16(uint16_t memval, uint8_t *addr);
-static void usb_ehci_write32(uint32_t memval, uint8_t *addr);
-#endif
 
 #ifdef CONFIG_ENDIAN_BIG
 static uint16_t usb_ehci_swap16(uint16_t value);
@@ -177,16 +173,6 @@ static uint32_t usb_ehci_swap32(uint32_t value);
 #else
 #define usb_ehci_swap16(value) (value)
 #define usb_ehci_swap32(value) (value)
-#endif
-
-#ifdef CONFIG_USB_DCACHE_ENABLE
-void usb_ehci_dcache_clean(uintptr_t addr, uint32_t len);
-void usb_ehci_dcache_invalidate(uintptr_t addr, uint32_t len);
-void usb_ehci_dcache_clean_invalidate(uintptr_t addr, uint32_t len);
-#else
-#define usb_ehci_dcache_clean(addr, len)
-#define usb_ehci_dcache_invalidate(addr, len)
-#define usb_ehci_dcache_clean_invalidate(addr, len)
 #endif
 
 /****************************************************************************
@@ -213,11 +199,11 @@ static struct ehci_hcd g_ehci_hcd;
 
 /* The head of the asynchronous queue */
 
-static struct usb_ehci_qh_s g_asynchead __attribute__((aligned(32)));
+static USB_MEM_ALIGNX struct usb_ehci_qh_s g_asynchead;
 
 /* The head of the periodic queue */
 
-static struct usb_ehci_qh_s g_intrhead __attribute__((aligned(32)));
+static USB_MEM_ALIGNX struct usb_ehci_qh_s g_intrhead;
 
 /* The frame list */
 static uint32_t g_framelist[FRAME_LIST_SIZE] __attribute__((aligned(4096)));
@@ -648,7 +634,7 @@ static int usb_ehci_qtd_flush(struct usb_ehci_qtd_s *qtd, uint32_t **bp, void *a
     * accessed.
     */
 
-    usb_ehci_dcache_clean_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
+    usb_dcache_clean_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
 
     return 0;
 }
@@ -668,7 +654,7 @@ static int usb_ehci_qh_flush(struct usb_ehci_qh_s *qh)
     * be reloaded from D-Cache.
     */
 
-    usb_ehci_dcache_clean_invalidate((uintptr_t)&qh->hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_clean_invalidate((uintptr_t)&qh->hw, sizeof(struct usb_ehci_qh_s));
 
     /* Then flush all of the qTD entries in the queue */
 
@@ -676,7 +662,7 @@ static int usb_ehci_qh_flush(struct usb_ehci_qh_s *qh)
 }
 #else
 #define usb_ehci_qtd_flush(qtd, bp, arg)
-#define usb_ehci_qtd_flush(qh)
+#define usb_ehci_qh_flush(qh)
 #endif
 /****************************************************************************
  * Name: usb_ehci_speed
@@ -798,7 +784,7 @@ static int usb_ehci_qtd_addbpl(struct usb_ehci_qtd_s *qtd, const void *buffer, s
     uint32_t next;
     int ndx;
 
-    usb_ehci_dcache_clean_invalidate((uintptr_t)buffer, buflen);
+    usb_dcache_clean_invalidate((uintptr_t)buffer, buflen);
     /* Loop, adding the aligned physical addresses of the buffer to the buffer
     * page list.  Only the first entry need not be aligned (because only the
     * first entry has the offset field). The subsequent entries must begin on
@@ -1015,7 +1001,7 @@ static void usb_ehci_qh_enqueue(struct usb_ehci_qh_s *qhead, struct usb_ehci_qh_
 
     physaddr = (uintptr_t)usb_ehci_physramaddr((uintptr_t)qh);
     qhead->hw.hlp = usb_ehci_swap32(physaddr | QH_HLP_TYP_QH);
-    usb_ehci_dcache_clean((uintptr_t)&qhead->hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_clean((uintptr_t)&qhead->hw, sizeof(struct usb_ehci_qh_s));
 }
 
 static int usb_ehci_control_init(struct usb_ehci_epinfo_s *epinfo, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
@@ -1481,7 +1467,7 @@ static int usb_ehci_qtd_ioccheck(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)arg;
     DEBUGASSERT(qtd && epinfo);
 
-    usb_ehci_dcache_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
+    usb_dcache_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
 
     /* Remove the qTD from the list
     *
@@ -1529,7 +1515,7 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
 
     DEBUGASSERT(qh && bp);
 
-    usb_ehci_dcache_invalidate((uintptr_t)&qh->hw, sizeof(struct ehci_qh_s));
+    usb_dcache_invalidate((uintptr_t)&qh->hw, sizeof(struct ehci_qh_s));
 
     /* Get the endpoint info pointer from the extended QH data.  Only the
     * g_asynchead QH can have a NULL epinfo field.
@@ -1575,7 +1561,7 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
         */
 
         **bp = qh->hw.hlp;
-        usb_ehci_dcache_clean((uintptr_t)*bp, sizeof(uint32_t));
+        usb_dcache_clean((uintptr_t)*bp, sizeof(uint32_t));
         /* Check for errors, update the data toggle */
 
         if ((token & QH_TOKEN_ERRORS) == 0) {
@@ -1658,7 +1644,7 @@ static int usb_ehci_qtd_cancel(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
 {
     DEBUGASSERT(qtd != NULL && bp != NULL);
 
-    usb_ehci_dcache_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
+    usb_dcache_invalidate((uintptr_t)&qtd->hw, sizeof(struct usb_ehci_qtd_s));
 
     /* Remove the qTD from the list
     *
@@ -1696,7 +1682,7 @@ static int usb_ehci_qh_cancel(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg
 
     DEBUGASSERT(qh != NULL && bp != NULL && epinfo != NULL);
 
-    usb_ehci_dcache_invalidate((uintptr_t)&qh->hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_invalidate((uintptr_t)&qh->hw, sizeof(struct usb_ehci_qh_s));
 
     /* Check if this is the QH that we are looking for */
 
@@ -1723,7 +1709,7 @@ static int usb_ehci_qh_cancel(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg
     */
 
     **bp = qh->hw.hlp;
-    usb_ehci_dcache_clean((uintptr_t)*bp, sizeof(uint32_t));
+    usb_dcache_clean((uintptr_t)*bp, sizeof(uint32_t));
     /* Re-enable the schedules (if they were enabled before. */
 
     usb_ehci_putreg(regval, &HCOR->usbcmd);
@@ -1748,7 +1734,7 @@ static inline void usb_ehci_ioc_bottomhalf(void)
     uint32_t *bp;
     int ret;
 
-    usb_ehci_dcache_invalidate((uintptr_t)&g_asynchead.hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_invalidate((uintptr_t)&g_asynchead.hw, sizeof(struct usb_ehci_qh_s));
     /* Set the back pointer to the forward qTD pointer of the asynchronous
     * queue head.
     */
@@ -1769,7 +1755,7 @@ static inline void usb_ehci_ioc_bottomhalf(void)
 #ifndef CONFIG_USBHOST_INT_DISABLE
     /* Check the Interrupt Queue */
 
-    usb_ehci_dcache_invalidate((uintptr_t)&g_intrhead.hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_invalidate((uintptr_t)&g_intrhead.hw, sizeof(struct usb_ehci_qh_s));
     /* Set the back pointer to the forward qTD pointer of the asynchronous
     * queue head.
     */
@@ -1830,6 +1816,7 @@ static inline void usb_ehci_portsc_bottomhalf(void)
                     struct usb_ehci_epinfo_s *epinfo = &g_ehci_hcd.chan[chidx];
                     if (epinfo->iocwait) {
                         epinfo->iocwait = false;
+                        epinfo->result = -ENXIO;
                         usb_osal_sem_give(epinfo->iocsem);
                     }
                 }
@@ -1843,164 +1830,6 @@ static inline void usb_ehci_portsc_bottomhalf(void)
         */
         usb_ehci_putreg(portsc, &HCOR->portsc[rhpndx]);
     }
-}
-
-/****************************************************************************
- * Name: usb_ehci_reset
- *
- * Description:
- *   Set the HCRESET bit in the USBCMD register to reset the EHCI hardware.
- *
- *   Table 2-9. USBCMD - USB Command Register Bit Definitions
- *
- *    "Host Controller Reset (HCRESET) ... This control bit is used by
- *     software to reset the host controller. The effects of this on Root
- *     Hub registers are similar to a Chip Hardware Reset.
- *
- *    "When software writes a one to this bit, the Host Controller resets its
- *     internal pipelines, timers, counters, state machines, etc. to their
- *     initial value. Any transaction currently in progress on USB is
- *     immediately terminated. A USB reset is not driven on downstream
- *     ports.
- *
- *    "PCI Configuration registers are not affected by this reset. All
- *     operational registers, including port registers and port state
- *     machines are set to their initial values. Port ownership reverts
- *     to the companion host controller(s)... Software must reinitialize
- *     the host controller ... in order to return the host controller to
- *     an operational state.
- *
- *    "This bit is set to zero by the Host Controller when the reset process
- *     is complete. Software cannot terminate the reset process early by
- *     writing a zero to this register. Software should not set this bit to
- *     a one when the HCHalted bit in the USBSTS register is a zero.
- *     Attempting to reset an actively running host controller will result
- *     in undefined behavior."
- *
- * Input Parameters:
- *   None.
- *
- * Returned Value:
- *   Zero (OK) is returned on success; A negated errno value is returned
- *   on failure.
- *
- * Assumptions:
- * - Called during the initialization of the EHCI.
- *
- ****************************************************************************/
-
-static int usb_ehci_reset(void)
-{
-    uint32_t regval;
-    unsigned int timeout;
-
-    /* Make sure that the EHCI is halted:  "When [the Run/Stop] bit is set to
-    * 0, the Host Controller completes the current transaction on the USB and
-    * then halts. The HC Halted bit in the status register indicates when the
-    * Host Controller has finished the transaction and has entered the
-    * stopped state..."
-    */
-
-    usb_ehci_putreg(0, &HCOR->usbcmd);
-
-    /* "... Software should not set [HCRESET] to a one when the HCHalted bit in
-    *  the USBSTS register is a zero. Attempting to reset an actively running
-    *  host controller will result in undefined behavior."
-    */
-
-    timeout = 0;
-    do {
-        /* Wait one microsecond and update the timeout counter */
-
-        usb_osal_msleep(1);
-        timeout++;
-
-        /* Get the current value of the USBSTS register.  This loop will
-        * terminate when either the timeout exceeds one millisecond or when
-        * the HCHalted bit is no longer set in the USBSTS register.
-        */
-
-        regval = usb_ehci_getreg(&HCOR->usbsts);
-    } while (((regval & EHCI_USBSTS_HALTED) == 0) && (timeout < 1000));
-
-    /* Is the EHCI still running?  Did we timeout? */
-
-    if ((regval & EHCI_USBSTS_HALTED) == 0) {
-        return -ETIMEDOUT;
-    }
-
-    /* Now we can set the HCReset bit in the USBCMD register to
-    * initiate the reset
-    */
-
-    regval = usb_ehci_getreg(&HCOR->usbcmd);
-    regval |= EHCI_USBCMD_HCRESET;
-    usb_ehci_putreg(regval, &HCOR->usbcmd);
-
-    /* Wait for the HCReset bit to become clear */
-
-    do {
-        /* Wait five microsecondw and update the timeout counter */
-
-        usb_osal_msleep(5);
-        timeout += 5;
-
-        /* Get the current value of the USBCMD register.  This loop will
-        * terminate when either the timeout exceeds one second or when the
-        * HCReset bit is no longer set in the USBSTS register.
-        */
-
-        regval = usb_ehci_getreg(&HCOR->usbcmd);
-    } while (((regval & EHCI_USBCMD_HCRESET) != 0) && (timeout < 1000000));
-
-    /* Return either success or a timeout */
-
-    return (regval & EHCI_USBCMD_HCRESET) != 0 ? -ETIMEDOUT : 0;
-}
-
-/****************************************************************************
- * Name: usb_ehci_wait_usbsts
- *
- * Description:
- *   Wait for either (1) a field in the USBSTS register to take a specific
- *   value, (2) for a timeout to occur, or (3) a error to occur.  Return
- *   a value to indicate which terminated the wait.
- *
- ****************************************************************************/
-
-static int usb_ehci_wait_usbsts(uint32_t maskbits, uint32_t donebits, unsigned int delay)
-{
-    uint32_t regval;
-    unsigned int timeout;
-
-    timeout = 0;
-    do {
-        /* Wait 5usec before trying again */
-
-        usb_osal_msleep(5);
-        timeout += 5;
-
-        /* Read the USBSTS register and check for a system error */
-
-        regval = usb_ehci_getreg(&HCOR->usbsts);
-        if ((regval & EHCI_INT_SYSERROR) != 0) {
-            return -EIO;
-        }
-
-        /* Mask out the bits of interest */
-
-        regval &= maskbits;
-
-        /* Loop until the masked bits take the specified value or until a
-       * timeout occurs.
-       */
-    } while (regval != donebits && timeout < delay);
-
-    /* We got here because either the waited for condition or a timeout
-    * occurred.  Return a value to indicate which.
-    */
-
-    return (regval == donebits) ? 0 : -ETIMEDOUT;
 }
 
 __WEAK void usb_hc_low_level_init(void)
@@ -2066,7 +1895,7 @@ int usb_hc_hw_init(void)
     g_asynchead.hw.overlay.token = usb_ehci_swap32(QH_TOKEN_HALTED);
     g_asynchead.fqp = usb_ehci_swap32(QTD_NQP_T);
 
-    usb_ehci_dcache_clean((uintptr_t)&g_asynchead.hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_clean((uintptr_t)&g_asynchead.hw, sizeof(struct usb_ehci_qh_s));
 
     /* Initialize the head of the periodic list.  Since Isochronous
     * endpoints are not not yet supported, each element of the
@@ -2090,16 +1919,19 @@ int usb_hc_hw_init(void)
     /* Set the Periodic Frame List Base Address. */
     physaddr2 = usb_ehci_physramaddr((uintptr_t)g_framelist);
 
-    usb_ehci_dcache_clean((uintptr_t)&g_intrhead.hw, sizeof(struct usb_ehci_qh_s));
-    usb_ehci_dcache_clean((uintptr_t)g_framelist, FRAME_LIST_SIZE * sizeof(uint32_t));
+    usb_dcache_clean((uintptr_t)&g_intrhead.hw, sizeof(struct usb_ehci_qh_s));
+    usb_dcache_clean((uintptr_t)g_framelist, FRAME_LIST_SIZE * sizeof(uint32_t));
 
     usb_hc_low_level_init();
+
     /* Host Controller Initialization. Paragraph 4.1 */
 
     /* Reset the EHCI hardware */
-    ret = usb_ehci_reset();
-    if (ret < 0) {
-        return -1;
+    regval = usb_ehci_getreg(&HCOR->usbcmd);
+    regval |= EHCI_USBCMD_HCRESET;
+    usb_ehci_putreg(regval, &HCOR->usbcmd);
+    /* Wait for the HCReset bit to become clear */
+    while (usb_ehci_getreg(&HCOR->usbcmd) & EHCI_USBCMD_HCRESET) {
     }
 
     /* Disable all interrupts */
@@ -2134,7 +1966,7 @@ int usb_hc_hw_init(void)
     */
     regval = usb_ehci_getreg(&HCOR->usbcmd);
     regval &= ~(EHCI_USBCMD_HCRESET | EHCI_USBCMD_FLSIZE_MASK |
-                EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN | EHCI_USBCMD_IAADB);
+                EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN | EHCI_USBCMD_IAADB | EHCI_USBCMD_ITHRE_MASK);
     regval |= EHCI_USBCMD_ASEN;
 
 #ifndef CONFIG_USBHOST_INT_DISABLE
@@ -2149,12 +1981,10 @@ int usb_hc_hw_init(void)
 #error Unsupported frame size list size
 #endif
 #endif
-
+    regval |= EHCI_USBCMD_ITHRE_8MF;
     usb_ehci_putreg(regval, &HCOR->usbcmd);
 
-    /* Start the host controller by setting the RUN bit in the
-    * USBCMD register.
-    */
+    /* Start the host controller by setting the RUN bit in the USBCMD register */
     regval = usb_ehci_getreg(&HCOR->usbcmd);
     regval |= EHCI_USBCMD_RUN;
     usb_ehci_putreg(regval, &HCOR->usbcmd);
@@ -2165,23 +1995,20 @@ int usb_hc_hw_init(void)
     regval |= EHCI_CONFIGFLAG;
     usb_ehci_putreg(regval, &HCOR->configflag);
 #endif
-    /* Wait for the EHCI to run (i.e., no longer report halted) */
-    ret = usb_ehci_wait_usbsts(EHCI_USBSTS_HALTED, 0, 100 * 1000);
-    if (ret < 0) {
-        return -2;
+
+    /* Wait for the EHCI to run (no longer report halted) */
+    while (usb_ehci_getreg(&HCOR->usbsts) & EHCI_USBSTS_HALTED) {
     }
+
 #ifdef CONFIG_USB_EHCI_PORT_POWER
-    for (uint8_t port = 1; i <= CONFIG_USBHOST_RHPORTS; port++) {
+    for (uint8_t port = 1; port <= CONFIG_USBHOST_RHPORTS; port++) {
         regval = usb_ehci_getreg(&HCOR->portsc[port - 1]);
         regval |= EHCI_PORTSC_PP;
         usb_ehci_putreg(regval, &HCOR->portsc[port - 1]);
     }
 #endif
-    /* Enable EHCI interrupts.  Interrupts are still disabled at the level of
-    * the interrupt controller.
-    */
+    /* Enable EHCI interrupts. */
     usb_ehci_putreg(EHCI_HANDLED_INTS, &HCOR->usbintr);
-
     return ret;
 }
 
