@@ -1392,6 +1392,7 @@ static void dwc2_port_irq_handler(void)
                 chan = &g_dwc2_hcd.chan[chidx];
                 if (chan->waiter) {
                     chan->waiter = false;
+                    chan->result = -ENXIO;
                     usb_osal_sem_give(chan->waitsem);
                 }
             }
