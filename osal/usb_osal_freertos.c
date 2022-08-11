@@ -63,22 +63,11 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 int usb_osal_sem_give(usb_osal_sem_t sem)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    uint32_t intstatus = 0;
     int ret;
-#ifdef __riscv
-    /* Obtain the level of the currently executing interrupt. */
-    __asm volatile("csrr %0, mintstatus" : "=r"(intstatus)::"memory");
-#else
-     /* Obtain the number of the currently executing interrupt. */
-     __asm volatile ( "mrs %0, ipsr" : "=r" ( intstatus )::"memory" );
-#endif
-    if (intstatus == 0) {
-        ret = xSemaphoreGive((SemaphoreHandle_t)sem);
-    } else {
-        ret = xSemaphoreGiveFromISR((SemaphoreHandle_t)sem, &xHigherPriorityTaskWoken);
-        if (ret == pdPASS) {
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        }
+
+    ret = xSemaphoreGiveFromISR((SemaphoreHandle_t)sem, &xHigherPriorityTaskWoken);
+    if (ret == pdPASS) {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 
     return (ret == pdPASS) ? 0 : -EINVAL;
