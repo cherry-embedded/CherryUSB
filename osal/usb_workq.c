@@ -44,6 +44,7 @@ void usb_workqueue_submit(struct usb_workqueue *queue, struct usb_work *work, us
 struct usb_workqueue g_hpworkq = { NULL };
 struct usb_workqueue g_lpworkq = { NULL };
 
+#ifdef CONFIG_USBHOST_HIGH_WORKQ
 static void usbh_hpwork_thread(void *argument)
 {
     struct usb_work *work;
@@ -66,7 +67,8 @@ static void usbh_hpwork_thread(void *argument)
         work->worker(work->arg);
     }
 }
-
+#endif
+#ifdef CONFIG_USBHOST_LOW_WORKQ
 static void usbh_lpwork_thread(void *argument)
 {
     struct usb_work *work;
@@ -89,6 +91,7 @@ static void usbh_lpwork_thread(void *argument)
         work->worker(work->arg);
     }
 }
+#endif
 
 int usbh_workq_initialize(void)
 {
