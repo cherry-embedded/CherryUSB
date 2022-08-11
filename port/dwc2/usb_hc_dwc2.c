@@ -1335,6 +1335,7 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
 
 void dwc2_reset_handler(void *arg)
 {
+    usb_osal_msleep(300); /* let the usb host power keep stable */
     usbh_reset_port(1);
 }
 
