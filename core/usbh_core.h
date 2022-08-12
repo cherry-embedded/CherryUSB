@@ -36,7 +36,6 @@
 #include "usb_log.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
-#include "usb_workq.h"
 #include "usbh_hub.h"
 
 #ifdef __cplusplus
@@ -129,7 +128,6 @@ typedef struct usbh_hub {
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_EHPORTS];
     struct usbh_hubport *parent; /* Parent hub port */
-    struct usb_work work;
 } usbh_hub_t;
 
 void usbh_event_notify_handler(uint8_t event, uint8_t rhport);

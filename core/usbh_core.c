@@ -830,8 +830,6 @@ int usbh_initialize(void)
     usbh_class_info_table_end = (struct usbh_class_info *)&_usbh_class_info_end;
 #endif
 
-    usbh_workq_initialize();
-
     usbh_core_cfg.pscevent = usb_osal_event_create();
     if (usbh_core_cfg.pscevent == NULL) {
         return -1;
