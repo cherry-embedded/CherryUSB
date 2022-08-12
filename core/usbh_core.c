@@ -826,10 +826,10 @@ int usbh_initialize(void)
     usbh_class_info_table_begin = (struct usbh_class_info *)&usbh_class_info$$Base;
     usbh_class_info_table_end = (struct usbh_class_info *)&usbh_class_info$$Limit;
 #elif defined(__GNUC__)
-    extern uint32_t _usbh_class_info_start;
-    extern uint32_t _usbh_class_info_end;
-    usbh_class_info_table_begin = (struct usbh_class_info *)&_usbh_class_info_start;
-    usbh_class_info_table_end = (struct usbh_class_info *)&_usbh_class_info_end;
+    extern uint32_t __usbh_class_info_start__;
+    extern uint32_t __usbh_class_info_end__;
+    usbh_class_info_table_begin = (struct usbh_class_info *)&__usbh_class_info_start__;
+    usbh_class_info_table_end = (struct usbh_class_info *)&__usbh_class_info_end__;
 #endif
 
     usbh_core_cfg.pscevent = usb_osal_event_create();

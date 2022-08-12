@@ -57,6 +57,15 @@
 .. figure:: img/config_file.png
 
 * 使用 `scons --target=mdk` 或者 `scons` 进行编译
+* 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
+
+.. code-block:: C
+
+        /* section information for usbh class */
+        . = ALIGN(4);
+        __usbh_class_info_start__ = .;
+        KEEP(*(.usbh_class_info))
+        __usbh_class_info_end__ = .;
 
 
 借助 STM32CubeMX 生成 USB 初始化
