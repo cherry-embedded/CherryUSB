@@ -68,12 +68,12 @@ enum usbh_event_type {
 };
 
 struct usbh_class_info {
-    uint8_t match_flags;/* Used for product specific matches; range is inclusive */
-    uint8_t class;    /* Base device class code */
-    uint8_t subclass; /* Sub-class, depends on base class. Eg. */
-    uint8_t protocol; /* Protocol, depends on base class. Eg. */
-    uint16_t vid;     /* Vendor ID (for vendor/product specific devices) */
-    uint16_t pid;     /* Product ID (for vendor/product specific devices) */
+    uint8_t match_flags; /* Used for product specific matches; range is inclusive */
+    uint8_t class;       /* Base device class code */
+    uint8_t subclass;    /* Sub-class, depends on base class. Eg. */
+    uint8_t protocol;    /* Protocol, depends on base class. Eg. */
+    uint16_t vid;        /* Vendor ID (for vendor/product specific devices) */
+    uint16_t pid;        /* Product ID (for vendor/product specific devices) */
     const struct usbh_class_driver *class_driver;
 };
 
@@ -130,12 +130,12 @@ typedef struct usbh_hub {
     struct usbh_hubport *parent; /* Parent hub port */
 } usbh_hub_t;
 
-void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
-
 int usbh_initialize(void);
 int lsusb(int argc, char **argv);
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
 void *usbh_find_class_instance(const char *devname);
+void usbh_device_mount_done_callback(struct usbh_hubport *hport);
+void usbh_device_unmount_done_callback(struct usbh_hubport *hport);
 
 #ifdef __cplusplus
 }

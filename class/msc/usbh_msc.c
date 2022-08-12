@@ -393,8 +393,6 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register MSC Class:%s\r\n", hport->config.intf[intf].devname);
 
-    extern int msc_test();
-    msc_test();
     return ret;
 }
 
