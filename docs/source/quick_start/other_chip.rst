@@ -25,15 +25,26 @@ USB Host 移植要点
 - 拷贝 `usb_config.h` 文件到自己工程目录下，并添加相应的目录头文件路径。所以根目录下的文件仅作为参考，不要添加根目录下的头文件路径
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 调用 `usbh_initialize` 初始化 usb 硬件
-- 如果使用的是 GCC，需要在链接脚本中添加如下代码：
+- 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
 
 .. code-block:: C
 
         /* section information for usbh class */
         . = ALIGN(4);
-        _usbh_class_info_start = .;
-        KEEP(*(usbh_class_info))
-        _usbh_class_info_end = .;
+        __usbh_class_info_start__ = .;
+        KEEP(*(.usbh_class_info))
+        __usbh_class_info_end__ = .;
+
+- 如果使用的是 Segger Embedded Studio ，需要在链接脚本(icf)中添加如下代码：
+
+.. code-block:: C
+
+        define region CHERRYUSB_RAM  = [from 0x1080000 + 700k size 68k];  /* reserve for cherryusb region */
+
+        define exported symbol __usbh_class_info_start__  = start of region CHERRYUSB_RAM;
+        define exported symbol __usbh_class_info_end__  = end of region CHERRYUSB_RAM + 1;
+
+        place in CHERRYUSB_RAM                   { section  .usbh_class_info };
 
 - 编译使用。各个 class 如何使用，参考 demo 下的 `usb_host.c` 文件
 

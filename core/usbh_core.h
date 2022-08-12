@@ -60,7 +60,7 @@ extern "C" {
 
 #define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
-#define CLASS_INFO_DEFINE          __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
+#define CLASS_INFO_DEFINE          __attribute__((section(".usbh_class_info"))) __USED __ALIGNED(1)
 
 enum usbh_event_type {
     USBH_EVENT_CONNECTED = (1 << 0),
