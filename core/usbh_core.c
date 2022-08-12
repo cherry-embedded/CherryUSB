@@ -660,6 +660,7 @@ static int usbh_enumerate(struct usbh_hubport *hport)
         }
     }
 
+    usbh_device_mount_done_callback(hport);
 errout:
     if (ret < 0) {
         usbh_hport_deactivate(hport);
@@ -760,6 +761,7 @@ static void usbh_portchange_detect_thread(void *argument)
             }
             usbh_enumerate(hport);
         } else {
+            usbh_device_unmount_done_callback(hport);
             usbh_hport_deactivate(hport);
             for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
                 if (hport->config.intf[i].class_driver && hport->config.intf[i].class_driver->disconnect) {
@@ -1026,4 +1028,12 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
         }
     }
     return NULL;
+}
+
+__WEAK void usbh_device_mount_done_callback(struct usbh_hubport *hport)
+{
+}
+
+__WEAK void usbh_device_unmount_done_callback(struct usbh_hubport *hport)
+{
 }

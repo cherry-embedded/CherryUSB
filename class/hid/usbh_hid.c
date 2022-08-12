@@ -163,8 +163,6 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register HID Class:%s\r\n", hport->config.intf[intf].devname);
 
-    extern int hid_test();
-    hid_test();
     return 0;
 }
 

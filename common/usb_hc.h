@@ -226,6 +226,10 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
  */
 int usb_ep_cancel(usbh_epinfo_t ep);
 
+/* usb hcd irq callback */
+
+void usbh_event_notify_handler(uint8_t event, uint8_t rhport);
+
 #ifdef __cplusplus
 }
 #endif

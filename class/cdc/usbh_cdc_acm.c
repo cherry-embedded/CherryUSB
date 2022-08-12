@@ -206,8 +206,6 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
 
-    extern int cdc_acm_test();
-    cdc_acm_test();
     return ret;
 }
 
