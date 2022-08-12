@@ -81,7 +81,6 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     path += [cwd + '/class/hub']
     src += Glob('core/usbh_core.c')
     src += Glob('osal/usb_osal_rtthread.c')
-    src += Glob('osal/usb_workq.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC']):
         path += [cwd + '/class/cdc']
@@ -101,7 +100,6 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
-        CPPDEFINES += ['CONFIG_USBHOST_HIGH_WORKQ']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB']):
         src += Glob('port/musb/usb_hc_musb.c')
