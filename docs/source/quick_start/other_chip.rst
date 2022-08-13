@@ -45,6 +45,7 @@ USB Host 移植要点
         define exported symbol __usbh_class_info_end__  = end of region CHERRYUSB_RAM + 1;
 
         place in CHERRYUSB_RAM                   { section  .usbh_class_info };
+        keep { section .usbh_class_info};
 
 - 编译使用。各个 class 如何使用，参考 demo 下的 `usb_host.c` 文件
 
