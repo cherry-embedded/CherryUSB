@@ -48,6 +48,7 @@ struct dwc2_pipe {
     uint8_t ep_interval;      /* Interrupt/isochronous EP polling interval */
     uint16_t num_packets;     /* for HCTSIZx*/
     uint32_t xferlen;         /* for HCTSIZx*/
+    uint8_t *buffer;          /* for dcache invalidate */
     volatile int result;      /* The result of the transfer */
     volatile uint32_t xfrd;   /* Bytes transferred (at end of transfer) */
     volatile bool waiter;     /* True: Thread is waiting for a channel event */
@@ -566,7 +567,11 @@ static void dwc2_pipe_wakeup(struct dwc2_pipe *chan)
             if (chan->result < 0) {
                 nbytes = chan->result;
             }
-
+#ifdef CONFIG_USB_DCACHE_ENABLE
+            if (((chan->ep_addr & 0x80) == 0x80) && (nbytes > 0)) {
+                usb_dcache_invalidate((uint32_t)chan->buffer, nbytes);
+            }
+#endif
             callback(arg, nbytes);
         }
 #endif
@@ -1043,6 +1048,7 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
         usb_dcache_clean((uintptr_t)buffer, buflen);
     }
 #endif
+    chan->buffer = buffer;
     dwc2_pipe_transfer(chidx, chan->ep_addr, (uint32_t *)buffer, chan->xferlen, chan->num_packets, chan->data_pid);
 
     return 0;
