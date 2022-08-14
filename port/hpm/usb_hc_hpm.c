@@ -26,7 +26,7 @@ struct hpm_ehci_hcd {
     struct hpm_ehci_pipe chan[HCD_MAX_ENDPOINT][2];
 } g_hpm_ehci_hcd;
 
-static inline uint32_t tu_align32(uint32_t value)
+static inline uint32_t hpm_ehci_align32(uint32_t value)
 {
     return (value & 0xFFFFFFE0UL);
 }
@@ -70,8 +70,9 @@ static const hcd_controller_t _hcd_controller[] = {
  *---------------------------------------------------------------------*/
 ATTR_PLACE_AT_NONCACHEABLE static usb_host_handle_t usb_host_handle;
 ATTR_PLACE_AT_NONCACHEABLE static bool hcd_int_sta;
-ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)
-static hcd_data_t _hcd_data;
+// clang-format off
+ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_HCD_DATA_RAM_ADDRESS_ALIGNMENT) static hcd_data_t _hcd_data;
+// clang-format on
 
 bool hcd_init(uint8_t rhport)
 {
@@ -281,9 +282,25 @@ int usb_hc_sw_init(void)
 
     for (uint8_t chidx = 0; chidx < HCD_MAX_ENDPOINT; chidx++) {
         g_hpm_ehci_hcd.chan[chidx][0].exclsem = usb_osal_mutex_create();
+        if (g_hpm_ehci_hcd.chan[chidx][0].exclsem == NULL) {
+            printf("no memory to alloc mutex\r\n");
+            return -ENOMEM;
+        }
         g_hpm_ehci_hcd.chan[chidx][0].waitsem = usb_osal_sem_create(0);
+        if (g_hpm_ehci_hcd.chan[chidx][0].exclsem == NULL) {
+            printf("no memory to alloc sem\r\n");
+            return -ENOMEM;
+        }
         g_hpm_ehci_hcd.chan[chidx][1].exclsem = usb_osal_mutex_create();
+        if (g_hpm_ehci_hcd.chan[chidx][0].exclsem == NULL) {
+            printf("no memory to alloc mutex\r\n");
+            return -ENOMEM;
+        }
         g_hpm_ehci_hcd.chan[chidx][1].waitsem = usb_osal_sem_create(0);
+        if (g_hpm_ehci_hcd.chan[chidx][0].exclsem == NULL) {
+            printf("no memory to alloc sem\r\n");
+            return -ENOMEM;
+        }
     }
 
     return 0;
@@ -731,11 +748,11 @@ static void period_list_xfer_complete_isr(usb_host_handle_t *handle, uint8_t int
 
     /* TODO abstract max loop guard for period */
     while (!next_item.terminate &&
-           !(interval_ms > 1 && period_1ms_addr == tu_align32(next_item.address)) &&
+           !(interval_ms > 1 && period_1ms_addr == hpm_ehci_align32(next_item.address)) &&
            max_loop < (HCD_MAX_ENDPOINT + usb_max_itd + usb_max_sitd) * 1) {
         switch (next_item.type) {
             case usb_qtype_qhd:
-                p_qhd_int = (hcd_qhd_t *)tu_align32(next_item.address);
+                p_qhd_int = (hcd_qhd_t *)hpm_ehci_align32(next_item.address);
                 if (!p_qhd_int->qtd_overlay.halted) {
                     qhd_xfer_complete_isr(p_qhd_int);
                 }
@@ -829,10 +846,10 @@ static void xfer_error_isr(usb_host_handle_t *handle)
 
         /* TODO abstract max loop guard for period */
         while (!next_item.terminate &&
-               !(interval_ms > 1 && period_1ms_addr == tu_align32(next_item.address))) {
+               !(interval_ms > 1 && period_1ms_addr == hpm_ehci_align32(next_item.address))) {
             switch (next_item.type) {
                 case usb_qtype_qhd:
-                    p_qhd_int = (hcd_qhd_t *)tu_align32(next_item.address);
+                    p_qhd_int = (hcd_qhd_t *)hpm_ehci_align32(next_item.address);
                     qhd_xfer_error_isr(handle, p_qhd_int);
                     break;
 
