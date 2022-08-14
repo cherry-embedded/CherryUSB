@@ -1,5 +1,8 @@
 #include "usbh_core.h"
 #include "hpm_usb_host.h"
+#include "hpm_common.h"
+#include "hpm_soc.h"
+#include "hpm_l1c_drv.h"
 #include "board.h"
 
 #define HCD_MAX_ENDPOINT 16
@@ -7,6 +10,7 @@
 struct hpm_ehci_pipe {
     uint8_t ep_addr;
     uint8_t dev_addr;
+    uint8_t *buffer;          /* for dcache invalidate */
     volatile int result;      /* The result of the transfer */
     volatile uint32_t xfrd;   /* Bytes transferred (at end of transfer) */
     volatile bool waiter;     /* True: Thread is waiting for a channel event */
@@ -65,6 +69,7 @@ static const hcd_controller_t _hcd_controller[] = {
  * Variable Definitions
  *---------------------------------------------------------------------*/
 ATTR_PLACE_AT_NONCACHEABLE static usb_host_handle_t usb_host_handle;
+ATTR_PLACE_AT_NONCACHEABLE static bool hcd_int_sta;
 ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)
 static hcd_data_t _hcd_data;
 
@@ -255,7 +260,11 @@ static void hpm_ehci_pipe_wakeup(struct hpm_ehci_pipe *chan)
             if (chan->result < 0) {
                 nbytes = chan->result;
             }
-
+#ifdef CONFIG_USB_DCACHE_ENABLE
+            if (((chan->ep_addr & 0x80) == 0x80) && (nbytes > 0)) {
+                l1c_dc_invalidate((uint32_t)chan->buffer, nbytes);
+            }
+#endif
             callback(arg, nbytes);
         }
 #endif
@@ -433,7 +442,9 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     if (ret < 0) {
         goto error_out;
     }
-
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    l1c_dc_writeback((uint32_t)setup, 8);
+#endif
     usb_host_setup_send(&usb_host_handle, chan->dev_addr, (uint8_t *)setup);
     ret = hpm_ehci_pipe_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
     if (ret < 0) {
@@ -449,7 +460,9 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
             if (ret < 0) {
                 goto error_out;
             }
-
+#ifdef CONFIG_USB_DCACHE_ENABLE
+            l1c_dc_invalidate((uint32_t)buffer, setup->wLength);
+#endif
             chan->waiter = true;
             chan->result = -EBUSY;
             usb_host_edpt_xfer(&usb_host_handle, chan->dev_addr, 0x00, NULL, 0);
@@ -460,6 +473,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
         } else {
             chan->waiter = true;
             chan->result = -EBUSY;
+            l1c_dc_writeback((uint32_t)buffer, setup->wLength);
             usb_host_edpt_xfer(&usb_host_handle, chan->dev_addr, 0x00, buffer, setup->wLength);
             ret = hpm_ehci_pipe_wait(chan, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT);
             if (ret < 0) {
@@ -499,6 +513,10 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
 
     chan = (struct hpm_ehci_pipe *)ep;
 
+    if (buffer && (((uint32_t)buffer) & 0x1f)) {
+        return -EINVAL;
+    }
+
     ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
@@ -508,12 +526,22 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
     if (ret < 0) {
         goto error_out;
     }
-
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((chan->ep_addr & 0x80) == 0x00) {
+        l1c_dc_writeback((uint32_t)buffer, buflen);
+    }
+#endif
+    chan->buffer = buffer;
     usb_host_edpt_xfer(&usb_host_handle, chan->dev_addr, chan->ep_addr, buffer, buflen);
     ret = hpm_ehci_pipe_wait(chan, timeout);
     if (ret < 0) {
         goto error_out;
     }
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((chan->ep_addr & 0x80) == 0x80) {
+        l1c_dc_invalidate((uint32_t)buffer, buflen);
+    }
+#endif
     usb_osal_mutex_give(chan->exclsem);
     return ret;
 error_out:
@@ -524,32 +552,7 @@ error_out:
 
 int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
-    struct hpm_ehci_pipe *chan;
-    int ret;
-
-    chan = (struct hpm_ehci_pipe *)ep;
-
-    ret = usb_osal_mutex_take(chan->exclsem);
-    if (ret < 0) {
-        return ret;
-    }
-
-    ret = hpm_ehci_pipe_waitsetup(chan);
-    if (ret < 0) {
-        goto error_out;
-    }
-
-    usb_host_edpt_xfer(&usb_host_handle, chan->dev_addr, chan->ep_addr, buffer, buflen);
-    ret = hpm_ehci_pipe_wait(chan, timeout);
-    if (ret < 0) {
-        goto error_out;
-    }
-    usb_osal_mutex_give(chan->exclsem);
-    return ret;
-error_out:
-    chan->waiter = false;
-    usb_osal_mutex_give(chan->exclsem);
-    return ret;
+    return usbh_ep_bulk_transfer(ep, buffer, buflen, timeout);
 }
 
 int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, usbh_asynch_callback_t callback, void *arg)
@@ -559,6 +562,10 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
 
     chan = (struct hpm_ehci_pipe *)ep;
 
+    if (buffer && (((uint32_t)buffer) & 0x1f)) {
+        return -EINVAL;
+    }
+
     ret = usb_osal_mutex_take(chan->exclsem);
     if (ret < 0) {
         return ret;
@@ -568,7 +575,11 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     if (ret < 0) {
         goto error_out;
     }
-
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((chan->ep_addr & 0x80) == 0x00) {
+        l1c_dc_writeback((uint32_t)buffer, buflen);
+    }
+#endif
     usb_host_edpt_xfer(&usb_host_handle, chan->dev_addr, chan->ep_addr, buffer, buflen);
 
 error_out:
@@ -578,30 +589,48 @@ error_out:
 
 int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, usbh_asynch_callback_t callback, void *arg)
 {
-    struct hpm_ehci_pipe *chan;
-    int ret;
-
-    chan = (struct hpm_ehci_pipe *)ep;
-
-    ret = usb_osal_mutex_take(chan->exclsem);
-    if (ret < 0) {
-        return ret;
-    }
-
-    ret = hpm_ehci_pipe_asynchsetup(chan, callback, arg);
-    if (ret < 0) {
-        goto error_out;
-    }
-
-    usb_host_edpt_xfer(&usb_host_handle, chan->dev_addr, chan->ep_addr, buffer, buflen);
-
-error_out:
-    usb_osal_mutex_give(chan->exclsem);
-    return ret;
+    return usbh_ep_bulk_async_transfer(ep, buffer, buflen, callback, arg);
 }
 
 int usb_ep_cancel(usbh_epinfo_t ep)
 {
+    struct hpm_ehci_pipe *chan;
+    int ret;
+    size_t flags;
+#ifdef CONFIG_USBHOST_ASYNCH
+    usbh_asynch_callback_t callback;
+    void *arg;
+#endif
+
+    chan = (struct hpm_ehci_pipe *)ep;
+
+    flags = usb_osal_enter_critical_section();
+
+    chan->result = -ESHUTDOWN;
+#ifdef CONFIG_USBHOST_ASYNCH
+    /* Extract the callback information */
+    callback = chan->callback;
+    arg = chan->arg;
+    chan->callback = NULL;
+    chan->arg = NULL;
+    chan->xfrd = 0;
+#endif
+    usb_osal_leave_critical_section(flags);
+
+    /* Is there a thread waiting for this transfer to complete? */
+
+    if (chan->waiter) {
+        /* Wake'em up! */
+        chan->waiter = false;
+        usb_osal_sem_give(chan->waitsem);
+    }
+#ifdef CONFIG_USBHOST_ASYNCH
+    /* No.. is an asynchronous callback expected when the transfer completes? */
+    else if (callback) {
+        /* Then perform the callback */
+        callback(arg, -ESHUTDOWN);
+    }
+#endif
     return 0;
 }
 
