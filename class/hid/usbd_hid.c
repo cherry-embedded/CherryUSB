@@ -23,9 +23,6 @@
 #include "usbd_core.h"
 #include "usbd_hid.h"
 
-#define HID_STATE_IDLE 0
-#define HID_STATE_BUSY 1
-
 struct usbd_hid {
     const uint8_t *hid_descriptor;
     const uint8_t *hid_report_descriptor;

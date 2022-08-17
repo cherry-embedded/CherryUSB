@@ -1,7 +1,7 @@
 #include "usbd_core.h"
 
 #ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_FS_Handler //use actual usb irq name instead
+#define USBD_IRQHandler USBD_IRQHandler
 #endif
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS

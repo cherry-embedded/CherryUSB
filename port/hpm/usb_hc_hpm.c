@@ -96,21 +96,6 @@ bool hcd_init(uint8_t rhport)
     return true;
 }
 
-/****************************************************************************
- * Name: hpm_ehci_pipe_waitsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the transfer).
- *   We do this to minimize race conditions.  This logic would have to be
- *   expanded if we want to have more than one packet in flight at a time!
- *
- * Assumptions:
- *   Called from a normal thread context BEFORE the transfer has been
- *   started.
- *
- ****************************************************************************/
-
 static int hpm_ehci_pipe_waitsetup(struct hpm_ehci_pipe *chan)
 {
     size_t flags;
@@ -118,13 +103,8 @@ static int hpm_ehci_pipe_waitsetup(struct hpm_ehci_pipe *chan)
 
     flags = usb_osal_enter_critical_section();
 
-    /* Is the device still connected? */
-
     if (usbh_get_port_connect_status(1)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
+
         chan->waiter = true;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -138,21 +118,6 @@ static int hpm_ehci_pipe_waitsetup(struct hpm_ehci_pipe *chan)
     return ret;
 }
 
-/****************************************************************************
- * Name: hpm_ehci_pipe_asynchsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the to avoid
- *   transfer).  We do this to minimize race conditions.  This logic would
- *   have to be expanded if we want to have more than one packet in flight
- *   at a time!
- *
- * Assumptions:
- *   Might be called from the level of an interrupt handler
- *
- ****************************************************************************/
-
 #ifdef CONFIG_USBHOST_ASYNCH
 static int hpm_ehci_pipe_asynchsetup(struct hpm_ehci_pipe *chan, usbh_asynch_callback_t callback, void *arg)
 {
@@ -160,14 +125,8 @@ static int hpm_ehci_pipe_asynchsetup(struct hpm_ehci_pipe *chan, usbh_asynch_cal
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
-    /* Is the device still connected? */
 
     if (usbh_get_port_connect_status(1)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
-
         chan->waiter = false;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -182,27 +141,11 @@ static int hpm_ehci_pipe_asynchsetup(struct hpm_ehci_pipe *chan, usbh_asynch_cal
 }
 #endif
 
-/****************************************************************************
- * Name: hpm_ehci_pipe_wait
- *
- * Description:
- *   Wait for a transfer on a channel to complete.
- *
- * Assumptions:
- *   Called from a normal thread context
- *
- ****************************************************************************/
-
 static int hpm_ehci_pipe_wait(struct hpm_ehci_pipe *chan, uint32_t timeout)
 {
     int ret;
 
-    /* Loop, testing for an end of transfer condition.  The channel 'result'
-   * was set to EBUSY and 'waiter' was set to true before the transfer;
-   * 'waiter' will be set to false and 'result' will be set appropriately
-   * when the transfer is completed.
-   */
-
+    /* wait until timeout or sem give */
     if (chan->waiter) {
         ret = usb_osal_sem_take(chan->waitsem, timeout);
         if (ret < 0) {
@@ -210,7 +153,7 @@ static int hpm_ehci_pipe_wait(struct hpm_ehci_pipe *chan, uint32_t timeout)
         }
     }
 
-    /* The transfer is complete re-enable interrupts and return the result */
+    /* Sem give, check if giving from error isr */
     ret = chan->result;
 
     if (ret < 0) {
@@ -219,57 +162,34 @@ static int hpm_ehci_pipe_wait(struct hpm_ehci_pipe *chan, uint32_t timeout)
     return chan->xfrd;
 }
 
-/****************************************************************************
- * Name: hpm_ehci_pipe_wakeup
- *
- * Description:
- *   A channel transfer has completed... wakeup any threads waiting for the
- *   transfer to complete.
- *
- * Assumptions:
- *   This function is called from the transfer complete interrupt handler for
- *   the channel.  Interrupts are disabled.
- *
- ****************************************************************************/
-
 static void hpm_ehci_pipe_wakeup(struct hpm_ehci_pipe *chan)
 {
     usbh_asynch_callback_t callback;
     void *arg;
     int nbytes;
 
-    /* Is the transfer complete? */
-
-    if (chan->result != -EBUSY) {
-        /* Is there a thread waiting for this transfer to complete? */
-
-        if (chan->waiter) {
-            /* Wake'em up! */
-            chan->waiter = false;
-            usb_osal_sem_give(chan->waitsem);
-        }
-#ifdef CONFIG_USBHOST_ASYNCH
-        /* No.. is an asynchronous callback expected when the transfer
-       * completes?
-       */
-        else if (chan->callback) {
-            callback = chan->callback;
-            arg = chan->arg;
-            nbytes = chan->xfrd;
-            chan->callback = NULL;
-            chan->arg = NULL;
-            if (chan->result < 0) {
-                nbytes = chan->result;
-            }
-#ifdef CONFIG_USB_DCACHE_ENABLE
-            if (((chan->ep_addr & 0x80) == 0x80) && (nbytes > 0)) {
-                l1c_dc_invalidate((uint32_t)chan->buffer, nbytes);
-            }
-#endif
-            callback(arg, nbytes);
-        }
-#endif
+    if (chan->waiter) {
+        chan->waiter = false;
+        usb_osal_sem_give(chan->waitsem);
     }
+#ifdef CONFIG_USBHOST_ASYNCH
+    else if (chan->callback) {
+        callback = chan->callback;
+        arg = chan->arg;
+        nbytes = chan->xfrd;
+        chan->callback = NULL;
+        chan->arg = NULL;
+        if (chan->result < 0) {
+            nbytes = chan->result;
+        }
+#ifdef CONFIG_USB_DCACHE_ENABLE
+        if (((chan->ep_addr & 0x80) == 0x80) && (nbytes > 0)) {
+            l1c_dc_invalidate((uint32_t)chan->buffer, nbytes);
+        }
+#endif
+        callback(arg, nbytes);
+    }
+#endif
 }
 
 __WEAK void usb_hc_low_level_init(void)
@@ -394,6 +314,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         }
     }
 
+    /* store variables */
     waitsem = chan->waitsem;
     exclsem = chan->exclsem;
 
@@ -419,7 +340,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
     usb_host_edpt_open(&usb_host_handle, hport->dev_addr, &ep_desc);
 
-    /* restore variable */
+    /* restore variables */
     chan->waitsem = waitsem;
     chan->exclsem = exclsem;
 

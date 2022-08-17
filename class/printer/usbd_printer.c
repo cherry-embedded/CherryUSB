@@ -23,21 +23,11 @@
 #include "usbd_core.h"
 #include "usbd_printer.h"
 
-/* Device data structure */
 struct printer_cfg_priv {
     uint8_t *device_id;
     uint8_t port_status;
 } usbd_printer_cfg;
 
-/**
- * @brief Handler called for Class requests not handled by the USB stack.
- *
- * @param setup    Information about the request to execute.
- * @param len       Size of the buffer.
- * @param data      Buffer containing the request result.
- *
- * @return  0 on success, negative errno code on fail.
- */
 static int printer_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("Printer Class request: "

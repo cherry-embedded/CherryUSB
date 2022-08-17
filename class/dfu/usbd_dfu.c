@@ -23,7 +23,6 @@
 #include "usbd_core.h"
 #include "usbd_dfu.h"
 
-/* Device data structure */
 struct dfu_cfg_priv {
     struct dfu_info info;
 } usbd_dfu_cfg;

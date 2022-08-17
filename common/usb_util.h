@@ -138,23 +138,11 @@
 #define HI_BYTE(x) ((uint8_t)((x & 0xFF00) >> 8))
 #endif
 
-/**
- * @def MAX
- * @brief The larger value between @p a and @p b.
- * @note Arguments are evaluated twice.
- */
 #ifndef MAX
-/* Use Z_MAX for a GCC-only, single evaluation version */
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-/**
- * @def MIN
- * @brief The smaller value between @p a and @p b.
- * @note Arguments are evaluated twice.
- */
 #ifndef MIN
-/* Use Z_MIN for a GCC-only, single evaluation version */
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
@@ -208,13 +196,6 @@
         (field)[3] = (uint8_t)((value) >> 0);  \
     } while (0)
 
-#define REQTYPE_GET_DIR(x)   (((x) >> 7) & 0x01)
-#define REQTYPE_GET_TYPE(x)  (((x) >> 5) & 0x03U)
-#define REQTYPE_GET_RECIP(x) ((x)&0x1F)
-
-#define GET_DESC_TYPE(x)  (((x) >> 8) & 0xFFU)
-#define GET_DESC_INDEX(x) ((x)&0xFFU)
-
 #define WBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF)
 #define DBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), ((x >> 24) & 0xFF)
 
@@ -238,7 +219,5 @@
         29, 28, 27, 26, 25, 24, 23, 22, 21, 20, \
         19, 18, 17, 16, 15, 14, 13, 12, 11, 10, \
         9, 8, 7, 6, 5, 4, 3, 2, 1, 0
-
-#define USB_DESC_SECTION __attribute__((section("usb_desc"))) __USED __ALIGNED(1)
 
 #endif

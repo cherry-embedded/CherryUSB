@@ -35,35 +35,20 @@ extern "C" {
  * Structure containing the USB endpoint configuration.
  */
 struct usbd_endpoint_cfg {
-    /** The number associated with the EP in the device
-     *  configuration structure
-     *       IN  EP = 0x80 | \<endpoint number\>
-     *       OUT EP = 0x00 | \<endpoint number\>
-     */
-    uint8_t ep_addr;
-    /** Endpoint Transfer Type.
-     * May be Bulk, Interrupt, Control or Isochronous
-     */
-    uint8_t ep_type;
-    /** Endpoint max packet size */
-    uint16_t ep_mps;
+    uint8_t ep_addr; /* Endpoint addr with direction */
+    uint8_t ep_type; /* Endpoint type */
+    uint16_t ep_mps; /* Endpoint max packet size */
 };
 
 /**
- * @brief USB Device Core Layer API
- * @defgroup _usb_device_core_api USB Device Core API
- * @{
- */
-
-/**
  * @brief init device controller registers.
- * @return 0 on success, negative errno code on fail.
+ * @return On success will return 0, and others indicate fail.
  */
 int usb_dc_init(void);
 
 /**
  * @brief deinit device controller registers.
- * @return 0 on success, negative errno code on fail.
+ * @return On success will return 0, and others indicate fail.
  */
 int usb_dc_deinit(void);
 
@@ -72,43 +57,35 @@ int usb_dc_deinit(void);
  *
  * @param[in] addr Device address
  *
- * @return 0 on success, negative errno code on fail.
+ * @return On success will return 0, and others indicate fail.
  */
 int usbd_set_address(const uint8_t addr);
 
 /**
  * @brief configure and enable endpoint.
  *
- * This function sets endpoint configuration according to one specified in USB.
- * endpoint descriptor and then enables it for data transfers.
+ * @param [in]  ep_cfg Endpoint config.
  *
- * @param [in]  ep_desc Endpoint descriptor byte array.
- *
- * @return true if successfully configured and enabled.
+ * @return On success will return 0, and others indicate fail.
  */
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
 
 /**
  * @brief Disable the selected endpoint
  *
- * Function to disable the selected endpoint. Upon success interrupts are
- * disabled for the corresponding endpoint and the endpoint is no longer able
- * for transmitting/receiving data.
+ * @param[in] ep Endpoint address
  *
- * @param[in] ep Endpoint address corresponding to the one
- *               listed in the device configuration table
- *
- * @return 0 on success, negative errno code on fail.
+ * @return On success will return 0, and others indicate fail.
  */
 int usbd_ep_close(const uint8_t ep);
 
 /**
  * @brief Set stall condition for the selected endpoint
  *
- * @param[in] ep Endpoint address corresponding to the one
- *               listed in the device configuration table
+ * @param[in] ep Endpoint address
  *
- * @return 0 on success, negative errno code on fail.
+ *
+ * @return On success will return 0, and others indicate fail.
  */
 int usbd_ep_set_stall(const uint8_t ep);
 
@@ -118,18 +95,18 @@ int usbd_ep_set_stall(const uint8_t ep);
  * @param[in] ep Endpoint address corresponding to the one
  *               listed in the device configuration table
  *
- * @return 0 on success, negative errno code on fail.
+ * @return On success will return 0, and others indicate fail.
  */
 int usbd_ep_clear_stall(const uint8_t ep);
 
 /**
  * @brief Check if the selected endpoint is stalled
  *
- * @param[in]  ep       Endpoint address corresponding to the one
- *                      listed in the device configuration table
+ * @param[in]  ep       Endpoint address
+ *
  * @param[out] stalled  Endpoint stall status
  *
- * @return 0 on success, negative errno code on fail.
+ * @return On success will return 0, and others indicate fail.
  */
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled);
 
