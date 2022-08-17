@@ -26,7 +26,6 @@
 const char *stop_name[] = { "1", "1.5", "2" };
 const char *parity_name[] = { "N", "O", "E", "M", "S" };
 
-/* Device data structure */
 struct usbd_cdc {
     struct cdc_line_coding line_coding;
     bool dtr;
@@ -48,15 +47,7 @@ static void usbd_cdc_acm_reset(void)
     g_usbd_cdc_acm_class.line_coding.bCharFormat = 0;
 }
 #endif
-/**
- * @brief Handler called for Class requests not handled by the USB stack.
- *
- * @param setup    Information about the request to execute.
- * @param len       Size of the buffer.
- * @param data      Buffer containing the request result.
- *
- * @return  0 on success, negative errno code on fail.
- */
+
 static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("CDC Class request: "

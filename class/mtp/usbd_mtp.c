@@ -23,7 +23,6 @@
 #include "usbd_core.h"
 #include "usbd_mtp.h"
 
-/* Device data structure */
 struct mtp_cfg_priv {
     uint8_t device_status;
 } usbd_mtp_cfg;
@@ -41,15 +40,6 @@ struct mtp_cfg_priv {
 /* Describe EndPoints configuration */
 static usbd_endpoint_t mtp_ep_data[2];
 
-/**
- * @brief Handler called for Class requests not handled by the USB stack.
- *
- * @param setup    Information about the request to execute.
- * @param len       Size of the buffer.
- * @param data      Buffer containing the request result.
- *
- * @return  0 on success, negative errno code on fail.
- */
 static int mtp_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("MTP Class request: "

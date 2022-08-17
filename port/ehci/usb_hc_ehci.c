@@ -292,37 +292,19 @@ static int usb_ehci_chan_alloc(void)
 {
     int chidx;
 
-    /* Search the table of channels */
-
     for (chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
-        /* Is this channel available? */
         if (!g_ehci_hcd.chan[chidx].inuse) {
-            /* Yes... make it "in use" and return the index */
-
             g_ehci_hcd.chan[chidx].inuse = true;
             return chidx;
         }
     }
-
-    /* All of the channels are "in-use" */
-
     return -EBUSY;
 }
 
 static void usb_ehci_chan_free(struct usb_ehci_epinfo_s *chan)
 {
-    /* Mark the channel available */
     chan->inuse = false;
 }
-/****************************************************************************
- * Name: usb_ehci_qh_alloc
- *
- * Description:
- *   Allocate a Queue Head (QH) structure by removing it from the free list
- *
- * Assumption:  Caller holds the exclsem
- *
- ****************************************************************************/
 
 static struct usb_ehci_qh_s *usb_ehci_qh_alloc(void)
 {
@@ -339,16 +321,6 @@ static struct usb_ehci_qh_s *usb_ehci_qh_alloc(void)
     return qh;
 }
 
-/****************************************************************************
- * Name: usb_ehci_qh_free
- *
- * Description:
- *   Free a Queue Head (QH) structure by returning it to the free list
- *
- * Assumption:  Caller holds the exclsem
- *
- ****************************************************************************/
-
 static void usb_ehci_qh_free(struct usb_ehci_qh_s *qh)
 {
     struct usb_ehci_list_s *entry = (struct usb_ehci_list_s *)qh;
@@ -358,17 +330,6 @@ static void usb_ehci_qh_free(struct usb_ehci_qh_s *qh)
     entry->flink = g_ehci_hcd.qhfree;
     g_ehci_hcd.qhfree = entry;
 }
-
-/****************************************************************************
- * Name: usb_ehci_qtd_alloc
- *
- * Description:
- *   Allocate a Queue Element Transfer Descriptor (qTD) by removing it from
- *   the free list
- *
- * Assumption:  Caller holds the exclsem
- *
- ****************************************************************************/
 
 static struct usb_ehci_qtd_s *usb_ehci_qtd_alloc(void)
 {
@@ -385,17 +346,6 @@ static struct usb_ehci_qtd_s *usb_ehci_qtd_alloc(void)
     return qtd;
 }
 
-/****************************************************************************
- * Name: usb_ehci_qtd_free
- *
- * Description:
- *   Free a Queue Element Transfer Descriptor (qTD) by returning it to the
- *   free list
- *
- * Assumption:  Caller holds the exclsem
- *
- ****************************************************************************/
-
 static void usb_ehci_qtd_free(struct usb_ehci_qtd_s *qtd)
 {
     struct usb_ehci_list_s *entry = (struct usb_ehci_list_s *)qtd;
@@ -405,16 +355,6 @@ static void usb_ehci_qtd_free(struct usb_ehci_qtd_s *qtd)
     entry->flink = g_ehci_hcd.qtdfree;
     g_ehci_hcd.qtdfree = entry;
 }
-
-/****************************************************************************
- * Name: usb_ehci_qh_foreach
- *
- * Description:
- *   Give the first entry in a list of Queue Head (QH) structures, call the
- *   handler for each QH structure in the list (including the one at the head
- *   of the list).
- *
- ****************************************************************************/
 
 static int usb_ehci_qh_foreach(struct usb_ehci_qh_s *qh, uint32_t **bp,
                                foreach_qh_t handler, void *arg)
@@ -484,15 +424,6 @@ static int usb_ehci_qh_foreach(struct usb_ehci_qh_s *qh, uint32_t **bp,
     return 0;
 }
 
-/****************************************************************************
- * Name: usb_ehci_qtd_foreach
- *
- * Description:
- *   Give a Queue Head (QH) instance, call the handler for each qTD structure
- *   in the queue.
- *
- ****************************************************************************/
-
 static int usb_ehci_qtd_foreach(struct usb_ehci_qh_s *qh, foreach_qtd_t handler,
                                 void *arg)
 {
@@ -560,15 +491,6 @@ static int usb_ehci_qtd_foreach(struct usb_ehci_qh_s *qh, foreach_qtd_t handler,
     return 0;
 }
 
-/****************************************************************************
- * Name: usb_ehci_qtd_discard
- *
- * Description:
- *   This is a usb_ehci_qtd_foreach callback.  It simply unlinks the QTD,
- *   updates the back pointer, and frees the QTD structure.
- *
- ****************************************************************************/
-
 static int usb_ehci_qtd_discard(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
                                 void *arg)
 {
@@ -586,18 +508,6 @@ static int usb_ehci_qtd_discard(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
     usb_ehci_qtd_free(qtd);
     return 0;
 }
-
-/****************************************************************************
- * Name: usb_ehci_qh_discard
- *
- * Description:
- *   Free the Queue Head (QH) and all qTD's attached to the QH.
- *
- * Assumptions:
- *   The QH structure itself has already been unlinked from whatever list it
- *   may have been in.
- *
- ****************************************************************************/
 
 static int usb_ehci_qh_discard(struct usb_ehci_qh_s *qh)
 {
@@ -617,15 +527,6 @@ static int usb_ehci_qh_discard(struct usb_ehci_qh_s *qh)
     return ret;
 }
 #ifdef CONFIG_USB_DCACHE_ENABLE
-/****************************************************************************
- * Name: usb_ehci_qtd_flush
- *
- * Description:
- *   This is a callback from usb_ehci_qtd_foreach.  It simply flushes D-cache
- *   for address range of the qTD entry.
- *
- ****************************************************************************/
-
 static int usb_ehci_qtd_flush(struct usb_ehci_qtd_s *qtd, uint32_t **bp, void *arg)
 {
     /* Flush the D-Cache, i.e., make the contents of the memory match the
@@ -638,14 +539,6 @@ static int usb_ehci_qtd_flush(struct usb_ehci_qtd_s *qtd, uint32_t **bp, void *a
 
     return 0;
 }
-
-/****************************************************************************
- * Name: usb_ehci_qh_flush
- *
- * Description:
- *   Invalidate the Queue Head and all qTD entries in the queue.
- *
- ****************************************************************************/
 
 static int usb_ehci_qh_flush(struct usb_ehci_qh_s *qh)
 {
@@ -664,14 +557,6 @@ static int usb_ehci_qh_flush(struct usb_ehci_qh_s *qh)
 #define usb_ehci_qtd_flush(qtd, bp, arg)
 #define usb_ehci_qh_flush(qh)
 #endif
-/****************************************************************************
- * Name: usb_ehci_speed
- *
- * Description:
- *   Map a speed enumeration value per Chapter 9 of the USB specification to
- *   the speed enumeration required in the EHCI queue head.
- *
- ****************************************************************************/
 
 static inline uint8_t usb_ehci_speed(uint8_t usbspeed)
 {
@@ -1253,71 +1138,26 @@ static int usb_ehci_intr_init(struct usb_ehci_epinfo_s *epinfo, uint8_t *buffer,
     return 0;
 }
 
-/****************************************************************************
- * Name: usb_ehci_ioc_setup
- *
- * Description:
- *   Set the request for the IOC event well BEFORE enabling the transfer (as
- *   soon as we are absolutely committed to the to avoid transfer).  We do
- *   this to minimize race conditions.  This logic would have to be expanded
- *   if we want to have more than one packet in flight at a time!
- *
- * Assumption:  The caller holds tex EHCI exclsem
- *
- ****************************************************************************/
-
-static int usb_ehci_ioc_setup(struct usb_ehci_epinfo_s *epinfo)
+static int usb_ehci_wait_setup(struct usb_ehci_epinfo_s *epinfo)
 {
     uint32_t flags;
     int ret = -ENODEV;
 
-    DEBUGASSERT(rhport && epinfo && !epinfo->iocwait);
-#ifdef CONFIG_USBHOST_ASYNCH
-    DEBUGASSERT(epinfo->callback == NULL);
-#endif
-
-    /* Is the device still connected? */
-
     flags = usb_osal_enter_critical_section();
     if (epinfo->hport->connected) {
-        /* Then set iocwait to indicate that we expect to be informed when
-        * either (1) the device is disconnected, or (2) the transfer
-        * completed.
-        */
-
-        epinfo->iocwait = true;  /* We want to be awakened by IOC interrupt */
-        epinfo->status = 0;      /* No status yet */
-        epinfo->xfrd = 0;        /* Nothing transferred yet */
-        epinfo->result = -EBUSY; /* Transfer in progress */
+        epinfo->iocwait = true;
+        epinfo->status = 0;
+        epinfo->xfrd = 0;
+        epinfo->result = -EBUSY;
 #ifdef CONFIG_USBHOST_ASYNCH
-        epinfo->callback = NULL; /* No asynchronous callback */
+        epinfo->callback = NULL;
         epinfo->arg = NULL;
 #endif
-        ret = 0; /* We are good to go */
+        ret = 0;
     }
     usb_osal_leave_critical_section(flags);
     return ret;
 }
-
-/****************************************************************************
- * Name: usb_ehci_ioc_async_setup
- *
- * Description:
- *   Setup to receive an asynchronous notification when a transfer completes.
- *
- * Input Parameters:
- *   epinfo - The IN or OUT endpoint descriptor for the device endpoint on
- *      which the transfer will be performed.
- *   callback - The function to be called when the completes
- *   arg - An arbitrary argument that will be provided with the callback.
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *   - Called from the interrupt level
- *
- ****************************************************************************/
 
 #ifdef CONFIG_USBHOST_ASYNCH
 static int usb_ehci_ioc_async_setup(struct usb_ehci_epinfo_s *epinfo, usbh_asynch_callback_t callback, void *arg)
@@ -1325,54 +1165,23 @@ static int usb_ehci_ioc_async_setup(struct usb_ehci_epinfo_s *epinfo, usbh_async
     uint32_t flags;
     int ret = -ENODEV;
 
-    DEBUGASSERT(rhport && epinfo && !epinfo->iocwait);
-#ifdef CONFIG_USBHOST_ASYNCH
-    DEBUGASSERT(epinfo->callback == NULL);
-#endif
-
-    /* Is the device still connected? */
-
     flags = usb_osal_enter_critical_section();
     if (epinfo->hport->connected) {
-        /* Then set iocwait to indicate that we expect to be informed when
-        * either (1) the device is disconnected, or (2) the transfer
-        * completed.
-        */
-
-        epinfo->iocwait = false; /* We want to be awakened by IOC interrupt */
-        epinfo->status = 0;      /* No status yet */
-        epinfo->xfrd = 0;        /* Nothing transferred yet */
-        epinfo->result = -EBUSY; /* Transfer in progress */
+        epinfo->iocwait = false;
+        epinfo->status = 0;
+        epinfo->xfrd = 0;
+        epinfo->result = -EBUSY;
 #ifdef CONFIG_USBHOST_ASYNCH
-        epinfo->callback = callback; /* No asynchronous callback */
+        epinfo->callback = callback;
         epinfo->arg = arg;
 #endif
-        ret = 0; /* We are good to go */
+        ret = 0;
     }
 
     usb_osal_leave_critical_section(flags);
     return ret;
 }
 #endif
-
-/****************************************************************************
- * Name: usb_ehci_asynch_completion
- *
- * Description:
- *   This function is called at the interrupt level when an asynchronous
- *   transfer completes.  It performs the pending callback.
- *
- * Input Parameters:
- *   epinfo - The IN or OUT endpoint descriptor for the device endpoint on
- *      which the transfer was performed.
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *   - Called from the interrupt level
- *
- ****************************************************************************/
 
 #ifdef CONFIG_USBHOST_ASYNCH
 static void usb_ehci_asynch_completion(struct usb_ehci_epinfo_s *epinfo)
@@ -1409,31 +1218,11 @@ static void usb_ehci_asynch_completion(struct usb_ehci_epinfo_s *epinfo)
 }
 #endif
 
-/****************************************************************************
- * Name: usb_ehci_transfer_wait
- *
- * Description:
- *   Wait for an IN or OUT transfer to complete.
- *
- * Assumption:  The caller holds the EHCI exclsem.  The caller must be aware
- *   that the EHCI exclsem will released while waiting for the transfer to
- *   complete, but will be re-acquired when before returning.  The state of
- *   EHCI resources could be very different upon return.
- *
- * Returned Value:
- *   On success, this function returns the number of bytes actually
- *   transferred.  For control transfers, this size includes the size of the
- *   control request plus the size of the data (which could be short); for
- *   bulk transfers, this will be the number of data bytes transfers (which
- *   could be short).
- *
- ****************************************************************************/
-
 static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo, uint32_t timeout)
 {
     int ret = 0;
 
-    /* Wait for the IOC completion event */
+    /* wait until timeout or sem give */
     if (epinfo->iocwait) {
         ret = usb_osal_sem_take(epinfo->iocsem, timeout);
         if (ret < 0) {
@@ -1441,25 +1230,13 @@ static int usb_ehci_transfer_wait(struct usb_ehci_epinfo_s *epinfo, uint32_t tim
         }
     }
 
+    /* Sem give, check if giving from error isr */
     ret = epinfo->result;
-
     if (ret < 0) {
         return ret;
     }
-
-    /* Transfer completed successfully.  Return the number of bytes transferred.*/
     return epinfo->xfrd;
 }
-
-/****************************************************************************
- * Name: usb_ehci_qtd_ioccheck
- *
- * Description:
- *   This function is a usb_ehci_qtd_foreach() callback function.  It services
- *   one qTD in the asynchronous queue.  It removes all of the qTD
- *   structures that are no longer active.
- *
- ****************************************************************************/
 
 static int usb_ehci_qtd_ioccheck(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
                                  void *arg)
@@ -1495,17 +1272,6 @@ static int usb_ehci_qtd_ioccheck(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
 
     return 0;
 }
-
-/****************************************************************************
- * Name: usb_ehci_qh_ioccheck
- *
- * Description:
- *   This function is a usb_ehci_qh_foreach() callback function.  It services
- *   one QH in the asynchronous queue.  It check all attached qTD structures
- *   and remove all of the structures that are no longer active.  if all of
- *   the qTD structures are removed, then QH itself will also be removed.
- *
- ****************************************************************************/
 
 static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg)
 {
@@ -1631,14 +1397,6 @@ static int usb_ehci_qh_ioccheck(struct usb_ehci_qh_s *qh, uint32_t **bp, void *a
     return 0;
 }
 
-/****************************************************************************
- * Name: usb_ehci_qtd_cancel
- *
- * Description:
- *   This function is a usb_ehci_qtd_foreach() callback function.  It removes
- *   each qTD attached to a QH.
- *
- ****************************************************************************/
 static int usb_ehci_qtd_cancel(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
                                void *arg)
 {
@@ -1664,16 +1422,6 @@ static int usb_ehci_qtd_cancel(struct usb_ehci_qtd_s *qtd, uint32_t **bp,
     return 0;
 }
 
-/****************************************************************************
- * Name: usb_ehci_qh_cancel
- *
- * Description:
- *   This function is a imxrt_qh_foreach() callback function.  It cancels
- *   one QH in the asynchronous queue.  It will remove all attached qTD
- *   structures and remove all of the structures that are no longer active.
- *   Then QH itself will also be removed.
- *
- ****************************************************************************/
 static int usb_ehci_qh_cancel(struct usb_ehci_qh_s *qh, uint32_t **bp, void *arg)
 {
     struct usb_ehci_epinfo_s *epinfo = (struct usb_ehci_epinfo_s *)arg;
@@ -1775,41 +1523,16 @@ static inline void usb_ehci_ioc_bottomhalf(void)
 #endif
 }
 
-/****************************************************************************
- * Name: usb_ehci_portsc_bottomhalf
- *
- * Description:
- *   EHCI Port Change Detect "Bottom Half" interrupt handler
- *
- *  "The Host Controller sets this bit to a one when any port for which the
- *   Port Owner bit is set to zero ... has a change bit transition from a
- *   zero to a one or a Force Port Resume bit transition from a zero to a
- *   one as a result of a J-K transition detected on a suspended port.
- *   This bit will also be set as a result of the Connect Status Change
- *   being set to a one after system software has relinquished ownership of
- *   a connected port by writing a one to a port's Port Owner bit...
- *
- *  "This bit is allowed to be maintained in the Auxiliary power well.
- *   Alternatively, it is also acceptable that on a D3 to D0 transition of
- *   the EHCI HC device, this bit is loaded with the OR of all of the PORTSC
- *   change bits (including: Force port resume, over-current change,
- *   enable/disable change and connect status change)."
- *
- ****************************************************************************/
 static inline void usb_ehci_portsc_bottomhalf(void)
 {
     uint32_t portsc;
     int rhpndx;
 
-    /* Handle root hub status change on each root port */
-
     for (rhpndx = 0; rhpndx < CONFIG_USBHOST_RHPORTS; rhpndx++) {
         portsc = usb_ehci_getreg(&HCOR->portsc[rhpndx]);
 
-        /* Handle port connection status change (CSC) events */
         if ((portsc & EHCI_PORTSC_CSC) != 0) {
             if ((portsc & EHCI_PORTSC_CCS) == EHCI_PORTSC_CCS) {
-                /* Connected ... Did we just become connected? */
                 usbh_event_notify_handler(USBH_EVENT_CONNECTED, 1);
             } else {
                 for (uint8_t chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
@@ -1824,10 +1547,6 @@ static inline void usb_ehci_portsc_bottomhalf(void)
             }
         }
 
-        /* Clear all pending port interrupt sources by writing a '1' to the
-        * corresponding bit in the PORTSC register.  In addition, we need
-        * to preserve the values of all R/W bits (RO bits don't matter)
-        */
         usb_ehci_putreg(portsc, &HCOR->portsc[rhpndx]);
     }
 }
@@ -1867,7 +1586,7 @@ int usb_hc_sw_init(void)
 
 int usb_hc_hw_init(void)
 {
-    int ret;
+    int ret = 0;
     uint32_t regval;
     uintptr_t physaddr1;
     uintptr_t physaddr2;
@@ -1926,6 +1645,17 @@ int usb_hc_hw_init(void)
 
     /* Host Controller Initialization. Paragraph 4.1 */
 
+    /* Make sure that the EHCI is halted:  "When [the Run/Stop] bit is set to
+    * 0, the Host Controller completes the current transaction on the USB and
+    * then halts. The HC Halted bit in the status register indicates when the
+    * Host Controller has finished the transaction and has entered the
+    * stopped state..."
+    */
+    usb_ehci_putreg(0, &HCOR->usbcmd);
+    while ((usb_ehci_getreg(&HCOR->usbsts) & EHCI_USBSTS_HALTED) == 0) {
+    }
+
+    /* Now we can set the HCReset bit in the USBCMD register to initiate the reset */
     /* Reset the EHCI hardware */
     regval = usb_ehci_getreg(&HCOR->usbcmd);
     regval |= EHCI_USBCMD_HCRESET;
@@ -2108,6 +1838,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
     epinfo = &g_ehci_hcd.chan[chidx];
 
+    /* store variables */
     iocsem = epinfo->iocsem;
     exclsem = epinfo->exclsem;
 
@@ -2124,7 +1855,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
     epinfo->speed = hport->speed;
     epinfo->hport = hport;
 
-    /* restore variable */
+    /* restore variables */
     epinfo->inuse = true;
     epinfo->iocsem = iocsem;
     epinfo->exclsem = exclsem;
@@ -2163,7 +1894,7 @@ int usbh_control_transfer(usbh_epinfo_t ep, struct usb_setup_packet *setup, uint
     }
 
     /* Set the request for the IOC event well BEFORE initiating the transfer. */
-    ret = usb_ehci_ioc_setup(epinfo);
+    ret = usb_ehci_wait_setup(epinfo);
     if (ret != 0) {
         goto errout_with_setup;
     }
@@ -2207,7 +1938,7 @@ int usbh_ep_bulk_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
         return ret;
     }
 
-    ret = usb_ehci_ioc_setup(epinfo);
+    ret = usb_ehci_wait_setup(epinfo);
     if (ret < 0) {
         goto errout_with_setup;
     }
@@ -2250,7 +1981,7 @@ int usbh_ep_intr_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t buflen, ui
         return ret;
     }
 
-    ret = usb_ehci_ioc_setup(epinfo);
+    ret = usb_ehci_wait_setup(epinfo);
     if (ret < 0) {
         goto errout_with_setup;
     }
@@ -2364,24 +2095,6 @@ errout_with_setup:
     return ret;
 }
 #endif
-/****************************************************************************
- * Name: usb_ehci_cancel
- *
- * Description:
- *   Cancel a pending transfer on an endpoint.  Canceled synchronous or
- *   asynchronous transfer will complete normally with the error -ESHUTDOWN.
- *
- * Input Parameters:
- *   drvr - The USB host driver instance obtained as a parameter from the
- *          call to the class create() method.
- *   ep   - The IN or OUT endpoint descriptor for the device endpoint on
- *          which an asynchronous transfer should be transferred.
- *
- * Returned Value:
- *   On success, zero (OK) is returned. On a failure, a negated errno value
- *   is returned indicating the nature of the failure
- *
- ****************************************************************************/
 
 int usb_ep_cancel(usbh_epinfo_t ep)
 {
@@ -2393,64 +2106,16 @@ int usb_ep_cancel(usbh_epinfo_t ep)
 #endif
     uint32_t *bp;
     uint32_t flags;
-    bool iocwait;
     int ret;
 
-    DEBUGASSERT(epinfo);
-
-    /* We must have exclusive access to the EHCI hardware and data structures.
-   * This will prevent servicing any transfer completion events while we
-   * perform the cancellation, but will not prevent DMA-related race
-   * conditions.
-   *
-   * REVISIT: This won't work.  This function must be callable from the
-   * interrupt level.
-   */
-
-    ret = usb_osal_mutex_take(epinfo->exclsem);
-    if (ret < 0) {
-        return ret;
-    }
-
-    /* Sample and reset all transfer termination information.  This will
-   * prevent any callbacks from occurring while are performing the
-   * cancellation.  The transfer may still be in progress, however, so this
-   * does not eliminate other DMA-related race conditions.
-   */
-
     flags = usb_osal_enter_critical_section();
+
 #ifdef CONFIG_USBHOST_ASYNCH
     callback = epinfo->callback;
     arg = epinfo->arg;
-#endif
-    iocwait = epinfo->iocwait;
-
-#ifdef CONFIG_USBHOST_ASYNCH
     epinfo->callback = NULL;
     epinfo->arg = NULL;
 #endif
-    epinfo->iocwait = false;
-
-    /* This will prevent any callbacks from occurring while are performing
-   * the cancellation.  The transfer may still be in progress, however, so
-   * this does not eliminate other DMA-related race conditions.
-   */
-
-    epinfo->callback = NULL;
-    epinfo->arg = NULL;
-    usb_osal_leave_critical_section(flags);
-
-    /* Bail if there is no transfer in progress for this endpoint */
-
-#ifdef CONFIG_USBHOST_ASYNCH
-    if (callback == NULL && !iocwait)
-#else
-    if (!iocwait)
-#endif
-    {
-        ret = 0;
-        goto errout_with_sem;
-    }
 
     /* Handle the cancellation according to the type of the transfer */
 
@@ -2474,7 +2139,6 @@ int usb_ep_cancel(usbh_epinfo_t ep)
                 /* Claim that we successfully cancelled the transfer */
 
                 ret = 0;
-                goto exit_terminate;
             }
         } break;
 
@@ -2493,7 +2157,6 @@ int usb_ep_cancel(usbh_epinfo_t ep)
                */
 
                 ret = 0;
-                goto exit_terminate;
             }
         } break;
 #endif
@@ -2501,7 +2164,7 @@ int usb_ep_cancel(usbh_epinfo_t ep)
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
         default:
             ret = -ENOSYS;
-            goto errout_with_sem;
+            break;
     }
 
     /* Find and remove the QH.  There are four possibilities:
@@ -2519,42 +2182,24 @@ int usb_ep_cancel(usbh_epinfo_t ep)
     if (ret < 0) {
     }
 
-    /* Was there a pending synchronous transfer? */
+    usb_osal_leave_critical_section(flags);
 
-exit_terminate:
-    epinfo->result = -ESHUTDOWN;
-#ifdef CONFIG_USBHOST_ASYNCH
-    if (iocwait) {
-        /* Yes... wake it up */
-
-        DEBUGASSERT(callback == NULL);
-        usb_osal_sem_give(epinfo->iocsem);
+    /* Check if there is a thread waiting for this transfer to complete? */
+    if (epinfo->iocwait) {
+        epinfo->iocwait = false;
+        usb_osal_sem_give(chan->waitsem);
     }
-
-    /* No.. Is there a pending asynchronous transfer? */
-
-    else /* if (callback != NULL) */
-    {
-        /* Yes.. perform the callback */
-
+#ifdef CONFIG_USBHOST_ASYNCH
+    /* No.. is an asynchronous callback expected when the transfer completes? */
+    else if (callback) {
         callback(arg, -ESHUTDOWN);
     }
-
-#else
-    /* Wake up the waiting thread */
-
-    usb_osal_sem_give(epinfo->iocsem);
 #endif
-
-errout_with_sem:
-    usb_osal_mutex_give(epinfo->exclsem);
     return ret;
 }
 
-static void usb_ehci_bottomhalf(void *arg)
+static void usb_ehci_bottomhalf(uint32_t pending)
 {
-    uint32_t pending = (uint32_t)arg;
-
     /* USB Interrupt (USBINT)
     *
     *  "The Host Controller sets this bit to 1 on the completion of a USB
@@ -2650,22 +2295,10 @@ void USBH_IRQHandler(void)
     usbsts = usb_ehci_getreg(&HCOR->usbsts);
     regval = usb_ehci_getreg(&HCOR->usbintr);
 
-    /* Handle all unmasked interrupt sources */
     pending = usbsts & regval;
 
     if (pending != 0) {
-        /* Disable further EHCI interrupts so that we do not overrun the work queue.*/
-        usb_ehci_putreg(0, &HCOR->usbintr);
-        /* Clear all pending status bits by writing the value of the pending
-        * interrupt bits back to the status register.
-        */
         usb_ehci_putreg(usbsts & EHCI_INT_ALLINTS, &HCOR->usbsts);
-
-        usb_ehci_bottomhalf((void *)pending);
-
-        /* Re-enable relevant EHCI interrupts.  Interrupts should still be enabled
-        * at the level of the interrupt controller.
-        */
-        usb_ehci_putreg(EHCI_HANDLED_INTS, &HCOR->usbintr);
+        usb_ehci_bottomhalf(pending);
     }
 }

@@ -30,12 +30,6 @@
 #define USB_OTG_HC(i)   ((USB_OTG_HostChannelTypeDef *)(USB_BASE + USB_OTG_HOST_CHANNEL_BASE + ((i)*USB_OTG_HOST_CHANNEL_SIZE)))
 #define USB_OTG_FIFO(i) *(__IO uint32_t *)(USB_BASE + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
 
-/* This structure retains the state of one host channel.  NOTE: Since there
- * is only one channel operation active at a time, some of the fields in
- * in the structure could be moved in struct stm32_ubhost_s to achieve
- * some memory savings.
- */
-
 struct dwc2_pipe {
     uint8_t ep_addr;
     uint8_t ep_type;
@@ -46,8 +40,8 @@ struct dwc2_pipe {
     uint8_t chidx;
     bool inuse;               /* True: This channel is "in use" */
     uint8_t ep_interval;      /* Interrupt/isochronous EP polling interval */
-    uint16_t num_packets;     /* for HCTSIZx*/
-    uint32_t xferlen;         /* for HCTSIZx*/
+    uint16_t num_packets;     /* for HCTSIZx */
+    uint32_t xferlen;         /* for HCTSIZx */
     uint8_t *buffer;          /* for dcache invalidate */
     volatile int result;      /* The result of the transfer */
     volatile uint32_t xfrd;   /* Bytes transferred (at end of transfer) */
@@ -358,64 +352,24 @@ static inline uint32_t dwc2_get_current_frame(void)
     return (USB_OTG_HOST->HFNUM & USB_OTG_HFNUM_FRNUM);
 }
 
-/****************************************************************************
- * Name: dwc2_pipe_alloc
- *
- * Description:
- *   Allocate a channel.
- *
- ****************************************************************************/
-
 static int dwc2_pipe_alloc(void)
 {
     int chidx;
 
-    /* Search the table of channels */
-
     for (chidx = 0; chidx < CONFIG_USB_DWC2_PIPE_NUM; chidx++) {
-        /* Is this channel available? */
         if (!g_dwc2_hcd.chan[chidx].inuse) {
-            /* Yes... make it "in use" and return the index */
-
             g_dwc2_hcd.chan[chidx].inuse = true;
             return chidx;
         }
     }
 
-    /* All of the channels are "in-use" */
-
     return -EBUSY;
 }
 
-/****************************************************************************
- * Name: dwc2_pipe_free
- *
- * Description:
- *   Free a previoiusly allocated channel.
- *
- ****************************************************************************/
-
 static void dwc2_pipe_free(struct dwc2_pipe *chan)
 {
-    /* Mark the channel available */
-
     chan->inuse = false;
 }
-
-/****************************************************************************
- * Name: dwc2_pipe_waitsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the transfer).
- *   We do this to minimize race conditions.  This logic would have to be
- *   expanded if we want to have more than one packet in flight at a time!
- *
- * Assumptions:
- *   Called from a normal thread context BEFORE the transfer has been
- *   started.
- *
- ****************************************************************************/
 
 static int dwc2_pipe_waitsetup(struct dwc2_pipe *chan)
 {
@@ -424,13 +378,7 @@ static int dwc2_pipe_waitsetup(struct dwc2_pipe *chan)
 
     flags = usb_osal_enter_critical_section();
 
-    /* Is the device still connected? */
-
     if (usbh_get_port_connect_status(1)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
         chan->waiter = true;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -444,21 +392,6 @@ static int dwc2_pipe_waitsetup(struct dwc2_pipe *chan)
     return ret;
 }
 
-/****************************************************************************
- * Name: dwc2_pipe_asynchsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the to avoid
- *   transfer).  We do this to minimize race conditions.  This logic would
- *   have to be expanded if we want to have more than one packet in flight
- *   at a time!
- *
- * Assumptions:
- *   Might be called from the level of an interrupt handler
- *
- ****************************************************************************/
-
 #ifdef CONFIG_USBHOST_ASYNCH
 static int dwc2_pipe_asynchsetup(struct dwc2_pipe *chan, usbh_asynch_callback_t callback, void *arg)
 {
@@ -466,14 +399,8 @@ static int dwc2_pipe_asynchsetup(struct dwc2_pipe *chan, usbh_asynch_callback_t 
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
-    /* Is the device still connected? */
 
     if (usbh_get_port_connect_status(1)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
-
         chan->waiter = false;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -488,27 +415,11 @@ static int dwc2_pipe_asynchsetup(struct dwc2_pipe *chan, usbh_asynch_callback_t 
 }
 #endif
 
-/****************************************************************************
- * Name: dwc2_pipe_wait
- *
- * Description:
- *   Wait for a transfer on a channel to complete.
- *
- * Assumptions:
- *   Called from a normal thread context
- *
- ****************************************************************************/
-
 static int dwc2_pipe_wait(struct dwc2_pipe *chan, uint32_t timeout)
 {
     int ret;
 
-    /* Loop, testing for an end of transfer condition.  The channel 'result'
-   * was set to EBUSY and 'waiter' was set to true before the transfer;
-   * 'waiter' will be set to false and 'result' will be set appropriately
-   * when the transfer is completed.
-   */
-
+    /* wait until timeout or sem give */
     if (chan->waiter) {
         ret = usb_osal_sem_take(chan->waitsem, timeout);
         if (ret < 0) {
@@ -516,27 +427,13 @@ static int dwc2_pipe_wait(struct dwc2_pipe *chan, uint32_t timeout)
         }
     }
 
-    /* The transfer is complete re-enable interrupts and return the result */
+    /* Sem give, check if giving from error isr */
     ret = chan->result;
-
     if (ret < 0) {
         return ret;
     }
     return chan->xfrd;
 }
-
-/****************************************************************************
- * Name: dwc2_pipe_wakeup
- *
- * Description:
- *   A channel transfer has completed... wakeup any threads waiting for the
- *   transfer to complete.
- *
- * Assumptions:
- *   This function is called from the transfer complete interrupt handler for
- *   the channel.  Interrupts are disabled.
- *
- ****************************************************************************/
 
 static void dwc2_pipe_wakeup(struct dwc2_pipe *chan)
 {
@@ -544,38 +441,29 @@ static void dwc2_pipe_wakeup(struct dwc2_pipe *chan)
     void *arg;
     int nbytes;
 
-    /* Is the transfer complete? */
-
-    if (chan->result != -EBUSY) {
-        /* Is there a thread waiting for this transfer to complete? */
-
-        if (chan->waiter) {
-            /* Wake'em up! */
-            chan->waiter = false;
-            usb_osal_sem_give(chan->waitsem);
-        }
-#ifdef CONFIG_USBHOST_ASYNCH
-        /* No.. is an asynchronous callback expected when the transfer
-       * completes?
-       */
-        else if (chan->callback) {
-            callback = chan->callback;
-            arg = chan->arg;
-            nbytes = chan->xfrd;
-            chan->callback = NULL;
-            chan->arg = NULL;
-            if (chan->result < 0) {
-                nbytes = chan->result;
-            }
-#ifdef CONFIG_USB_DCACHE_ENABLE
-            if (((chan->ep_addr & 0x80) == 0x80) && (nbytes > 0)) {
-                usb_dcache_invalidate((uint32_t)chan->buffer, nbytes);
-            }
-#endif
-            callback(arg, nbytes);
-        }
-#endif
+    if (chan->waiter) {
+        chan->waiter = false;
+        usb_osal_sem_give(chan->waitsem);
     }
+#ifdef CONFIG_USBHOST_ASYNCH
+    else if (chan->callback) {
+        callback = chan->callback;
+        arg = chan->arg;
+        nbytes = chan->xfrd;
+        chan->callback = NULL;
+        chan->arg = NULL;
+        if (chan->result < 0) {
+            nbytes = chan->result;
+        }
+#ifdef CONFIG_USB_DCACHE_ENABLE
+        if (((chan->ep_addr & 0x80) == 0x80) && (nbytes > 0)) {
+            usb_dcache_invalidate((uint32_t)chan->buffer, nbytes);
+        }
+#endif
+        callback(arg, nbytes);
+    }
+
+#endif
 }
 
 __WEAK void usb_hc_low_level_init(void)
@@ -755,6 +643,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
 
     chan = &g_dwc2_hcd.chan[chidx];
 
+    /* store variables */
     waitsem = chan->waitsem;
     exclsem = chan->exclsem;
 
@@ -775,6 +664,7 @@ int usbh_ep_alloc(usbh_epinfo_t *ep, const struct usbh_endpoint_cfg *ep_cfg)
         chan->data_pid = HC_PID_DATA0;
     }
 
+    /* restore variables */
     chan->inuse = true;
     chan->waitsem = waitsem;
     chan->exclsem = exclsem;
@@ -1076,9 +966,7 @@ int usb_ep_cancel(usbh_epinfo_t ep)
 
     flags = usb_osal_enter_critical_section();
 
-    chan->result = -ESHUTDOWN;
 #ifdef CONFIG_USBHOST_ASYNCH
-    /* Extract the callback information */
     callback = chan->callback;
     arg = chan->arg;
     chan->callback = NULL;
@@ -1087,17 +975,14 @@ int usb_ep_cancel(usbh_epinfo_t ep)
 #endif
     usb_osal_leave_critical_section(flags);
 
-    /* Is there a thread waiting for this transfer to complete? */
-
+    /* Check if there is a thread waiting for this transfer to complete? */
     if (chan->waiter) {
-        /* Wake'em up! */
         chan->waiter = false;
         usb_osal_sem_give(chan->waitsem);
     }
 #ifdef CONFIG_USBHOST_ASYNCH
     /* No.. is an asynchronous callback expected when the transfer completes? */
     else if (callback) {
-        /* Then perform the callback */
         callback(arg, -ESHUTDOWN);
     }
 #endif

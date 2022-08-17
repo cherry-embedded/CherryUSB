@@ -262,21 +262,6 @@ static void musb_read_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
     }
 }
 
-/****************************************************************************
- * Name: musb_pipe_waitsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the transfer).
- *   We do this to minimize race conditions.  This logic would have to be
- *   expanded if we want to have more than one packet in flight at a time!
- *
- * Assumptions:
- *   Called from a normal thread context BEFORE the transfer has been
- *   started.
- *
- ****************************************************************************/
-
 static int musb_pipe_waitsetup(struct musb_pipe *chan)
 {
     size_t flags;
@@ -284,13 +269,7 @@ static int musb_pipe_waitsetup(struct musb_pipe *chan)
 
     flags = usb_osal_enter_critical_section();
 
-    /* Is the device still connected? */
-
     if (usbh_get_port_connect_status(0)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
         chan->waiter = true;
         chan->enable = true;
         chan->result = -EBUSY;
@@ -305,21 +284,6 @@ static int musb_pipe_waitsetup(struct musb_pipe *chan)
     return ret;
 }
 
-/****************************************************************************
- * Name: musb_pipe_asynchsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the to avoid
- *   transfer).  We do this to minimize race conditions.  This logic would
- *   have to be expanded if we want to have more than one packet in flight
- *   at a time!
- *
- * Assumptions:
- *   Might be called from the level of an interrupt handler
- *
- ****************************************************************************/
-
 #ifdef CONFIG_USBHOST_ASYNCH
 static int musb_pipe_asynchsetup(struct musb_pipe *chan, usbh_asynch_callback_t callback, void *arg)
 {
@@ -327,13 +291,8 @@ static int musb_pipe_asynchsetup(struct musb_pipe *chan, usbh_asynch_callback_t 
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
-    /* Is the device still connected? */
 
     if (usbh_get_port_connect_status(0)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
         chan->waiter = false;
         chan->enable = true;
         chan->result = -EBUSY;
@@ -348,27 +307,11 @@ static int musb_pipe_asynchsetup(struct musb_pipe *chan, usbh_asynch_callback_t 
 }
 #endif
 
-/****************************************************************************
- * Name: musb_pipe_wait
- *
- * Description:
- *   Wait for a transfer on a channel to complete.
- *
- * Assumptions:
- *   Called from a normal thread context
- *
- ****************************************************************************/
-
 static int musb_pipe_wait(struct musb_pipe *chan, uint32_t timeout)
 {
     int ret;
 
-    /* Loop, testing for an end of transfer condition.  The channel 'result'
-   * was set to EBUSY and 'waiter' was set to true before the transfer;
-   * 'waiter' will be set to false and 'result' will be set appropriately
-   * when the transfer is completed.
-   */
-
+    /* wait until timeout or sem give */
     if (chan->waiter) {
         ret = usb_osal_sem_take(chan->waitsem, timeout);
         if (ret < 0) {
@@ -376,7 +319,7 @@ static int musb_pipe_wait(struct musb_pipe *chan, uint32_t timeout)
         }
     }
 
-    /* The transfer is complete and return the result */
+    /* Sem give, check if giving from error isr */
     ret = chan->result;
 
     if (ret < 0) {
@@ -386,19 +329,6 @@ static int musb_pipe_wait(struct musb_pipe *chan, uint32_t timeout)
     return chan->xfrd;
 }
 
-/****************************************************************************
- * Name: musb_pipe_wakeup
- *
- * Description:
- *   A channel transfer has completed... wakeup any threads waiting for the
- *   transfer to complete.
- *
- * Assumptions:
- *   This function is called from the transfer complete interrupt handler for
- *   the channel.  Interrupts are disabled.
- *
- ****************************************************************************/
-
 static void musb_pipe_wakeup(struct musb_pipe *chan)
 {
     usbh_asynch_callback_t callback;
@@ -406,16 +336,11 @@ static void musb_pipe_wakeup(struct musb_pipe *chan)
     int nbytes;
 
     chan->enable = false;
-    /* Is the transfer complete? */
     if (chan->waiter) {
-        /* Wake'em up! */
         chan->waiter = false;
         usb_osal_sem_give(chan->waitsem);
     }
 #ifdef CONFIG_USBHOST_ASYNCH
-    /* No.. is an asynchronous callback expected when the transfer
-       * completes?
-       */
     else if (chan->callback) {
         callback = chan->callback;
         arg = chan->arg;
@@ -894,7 +819,6 @@ int usbh_ep_bulk_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     return ret;
 errout_with_mutex:
     chan->enable = false;
-    chan->enable = false;
     usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 }
@@ -967,7 +891,6 @@ int usbh_ep_intr_async_transfer(usbh_epinfo_t ep, uint8_t *buffer, uint32_t bufl
     return ret;
 errout_with_mutex:
     chan->enable = false;
-    chan->enable = false;
     usb_osal_mutex_give(g_musb_hcd.exclsem[chan->ep_idx]);
     return ret;
 }
@@ -995,17 +918,15 @@ int usb_ep_cancel(usbh_epinfo_t ep)
 
     chan->enable = false;
     usb_osal_leave_critical_section(flags);
-    /* Is there a thread waiting for this transfer to complete? */
 
+    /* Check if there is a thread waiting for this transfer to complete? */
     if (chan->waiter) {
-        /* Wake'em up! */
         chan->waiter = false;
         usb_osal_sem_give(chan->waitsem);
     }
 #ifdef CONFIG_USBHOST_ASYNCH
     /* No.. is an asynchronous callback expected when the transfer completes? */
     else if (callback) {
-        /* Then perform the callback */
         callback(arg, -ESHUTDOWN);
     }
 #endif

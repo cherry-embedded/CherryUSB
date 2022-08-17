@@ -46,7 +46,7 @@
 /**< maximum packet size (MPS) for EP 0 */
 #define USB_CTRL_EP_MPS 64
 
-// USB PID Types
+/* USB PID Types */
 #define USB_PID_OUT   (0x01) /* Tokens */
 #define USB_PID_IN    (0x09)
 #define USB_PID_SOF   (0x05)

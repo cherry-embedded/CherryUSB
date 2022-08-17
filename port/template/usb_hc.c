@@ -1,7 +1,7 @@
 #include "usbh_core.h"
 
 #ifndef USBH_IRQHandler
-#define USBH_IRQHandler OTG_FS_IRQHandler
+#define USBH_IRQHandler USBH_IRQHandler
 #endif
 
 struct xxx_pipe {
@@ -20,64 +20,24 @@ struct xxx_hcd {
     struct xxx_pipe chan[5];
 } g_xxx_hcd;
 
-/****************************************************************************
- * Name: xxx_pipe_alloc
- *
- * Description:
- *   Allocate a channel.
- *
- ****************************************************************************/
-
 static int xxx_pipe_alloc(void)
 {
     int chidx;
 
-    /* Search the table of channels */
-
     for (chidx = 0; chidx < HCD_MAX_ENDPOINT; chidx++) {
-        /* Is this channel available? */
         if (!g_xxx_hcd.chan[chidx].inuse) {
-            /* Yes... make it "in use" and return the index */
-
             g_xxx_hcd.chan[chidx].inuse = true;
             return chidx;
         }
     }
 
-    /* All of the channels are "in-use" */
-
     return -EBUSY;
 }
 
-/****************************************************************************
- * Name: xxx_pipe_free
- *
- * Description:
- *   Free a previoiusly allocated channel.
- *
- ****************************************************************************/
-
 static void xxx_pipe_free(struct xxx_pipe *chan)
 {
-    /* Mark the channel available */
-
     chan->inuse = false;
 }
-
-/****************************************************************************
- * Name: xxx_pipe_waitsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the transfer).
- *   We do this to minimize race conditions.  This logic would have to be
- *   expanded if we want to have more than one packet in flight at a time!
- *
- * Assumptions:
- *   Called from a normal thread context BEFORE the transfer has been
- *   started.
- *
- ****************************************************************************/
 
 static int xxx_pipe_waitsetup(struct xxx_pipe *chan)
 {
@@ -86,13 +46,8 @@ static int xxx_pipe_waitsetup(struct xxx_pipe *chan)
 
     flags = usb_osal_enter_critical_section();
 
-    /* Is the device still connected? */
-
     if (usbh_get_port_connect_status(1)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
+
         chan->waiter = true;
         chan->result = -EBUSY;
         chan->xfrd = 0;
@@ -106,21 +61,6 @@ static int xxx_pipe_waitsetup(struct xxx_pipe *chan)
     return ret;
 }
 
-/****************************************************************************
- * Name: xxx_pipe_asynchsetup
- *
- * Description:
- *   Set the request for the transfer complete event well BEFORE enabling
- *   the transfer (as soon as we are absolutely committed to the to avoid
- *   transfer).  We do this to minimize race conditions.  This logic would
- *   have to be expanded if we want to have more than one packet in flight
- *   at a time!
- *
- * Assumptions:
- *   Might be called from the level of an interrupt handler
- *
- ****************************************************************************/
-
 #ifdef CONFIG_USBHOST_ASYNCH
 static int xxx_pipe_asynchsetup(struct xxx_pipe *chan, usbh_asynch_callback_t callback, void *arg)
 {
@@ -128,13 +68,8 @@ static int xxx_pipe_asynchsetup(struct xxx_pipe *chan, usbh_asynch_callback_t ca
     int ret = -ENODEV;
 
     flags = usb_osal_enter_critical_section();
-    /* Is the device still connected? */
 
     if (usbh_get_port_connect_status(1)) {
-        /* Yes.. then set waiter to indicate that we expect to be informed
-       * when either (1) the device is disconnected, or (2) the transfer
-       * completed.
-       */
 
         chan->waiter = false;
         chan->result = -EBUSY;
@@ -150,26 +85,9 @@ static int xxx_pipe_asynchsetup(struct xxx_pipe *chan, usbh_asynch_callback_t ca
 }
 #endif
 
-/****************************************************************************
- * Name: xxx_pipe_wait
- *
- * Description:
- *   Wait for a transfer on a channel to complete.
- *
- * Assumptions:
- *   Called from a normal thread context
- *
- ****************************************************************************/
-
 static int xxx_pipe_wait(struct xxx_pipe *chan, uint32_t timeout)
 {
     int ret;
-
-    /* Loop, testing for an end of transfer condition.  The channel 'result'
-   * was set to EBUSY and 'waiter' was set to true before the transfer;
-   * 'waiter' will be set to false and 'result' will be set appropriately
-   * when the transfer is completed.
-   */
 
     if (chan->waiter) {
         ret = usb_osal_sem_take(chan->waitsem, timeout);
@@ -178,7 +96,6 @@ static int xxx_pipe_wait(struct xxx_pipe *chan, uint32_t timeout)
         }
     }
 
-    /* The transfer is complete re-enable interrupts and return the result */
     ret = chan->result;
 
     if (ret < 0) {
@@ -187,53 +104,30 @@ static int xxx_pipe_wait(struct xxx_pipe *chan, uint32_t timeout)
     return chan->xfrd;
 }
 
-/****************************************************************************
- * Name: xxx_pipe_wakeup
- *
- * Description:
- *   A channel transfer has completed... wakeup any threads waiting for the
- *   transfer to complete.
- *
- * Assumptions:
- *   This function is called from the transfer complete interrupt handler for
- *   the channel.  Interrupts are disabled.
- *
- ****************************************************************************/
-
 static void xxx_pipe_wakeup(struct xxx_pipe *chan)
 {
     usbh_asynch_callback_t callback;
     void *arg;
     int nbytes;
 
-    /* Is the transfer complete? */
-
-    if (chan->result != -EBUSY) {
-        /* Is there a thread waiting for this transfer to complete? */
-
-        if (chan->waiter) {
-            /* Wake'em up! */
-            chan->waiter = false;
-            usb_osal_sem_give(chan->waitsem);
-        }
-#ifdef CONFIG_USBHOST_ASYNCH
-        /* No.. is an asynchronous callback expected when the transfer
-       * completes?
-       */
-        else if (chan->callback) {
-            callback = chan->callback;
-            arg = chan->arg;
-            nbytes = chan->xfrd;
-            chan->callback = NULL;
-            chan->arg = NULL;
-            if (chan->result < 0) {
-                nbytes = chan->result;
-            }
-
-            callback(arg, nbytes);
-        }
-#endif
+    if (chan->waiter) {
+        chan->waiter = false;
+        usb_osal_sem_give(chan->waitsem);
     }
+#ifdef CONFIG_USBHOST_ASYNCH
+    else if (chan->callback) {
+        callback = chan->callback;
+        arg = chan->arg;
+        nbytes = chan->xfrd;
+        chan->callback = NULL;
+        chan->arg = NULL;
+        if (chan->result < 0) {
+            nbytes = chan->result;
+        }
+
+        callback(arg, nbytes);
+    }
+#endif
 }
 
 __WEAK void usb_hc_low_level_init(void)
