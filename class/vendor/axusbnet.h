@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2022, aozima
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Change Logs
  * Date           Author       Notes
  * 2022-04-17     aozima       the first version for CherryUSB.

@@ -1,5 +1,10 @@
-#ifndef _USB_MTP_H
-#define _USB_MTP_H
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef USB_MTP_H
+#define USB_MTP_H
 
 #define USB_MTP_CLASS 0x06
 
@@ -341,4 +346,4 @@
 #define MTP_PROP_GET     0x00U
 #define MTP_PROP_GET_SET 0x01U
 
-#endif
+#endif /* USB_MTP_H */

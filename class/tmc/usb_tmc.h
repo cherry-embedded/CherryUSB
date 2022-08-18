@@ -1,11 +1,10 @@
-/**
- * @file
- * @brief USB TMC Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_TMC_H_
-#define _USB_TMC_H_
+#ifndef USB_TMC_H
+#define USB_TMC_H
 
 /**@addtogroup MODULE_TMC USB TMC class
  * @brief This module contains USB Device Test and Measurement Class definitions.
@@ -127,4 +126,4 @@ struct usb_tmc_bulk_header {
     union usb_tmc_bulk_header_specific MsgSpecific;
 } __PACKED;
 
-#endif /* _USB_TMC_H_ */
+#endif /* USB_TMC_H */

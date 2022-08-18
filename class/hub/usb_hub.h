@@ -1,11 +1,10 @@
-/**
- * @file
- * @brief USB HUB Device Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_HUB_H_
-#define _USB_HUB_H_
+#ifndef USB_HUB_H
+#define USB_HUB_H
 
 /* HUB Class Descriptor Types */
 #define HUB_DESCRIPTOR_TYPE_HUB 0x29
@@ -117,4 +116,4 @@ struct hub_port_status {
     uint16_t wPortChange;
 };
 
-#endif /* _USB_HUB_H_ */
+#endif /* USB_HUB_H */

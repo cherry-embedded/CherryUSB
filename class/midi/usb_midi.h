@@ -1,11 +1,10 @@
-/**
- * @file
- * @brief USB MIDI Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_MIDI_H_
-#define _USB_MIDI_H_
+#ifndef USB_MIDI_H
+#define USB_MIDI_H
 
 /* bDescriptorSubType */
 #define MIDI_VC_HEADER_DESCRIPTOR_SUBTYPE     0x01U
@@ -211,4 +210,4 @@ struct midi_cs_ep_ms_general_descriptor {
 
 // clang-format on
 
-#endif /* _USB_MIDI_H_ */
+#endif /* USB_MIDI_H */

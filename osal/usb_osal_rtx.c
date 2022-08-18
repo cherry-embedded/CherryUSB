@@ -1,25 +1,3 @@
-/**
- * @file usb_osal_rtx.c
- * @brief
- *
- * Copyright (c) 2022 sakumisu
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The
- * ASF licenses this file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
- */
 #include "usb_osal.h"
 #include "usb_errno.h"
 #include "stdlib.h"
@@ -40,7 +18,7 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     void *stk = malloc(stack_size);
     _init_box8(sem_mpool, sizeof(sem_mpool), sizeof(OS_SEM));
     _init_box8(mut_mpool, sizeof(mut_mpool), sizeof(OS_MUT));
-    
+
     return (usb_osal_thread_t)os_tsk_create_user_ex (entry, prio,
                                   stk, stack_size,
                                   args);
@@ -140,7 +118,7 @@ int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
     } else {
         isr_evt_set(set, (OS_TID)event);
     }
-    
+
     return 0;
 }
 
@@ -164,9 +142,9 @@ void usb_osal_msleep(uint32_t delay)
 
 __asm uint32_t __builtin_ctz(uint32_t val)
 {
-    rsb r3, r0, #0 
-    and r0, r3, r0 
-    clz r0, r0 
+    rsb r3, r0, #0
+    and r0, r3, r0
+    clz r0, r0
     rsb r0, r0, #31
     bx  lr
 }

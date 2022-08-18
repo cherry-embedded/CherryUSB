@@ -1,5 +1,10 @@
-#ifndef _USB_PRINTER_H
-#define _USB_PRINTER_H
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef USB_PRINTER_H
+#define USB_PRINTER_H
 
 #define PRINTER_SUBCLASS 0x01U
 
@@ -11,4 +16,4 @@
 #define PRINTER_STATUS_SELECTED    0x08U
 #define PRINTER_STATUS_PAPER_EMPTY 0x10U
 
-#endif
+#endif /* USB_PRINTER_H */

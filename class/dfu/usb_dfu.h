@@ -1,11 +1,10 @@
-/**
- * @file
- * @brief USB DFU Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_DFU_H_
-#define _USB_DFU_H_
+#ifndef USB_DFU_H
+#define USB_DFU_H
 
 /**\addtogroup USB_MODULE_DFU USB DFU class
  * \brief This module contains USB Device Firmware Upgrade class definitions.
@@ -100,4 +99,4 @@ struct dfu_info {
     uint8_t     iString;            /**<\brief Index of the status string descriptor.*/
 };
 
-#endif /* _USB_DFU_H_ */
+#endif /* USB_DFU_H */

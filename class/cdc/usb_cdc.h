@@ -1,16 +1,10 @@
-/**
- * @file
- * @brief USB Communications Device Class (CDC) public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
- * Header follows the Class Definitions for
- * Communications Devices Specification (CDC120-20101103-track.pdf),
- * PSTN Devices Specification (PSTN120.pdf) and
- * Ethernet Control Model Devices Specification (ECM120.pdf).
- * Header is limited to ACM and ECM Subclasses.
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_CDC_H
-#define _USB_CDC_H
+#ifndef USB_CDC_H
+#define USB_CDC_H
 
 /*------------------------------------------------------------------------------
  *      Definitions  based on usbcdc11.pdf (www.usb.org)
@@ -441,4 +435,4 @@ struct cdc_ecm_descriptor {
 #endif
 // clang-format on
 
-#endif /* USB_CDC_H_ */
+#endif /* USB_CDC_H */

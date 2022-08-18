@@ -1,17 +1,10 @@
-/**
- * @file
- * @brief USB Audio Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
- * Header follows below documentation:
- * - USB Class Definition for Audio Devices (audio10.pdf)
- *
- * Additional documentation considered a part of USB Audio v1.0:
- * - USB Class Definition for Audio Data Formats (frmts10.pdf)
- * - USB Class Definition for Terminal Types (termt10.pdf)
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_AUDIO_H_
-#define _USB_AUDIO_H_
+#ifndef USB_AUDIO_H
+#define USB_AUDIO_H
 
 /** Audio Interface Subclass Codes
  * Refer to Table A-2 from audio10.pdf
@@ -1093,4 +1086,4 @@ struct audio_v2_control_range3_param_block {
 #define AUDIO_SAMPLE_FREQ_4B(frq)  (uint8_t)(frq), (uint8_t)((frq >> 8)), \
                                   (uint8_t)((frq >> 16)), (uint8_t)((frq >> 24))
 
-#endif /* _USB_AUDIO_H_ */
+#endif /* USB_AUDIO_H */
