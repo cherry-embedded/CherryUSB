@@ -227,7 +227,7 @@ void hid_custom_keyboard_init(void)
 
 void hid_custom_test(void)
 {
-    uint8_t sendbuffer[64] = { 0x00, 0x00, HID_KEY_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    uint8_t sendbuffer[64] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
     custom_state = HID_STATE_BUSY;
     usbd_ep_start_write(HIDRAW_IN_EP, sendbuffer, 8);
     while (custom_state == HID_STATE_BUSY) {
