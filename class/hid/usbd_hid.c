@@ -11,7 +11,6 @@ struct usbd_hid {
     const uint8_t *hid_report_descriptor;
     uint32_t hid_report_descriptor_len;
     uint8_t intf_num;
-    uint8_t hid_state;
     uint8_t report;
     uint8_t idle_state;
     uint8_t protocol;
@@ -27,7 +26,6 @@ static void usbd_hid_reset(void)
     usb_slist_for_each(i, &usbd_hid_head)
     {
         struct usbd_hid *hid_intf = usb_slist_entry(i, struct usbd_hid, list);
-        hid_intf->hid_state = HID_STATE_IDLE;
         hid_intf->report = 0;
         hid_intf->idle_state = 0;
         hid_intf->protocol = 0;
