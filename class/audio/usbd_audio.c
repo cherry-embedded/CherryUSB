@@ -357,10 +357,6 @@ static void audio_notify_handler(uint8_t event, void *arg)
 
             break;
 
-        case USBD_EVENT_SOF:
-            usbd_audio_sof_callback();
-            break;
-
         case USBD_EVENT_SET_INTERFACE: {
             struct usb_interface_descriptor *intf = (struct usb_interface_descriptor *)arg;
             if (intf->bAlternateSetting == 1) {
@@ -463,9 +459,5 @@ __WEAK void usbd_audio_get_sampling_freq_table(uint8_t entity_id, uint8_t **samp
 }
 #endif
 __WEAK void usbd_audio_set_pitch(uint8_t ep, bool enable)
-{
-}
-
-__WEAK void usbd_audio_sof_callback(void)
 {
 }

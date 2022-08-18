@@ -692,10 +692,6 @@ static void video_notify_handler(uint8_t event, void *arg)
             usbd_video_cfg.power_mode = 0;
             break;
 
-        case USBD_EVENT_SOF:
-            usbd_video_sof_callback();
-            break;
-
         case USBD_EVENT_SET_INTERFACE: {
             struct usb_interface_descriptor *intf = (struct usb_interface_descriptor *)arg;
             if (intf->bAlternateSetting == 1) {
@@ -801,8 +797,4 @@ void usbd_video_mjpeg_payload_header_toggle(uint8_t *output, uint32_t packets)
     for (size_t i = 0; i < packets; i++) {
         output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i + 1] ^= 0x01;
     }
-}
-
-__WEAK void usbd_video_sof_callback(void)
-{
 }
