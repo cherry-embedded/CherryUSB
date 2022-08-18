@@ -213,7 +213,7 @@ void hid_keyboard_init(void)
 
 void hid_keyboard_test(void)
 {
-    uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KEY_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
+    uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
     hid_state = HID_STATE_BUSY;
     usbd_ep_start_write(HID_INT_EP, sendbuffer, 8);
     while (hid_state == HID_STATE_BUSY) {
