@@ -46,6 +46,9 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_cfg_priv {
     bool configured;
     /** Currently selected configuration */
     uint8_t configuration;
+#ifdef CONFIG_USBDEV_TEST_MODE
+    bool test_mode;
+#endif
 } usbd_core_cfg;
 
 static usb_slist_t usbd_class_head = USB_SLIST_OBJECT_INIT(usbd_class_head);
@@ -359,15 +362,13 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
             break;
 
         case USB_REQUEST_CLEAR_FEATURE:
-            if (value == USB_FEATURE_REMOTE_WAKEUP) {
-                usbd_class_event_notify_handler(USBD_EVENT_CLEAR_REMOTE_WAKEUP, NULL);
-            }
-            *len = 0;
-            break;
-
         case USB_REQUEST_SET_FEATURE:
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
-                usbd_class_event_notify_handler(USBD_EVENT_SET_REMOTE_WAKEUP, NULL);
+            } else if (value == USB_FEATURE_TEST_MODE) {
+#ifdef CONFIG_USBDEV_TEST_MODE
+                usbd_core_cfg.test_mode = true;
+                usbd_execute_test_mode(setup);
+#endif
             }
             *len = 0;
             break;
@@ -495,7 +496,6 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
                 USB_LOG_ERR("ep:%02x clear halt\r\n", ep);
 
                 usbd_ep_clear_stall(ep);
-                usbd_class_event_notify_handler(USBD_EVENT_CLEAR_HALT, NULL);
                 break;
             } else {
                 ret = false;
@@ -507,7 +507,6 @@ static bool usbd_std_endpoint_req_handler(struct usb_setup_packet *setup, uint8_
                 USB_LOG_ERR("ep:%02x set halt\r\n", ep);
 
                 usbd_ep_set_stall(ep);
-                usbd_class_event_notify_handler(USBD_EVENT_SET_HALT, NULL);
             } else {
                 ret = false;
             }
@@ -795,7 +794,9 @@ void usbd_event_reset_handler(void)
     usbd_set_address(0);
     usbd_core_cfg.configured = 0;
     usbd_core_cfg.configuration = 0;
-
+#ifdef CONFIG_USBDEV_TEST_MODE
+    usbd_core_cfg.test_mode = false;
+#endif
     struct usbd_endpoint_cfg ep0_cfg;
 
     ep0_cfg.ep_mps = USB_CTRL_EP_MPS;
@@ -842,7 +843,13 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
         usbd_ep_set_stall(USB_CONTROL_IN_EP0);
         return;
     }
-
+#ifdef CONFIG_USBDEV_TEST_MODE
+    /* send status in test mode, so do not execute downward, just return */
+    if (usbd_core_cfg.test_mode) {
+        usbd_core_cfg.test_mode = false;
+        return;
+    }
+#endif
     /* Send smallest of requested and offered length */
     usbd_core_cfg.ep0_data_buf_residue = MIN(usbd_core_cfg.ep0_data_buf_len,
                                              setup->wLength);
