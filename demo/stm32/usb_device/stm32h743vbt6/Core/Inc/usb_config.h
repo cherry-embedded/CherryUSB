@@ -22,14 +22,6 @@
 // #define CONFIG_USBDEV_DESC_CHECK
 // #define CONFIG_USBDEV_TEST_MODE
 
-#ifndef CONFIG_USBDEV_DESC_CHECK
-#define CONFIG_USBDEV_DESC_CHECK 0
-#endif
-
-#ifndef CONFIG_USBDEV_TEST_MODE
-#define CONFIG_USBDEV_TEST_MODE 0
-#endif
-
 /* cdc class */
 // #define CONFIG_USBDEV_CDC_ACM_UART
 
