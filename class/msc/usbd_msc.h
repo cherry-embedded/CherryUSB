@@ -1,16 +1,10 @@
-/**
- * @file
- * @brief USB Mass Storage Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
- * Header follows the Mass Storage Class Specification
- * (Mass_Storage_Specification_Overview_v1.4_2-19-2010.pdf) and
- * Mass Storage Class Bulk-Only Transport Specification
- * (usbmassbulk_10.pdf).
- * Header is limited to Bulk-Only Transfer protocol.
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USBD_MSC_H__
-#define _USBD_MSC_H__
+#ifndef USBD_MSC_H
+#define USBD_MSC_H
 
 #include "usb_msc.h"
 
@@ -27,4 +21,4 @@ int usbd_msc_sector_write(uint32_t sector, uint8_t *buffer, uint32_t length);
 }
 #endif
 
-#endif /* USBD_MSC_H_ */
+#endif /* USBD_MSC_H */

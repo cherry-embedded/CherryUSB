@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2022, aozima
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Change Logs
  * Date           Author       Notes
  * 2022-04-17     aozima       the first version for CherryUSB.
@@ -181,7 +186,7 @@ static void packet_dump(const char * msg, const struct pbuf* p)
     }
 
     rt_kprintf("%s %d byte. \n", msg, p->tot_len);
-#ifdef DUMP_RAW    
+#ifdef DUMP_RAW
     const struct pbuf* q;
     rt_uint32_t i,j;
     rt_uint8_t *ptr;
@@ -317,8 +322,8 @@ ax8817x_mdio_write(struct usbnet *dev, int phy_id, int loc, int val)
 		msleep(1);
 
 		ax8817x_read_cmd(dev, AX_CMD_READ_STATMNGSTS_REG, 0, 0, 1, &smsr);
-	} while (!(smsr & AX_HOST_EN) && (i++ < 30));	
-	
+	} while (!(smsr & AX_HOST_EN) && (i++ < 30));
+
 	// *res = val;
     res = val;
 
@@ -463,7 +468,7 @@ static int ax88772a_phy_powerup(struct usbnet *dev)
 static int ax88772b_reset(struct usbnet *dev)
 {
 	int ret;
-	
+
 	ret = ax88772a_phy_powerup(dev);
 	if (ret < 0)
 		return ret;
@@ -576,14 +581,14 @@ static rt_err_t rt_rndis_eth_control(rt_device_t dev, int cmd, void *args)
     case NIOCTL_GADDR:
         /* get mac address */
         if(args)
-        { 
+        {
             USB_LOG_INFO("%s L%d NIOCTL_GADDR\r\n", __FUNCTION__, __LINE__);
             rt_memcpy(args, rndis_eth_dev->dev_addr, MAX_ADDR_LEN);
-        }    
+        }
         else
-        { 
+        {
             return -RT_ERROR;
-        }    
+        }
         break;
     default :
         break;
@@ -887,7 +892,7 @@ static void rt_thread_axusbnet_entry(void *parameter)
 		if (tmp32 != (AX88772A_IPG2_DEFAULT << 16 |
 			AX88772A_IPG1_DEFAULT << 8 | AX88772A_IPG0_DEFAULT)) {
 			USB_LOG_ERR("Non-authentic ASIX product\nASIX does not support it\n");
-			// ret = -ENODEV;		
+			// ret = -ENODEV;
 			goto err_out;
 		}
 	}
@@ -987,7 +992,7 @@ static void rt_thread_axusbnet_entry(void *parameter)
         }
 		if (!(bmcr & BMCR_SPEED100))
         {
-			mode &= ~AX88772_MEDIUM_100MB;	
+			mode &= ~AX88772_MEDIUM_100MB;
             USB_LOG_ERR("%s L%d not AX88772_MEDIUM_100MB\r\n", __FUNCTION__, __LINE__);
         }
 		ax8817x_write_cmd(dev, AX_CMD_WRITE_MEDIUM_MODE, mode, 0, 0, NULL);
@@ -1122,7 +1127,7 @@ static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
     USB_LOG_INFO("%s %d\r\n", __FUNCTION__, __LINE__);
 
     struct usbh_axusbnet *class = usb_malloc(sizeof(struct usbh_axusbnet));
-    if (class == NULL) 
+    if (class == NULL)
     {
         USB_LOG_ERR("Fail to alloc class\r\n");
         return -ENOMEM;
@@ -1138,7 +1143,7 @@ static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
 
 #if 1
     USB_LOG_INFO("hport=%p, intf=%d, intf_desc.bNumEndpoints:%d\r\n", hport, intf, hport->config.intf[intf].intf_desc.bNumEndpoints);
-    for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++) 
+    for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++)
     {
         ep_desc = &hport->config.intf[intf].ep[i].ep_desc;
 
@@ -1148,7 +1153,7 @@ static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 #endif
 
-    for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++) 
+    for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++)
     {
         ep_desc = &hport->config.intf[intf].ep[i].ep_desc;
 

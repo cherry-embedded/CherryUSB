@@ -1,16 +1,10 @@
-/**
- * @file
- * @brief USB Mass Storage Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
- * Header follows the Mass Storage Class Specification
- * (Mass_Storage_Specification_Overview_v1.4_2-19-2010.pdf) and
- * Mass Storage Class Bulk-Only Transport Specification
- * (usbmassbulk_10.pdf).
- * Header is limited to Bulk-Only Transfer protocol.
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_MSC_H__
-#define _USB_MSC_H__
+#ifndef USB_MSC_H
+#define USB_MSC_H
 
 /* MSC Subclass Codes */
 #define MSC_SUBCLASS_RBC           0x01 /* Reduced block commands (e.g., flash devices) */
@@ -118,4 +112,4 @@ struct CSW {
 #endif
 // clang-format on
 
-#endif /* USB_MSC_H_ */
+#endif /* USB_MSC_H */

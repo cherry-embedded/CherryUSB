@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "usbh_core.h"
 #include "usbh_rndis.h"
 #include "rndis_protocol.h"

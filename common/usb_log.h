@@ -1,5 +1,10 @@
-#ifndef _USB_LOG_H
-#define _USB_LOG_H
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef USB_LOG_H
+#define USB_LOG_H
 
 #include <stdio.h>
 
@@ -84,4 +89,4 @@ void usb_assert(const char *filename, int linenum);
             usb_assert(__FILE__, __LINE__); \
     } while (0)
 
-#endif
+#endif /* USB_LOG_H */

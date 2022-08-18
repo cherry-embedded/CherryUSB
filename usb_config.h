@@ -1,5 +1,10 @@
-#ifndef _USB_CONFIG_H
-#define _USB_CONFIG_H
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef CHERRYUSB_CONFIG_H
+#define CHERRYUSB_CONFIG_H
 
 /* USB common Configuration */
 #ifndef CONFIG_USB_DBG_LEVEL

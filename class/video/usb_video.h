@@ -1,13 +1,10 @@
-/**
- * @file
- * @brief USB Video Class public header
+/*
+ * Copyright (c) 2022, sakumisu
  *
- * Header follows below documentation:
- * - USB Device Class Definition for Video Devices UVC 1.5 Class specification.pdf
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _USB_VIDEO_H_
-#define _USB_VIDEO_H_
+#ifndef USB_VIDEO_H
+#define USB_VIDEO_H
 
 #define USB_DEVICE_VIDEO_CLASS_VERSION_1_5 0
 
@@ -1198,4 +1195,4 @@ struct video_autoexposure_mode {
     bFrameIntervalType,                      /* bFrameIntervalType : Indicates how the frame interval can be programmed. 0: Continuous frame interval 1..255: The number of discrete frame   */ \
     __VA_ARGS__
 // clang-format on
-#endif /* USB_VIDEO_H_ */
+#endif /*USB_VIDEO_H */
