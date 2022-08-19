@@ -175,13 +175,6 @@ int usbd_hid_alloc(uint8_t intf)
 
 void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
-    static usbd_class_t *last_class = NULL;
-
-    if (last_class != devclass) {
-        last_class = devclass;
-        usbd_class_register(devclass);
-    }
-
     intf->class_handler = hid_class_request_handler;
     intf->custom_handler = hid_custom_request_handler;
     intf->vendor_handler = NULL;
