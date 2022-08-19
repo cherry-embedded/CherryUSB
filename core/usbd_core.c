@@ -51,7 +51,8 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_cfg_priv {
 #endif
 } usbd_core_cfg;
 
-static usb_slist_t usbd_class_head = USB_SLIST_OBJECT_INIT(usbd_class_head);
+static usb_slist_t usbd_intf_head = USB_SLIST_OBJECT_INIT(usbd_intf_head);
+
 static struct usb_msosv1_descriptor *msosv1_desc;
 static struct usb_msosv2_descriptor *msosv2_desc;
 static struct usb_bos_descriptor *bos_desc;
@@ -582,31 +583,21 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
 {
     usb_slist_t *i, *j;
     if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_INTERFACE) {
-        usb_slist_for_each(i, &usbd_class_head)
+        usb_slist_for_each(i, &usbd_intf_head)
         {
-            usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+            usbd_interface_t *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-            usb_slist_for_each(j, &devclass->intf_list)
-            {
-                usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-                if (intf->class_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
-                    return intf->class_handler(setup, data, len);
-                }
+            if (intf->class_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
+                return intf->class_handler(setup, data, len);
             }
         }
     } else if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_ENDPOINT) {
-        usb_slist_for_each(i, &usbd_class_head)
+        usb_slist_for_each(i, &usbd_intf_head)
         {
-            usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+            usbd_interface_t *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-            usb_slist_for_each(j, &devclass->intf_list)
-            {
-                usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-                if (intf->custom_handler && (intf->intf_num == ((setup->wIndex >> 8) & 0xFF))) {
-                    return intf->custom_handler(setup, data, len);
-                }
+            if (intf->custom_handler && (intf->intf_num == ((setup->wIndex >> 8) & 0xFF))) {
+                return intf->custom_handler(setup, data, len);
             }
         }
     }
@@ -661,19 +652,14 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
         }
     }
 
-    usb_slist_t *i, *j;
+    usb_slist_t *i;
 
-    usb_slist_for_each(i, &usbd_class_head)
+    usb_slist_for_each(i, &usbd_intf_head)
     {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+        usbd_interface_t *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-        usb_slist_for_each(j, &devclass->intf_list)
-        {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-            if (intf->vendor_handler && !intf->vendor_handler(setup, data, len)) {
-                return 0;
-            }
+        if (intf->vendor_handler && !intf->vendor_handler(setup, data, len)) {
+            return 0;
         }
     }
 
@@ -695,18 +681,13 @@ static int usbd_custom_request_handler(struct usb_setup_packet *setup, uint8_t *
         return -1;
     }
 
-    usb_slist_t *i, *j;
-    usb_slist_for_each(i, &usbd_class_head)
+    usb_slist_t *i;
+    usb_slist_for_each(i, &usbd_intf_head)
     {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
+        usbd_interface_t *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-        usb_slist_for_each(j, &devclass->intf_list)
-        {
-            usbd_interface_t *intf = usb_slist_entry(j, struct usbd_interface, list);
-
-            if (intf->custom_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
-                return intf->custom_handler(setup, data, len);
-            }
+        if (intf->custom_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
+            return intf->custom_handler(setup, data, len);
         }
     }
 
@@ -758,10 +739,9 @@ static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t *
 static void usbd_class_event_notify_handler(uint8_t event, void *arg)
 {
     usb_slist_t *i;
-    usb_slist_for_each(i, &usbd_class_head)
+    usb_slist_for_each(i, &usbd_intf_head)
     {
-        usbd_class_t *devclass = usb_slist_entry(i, struct usbd_class, list);
-        usbd_interface_t *intf = usb_slist_first_entry(&devclass->intf_list, struct usbd_interface, list);
+        usbd_interface_t *intf = usb_slist_entry(i, struct usbd_interface, list);
 
         if (intf->notify_handler) {
             intf->notify_handler(event, arg);
@@ -974,15 +954,16 @@ void usbd_bos_desc_register(struct usb_bos_descriptor *desc)
 
 void usbd_class_register(usbd_class_t *devclass)
 {
-    usb_slist_add_tail(&usbd_class_head, &devclass->list);
-    usb_slist_init(&devclass->intf_list);
+    // usb_slist_add_tail(&usbd_class_head, &devclass->list);
+    // usb_slist_init(&devclass->intf_list);
 }
 
 void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
     static uint8_t intf_offset = 0;
+
     intf->intf_num = intf_offset;
-    usb_slist_add_tail(&devclass->intf_list, &intf->list);
+    usb_slist_add_tail(&usbd_intf_head, &intf->list);
     usb_slist_init(&intf->ep_list);
     intf_offset++;
 }
@@ -1004,6 +985,5 @@ bool usb_device_is_configured(void)
 
 int usbd_initialize(void)
 {
-    usb_dc_init();
-    return 0;
+    return usb_dc_init();
 }

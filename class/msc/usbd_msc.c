@@ -911,8 +911,6 @@ static void usbd_msc_thread(void *argument)
 }
 #endif
 
-static usbd_class_t msc_class;
-
 static usbd_interface_t msc_intf = {
     .class_handler = msc_storage_class_request_handler,
     .vendor_handler = NULL,
@@ -921,10 +919,7 @@ static usbd_interface_t msc_intf = {
 
 void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep)
 {
-    msc_class.name = "usbd_msc";
-
-    usbd_class_register(&msc_class);
-    usbd_class_add_interface(&msc_class, &msc_intf);
+    usbd_class_add_interface(NULL, &msc_intf);
 
     mass_ep_data[0].ep_addr = out_ep;
     mass_ep_data[0].ep_cb = mass_storage_bulk_out;

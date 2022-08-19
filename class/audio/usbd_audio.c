@@ -375,13 +375,6 @@ static void audio_notify_handler(uint8_t event, void *arg)
 
 void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
-    static usbd_class_t *last_class = NULL;
-
-    if (last_class != devclass) {
-        last_class = devclass;
-        usbd_class_register(devclass);
-    }
-
     intf->class_handler = audio_class_request_handler;
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
     intf->custom_handler = audio_custom_request_handler;

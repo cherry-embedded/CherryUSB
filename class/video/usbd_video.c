@@ -709,13 +709,6 @@ static void video_notify_handler(uint8_t event, void *arg)
 
 void usbd_video_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
 {
-    static usbd_class_t *last_class = NULL;
-
-    if (last_class != devclass) {
-        last_class = devclass;
-        usbd_class_register(devclass);
-    }
-
     intf->class_handler = video_class_request_handler;
     intf->custom_handler = NULL;
     intf->vendor_handler = NULL;
