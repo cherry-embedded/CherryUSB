@@ -62,15 +62,7 @@ static uint8_t rndis_encapsulated_resp_buffer[CONFIG_RNDIS_RESP_BUFFER_SIZE];
 static int rndis_encapsulated_cmd_handler(uint8_t *data, uint32_t len);
 // static int rndis_encapsulated_resp_handler(uint8_t *data, uint32_t *len);
 static void rndis_notify_rsp(void);
-/**
- * @brief Handler called for Class requests not handled by the USB stack.
- *
- * @param setup    Information about the request to execute.
- * @param len       Size of the buffer.
- * @param data      Buffer containing the request result.
- *
- * @return  0 on success, negative errno code on fail.
- */
+
 static int rndis_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     switch (setup->bRequest) {
