@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>ES32F36xx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\msc;..\..\..\..\..\demo</IncludePath>
+              <IncludePath>..\..\..\Drivers\CMSIS\Include;..\..\..\Drivers\CMSIS\Device\EastSoft\ES32F36xx\Include;..\..\..\Drivers\ALD\ES32F36xx\Include;..\Inc;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\msc;..\..\..\..\..\class\hid;..\..\..\..\..\class\audio;..\..\..\..\..\class\video;..\..\..\..\..\demo</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -483,6 +483,11 @@
               <FileName>usb_dc_musb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\port\musb\usb_dc_musb.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_hid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\hid\usbd_hid.c</FilePath>
             </File>
           </Files>
         </Group>

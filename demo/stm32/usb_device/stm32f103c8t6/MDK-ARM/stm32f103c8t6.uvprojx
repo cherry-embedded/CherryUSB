@@ -535,6 +535,11 @@
               <FilePath>..\..\..\..\..\class\msc\usbd_msc.c</FilePath>
             </File>
             <File>
+              <FileName>usbd_hid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\hid\usbd_hid.c</FilePath>
+            </File>
+            <File>
               <FileName>usb_dc_fsdev.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\port\fsdev\usb_dc_fsdev.c</FilePath>
