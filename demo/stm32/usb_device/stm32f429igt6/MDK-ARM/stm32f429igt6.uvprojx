@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F429xx,CONFIG_USB_DWC2_PORT=HS_PORT</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\class\cdc;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\class\video;..\..\..\..\..\class\msc;..\..\..\..\..\class\audio</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\class\cdc;..\..\..\..\..\class\msc;..\..\..\..\..\class\hid;..\..\..\..\..\class\audio;..\..\..\..\..\class\video</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -574,6 +574,11 @@
               <FileName>usbd_msc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\msc\usbd_msc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_hid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\hid\usbd_hid.c</FilePath>
             </File>
             <File>
               <FileName>usbd_core.c</FileName>
