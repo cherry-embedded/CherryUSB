@@ -181,21 +181,16 @@ void usbd_configure_done_callback(void)
 #define HID_STATE_BUSY 1
 
 /*!< hid state ! Data can be sent only when state is idle  */
-static uint8_t hid_state = HID_STATE_IDLE;
+static volatile uint8_t hid_state = HID_STATE_IDLE;
 
 void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 {
-    /*!< endpoint call back */
-    /*!< transfer successfully */
-    if (hid_state == HID_STATE_BUSY) {
-        /*!< update the state  */
-        hid_state = HID_STATE_IDLE;
-    }
+    hid_state = HID_STATE_IDLE;
 }
 
 static struct usbd_endpoint hid_in_ep = {
     .ep_cb = usbd_hid_int_callback,
-    .ep_addr = 0x81
+    .ep_addr = HID_INT_EP
 };
 
 void hid_keyboard_init(void)
@@ -211,7 +206,10 @@ void hid_keyboard_test(void)
 {
     uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
     hid_state = HID_STATE_BUSY;
-    usbd_ep_start_write(HID_INT_EP, sendbuffer, 8);
+    int ret = usbd_ep_start_write(HID_INT_EP, sendbuffer, 8);
+    if (ret < 0) {
+        return;
+    }
     while (hid_state == HID_STATE_BUSY) {
     }
 }

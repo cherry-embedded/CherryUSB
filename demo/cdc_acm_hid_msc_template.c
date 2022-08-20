@@ -13,7 +13,7 @@
 
 /*!< endpoint address */
 #define HID_INT_EP          0x86
-#define HID_INT_EP_SIZE     8
+#define HID_INT_EP_SIZE     4
 #define HID_INT_EP_INTERVAL 10
 
 #define USBD_VID           0xFFFF
@@ -230,7 +230,7 @@ static struct hid_mouse mouse_cfg;
 #define HID_STATE_BUSY 1
 
 /*!< hid state ! Data can be sent only when state is idle  */
-static uint8_t hid_state = HID_STATE_IDLE;
+static volatile uint8_t hid_state = HID_STATE_IDLE;
 
 /* function ------------------------------------------------------------------*/
 static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
@@ -337,7 +337,10 @@ void hid_mouse_test(void)
     /*!< move mouse pointer */
     mouse_cfg.x += 10;
     mouse_cfg.y = 0;
-    usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+    int ret = usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+    if (ret < 0) {
+        return;
+    }
     while (hid_state == HID_STATE_BUSY) {
     }
 }
