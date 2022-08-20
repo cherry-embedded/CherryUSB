@@ -43,7 +43,6 @@ static void dfu_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:
-
             break;
 
         default:
@@ -51,12 +50,18 @@ static void dfu_notify_handler(uint8_t event, void *arg)
     }
 }
 
-void usbd_dfu_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
+struct usbd_interface *usbd_dfu_alloc_intf(void)
 {
+    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
+    if (intf == NULL) {
+        USB_LOG_ERR("no mem to alloc intf\r\n");
+        return NULL;
+    }
+
     intf->class_handler = dfu_class_request_handler;
     intf->custom_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = dfu_notify_handler;
 
-    usbd_class_add_interface(devclass, intf);
+    return intf;
 }

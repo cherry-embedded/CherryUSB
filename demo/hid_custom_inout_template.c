@@ -172,12 +172,6 @@ void usbd_configure_done_callback(void)
     usbd_ep_start_read(HIDRAW_OUT_EP, read_buffer, 64);
 }
 
-/*!< class */
-static usbd_class_t hid_class;
-
-/*!< interface one */
-static usbd_interface_t hid_intf_1;
-
 static void usbd_hid_custom_in_callback(uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
@@ -193,12 +187,12 @@ static void usbd_hid_custom_out_callback(uint8_t ep, uint32_t nbytes)
     usbd_ep_start_read(HIDRAW_OUT_EP, read_buffer, 64);
 }
 
-static usbd_endpoint_t custom_in_ep = {
+static struct usbd_endpoint custom_in_ep = {
     .ep_cb = usbd_hid_custom_in_callback,
     .ep_addr = HIDRAW_IN_EP
 };
 
-static usbd_endpoint_t custom_out_ep = {
+static struct usbd_endpoint custom_out_ep = {
     .ep_cb = usbd_hid_custom_out_callback,
     .ep_addr = HIDRAW_OUT_EP
 };
@@ -213,14 +207,9 @@ static usbd_endpoint_t custom_out_ep = {
 void hid_custom_keyboard_init(void)
 {
     usbd_desc_register(hid_descriptor);
-    /*!< add interface ! the first interface */
-    usbd_hid_add_interface(&hid_class, &hid_intf_1);
-    /*!< interface0 add endpoint ! the first endpoint */
-    usbd_interface_add_endpoint(&hid_intf_1, &custom_in_ep);
-    /*!< interface0 add endpoint ! the second endpoint */
-    usbd_interface_add_endpoint(&hid_intf_1, &custom_out_ep);
-    /*!< register report descriptor interface 0 */
-    usbd_hid_report_descriptor_register(0, hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE);
+    usbd_add_interface(usbd_hid_alloc_intf(hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
+    usbd_add_endpoint(&custom_in_ep);
+    usbd_add_endpoint(&custom_out_ep);
 
     usbd_initialize();
 }

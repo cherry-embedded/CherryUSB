@@ -190,7 +190,7 @@ const uint8_t winusb_descriptor[] = {
 #define WINUSB_OUT_EP_MPS 64
 #endif
 
-uint8_t read_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
 
 void usbd_configure_done_callback(void)
 {
@@ -206,15 +206,14 @@ void usbd_winusb_in(uint8_t ep, uint32_t nbytes)
 {
 }
 
-usbd_class_t winusb_class;
-usbd_interface_t winusb_intf;
+struct usbd_interface winusb_intf;
 
-usbd_endpoint_t winusb_out_ep = {
+struct usbd_endpoint winusb_out_ep = {
     .ep_addr = WINUSB_OUT_EP,
     .ep_cb = usbd_winusb_out
 };
 
-usbd_endpoint_t winusb_in_ep = {
+struct usbd_endpoint winusb_in_ep = {
     .ep_addr = WINUSB_IN_EP,
     .ep_cb = usbd_winusb_in
 };
@@ -223,9 +222,9 @@ void daplink_winusb_init(void)
 {
     usbd_desc_register(winusb_descriptor);
     usbd_msosv1_desc_register(&msosv1_desc);
-    usbd_class_add_interface(&winusb_class, &winusb_intf);
-    usbd_interface_add_endpoint(&winusb_intf, &winusb_out_ep);
-    usbd_interface_add_endpoint(&winusb_intf, &winusb_in_ep);
+    usbd_add_interface(&winusb_intf);
+    usbd_add_endpoint(&winusb_out_ep);
+    usbd_add_endpoint(&winusb_in_ep);
 
     usbd_initialize();
 

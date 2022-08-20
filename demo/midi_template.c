@@ -1,7 +1,7 @@
 #include "usbd_core.h"
 #include "usb_midi.h"
 
-USB_DESC_SECTION const uint8_t midi_descriptor[] = {
+const uint8_t midi_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0100, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     // Standard AC Interface Descriptor
@@ -130,37 +130,34 @@ USB_DESC_SECTION const uint8_t midi_descriptor[] = {
     0x00
 };
 
-void usbd_midi_bulk_out(uint8_t ep)
+void usbd_midi_bulk_out(uint8_t ep, uint32_t nbytes)
 {
 }
 
-void usbd_midi_bulk_in(uint8_t ep)
+void usbd_midi_bulk_in(uint8_t ep, uint32_t nbytes)
 {
 }
 
-usbd_class_t midi_class;
-usbd_interface_t midi_cmd_intf;
-usbd_interface_t midi_data_intf;
+struct usbd_interface midi_cmd_intf;
+struct usbd_interface midi_data_intf;
 
-usbd_endpoint_t midi_out_ep = {
+struct usbd_endpoint midi_out_ep = {
     .ep_addr = MIDI_OUT_EP,
     .ep_cb = usbd_midi_bulk_out
 };
 
-usbd_endpoint_t midi_in_ep = {
+struct usbd_endpoint midi_in_ep = {
     .ep_addr = MIDI_IN_EP,
     .ep_cb = usbd_midi_bulk_in
 };
 
-
 void midi_init(void)
 {
     usbd_desc_register(midi_descriptor);
-
-    usbd_class_add_interface(&midi_class, &midi_cmd_intf);
-    usbd_class_add_interface(&midi_class, &midi_data_intf);
-    usbd_interface_add_endpoint(&midi_data_intf, &midi_out_ep);
-    usbd_interface_add_endpoint(&midi_data_intf, &midi_in_ep);
+    usbd_add_interface(&midi_cmd_intf);
+    usbd_add_interface(&midi_data_intf);
+    usbd_add_endpoint(&midi_out_ep);
+    usbd_add_endpoint(&midi_in_ep);
 
     usbd_initialize();
 }

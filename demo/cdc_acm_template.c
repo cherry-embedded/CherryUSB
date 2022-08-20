@@ -93,15 +93,8 @@ static const uint8_t cdc_descriptor[] = {
     0x00
 };
 
-/*!< class */
-usbd_class_t cdc_class;
-/*!< interface one */
-usbd_interface_t cdc_cmd_intf;
-/*!< interface two */
-usbd_interface_t cdc_data_intf;
-
-uint8_t read_buffer[2048];
-uint8_t write_buffer[2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
 
 volatile bool ep_tx_busy_flag = false;
 
@@ -141,12 +134,12 @@ void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
 }
 
 /*!< endpoint call back */
-usbd_endpoint_t cdc_out_ep = {
+struct usbd_endpoint cdc_out_ep = {
     .ep_addr = CDC_OUT_EP,
     .ep_cb = usbd_cdc_acm_bulk_out
 };
 
-usbd_endpoint_t cdc_in_ep = {
+struct usbd_endpoint cdc_in_ep = {
     .ep_addr = CDC_IN_EP,
     .ep_cb = usbd_cdc_acm_bulk_in
 };
@@ -155,13 +148,10 @@ usbd_endpoint_t cdc_in_ep = {
 void cdc_acm_init(void)
 {
     usbd_desc_register(cdc_descriptor);
-    /*!< add interface */
-    usbd_cdc_add_acm_interface(&cdc_class, &cdc_cmd_intf);
-    usbd_cdc_add_acm_interface(&cdc_class, &cdc_data_intf);
-    /*!< interface add endpoint */
-    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
-    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
-
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_endpoint(&cdc_out_ep);
+    usbd_add_endpoint(&cdc_in_ep);
     usbd_initialize();
 }
 

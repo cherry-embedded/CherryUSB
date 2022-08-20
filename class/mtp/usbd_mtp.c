@@ -21,7 +21,7 @@ struct mtp_cfg_priv {
 #define MSD_IN_EP_IDX  1
 
 /* Describe EndPoints configuration */
-static usbd_endpoint_t mtp_ep_data[2];
+static struct usbd_interface mtp_ep_data[2];
 
 static int mtp_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {

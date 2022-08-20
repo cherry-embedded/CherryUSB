@@ -223,12 +223,6 @@ struct hid_mouse {
     int8_t wheel;
 };
 
-/*!< class */
-static usbd_class_t hid_class;
-
-/*!< interface */
-static usbd_interface_t hid_intf;
-
 /*!< mouse report */
 static struct hid_mouse mouse_cfg;
 
@@ -250,17 +244,10 @@ static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 }
 
 /*!< endpoint call back */
-static usbd_endpoint_t hid_in_ep = {
+static struct usbd_endpoint hid_in_ep = {
     .ep_cb = usbd_hid_int_callback,
     .ep_addr = HID_INT_EP
 };
-
-/*!< class */
-usbd_class_t cdc_class;
-/*!< interface one */
-usbd_interface_t cdc_cmd_intf;
-/*!< interface two */
-usbd_interface_t cdc_data_intf;
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
@@ -299,12 +286,12 @@ void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
 }
 
 /*!< endpoint call back */
-usbd_endpoint_t cdc_out_ep = {
+struct usbd_endpoint cdc_out_ep = {
     .ep_addr = CDC_OUT_EP,
     .ep_cb = usbd_cdc_acm_bulk_out
 };
 
-usbd_endpoint_t cdc_in_ep = {
+struct usbd_endpoint cdc_in_ep = {
     .ep_addr = CDC_IN_EP,
     .ep_cb = usbd_cdc_acm_bulk_in
 };
@@ -320,20 +307,15 @@ void cdc_acm_hid_msc_descriptor_init(void)
 {
     usbd_desc_register(cdc_acm_hid_msc_descriptor);
 
-    /*!< add interface */
-    usbd_cdc_add_acm_interface(&cdc_class, &cdc_cmd_intf);
-    usbd_cdc_add_acm_interface(&cdc_class, &cdc_data_intf);
-    /*!< interface add endpoint */
-    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_out_ep);
-    usbd_interface_add_endpoint(&cdc_data_intf, &cdc_in_ep);
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_endpoint(&cdc_out_ep);
+    usbd_add_endpoint(&cdc_in_ep);
 
-    usbd_msc_class_init(MSC_OUT_EP, MSC_IN_EP);
-    /*!< add interface */
-    usbd_hid_add_interface(&hid_class, &hid_intf);
-    /*!< interface add endpoint */
-    usbd_interface_add_endpoint(&hid_intf, &hid_in_ep);
-    /*!< register report descriptor */
-    usbd_hid_report_descriptor_register(1, hid_mouse_report_desc, HID_MOUSE_REPORT_DESC_SIZE);
+    usbd_add_interface(usbd_msc_alloc_intf(MSC_OUT_EP, MSC_IN_EP));
+
+    usbd_add_interface(usbd_hid_alloc_intf(hid_mouse_report_desc, HID_MOUSE_REPORT_DESC_SIZE));
+    usbd_add_endpoint(&hid_in_ep);
 
     /*!< init mouse report data */
     mouse_cfg.buttons = 0;

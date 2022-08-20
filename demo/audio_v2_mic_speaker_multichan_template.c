@@ -230,18 +230,13 @@ void usbd_audio_set_sampling_freq(uint8_t entity_id, uint8_t ep_ch, uint32_t sam
     }
 }
 
-static usbd_class_t audio_class;
-static usbd_interface_t audio_control_intf;
-static usbd_interface_t audio_stream_intf;
-static usbd_interface_t audio_stream_intf2;
-
 #ifdef CONFIG_USB_HS
 #define AUDIO_OUT_EP_MPS 512
 #else
 #define AUDIO_OUT_EP_MPS 64
 #endif
 
-USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
 
 void usbd_configure_done_callback(void)
 {
@@ -257,12 +252,12 @@ void usbd_audio_iso_in_callback(uint8_t ep, uint32_t nbytes)
 {
 }
 
-static usbd_endpoint_t audio_out_ep = {
+static struct usbd_endpoint audio_out_ep = {
     .ep_cb = usbd_audio_iso_out_callback,
     .ep_addr = AUDIO_OUT_EP
 };
 
-static usbd_endpoint_t audio_in_ep = {
+static struct usbd_endpoint audio_in_ep = {
     .ep_cb = usbd_audio_iso_in_callback,
     .ep_addr = AUDIO_IN_EP
 };
@@ -270,11 +265,12 @@ static usbd_endpoint_t audio_in_ep = {
 void audio_init()
 {
     usbd_desc_register(audio_descriptor);
-    usbd_audio_add_interface(&audio_class, &audio_control_intf);
-    usbd_audio_add_interface(&audio_class, &audio_stream_intf);
-    usbd_audio_add_interface(&audio_class, &audio_stream_intf2);
-    usbd_interface_add_endpoint(&audio_stream_intf, &audio_out_ep);
-    usbd_interface_add_endpoint(&audio_stream_intf2, &audio_in_ep);
+    usbd_add_interface(usbd_audio_alloc_intf());
+    usbd_add_interface(usbd_audio_alloc_intf());
+    usbd_add_interface(usbd_audio_alloc_intf());
+    usbd_add_endpoint(&audio_in_ep);
+    usbd_add_endpoint(&audio_out_ep);
+
     usbd_audio_add_entity(0x01, AUDIO_CONTROL_CLOCK_SOURCE);
     usbd_audio_add_entity(0x03, AUDIO_CONTROL_FEATURE_UNIT);
     usbd_audio_add_entity(0x05, AUDIO_CONTROL_CLOCK_SOURCE);

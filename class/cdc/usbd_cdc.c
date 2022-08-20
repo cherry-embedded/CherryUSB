@@ -17,7 +17,7 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
 
     struct cdc_line_coding line_coding;
     bool dtr, rts;
-    uint8_t intf = LO_BYTE(setup->wIndex);
+    uint8_t intf_num = LO_BYTE(setup->wIndex);
 
     switch (setup->bRequest) {
         case CDC_REQUEST_SET_LINE_CODING:
@@ -41,31 +41,31 @@ static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t
             /*******************************************************************************/
             memcpy(&line_coding, *data, setup->wLength);
             USB_LOG_DBG("Set intf:%d linecoding <%d %d %s %s>\r\n",
-                        intf,
+                        intf_num,
                         line_coding.dwDTERate,
                         line_coding.bDataBits,
                         parity_name[line_coding.bParityType],
                         stop_name[line_coding.bCharFormat]);
-            usbd_cdc_acm_set_line_coding(intf, &line_coding);
+            usbd_cdc_acm_set_line_coding(intf_num, &line_coding);
             break;
 
         case CDC_REQUEST_SET_CONTROL_LINE_STATE: {
             dtr = (setup->wValue & 0x0001);
             rts = (setup->wValue & 0x0002);
             USB_LOG_DBG("Set intf:%d DTR 0x%x,RTS 0x%x\r\n",
-                        intf,
+                        intf_num,
                         dtr,
                         rts);
-            usbd_cdc_acm_set_dtr(intf, dtr);
-            usbd_cdc_acm_set_rts(intf, rts);
+            usbd_cdc_acm_set_dtr(intf_num, dtr);
+            usbd_cdc_acm_set_rts(intf_num, rts);
         } break;
 
         case CDC_REQUEST_GET_LINE_CODING:
-            usbd_cdc_acm_get_line_coding(intf, &line_coding);
+            usbd_cdc_acm_get_line_coding(intf_num, &line_coding);
             memcpy(*data, &line_coding, 7);
             *len = 7;
             USB_LOG_DBG("Get intf:%d linecoding %d %d %d %d\r\n",
-                        intf,
+                        intf_num,
                         line_coding.dwDTERate,
                         line_coding.bCharFormat,
                         line_coding.bParityType,
@@ -90,13 +90,20 @@ static void cdc_notify_handler(uint8_t event, void *arg)
     }
 }
 
-void usbd_cdc_add_acm_interface(usbd_class_t *devclass, usbd_interface_t *intf)
+struct usbd_interface *usbd_cdc_acm_alloc_intf(void)
 {
+    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
+    if (intf == NULL) {
+        USB_LOG_ERR("no mem to alloc intf\r\n");
+        return NULL;
+    }
+
     intf->class_handler = cdc_acm_class_request_handler;
     intf->custom_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = cdc_notify_handler;
-    usbd_class_add_interface(devclass, intf);
+
+    return intf;
 }
 
 __WEAK void usbd_cdc_acm_set_line_coding(uint8_t intf, struct cdc_line_coding *line_coding)
