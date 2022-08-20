@@ -159,17 +159,13 @@ void usbd_audio_close(uint8_t intf)
     rx_flag = 0;
 }
 
-static usbd_class_t audio_class;
-static usbd_interface_t audio_control_intf;
-static usbd_interface_t audio_stream_intf;
-
 #ifdef CONFIG_USB_HS
 #define AUDIO_OUT_EP_MPS 512
 #else
 #define AUDIO_OUT_EP_MPS 64
 #endif
 
-USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
 
 void usbd_configure_done_callback(void)
 {
@@ -181,7 +177,7 @@ void usbd_audio_iso_out_callback(uint8_t ep, uint32_t nbytes)
 {
 }
 
-static usbd_endpoint_t audio_out_ep = {
+static struct usbd_endpoint audio_out_ep = {
     .ep_cb = usbd_audio_iso_out_callback,
     .ep_addr = AUDIO_OUT_EP
 };
@@ -189,9 +185,10 @@ static usbd_endpoint_t audio_out_ep = {
 void audio_init()
 {
     usbd_desc_register(audio_descriptor);
-    usbd_audio_add_interface(&audio_class, &audio_control_intf);
-    usbd_audio_add_interface(&audio_class, &audio_stream_intf);
-    usbd_interface_add_endpoint(&audio_stream_intf, &audio_out_ep);
+    usbd_add_interface(usbd_audio_alloc_intf());
+    usbd_add_interface(usbd_audio_alloc_intf());
+    usbd_add_endpoint(&audio_out_ep);
+
     usbd_audio_add_entity(0x01, AUDIO_CONTROL_CLOCK_SOURCE);
     usbd_audio_add_entity(0x03, AUDIO_CONTROL_FEATURE_UNIT);
 

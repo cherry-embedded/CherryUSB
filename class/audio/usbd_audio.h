@@ -12,7 +12,8 @@
 extern "C" {
 #endif
 
-void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+/* Alloc audio interface driver */
+struct usbd_interface *usbd_audio_alloc_intf(void);
 
 void usbd_audio_open(uint8_t intf);
 void usbd_audio_close(uint8_t intf);

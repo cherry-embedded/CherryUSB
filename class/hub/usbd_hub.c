@@ -71,12 +71,3 @@ static void hub_notify_handler(uint8_t event, void *arg)
             break;
     }
 }
-
-void usbd_hub_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
-{
-    intf->class_handler = NULL;
-    intf->custom_handler = hub_custom_request_handler;
-    intf->vendor_handler = NULL;
-    intf->notify_handler = hub_notify_handler;
-    usbd_class_add_interface(devclass, intf);
-}

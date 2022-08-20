@@ -1,13 +1,11 @@
 设备协议栈
 =========================
 
-关于设备协议栈 API 的实现过程，有兴趣的可以看我的 B 站视频。设备协议栈的 API 使用了大量的链表，如何使用相关 API,参考下面一张图，并且总结如下：
+设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 `usbd_add_interface` 函数，记录传入的接口驱动保存到链表中，当主机进行类请求时就可以查找链表进行访问了。
+在调用 `usbd_desc_register` 以后需要进行接口注册和端点注册，口诀如下：
 
-- 有多少个 class 就调用多少次 `usbd_class_register`
-- 每个 class 有多少个接口就调用多少次 `usbd_class_add_interface`，已经支持的 class 接口就调用对应的 `usbd_xxx_class_add_interface`
-- 每个接口有多少个端点就调用多少次 `usbd_interface_add_endpoint`
-
-.. figure:: img/api_device1.png
+- 有多少个接口就调用多少次 `usbd_add_interface`，参数填各个 class alloc出来的 intf，如果没有 alloc 的intf 表示不需要加载。
+- 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
 CORE
 -----------------
@@ -19,11 +17,10 @@ CORE
 
 .. code-block:: C
 
-    typedef struct usbd_endpoint {
-        usb_slist_t list;
+    struct usbd_endpoint {
         uint8_t ep_addr;
         usbd_endpoint_callback ep_cb;
-    } usbd_endpoint_t;
+    };
 
 - **list** 端点的链表节点
 - **ep_addr** 端点地址（带方向）
@@ -38,7 +35,7 @@ CORE
 
 .. code-block:: C
 
-    typedef struct usbd_interface {
+    struct usbd_interface {
         usb_slist_t list;
         /** Handler for USB Class specific commands*/
         usbd_request_handler class_handler;
@@ -48,9 +45,10 @@ CORE
         usbd_request_handler custom_handler;
         /** Handler for USB event notify commands */
         usbd_notify_handler notify_handler;
+        uint8_t *hid_report_descriptor;
+        uint8_t *hid_report_descriptor_len;
         uint8_t intf_num;
-        usb_slist_t ep_list;
-    } usbd_interface_t;
+    };
 
 - **list** 接口的链表节点
 - **class_handler** class setup 请求回调函数
@@ -59,23 +57,6 @@ CORE
 - **notify_handler** 中断标志、协议栈相关状态回调函数
 - **intf_num** 当前接口偏移
 - **ep_list** 端点的链表节点
-
-类结构体
-""""""""""""""""""""""""""""""""""""
-
-类结构体主要用于挂载接口链表。后期可能会删除，因为这个部分跟接口其实是有关系的。
-
-.. code-block:: C
-
-    typedef struct usbd_class {
-        usb_slist_t list;
-        const char *name;
-        usb_slist_t intf_list;
-    } usbd_class_t;
-
-- **list** 类的链表节点
-- **name** 类的名称
-- **intf_list** 接口的链表节点
 
 usbd_desc_register
 """"""""""""""""""""""""""""""""""""
@@ -132,29 +113,26 @@ usbd_class_register
 
 - **devclass**  USB 设备类的句柄
 
-usbd_class_add_interface
+usbd_add_interface
 """"""""""""""""""""""""""""""""""""
 
-``usbd_class_add_interface`` 用来给 USB 设备类增加接口，并将接口信息挂载在类的链表上。
+``usbd_add_interface`` 添加一个接口驱动。
 
 .. code-block:: C
 
-    void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+    void usbd_add_interface(struct usbd_interface *intf);
 
-- **devclass**  USB 设备类的句柄
 - **intf**   USB 设备接口的句柄
 
-usbd_interface_add_endpoint
+usbd_add_endpoint
 """"""""""""""""""""""""""""""""""""
 
-``usbd_interface_add_endpoint`` 用来给 USB 接口增加端点，并将端点信息挂载在接口的链表上。
+``usbd_add_endpoint`` 添加一个端点中断完成回调函数。
 
 .. code-block:: C
 
-    void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep);
+    void usbd_add_endpoint(struct usbd_endpoint *ep);;
 
-
-- **intf**  USB 设备接口的句柄
 - **ep**    USB 设备端点的句柄
 
 usb_device_is_configured
@@ -191,20 +169,19 @@ usbd_initialize
 CDC ACM
 -----------------
 
-usbd_cdc_add_acm_interface
+usbd_cdc_acm_alloc_intf
 """"""""""""""""""""""""""""""""""""
 
-``usbd_cdc_add_acm_interface`` 用来给 USB CDC ACM 类添加接口，并实现该接口相关的函数。
+``usbd_cdc_acm_alloc_intf`` 用来申请一个 USB CDC ACM 类接口，并实现该接口相关的函数。
 
 - ``cdc_acm_class_request_handler`` 用来处理 USB CDC ACM 类 Setup 请求。
 - ``cdc_notify_handler`` 用来处理 USB CDC 其他中断回调函数。
 
 .. code-block:: C
 
-    void usbd_cdc_add_acm_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+    struct usbd_interface *usbd_cdc_acm_alloc_intf(void);
 
-- **devclass** 类的句柄
-- **intf**  接口句柄
+- **return**  接口句柄
 
 usbd_cdc_acm_set_line_coding
 """"""""""""""""""""""""""""""""""""
@@ -213,13 +190,22 @@ usbd_cdc_acm_set_line_coding
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_line_coding(uint8_t intf, uint32_t baudrate, uint8_t databits, uint8_t parity, uint8_t stopbits);
+    void usbd_cdc_acm_set_line_coding(uint8_t intf, struct cdc_line_coding *line_coding);
 
 - **intf** 控制接口号
-- **baudrate** 波特率
-- **databits**  数据位
-- **parity**  校验位
-- **stopbits**  停止位
+- **line_coding** 串口配置
+
+usbd_cdc_acm_get_line_coding
+""""""""""""""""""""""""""""""""""""
+
+``usbd_cdc_acm_get_line_coding`` 用来获取串口进行配置，如果仅使用 USB 而不用 串口，该接口不用用户实现，使用默认。
+
+.. code-block:: C
+
+    void usbd_cdc_acm_get_line_coding(uint8_t intf, struct cdc_line_coding *line_coding);
+
+- **intf** 控制接口号
+- **line_coding** 串口配置
 
 usbd_cdc_acm_set_dtr
 """"""""""""""""""""""""""""""""""""
@@ -263,10 +249,10 @@ CDC_ACM_DESCRIPTOR_INIT
 HID
 -----------------
 
-usbd_hid_add_interface
+usbd_hid_alloc_intf
 """"""""""""""""""""""""""""""""""""
 
-``usbd_hid_add_interface`` 用来给 USB HID 类添加接口，并实现该接口相关的函数：
+``usbd_hid_alloc_intf`` 用来申请一个 USB HID 类接口，并实现该接口相关的函数：
 
 - ``hid_class_request_handler`` 用来处理 USB HID 类的 Setup 请求。
 - ``hid_custom_request_handler`` 用来处理 USB HID 获取报告描述符请求。
@@ -274,30 +260,17 @@ usbd_hid_add_interface
 
 .. code-block:: C
 
-    void usbd_hid_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+    struct usbd_interface *usbd_hid_alloc_intf(const uint8_t *desc, uint32_t desc_len);
 
-- **devclass** 类的句柄
-- **intf**  接口句柄
-
-usbd_hid_report_descriptor_register
-""""""""""""""""""""""""""""""""""""""""""""
-
-``usbd_hid_report_descriptor_register``  用来注册 hid 报告描述符。
-
-.. code-block:: C
-
-    void usbd_hid_report_descriptor_register(uint8_t intf_num, const uint8_t *desc, uint32_t desc_len);
-
-- **intf_num** 当前 hid 报告描述符所在接口偏移
 - **desc** 报告描述符
 - **desc_len** 报告描述符长度
 
 MSC
 -----------------
 
-usbd_msc_class_init
+usbd_msc_alloc_intf
 """"""""""""""""""""""""""""""""""""
-``usbd_msc_class_init`` 用来给 MSC 类添加接口，并实现该接口相关函数，并且注册端点回调函数。（因为 msc bot 协议是固定的，所以不需要用于实现，因此端点回调函数自然不需要用户实现）。
+``usbd_msc_alloc_intf`` 用来申请一个 MSC 类接口，并实现该接口相关函数，并且注册端点回调函数。（因为 msc bot 协议是固定的，所以不需要用于实现，因此端点回调函数自然不需要用户实现）。
 
 - ``msc_storage_class_request_handler`` 用于处理 USB MSC Setup 中断请求。
 - ``msc_storage_notify_handler`` 用于实现 USB MSC 其他中断回调函数。
@@ -307,7 +280,7 @@ usbd_msc_class_init
 
 .. code-block:: C
 
-    void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep);
+    struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t in_ep);
 
 - **out_ep**     out 端点地址
 - **in_ep**      in 端点地址
@@ -355,16 +328,16 @@ usbd_msc_sector_write
 UAC
 -----------------
 
-usbd_audio_add_interface
+usbd_audio_alloc_intf
 """"""""""""""""""""""""""""""""""""
-``usbd_audio_add_interface``  用来给 USB Audio 类添加接口，并实现该接口相关的函数：
+``usbd_audio_alloc_intf``  用来申请一个 USB Audio 类接口，并实现该接口相关的函数：
 
 - ``audio_class_request_handler`` 用于处理 USB Audio Setup 中断请求。
 - ``audio_notify_handler`` 用于实现 USB Audio 其他中断回调函数。
 
 .. code-block:: C
 
-    void usbd_audio_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+    struct usbd_interface *usbd_audio_alloc_intf(void);
 
 - **class** 类的句柄
 - **intf**  接口句柄
@@ -465,30 +438,21 @@ usbd_audio_set_pitch
 UVC
 -----------------
 
-usbd_video_add_interface
+usbd_video_alloc_intf
 """"""""""""""""""""""""""""""""""""
-``usbd_video_add_interface``  用来给 USB Video 类添加接口，并实现该接口相关的函数：
+``usbd_video_alloc_intf``  用来申请一个 USB Video 类接口，并实现该接口相关的函数：
 
 - ``video_class_request_handler`` 用于处理 USB Video Setup 中断请求。
 - ``video_notify_handler`` 用于实现 USB Video 其他中断回调函数。
 
 .. code-block:: C
 
-    void usbd_video_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+    struct usbd_interface *usbd_video_alloc_intf(uint32_t dwFrameInterval,
+                                             uint32_t dwMaxVideoFrameSize,
+                                             uint32_t dwMaxPayloadTransferSize);
 
 - **class** 类的句柄
 - **intf**  接口句柄
-
-usbd_video_probe_and_commit_controls_init
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-``usbd_video_probe_and_commit_controls_init``  初始化视频传输每帧最大传输长度。
-
-.. code-block:: C
-
-    void usbd_video_probe_and_commit_controls_init(uint32_t dwFrameInterval, uint32_t dwMaxVideoFrameSize, uint32_t dwMaxPayloadTransferSize);
-
-- **value** 为1 表示开启 stream 传输，为0 相反
 
 usbd_video_open
 """"""""""""""""""""""""""""""""""""

@@ -12,7 +12,8 @@
 extern "C" {
 #endif
 
-void usbd_printer_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+/* Alloc printer interface driver */
+struct usbd_interface *usbd_printer_alloc_intf(void);
 
 #ifdef __cplusplus
 }

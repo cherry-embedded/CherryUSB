@@ -177,9 +177,6 @@ void usbd_configure_done_callback(void)
     /* no out ep, do nothing */
 }
 
-static usbd_class_t hid_class;
-static usbd_interface_t hid_intf;
-
 #define HID_STATE_IDLE 0
 #define HID_STATE_BUSY 1
 
@@ -196,7 +193,7 @@ void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
     }
 }
 
-static usbd_endpoint_t hid_in_ep = {
+static struct usbd_endpoint hid_in_ep = {
     .ep_cb = usbd_hid_int_callback,
     .ep_addr = 0x81
 };
@@ -204,9 +201,8 @@ static usbd_endpoint_t hid_in_ep = {
 void hid_keyboard_init(void)
 {
     usbd_desc_register(hid_descriptor);
-    usbd_hid_add_interface(&hid_class, &hid_intf);
-    usbd_interface_add_endpoint(&hid_intf, &hid_in_ep);
-    usbd_hid_report_descriptor_register(0, hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE);
+    usbd_add_interface(usbd_hid_alloc_intf(hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE));
+    usbd_add_endpoint(&hid_in_ep);
 
     usbd_initialize();
 }

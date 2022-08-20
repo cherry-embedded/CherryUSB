@@ -12,8 +12,6 @@
 extern "C" {
 #endif
 
-void usbd_hub_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
-
 #ifdef __cplusplus
 }
 #endif

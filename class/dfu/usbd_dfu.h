@@ -12,7 +12,8 @@
 extern "C" {
 #endif
 
-void usbd_dfu_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
+/* Alloc dfu interface driver */
+struct usbd_interface *usbd_dfu_alloc_intf(void);
 
 #ifdef __cplusplus
 }

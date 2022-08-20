@@ -44,13 +44,14 @@ typedef int (*usbd_request_handler)(struct usb_setup_packet *setup, uint8_t **da
 typedef void (*usbd_endpoint_callback)(uint8_t ep, uint32_t nbytes);
 typedef void (*usbd_notify_handler)(uint8_t event, void *arg);
 
-typedef struct usbd_endpoint {
-    usb_slist_t list;
+extern usb_slist_t usbd_intf_head;
+
+struct usbd_endpoint {
     uint8_t ep_addr;
     usbd_endpoint_callback ep_cb;
-} usbd_endpoint_t;
+};
 
-typedef struct usbd_interface {
+struct usbd_interface {
     usb_slist_t list;
     /** Handler for USB Class specific commands*/
     usbd_request_handler class_handler;
@@ -60,23 +61,19 @@ typedef struct usbd_interface {
     usbd_request_handler custom_handler;
     /** Handler for USB event notify commands */
     usbd_notify_handler notify_handler;
+    const uint8_t *hid_report_descriptor;
+    uint32_t hid_report_descriptor_len;
     uint8_t intf_num;
-    usb_slist_t ep_list;
-} usbd_interface_t;
-
-typedef struct usbd_class {
-    usb_slist_t list;
-    const char *name;
-    usb_slist_t intf_list;
-} usbd_class_t;
+};
 
 void usbd_desc_register(const uint8_t *desc);
 void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);
 void usbd_msosv2_desc_register(struct usb_msosv2_descriptor *desc);
 void usbd_bos_desc_register(struct usb_bos_descriptor *desc);
-void usbd_class_register(usbd_class_t *devclass);
-void usbd_class_add_interface(usbd_class_t *devclass, usbd_interface_t *intf);
-void usbd_interface_add_endpoint(usbd_interface_t *intf, usbd_endpoint_t *ep);
+
+void usbd_add_interface(struct usbd_interface *intf);
+void usbd_add_endpoint(struct usbd_endpoint *ep);
+
 bool usb_device_is_configured(void);
 void usbd_configure_done_callback(void);
 int usbd_initialize(void);

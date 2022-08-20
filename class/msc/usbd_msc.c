@@ -22,7 +22,7 @@
 #define MSD_IN_EP_IDX  1
 
 /* Describe EndPoints configuration */
-static usbd_endpoint_t mass_ep_data[2];
+static struct usbd_endpoint mass_ep_data[2];
 
 /* MSC Bulk-only Stage */
 enum Stage {
@@ -822,7 +822,7 @@ static bool SCSI_CBWDecode(uint32_t nbytes)
     return ret;
 }
 
-static void mass_storage_bulk_out(uint8_t ep, uint32_t nbytes)
+void mass_storage_bulk_out(uint8_t ep, uint32_t nbytes)
 {
     switch (usbd_msc_cfg.stage) {
         case MSC_READ_CBW:
@@ -849,7 +849,7 @@ static void mass_storage_bulk_out(uint8_t ep, uint32_t nbytes)
     }
 }
 
-static void mass_storage_bulk_in(uint8_t ep, uint32_t nbytes)
+void mass_storage_bulk_in(uint8_t ep, uint32_t nbytes)
 {
     switch (usbd_msc_cfg.stage) {
         case MSC_DATA_IN:
@@ -911,23 +911,26 @@ static void usbd_msc_thread(void *argument)
 }
 #endif
 
-static usbd_interface_t msc_intf = {
-    .class_handler = msc_storage_class_request_handler,
-    .vendor_handler = NULL,
-    .notify_handler = msc_storage_notify_handler,
-};
-
-void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep)
+struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t in_ep)
 {
-    usbd_class_add_interface(NULL, &msc_intf);
+    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
+    if (intf == NULL) {
+        USB_LOG_ERR("no mem to alloc intf\r\n");
+        return NULL;
+    }
 
-    mass_ep_data[0].ep_addr = out_ep;
-    mass_ep_data[0].ep_cb = mass_storage_bulk_out;
-    mass_ep_data[1].ep_addr = in_ep;
-    mass_ep_data[1].ep_cb = mass_storage_bulk_in;
+    intf->class_handler = msc_storage_class_request_handler;
+    intf->custom_handler = NULL;
+    intf->vendor_handler = NULL;
+    intf->notify_handler = msc_storage_notify_handler;
 
-    usbd_interface_add_endpoint(&msc_intf, &mass_ep_data[0]);
-    usbd_interface_add_endpoint(&msc_intf, &mass_ep_data[1]);
+    mass_ep_data[MSD_OUT_EP_IDX].ep_addr = out_ep;
+    mass_ep_data[MSD_OUT_EP_IDX].ep_cb = mass_storage_bulk_out;
+    mass_ep_data[MSD_IN_EP_IDX].ep_addr = in_ep;
+    mass_ep_data[MSD_IN_EP_IDX].ep_cb = mass_storage_bulk_in;
+
+    usbd_add_endpoint(&mass_ep_data[MSD_OUT_EP_IDX]);
+    usbd_add_endpoint(&mass_ep_data[MSD_IN_EP_IDX]);
 
     memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
 
@@ -935,7 +938,7 @@ void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep)
 
     if (usbd_msc_cfg.scsi_blk_size > CONFIG_USBDEV_MSC_BLOCK_SIZE) {
         USB_LOG_ERR("msc block buffer overflow\r\n");
-        return;
+        return NULL;
     }
 #ifdef CONFIG_USBDEV_MSC_THREAD
     msc_sem = usb_osal_sem_create(1);
@@ -945,4 +948,6 @@ void usbd_msc_class_init(uint8_t out_ep, uint8_t in_ep)
         return;
     }
 #endif
+
+    return intf;
 }

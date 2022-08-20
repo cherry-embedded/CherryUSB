@@ -108,13 +108,6 @@ static const uint8_t cdc_descriptor[] = {
     0x00
 };
 
-/*!< class */
-usbd_class_t cdc_class;
-/*!< interface one */
-usbd_interface_t cdc_cmd_intf;
-/*!< interface two */
-usbd_interface_t cdc_data_intf;
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[4][2048];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[4][2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
 
@@ -154,59 +147,42 @@ void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
     }
 }
 
-/*!< endpoint call back */
-usbd_class_t cdc_class1;
-usbd_interface_t cdc_cmd_intf1;
-usbd_interface_t cdc_data_intf1;
-
-usbd_endpoint_t cdc_out_ep1 = {
+struct usbd_endpoint cdc_out_ep1 = {
     .ep_addr = CDC_OUT_EP,
     .ep_cb = usbd_cdc_acm_bulk_out
 };
 
-usbd_endpoint_t cdc_in_ep1 = {
+struct usbd_endpoint cdc_in_ep1 = {
     .ep_addr = CDC_IN_EP,
     .ep_cb = usbd_cdc_acm_bulk_in
 };
 
-usbd_class_t cdc_class2;
-usbd_interface_t cdc_cmd_intf2;
-usbd_interface_t cdc_data_intf2;
-
-usbd_endpoint_t cdc_out_ep2 = {
+struct usbd_endpoint cdc_out_ep2 = {
     .ep_addr = CDC_OUT_EP2,
     .ep_cb = usbd_cdc_acm_bulk_out
 };
 
-usbd_endpoint_t cdc_in_ep2 = {
+struct usbd_endpoint cdc_in_ep2 = {
     .ep_addr = CDC_IN_EP2,
     .ep_cb = usbd_cdc_acm_bulk_in
 };
 
-usbd_class_t cdc_class3;
-usbd_interface_t cdc_cmd_intf3;
-usbd_interface_t cdc_data_intf3;
-
-usbd_endpoint_t cdc_out_ep3 = {
+struct usbd_endpoint cdc_out_ep3 = {
     .ep_addr = CDC_OUT_EP3,
     .ep_cb = usbd_cdc_acm_bulk_out
 };
 
-usbd_endpoint_t cdc_in_ep3 = {
+struct usbd_endpoint cdc_in_ep3 = {
     .ep_addr = CDC_IN_EP3,
     .ep_cb = usbd_cdc_acm_bulk_in
 };
 
-usbd_class_t cdc_class4;
-usbd_interface_t cdc_cmd_intf4;
-usbd_interface_t cdc_data_intf4;
-
-usbd_endpoint_t cdc_out_ep4 = {
+struct usbd_endpoint cdc_out_ep4 = {
     .ep_addr = CDC_OUT_EP4,
     .ep_cb = usbd_cdc_acm_bulk_out
 };
 
-usbd_endpoint_t cdc_in_ep4 = {
+struct usbd_endpoint cdc_in_ep4 = {
     .ep_addr = CDC_IN_EP4,
     .ep_cb = usbd_cdc_acm_bulk_in
 };
@@ -216,25 +192,25 @@ void cdc_acm_multi_init(void)
 {
     usbd_desc_register(cdc_descriptor);
 
-    usbd_cdc_add_acm_interface(&cdc_class1, &cdc_cmd_intf1);
-    usbd_cdc_add_acm_interface(&cdc_class1, &cdc_data_intf1);
-    usbd_interface_add_endpoint(&cdc_data_intf1, &cdc_out_ep1);
-    usbd_interface_add_endpoint(&cdc_data_intf1, &cdc_in_ep1);
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_endpoint(&cdc_out_ep1);
+    usbd_add_endpoint(&cdc_in_ep1);
 
-    usbd_cdc_add_acm_interface(&cdc_class2, &cdc_cmd_intf2);
-    usbd_cdc_add_acm_interface(&cdc_class2, &cdc_data_intf2);
-    usbd_interface_add_endpoint(&cdc_data_intf2, &cdc_out_ep2);
-    usbd_interface_add_endpoint(&cdc_data_intf2, &cdc_in_ep2);
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_endpoint(&cdc_out_ep2);
+    usbd_add_endpoint(&cdc_in_ep2);
 
-    usbd_cdc_add_acm_interface(&cdc_class3, &cdc_cmd_intf3);
-    usbd_cdc_add_acm_interface(&cdc_class3, &cdc_data_intf3);
-    usbd_interface_add_endpoint(&cdc_data_intf3, &cdc_out_ep3);
-    usbd_interface_add_endpoint(&cdc_data_intf3, &cdc_in_ep3);
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_endpoint(&cdc_out_ep3);
+    usbd_add_endpoint(&cdc_in_ep3);
 
-    usbd_cdc_add_acm_interface(&cdc_class4, &cdc_cmd_intf4);
-    usbd_cdc_add_acm_interface(&cdc_class4, &cdc_data_intf4);
-    usbd_interface_add_endpoint(&cdc_data_intf4, &cdc_out_ep4);
-    usbd_interface_add_endpoint(&cdc_data_intf4, &cdc_in_ep4);
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_endpoint(&cdc_out_ep4);
+    usbd_add_endpoint(&cdc_in_ep4);
 
     usbd_initialize();
 }
