@@ -29,8 +29,9 @@ struct fsdev_ep_state {
     uint16_t ep_mps;         /* Endpoint max packet size */
     uint8_t ep_type;         /* Endpoint type */
     uint8_t ep_stalled;      /* Endpoint stall flag */
-    uint16_t ep_pma_buf_len; /** Previously allocated buffer size */
-    uint16_t ep_pma_addr;    /** ep pmd allocated addr */
+    uint8_t ep_enable;       /* Endpoint enable */
+    uint16_t ep_pma_buf_len; /* Previously allocated buffer size */
+    uint16_t ep_pma_addr;    /* ep pmd allocated addr */
     uint8_t *xfer_buf;
     uint32_t xfer_len;
     uint32_t actual_xfer_len;
@@ -55,10 +56,6 @@ __WEAK void usb_dc_low_level_deinit(void)
 
 int usb_dc_init(void)
 {
-    memset(&g_fsdev_udc, 0, sizeof(struct fsdev_udc));
-
-    g_fsdev_udc.pma_offset = USB_BTABLE_SIZE;
-
     usb_dc_low_level_init();
 
     /* Init Device */
@@ -153,6 +150,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         g_fsdev_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_fsdev_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_fsdev_udc.out_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.out_ep[ep_idx].ep_mps > g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len) {
             if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
                 USB_LOG_ERR("Ep pma %d overflow\r\n", ep_cfg->ep_addr);
@@ -170,6 +168,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     } else {
         g_fsdev_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_fsdev_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_fsdev_udc.in_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.in_ep[ep_idx].ep_mps > g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len) {
             if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
                 USB_LOG_ERR("Ep pma %d overflow\r\n", ep_cfg->ep_addr);
@@ -259,6 +258,10 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         return -1;
     }
 
+    if (!g_fsdev_udc.in_ep[ep_idx].ep_enable) {
+        return -2;
+    }
+
     g_fsdev_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
     g_fsdev_udc.in_ep[ep_idx].xfer_len = data_len;
     g_fsdev_udc.in_ep[ep_idx].actual_xfer_len = 0;
@@ -278,6 +281,9 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 
     if (!data && data_len) {
         return -1;
+    }
+    if (!g_fsdev_udc.out_ep[ep_idx].ep_enable) {
+        return -2;
     }
 
     g_fsdev_udc.out_ep[ep_idx].xfer_buf = data;
