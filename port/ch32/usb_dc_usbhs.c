@@ -28,6 +28,7 @@ struct ch32_usbhs_ep_state {
     uint16_t ep_mps;    /* Endpoint max packet size */
     uint8_t ep_type;    /* Endpoint type */
     uint8_t ep_stalled; /* Endpoint stall flag */
+    uint8_t ep_enable;  /* Endpoint enable */
     uint8_t *xfer_buf;
     uint32_t xfer_len;
     uint32_t actual_xfer_len;
@@ -58,8 +59,6 @@ __WEAK void usb_dc_low_level_deinit(void)
 
 int usb_dc_init(void)
 {
-    memset(&g_ch32_usbhs_udc, 0, sizeof(struct ch32_usbhs_udc));
-
     usb_dc_low_level_init();
 
     USBHS_DEVICE->HOST_CTRL = 0x00;
@@ -171,9 +170,11 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     if (!data && data_len) {
         return -1;
     }
-
-    if ((uint32_t)data & 0x03) {
+    if (!g_ch32_usbhs_udc.in_ep[ep_idx].ep_enable) {
         return -2;
+    }
+    if ((uint32_t)data & 0x03) {
+        return -3;
     }
 
     g_ch32_usbhs_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -214,9 +215,11 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     if (!data && data_len) {
         return -1;
     }
-
-    if ((uint32_t)data & 0x03) {
+    if (!g_ch32_usbhs_udc.out_ep[ep_idx].ep_enable) {
         return -2;
+    }
+    if ((uint32_t)data & 0x03) {
+        return -3;
     }
 
     g_ch32_usbhs_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -361,6 +364,7 @@ void USBD_IRQHandler(void)
             epx_tx_data_toggle[ep_idx - 1] = false;
         }
 
+        memset(&g_ch32_usbhs_udc, 0, sizeof(struct ch32_usbhs_udc));
         usbd_event_reset_handler();
         USBHS_DEVICE->UEP0_DMA = (uint32_t)&g_ch32_usbhs_udc.setup;
         USBHS_DEVICE->UEP0_RX_CTRL = USBHS_EP_R_RES_ACK;

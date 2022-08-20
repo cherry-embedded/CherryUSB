@@ -29,6 +29,7 @@ struct ch32_usbfs_ep_state {
     uint16_t ep_mps;    /* Endpoint max packet size */
     uint8_t ep_type;    /* Endpoint type */
     uint8_t ep_stalled; /* Endpoint stall flag */
+    uint8_t ep_enable;  /* Endpoint enable */
     uint8_t *xfer_buf;
     uint32_t xfer_len;
     uint32_t actual_xfer_len;
@@ -58,8 +59,6 @@ __WEAK void usb_dc_low_level_deinit(void)
 
 int usb_dc_init(void)
 {
-    memset(&g_ch32_usbfs_udc, 0, sizeof(struct ch32_usbfs_udc));
-
     usb_dc_low_level_init();
 
     USBFS_DEVICE->BASE_CTRL = 0x00;
@@ -107,10 +106,12 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_ch32_usbfs_udc.out_ep[ep_idx].ep_enable = true;
         USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK | USBFS_UEP_AUTO_TOG);
     } else {
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_ch32_usbfs_udc.in_ep[ep_idx].ep_enable = true;
         USB_SET_TX_CTRL(ep_idx, USBFS_UEP_T_RES_NAK | USBFS_UEP_AUTO_TOG);
     }
     return 0;
@@ -172,10 +173,13 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     if (!data && data_len) {
         return -1;
     }
+    if (!g_ch32_usbfs_udc.in_ep[ep_idx].ep_enable) {
+        return -2;
+    }
 
     if ((uint32_t)data & 0x03) {
         printf("data do not align4\r\n");
-        return -2;
+        return -3;
     }
 
     g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -216,10 +220,12 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     if (!data && data_len) {
         return -1;
     }
-
+    if (!g_ch32_usbfs_udc.out_ep[ep_idx].ep_enable) {
+        return -2;
+    }
     if ((uint32_t)data & 0x03) {
         printf("data do not align4\r\n");
-        return -2;
+        return -3;
     }
 
     g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -374,6 +380,7 @@ void USBD_IRQHandler(void)
         ep0_tx_data_toggle = true;
         ep0_rx_data_toggle = true;
 
+        memset(&g_ch32_usbfs_udc, 0, sizeof(struct ch32_usbfs_udc));
         usbd_event_reset_handler();
         USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
         USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
