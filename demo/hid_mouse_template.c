@@ -1,12 +1,9 @@
 #include "usbd_core.h"
 #include "usbd_hid.h"
 
-#define HID_STATE_IDLE 0
-#define HID_STATE_BUSY 1
-
 /*!< endpoint address */
 #define HID_INT_EP          0x81
-#define HID_INT_EP_SIZE     8
+#define HID_INT_EP_SIZE     4
 #define HID_INT_EP_INTERVAL 10
 
 #define USBD_VID           0xffff
@@ -191,8 +188,11 @@ struct hid_mouse {
 /*!< mouse report */
 static struct hid_mouse mouse_cfg;
 
+#define HID_STATE_IDLE 0
+#define HID_STATE_BUSY 1
+
 /*!< hid state ! Data can be sent only when state is idle  */
-static uint8_t hid_state = HID_STATE_IDLE;
+static volatile uint8_t hid_state = HID_STATE_IDLE;
 
 void usbd_configure_done_callback(void)
 {
@@ -202,18 +202,13 @@ void usbd_configure_done_callback(void)
 /* function ------------------------------------------------------------------*/
 static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 {
-    /*!< endpoint call back */
-    /*!< transfer successfully */
-    if (hid_state == HID_STATE_BUSY) {
-        /*!< update the state  */
-        hid_state = HID_STATE_IDLE;
-    }
+    hid_state = HID_STATE_IDLE;
 }
 
 /*!< endpoint call back */
 static struct usbd_endpoint hid_in_ep = {
     .ep_cb = usbd_hid_int_callback,
-    .ep_addr = 0x81
+    .ep_addr = HID_INT_EP
 };
 
 /* function ------------------------------------------------------------------*/
@@ -250,7 +245,10 @@ void hid_mouse_test(void)
     mouse_cfg.x += 10;
     mouse_cfg.y = 0;
     hid_state = HID_STATE_BUSY;
-    usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+    int ret = usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+    if (ret < 0) {
+        return;
+    }
     while (hid_state == HID_STATE_BUSY) {
     }
 }
