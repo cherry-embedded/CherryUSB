@@ -837,14 +837,16 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
     /* check if the data buf addr matches align size,if not, copy into align buf */
 #ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
     if (((unsigned long)usbd_core_cfg.ep0_data_buf) & (CONFIG_USB_ALIGN_SIZE - 1)) {
-#endif
-        /*copy data buf from misalign32 addr to align32 addr*/
+        if (usbd_core_cfg.ep0_data_buf_residue > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
+            USB_LOG_ERR("Request buffer too small\r\n");
+            return;
+        }
+        /* copy data buf from misalignx addr to alignx addr */
         memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
         usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
-#ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
     }
 #endif
-    /*Send data or status to host*/
+    /* Send data or status to host */
     usbd_ep_start_write(USB_CONTROL_IN_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
     /*
     * Set ZLP flag when host asks for a bigger length and the data size is multiplier of USB_CTRL_EP_MPS,
@@ -872,7 +874,7 @@ void usbd_event_ep_in_complete_handler(uint8_t ep, uint32_t nbytes)
         } else {
             if (usbd_core_cfg.zlp_flag == true) {
                 usbd_core_cfg.zlp_flag = false;
-                /*Send zlp to host*/
+                /* Send zlp to host */
                 USB_LOG_DBG("EP0 Send zlp\r\n");
                 usbd_ep_start_write(USB_CONTROL_IN_EP0, NULL, 0);
             } else {
