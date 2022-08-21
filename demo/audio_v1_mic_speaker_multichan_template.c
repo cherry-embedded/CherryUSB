@@ -160,21 +160,27 @@ void usbd_audio_close(uint8_t intf)
 #define AUDIO_OUT_EP_MPS 64
 #endif
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_PACKET];
+
+volatile bool ep_tx_busy_flag = false;
 
 void usbd_configure_done_callback(void)
 {
     /* setup first out ep read transfer */
-    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_EP_MPS);
+    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_PACKET);
 }
 
-void usbd_audio_out_callback(uint8_t ep, uint32_t bytes)
+void usbd_audio_out_callback(uint8_t ep, uint32_t nbytes)
 {
-
+    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_PACKET);
 }
 
-void usbd_audio_in_callback(uint8_t ep, uint32_t bytes)
+void usbd_audio_in_callback(uint8_t ep, uint32_t nbytes)
 {
+    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+    ep_tx_busy_flag = false;
 }
 
 static struct usbd_endpoint audio_in_ep = {
@@ -206,6 +212,11 @@ void audio_test()
 {
     while (1) {
         if (tx_flag) {
+//            memset(write_buffer, 'a', 2048);
+//            ep_tx_busy_flag = true;
+//            usbd_ep_start_write(AUDIO_IN_EP, write_buffer, 2048);
+//            while (ep_tx_busy_flag) {
+//            }
         }
     }
 }
