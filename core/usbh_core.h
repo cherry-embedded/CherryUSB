@@ -44,7 +44,12 @@ extern "C" {
 
 #define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
+
+#ifdef __ARMCC_VERSION /* ARM C Compiler */
+#define CLASS_INFO_DEFINE          __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
+#elif defined(__GNUC__)
 #define CLASS_INFO_DEFINE          __attribute__((section(".usbh_class_info"))) __USED __ALIGNED(1)
+#endif
 
 enum usbh_event_type {
     USBH_EVENT_CONNECTED = (1 << 0),
