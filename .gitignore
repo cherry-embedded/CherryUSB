@@ -15,7 +15,6 @@
 *.iex
 *.lst
 *.axf
-*.sct
 *.hex
 *.Bak
 *.uvguix.*

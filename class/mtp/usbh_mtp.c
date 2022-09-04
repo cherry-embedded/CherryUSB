@@ -37,7 +37,7 @@ static int usbh_mtp_connect(struct usbh_hubport *hport, uint8_t intf)
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
     ep_cfg.ep_interval = ep_desc->bInterval;
     ep_cfg.hport = hport;
-    usbh_ep_alloc(&mtp_class->intin, &ep_cfg);
+    usbh_pipe_alloc(&mtp_class->intin, &ep_cfg);
 
 #endif
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].intf_desc.bNumEndpoints; i++) {
@@ -45,13 +45,13 @@ static int usbh_mtp_connect(struct usbh_hubport *hport, uint8_t intf)
 
         ep_cfg.ep_addr = ep_desc->bEndpointAddress;
         ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
+        ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;;
         ep_cfg.ep_interval = ep_desc->bInterval;
         ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_ep_alloc(&mtp_class->bulkin, &ep_cfg);
+            usbh_pipe_alloc(&mtp_class->bulkin, &ep_cfg);
         } else {
-            usbh_ep_alloc(&mtp_class->bulkout, &ep_cfg);
+            usbh_pipe_alloc(&mtp_class->bulkout, &ep_cfg);
         }
     }
 
@@ -70,17 +70,11 @@ static int usbh_mtp_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (mtp_class) {
         if (mtp_class->bulkin) {
-            ret = usb_ep_cancel(mtp_class->bulkin);
-            if (ret < 0) {
-            }
-            usbh_ep_free(mtp_class->bulkin);
+            usbh_pipe_free(mtp_class->bulkin);
         }
 
         if (mtp_class->bulkout) {
-            ret = usb_ep_cancel(mtp_class->bulkout);
-            if (ret < 0) {
-            }
-            usbh_ep_free(mtp_class->bulkout);
+            usbh_pipe_free(mtp_class->bulkout);
         }
 
         usb_free(mtp_class);

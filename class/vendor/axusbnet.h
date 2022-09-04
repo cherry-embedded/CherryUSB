@@ -20,9 +20,9 @@ struct usbh_axusbnet {
 
     uint8_t intf; /* interface number */
 
-    usbh_epinfo_t int_notify; /* Notify endpoint */
-    usbh_epinfo_t bulkin;  /* Bulk IN endpoint */
-    usbh_epinfo_t bulkout; /* Bulk OUT endpoint */
+    usbh_pipe_t int_notify; /* Notify endpoint */
+    usbh_pipe_t bulkin;  /* Bulk IN endpoint */
+    usbh_pipe_t bulkout; /* Bulk OUT endpoint */
 
     uint32_t bulkin_buf[2048/sizeof(uint32_t)];
 };

@@ -14,9 +14,9 @@ struct usbh_rndis {
     uint8_t ctrl_intf; /* Control interface number */
     uint8_t data_intf; /* Data interface number */
 
-    usbh_epinfo_t bulkin;  /* Bulk IN endpoint */
-    usbh_epinfo_t bulkout; /* Bulk OUT endpoint */
-    usbh_epinfo_t intin;   /* Notify endpoint */
+    usbh_pipe_t bulkin;  /* Bulk IN endpoint */
+    usbh_pipe_t bulkout; /* Bulk OUT endpoint */
+    usbh_pipe_t intin;   /* Notify endpoint */
 
     uint32_t request_id;
     uint8_t mac[6];

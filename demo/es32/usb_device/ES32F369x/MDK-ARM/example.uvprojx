@@ -480,14 +480,14 @@
               <FilePath>..\..\..\..\..\class\cdc\usbd_cdc.c</FilePath>
             </File>
             <File>
-              <FileName>usb_dc_musb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\port\musb\usb_dc_musb.c</FilePath>
-            </File>
-            <File>
               <FileName>usbd_hid.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\hid\usbd_hid.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dc_musb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\port\musb\usb_dc_musb.c</FilePath>
             </File>
           </Files>
         </Group>

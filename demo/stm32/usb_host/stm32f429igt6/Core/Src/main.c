@@ -122,9 +122,10 @@ int main(void)
   MX_USART1_UART_Init();
   //MX_USB_OTG_HS_HCD_Init();
   /* USER CODE BEGIN 2 */
-                   
-  usbh_initialize();
   printf("Start usb host task...\r\n");
+  extern void usbh_class_test(void);                   
+  usbh_initialize();
+  usbh_class_test();
   vTaskStartScheduler();
   /* USER CODE END 2 */
 

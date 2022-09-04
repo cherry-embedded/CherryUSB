@@ -11,7 +11,7 @@
 
 static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 {
-    struct usb_setup_packet *setup = rndis_class->hport->setup;
+    struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
     rndis_initialize_msg_t cmd;
     rndis_initialize_cmplt_t resp;
@@ -54,7 +54,7 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 
 int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, uint32_t query_len, uint8_t *info, uint32_t *info_len)
 {
-    struct usb_setup_packet *setup = rndis_class->hport->setup;
+    struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
     rndis_query_msg_t cmd;
     rndis_query_cmplt_t *resp;
@@ -110,7 +110,7 @@ error_out:
 
 static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, uint8_t *info, uint32_t info_len)
 {
-    struct usb_setup_packet *setup = rndis_class->hport->setup;
+    struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
     rndis_set_msg_t *cmd;
     rndis_set_cmplt_t resp;
@@ -164,7 +164,7 @@ error_out:
 
 int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
 {
-    struct usb_setup_packet *setup = rndis_class->hport->setup;
+    struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
     rndis_keepalive_msg_t cmd;
     rndis_keepalive_cmplt_t resp;
@@ -231,10 +231,10 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     ep_desc = &hport->config.intf[intf].ep[0].ep_desc;
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
     ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
+    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;;
     ep_cfg.ep_interval = ep_desc->bInterval;
     ep_cfg.hport = hport;
-    usbh_ep_alloc(&rndis_class->intin, &ep_cfg);
+    usbh_pipe_alloc(&rndis_class->intin, &ep_cfg);
 
 #endif
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].intf_desc.bNumEndpoints; i++) {
@@ -246,9 +246,9 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
         ep_cfg.ep_interval = ep_desc->bInterval;
         ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_ep_alloc(&rndis_class->bulkin, &ep_cfg);
+            usbh_pipe_alloc(&rndis_class->bulkin, &ep_cfg);
         } else {
-            usbh_ep_alloc(&rndis_class->bulkout, &ep_cfg);
+            usbh_pipe_alloc(&rndis_class->bulkout, &ep_cfg);
         }
     }
 
@@ -355,17 +355,11 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (rndis_class) {
         if (rndis_class->bulkin) {
-            ret = usb_ep_cancel(rndis_class->bulkin);
-            if (ret < 0) {
-            }
-            usbh_ep_free(rndis_class->bulkin);
+            usbh_pipe_free(rndis_class->bulkin);
         }
 
         if (rndis_class->bulkout) {
-            ret = usb_ep_cancel(rndis_class->bulkout);
-            if (ret < 0) {
-            }
-            usbh_ep_free(rndis_class->bulkout);
+            usbh_pipe_free(rndis_class->bulkout);
         }
 
         usb_free(rndis_class);

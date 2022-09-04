@@ -225,15 +225,6 @@ void cpu_mpu_config(uint8_t Region, uint8_t Mode, uint32_t Address, uint32_t Siz
 
 }
 
-void usb_dcache_clean(uintptr_t addr, uint32_t len)
-{
-    SCB_CleanDCache_by_Addr((uint32_t*)addr,len);
-}
-
-void usb_dcache_invalidate(uintptr_t addr, uint32_t len)
-{
-    SCB_InvalidateDCache_by_Addr((uint32_t*)addr,len);
-}
 /* USER CODE END 0 */
 
 /**
@@ -248,10 +239,9 @@ int main(void)
 
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
-#ifdef CONFIG_USB_DCACHE_ENABLE
   /* Enable D-Cache---------------------------------------------------------*/
   SCB_EnableDCache();
-#endif
+
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -273,11 +263,13 @@ int main(void)
   MX_USART1_UART_Init();
   //MX_USB_OTG_HS_HCD_Init();
   /* USER CODE BEGIN 2 */
-#ifdef CONFIG_USB_DCACHE_ENABLE
-  cpu_mpu_config(0, MPU_Normal_WB, 0x24000000, MPU_REGION_SIZE_512KB);
-#endif
-  usbh_initialize();
+
+  cpu_mpu_config(0, MPU_Normal_NonCache, 0x24070000, MPU_REGION_SIZE_64KB);
+
   printf("Start usb host task...\r\n");
+  extern void usbh_class_test(void);                   
+  usbh_initialize();
+  usbh_class_test();
   vTaskStartScheduler();
   /* USER CODE END 2 */
 

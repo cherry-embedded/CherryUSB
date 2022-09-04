@@ -10,7 +10,7 @@
 
 static int usbh_printer_get_device_id(struct usbh_printer *printer_class, uint8_t *buffer)
 {
-    struct usb_setup_packet *setup = printer_class->hport->setup;
+    struct usb_setup_packet *setup = &printer_class->hport->setup;
     int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -24,7 +24,7 @@ static int usbh_printer_get_device_id(struct usbh_printer *printer_class, uint8_
 
 static int usbh_printer_get_port_status(struct usbh_printer *printer_class, uint8_t *buffer)
 {
-    struct usb_setup_packet *setup = printer_class->hport->setup;
+    struct usb_setup_packet *setup = &printer_class->hport->setup;
     int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -38,7 +38,7 @@ static int usbh_printer_get_port_status(struct usbh_printer *printer_class, uint
 
 static int usbh_printer_soft_reset(struct usbh_printer *printer_class)
 {
-    struct usb_setup_packet *setup = printer_class->hport->setup;
+    struct usb_setup_packet *setup = &printer_class->hport->setup;
     int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -74,13 +74,13 @@ static int usbh_printer_connect(struct usbh_hubport *hport, uint8_t intf)
 
         ep_cfg.ep_addr = ep_desc->bEndpointAddress;
         ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
+        ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
         ep_cfg.ep_interval = ep_desc->bInterval;
         ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_ep_alloc(&printer_class->bulkin, &ep_cfg);
+            usbh_pipe_alloc(&printer_class->bulkin, &ep_cfg);
         } else {
-            usbh_ep_alloc(&printer_class->bulkout, &ep_cfg);
+            usbh_pipe_alloc(&printer_class->bulkout, &ep_cfg);
         }
     }
 
@@ -101,17 +101,11 @@ static int usbh_printer_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (printer_class) {
         if (printer_class->bulkin) {
-            ret = usb_ep_cancel(printer_class->bulkin);
-            if (ret < 0) {
-            }
-            usbh_ep_free(printer_class->bulkin);
+            usbh_pipe_free(printer_class->bulkin);
         }
 
         if (printer_class->bulkout) {
-            ret = usb_ep_cancel(printer_class->bulkout);
-            if (ret < 0) {
-            }
-            usbh_ep_free(printer_class->bulkout);
+            usbh_pipe_free(printer_class->bulkout);
         }
 
         usb_free(printer_class);
