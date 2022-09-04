@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "usbd_core.h"
 #include "usb_musb_reg.h"
 

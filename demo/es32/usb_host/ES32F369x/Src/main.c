@@ -140,8 +140,9 @@ int main()
 
     uart_pin_init();
     printf("\rSystem start...\r\n");
-
+    extern void usbh_class_test(void);
     usbh_initialize();
+    usbh_class_test();
     vTaskStartScheduler();
     while (1) {
     }

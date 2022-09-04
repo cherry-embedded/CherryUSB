@@ -500,11 +500,6 @@
               <FilePath>..\..\..\..\..\osal\usb_osal_freertos.c</FilePath>
             </File>
             <File>
-              <FileName>usb_workq.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\osal\usb_workq.c</FilePath>
-            </File>
-            <File>
               <FileName>usb_hc_musb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\port\musb\usb_hc_musb.c</FilePath>

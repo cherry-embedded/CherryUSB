@@ -11,16 +11,16 @@
 struct usbh_cdc_acm {
     struct usbh_hubport *hport;
 
-    struct cdc_line_coding *linecoding;
+    struct cdc_line_coding linecoding;
     uint8_t ctrl_intf; /* Control interface number */
     uint8_t data_intf; /* Data interface number */
     bool dtr;
     bool rts;
     uint8_t minor;
-    usbh_epinfo_t bulkin;  /* Bulk IN endpoint */
-    usbh_epinfo_t bulkout; /* Bulk OUT endpoint */
+    usbh_pipe_t bulkin;  /* Bulk IN endpoint */
+    usbh_pipe_t bulkout; /* Bulk OUT endpoint */
 #ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
-    usbh_epinfo_t intin; /* Interrupt IN endpoint (optional) */
+    usbh_pipe_t intin; /* Interrupt IN endpoint (optional) */
 #endif
 };
 

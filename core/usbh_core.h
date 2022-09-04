@@ -20,20 +20,10 @@
 #include "usb_log.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
-#include "usbh_hub.h"
+#include "usb_hub.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#define USBH_ROOT_HUB_INDEX       1 /* roothub index*/
-#define USBH_EX_HUB_INDEX         2 /* external hub index */
-#define USBH_HUB_PORT_START_INDEX 1 /* first hub port index */
-
-#ifdef CONFIG_USBHOST_HUB
-#define ROOTHUB(hport) ((hport)->parent == NULL)
-#else
-#define ROOTHUB(hport) true
 #endif
 
 #define USB_CLASS_MATCH_VENDOR        0x0001
@@ -46,15 +36,62 @@ extern "C" {
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
 
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
-#define CLASS_INFO_DEFINE          __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
+#define CLASS_INFO_DEFINE __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
 #elif defined(__GNUC__)
-#define CLASS_INFO_DEFINE          __attribute__((section(".usbh_class_info"))) __USED __ALIGNED(1)
+#define CLASS_INFO_DEFINE __attribute__((section(".usbh_class_info"))) __USED __ALIGNED(1)
 #endif
 
-enum usbh_event_type {
-    USBH_EVENT_CONNECTED = (1 << 0),
-    USBH_EVENT_DISCONNECTED = (1 << 1),
-};
+static inline void usbh_control_urb_fill(struct usbh_urb *urb,
+                                         usbh_pipe_t pipe,
+                                         struct usb_setup_packet *setup,
+                                         uint8_t *transfer_buffer,
+                                         uint32_t transfer_buffer_length,
+                                         uint32_t timeout,
+                                         usbh_complete_callback_t complete,
+                                         void *arg)
+{
+    urb->pipe = pipe;
+    urb->setup = setup;
+    urb->transfer_buffer = transfer_buffer;
+    urb->transfer_buffer_length = transfer_buffer_length;
+    urb->timeout = timeout;
+    urb->complete = complete;
+    urb->arg = arg;
+}
+
+static inline void usbh_bulk_urb_fill(struct usbh_urb *urb,
+                                      usbh_pipe_t pipe,
+                                      uint8_t *transfer_buffer,
+                                      uint32_t transfer_buffer_length,
+                                      uint32_t timeout,
+                                      usbh_complete_callback_t complete,
+                                      void *arg)
+{
+    urb->pipe = pipe;
+    urb->setup = NULL;
+    urb->transfer_buffer = transfer_buffer;
+    urb->transfer_buffer_length = transfer_buffer_length;
+    urb->timeout = timeout;
+    urb->complete = complete;
+    urb->arg = arg;
+}
+
+static inline void usbh_int_urb_fill(struct usbh_urb *urb,
+                                     usbh_pipe_t pipe,
+                                     uint8_t *transfer_buffer,
+                                     uint32_t transfer_buffer_length,
+                                     uint32_t timeout,
+                                     usbh_complete_callback_t complete,
+                                     void *arg)
+{
+    urb->pipe = pipe;
+    urb->setup = NULL;
+    urb->transfer_buffer = transfer_buffer;
+    urb->transfer_buffer_length = transfer_buffer_length;
+    urb->timeout = timeout;
+    urb->complete = complete;
+    urb->arg = arg;
+}
 
 struct usbh_class_info {
     uint8_t match_flags; /* Used for product specific matches; range is inclusive */
@@ -73,59 +110,121 @@ struct usbh_class_driver {
     int (*disconnect)(struct usbh_hubport *hport, uint8_t intf);
 };
 
-typedef struct usbh_endpoint {
+struct usbh_endpoint {
     struct usb_endpoint_descriptor ep_desc;
-} usbh_endpoint_t;
+};
 
-typedef struct usbh_interface {
+struct usbh_interface {
     struct usb_interface_descriptor intf_desc;
     struct usbh_endpoint ep[CONFIG_USBHOST_EP_NUM];
     char devname[CONFIG_USBHOST_DEV_NAMELEN];
     struct usbh_class_driver *class_driver;
     void *priv;
-} usbh_interface_t;
+};
 
-typedef struct usbh_configuration {
+struct usbh_configuration {
     struct usb_configuration_descriptor config_desc;
     struct usbh_interface intf[CONFIG_USBHOST_INTF_NUM];
-} usbh_configuration_t;
+};
 
-typedef struct usbh_hubport {
-    bool connected;    /* True: device connected; false: disconnected */
-    bool port_change;  /* True: port changed; false: port do not change */
-    uint8_t port;      /* Hub port index */
-    uint8_t dev_addr;  /* device address */
-    uint8_t speed;     /* device speed */
-    usbh_epinfo_t ep0; /* control ep info */
+struct usbh_hubport {
+    bool connected;   /* True: device connected; false: disconnected */
+    uint8_t port;     /* Hub port index */
+    uint8_t dev_addr; /* device address */
+    uint8_t speed;    /* device speed */
+    usbh_pipe_t ep0;  /* control ep pipe info */
     struct usb_device_descriptor device_desc;
     struct usbh_configuration config;
+    const char *iManufacturer;
+    const char *iProduct;
+    const char *iSerialNumber;
 #if 0
-    uint8_t* config_desc;
+    uint8_t* raw_config_desc;
 #endif
-    struct usb_setup_packet *setup;
-    struct usbh_hub *parent; /*if NULL, is roothub*/
-} usbh_hubport_t;
+    USB_MEM_ALIGNX struct usb_setup_packet setup;
+    struct usbh_hub *parent;
+};
 
-typedef struct usbh_hub {
+struct usbh_hub {
     usb_slist_t list;
-    uint8_t index;    /* Hub index */
-    uint8_t nports;   /* Hub port number */
-    uint8_t dev_addr; /* Hub device address */
-    usbh_epinfo_t intin;
-    uint8_t *int_buffer;
-    struct hub_port_status *port_status;
+    bool connected;
+    bool is_roothub;
+    uint8_t index;
+    uint8_t hub_addr;
+    usbh_pipe_t intin;
+    USB_MEM_ALIGNX uint8_t int_buffer[1];
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_EHPORTS];
-    struct usbh_hubport *parent; /* Parent hub port */
-} usbh_hub_t;
+    struct usbh_hubport *parent;
+    usb_slist_t hub_event_list;
+};
+
+/* usb host transfer wrapper */
+
+/**
+ * @brief Submit an bulk transfer to an endpoint.
+ * This is a blocking method; this method will not return until the transfer has completed.
+ * Default timeout is 500ms.
+ *
+ * @param pipe The control endpoint to send/receive the control request.
+ * @param setup Setup packet to be sent.
+ * @param buffer buffer used for sending the request and for returning any responses.
+ * @return On success will return 0, and others indicate fail.
+ */
+int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint8_t *buffer);
+
+/**
+ * @brief  Submit an bulk transfer to an endpoint.
+ * This is a blocking method; this method will not return until the transfer has completed.
+ *
+ * @param pipe The IN or OUT endpoint pipe info.
+ * @param buffer A buffer containing the data to be sent (OUT endpoint) or received (IN endpoint).
+ * @param buflen The length of the data to be sent or received.
+ * @param timeout Timeout for transfer, unit is ms.
+ * @return On success, a non-negative value is returned that indicates the number
+ *   of bytes successfully transferred.  On a failure, a negated errno value
+ *   is returned that indicates the nature of the failure:
+ *
+ *     -EAGAIN - If devices NAKs the transfer (or NYET or other error where
+ *              it may be appropriate to restart the entire transaction).
+ *     -EPERM  - If the endpoint stalls
+ *     -EIO    - On a TX or data toggle error
+ *     -EPIPE  - Overrun errors
+ *     -ETIMEDOUT  - Sem wait timeout
+ *
+ */
+int usbh_bulk_transfer(usbh_pipe_t pipe, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
+
+/**
+ * @brief  Submit an interrupt transfer to an endpoint.
+ * This is a blocking method; this method will not return until the transfer has completed.
+ *
+ * @param pipe The IN or OUT endpoint pipe info.
+ * @param buffer A buffer containing the data to be sent (OUT endpoint) or received (IN endpoint).
+ * @param buflen The length of the data to be sent or received.
+ * @param timeout Timeout for transfer, unit is ms.
+ * @return On success, a non-negative value is returned that indicates the number
+ *   of bytes successfully transferred.  On a failure, a negated errno value
+ *   is returned that indicates the nature of the failure:
+ *
+ *     -EAGAIN - If devices NAKs the transfer (or NYET or other error where
+ *              it may be appropriate to restart the entire transaction).
+ *     -EPERM  - If the endpoint stalls
+ *     -EIO    - On a TX or data toggle error
+ *     -EPIPE  - Overrun errors
+ *     -ETIMEDOUT  - Sem wait timeout
+ *
+ */
+int usbh_int_transfer(usbh_pipe_t pipe, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
 
 int usbh_initialize(void);
-int lsusb(int argc, char **argv);
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
 void *usbh_find_class_instance(const char *devname);
+
 void usbh_device_mount_done_callback(struct usbh_hubport *hport);
 void usbh_device_unmount_done_callback(struct usbh_hubport *hport);
 
+int lsusb(int argc, char **argv);
 #ifdef __cplusplus
 }
 #endif

@@ -12,8 +12,8 @@ static uint32_t g_devinuse = 0;
 struct usbh_cdc_custom_air724 {
     struct usbh_hubport *hport;
 
-    usbh_epinfo_t bulkin;  /* Bulk IN endpoint */
-    usbh_epinfo_t bulkout; /* Bulk OUT endpoint */
+    usbh_pipe_t bulkin;  /* Bulk IN endpoint */
+    usbh_pipe_t bulkout; /* Bulk OUT endpoint */
 };
 
 int usbh_air724_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -48,9 +48,9 @@ int usbh_air724_connect(struct usbh_hubport *hport, uint8_t intf)
         ep_cfg.ep_interval = ep_desc->bInterval;
         ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_ep_alloc(&cdc_custom_class->bulkin, &ep_cfg);
+            usbh_pipe_alloc(&cdc_custom_class->bulkin, &ep_cfg);
         } else {
-            usbh_ep_alloc(&cdc_custom_class->bulkout, &ep_cfg);
+            usbh_pipe_alloc(&cdc_custom_class->bulkout, &ep_cfg);
         }
     }
 

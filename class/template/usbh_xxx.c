@@ -32,9 +32,9 @@ static int usbh_xxx_connect(struct usbh_hubport *hport, uint8_t intf)
         ep_cfg.ep_interval = ep_desc->bInterval;
         ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_ep_alloc(&rndis_class->bulkin, &ep_cfg);
+            usbh_pipe_alloc(&rndis_class->bulkin, &ep_cfg);
         } else {
-            usbh_ep_alloc(&rndis_class->bulkout, &ep_cfg);
+            usbh_pipe_alloc(&rndis_class->bulkout, &ep_cfg);
         }
     }
 
@@ -51,17 +51,11 @@ static int usbh_xxx_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (xxx_class) {
         if (xxx_class->bulkin) {
-            ret = usb_ep_cancel(xxx_class->bulkin);
-            if (ret < 0) {
-            }
-            usbh_ep_free(xxx_class->bulkin);
+            usbh_pipe_free(xxx_class->bulkin);
         }
 
         if (xxx_class->bulkout) {
-            ret = usb_ep_cancel(xxx_class->bulkout);
-            if (ret < 0) {
-            }
-            usbh_ep_free(xxx_class->bulkout);
+            usbh_pipe_free(xxx_class->bulkout);
         }
 
         usb_free(xxx_class);

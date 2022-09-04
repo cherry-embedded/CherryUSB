@@ -16,17 +16,25 @@
 #define CONFIG_USB_PRINTF printf
 #endif
 
-/* attribute data into no cache ram */
-// #define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable")))
 /* Enable print with color */
 #define CONFIG_USB_PRINTF_COLOR_ENABLE
+
+/* data align size when use dma */
+#ifndef CONFIG_USB_ALIGN_SIZE
+#define CONFIG_USB_ALIGN_SIZE 4
+#endif
+
+/* attribute data into no cache ram */
+#define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable")))
 
 /* ================ USB DEVICE Configuration ================*/
 
 /* core */
 
 /* Ep0 max transfer buffer, specially for receiving data from ep0 out */
+#ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
+#endif
 /* Setup packet log for debug */
 // #define CONFIG_USBDEV_SETUP_LOG_PRINT
 /* Check if the input descriptor is correct */
@@ -79,6 +87,11 @@
 #endif
 
 /* ================ USB HOST Configuration ================ */
+/* core */
+/* Ep0 max transfer buffer */
+#ifndef CONFIG_USBHOST_REQUEST_BUFFER_LEN
+#define CONFIG_USBHOST_REQUEST_BUFFER_LEN 512
+#endif
 
 #ifndef CONFIG_USBHOST_RHPORTS
 #define CONFIG_USBHOST_RHPORTS 1
@@ -86,10 +99,6 @@
 
 #ifndef CONFIG_USBHOST_EHPORTS
 #define CONFIG_USBHOST_EHPORTS 4
-#endif
-
-#ifndef CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USBHOST_PIPE_NUM 10
 #endif
 
 #ifndef CONFIG_USBHOST_INTF_NUM
@@ -101,7 +110,7 @@
 #endif
 
 #ifndef CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT
-#define CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT 5000
+#define CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT 500
 #endif
 
 #ifndef CONFIG_USBHOST_MSC_TIMEOUT
@@ -112,22 +121,24 @@
 #define CONFIG_USBHOST_PSC_PRIO 4
 #endif
 #ifndef CONFIG_USBHOST_PSC_STACKSIZE
-#define CONFIG_USBHOST_PSC_STACKSIZE 4096
+#define CONFIG_USBHOST_PSC_STACKSIZE 2048
 #endif
 
 #ifndef CONFIG_USBHOST_DEV_NAMELEN
 #define CONFIG_USBHOST_DEV_NAMELEN 16
 #endif
 
-#define CONFIG_USBHOST_ASYNCH
 //#define CONFIG_USBHOST_GET_STRING_DESC
+
+#ifndef CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USBHOST_PIPE_NUM 4
+#endif
 
 /* ================ EHCI Configuration ================ */
 
-#define CONFIG_USB_EHCI_HCCR_BASE (0x20072000)
-#define CONFIG_USB_EHCI_HCOR_BASE (0x20072000 + 0x10)
-#define CONFIG_USB_EHCI_QH_NUM    (10)
-#define CONFIG_USB_EHCI_QTD_NUM   (10)
+#define CONFIG_USB_EHCI_HCCR_BASE   (0x20072000)
+#define CONFIG_USB_EHCI_HCOR_BASE   (0x20072000 + 0x10)
+#define CONFIG_EHCI_FRAME_LIST_SIZE 1024
 // #define CONFIG_USB_EHCI_INFO_ENABLE
 // #define CONFIG_USB_ECHI_HCOR_RESERVED_DISABLE
 // #define CONFIG_USB_EHCI_CONFIGFLAG

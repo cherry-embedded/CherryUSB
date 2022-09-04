@@ -211,7 +211,7 @@
             <Ra1Chk>0</Ra1Chk>
             <Ra2Chk>0</Ra2Chk>
             <Ra3Chk>0</Ra3Chk>
-            <Im1Chk>0</Im1Chk>
+            <Im1Chk>1</Im1Chk>
             <Im2Chk>1</Im2Chk>
             <OnChipMemories>
               <Ocm1>
@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32H743xx,STM32H7,CONFIG_USB_DCACHE_ENABLE,CONFIG_USB_ALIGN_SIZE=32</Define>
+              <Define>USE_HAL_DRIVER,STM32H743xx,STM32H7</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\osal;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM7\r0p1</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\osal;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\class\wireless;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM7\r0p1</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -362,7 +362,7 @@
             </VariousControls>
           </Aads>
           <LDads>
-            <umfTarg>1</umfTarg>
+            <umfTarg>0</umfTarg>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
             <noStLib>0</noStLib>
@@ -371,7 +371,7 @@
             <TextAddressRange></TextAddressRange>
             <DataAddressRange></DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>stm32h743xih6\stm32h743xih6.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -595,9 +595,9 @@
               <FilePath>..\..\..\..\..\core\usbh_core.c</FilePath>
             </File>
             <File>
-              <FileName>usb_osal_freertos.c</FileName>
+              <FileName>usbh_hub.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\osal\usb_osal_freertos.c</FilePath>
+              <FilePath>..\..\..\..\..\class\hub\usbh_hub.c</FilePath>
             </File>
             <File>
               <FileName>usbh_cdc_acm.c</FileName>
@@ -613,6 +613,16 @@
               <FileName>usbh_msc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\msc\usbh_msc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbh_rndis.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\wireless\usbh_rndis.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_osal_freertos.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\osal\usb_osal_freertos.c</FilePath>
             </File>
             <File>
               <FileName>usb_hc_dwc2.c</FileName>

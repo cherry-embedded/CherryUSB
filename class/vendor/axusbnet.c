@@ -1166,14 +1166,14 @@ static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
         if(ep_cfg.ep_type == USB_ENDPOINT_TYPE_BULK)
         {
             if (ep_desc->bEndpointAddress & 0x80) {
-                usbh_ep_alloc(&class->bulkin, &ep_cfg);
+                usbh_pipe_alloc(&class->bulkin, &ep_cfg);
             } else {
-                usbh_ep_alloc(&class->bulkout, &ep_cfg);
+                usbh_pipe_alloc(&class->bulkout, &ep_cfg);
             }
         }
         else
         {
-            usbh_ep_alloc(&class->int_notify, &ep_cfg);
+            usbh_pipe_alloc(&class->int_notify, &ep_cfg);
         }
     }
 
