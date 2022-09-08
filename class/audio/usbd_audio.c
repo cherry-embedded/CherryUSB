@@ -77,7 +77,7 @@ const uint8_t default_sampling_freq_table[] = {
 #endif
 
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
-static int audio_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int audio_class_endpoint_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint8_t control_selector;
     uint32_t sampling_freq = 0;
@@ -121,7 +121,7 @@ static int audio_custom_request_handler(struct usb_setup_packet *setup, uint8_t 
 }
 #endif
 
-static int audio_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int audio_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("AUDIO Class request: "
                 "bRequest 0x%02x\r\n",
@@ -381,11 +381,11 @@ struct usbd_interface *usbd_audio_alloc_intf(void)
         return NULL;
     }
 
-    intf->class_handler = audio_class_request_handler;
+    intf->class_interface_handler = audio_class_interface_request_handler;
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
-    intf->custom_handler = audio_custom_request_handler;
+    intf->class_endpoint_handler = audio_class_endpoint_request_handler;
 #else
-    intf->custom_handler = NULL;
+    intf->class_endpoint_handler = NULL;
 #endif
     intf->vendor_handler = NULL;
     intf->notify_handler = audio_notify_handler;

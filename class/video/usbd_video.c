@@ -659,7 +659,7 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
     return 0;
 }
 
-static int video_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int video_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("Video Class request: "
                 "bRequest 0x%02x\r\n",
@@ -750,8 +750,8 @@ struct usbd_interface *usbd_video_alloc_intf(uint32_t dwFrameInterval, uint32_t 
         return NULL;
     }
 
-    intf->class_handler = video_class_request_handler;
-    intf->custom_handler = NULL;
+    intf->class_interface_handler = video_class_interface_request_handler;
+    intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = video_notify_handler;
 

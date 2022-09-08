@@ -64,7 +64,7 @@ static void usbd_msc_reset(void)
     usbd_msc_cfg.stage = MSC_READ_CBW;
 }
 
-static int msc_storage_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int msc_storage_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("MSC Class request: "
                 "bRequest 0x%02x\r\n",
@@ -919,8 +919,8 @@ struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t i
         return NULL;
     }
 
-    intf->class_handler = msc_storage_class_request_handler;
-    intf->custom_handler = NULL;
+    intf->class_interface_handler = msc_storage_class_interface_request_handler;
+    intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = msc_storage_notify_handler;
 

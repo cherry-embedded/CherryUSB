@@ -9,7 +9,7 @@
 const char *stop_name[] = { "1", "1.5", "2" };
 const char *parity_name[] = { "N", "O", "E", "M", "S" };
 
-static int cdc_acm_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("CDC Class request: "
                 "bRequest 0x%02x\r\n",
@@ -98,8 +98,8 @@ struct usbd_interface *usbd_cdc_acm_alloc_intf(void)
         return NULL;
     }
 
-    intf->class_handler = cdc_acm_class_request_handler;
-    intf->custom_handler = NULL;
+    intf->class_interface_handler = cdc_acm_class_interface_request_handler;
+    intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = cdc_notify_handler;
 
