@@ -10,7 +10,7 @@ struct dfu_cfg_priv {
     struct dfu_info info;
 } usbd_dfu_cfg;
 
-static int dfu_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int dfu_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_WRN("DFU Class request: "
                  "bRequest 0x%02x\r\n",
@@ -58,8 +58,8 @@ struct usbd_interface *usbd_dfu_alloc_intf(void)
         return NULL;
     }
 
-    intf->class_handler = dfu_class_request_handler;
-    intf->custom_handler = NULL;
+    intf->class_interface_handler = dfu_class_interface_request_handler;
+    intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = dfu_notify_handler;
 

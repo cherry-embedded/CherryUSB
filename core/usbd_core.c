@@ -431,6 +431,8 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
 static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
                                            uint8_t **data, uint32_t *len)
 {
+    uint8_t type = HI_BYTE(setup->wValue);
+    uint8_t intf_num = LO_BYTE(setup->wIndex);
     bool ret = true;
 
     /* Only when device is configured, then interface requests can be valid. */
@@ -445,6 +447,24 @@ static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
             *len = 2;
             break;
 
+        case USB_REQUEST_GET_DESCRIPTOR:
+            if (type == 0x22) { /* HID_DESCRIPTOR_TYPE_HID_REPORT */
+                USB_LOG_INFO("read hid report descriptor\r\n");
+                usb_slist_t *i;
+
+                usb_slist_for_each(i, &usbd_intf_head)
+                {
+                    struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
+
+                    if (intf->intf_num == intf_num) {
+                        *data = (uint8_t *)intf->hid_report_descriptor;
+                        *len = intf->hid_report_descriptor_len;
+                        return true;
+                    }
+                }
+            }
+            ret = false;
+            break;
         case USB_REQUEST_CLEAR_FEATURE:
         case USB_REQUEST_SET_FEATURE:
             ret = false;
@@ -587,8 +607,8 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
         {
             struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-            if (intf->class_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
-                return intf->class_handler(setup, data, len);
+            if (intf->class_interface_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
+                return intf->class_interface_handler(setup, data, len);
             }
         }
     } else if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_ENDPOINT) {
@@ -596,8 +616,8 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
         {
             struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-            if (intf->custom_handler && (intf->intf_num == ((setup->wIndex >> 8) & 0xFF))) {
-                return intf->custom_handler(setup, data, len);
+            if (intf->class_endpoint_handler && (intf->intf_num == ((setup->wIndex >> 8) & 0xFF))) {
+                return intf->class_endpoint_handler(setup, data, len);
             }
         }
     }
@@ -667,34 +687,6 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
 }
 
 /**
- * @brief handler for special requests (for hid report or audio ep request, later will be removed)
- *
- * @param [in]     setup    The setup packet
- * @param [in,out] data     Data buffer
- * @param [in,out] len      Pointer to data length
- *
- * @return true if the request was handled successfully
- */
-static int usbd_custom_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
-{
-    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) != USB_REQUEST_RECIPIENT_INTERFACE) {
-        return -1;
-    }
-
-    usb_slist_t *i;
-    usb_slist_for_each(i, &usbd_intf_head)
-    {
-        struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
-
-        if (intf->custom_handler && (intf->intf_num == (setup->wIndex & 0xFF))) {
-            return intf->custom_handler(setup, data, len);
-        }
-    }
-
-    return -1;
-}
-
-/**
  * @brief handle setup request( standard/class/vendor/other)
  *
  * @param [in]     setup The setup packet
@@ -705,32 +697,31 @@ static int usbd_custom_request_handler(struct usb_setup_packet *setup, uint8_t *
  */
 static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    uint8_t type = setup->bmRequestType & USB_REQUEST_TYPE_MASK;
+    switch (setup->bmRequestType & USB_REQUEST_TYPE_MASK) {
+        case USB_REQUEST_STANDARD:
+            if (usbd_standard_request_handler(setup, data, len) < 0) {
+                USB_LOG_ERR("standard request error\r\n");
+                usbd_print_setup(setup);
+                return false;
+            }
+            break;
+        case USB_REQUEST_CLASS:
+            if (usbd_class_request_handler(setup, data, len) < 0) {
+                USB_LOG_ERR("class request error\r\n");
+                usbd_print_setup(setup);
+                return false;
+            }
+            break;
+        case USB_REQUEST_VENDOR:
+            if (usbd_vendor_request_handler(setup, data, len) < 0) {
+                USB_LOG_ERR("vendor request error\r\n");
+                usbd_print_setup(setup);
+                return false;
+            }
+            break;
 
-    if (!usbd_custom_request_handler(setup, data, len)) {
-        return true;
-    }
-
-    if (type == USB_REQUEST_STANDARD) {
-        if (usbd_standard_request_handler(setup, data, len) < 0) {
-            USB_LOG_ERR("standard request error\r\n");
-            usbd_print_setup(setup);
+        default:
             return false;
-        }
-    } else if (type == USB_REQUEST_CLASS) {
-        if (usbd_class_request_handler(setup, data, len) < 0) {
-            USB_LOG_ERR("class request error\r\n");
-            usbd_print_setup(setup);
-            return false;
-        }
-    } else if (type == USB_REQUEST_VENDOR) {
-        if (usbd_vendor_request_handler(setup, data, len) < 0) {
-            USB_LOG_ERR("vendor request error\r\n");
-            usbd_print_setup(setup);
-            return false;
-        }
-    } else {
-        return false;
     }
 
     return true;

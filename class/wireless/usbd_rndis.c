@@ -391,8 +391,8 @@ void usbd_rndis_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
         usbd_class_register(devclass);
     }
 
-    intf->class_handler = rndis_class_request_handler;
-    intf->custom_handler = NULL;
+    intf->class_interface_handler = rndis_class_request_handler;
+    intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = rndis_notify_handler;
     usbd_class_add_interface(devclass, intf);
