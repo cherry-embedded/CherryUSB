@@ -4,7 +4,7 @@
 
 CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system with USB ip.
 
-![CherryUSB](./docs/asserts/usb_outline.png)
+![CherryUSB](./docs/assets/usb_outline.png)
 
 ## Why choose
 
