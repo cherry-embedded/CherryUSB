@@ -8,6 +8,31 @@
 - F4 与 H7 cache 区别、USB BASE 区别
 
 
+如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
+
+.. code-block:: C
+
+    cpu_mpu_config(0, MPU_Normal_NonCache, 0x24070000, MPU_REGION_SIZE_64KB);
+
+对应 keil 中的 sct 脚本修改：
+
+.. code-block:: C
+
+    LR_IROM1 0x08000000 0x00200000  {    ; load region size_region
+    ER_IROM1 0x08000000 0x00200000  {  ; load address = execution address
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+    .ANY (+XO)
+    }
+    RW_IRAM2 0x24000000 0x00070000  {  ; RW data
+    .ANY (+RW +ZI)
+    }
+    USB_NOCACHERAM 0x24070000 0x00010000  {  ; RW data
+    *(.noncacheable)
+    }
+    }
+
 工程样例试用
 -----------------------
 
@@ -52,7 +77,7 @@ USB Device 移植要点
 
 .. figure:: img/stm32_7.png
 
-- 复制一份 **usb_config.h**，这里放到 `Core/Inc` 目录下
+- 复制一份 **cherryusb_config_template.h**，放到 `Core/Inc` 目录下，并命名为 `usb_config.h`
 
 .. figure:: img/stm32_8.png
 
@@ -79,25 +104,9 @@ USB Host 移植要点
 
 前面 7 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port，所以 fs port 不做支持（没有 dma 你玩什么主机）。
 
-- 添加 CherryUSB 必须要的源码（ **usbh_core.c** 、 **usb_hc_dwc2.c** 、以及 **osal** 目录下的适配层文件）,以及想要使用的 class 驱动（推荐添加除了 hub 之外的所有的 class），可以将对应的 usb host template 添加方便测试。
+- 添加 CherryUSB 必须要的源码（ **usbh_core.c** 、 **usbh_hub.c** 、 **usb_hc_dwc2.c** 、以及 **osal** 目录下的适配层文件）,以及想要使用的 class 驱动，并且可以将对应的 **usb host.c** 添加方便测试。
 
 .. figure:: img/stm32_16.png
-
-- 编译选项中需要添加 `CONFIG_USBHOST_HIGH_WORKQ`,作用是在线程中复位 port。
-
-.. figure:: img/stm32_17.png
-
-- 如果使用 STM32H7 或者 F7 ，需要添加 `STM32H7` 或者 `STM32F7` 编译选项
-- 如果使用的是 F7/H7 这种带 cache功能的，由于 dma 原因，所以需要刷 cache，编译选项中需要添加 `CONFIG_USB_DCACHE_ENABLE`,并实现刷 cache的两个函数。当然，可以不开 dcahe功能，就不需要添加编译选项。
-并且需要搭配 MPU 使用，如果是新手，对 cache不了解，推荐关闭 cache功能。默认 cache 使用 Write Back 属性。
-
-.. figure:: img/stm32_17_1.png
-.. figure:: img/stm32_17_2.png
-.. figure:: img/stm32_17_3.png
-
-.. note:: STM32 h7/f7 usb dma 访问的 ram 只能是从 0x24000000 开始的地址，所以，推荐关闭 0x20000000 开始的地址。
-
-.. figure:: img/stm32_17_4.png
 
 - 编译器推荐使用 **AC6**。勾选 **Microlib**，并实现 **printf** ，方便后续查看 log。
 .. figure:: img/stm32_10.png
