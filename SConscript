@@ -80,6 +80,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     path += [cwd + '/osal']
     path += [cwd + '/class/hub']
     src += Glob('core/usbh_core.c')
+    src += Glob('class/hub/usbh_hub.c')
     src += Glob('osal/usb_osal_rtthread.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC']):
@@ -93,10 +94,6 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/msc/usbh_msc.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_RNDIS']):
         src += Glob('class/wireless/usbh_rndis.c')
-
-    if GetDepend(['PKG_CHERRYUSB_HOST_HUB']):
-        src += Glob('class/hub/usbh_hub.c')
-        CPPDEFINES += ['CONFIG_USBHOST_HUB']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
