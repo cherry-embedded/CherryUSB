@@ -4,7 +4,7 @@
 
 CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带 USB ip)的 USB 主从协议栈。
 
-![CherryUSB](./docs/asserts/usb_outline.png)
+![CherryUSB](./docs/assets/usb_outline.png)
 
 ## 为什么选择
 
