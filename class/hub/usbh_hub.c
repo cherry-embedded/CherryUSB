@@ -252,6 +252,16 @@ static void usbh_hub_thread_wakeup(struct usbh_hub *hub)
     usb_osal_sem_give(hub_event_wait);
 }
 
+static void hub_int_complete_callback(void *arg, int nbytes)
+{
+    struct usbh_hub *hub = (struct usbh_hub *)arg;
+
+    if (nbytes > 0) {
+        usbh_hub_thread_wakeup(hub);
+        usbh_submit_urb(&hub->inturb);
+    }
+}
+
 static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
@@ -316,10 +326,13 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
+    hub->connected = true;
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hub->index);
     usbh_hub_register(hub);
     USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
+    usbh_int_urb_fill(&hub->inturb, hub->intin, hub->int_buffer, 1, 0, hub_int_complete_callback, hub);
+    usbh_submit_urb(&hub->inturb);
     return 0;
 }
 

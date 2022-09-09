@@ -153,6 +153,7 @@ struct usbh_hub {
     uint8_t hub_addr;
     usbh_pipe_t intin;
     USB_MEM_ALIGNX uint8_t int_buffer[1];
+    struct usbh_urb inturb;
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_EHPORTS];
     struct usbh_hubport *parent;
