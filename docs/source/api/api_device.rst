@@ -4,7 +4,7 @@
 设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 `usbd_add_interface` 函数，记录传入的接口驱动保存到链表中，当主机进行类请求时就可以查找链表进行访问了。
 在调用 `usbd_desc_register` 以后需要进行接口注册和端点注册，口诀如下：
 
-- 有多少个接口就调用多少次 `usbd_add_interface`，参数填各个 class alloc出来的 intf，如果没有 alloc 的intf 表示不需要加载。
+- 有多少个接口就调用多少次 `usbd_add_interface`，参数填各个 class alloc 出来的 intf，如果没有 alloc 的intf 表示不需要加载。
 - 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
 CORE
@@ -37,24 +37,22 @@ CORE
 
     struct usbd_interface {
         usb_slist_t list;
-        /** Handler for USB Class specific commands*/
-        usbd_request_handler class_handler;
-        /** Handler for USB Vendor specific commands */
+        usbd_request_handler class_interface_handler;
+        usbd_request_handler class_endpoint_handler;
         usbd_request_handler vendor_handler;
-        /** Handler for USB custom specific commands */
-        usbd_request_handler custom_handler;
-        /** Handler for USB event notify commands */
         usbd_notify_handler notify_handler;
-        uint8_t *hid_report_descriptor;
-        uint8_t *hid_report_descriptor_len;
+        const uint8_t *hid_report_descriptor;
+        uint32_t hid_report_descriptor_len;
         uint8_t intf_num;
     };
 
 - **list** 接口的链表节点
-- **class_handler** class setup 请求回调函数
+- **class_interface_handler** class setup 请求回调函数,接收者为接口
+- **class_endpoint_handler** class setup 请求回调函数,接收者为端点
 - **vendor_handler** vendor setup 请求回调函数
-- **custom_handler** custom setup 请求回调函数
 - **notify_handler** 中断标志、协议栈相关状态回调函数
+- **hid_report_descriptor** hid 报告描述符
+- **hid_report_descriptor_len** hid 报告描述符长度
 - **intf_num** 当前接口偏移
 - **ep_list** 端点的链表节点
 
@@ -102,17 +100,6 @@ usbd_bos_desc_register
 
 - **desc**  描述符句柄
 
-usbd_class_register
-""""""""""""""""""""""""""""""""""""
-
-``usbd_class_register`` 用来注册一个 class，该 class 中的接口链表成员，用于后续挂载多个接口。
-
-.. code-block:: C
-
-    void usbd_class_register(usbd_class_t *devclass);
-
-- **devclass**  USB 设备类的句柄
-
 usbd_add_interface
 """"""""""""""""""""""""""""""""""""
 
@@ -122,7 +109,7 @@ usbd_add_interface
 
     void usbd_add_interface(struct usbd_interface *intf);
 
-- **intf**   USB 设备接口的句柄
+- **intf**  接口驱动句柄，通常从不同 class 的 `xxx_alloc_intf` 函数获取
 
 usbd_add_endpoint
 """"""""""""""""""""""""""""""""""""
@@ -133,7 +120,7 @@ usbd_add_endpoint
 
     void usbd_add_endpoint(struct usbd_endpoint *ep);;
 
-- **ep**    USB 设备端点的句柄
+- **ep**    端点句柄
 
 usb_device_is_configured
 """"""""""""""""""""""""""""""""""""
