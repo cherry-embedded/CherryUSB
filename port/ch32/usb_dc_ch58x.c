@@ -51,22 +51,22 @@
   R8_USB_DEV_AD = (R8_USB_DEV_AD & RB_UDA_GP_BIT) | add;
 /*!< set epid ep tx valid */
 #define EPn_SET_TX_VALID(epid) \
-  EPn_CTRL(epid) = EPn_CTRL(epid) & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_T_RES) | UEP_T_RES_ACK;
 /*!< set epid ep rx valid */
 #define EPn_SET_RX_VALID(epid) \
-  EPn_CTRL(epid) = EPn_CTRL(epid) & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+  EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_R_RES) | UEP_R_RES_ACK;
 /*!< set epid ep tx nak */
 #define EPn_SET_TX_NAK(epid) \
-  EPn_CTRL(epid) = EPn_CTRL(epid) & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
+  EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_T_RES) | UEP_T_RES_NAK;
 /*!< set epid ep rx nak */
 #define EPn_SET_RX_NAK(epid) \
-  EPn_CTRL(epid) = EPn_CTRL(epid) & ~MASK_UEP_R_RES | UEP_R_RES_NAK;
+  EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_R_RES) | UEP_R_RES_NAK;
 /*!< set epid ep tx stall */
 #define EPn_SET_TX_STALL(epid) \
-  EPn_CTRL(epid) = EPn_CTRL(epid) & ~MASK_UEP_T_RES | UEP_T_RES_STALL
+  EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_T_RES) | UEP_T_RES_STALL
 /*!< set epid ep rx stall */
 #define EPn_SET_RX_STALL(epid) \
-  EPn_CTRL(epid) = EPn_CTRL(epid) & ~MASK_UEP_R_RES | UEP_R_RES_STALL
+  EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_R_RES) | UEP_R_RES_STALL
 /*!< set epid ep tx len */
 #define EPn_SET_TX_LEN(epid, len) \
   EPn_TX_LEN(epid) = len
