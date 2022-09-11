@@ -79,10 +79,11 @@
 
 /* ================ USB HOST Stack Configuration ================== */
 
-#define CONFIG_USBHOST_RHPORTS  1
-#define CONFIG_USBHOST_EHPORTS  4
-#define CONFIG_USBHOST_INTF_NUM 6
-#define CONFIG_USBHOST_EP_NUM   4
+#define CONFIG_USBHOST_RHPORTS    1
+#define CONFIG_USBHOST_EXTHUB_NUM 1
+#define CONFIG_USBHOST_EHPORTS    4
+#define CONFIG_USBHOST_INTF_NUM   6
+#define CONFIG_USBHOST_EP_NUM     4
 
 #define CONFIG_USBHOST_DEV_NAMELEN 16
 

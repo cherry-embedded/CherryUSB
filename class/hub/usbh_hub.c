@@ -11,6 +11,8 @@
 #define DEBOUNCE_TIME_STEP     25
 #define DELAY_TIME_AFTER_RESET 200
 
+#define EXTHUB_FIRST_INDEX        2
+
 static uint32_t g_devinuse = 0;
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_buf[32];
@@ -23,6 +25,8 @@ usb_osal_thread_t hub_thread;
 
 USB_NOCACHE_RAM_SECTION struct usbh_hub roothub;
 struct usbh_hubport roothub_parent_port;
+
+USB_NOCACHE_RAM_SECTION struct usbh_hub exthub[CONFIG_USBHOST_EXTHUB_NUM];
 
 extern int usbh_hport_activate_ep0(struct usbh_hubport *hport);
 extern int usbh_hport_deactivate_ep0(struct usbh_hubport *hport);
@@ -38,23 +42,18 @@ static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "
  *
  ****************************************************************************/
 
-static int usbh_hub_devno_alloc(struct usbh_hub *hub)
+static int usbh_hub_devno_alloc(void)
 {
-    size_t flags;
     int devno;
 
-    flags = usb_osal_enter_critical_section();
-    for (devno = 2; devno < 32; devno++) {
+    for (devno = EXTHUB_FIRST_INDEX; devno < 32; devno++) {
         uint32_t bitno = 1 << devno;
         if ((g_devinuse & bitno) == 0) {
             g_devinuse |= bitno;
-            hub->index = devno;
-            usb_osal_leave_critical_section(flags);
-            return 0;
+            return devno;
         }
     }
 
-    usb_osal_leave_critical_section(flags);
     return -EMFILE;
 }
 
@@ -70,10 +69,8 @@ static void usbh_hub_devno_free(struct usbh_hub *hub)
 {
     int devno = hub->index;
 
-    if (devno >= 2 && devno < 32) {
-        size_t flags = usb_osal_enter_critical_section();
+    if (devno >= EXTHUB_FIRST_INDEX && devno < 32) {
         g_devinuse &= ~(1 << devno);
-        usb_osal_leave_critical_section(flags);
     }
 }
 
@@ -179,7 +176,7 @@ static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length
         USB_LOG_ERR("unexpected descriptor 0x%02x\r\n", desc->bDescriptorType);
         return -2;
     } else {
-        USB_LOG_RAW("Device Descriptor:\r\n");
+        USB_LOG_RAW("Hub Descriptor:\r\n");
         USB_LOG_RAW("bLength: 0x%02x             \r\n", desc->bLength);
         USB_LOG_RAW("bDescriptorType: 0x%02x     \r\n", desc->bDescriptorType);
         USB_LOG_RAW("bNbrPorts: 0x%02x           \r\n", desc->bNbrPorts);
@@ -268,17 +265,19 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     struct hub_port_status port_status;
     int ret;
+    int index;
 
-    struct usbh_hub *hub = usb_malloc(sizeof(struct usbh_hub));
-    if (hub == NULL) {
-        USB_LOG_ERR("Fail to alloc hub\r\n");
+    index = usbh_hub_devno_alloc();
+    if (index > (CONFIG_USBHOST_EXTHUB_NUM + EXTHUB_FIRST_INDEX)) {
         return -ENOMEM;
     }
 
+    struct usbh_hub *hub = &exthub[index - EXTHUB_FIRST_INDEX];
+
     memset(hub, 0, sizeof(struct usbh_hub));
-    usbh_hub_devno_alloc(hub);
     hub->hub_addr = hport->dev_addr;
     hub->parent = hport;
+    hub->index = index;
 
     hport->config.intf[intf].priv = hub;
 
@@ -320,7 +319,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
         ret = usbh_hub_get_portstatus(hub, port + 1, &port_status);
-        USB_LOG_INFO("port %u, status:0x%02x, change:0x%02x\r\n", port, port_status.wPortStatus, port_status.wPortChange);
+        USB_LOG_INFO("port %u, status:0x%02x, change:0x%02x\r\n", port + 1, port_status.wPortStatus, port_status.wPortChange);
         if (ret < 0) {
             return ret;
         }
@@ -365,7 +364,6 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         usbh_hub_unregister(hub);
         memset(hub, 0, sizeof(struct usbh_hub));
-        usb_free(hub);
 
         if (hport->config.intf[intf].devname[0] != '\0')
             USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
