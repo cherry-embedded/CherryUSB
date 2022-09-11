@@ -312,7 +312,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-        ret = usbh_hub_set_feature(hub, 1, HUB_PORT_FEATURE_POWER);
+        ret = usbh_hub_set_feature(hub, port + 1, HUB_PORT_FEATURE_POWER);
         if (ret < 0) {
             return ret;
         }
