@@ -1,10 +1,6 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbhs_reg.h"
 
-#ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
-#error "ch32 ip must disable align check"
-#endif
-
 #ifndef USBD_IRQHandler
 #define USBD_IRQHandler USBHS_IRQHandler //use actual usb irq name instead
 #endif
@@ -107,11 +103,13 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_ch32_usbhs_udc.out_ep[ep_idx].ep_enable = true;
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx + 16));
         USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_RES_NAK | USBHS_EP_R_TOG_0 | USBHS_EP_R_AUTOTOG);
     } else {
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_ch32_usbhs_udc.in_ep[ep_idx].ep_enable = true;
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx));
         USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0 | USBHS_EP_T_AUTOTOG);
     }
