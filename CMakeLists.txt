@@ -9,8 +9,6 @@ sdk_inc(class/audio)
 sdk_inc(class/video)
 sdk_inc(class/hub)
 
-sdk_compile_definitions(-DCONFIG_USB_ALIGN_SIZE=64)
-
 if(CONFIG_CHERRYUSB_DEVICE)
 sdk_src(core/usbd_core.c)
 sdk_src(port/hpm/usb_dc_hpm.c)

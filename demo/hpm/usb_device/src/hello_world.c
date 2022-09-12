@@ -15,7 +15,6 @@ int main(void)
 {
     int u;
 
-    l1c_dc_disable();
     board_init();
     board_init_led_pins();
     board_init_usb_pins();
