@@ -11,7 +11,7 @@
 #define DEBOUNCE_TIME_STEP     25
 #define DELAY_TIME_AFTER_RESET 200
 
-#define EXTHUB_FIRST_INDEX        2
+#define EXTHUB_FIRST_INDEX 2
 
 static uint32_t g_devinuse = 0;
 
@@ -540,7 +540,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     }
                 }
 
-                USB_LOG_INFO("Device on on Hub %u, Port %u disconnected\r\n", hub->index, port + 1);
+                USB_LOG_INFO("Device on Hub %u, Port %u disconnected\r\n", hub->index, port + 1);
                 usbh_device_unmount_done_callback(child);
                 memset(child, 0, sizeof(struct usbh_hubport));
             }
