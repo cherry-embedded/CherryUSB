@@ -148,8 +148,6 @@ typedef enum {
     USB_EP0_STATE_IN_STATUS,   /**< IN status*/
     USB_EP0_STATE_OUT_DATA,    /**< OUT DATA */
     USB_EP0_STATE_OUT_STATUS,  /**< OUT status */
-    USB_EP0_STATE_IN_DATA_C,   /**< IN status*/
-    USB_EP0_STATE_IN_STATUS_C, /**< IN DATA */
 } ep0_state_t;
 
 struct musb_pipe {
@@ -643,9 +641,13 @@ int usbh_submit_urb(struct usbh_urb *urb)
     size_t flags;
     int ret = 0;
 
+    if (!urb) {
+        return -EINVAL;
+    }
+
     pipe = urb->pipe;
 
-    if (!urb || !pipe) {
+    if (!pipe) {
         return -EINVAL;
     }
 

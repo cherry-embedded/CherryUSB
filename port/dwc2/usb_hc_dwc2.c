@@ -754,9 +754,13 @@ int usbh_submit_urb(struct usbh_urb *urb)
     size_t flags;
     int ret = 0;
 
+    if (!urb) {
+        return -EINVAL;
+    }
+
     chan = urb->pipe;
 
-    if (!urb || !chan) {
+    if (!chan) {
         return -EINVAL;
     }
 
@@ -832,7 +836,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     pipe->urb = NULL;
 
     usb_osal_leave_critical_section(flags);
-    
+
     return 0;
 }
 
