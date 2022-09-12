@@ -77,8 +77,8 @@ int cdc_acm_test(void)
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_write_buffer[25 * 100];
 
-FATFS fs;
-FIL fnew;
+USB_NOCACHE_RAM_SECTION FATFS fs;
+USB_NOCACHE_RAM_SECTION FIL fnew;
 UINT fnum;
 FRESULT res_sd = 0;
 
