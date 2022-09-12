@@ -78,13 +78,7 @@
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
 #if defined(STM32F7) || defined(STM32H7)
-#ifndef CONFIG_USB_DCACHE_ENABLE
-#warning "if you enable dcache,please enable this macro"
-#else
-#if CONFIG_USB_ALIGN_SIZE != 32
-#error "dwc2 hs with dma and cache, must enable align32"
-#endif
-#endif
+#warning "if you enable dcache,please add .nocacheble section in your sct or ld or icf"
 #endif
 #endif
 
@@ -129,14 +123,6 @@
 #define USB_OTG_INEP(i)  ((USB_OTG_INEndpointTypeDef *)(USB_BASE + USB_OTG_IN_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
 #define USB_OTG_OUTEP(i) ((USB_OTG_OUTEndpointTypeDef *)(USB_BASE + USB_OTG_OUT_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
 #define USB_OTG_FIFO(i)  *(__IO uint32_t *)(USB_BASE + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
-
-#ifdef CONFIG_USB_DCACHE_ENABLE
-void usb_dwc2_dcache_clean(uintptr_t addr, uint32_t len);
-void usb_dwc2_dcache_invalidate(uintptr_t addr, uint32_t len);
-#else
-#define usb_dwc2_dcache_clean(addr, len)
-#define usb_dwc2_dcache_invalidate(addr, len)
-#endif
 
 extern uint32_t SystemCoreClock;
 
@@ -801,19 +787,14 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     if ((uint32_t)data & 0x03) {
         return -3;
     }
-#endif
-#ifdef CONFIG_USB_DCACHE_ENABLE
-    if ((data && (((uint32_t)data) & 0x1f))) {
-        return -4;
-    }
 #if defined(STM32F7) || defined(STM32H7)
     if ((((uint32_t)data) & 0x24000000) != 0x24000000) {
-        return -5;
+        return -4;
     }
 #endif
 #endif
     if (USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
-        return -6;
+        return -5;
     }
 
     g_dwc2_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -882,19 +863,14 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     if (((uint32_t)data) & 0x03) {
         return -3;
     }
-#endif
-#ifdef CONFIG_USB_DCACHE_ENABLE
-    if (((uint32_t)data) & 0x1f) {
-        return -4;
-    }
 #if defined(STM32F7) || defined(STM32H7)
     if ((((uint32_t)data) & 0x24000000) != 0x24000000) {
-        return -5;
+        return -4;
     }
 #endif
 #endif
     if (USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) {
-        return -6;
+        return -5;
     }
 
     g_dwc2_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -996,18 +972,15 @@ void USBD_IRQHandler(void)
                                     g_dwc2_udc.out_ep[ep_idx].actual_xfer_len += g_dwc2_udc.out_ep[ep_idx].xfer_len;
                                     g_dwc2_udc.out_ep[ep_idx].xfer_len = 0;
                                 }
-                                usb_dwc2_dcache_invalidate((uintptr_t)g_dwc2_udc.out_ep[ep_idx].xfer_buf, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                                 usbd_event_ep_out_complete_handler(0x00, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                             }
                         } else {
                             g_dwc2_udc.out_ep[ep_idx].actual_xfer_len = g_dwc2_udc.out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
-                            usb_dwc2_dcache_invalidate((uintptr_t)g_dwc2_udc.out_ep[ep_idx].xfer_buf, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                             usbd_event_ep_out_complete_handler(ep_idx, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                         }
                     }
 
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
-                        usb_dwc2_dcache_invalidate((uintptr_t)&g_dwc2_udc.setup, 8);
                         usbd_event_ep0_setup_complete_handler((uint8_t *)&g_dwc2_udc.setup);
                     }
                 }
