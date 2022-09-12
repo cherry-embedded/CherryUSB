@@ -635,6 +635,10 @@ __WEAK void usb_hc_low_level_init(void)
 {
 }
 
+__WEAK void usb_hc_low_level2_init(void)
+{
+}
+
 int usb_hc_init(void)
 {
     uint32_t interval;
@@ -711,6 +715,8 @@ int usb_hc_init(void)
             return -ETIMEDOUT;
         }
     }
+    
+    usb_hc_low_level2_init();
 
     EHCI_HCOR->usbintr = 0;
     EHCI_HCOR->usbsts = EHCI_HCOR->usbsts;
@@ -737,8 +743,8 @@ int usb_hc_init(void)
 
     regval |= EHCI_USBCMD_ITHRE_1MF;
     regval |= EHCI_USBCMD_ASEN;
-    regval |= EHCI_USBCMD_RUN;
     regval |= EHCI_USBCMD_PSEN;
+    regval |= EHCI_USBCMD_RUN;
     EHCI_HCOR->usbcmd = regval;
 
 #ifdef CONFIG_USB_EHCI_CONFIGFLAG

@@ -15,9 +15,10 @@
 #include "hpm_gpio_drv.h"
 #include "usbh_core.h"
 
+extern void usbh_class_test();
+
 int main(void)
 {
-    l1c_dc_disable();
     board_init();
     board_init_gpio_pins();
     board_init_usb_pins();
@@ -26,7 +27,9 @@ int main(void)
     gpio_write_pin(BOARD_LED_GPIO_CTRL, BOARD_LED_GPIO_INDEX, BOARD_LED_GPIO_PIN, BOARD_LED_ON_LEVEL);
 #endif
 
+    printf("Start usb host task...\r\n");
     usbh_initialize();
+    usbh_class_test();
     vTaskStartScheduler();
     for (;;) {
         ;
