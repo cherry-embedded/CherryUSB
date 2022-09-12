@@ -196,7 +196,7 @@ void usbh_device_unmount_done_callback(struct usbh_hubport *hport)
 static void usbh_class_test_thread(void *argument)
 {
     while (1) {
-        printf("hellworld\r\n");
+        printf("helloworld\r\n");
         usb_osal_msleep(1000);
         cdc_acm_test();
         msc_test();
