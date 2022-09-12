@@ -715,7 +715,7 @@ int usb_hc_init(void)
             return -ETIMEDOUT;
         }
     }
-    
+
     usb_hc_low_level2_init();
 
     EHCI_HCOR->usbintr = 0;
@@ -990,9 +990,13 @@ int usbh_submit_urb(struct usbh_urb *urb)
     size_t flags;
     int ret = 0;
 
+    if (!urb) {
+        return -EINVAL;
+    }
+
     pipe = urb->pipe;
 
-    if (!urb || !pipe) {
+    if (!pipe) {
         return -EINVAL;
     }
 
