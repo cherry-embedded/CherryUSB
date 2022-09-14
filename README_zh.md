@@ -65,14 +65,14 @@ CherryUSB Device 协议栈当前实现以下功能：
 
 CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
-|   file      |  FLASH (Byte)  |  RAM (Byte)  |
-|:-----------:|:--------------:|:------------:|
-|usbd_core.c  |  3045          | 373          |
-|usbd_cdc.c   |  302           | 20           |
-|usbd_msc.c   |  2452          | 132          |
-|usbd_hid.c   |  784           | 201          |
-|usbd_audio.c |  438           | 14           |
-|usbd_video.c |  402           | 4            |
+|   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)                      |
+|:-------------:|:--------------:|:-------------------------:|:-------------:|:---------------------------------:|
+|usbd_core.c    |  3263          | 384                       | 17            | 0                                 |
+|usbd_cdc.c     |  490           | 0                         | 0             | sizeof(struct usbd_interface) * x |
+|usbd_msc.c     |  2772          | 128 + 512(default)        | 16            | sizeof(struct usbd_interface) * x |
+|usbd_hid.c     |  501           | 0                         | 0             | sizeof(struct usbd_interface) * x |
+|usbd_audio.c   |  1208          | 0                         | 4             | sizeof(struct usbd_interface) * x |
+|usbd_video.c   |  2272          | 0                         | 82            | sizeof(struct usbd_interface) * x |
 
 ## Host 协议栈简介
 
@@ -94,13 +94,23 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 CherryUSB Host 协议栈资源占用说明（GCC 10.2 with -O2）：
 
-|   file        |  FLASH (Byte)  |  RAM (Byte)  |
-|:-------------:|:--------------:|:------------:|
-|usbh_core.c    |  7992          | 472          |
-|usbh_cdc_acm.c |  1208          | 4            |
-|usbh_msc.c     |  2239          | 4            |
-|usbh_hid.c     |  930           | 4            |
-|usbh_hub.c     |  3878          | 14           |
+|   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte)                    |
+|:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:-------------------------------:|
+|usbh_core.c    |  4261          | 512                             | 28                          | sizeof(struct usbh_urb)         |
+|usbh_hub.c     |  4633          | sizeof(struct usbh_hub) * (1+n) | sizeof(struct usbh_hubport) + 20 | 0                          |
+|usbh_cdc_acm.c |  1004          | 7                               | 4                           | sizeof(struct usbh_cdc_acm) * x |
+|usbh_msc.c     |  1776          | 32                              | 4                           | sizeof(struct usbh_msc) * x     |
+|usbh_hid.c     |  822           | 128                             | 4                           | sizeof(struct usbh_hid) * x     |
+
+其中，`sizeof(struct usbh_hub)` 和 `sizeof(struct usbh_hubport)` 受以下宏影响：
+
+```
+#define CONFIG_USBHOST_MAX_EXTHUBS          1
+#define CONFIG_USBHOST_MAX_EHPORTS          4
+#define CONFIG_USBHOST_MAX_INTERFACES       6
+#define CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 1
+#define CONFIG_USBHOST_MAX_ENDPOINTS        4
+```
 
 ## 文档教程
 
