@@ -26,6 +26,7 @@ struct usbh_endpoint_cfg {
     uint8_t ep_type;     /* Endpoint type */
     uint16_t ep_mps;     /* Endpoint max packet size */
     uint8_t ep_interval; /* Endpoint interval */
+    uint8_t mult;        /* Endpoint additional transcation */
 };
 
 /**
