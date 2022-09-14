@@ -93,6 +93,23 @@ static inline void usbh_int_urb_fill(struct usbh_urb *urb,
     urb->arg = arg;
 }
 
+static inline void usbh_iso_urb_fill(struct usbh_urb *urb,
+                                     usbh_pipe_t pipe,
+                                     uint8_t *transfer_buffer,
+                                     uint32_t transfer_buffer_length,
+                                     uint32_t timeout,
+                                     usbh_complete_callback_t complete,
+                                     void *arg)
+{
+    urb->pipe = pipe;
+    urb->setup = NULL;
+    urb->transfer_buffer = transfer_buffer;
+    urb->transfer_buffer_length = transfer_buffer_length;
+    urb->timeout = timeout;
+    urb->complete = complete;
+    urb->arg = arg;
+}
+
 struct usbh_class_info {
     uint8_t match_flags; /* Used for product specific matches; range is inclusive */
     uint8_t class;       /* Base device class code */
@@ -114,9 +131,14 @@ struct usbh_endpoint {
     struct usb_endpoint_descriptor ep_desc;
 };
 
-struct usbh_interface {
+struct usbh_interface_altsetting {
     struct usb_interface_descriptor intf_desc;
-    struct usbh_endpoint ep[CONFIG_USBHOST_EP_NUM];
+    struct usbh_endpoint ep[CONFIG_USBHOST_MAX_ENDPOINTS];
+};
+
+struct usbh_interface {
+    struct usbh_interface_altsetting altsetting[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
+    uint8_t altsetting_num;
     char devname[CONFIG_USBHOST_DEV_NAMELEN];
     struct usbh_class_driver *class_driver;
     void *priv;
@@ -124,7 +146,7 @@ struct usbh_interface {
 
 struct usbh_configuration {
     struct usb_configuration_descriptor config_desc;
-    struct usbh_interface intf[CONFIG_USBHOST_INTF_NUM];
+    struct usbh_interface intf[CONFIG_USBHOST_MAX_INTERFACES];
 };
 
 struct usbh_hubport {
@@ -155,10 +177,12 @@ struct usbh_hub {
     USB_MEM_ALIGNX uint8_t int_buffer[1];
     struct usbh_urb inturb;
     struct usb_hub_descriptor hub_desc;
-    struct usbh_hubport child[CONFIG_USBHOST_EHPORTS];
+    struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
     struct usbh_hubport *parent;
     usb_slist_t hub_event_list;
 };
+
+int usbh_hport_activate_epx(usbh_pipe_t pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
 
 /* usb host transfer wrapper */
 

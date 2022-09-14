@@ -112,7 +112,6 @@ int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer)
 
 int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
@@ -139,24 +138,13 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         return ret;
     }
 
-    for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++) {
-        ep_desc = &hport->config.intf[intf].ep[i].ep_desc;
-        ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-        ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-        ep_cfg.ep_interval = ep_desc->bInterval;
-        ep_cfg.hport = hport;
+    for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
+        ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_pipe_alloc(&hid_class->intin, &ep_cfg);
+            usbh_hport_activate_epx(&hid_class->intin, hport, ep_desc);
         } else {
-            usbh_pipe_alloc(&hid_class->intout, &ep_cfg);
+            usbh_hport_activate_epx(&hid_class->intout, hport, ep_desc);
         }
-
-        USB_LOG_INFO("Ep=%02x Attr=%02u Mps=%d Interval=%02u\r\n",
-                     ep_desc->bEndpointAddress,
-                     ep_desc->bmAttributes,
-                     ep_desc->wMaxPacketSize,
-                     ep_desc->bInterval);
     }
 
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hid_class->minor);

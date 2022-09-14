@@ -540,7 +540,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     uint8_t port;
     uint32_t status;
 
-    nports = CONFIG_USBHOST_RHPORTS;
+    nports = CONFIG_USBHOST_MAX_RHPORTS;
     port = setup->wIndex;
     if (setup->bmRequestType & USB_REQUEST_RECIPIENT_DEVICE) {
         switch (setup->bRequest) {
