@@ -760,7 +760,7 @@ int usb_hc_init(void)
         }
     }
 #ifdef CONFIG_USB_EHCI_PORT_POWER
-    for (uint8_t port = 0; port < CONFIG_USBHOST_RHPORTS; port++) {
+    for (uint8_t port = 0; port < CONFIG_USBHOST_MAX_RHPORTS; port++) {
         regval = EHCI_HCOR->portsc[port];
         regval |= EHCI_PORTSC_PP;
         EHCI_HCOR->portsc[port] = regval;
@@ -778,7 +778,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     uint8_t port;
     uint32_t temp, status;
 
-    nports = CONFIG_USBHOST_RHPORTS;
+    nports = CONFIG_USBHOST_MAX_RHPORTS;
 
     port = setup->wIndex;
     if (setup->bmRequestType & USB_REQUEST_RECIPIENT_DEVICE) {
@@ -1161,7 +1161,7 @@ void USBH_IRQHandler(void)
     }
 
     if (usbsts & EHCI_USBSTS_PCD) {
-        for (int port = 0; port < CONFIG_USBHOST_RHPORTS; port++) {
+        for (int port = 0; port < CONFIG_USBHOST_MAX_RHPORTS; port++) {
             uint32_t portsc = EHCI_HCOR->portsc[port];
 
             if (portsc & EHCI_PORTSC_CSC) {

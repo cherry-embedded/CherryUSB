@@ -26,7 +26,7 @@ usb_osal_thread_t hub_thread;
 USB_NOCACHE_RAM_SECTION struct usbh_hub roothub;
 struct usbh_hubport roothub_parent_port;
 
-USB_NOCACHE_RAM_SECTION struct usbh_hub exthub[CONFIG_USBHOST_EXTHUB_NUM];
+USB_NOCACHE_RAM_SECTION struct usbh_hub exthub[CONFIG_USBHOST_MAX_EXTHUBS];
 
 extern int usbh_hport_activate_ep0(struct usbh_hubport *hport);
 extern int usbh_hport_deactivate_ep0(struct usbh_hubport *hport);
@@ -261,14 +261,13 @@ static void hub_int_complete_callback(void *arg, int nbytes)
 
 static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
     struct hub_port_status port_status;
     int ret;
     int index;
 
     index = usbh_hub_devno_alloc();
-    if (index > (CONFIG_USBHOST_EXTHUB_NUM + EXTHUB_FIRST_INDEX)) {
+    if (index > (CONFIG_USBHOST_MAX_EXTHUBS + EXTHUB_FIRST_INDEX)) {
         return -ENOMEM;
     }
 
@@ -293,19 +292,9 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         hub->child[port].parent = hub;
     }
 
-    ep_desc = &hport->config.intf[intf].ep[0].ep_desc;
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    ep_cfg.ep_interval = ep_desc->bInterval;
-    ep_cfg.hport = hport;
+    ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
     if (ep_desc->bEndpointAddress & 0x80) {
-        usbh_pipe_alloc(&hub->intin, &ep_cfg);
-        USB_LOG_INFO("Ep=%02x Attr=%02u Mps=%d Interval=%02u\r\n",
-                     ep_desc->bEndpointAddress,
-                     ep_desc->bmAttributes,
-                     ep_desc->wMaxPacketSize,
-                     ep_desc->bInterval);
+        usbh_hport_activate_epx(&hub->intin, hport, ep_desc);
     } else {
         return -1;
     }
@@ -382,7 +371,7 @@ static void usbh_roothub_register(void)
     roothub.is_roothub = true;
     roothub.parent = &roothub_parent_port;
     roothub.hub_addr = roothub_parent_port.dev_addr;
-    roothub.hub_desc.bNbrPorts = CONFIG_USBHOST_RHPORTS;
+    roothub.hub_desc.bNbrPorts = CONFIG_USBHOST_MAX_RHPORTS;
     usbh_hub_register(&roothub);
 }
 
@@ -542,7 +531,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
                 USB_LOG_INFO("Device on Hub %u, Port %u disconnected\r\n", hub->index, port + 1);
                 usbh_device_unmount_done_callback(child);
-                memset(child, 0, sizeof(struct usbh_hubport));
+                child->config.config_desc.bNumInterfaces = 0;
             }
         }
     }
@@ -553,7 +542,6 @@ static void usbh_hub_thread(void *argument)
     size_t flags;
     int ret = 0;
 
-    usbh_roothub_register();
     usb_hc_init();
     while (1) {
         ret = usb_osal_sem_take(hub_event_wait, 0xffffffff);
@@ -589,6 +577,8 @@ void usbh_hub_unregister(struct usbh_hub *hub)
 
 int usbh_hub_initialize(void)
 {
+    usbh_roothub_register();
+
     hub_event_wait = usb_osal_sem_create(0);
     if (hub_event_wait == NULL) {
         return -1;
