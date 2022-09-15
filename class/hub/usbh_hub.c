@@ -255,7 +255,7 @@ static void hub_int_complete_callback(void *arg, int nbytes)
 
     if (nbytes > 0) {
         usbh_hub_thread_wakeup(hub);
-        usbh_submit_urb(&hub->inturb);
+        usbh_submit_urb(&hub->intin_urb);
     }
 }
 
@@ -319,8 +319,8 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_hub_register(hub);
     USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
-    usbh_int_urb_fill(&hub->inturb, hub->intin, hub->int_buffer, 1, 0, hub_int_complete_callback, hub);
-    usbh_submit_urb(&hub->inturb);
+    usbh_int_urb_fill(&hub->intin_urb, hub->intin, hub->int_buffer, 1, 0, hub_int_complete_callback, hub);
+    usbh_submit_urb(&hub->intin_urb);
     return 0;
 }
 
