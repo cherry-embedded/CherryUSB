@@ -8,12 +8,13 @@ CherryUSB is a tiny, beautiful and portable USB host and device stack for embedd
 
 ## Why choose
 
-- More comprehensive class drivers, and class drivers are all templated, easy to learn and add independently
-- Tree programming, easy to understand the relationship between class driver and interface, endpoint, the relationship between hub, port, class; code layer by layer, call relationship at a glance, easy to understand the usb enumeration process and class driver loading
-- The use of device protocol stacks is equivalent to uart tx/rx dma, and the use of the host stack is equivalent to file opertion.
-- Standardized porting interface, as well as ip-oriented programming, eliminating the need to rewrite drivers for the same ip
-- Api less, clear classification: dcd/hcd api, registration api, command callback api
-- Streamlined code, minimal memory footprint, and the ip driver code is also streamlined to achieve the theoretical bandwidth of the usb hardware
+- Streamlined code with small memory usage which also can be further trimmed
+- Comprehensive class drivers and all master and slave class drivers are templated,making it easy for users to add new class drivers and find patterns when learning
+- The APIs available to the users are very few and clearly categorised. Device: initialisation + registration apis, command callback apis, data sending and receiving apis; Host: initialisation + lookup apis, data sending and receiving apis
+- Tree-based programming with a hierarchy of code that makes it easy for the user to sort out function call relationships, enumerations and class-driven loading processes
+- Standardised porting interface, no need to rewrite the driver for the same ip, and porting drivers are templated to make it easier for users to add new ports
+- The use of the device or host transceiver apis are equivalent to the use of the uart tx/rx dma, and there is no limit to the length
+- Capable of achieving theoretical USB hardware bandwidth
 
 ## Directoy Structure
 

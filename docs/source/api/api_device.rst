@@ -4,7 +4,7 @@
 设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 `usbd_add_interface` 函数，记录传入的接口驱动保存到链表中，当主机进行类请求时就可以查找链表进行访问了。
 在调用 `usbd_desc_register` 以后需要进行接口注册和端点注册，口诀如下：
 
-- 有多少个接口就调用多少次 `usbd_add_interface`，参数填各个 class alloc 出来的 intf，如果没有 alloc 的intf 表示不需要加载。
+- 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_alloc_intf`, 如果没有支持的，手动创建一个填入
 - 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
 CORE
