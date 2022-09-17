@@ -388,32 +388,23 @@ int usbh_enumerate(struct usbh_hubport *hport)
     struct usb_setup_packet *setup;
     uint8_t descsize;
     int dev_addr;
-    uint8_t ep_mps;
+    uint16_t ep_mps;
     int ret;
 
 #define USB_REQUEST_BUFFER_SIZE 256
     setup = &hport->setup;
 
-    /* Pick an appropriate packet size for this device
-     *
-     * USB 2.0, Paragraph 5.5.3 "Control Transfer Packet Size Constraints"
-     *
-     *  "An endpoint for control transfers specifies the maximum data
-     *   payload size that the endpoint can accept from or transmit to
-     *   the bus. The allowable maximum control transfer data payload
-     *   sizes for full-speed devices is 8, 16, 32, or 64 bytes; for
-     *   high-speed devices, it is 64 bytes and for low-speed devices,
-     *   it is 8 bytes. This maximum applies to the data payloads of the
-     *   Data packets following a Setup..."
-     */
-
-    if (hport->speed == USB_SPEED_HIGH) {
-        /* For high-speed, we must use 64 bytes */
-        ep_mps = 64;
-        descsize = USB_SIZEOF_DEVICE_DESC;
-    } else {
-        /* For low or full, we use 8 bytes */
+    if ((hport->speed == USB_SPEED_SUPER) || (hport->speed == USB_SPEED_SUPER_PLUS)) {
+        /* For super speed , we must use 512 bytes */
+        ep_mps = 512;
+        descsize = 8;
+    } else if (hport->speed == USB_SPEED_LOW) {
+        /* For low speed, we use 8 bytes */
         ep_mps = 8;
+        descsize = 8;
+    } else {
+        /* For full or high speed, we use 64 bytes */
+        ep_mps = 64;
         descsize = 8;
     }
 
