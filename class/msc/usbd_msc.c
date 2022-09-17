@@ -892,14 +892,14 @@ static void usbd_msc_thread(void *argument)
         switch (thread_op) {
             case MSC_THREAD_OP_READ_MEM:
                 data_len = MIN(usbd_msc_cfg.nsectors * usbd_msc_cfg.scsi_blk_size, CONFIG_USBDEV_MSC_BLOCK_SIZE);
-                if (usbd_msc_sector_read(usbd_msc_cfg.start_sector, usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size) != 0) {
+                if (usbd_msc_sector_read(usbd_msc_cfg.start_sector, usbd_msc_cfg.block_buffer, data_len) != 0) {
                     SCSI_SetSenseData(SCSI_KCQHE_UREINRESERVEDAREA);
                 }
                 usbd_msc_thread_memory_read_done();
                 break;
             case MSC_THREAD_OP_WRITE_MEM:
                 data_len = MIN(usbd_msc_cfg.nsectors * usbd_msc_cfg.scsi_blk_size, CONFIG_USBDEV_MSC_BLOCK_SIZE);
-                if (usbd_msc_sector_write(usbd_msc_cfg.start_sector, usbd_msc_cfg.block_buffer, usbd_msc_cfg.scsi_blk_size) != 0) {
+                if (usbd_msc_sector_write(usbd_msc_cfg.start_sector, usbd_msc_cfg.block_buffer, data_len) != 0) {
                     SCSI_SetSenseData(SCSI_KCQHE_WRITEFAULT);
                 }
                 usbd_msc_thread_memory_write_done();
