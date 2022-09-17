@@ -825,7 +825,6 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     }
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
-    usb_dwc2_dcache_clean((uintptr_t)data, data_len);
     USB_OTG_INEP(ep_idx)->DIEPDMA = (uint32_t)data;
 
     if (g_dwc2_udc.in_ep[ep_idx].ep_type == 0x01) {
