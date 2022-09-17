@@ -34,6 +34,10 @@ typedef struct
   __IO uint16_t RESERVEDB;            /*!< Reserved */
   __IO uint16_t BTABLE;               /*!< Buffer Table address register,             Address offset: 0x50 */
   __IO uint16_t RESERVEDC;            /*!< Reserved */
+  __IO uint16_t LPMCSR;               /*!< LPM Control and Status register,           Address offset: 0x54 */
+  __IO uint16_t RESERVEDD;            /*!< Reserved */
+  __IO uint16_t BCDR;                 /*!< Battery Charging detector register,        Address offset: 0x58 */
+  __IO uint16_t RESERVEDE;            /*!< Reserved */
 } USB_TypeDef;
 
 /******************************************************************************/
@@ -591,6 +595,23 @@ typedef struct
 #define USB_BTABLE_BTABLE_Pos                   (3U)
 #define USB_BTABLE_BTABLE_Msk                   (0x1FFFUL << USB_BTABLE_BTABLE_Pos) /*!< 0x0000FFF8 */
 #define USB_BTABLE_BTABLE                       USB_BTABLE_BTABLE_Msk          /*!< Buffer Table */
+
+/******************  Bits definition for USB_BCDR register  *******************/
+#define USB_BCDR_BCDEN                           ((uint16_t)0x0001U)           /*!< Battery charging detector (BCD) enable */
+#define USB_BCDR_DCDEN                           ((uint16_t)0x0002U)           /*!< Data contact detection (DCD) mode enable */
+#define USB_BCDR_PDEN                            ((uint16_t)0x0004U)           /*!< Primary detection (PD) mode enable */
+#define USB_BCDR_SDEN                            ((uint16_t)0x0008U)           /*!< Secondary detection (SD) mode enable */
+#define USB_BCDR_DCDET                           ((uint16_t)0x0010U)           /*!< Data contact detection (DCD) status */
+#define USB_BCDR_PDET                            ((uint16_t)0x0020U)           /*!< Primary detection (PD) status */
+#define USB_BCDR_SDET                            ((uint16_t)0x0040U)           /*!< Secondary detection (SD) status */
+#define USB_BCDR_PS2DET                          ((uint16_t)0x0080U)           /*!< PS2 port or proprietary charger detected */
+#define USB_BCDR_DPPU                            ((uint16_t)0x8000U)           /*!< DP Pull-up Enable */
+
+/*******************  Bit definition for LPMCSR register  *********************/
+#define USB_LPMCSR_LMPEN                         ((uint16_t)0x0001U)           /*!< LPM support enable  */
+#define USB_LPMCSR_LPMACK                        ((uint16_t)0x0002U)           /*!< LPM Token acknowledge enable*/
+#define USB_LPMCSR_REMWAKE                       ((uint16_t)0x0008U)           /*!< bRemoteWake value received with last ACKed LPM Token */
+#define USB_LPMCSR_BESL                          ((uint16_t)0x00F0U)           /*!< BESL value received with last ACKed LPM Token  */
 
 /*!< Buffer descriptor table */
 /*****************  Bit definition for USB_ADDR0_TX register  *****************/
