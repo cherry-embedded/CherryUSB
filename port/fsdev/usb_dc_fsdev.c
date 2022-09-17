@@ -17,6 +17,8 @@
 #define USB_RAM_SIZE 512
 #endif
 
+#warning please check your PMA_ACCESS is 1 or 2
+
 #define USB ((USB_TypeDef *)USB_BASE)
 
 #define USB_BTABLE_SIZE (8 * USB_NUM_BIDIR_ENDPOINTS)
@@ -81,6 +83,9 @@ int usb_dc_init(void)
 
     /* Set interrupt mask */
     USB->CNTR = (uint16_t)winterruptmask;
+
+    /* Enabling DP Pull-UP bit to Connect internal PU resistor on USB DP line */
+    USB->BCDR |= (uint16_t)USB_BCDR_DPPU;
 
     return 0;
 }
