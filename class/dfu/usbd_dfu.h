@@ -15,6 +15,11 @@ extern "C" {
 /* Alloc dfu interface driver */
 struct usbd_interface *usbd_dfu_alloc_intf(void);
 
+/* Interface functions that need to be implemented by the user */
+uint8_t *dfu_read_flash(uint8_t *src, uint8_t *dest, uint32_t len);
+uint16_t dfu_write_flash(uint8_t *src, uint8_t *dest, uint32_t len);
+uint16_t dfu_erase_flash(uint32_t add);
+void dfu_leave(void);
 #ifdef __cplusplus
 }
 #endif
