@@ -16,16 +16,6 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     return (usb_osal_thread_t)htask;
 }
 
-void usb_osal_thread_suspend(usb_osal_thread_t thread)
-{
-    rt_thread_suspend(thread);
-}
-
-void usb_osal_thread_resume(usb_osal_thread_t thread)
-{
-    rt_thread_resume(thread);
-}
-
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     return (usb_osal_sem_t)rt_sem_create("usbh_sem", initial_count, RT_IPC_FLAG_FIFO);
@@ -76,46 +66,6 @@ int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
     return (int)rt_mutex_release((rt_mutex_t)mutex);
-}
-
-usb_osal_event_t usb_osal_event_create(void)
-{
-    return (usb_osal_event_t)rt_event_create("psc_event", RT_IPC_FLAG_FIFO);
-}
-
-void usb_osal_event_delete(usb_osal_event_t event)
-{
-    rt_event_delete((rt_event_t)event);
-}
-
-int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
-{
-    int ret = 0;
-    rt_err_t result = RT_EOK;
-
-    result = rt_event_recv((rt_event_t)event, set, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, (rt_uint32_t *)recved);
-    if (result == RT_ETIMEOUT) {
-        ret = -ETIMEDOUT;
-    } else if (result == RT_ERROR) {
-        ret = -EINVAL;
-    } else {
-        ret = 0;
-    }
-
-    return ret;
-}
-
-int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
-{
-    int ret = 0;
-    rt_err_t result = RT_EOK;
-
-    result = rt_event_send((rt_event_t)event, set);
-    if (result != RT_EOK) {
-        ret = -EINVAL;
-    }
-
-    return ret;
 }
 
 size_t usb_osal_enter_critical_section(void)
