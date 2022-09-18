@@ -24,16 +24,6 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
                                   args);
 }
 
-void usb_osal_thread_suspend(usb_osal_thread_t thread)
-{
-    os_suspend();
-}
-
-void usb_osal_thread_resume(usb_osal_thread_t thread)
-{
-    os_resume(0);
-}
-
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     void *sem = _alloc_box(sem_mpool);
@@ -88,38 +78,6 @@ int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
     return (os_mut_release(mutex) == OS_R_OK) ? 0 : -EINVAL;
-}
-
-usb_osal_event_t usb_osal_event_create(void)
-{
-    return (usb_osal_event_t)os_tsk_self();
-}
-
-void usb_osal_event_delete(usb_osal_event_t event)
-{
-    return;
-}
-
-int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
-{
-    os_evt_wait_or(set, 0xffff);
-    *recved = os_evt_get();
-    return 0;
-}
-
-//在线程，中断均调用
-int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
-{
-    uint32_t intstatus = 0;
-     /* Obtain the number of the currently executing interrupt. */
-     __asm volatile ( "mrs intstatus, cpsr" );
-    if ((intstatus & 0xf) == 0) {   //user mode
-        os_evt_set(set, (OS_TID)event);
-    } else {
-        isr_evt_set(set, (OS_TID)event);
-    }
-
-    return 0;
 }
 
 //这两个函数只在线程调用，可以改为tsk_lock和tsk_unlock版本

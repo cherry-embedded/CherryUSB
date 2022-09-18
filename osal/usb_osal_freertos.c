@@ -18,16 +18,6 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     return (usb_osal_thread_t)htask;
 }
 
-void usb_osal_thread_suspend(usb_osal_thread_t thread)
-{
-    vTaskSuspend(thread);
-}
-
-void usb_osal_thread_resume(usb_osal_thread_t thread)
-{
-    vTaskResume(thread);
-}
-
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     return (usb_osal_sem_t)xSemaphoreCreateCounting(1, initial_count);
@@ -74,34 +64,6 @@ int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
     return (xSemaphoreGive((SemaphoreHandle_t)mutex) == pdPASS) ? 0 : -EINVAL;
-}
-
-usb_osal_event_t usb_osal_event_create(void)
-{
-    return (usb_osal_event_t)xEventGroupCreate();
-}
-
-void usb_osal_event_delete(usb_osal_event_t event)
-{
-    vEventGroupDelete((EventGroupHandle_t)event);
-}
-
-int usb_osal_event_recv(usb_osal_event_t event, uint32_t set, uint32_t *recved)
-{
-    *recved = xEventGroupWaitBits((EventGroupHandle_t)event, set, pdTRUE, pdFALSE, portMAX_DELAY);
-    return 0;
-}
-
-int usb_osal_event_send(usb_osal_event_t event, uint32_t set)
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    int ret;
-
-    ret = xEventGroupSetBitsFromISR((EventGroupHandle_t)event, set, &xHigherPriorityTaskWoken);
-    if (ret == pdPASS) {
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-    return (ret == pdPASS) ? 0 : -EINVAL;
 }
 
 size_t usb_osal_enter_critical_section(void)
