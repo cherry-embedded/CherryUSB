@@ -132,6 +132,7 @@ struct dwc2_ep_state {
     uint8_t ep_type;    /* Endpoint type */
     uint8_t ep_stalled; /* Endpoint stall flag */
     uint8_t ep_enable;  /* Endpoint enable */
+    uint8_t ep_busy;    /* Endpoint busy */
     uint8_t *xfer_buf;
     uint32_t xfer_len;
     uint32_t actual_xfer_len;
@@ -661,7 +662,7 @@ int usbd_set_address(const uint8_t addr)
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
-    uint8_t ep_mps;
+    uint16_t ep_mps;
 
     if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
         USB_LOG_ERR("Ep addr %d overflow\r\n", ep_cfg->ep_addr);
@@ -787,15 +788,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     if ((uint32_t)data & 0x03) {
         return -3;
     }
-#if defined(STM32F7) || defined(STM32H7)
-    if ((((uint32_t)data) & 0x24000000) != 0x24000000) {
-        return -4;
-    }
 #endif
-#endif
-    if (USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
-        return -5;
-    }
 
     g_dwc2_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
     g_dwc2_udc.in_ep[ep_idx].xfer_len = data_len;
@@ -862,15 +855,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     if (((uint32_t)data) & 0x03) {
         return -3;
     }
-#if defined(STM32F7) || defined(STM32H7)
-    if ((((uint32_t)data) & 0x24000000) != 0x24000000) {
-        return -4;
-    }
 #endif
-#endif
-    if (USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) {
-        return -5;
-    }
 
     g_dwc2_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
     g_dwc2_udc.out_ep[ep_idx].xfer_len = data_len;
@@ -956,7 +941,7 @@ void USBD_IRQHandler(void)
                 if ((ep_intr & 0x1U) != 0U) {
                     epint = dwc2_get_outep_intstatus(ep_idx);
                     uint32_t DoepintReg = USB_OTG_OUTEP(ep_idx)->DOEPINT;
-                    USB_OTG_OUTEP(ep_idx)->DOEPINT = epint;
+                    USB_OTG_OUTEP(ep_idx)->DOEPINT = DoepintReg;
 
                     if ((epint & USB_OTG_DOEPINT_XFRC) == USB_OTG_DOEPINT_XFRC) {
                         if (ep_idx == 0) {
@@ -994,7 +979,7 @@ void USBD_IRQHandler(void)
                 if ((ep_intr & 0x1U) != 0U) {
                     epint = dwc2_get_inep_intstatus(ep_idx);
                     uint32_t DiepintReg = USB_OTG_INEP(ep_idx)->DIEPINT;
-                    USB_OTG_INEP(ep_idx)->DIEPINT = epint;
+                    USB_OTG_INEP(ep_idx)->DIEPINT = DiepintReg;
 
                     if ((epint & USB_OTG_DIEPINT_XFRC) == USB_OTG_DIEPINT_XFRC) {
                         if (ep_idx == 0) {
