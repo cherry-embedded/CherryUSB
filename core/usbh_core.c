@@ -333,13 +333,35 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
     }
 }
 
+#ifdef CONFIG_USBHOST_XHCI
+
+static int usbh_get_default_mps(int speed)
+{
+	switch (speed) {
+	case USB_SPEED_LOW:
+		return 8;
+	case USB_SPEED_FULL:
+	case USB_SPEED_HIGH:
+		return 64;
+	case USB_SPEED_SUPER:
+	default:
+		return 512;
+	}
+}
+
+#endif
+
 int usbh_hport_activate_ep0(struct usbh_hubport *hport)
 {
     struct usbh_endpoint_cfg ep0_cfg = { 0 };
 
     ep0_cfg.ep_addr = 0x00;
     ep0_cfg.ep_interval = 0x00;
+#ifdef CONFIG_USBHOST_XHCI
+    ep0_cfg.ep_mps = usbh_get_default_mps(hport->speed);
+#else
     ep0_cfg.ep_mps = 0x08;
+#endif
     ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
     ep0_cfg.hport = hport;
 
