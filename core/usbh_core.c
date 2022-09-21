@@ -408,6 +408,42 @@ int usbh_enumerate(struct usbh_hubport *hport)
         descsize = 8;
     }
 
+#ifdef CONFIG_USBHOST_XHCI
+
+    extern int usbh_get_xhci_devaddr(usbh_pipe_t * pipe);
+
+    /* Read the first 8 bytes of the device descriptor */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
+    setup->wIndex = 0;
+    setup->wLength = descsize;
+
+    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    if (ret < 0) {
+        USB_LOG_ERR("Failed to get device descriptor,errorcode:%d\r\n", ret);
+        goto errout;
+    }
+
+    parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer, descsize);
+
+    /* Extract the correct max packetsize from the device descriptor */
+    ep_mps = ((struct usb_device_descriptor *)ep0_request_buffer)->bMaxPacketSize0;
+
+    /* And reconfigure EP0 with the correct maximum packet size */
+    usbh_ep0_pipe_reconfigure(hport->ep0, 0, ep_mps, hport->speed);
+
+    dev_addr = usbh_get_xhci_devaddr(hport->ep0);
+    if (dev_addr < 0) {
+        USB_LOG_ERR("Failed to allocate devaddr,errorcode:%d\r\n", ret);
+        goto errout;
+    }
+
+    /* Assign the function address to the port */
+    hport->dev_addr = dev_addr;
+
+#else
+
     /* Configure EP0 with the initial maximum packet size */
     usbh_ep0_pipe_reconfigure(hport->ep0, 0, ep_mps, hport->speed);
 
@@ -460,6 +496,8 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     /* And reconfigure EP0 with the correct address */
     usbh_ep0_pipe_reconfigure(hport->ep0, dev_addr, ep_mps, hport->speed);
+
+#endif
 
     /* Read the full device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
