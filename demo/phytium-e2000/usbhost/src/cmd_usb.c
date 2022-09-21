@@ -43,11 +43,11 @@ static int USBCmdEntry(int argc, char *argv[])
     }
     else if (!strcmp(argv[1], "disk"))
     {
-
+        ret = FFreeRTOSWriteReadUsbDisk();
     }
     else if (!strcmp(argv[1], "hid"))
     {
-
+        ret = FFreeRTOSRecvHidInput();
     }
 
     return ret;

@@ -463,9 +463,6 @@ enum TRBCCode {
 #define XHCI_RING(_trb)          \
     ((struct xhci_ring*)((unsigned long)(_trb) & ~(XHCI_RING_SIZE-1)))
 
-#define XHCI_GET_FIELD(data, field)             \
-    (((data) >> field##_SHIFT) & field##_MASK)
-
 #define BARRIER() __asm__ __volatile__("": : :"memory")
 
 #ifdef XHCI_AARCH64
