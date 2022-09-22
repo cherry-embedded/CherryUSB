@@ -41,7 +41,7 @@ extern "C"
 /*****************************************************************************/
 BaseType_t FFreeRTOSInitUsb(void);
 BaseType_t FFreeRTOSWriteReadUsbDisk(void);
-BaseType_t FFreeRTOSRecvHidInput(void);
+BaseType_t FFreeRTOSRecvInput(void);
 
 #ifdef __cplusplus
 }
