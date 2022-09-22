@@ -191,6 +191,12 @@
 #define HID_MOUSE_INPUT_REPORT_BUTTON3     (1 << 2)
 #define HID_MOUSE_INPUT_REPORT_BUTTON_MASK (7)
 
+#define HID_MOUSE_INPUT_BUTTON_LEFT        (1 << 0)
+#define HID_MOUSE_INPUT_BUTTON_RIGHT       (1 << 1)
+#define HID_MOUSE_INPUT_BUTTON_MIDDLE      (1 << 2)
+#define HID_MOUSE_INPUT_BUTTON_BACKWARD    (1 << 3)
+#define HID_MOUSE_INPUT_BUTTON_FORWARD     (1 << 4)
+
 /* Joystick input report (4 bytes) (HID D.1) */
 #define HID_JS_INPUT_REPORT_HATSWITCH_SHIFT (0)
 #define HID_JS_INPUT_REPORT_HATSWITCH_MASK  (15 << HID_JSIN_HATSWITCH_SHIFT)
@@ -546,7 +552,7 @@ struct usb_hid_descriptor {
 /* Keyboard input report (8 bytes) (HID B.1) */
 struct usb_hid_kbd_report
 {
-  uint8_t modifier;  /* Modifier keys. See USBHID_MODIFIER_* definitions */
+  uint8_t modifier;  /* Modifier keys. See HID_MODIFER_* definitions */
   uint8_t reserved;
   uint8_t key[6];    /* Keycode 1-6 */
 };
@@ -558,7 +564,7 @@ struct usb_hid_kbd_report
 /* Mouse input report (HID B.2) */
 struct usb_hid_mouse_report
 {
-  uint8_t buttons;   /* See USBHID_MOUSEIN_* definitions */
+  uint8_t buttons;   /* See HID_MOUSE_INPUT_BUTTON_* definitions */
   uint8_t xdisp;     /* X displacement */
   uint8_t ydisp;     /* y displacement */
                      /* Device specific additional bytes may follow */

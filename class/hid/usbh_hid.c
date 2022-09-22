@@ -84,8 +84,14 @@ int usbh_hid_set_idle(struct usbh_hid *hid_class, uint8_t report_id, uint8_t dur
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = HID_REQUEST_SET_IDLE;
-    setup->wValue = report_id;
-    setup->wIndex = (duration << 8) | hid_class->intf;
+    //setup->wValue = report_id;
+    //setup->wIndex = (duration << 8) | hid_class->intf;
+    /* wValue, high-bytes sets the duration, or the max amount of time between reports 
+                  0x00 = hid will send a report only when report data has changed or duration time elapsed
+               low-bytes indicate the report id that the requeset applies to */
+    setup->wValue = (duration << 8) | report_id;
+    /* wIndex, num of interface that supports the request */
+    setup->wIndex = hid_class->intf;
     setup->wLength = 0;
 
     return usbh_control_transfer(hid_class->hport->ep0, setup, NULL);
@@ -110,6 +116,19 @@ int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer)
     return ret;
 }
 
+int usbh_hid_set_protocol(struct usbh_hid *hid_class, uint8_t protocol)
+{
+    struct usb_setup_packet *setup = &hid_class->hport->setup;
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = HID_REQUEST_SET_PROTOCOL;
+    setup->wValue = protocol;
+    setup->wIndex = 0;
+    setup->wLength = 0;   
+
+    return usbh_control_transfer(hid_class->hport->ep0, setup, NULL);     
+}
+
 int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
@@ -127,6 +146,12 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     hid_class->intf = intf;
 
     hport->config.intf[intf].priv = hid_class;
+
+    // /* 0x0 = boot protocol, 0x1 = report protocol */
+    // ret = usbh_hid_set_protocol(hid_class, 0x1);
+    // if (ret < 0) {
+    //     return ret;
+    // }
 
     ret = usbh_hid_set_idle(hid_class, 0, 0);
     if (ret < 0) {
