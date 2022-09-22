@@ -1092,7 +1092,9 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     /* wait all ring handled by xHc */
     int cc = xhci_event_wait(xhci, ppipe, &ppipe->reqs);
-    if (cc != CC_SUCCESS) {
+    if ((cc != CC_SUCCESS) && 
+        !((cc == CC_TIMEOUT) && (ppipe->eptype == USB_ENDPOINT_TYPE_INTERRUPT))) {
+        /* ignore transfer timeout for interrupt type */
         USB_LOG_ERR("%s: xfer failed (cc %d)\n", __func__, cc);
         ret = -1;
         urb->errorcode = cc;

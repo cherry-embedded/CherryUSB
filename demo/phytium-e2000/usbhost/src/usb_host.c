@@ -184,38 +184,6 @@ err_exit:
     vTaskDelete(NULL);
 }
 
-static void UsbHidTask(void * args)
-{
-    int ret;
-    struct usbh_hid *hid_class;
-    static uint8_t hid_buffer[128] = {0};
-
-    while (TRUE)
-    {
-        hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0");
-        if (hid_class == NULL) 
-        {
-            USB_LOG_RAW("do not find /dev/input0\r\n");
-            goto err_exit;
-        }
-
-        ret = usbh_int_transfer(hid_class->intin, hid_buffer, 8, 1000);
-        if (ret < 0) 
-        {
-            USB_LOG_RAW("intr in error,ret:%d\r\n", ret);
-            goto err_exit;
-        }
-        USB_LOG_RAW("recv len:%d, key:[0x%x, 0x%x, 0x%x, 0x%x]\r\n", 
-                    ret, 
-                    hid_buffer[0], hid_buffer[1], hid_buffer[2], hid_buffer[3]);
-
-        vTaskDelay(10);
-    }
-
-err_exit:
-    vTaskDelete(NULL);
-}
-
 BaseType_t FFreeRTOSInitUsb(void)
 {
     BaseType_t ret = pdPASS;
@@ -254,21 +222,3 @@ BaseType_t FFreeRTOSWriteReadUsbDisk(void)
     return ret;    
 }
 
-BaseType_t FFreeRTOSRecvHidInput(void)
-{
-    BaseType_t ret = pdPASS;
-
-    taskENTER_CRITICAL(); /* no schedule when create task */
-
-    ret = xTaskCreate((TaskFunction_t )UsbHidTask,
-                            (const char* )"UsbHidTask",
-                            (uint16_t )2048,
-                            NULL,
-                            (UBaseType_t )configMAX_PRIORITIES - 1,
-                            NULL);
-    FASSERT_MSG(pdPASS == ret, "create task failed");
-
-    taskEXIT_CRITICAL(); /* allow schedule since task created */
-
-    return ret;      
-}
