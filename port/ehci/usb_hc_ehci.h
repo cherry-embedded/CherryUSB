@@ -90,7 +90,7 @@
 
 /* USB Frame Index. Paragraph 2.3.4 */
 
-#define EHCI_FRINDEX_MASK (0x1fff) /* Bits 0-13: Frame index */
+#define EHCI_FRINDEX_MASK (0x3fff) /* Bits 0-13: Frame index */
 
 /* 4G Segment Selector.
  * Paragraph 2.3.5,  Bits[64:32] of data structure addresses
@@ -195,9 +195,8 @@
 #define QH_EPCAPS_MULT_MASK     (3 << QH_EPCAPS_MULT_SHIFT)
 #define QH_EPCAPS_MULT(n)       ((n) << QH_EPCAPS_MULT_SHIFT)
 
-/* qTD Token.
- * Paragraph 3.5.3
- */
+/* qTD Token. Paragraph 3.5.3 */
+
 #define QTD_LIST_END 1
 
 #define QTD_TOKEN_STATUS_SHIFT       (0) /* Bits 0-7: Status */
@@ -225,6 +224,54 @@
 #define QTD_TOKEN_NBYTES_SHIFT       (16)      /* Bits 16-30: Total Bytes to Transfer */
 #define QTD_TOKEN_NBYTES_MASK        (0x7fff << QTD_TOKEN_NBYTES_SHIFT)
 #define QTD_TOKEN_TOGGLE             (1 << 31) /* Bit 31: Data Toggle */
+
+/* Isochronous (High-Speed) Transfer Descriptor (iTD). Paragraph 3.3 */
+
+/* iTD Next Link Pointer. Paragraph 3.3.1 */
+
+#define ITD_NLP_ITD(x)  (((uint32_t)(x) & ~0x1F) | 0x0)
+#define ITD_NLP_QH(x)   (((uint32_t)(x) & ~0x1F) | 0x2)
+#define ITD_NLP_SITD(x) (((uint32_t)(x) & ~0x1F) | 0x4)
+#define ITD_NLP_FSTN(x) (((uint32_t)(x) & ~0x1F) | 0x6)
+
+/* iTD Transaction Status and Control List. Paragraph 3.3.2 */
+#define ITD_TSCL_XOFFS_SHIFT    (0) /* Bits 0-11: Transaction X offset */
+#define ITD_TSCL_XOFFS_MASK     (0xfff << ITD_TSCL_XOFFS_SHIFT)
+#define ITD_TSCL_PG_SHIFT       (12) /* Bits 12-14: Page select */
+#define ITD_TSCL_PG_MASK        (7 << ITD_TSCL_PG_SHIFT)
+#define ITD_TSCL_IOC            (1 << 15) /* Bit 15:  Interrupt On Comp */
+#define ITD_TSCL_LENGTH_SHIFT   (16)      /* Bits 16-27:  Transaction length */
+#define ITD_TSCL_LENGTH_MASK    (0xfff << ITD_TSCL_LENGTH_SHIFT)
+#define ITD_TSCL_STATUS_SHIFT   (28) /* Bits 28-31:  Transaction status */
+#define ITD_TSCL_STATUS_MASK    (15 << ITD_TSCL_STATUS_SHIFT)
+#define ITD_TSCL_STATUS_XACTERR (1 << 28) /* Bit 28: Transaction error */
+#define ITD_TSCL_STATUS_BABBLE  (1 << 29) /* Bit 29: Babble Detected */
+#define ITD_TSCL_STATUS_DBERROR (1 << 30) /* Bit 30: Data Buffer Error */
+#define ITD_TSCL_STATUS_ACTIVE  (1 << 31) /* Bit 28: Transaction error */
+
+/* iTD Buffer Page Pointer List. Paragraph 3.3.4 */
+
+/* iTD Buffer Pointer Page 0. Table 3-4 */
+
+#define ITD_BUFPTR0_DEVADDR_SHIFT (0) /* Bits 0-6: Device Address */
+#define ITD_BUFPTR0_DEVADDR_MASK  (0x7f << ITD_BUFPTR0_DEVADDR_SHIFT)
+#define ITD_BUFPTR0_ENDPT_SHIFT   (8) /* Bits 8-11: Endpoint Number */
+#define ITD_BUFPTR0_ENDPT_MASK    (15 << ITD_BUFPTR0_ENDPT_SHIFT)
+
+/* iTD Buffer Pointer Page 1. Table 3-5 */
+
+#define ITD_BUFPTR1_MAXPKT_SHIFT (0) /* Bits 0-10: Maximum Packet Size */
+#define ITD_BUFPTR1_MAXPKT_MASK  (0x7ff << ITD_BUFPTR1_MAXPKT_SHIFT)
+#define ITD_BUFPTR1_DIRIN        (1 << 11) /* Bit 11: Direction 1=IN */
+#define ITD_BUFPTR1_DIROUT       (0)       /* Bit 11: Direction 0=OUT */
+
+/* iTD Buffer Pointer Page 2. Table 3-6 */
+
+#define ITD_BUFPTR2_MULTI_SHIFT (0) /* Bits 0-1: Multi */
+#define ITD_BUFPTR2_MULTI_MASK  (3 << ITD_BUFPTR2_MULTI_SHIFT)
+#define ITD_BUFPTR2_MULTI_1     (1 << ITD_BUFPTR2_MULTI_SHIFT) /* One transaction per micro-frame */
+#define ITD_BUFPTR2_MULTI_2     (2 << ITD_BUFPTR2_MULTI_SHIFT) /* Two transactions per micro-frame */
+#define ITD_BUFPTR2_MULTI_3     (3 << ITD_BUFPTR2_MULTI_SHIFT) /* Three transactions per micro-frame */
 
 /* Registers ****************************************************************/
 
@@ -298,5 +345,30 @@ struct ehci_qh {
 };
 
 #define SIZEOF_EHCI_QH (48) /* 4*sizeof(uint32_t) + 32 */
+
+/* Isochronous (High-Speed) Transfer Descriptor (iTD).
+ * Paragraph 3.3.  Must be aligned to 32-byte boundaries.
+ */
+
+struct ehci_itd {
+    uint32_t nlp;     /* 0x00-0x03: Next link pointer */
+    uint32_t tscl[8]; /* 0x04-0x23: Transaction Status and Control List */
+    uint32_t bpl[7];  /* 0x24-0x3c: Buffer Page Pointer List */
+};
+
+#define SIZEOF_EHCI_ITD_S (64) /* 16*sizeof(uint32_t) */
+
+/* Split Transaction Isochronous Transfer Descriptor (siTD). Paragraph 3.4 */
+
+struct ehci_sitd {
+    uint32_t nlp;    /* 0x00-0x03: Next link pointer */
+    uint32_t epchar; /* 0x04-0x07: Endpoint and Transaction Translator Characteristics */
+    uint32_t mfsc;   /* 0x08-0x0b: Micro-frame Schedule Control */
+    uint32_t tsc;    /* 0x0c-0x0f: Transfer Status and Control */
+    uint32_t bpl[2]; /* 0x10-0x17: Buffer Pointer List */
+    uint32_t blp;    /* 0x18-0x1b: Back link pointer */
+};
+
+#define SIZEOF_EHCI_SITD_S (28) /* 7*sizeof(uint32_t) */
 
 #endif /* USB_HC_EHCI_H */
