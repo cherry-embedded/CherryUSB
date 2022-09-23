@@ -1,9 +1,7 @@
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stddef.h>
 #include "usb_dc.h"
 #include "usbd_core.h"
-#include "./nrf5x_regs.h"
+#include "nrf5x_regs.h"
 
 #define __ISB()           \
   do                      \
@@ -22,49 +20,59 @@
   } while (0U)
 
 #ifndef USBD_IRQHandler
-#define USBD_IRQHandler USBD_IRQHandler /*!< use actual usb irq name instead */
+#define USBD_IRQHandler USBD_IRQHandler /*!< Use actual usb irq name instead */
 #endif
 
 #ifndef USBD_CONFIG_ISO_IN_ZLP
 #define USBD_CONFIG_ISO_IN_ZLP 0
 #endif
 
-/*!< ep dir in */
-#define EP_DIR_IN 1
-/*!< ep dir out */
-#define EP_DIR_OUT 0
-/*!< get ep id by epadd */
-#define GET_EP_ID(ep_add) (uint8_t)(ep_add & 0x7f)
-/*!< get ep dir by epadd */
-#define GET_EP_DIR(ep_add) (uint8_t)(ep_add & 0x80)
-/*!< ep nums */
+/*!< The default platform is NRF52840 */
+#define NRF52_SERIES
+#define NRF52840_XXAA
+
+/*!< Ep nums */
 #define EP_NUMS 9
-/*!< ep mps */
+/*!< Ep mps */
 #define EP_MPS 64
-/*!< nrf5x special */
+/*!< Nrf5x special */
 #define EP_ISO_NUM 8
 
-/*!< Peripheral address base */
+/*!< USBD peripheral address base */
 #define NRF_USBD_BASE 0x40027000UL
+/*!< Clock peripheral address base */
+#define NRF_CLOCK_BASE 0x40000000UL
+/*!< NVIC peripheral address base */
+#define NVIC_BASE (0xE000E000UL + 0x0100UL)
+
 #define NRF_USBD ((NRF_USBD_Type *)NRF_USBD_BASE)
+#define NRF_CLOCK ((NRF_CLOCK_Type *)NRF_CLOCK_BASE)
+#define NVIC ((NVIC_Type *)NVIC_BASE)
+
+#define USBD_IRQn 39
 
 #ifndef EP_ISO_MPS
 #define EP_ISO_MPS 64
 #endif
 
-__attribute__((aligned(4))) uint8_t ep_iso_tx[EP_ISO_MPS];
-__attribute__((aligned(4))) uint8_t ep_iso_rx[EP_ISO_MPS + EP_ISO_MPS];
+#define CHECK_ADD_IS_RAM(address) ((((uint32_t)address) & 0xE0000000u) == 0x20000000u) ? 1 : 0
 
 /**
  * @brief   Endpoint information structure
  */
 typedef struct _usbd_ep_info
 {
-  uint8_t mps;          /*!< Maximum packet length of endpoint */
-  uint8_t eptype;       /*!< Endpoint Type */
-  uint8_t *ep_ram_addr; /*!< Endpoint buffer address */
+  uint16_t mps;       /*!< Maximum packet length of endpoint */
+  uint8_t eptype;     /*!< Endpoint Type */
+  uint8_t ep_stalled; /* Endpoint stall flag */
+  uint8_t ep_enable;  /* Endpoint enable */
+  uint8_t *xfer_buf;
+  uint32_t xfer_len;
+  uint32_t actual_xfer_len;
+  uint8_t ep_buffer[EP_MPS];
   /*!< Other endpoint parameters that may be used */
   volatile uint8_t is_using_dma;
+  volatile uint8_t add_flag;
 } usbd_ep_info;
 
 /*!< nrf52840 usb */
@@ -86,43 +94,16 @@ struct _nrf52840_core_prvi
   volatile uint8_t is_setup_packet;
 } usb_dc_cfg;
 
-__WEAK void usb_dc_low_level_init(void)
+__WEAK void usb_dc_low_level_pre_init(void)
+{
+}
+
+__WEAK void usb_dc_low_level_post_init(void)
 {
 }
 
 __WEAK void usb_dc_low_level_deinit(void)
 {
-}
-
-static inline void nrf_usbd_enable(void)
-{
-  /*!< Prepare for READY event receiving */
-  NRF_USBD->EVENTCAUSE = USBD_EVENTCAUSE_READY_Msk;
-  __ISB();
-  __DSB();
-
-  NRF_USBD->ENABLE = 0x01;
-
-  while (0 == (USBD_EVENTCAUSE_READY_Msk & (NRF_USBD->EVENTCAUSE)))
-  {
-    /*!< Empty loop */
-  }
-
-  NRF_USBD->EVENTCAUSE = USBD_EVENTCAUSE_READY_Msk;
-  __ISB();
-  __DSB();
-
-  NRF_USBD->ISOSPLIT = USBD_ISOSPLIT_SPLIT_HalfIN << USBD_ISOSPLIT_SPLIT_Pos;
-  if (USBD_CONFIG_ISO_IN_ZLP)
-  {
-    NRF_USBD->ISOINCONFIG = ((uint32_t)USBD_ISOINCONFIG_RESPONSE_ZeroData) << USBD_ISOINCONFIG_RESPONSE_Pos;
-  }
-  else
-  {
-    NRF_USBD->ISOINCONFIG = ((uint32_t)USBD_ISOINCONFIG_RESPONSE_NoResp) << USBD_ISOINCONFIG_RESPONSE_Pos;
-  }
-  
-  usb_dc_low_level_init();
 }
 
 /**
@@ -150,7 +131,7 @@ static inline void get_setup_packet(struct usb_setup_packet *setup)
  */
 static void nrf_usbd_ep_easydma_set_tx(uint8_t ep, uint32_t ptr, uint32_t maxcnt)
 {
-  uint8_t epid = GET_EP_ID(ep);
+  uint8_t epid = USB_EP_GET_IDX(ep);
   if (epid == EP_ISO_NUM)
   {
     NRF_USBD->ISOIN.PTR = ptr;
@@ -171,7 +152,7 @@ static void nrf_usbd_ep_easydma_set_tx(uint8_t ep, uint32_t ptr, uint32_t maxcnt
  */
 static void nrf_usbd_ep_easydma_set_rx(uint8_t ep, uint32_t ptr, uint32_t maxcnt)
 {
-  uint8_t epid = GET_EP_ID(ep);
+  uint8_t epid = USB_EP_GET_IDX(ep);
   if (epid == EP_ISO_NUM)
   {
     NRF_USBD->ISOOUT.PTR = ptr;
@@ -217,21 +198,18 @@ int usbd_set_address(const uint8_t address)
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
   /*!< ep id */
-  uint8_t epid = GET_EP_ID(ep_cfg->ep_addr);
-  /*!< ep dir */
-  bool dir = GET_EP_DIR(ep_cfg->ep_addr);
+  uint8_t epid = USB_EP_GET_IDX(ep_cfg->ep_addr);
   /*!< ep max packet length */
   uint8_t mps = ep_cfg->ep_mps;
-  if (dir == EP_DIR_IN)
+  if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr))
   {
     /*!< In */
     usb_dc_cfg.ep_in[epid].mps = mps;
     usb_dc_cfg.ep_in[epid].eptype = ep_cfg->ep_type;
+    usb_dc_cfg.ep_in[epid].ep_enable = true;
     /*!< Open ep */
     if (ep_cfg->ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS)
     {
-      /*!< Allocate memory to endpoints */
-      usb_dc_cfg.ep_in[epid].ep_ram_addr = (uint8_t *)malloc(usb_dc_cfg.ep_in[epid].mps);
       /*!< Enable endpoint interrupt */
       NRF_USBD->INTENSET = (1 << (USBD_INTEN_ENDEPIN0_Pos + epid));
       /*!< Enable the in endpoint host to respond when sending in token */
@@ -241,8 +219,6 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     }
     else
     {
-      /*!< Allocate memory to endpoints */
-      usb_dc_cfg.ep_in[EP_ISO_NUM].ep_ram_addr = ep_iso_tx;
       NRF_USBD->EVENTS_ENDISOIN = 0;
       /*!< SPLIT ISO buffer when ISO OUT endpoint is already opened. */
       if (usb_dc_cfg.ep_out[EP_ISO_NUM].mps)
@@ -257,16 +233,15 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
       NRF_USBD->EPINEN |= USBD_EPINEN_ISOIN_Msk;
     }
   }
-  else if (dir == EP_DIR_OUT)
+  else if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr))
   {
     /*!< Out */
     usb_dc_cfg.ep_out[epid].mps = mps;
     usb_dc_cfg.ep_out[epid].eptype = ep_cfg->ep_type;
+    usb_dc_cfg.ep_out[epid].ep_enable = true;
     /*!< Open ep */
     if (ep_cfg->ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS)
     {
-      /*!< Allocate memory to endpoints */
-      usb_dc_cfg.ep_out[epid].ep_ram_addr = (uint8_t *)malloc(usb_dc_cfg.ep_out[epid].mps);
       NRF_USBD->INTENSET = (1 << (USBD_INTEN_ENDEPOUT0_Pos + epid));
       NRF_USBD->EPOUTEN |= (1 << (epid));
       __ISB();
@@ -276,8 +251,6 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     }
     else
     {
-      /*!< Allocate memory to endpoints */
-      usb_dc_cfg.ep_out[EP_ISO_NUM].ep_ram_addr = ep_iso_rx;
       /*!< SPLIT ISO buffer when ISO IN endpoint is already opened. */
       if (usb_dc_cfg.ep_in[EP_ISO_NUM].mps)
         NRF_USBD->ISOSPLIT = USBD_ISOSPLIT_SPLIT_HalfIN;
@@ -314,20 +287,19 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 int usbd_ep_close(const uint8_t ep)
 {
   /*!< ep id */
-  uint8_t epid = GET_EP_ID(ep);
-  /*!< ep dir */
-  bool dir = GET_EP_DIR(ep);
+  uint8_t epid = USB_EP_GET_IDX(ep);
   if (epid != EP_ISO_NUM)
   {
-    if (dir == EP_DIR_OUT)
+
+    if (USB_EP_DIR_IS_OUT(ep))
     {
-      free(usb_dc_cfg.ep_out[epid].ep_ram_addr);
+      usb_dc_cfg.ep_out[epid].ep_enable = false;
       NRF_USBD->INTENCLR = (1 << (USBD_INTEN_ENDEPOUT0_Pos + epid));
       NRF_USBD->EPOUTEN &= ~(1 << (epid));
     }
     else
     {
-      free(usb_dc_cfg.ep_in[epid].ep_ram_addr);
+      usb_dc_cfg.ep_in[epid].ep_enable = false;
       NRF_USBD->INTENCLR = (1 << (USBD_INTEN_ENDEPIN0_Pos + epid));
       NRF_USBD->EPINEN &= ~(1 << (epid));
     }
@@ -335,8 +307,9 @@ int usbd_ep_close(const uint8_t ep)
   else
   {
     /*!< ISO EP */
-    if (dir == EP_DIR_OUT)
+    if (USB_EP_DIR_IS_OUT(ep))
     {
+      usb_dc_cfg.ep_out[epid].ep_enable = false;
       usb_dc_cfg.ep_out[EP_ISO_NUM].mps = 0;
       NRF_USBD->INTENCLR = USBD_INTENCLR_ENDISOOUT_Msk;
       NRF_USBD->EPOUTEN &= ~USBD_EPOUTEN_ISOOUT_Msk;
@@ -344,6 +317,7 @@ int usbd_ep_close(const uint8_t ep)
     }
     else
     {
+      usb_dc_cfg.ep_in[epid].ep_enable = false;
       usb_dc_cfg.ep_in[EP_ISO_NUM].mps = 0;
       NRF_USBD->INTENCLR = USBD_INTENCLR_ENDISOIN_Msk;
       NRF_USBD->EPINEN &= ~USBD_EPINEN_ISOIN_Msk;
@@ -363,145 +337,141 @@ int usbd_ep_close(const uint8_t ep)
 }
 
 /**
- * @brief            Write send buffer
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @param[in]        data ： First address of data buffer to be written
- * @param[in]        data_len ： Write total length
- * @param[in]        ret_bytes ： Length actually written
- * @retval           >=0 success otherwise failure
+ * @brief Setup in ep transfer setting and start transfer.
+ *
+ * This function is asynchronous.
+ * This function is similar to uart with tx dma.
+ *
+ * This function is called to write data to the specified endpoint. The
+ * supplied usbd_endpoint_callback function will be called when data is transmitted
+ * out.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to write
+ * @param[in]  data_len  Length of the data requested to write. This may
+ *                       be zero for a zero length status packet.
+ * @return 0 on success, negative errno code on fail.
  */
-int usbd_ep_write(const uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
+int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
-  /*!< ep id */
-  uint8_t epid = GET_EP_ID(ep);
-  /*!< real write byte nums */
-  uint32_t real_wt_nums = 0;
-  /*!< ep mps */
-  uint8_t ep_mps = usb_dc_cfg.ep_in[epid].mps;
-  /*!< Analyze bytes actually written */
-  if (data == NULL && data_len > 0)
+  uint8_t ep_idx = USB_EP_GET_IDX(ep);
+
+  if (!data && data_len)
   {
     return -1;
   }
+  if (!usb_dc_cfg.ep_in[ep_idx].ep_enable)
+  {
+    return -2;
+  }
+  if ((uint32_t)data & 0x03)
+  {
+    return -3;
+  }
+
+  usb_dc_cfg.ep_in[ep_idx].xfer_buf = (uint8_t *)data;
+  usb_dc_cfg.ep_in[ep_idx].xfer_len = data_len;
+  usb_dc_cfg.ep_in[ep_idx].actual_xfer_len = 0;
 
   if (data_len == 0)
   {
     /*!< write 0 len data */
-    memset(usb_dc_cfg.ep_in[epid].ep_ram_addr, 0, ep_mps);
-    nrf_usbd_ep_easydma_set_tx(epid, (uint32_t)usb_dc_cfg.ep_in[epid].ep_ram_addr, 0);
-    NRF_USBD->TASKS_STARTEPIN[epid] = 1;
-    return 0;
-  }
-
-  if (data_len > ep_mps)
-  {
-    /*!< The data length is greater than the maximum packet length of the endpoint */
-    real_wt_nums = ep_mps;
+    nrf_usbd_ep_easydma_set_tx(ep_idx, NULL, 0);
+    NRF_USBD->TASKS_STARTEPIN[ep_idx] = 1;
   }
   else
   {
-    real_wt_nums = data_len;
+    /*!< Not zlp */
+    data_len = MIN(data_len, usb_dc_cfg.ep_in[ep_idx].mps);
+    if (!CHECK_ADD_IS_RAM(data))
+    {
+      /*!< Data is not in ram */
+      /*!< Memcpy data to ram */
+      memcpy(usb_dc_cfg.ep_in[ep_idx].ep_buffer, data, data_len);
+      nrf_usbd_ep_easydma_set_tx(ep_idx, (uint32_t)usb_dc_cfg.ep_in[ep_idx].ep_buffer, data_len);
+    }
+    else
+    {
+      nrf_usbd_ep_easydma_set_tx(ep_idx, (uint32_t)data, data_len);
+    }
+    /**
+     * Note that starting DMA transmission is to transmit data to USB peripherals,
+     * and then wait for the host to get it
+     */
+    /*!< Start dma transfer */
+    if (ep_idx != EP_ISO_NUM)
+    {
+      NRF_USBD->TASKS_STARTEPIN[ep_idx] = 1;
+    }
+    else
+    {
+      // NRF_USBD->TASKS_STARTISOIN = 1;
+      usb_dc_cfg.iso_tx_is_ready = 1;
+    }
   }
-
-  /*!< write buff start */
-  memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, data, real_wt_nums);
-  nrf_usbd_ep_easydma_set_tx(epid, (uint32_t)usb_dc_cfg.ep_in[epid].ep_ram_addr, real_wt_nums);
-  /*!< write buff over */
-
-  /**
-   * Note that starting DMA transmission is to transmit data to USB peripherals,
-   * and then wait for the host to get it
-   */
-  /*!< Start dma transfer */
-  if (epid != EP_ISO_NUM)
-  {
-    NRF_USBD->TASKS_STARTEPIN[epid] = 1;
-  }
-  else
-  {
-    // NRF_USBD->TASKS_STARTISOIN = 1;
-    usb_dc_cfg.iso_tx_is_ready = 1;
-  }
-
-  if (ret_bytes != NULL)
-  {
-    *ret_bytes = real_wt_nums;
-  }
-
   return 0;
 }
 
 /**
- * @brief            Read receive buffer
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @param[in]        data ： Read the first address of the buffer where the data is stored
- * @param[in]        max_data_len ： Maximum readout length
- * @param[in]        read_bytes ： Actual read length
- * @retval           >=0 success otherwise failure
+ * @brief Setup out ep transfer setting and start transfer.
+ *
+ * This function is asynchronous.
+ * This function is similar to uart with rx dma.
+ *
+ * This function is called to read data to the specified endpoint. The
+ * supplied usbd_endpoint_callback function will be called when data is received
+ * in.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to read
+ * @param[in]  data_len  Max length of the data requested to read.
+ *
+ * @return 0 on success, negative errno code on fail.
  */
-int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
+int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
-  /*!< ep id */
-  uint8_t epid = GET_EP_ID(ep);
-  /*!< real read byte nums */
-  uint32_t real_rd_nums = 0;
-  /*!< ep mps */
-  uint8_t ep_mps = usb_dc_cfg.ep_out[epid].mps;
+  uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-  if (data == NULL && max_data_len > 0)
+  if (!data && data_len)
   {
     return -1;
   }
-
-  if (max_data_len == 0)
+  if (!usb_dc_cfg.ep_out[ep_idx].ep_enable)
   {
-    // if (epid != 0)
-    NRF_USBD->SIZE.EPOUT[epid] = EP_MPS;
-    return 0;
+    return -2;
+  }
+  if ((uint32_t)data & 0x03)
+  {
+    return -3;
   }
 
-  /*!< Nrf5x special place */
-  /*!< Start */
-  if ((usb_dc_cfg.is_setup_packet == 1) &&
-      (max_data_len == sizeof(struct usb_setup_packet)))
+  usb_dc_cfg.ep_out[ep_idx].xfer_buf = (uint8_t *)data;
+  usb_dc_cfg.ep_out[ep_idx].xfer_len = data_len;
+  usb_dc_cfg.ep_out[ep_idx].actual_xfer_len = 0;
+
+  if (data_len == 0)
   {
-    /*!< Read setup packet */
-    get_setup_packet((struct usb_setup_packet *)data);
-    usb_dc_cfg.is_setup_packet = 0;
-    if (read_bytes != NULL)
+    return 0;
+  }
+  else
+  {
+    data_len = MIN(data_len, usb_dc_cfg.ep_out[ep_idx].mps);
+    if (!CHECK_ADD_IS_RAM(data))
     {
-      *read_bytes = real_rd_nums;
+      /*!< Data address is not in ram */
+      // TODO:
     }
-    return 0;
+    else
+    {
+      if (ep_idx == 0)
+      {
+        NRF_USBD->TASKS_EP0RCVOUT = 1;
+      }
+      nrf_usbd_ep_easydma_set_rx(ep_idx, (uint32_t)data, data_len);
+    }
   }
-  /*!< Over */
-
-  if (max_data_len > ep_mps)
-    max_data_len = ep_mps;
-
-  real_rd_nums = NRF_USBD->SIZE.EPOUT[epid];
-  real_rd_nums = MIN(real_rd_nums, max_data_len);
-
-  /*!< read buff start */
-  memcpy(data, (uint8_t *)usb_dc_cfg.ep_out[epid].ep_ram_addr, real_rd_nums);
-  /**
-   * The reason why DMA transmission is not started here is that when the endpoint receives data, the host sends an out token and then transmits the data.
-   * Nrf5x after receiving the data and responding to the host ACK, an EPDATA event will be generated.
-   * In that event, we query the flag bit to obtain which endpoint received the data successfully,
-   * and then set the target address of easydma to move the data from the USB peripheral to ram.
-   * Easydma will trigger an ENDEPOUT[epid] event after moving data,
-   * in which EP in the protocol stack is called ep_out_handler.So When reading, the RAM buffer of the endpoint has received the data.
-   * We only need to copy the data from the buffer.
-   */
-  /*!< read buff over */
-
-  if (read_bytes != NULL)
-  {
-    *read_bytes = real_rd_nums;
-  }
-
   return 0;
 }
 
@@ -514,9 +484,7 @@ int usbd_ep_read(const uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_
 int usbd_ep_set_stall(const uint8_t ep)
 {
   /*!< ep id */
-  uint8_t epid = GET_EP_ID(ep);
-  bool dir = GET_EP_DIR(ep);
-
+  uint8_t epid = USB_EP_GET_IDX(ep);
   if (epid == 0)
   {
     NRF_USBD->TASKS_EP0STALL = 1;
@@ -539,8 +507,7 @@ int usbd_ep_set_stall(const uint8_t ep)
 int usbd_ep_clear_stall(const uint8_t ep)
 {
   /*!< ep id */
-  uint8_t epid = GET_EP_ID(ep);
-  uint8_t dir = GET_EP_DIR(ep);
+  uint8_t epid = USB_EP_GET_IDX(ep);
 
   if (epid != 0 && epid != EP_ISO_NUM)
   {
@@ -556,7 +523,7 @@ int usbd_ep_clear_stall(const uint8_t ep)
     NRF_USBD->EPSTALL = (USBD_EPSTALL_STALL_UnStall << USBD_EPSTALL_STALL_Pos) | ep;
 
     /*!< Write any value to SIZE register will allow nRF to ACK/accept data */
-    if (dir == EP_DIR_OUT)
+    if (USB_EP_DIR_IS_OUT(ep))
       NRF_USBD->SIZE.EPOUT[epid] = 0;
 
     __ISB();
@@ -587,8 +554,9 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 int usb_dc_init(void)
 {
   /*!< dc init */
-  memset(&usb_dc_cfg, 0, sizeof(usb_dc_cfg));
+  usb_dc_low_level_pre_init();
 
+  memset(&usb_dc_cfg, 0, sizeof(usb_dc_cfg));
   /*!< Clear USB Event Interrupt */
   NRF_USBD->EVENTS_USBEVENT = 0;
   NRF_USBD->EVENTCAUSE |= NRF_USBD->EVENTCAUSE;
@@ -597,7 +565,8 @@ int usb_dc_init(void)
   NRF_USBD->INTENCLR = NRF_USBD->INTEN;
   NRF_USBD->INTENSET = USBD_INTEN_USBRESET_Msk | USBD_INTEN_USBEVENT_Msk | USBD_INTEN_EPDATA_Msk |
                        USBD_INTEN_EP0SETUP_Msk | USBD_INTEN_EP0DATADONE_Msk | USBD_INTEN_ENDEPIN0_Msk | USBD_INTEN_ENDEPOUT0_Msk | USBD_INTEN_STARTED_Msk;
-  nrf_usbd_enable();
+
+  usb_dc_low_level_post_init();
   return 0;
 }
 
@@ -636,7 +605,7 @@ void USBD_IRQHandler(void)
       if ((NRF_USBD->EPDATASTATUS) & (1 << (16 + ep_out_ct)))
       {
         NRF_USBD->EPDATASTATUS |= (1 << (16 + ep_out_ct));
-        nrf_usbd_ep_easydma_set_rx(ep_out_ct, (uint32_t)usb_dc_cfg.ep_out[ep_out_ct].ep_ram_addr, NRF_USBD->SIZE.EPOUT[ep_out_ct]);
+        /*!< The data arrives at the usb fifo, starts the dma transmission, and transfers it to the user ram  */
         NRF_USBD->TASKS_STARTEPOUT[ep_out_ct] = 1;
       }
     }
@@ -647,7 +616,28 @@ void USBD_IRQHandler(void)
       {
         /*!< in ep tranfer to host successfully */
         NRF_USBD->EPDATASTATUS |= (1 << (0 + ep_in_ct));
-        usbd_event_notify_handler(USBD_EVENT_EP_IN_NOTIFY, (uint32_t *)((ep_in_ct) | 0x80));
+        if (usb_dc_cfg.ep_in[ep_in_ct].xfer_len > usb_dc_cfg.ep_in[ep_in_ct].mps)
+        {
+          /*!< Need start in again */
+          usb_dc_cfg.ep_in[ep_in_ct].xfer_buf += usb_dc_cfg.ep_in[ep_in_ct].mps;
+          usb_dc_cfg.ep_in[ep_in_ct].xfer_len -= usb_dc_cfg.ep_in[ep_in_ct].mps;
+          usb_dc_cfg.ep_in[ep_in_ct].actual_xfer_len += usb_dc_cfg.ep_in[ep_in_ct].mps;
+          if (usb_dc_cfg.ep_in[ep_in_ct].xfer_len > usb_dc_cfg.ep_in[ep_in_ct].mps)
+          {
+            nrf_usbd_ep_easydma_set_tx(ep_in_ct, (uint32_t)usb_dc_cfg.ep_in[ep_in_ct].xfer_buf, usb_dc_cfg.ep_in[ep_in_ct].mps);
+          }
+          else
+          {
+            nrf_usbd_ep_easydma_set_tx(ep_in_ct, (uint32_t)usb_dc_cfg.ep_in[ep_in_ct].xfer_buf, usb_dc_cfg.ep_in[ep_in_ct].xfer_len);
+          }
+          NRF_USBD->TASKS_STARTEPIN[ep_in_ct] = 1;
+        }
+        else
+        {
+          usb_dc_cfg.ep_in[ep_in_ct].actual_xfer_len += usb_dc_cfg.ep_in[ep_in_ct].xfer_len;
+          usb_dc_cfg.ep_in[ep_in_ct].xfer_len = 0;
+          usbd_event_ep_in_complete_handler(ep_in_ct | 0x80, usb_dc_cfg.ep_in[ep_in_ct].actual_xfer_len);
+        }
       }
     }
   }
@@ -658,16 +648,8 @@ void USBD_IRQHandler(void)
     /* Setup */
     /*!< Storing this setup package will help the following procedures */
     get_setup_packet(&(usb_dc_cfg.setup));
-    usb_dc_cfg.is_setup_packet = 1;
-    usb_dc_cfg.in_count = usb_dc_cfg.setup.wLength / 64;
     /*!< Nrf52840 will set the address automatically by hardware,
          so the protocol stack of the address setting command sent by the host does not need to be processed */
-    if ((usb_dc_cfg.setup.bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT &&
-        usb_dc_cfg.setup.wLength > 0)
-    {
-      NRF_USBD->TASKS_EP0RCVOUT = 1;
-      nrf_usbd_ep_easydma_set_rx(0, (uint32_t)usb_dc_cfg.ep_out[0].ep_ram_addr, usb_dc_cfg.ep_out[0].mps);
-    }
 
     if (usb_dc_cfg.setup.wLength == 0)
     {
@@ -676,7 +658,7 @@ void USBD_IRQHandler(void)
 
     if (usb_dc_cfg.setup.bRequest != USB_REQUEST_SET_ADDRESS)
     {
-      usbd_event_notify_handler(USBD_EVENT_SETUP_NOTIFY, NULL);
+      usbd_event_ep0_setup_complete_handler((uint8_t *)&(usb_dc_cfg.setup));
     }
   }
 
@@ -688,11 +670,11 @@ void USBD_IRQHandler(void)
     if (usb_event & USBD_EVENTCAUSE_SUSPEND_Msk)
     {
       NRF_USBD->LOWPOWER = 1;
-      usbd_event_notify_handler(USBD_EVENT_SUSPEND, NULL);
+      /*!<  */
     }
     if (usb_event & USBD_EVENTCAUSE_RESUME_Msk)
     {
-      usbd_event_notify_handler(USBD_EVENT_RESUME, NULL);
+      /*!<  */
     }
     if (usb_event & USBD_EVENTCAUSE_USBWUALLOWED_Msk)
     {
@@ -717,24 +699,12 @@ void USBD_IRQHandler(void)
     {
       iso_enabled = true;
       /*!< If ZERO bit is set, ignore ISOOUT length */
-      if (usb_dc_cfg.iso_turn < 2)
+      if ((NRF_USBD->SIZE.ISOOUT) & USBD_SIZE_ISOOUT_ZERO_Msk)
       {
-        usb_dc_cfg.iso_turn++;
-        if ((NRF_USBD->SIZE.ISOOUT) & USBD_SIZE_ISOOUT_ZERO_Msk)
-        {
-          /*!<  */
-        }
-        else
-        {
-          /*!< Prepare */
-          NRF_USBD->ISOOUT.PTR = (uint32_t)usb_dc_cfg.ep_out[EP_ISO_NUM].ep_ram_addr;
-          NRF_USBD->ISOOUT.MAXCNT = NRF_USBD->SIZE.ISOOUT;
-        }
       }
-      if (usb_dc_cfg.iso_turn == 2)
+      else
       {
-        NRF_USBD->ISOOUT.PTR = (uint32_t)usb_dc_cfg.ep_out[EP_ISO_NUM].ep_ram_addr;
-        NRF_USBD->ISOOUT.MAXCNT = NRF_USBD->SIZE.ISOOUT;
+        /*!< Trigger DMA move data from Endpoint -> SRAM */
         NRF_USBD->TASKS_STARTISOOUT = 1;
         /*!< EP_ISO_NUM out using dma */
         usb_dc_cfg.ep_out[EP_ISO_NUM].is_using_dma = 1;
@@ -768,7 +738,26 @@ void USBD_IRQHandler(void)
     if (usb_dc_cfg.ep_out[EP_ISO_NUM].is_using_dma == 1)
     {
       usb_dc_cfg.ep_out[EP_ISO_NUM].is_using_dma = 0;
-      usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (uint32_t *)(EP_ISO_NUM | 0x00));
+      uint32_t read_count = NRF_USBD->SIZE.ISOOUT;
+      usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_buf += read_count;
+      usb_dc_cfg.ep_out[EP_ISO_NUM].actual_xfer_len += read_count;
+      usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_len -= read_count;
+
+      if ((read_count < usb_dc_cfg.ep_out[EP_ISO_NUM].mps) || (usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_len == 0))
+      {
+        usbd_event_ep_out_complete_handler(((EP_ISO_NUM)&0x7f), usb_dc_cfg.ep_out[EP_ISO_NUM].actual_xfer_len);
+      }
+      else
+      {
+        if (usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_len > usb_dc_cfg.ep_out[EP_ISO_NUM].mps)
+        {
+          nrf_usbd_ep_easydma_set_rx(((EP_ISO_NUM)&0x7f), (uint32_t)usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_buf, usb_dc_cfg.ep_out[EP_ISO_NUM].mps);
+        }
+        else
+        {
+          nrf_usbd_ep_easydma_set_rx(((EP_ISO_NUM)&0x7f), (uint32_t)usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_buf, usb_dc_cfg.ep_out[EP_ISO_NUM].xfer_len);
+        }
+      }
     }
   }
 
@@ -781,24 +770,43 @@ void USBD_IRQHandler(void)
     if (int_status & (USBD_INTEN_ENDEPOUT1_Msk << offset))
     {
       /*!< Out 'offset' transfer complete */
-      usbd_event_notify_handler(USBD_EVENT_EP_OUT_NOTIFY, (uint32_t *)((offset + 1) & 0x7f));
+      uint32_t read_count = NRF_USBD->SIZE.EPOUT[offset + 1];
+      usb_dc_cfg.ep_out[offset + 1].xfer_buf += read_count;
+      usb_dc_cfg.ep_out[offset + 1].actual_xfer_len += read_count;
+      usb_dc_cfg.ep_out[offset + 1].xfer_len -= read_count;
+
+      if ((read_count < usb_dc_cfg.ep_out[offset + 1].mps) || (usb_dc_cfg.ep_out[offset + 1].xfer_len == 0))
+      {
+        usbd_event_ep_out_complete_handler(((offset + 1) & 0x7f), usb_dc_cfg.ep_out[offset + 1].actual_xfer_len);
+      }
+      else
+      {
+        if (usb_dc_cfg.ep_out[offset + 1].xfer_len > usb_dc_cfg.ep_out[offset + 1].mps)
+        {
+          nrf_usbd_ep_easydma_set_rx(((offset + 1) & 0x7f), (uint32_t)usb_dc_cfg.ep_out[offset + 1].xfer_buf, usb_dc_cfg.ep_out[offset + 1].mps);
+        }
+        else
+        {
+          nrf_usbd_ep_easydma_set_rx(((offset + 1) & 0x7f), (uint32_t)usb_dc_cfg.ep_out[offset + 1].xfer_buf, usb_dc_cfg.ep_out[offset + 1].xfer_len);
+        }
+      }
     }
   }
 
   /*!< bit 12 */
   if (int_status & USBD_INTEN_ENDEPOUT0_Msk)
   {
-    if (NRF_USBD->SIZE.EPOUT[0] == 64)
-    {
-      /*!< Enable the data phase of the endpoint */
-      NRF_USBD->TASKS_EP0RCVOUT = 1;
-    }
-    else
+    uint32_t read_count = NRF_USBD->SIZE.EPOUT[0];
+    usb_dc_cfg.ep_out[0].actual_xfer_len += read_count;
+    usb_dc_cfg.ep_out[0].xfer_len -= read_count;
+
+    if (usb_dc_cfg.ep_out[0].xfer_len == 0)
     {
       /*!< Enable the state phase of endpoint 0 */
       NRF_USBD->TASKS_EP0STATUS = 1;
     }
-    usbd_event_notify_handler(USBD_EVENT_EP0_OUT_NOTIFY, NULL);
+
+    usbd_event_ep_out_complete_handler(0x00, usb_dc_cfg.ep_out[0].actual_xfer_len);
   }
 
   /*!< bit 11 */
@@ -813,32 +821,25 @@ void USBD_IRQHandler(void)
     {
     case 1:
       /*!< IN */
-      if ((usb_dc_cfg.setup.wLength == 64 && usb_dc_cfg.setup.bRequest == 0x06 && (usb_dc_cfg.setup.wValue >> 8) == 1) ||   /*!< Get device descriptor for the first time */
-          (usb_dc_cfg.setup.wLength == 0xff && usb_dc_cfg.setup.bRequest == 0x06 && (usb_dc_cfg.setup.wValue >> 8) == 2) || /*!< Get configuration descriptor for the first time */
-          (usb_dc_cfg.setup.wLength == 0xff && usb_dc_cfg.setup.bRequest == 0x06 && (usb_dc_cfg.setup.wValue >> 8) == 3) || /*!< Get string descriptor for the first time */
-          (usb_dc_cfg.setup.wLength == 64))
+      if (usb_dc_cfg.ep_in[0].xfer_len > usb_dc_cfg.ep_in[0].mps)
       {
-        usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
-        NRF_USBD->TASKS_EP0STATUS = 1;
-      }
-      else if (usb_dc_cfg.setup.wLength > 64)
-      {
-        usb_dc_cfg.in_count--;
-        usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
-        if (usb_dc_cfg.in_count == -1)
-        {
-          NRF_USBD->TASKS_EP0STATUS = 1;
-        }
+        usb_dc_cfg.ep_in[0].xfer_len -= usb_dc_cfg.ep_in[0].mps;
+        usb_dc_cfg.ep_in[0].actual_xfer_len += usb_dc_cfg.ep_in[0].mps;
+        usbd_event_ep_in_complete_handler(0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
       }
       else
       {
-        usbd_event_notify_handler(USBD_EVENT_EP0_IN_NOTIFY, NULL);
+        usb_dc_cfg.ep_in[0].actual_xfer_len += usb_dc_cfg.ep_in[0].xfer_len;
+        usb_dc_cfg.ep_in[0].xfer_len = 0;
+        /*!< Enable the state phase of endpoint 0 */
+        usbd_event_ep_in_complete_handler(0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
         NRF_USBD->TASKS_EP0STATUS = 1;
       }
       break;
     case 0:
       if (usb_dc_cfg.setup.bRequest != USB_REQUEST_SET_ADDRESS)
       {
+        /*!< The data arrives at the usb fifo, starts the dma transmission, and transfers it to the user ram  */
         NRF_USBD->TASKS_STARTEPOUT[0] = 1;
       }
       break;
@@ -857,19 +858,16 @@ void USBD_IRQHandler(void)
     }
   }
 
-  /*!< bit 2 */
-  if (int_status & USBD_INTEN_ENDEPIN0_Msk)
-  {
-  }
-
   /*!< bit 1 */
   if (int_status & USBD_INTEN_STARTED_Msk)
   {
-    if (usb_dc_cfg.ep_out[EP_ISO_NUM].is_using_dma == 1)
-    {
-      NRF_USBD->ISOOUT.PTR = (uint32_t)usb_dc_cfg.ep_out[EP_ISO_NUM].ep_ram_addr + EP_NUMS;
-      NRF_USBD->ISOOUT.MAXCNT = NRF_USBD->SIZE.ISOOUT;
-    }
+    /*!< Easy dma start transfer data */
+  }
+
+  /*!< bit 2 */
+  if (int_status & USBD_INTEN_ENDEPIN0_Msk)
+  {
+    /*!< EP0 IN DMA move data completed */
   }
 
   /*!< bit 0 */
@@ -896,6 +894,410 @@ void USBD_IRQHandler(void)
     NRF_USBD->INTENSET = USBD_INTEN_USBRESET_Msk | USBD_INTEN_USBEVENT_Msk | USBD_INTEN_EPDATA_Msk |
                          USBD_INTEN_EP0SETUP_Msk | USBD_INTEN_EP0DATADONE_Msk | USBD_INTEN_ENDEPIN0_Msk | USBD_INTEN_ENDEPOUT0_Msk | USBD_INTEN_STARTED_Msk;
 
-    usbd_event_notify_handler(USBD_EVENT_RESET, NULL);
+    usbd_event_reset_handler();
+  }
+}
+
+/**
+ * Errata: USB cannot be enabled.
+ */
+static bool chyu_nrf52_errata_187(void)
+{
+#ifndef NRF52_SERIES
+  return false;
+#else
+#if defined(NRF52820_XXAA) || defined(DEVELOP_IN_NRF52820) || defined(NRF52833_XXAA) || defined(DEVELOP_IN_NRF52833) || defined(NRF52840_XXAA) || defined(DEVELOP_IN_NRF52840)
+  uint32_t var1 = *(uint32_t *)0x10000130ul;
+  uint32_t var2 = *(uint32_t *)0x10000134ul;
+#endif
+#if defined(NRF52840_XXAA) || defined(DEVELOP_IN_NRF52840)
+  if (var1 == 0x08)
+  {
+    switch (var2)
+    {
+    case 0x00ul:
+      return false;
+    case 0x01ul:
+      return true;
+    case 0x02ul:
+      return true;
+    case 0x03ul:
+      return true;
+    default:
+      return true;
+    }
+  }
+#endif
+#if defined(NRF52833_XXAA) || defined(DEVELOP_IN_NRF52833)
+  if (var1 == 0x0D)
+  {
+    switch (var2)
+    {
+    case 0x00ul:
+      return true;
+    case 0x01ul:
+      return true;
+    default:
+      return true;
+    }
+  }
+#endif
+#if defined(NRF52820_XXAA) || defined(DEVELOP_IN_NRF52820)
+  if (var1 == 0x10)
+  {
+    switch (var2)
+    {
+    case 0x00ul:
+      return true;
+    case 0x01ul:
+      return true;
+    case 0x02ul:
+      return true;
+    default:
+      return true;
+    }
+  }
+#endif
+  return false;
+#endif
+}
+
+/**
+ * Errata: USBD might not reach its active state.
+ */
+static bool chyu_nrf52_errata_171(void)
+{
+#ifndef NRF52_SERIES
+  return false;
+#else
+#if defined(NRF52840_XXAA) || defined(DEVELOP_IN_NRF52840)
+  uint32_t var1 = *(uint32_t *)0x10000130ul;
+  uint32_t var2 = *(uint32_t *)0x10000134ul;
+#endif
+#if defined(NRF52840_XXAA) || defined(DEVELOP_IN_NRF52840)
+  if (var1 == 0x08)
+  {
+    switch (var2)
+    {
+    case 0x00ul:
+      return true;
+    case 0x01ul:
+      return true;
+    case 0x02ul:
+      return true;
+    case 0x03ul:
+      return true;
+    default:
+      return true;
+    }
+  }
+#endif
+  return false;
+#endif
+}
+
+/**
+ * Errata: ISO double buffering not functional.
+ */
+static bool chyu_nrf52_errata_166(void)
+{
+#ifndef NRF52_SERIES
+  return false;
+#else
+#if defined(NRF52840_XXAA) || defined(DEVELOP_IN_NRF52840)
+  uint32_t var1 = *(uint32_t *)0x10000130ul;
+  uint32_t var2 = *(uint32_t *)0x10000134ul;
+#endif
+#if defined(NRF52840_XXAA) || defined(DEVELOP_IN_NRF52840)
+  if (var1 == 0x08)
+  {
+    switch (var2)
+    {
+    case 0x00ul:
+      return true;
+    case 0x01ul:
+      return true;
+    case 0x02ul:
+      return true;
+    case 0x03ul:
+      return true;
+    default:
+      return true;
+    }
+  }
+#endif
+  return false;
+#endif
+}
+
+#ifdef SOFTDEVICE_PRESENT
+
+#include "nrf_mbr.h"
+#include "nrf_sdm.h"
+#include "nrf_soc.h"
+
+#ifndef SD_MAGIC_NUMBER
+#define SD_MAGIC_NUMBER 0x51B1E5DB
+#endif
+
+static inline bool is_sd_existed(void)
+{
+  return *((uint32_t *)(SOFTDEVICE_INFO_STRUCT_ADDRESS + 4)) == SD_MAGIC_NUMBER;
+}
+
+/**
+ * check if SD is existed and enabled
+ */
+static inline bool is_sd_enabled(void)
+{
+  if (!is_sd_existed())
+    return false;
+
+  uint8_t sd_en = false;
+  (void)sd_softdevice_is_enabled(&sd_en);
+  return sd_en;
+}
+#endif
+
+static bool hfclk_running(void)
+{
+#ifdef SOFTDEVICE_PRESENT
+  if (is_sd_enabled())
+  {
+    uint32_t is_running = 0;
+    (void)sd_clock_hfclk_is_running(&is_running);
+    return (is_running ? true : false);
+  }
+#endif
+
+#if defined(CLOCK_HFCLKSTAT_SRC_Xtal) || defined(__NRFX_DOXYGEN__)
+  return (NRF_CLOCK->HFCLKSTAT & (CLOCK_HFCLKSTAT_STATE_Msk | CLOCK_HFCLKSTAT_SRC_Msk)) ==
+         (CLOCK_HFCLKSTAT_STATE_Msk | (CLOCK_HFCLKSTAT_SRC_Xtal << CLOCK_HFCLKSTAT_SRC_Pos));
+#else
+  return (NRF_CLOCK->HFCLKSTAT & (CLOCK_HFCLKSTAT_STATE_Msk | CLOCK_HFCLKSTAT_SRC_Msk)) ==
+         (CLOCK_HFCLKSTAT_STATE_Msk | (CLOCK_HFCLKSTAT_SRC_HFXO << CLOCK_HFCLKSTAT_SRC_Pos));
+#endif
+}
+
+enum
+{
+  NRF_CLOCK_EVENT_HFCLKSTARTED = offsetof(NRF_CLOCK_Type, EVENTS_HFCLKSTARTED), /*!< HFCLK oscillator started. */
+};
+
+enum
+{
+  NRF_CLOCK_TASK_HFCLKSTART = offsetof(NRF_CLOCK_Type, TASKS_HFCLKSTART), /*!< Start HFCLK clock source. */
+  NRF_CLOCK_TASK_HFCLKSTOP = offsetof(NRF_CLOCK_Type, TASKS_HFCLKSTOP),   /*!< Stop HFCLK clock source. */
+};
+
+static void hfclk_enable(void)
+{
+  /*!< already running, nothing to do */
+  if (hfclk_running())
+    return;
+
+#ifdef SOFTDEVICE_PRESENT
+  if (is_sd_enabled())
+  {
+    (void)sd_clock_hfclk_request();
+    return;
+  }
+#endif
+
+  *((volatile uint32_t *)((uint8_t *)NRF_CLOCK + NRF_CLOCK_EVENT_HFCLKSTARTED)) = 0x0UL;
+  volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)NRF_CLOCK + (uint32_t)NRF_CLOCK_EVENT_HFCLKSTARTED));
+  (void)dummy;
+  *((volatile uint32_t *)((uint8_t *)NRF_CLOCK + NRF_CLOCK_TASK_HFCLKSTART)) = 0x1UL;
+}
+
+static void hfclk_disable(void)
+{
+#ifdef SOFTDEVICE_PRESENT
+  if (is_sd_enabled())
+  {
+    (void)sd_clock_hfclk_release();
+    return;
+  }
+#endif
+
+  *((volatile uint32_t *)((uint8_t *)NRF_CLOCK + NRF_CLOCK_TASK_HFCLKSTOP)) = 0x1UL;
+}
+
+/**
+ * Power & Clock Peripheral on nRF5x to manage USB
+ * USB Bus power is managed by Power module, there are 3 VBUS power events:
+ * Detected, Ready, Removed. Upon these power events, This function will
+ * enable ( or disable ) usb & hfclk peripheral, set the usb pin pull up
+ * accordingly to the controller Startup/Standby Sequence in USBD 51.4 specs.
+ * Therefore this function must be called to handle USB power event by
+ * - nrfx_power_usbevt_init() : if Softdevice is not used or enabled
+ * - SoftDevice SOC event : if SD is used and enabled
+ */
+void cherry_usb_hal_nrf_power_event(uint32_t event)
+{
+  enum
+  {
+    USB_EVT_DETECTED = 0,
+    USB_EVT_REMOVED = 1,
+    USB_EVT_READY = 2
+  };
+
+  switch (event)
+  {
+  case USB_EVT_DETECTED:
+    if (!NRF_USBD->ENABLE)
+    {
+      /*!< Prepare for receiving READY event: disable interrupt since we will blocking wait */
+      NRF_USBD->INTENCLR = USBD_INTEN_USBEVENT_Msk;
+      NRF_USBD->EVENTCAUSE = USBD_EVENTCAUSE_READY_Msk;
+      __ISB();
+      __DSB();
+
+#ifdef NRF52_SERIES /*!< NRF53 does not need this errata */
+      /*!< ERRATA 171, 187, 166 */
+      if (chyu_nrf52_errata_187())
+      {
+        if (*((volatile uint32_t *)(0x4006EC00)) == 0x00000000)
+        {
+          *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+          *((volatile uint32_t *)(0x4006ED14)) = 0x00000003;
+          *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+        }
+        else
+        {
+          *((volatile uint32_t *)(0x4006ED14)) = 0x00000003;
+        }
+      }
+
+      if (chyu_nrf52_errata_171())
+      {
+        if (*((volatile uint32_t *)(0x4006EC00)) == 0x00000000)
+        {
+          *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+          *((volatile uint32_t *)(0x4006EC14)) = 0x000000C0;
+          *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+        }
+        else
+        {
+          *((volatile uint32_t *)(0x4006EC14)) = 0x000000C0;
+        }
+      }
+#endif
+
+      /*!< Enable the peripheral (will cause Ready event) */
+      NRF_USBD->ENABLE = 1;
+      __ISB();
+      __DSB();
+
+      /*!< Enable HFCLK */
+      hfclk_enable();
+    }
+    break;
+
+  case USB_EVT_READY:
+    /**
+     * Skip if pull-up is enabled and HCLK is already running.
+     * Application probably call this more than necessary.
+     */
+    if (NRF_USBD->USBPULLUP && hfclk_running())
+      break;
+
+    /*!< Waiting for USBD peripheral enabled */
+    while (!(USBD_EVENTCAUSE_READY_Msk & NRF_USBD->EVENTCAUSE))
+    {
+    }
+
+    NRF_USBD->EVENTCAUSE = USBD_EVENTCAUSE_READY_Msk;
+    __ISB();
+    __DSB();
+
+#ifdef NRF52_SERIES
+    if (chyu_nrf52_errata_171())
+    {
+      if (*((volatile uint32_t *)(0x4006EC00)) == 0x00000000)
+      {
+        *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+        *((volatile uint32_t *)(0x4006EC14)) = 0x00000000;
+        *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+      }
+      else
+      {
+        *((volatile uint32_t *)(0x4006EC14)) = 0x00000000;
+      }
+    }
+
+    if (chyu_nrf52_errata_187())
+    {
+      if (*((volatile uint32_t *)(0x4006EC00)) == 0x00000000)
+      {
+        *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+        *((volatile uint32_t *)(0x4006ED14)) = 0x00000000;
+        *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
+      }
+      else
+      {
+        *((volatile uint32_t *)(0x4006ED14)) = 0x00000000;
+      }
+    }
+
+    if (chyu_nrf52_errata_166())
+    {
+      *((volatile uint32_t *)(NRF_USBD_BASE + 0x800)) = 0x7E3;
+      *((volatile uint32_t *)(NRF_USBD_BASE + 0x804)) = 0x40;
+
+      __ISB();
+      __DSB();
+    }
+#endif
+
+    /*!< ISO buffer Lower half for IN, upper half for OUT */
+    NRF_USBD->ISOSPLIT = USBD_ISOSPLIT_SPLIT_HalfIN;
+
+    /*!< Enable bus-reset interrupt */
+    NRF_USBD->INTENSET = USBD_INTEN_USBRESET_Msk;
+
+    /*!< Enable interrupt, priorities should be set by application */
+    /*!< clear pending irq */
+    NVIC->ICPR[(((uint32_t)USBD_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)USBD_IRQn) & 0x1FUL));
+    /**
+     * Don't enable USBD interrupt yet, if dcd_init() did not finish yet
+     * Interrupt will be enabled by tud_init(), when USB stack is ready
+     * to handle interrupts.
+     */
+    /*!< Wait for HFCLK */
+    while (!hfclk_running())
+    {
+    }
+
+    /*!< Enable pull up */
+    NRF_USBD->USBPULLUP = 1;
+    __ISB();
+    __DSB();
+    break;
+
+  case USB_EVT_REMOVED:
+    if (NRF_USBD->ENABLE)
+    {
+      /*!< Disable pull up */
+      NRF_USBD->USBPULLUP = 0;
+      __ISB();
+      __DSB();
+
+      /*!< Disable Interrupt */
+      NVIC->ICER[(((uint32_t)USBD_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)USBD_IRQn) & 0x1FUL));
+      __DSB();
+      __ISB();
+      /*!< disable all interrupt */
+      NRF_USBD->INTENCLR = NRF_USBD->INTEN;
+
+      NRF_USBD->ENABLE = 0;
+      __ISB();
+      __DSB();
+      hfclk_disable();
+    }
+    break;
+
+  default:
+    break;
   }
 }

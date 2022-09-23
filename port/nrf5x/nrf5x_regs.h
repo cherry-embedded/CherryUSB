@@ -518,3 +518,88 @@ typedef struct {                                /*!< (@ 0x40027000) USBD Structu
 #define USBD_ISOINCONFIG_RESPONSE_Msk (0x1UL << USBD_ISOINCONFIG_RESPONSE_Pos) /*!< Bit mask of RESPONSE field. */
 #define USBD_ISOINCONFIG_RESPONSE_NoResp (0UL)                                 /*!< Endpoint does not respond in that case */
 #define USBD_ISOINCONFIG_RESPONSE_ZeroData (1UL)                               /*!< Endpoint responds with a zero-length data packet in that case */
+
+
+
+
+/**
+  * @brief Clock control (CLOCK)
+  */
+
+typedef struct {                                /*!< (@ 0x40000000) CLOCK Structure                                            */
+  __OM  uint32_t  TASKS_HFCLKSTART;             /*!< (@ 0x00000000) Start HFXO crystal oscillator                              */
+  __OM  uint32_t  TASKS_HFCLKSTOP;              /*!< (@ 0x00000004) Stop HFXO crystal oscillator                               */
+  __OM  uint32_t  TASKS_LFCLKSTART;             /*!< (@ 0x00000008) Start LFCLK                                                */
+  __OM  uint32_t  TASKS_LFCLKSTOP;              /*!< (@ 0x0000000C) Stop LFCLK                                                 */
+  __OM  uint32_t  TASKS_CAL;                    /*!< (@ 0x00000010) Start calibration of LFRC                                  */
+  __OM  uint32_t  TASKS_CTSTART;                /*!< (@ 0x00000014) Start calibration timer                                    */
+  __OM  uint32_t  TASKS_CTSTOP;                 /*!< (@ 0x00000018) Stop calibration timer                                     */
+  __IM  uint32_t  RESERVED[57];
+  __IOM uint32_t  EVENTS_HFCLKSTARTED;          /*!< (@ 0x00000100) HFXO crystal oscillator started                            */
+  __IOM uint32_t  EVENTS_LFCLKSTARTED;          /*!< (@ 0x00000104) LFCLK started                                              */
+  __IM  uint32_t  RESERVED1;
+  __IOM uint32_t  EVENTS_DONE;                  /*!< (@ 0x0000010C) Calibration of LFRC completed                              */
+  __IOM uint32_t  EVENTS_CTTO;                  /*!< (@ 0x00000110) Calibration timer timeout                                  */
+  __IM  uint32_t  RESERVED2[5];
+  __IOM uint32_t  EVENTS_CTSTARTED;             /*!< (@ 0x00000128) Calibration timer has been started and is ready
+                                                                    to process new tasks                                       */
+  __IOM uint32_t  EVENTS_CTSTOPPED;             /*!< (@ 0x0000012C) Calibration timer has been stopped and is ready
+                                                                    to process new tasks                                       */
+  __IM  uint32_t  RESERVED3[117];
+  __IOM uint32_t  INTENSET;                     /*!< (@ 0x00000304) Enable interrupt                                           */
+  __IOM uint32_t  INTENCLR;                     /*!< (@ 0x00000308) Disable interrupt                                          */
+  __IM  uint32_t  RESERVED4[63];
+  __IM  uint32_t  HFCLKRUN;                     /*!< (@ 0x00000408) Status indicating that HFCLKSTART task has been
+                                                                    triggered                                                  */
+  __IM  uint32_t  HFCLKSTAT;                    /*!< (@ 0x0000040C) HFCLK status                                               */
+  __IM  uint32_t  RESERVED5;
+  __IM  uint32_t  LFCLKRUN;                     /*!< (@ 0x00000414) Status indicating that LFCLKSTART task has been
+                                                                    triggered                                                  */
+  __IM  uint32_t  LFCLKSTAT;                    /*!< (@ 0x00000418) LFCLK status                                               */
+  __IM  uint32_t  LFCLKSRCCOPY;                 /*!< (@ 0x0000041C) Copy of LFCLKSRC register, set when LFCLKSTART
+                                                                    task was triggered                                         */
+  __IM  uint32_t  RESERVED6[62];
+  __IOM uint32_t  LFCLKSRC;                     /*!< (@ 0x00000518) Clock source for the LFCLK                                 */
+  __IM  uint32_t  RESERVED7[3];
+  __IOM uint32_t  HFXODEBOUNCE;                 /*!< (@ 0x00000528) HFXO debounce time. The HFXO is started by triggering
+                                                                    the TASKS_HFCLKSTART task.                                 */
+  __IM  uint32_t  RESERVED8[3];
+  __IOM uint32_t  CTIV;                         /*!< (@ 0x00000538) Calibration timer interval                                 */
+  __IM  uint32_t  RESERVED9[8];
+  __IOM uint32_t  TRACECONFIG;                  /*!< (@ 0x0000055C) Clocking options for the trace port debug interface        */
+  __IM  uint32_t  RESERVED10[21];
+  __IOM uint32_t  LFRCMODE;                     /*!< (@ 0x000005B4) LFRC mode configuration                                    */
+} NRF_CLOCK_Type;                               /*!< Size = 1464 (0x5b8)                                                       */
+
+
+#define CLOCK_HFCLKSTAT_STATE_Pos (16UL) /*!< Position of STATE field. */
+#define CLOCK_HFCLKSTAT_STATE_Msk (0x1UL << CLOCK_HFCLKSTAT_STATE_Pos) /*!< Bit mask of STATE field. */
+#define CLOCK_HFCLKSTAT_STATE_NotRunning (0UL) /*!< HFCLK not running */
+#define CLOCK_HFCLKSTAT_STATE_Running (1UL) /*!< HFCLK running */
+
+
+/* Bit 0 : Source of HFCLK */
+#define CLOCK_HFCLKSTAT_SRC_Pos (0UL) /*!< Position of SRC field. */
+#define CLOCK_HFCLKSTAT_SRC_Msk (0x1UL << CLOCK_HFCLKSTAT_SRC_Pos) /*!< Bit mask of SRC field. */
+#define CLOCK_HFCLKSTAT_SRC_RC (0UL) /*!< 64 MHz internal oscillator (HFINT) */
+#define CLOCK_HFCLKSTAT_SRC_Xtal (1UL) /*!< 64 MHz crystal oscillator (HFXO) */
+
+
+
+typedef struct
+{
+  __IOM uint32_t ISER[8U];               /*!< Offset: 0x000 (R/W)  Interrupt Set Enable Register */
+        uint32_t RESERVED0[24U];
+  __IOM uint32_t ICER[8U];               /*!< Offset: 0x080 (R/W)  Interrupt Clear Enable Register */
+        uint32_t RESERVED1[24U];
+  __IOM uint32_t ISPR[8U];               /*!< Offset: 0x100 (R/W)  Interrupt Set Pending Register */
+        uint32_t RESERVED2[24U];
+  __IOM uint32_t ICPR[8U];               /*!< Offset: 0x180 (R/W)  Interrupt Clear Pending Register */
+        uint32_t RESERVED3[24U];
+  __IOM uint32_t IABR[8U];               /*!< Offset: 0x200 (R/W)  Interrupt Active bit Register */
+        uint32_t RESERVED4[56U];
+  __IOM uint8_t  IP[240U];               /*!< Offset: 0x300 (R/W)  Interrupt Priority Register (8Bit wide) */
+        uint32_t RESERVED5[644U];
+  __OM  uint32_t STIR;                   /*!< Offset: 0xE00 ( /W)  Software Trigger Interrupt Register */
+}  NVIC_Type;
+
