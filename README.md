@@ -89,6 +89,7 @@ CherryUSB Host Stack has the following functions：
 - Support Communication Device Class (CDC)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
+- Support USB VIDEO CLASS (UVC1.0, only supports ehci)
 - Support Remote NDIS (RNDIS)
 - Support Vendor class
 
