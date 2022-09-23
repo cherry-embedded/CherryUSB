@@ -32,7 +32,7 @@ extern int usbh_hport_activate_ep0(struct usbh_hubport *hport);
 extern int usbh_hport_deactivate_ep0(struct usbh_hubport *hport);
 extern int usbh_enumerate(struct usbh_hubport *hport);
 
-static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed" };
+static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed", "wireless-speed", "super-speed", "superplus-speed" };
 
 /****************************************************************************
  * Name: usbh_hub_devno_alloc
