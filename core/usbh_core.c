@@ -572,7 +572,13 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer, wTotalLength);
     USB_LOG_INFO("The device has %d interfaces\r\n", ((struct usb_configuration_descriptor *)ep0_request_buffer)->bNumInterfaces);
-
+    hport->raw_config_desc = usb_malloc(wTotalLength);
+    if (hport->raw_config_desc == NULL) {
+        ret = -ENOMEM;
+        USB_LOG_ERR("No memory to alloc for raw_config_desc\r\n");
+        goto errout;
+    }
+    memcpy(hport->raw_config_desc, ep0_request_buffer, wTotalLength);
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     /* Get Manufacturer string */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
@@ -661,7 +667,10 @@ errout:
     if (ret < 0) {
         usbh_hport_deactivate_ep0(hport);
     }
-
+    if (hport->raw_config_desc) {
+        usb_free(hport->raw_config_desc);
+        hport->raw_config_desc = NULL;
+    }
     return ret;
 }
 
