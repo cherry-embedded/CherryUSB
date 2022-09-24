@@ -30,6 +30,18 @@ struct usbh_endpoint_cfg {
 };
 
 /**
+ * @brief USB Iso Configuration.
+ *
+ * Structure containing the USB Iso configuration.
+ */
+struct usbh_iso_frame_packet {
+    uint8_t *transfer_buffer;
+    uint32_t transfer_buffer_length;
+    uint32_t actual_length;
+    int errorcode;
+};
+
+/**
  * @brief USB Urb Configuration.
  *
  * Structure containing the USB Urb configuration.
@@ -43,8 +55,10 @@ struct usbh_urb {
     uint32_t actual_length;
     uint32_t timeout;
     int errorcode;
+    uint32_t num_of_iso_packets;
     usbh_complete_callback_t complete;
     void *arg;
+    struct usbh_iso_frame_packet iso_packet[];
 };
 
 /**
