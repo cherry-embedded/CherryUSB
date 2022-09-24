@@ -42,6 +42,7 @@ struct usbh_video {
     uint16_t isoout_mps;
     bool is_opened;
     uint16_t bcdVDC;
+    uint8_t num_of_intf_altsettings;
     uint8_t num_of_formats;
     struct usbh_video_format format[3];
 };

@@ -183,7 +183,11 @@ int usbh_video_open(struct usbh_video *video_class, uint8_t altsetting)
     int ret;
 
     if (video_class->is_opened) {
-        return -EEXIST;
+        return -EMFILE;
+    }
+
+    if (altsetting > (video_class->num_of_intf_altsettings - 1)) {
+        return -EINVAL;
     }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -246,6 +250,7 @@ void usbh_video_list_info(struct usbh_video *video_class)
 {
     USB_LOG_INFO("============= Video device information ===================\r\n");
     USB_LOG_INFO("bcdVDC:%04x\r\n", video_class->bcdVDC);
+    USB_LOG_INFO("Num of altsettings:%02x\r\n", video_class->num_of_intf_altsettings);
     USB_LOG_INFO("bNumFormats:%u\r\n", video_class->num_of_formats);
     for (uint8_t i = 0; i < video_class->num_of_formats; i++) {
         USB_LOG_INFO("  FormatIndex:%u\r\n", i + 1);
@@ -288,6 +293,7 @@ static int usbh_video_ctrl_intf_connect(struct usbh_hubport *hport, uint8_t intf
     video_class->hport = hport;
     video_class->ctrl_intf = intf;
     video_class->data_intf = intf + 1;
+    video_class->num_of_intf_altsettings = hport->config.intf[intf + 1].altsetting_num;
 
     hport->config.intf[intf].priv = video_class;
 
