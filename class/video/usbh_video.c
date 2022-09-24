@@ -444,16 +444,19 @@ void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostre
             uint8_t errorBit             : 1U;
             uint8_t endOfHeader          : 1U;
         */
-
-        if (iso_packet[i].actual_length < iso_packet[i].transfer_buffer[0]) {
-            return;
-        }
-        if (iso_packet[i].transfer_buffer[1] & (1 << 6)) {
+        if (iso_packet[i].actual_length == 0) { /* skip */
             stream->bufoffset = 0;
             continue;
         }
-
-        if (iso_packet[i].actual_length == 0) { /* skip */
+        if (iso_packet[i].actual_length < iso_packet[i].transfer_buffer[0]) {
+            stream->bufoffset = 0;
+            continue;
+        }
+        if ((iso_packet[i].transfer_buffer[0] > 12) || (iso_packet[i].transfer_buffer[0] == 0)) {
+            stream->bufoffset = 0;
+            continue;
+        }
+        if (iso_packet[i].transfer_buffer[1] & (1 << 6)) {
             stream->bufoffset = 0;
             continue;
         }
@@ -510,15 +513,19 @@ void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_vid
             uint8_t endOfHeader          : 1U;
         */
 
-        if (iso_packet[i].actual_length < iso_packet[i].transfer_buffer[0]) {
-            return;
-        }
-        if (iso_packet[i].transfer_buffer[1] & (1 << 6)) {
+        if (iso_packet[i].actual_length == 0) { /* skip */
             stream->bufoffset = 0;
             continue;
         }
-
-        if (iso_packet[i].actual_length == 0) { /* skip */
+        if (iso_packet[i].actual_length < iso_packet[i].transfer_buffer[0]) {
+            stream->bufoffset = 0;
+            continue;
+        }
+        if ((iso_packet[i].transfer_buffer[0] > 12) || (iso_packet[i].transfer_buffer[0] == 0)) {
+            stream->bufoffset = 0;
+            continue;
+        }
+        if (iso_packet[i].transfer_buffer[1] & (1 << 6)) {
             stream->bufoffset = 0;
             continue;
         }
