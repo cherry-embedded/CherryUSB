@@ -681,11 +681,11 @@ struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
     usb_slist_for_each(hub_list, &hub_class_head)
     {
         struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
-        for (int port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-            hport = &hub->child[port - 1];
+        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
+            hport = &hub->child[port];
             if (hport->connected) {
                 if (hport->dev_addr == dev_addr) {
-                    return &hub->child[port - 1];
+                    return &hub->child[port];
                 }
             }
         }
@@ -701,7 +701,7 @@ void *usbh_find_class_instance(const char *devname)
     usb_slist_for_each(hub_list, &hub_class_head)
     {
         struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
-        for (int port = 0; port < hub->hub_desc.bNbrPorts; port++) {
+        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
             hport = &hub->child[port];
             if (hport->connected) {
                 for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
@@ -824,7 +824,7 @@ int lsusb(int argc, char **argv)
         {
             struct usbh_hub *hub = usb_slist_entry(i, struct usbh_hub, list);
             for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-                hport = &hub->child[port - 1];
+                hport = &hub->child[port];
                 if (hport->connected) {
                     USB_LOG_RAW("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n",
                                 hub->index,
@@ -850,7 +850,7 @@ int lsusb(int argc, char **argv)
         {
             struct usbh_hub *hub = usb_slist_entry(i, struct usbh_hub, list);
             for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-                hport = &hub->child[port - 1];
+                hport = &hub->child[port];
                 if (hport->connected) {
                     USB_LOG_RAW("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n",
                                 hub->index,
