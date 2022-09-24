@@ -221,13 +221,16 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                     cur_alt_setting = intf_desc->bAlternateSetting;
                     cur_ep_num = intf_desc->bNumEndpoints;
                     cur_ep = 0;
-                    if (cur_iface > CONFIG_USBHOST_MAX_INTERFACES) {
+                    if (cur_iface > (CONFIG_USBHOST_MAX_INTERFACES - 1)) {
+                        USB_LOG_ERR("Interface num overflow\r\n");
                         return -ENOMEM;
                     }
-                    if (cur_alt_setting > CONFIG_USBHOST_MAX_INTF_ALTSETTINGS) {
+                    if (cur_alt_setting > (CONFIG_USBHOST_MAX_INTF_ALTSETTINGS - 1)) {
+                        USB_LOG_ERR("Interface altsetting num overflow\r\n");
                         return -ENOMEM;
                     }
                     if (cur_ep_num > CONFIG_USBHOST_MAX_ENDPOINTS) {
+                        USB_LOG_ERR("Endpoint num overflow\r\n");
                         return -ENOMEM;
                     }
 #if 0
@@ -337,16 +340,16 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
 
 static int usbh_get_default_mps(int speed)
 {
-	switch (speed) {
-	case USB_SPEED_LOW:
-		return 8;
-	case USB_SPEED_FULL:
-	case USB_SPEED_HIGH:
-		return 64;
-	case USB_SPEED_SUPER:
-	default:
-		return 512;
-	}
+    switch (speed) {
+        case USB_SPEED_LOW:
+            return 8;
+        case USB_SPEED_FULL:
+        case USB_SPEED_HIGH:
+            return 64;
+        case USB_SPEED_SUPER:
+        default:
+            return 512;
+    }
 }
 
 #endif
@@ -570,7 +573,11 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
-    parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer, wTotalLength);
+    ret = parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer, wTotalLength);
+    if (ret < 0) {
+        USB_LOG_ERR("Parse config fail\r\n");
+        goto errout;
+    }
     USB_LOG_INFO("The device has %d interfaces\r\n", ((struct usb_configuration_descriptor *)ep0_request_buffer)->bNumInterfaces);
     hport->raw_config_desc = usb_malloc(wTotalLength);
     if (hport->raw_config_desc == NULL) {
