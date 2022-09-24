@@ -49,6 +49,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_cfg_priv {
 #ifdef CONFIG_USBDEV_TEST_MODE
     bool test_mode;
 #endif
+    uint8_t intf_offset;
 } usbd_core_cfg;
 
 usb_slist_t usbd_intf_head = USB_SLIST_OBJECT_INIT(usbd_intf_head);
@@ -926,6 +927,7 @@ void usbd_event_ep_out_complete_handler(uint8_t ep, uint32_t nbytes)
 void usbd_desc_register(const uint8_t *desc)
 {
     usbd_core_cfg.descriptors = desc;
+    usbd_core_cfg.intf_offset = 0;
 }
 
 /* Register MS OS Descriptors version 1 */
@@ -947,11 +949,9 @@ void usbd_bos_desc_register(struct usb_bos_descriptor *desc)
 
 void usbd_add_interface(struct usbd_interface *intf)
 {
-    static uint8_t intf_offset = 0;
-
-    intf->intf_num = intf_offset;
+    intf->intf_num = usbd_core_cfg.intf_offset;
     usb_slist_add_tail(&usbd_intf_head, &intf->list);
-    intf_offset++;
+    usbd_core_cfg.intf_offset++;
 }
 
 void usbd_add_endpoint(struct usbd_endpoint *ep)
@@ -971,4 +971,12 @@ bool usb_device_is_configured(void)
 int usbd_initialize(void)
 {
     return usb_dc_init();
+}
+
+int usbd_deinitialize(void)
+{
+    usbd_core_cfg.intf_offset = 0;
+    usb_slist_init(&usbd_intf_head);
+    usb_dc_deinit();
+    return 0;
 }
