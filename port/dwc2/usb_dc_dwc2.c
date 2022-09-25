@@ -5,7 +5,51 @@
  */
 #include "usbd_core.h"
 #include "usb_dwc2_reg.h"
-#include "cmsis_compiler.h"
+
+// clang-format off
+#if   defined ( __CC_ARM )
+#ifndef   __UNALIGNED_UINT32_WRITE
+  #define __UNALIGNED_UINT32_WRITE(addr, val)    ((*((__packed uint32_t *)(addr))) = (val))
+#endif
+#ifndef   __UNALIGNED_UINT32_READ
+  #define __UNALIGNED_UINT32_READ(addr)          (*((const __packed uint32_t *)(addr)))
+#endif
+#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#ifndef   __UNALIGNED_UINT32_WRITE
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wpacked"
+/*lint -esym(9058, T_UINT32_WRITE)*/ /* disable MISRA 2012 Rule 2.4 for T_UINT32_WRITE */
+  __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
+  #pragma clang diagnostic pop
+  #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))->v) = (val))
+#endif
+#ifndef   __UNALIGNED_UINT32_READ
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wpacked"
+/*lint -esym(9058, T_UINT32_READ)*/ /* disable MISRA 2012 Rule 2.4 for T_UINT32_READ */
+  __PACKED_STRUCT T_UINT32_READ { uint32_t v; };
+  #pragma clang diagnostic pop
+  #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(addr))->v)
+#endif
+#elif defined ( __GNUC__ )
+#ifndef   __UNALIGNED_UINT32_WRITE
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpacked"
+  #pragma GCC diagnostic ignored "-Wattributes"
+  __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
+  #pragma GCC diagnostic pop
+  #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))->v) = (val))
+#endif
+#ifndef   __UNALIGNED_UINT32_READ
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpacked"
+  #pragma GCC diagnostic ignored "-Wattributes"
+  __PACKED_STRUCT T_UINT32_READ { uint32_t v; };
+  #pragma GCC diagnostic pop
+  #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(addr))->v)
+#endif
+#endif
+// clang-format on
 
 #define FS_PORT 0
 #define HS_PORT 1
