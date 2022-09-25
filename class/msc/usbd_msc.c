@@ -40,6 +40,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_cfg_priv {
     USB_MEM_ALIGNX struct CBW cbw;
     USB_MEM_ALIGNX struct CSW csw;
 
+    bool readonly;
     uint8_t sKey; /* Sense key */
     uint8_t ASC;  /* Additional Sense Code */
     uint8_t ASQ;  /* Additional Sense Qualifier */
@@ -62,6 +63,7 @@ static volatile uint32_t current_byte_read;
 static void usbd_msc_reset(void)
 {
     usbd_msc_cfg.stage = MSC_READ_CBW;
+    usbd_msc_cfg.readonly = false;
 }
 
 static int msc_storage_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
@@ -365,6 +367,9 @@ static bool SCSI_modeSense6(uint8_t **data, uint32_t *len)
 
     uint8_t sense6[SCSIRESP_MODEPARAMETERHDR6_SIZEOF] = { 0x03, 0x00, 0x00, 0x00 };
 
+    if (usbd_msc_cfg.readonly) {
+        sense6[2] = 0x80;
+    }
     memcpy(*data, (uint8_t *)sense6, data_len);
     *len = data_len;
     return true;
@@ -950,4 +955,9 @@ struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t i
 #endif
 
     return intf;
+}
+
+void usbd_msc_set_readonly(bool readonly)
+{
+    usbd_msc_cfg.readonly = readonly;
 }
