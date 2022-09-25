@@ -121,7 +121,7 @@ usbd_ep_start_read
 
 - **ep** out 端点地址
 - **data** 接收数据缓冲区
-- **data_len** 接收长度，原则上无限长，推荐 16K 字节以内
+- **data_len** 接收长度，原则上无限长，推荐 16K 字节以内，并且推荐是最大包长的整数倍
 - **return** 返回 0 表示正确，其他表示错误
 
 .. note:: 启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包；2、接收总长度等于 data_len
@@ -218,8 +218,10 @@ usbh_submit_urb
         uint32_t actual_length;
         uint32_t timeout;
         int errorcode;
+        uint32_t num_of_iso_packets;
         usbh_complete_callback_t complete;
         void *arg;
+        struct usbh_iso_frame_packet iso_packet[];
     };
 
 - **pipe** 端点对应的 pipe 句柄
@@ -230,8 +232,10 @@ usbh_submit_urb
 - **actual_length** 实际传输长度
 - **timeout** 传输超时时间，为 0 该函数则为非阻塞，可在中断中使用
 - **errorcode** 错误码
+- **num_of_iso_packets** iso 帧或者微帧个数
 - **complete** 传输完成回调函数
 - **arg** 传输完成时携带的参数
+- **iso_packet** iso 数据包
 
 `errorcode` 可以返回以下值：
 
@@ -259,3 +263,19 @@ usbh_submit_urb
       - 数据溢出
     * - ESHUTDOWN
       - 设备断开，传输中止
+
+其中 `iso_packet` 结构体信息如下：
+
+.. code-block:: C
+
+  struct usbh_iso_frame_packet {
+      uint8_t *transfer_buffer;
+      uint32_t transfer_buffer_length;
+      uint32_t actual_length;
+      int errorcode;
+  };
+
+- **transfer_buffer** 传输的数据缓冲区
+- **transfer_buffer_length** 传输长度
+- **actual_length** 实际传输长度
+- **errorcode** 错误码

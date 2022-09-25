@@ -65,14 +65,12 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 
 .. toctree::
    :maxdepth: 1
-   :caption: 综合例程
+   :caption: 基本例程
 
-   demo/usb2uart
-   demo/mouse_keyboard
-   demo/msc_boot
-   demo/video
-   demo/speaker_mic
-   demo/daplink
+   demo/cdc_acm
+   demo/msc_ram
+   demo/audio_mic_speaker
+   demo/usb_video
 
 .. toctree::
    :maxdepth: 1

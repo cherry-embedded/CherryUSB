@@ -86,6 +86,7 @@ USB Device 移植要点
 .. figure:: img/stm32_9.png
 
 - 编译器推荐使用 **AC6**。勾选 **Microlib**，并实现 **printf** ，方便后续查看 log。
+
 .. figure:: img/stm32_10.png
 .. figure:: img/stm32_11.png
 
@@ -109,6 +110,7 @@ USB Host 移植要点
 .. figure:: img/stm32_16.png
 
 - 编译器推荐使用 **AC6**。勾选 **Microlib**，并实现 **printf** ，方便后续查看 log。
+
 .. figure:: img/stm32_10.png
 .. figure:: img/stm32_11.png
 
