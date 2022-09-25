@@ -56,7 +56,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_cfg_priv {
 static volatile uint8_t thread_op;
 static usb_osal_sem_t msc_sem;
 static usb_osal_thread_t msc_thread;
-static uint32_t current_byte_read;
+static volatile uint32_t current_byte_read;
 #endif
 
 static void usbd_msc_reset(void)
@@ -669,7 +669,7 @@ static void usbd_msc_thread_memory_read_done(void)
     transfer_len = MIN(usbd_msc_cfg.nsectors * usbd_msc_cfg.scsi_blk_size, CONFIG_USBDEV_MSC_BLOCK_SIZE);
 
     usbd_ep_start_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
-                        &usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size], transfer_len);
+                        usbd_msc_cfg.block_buffer, transfer_len);
 
     usbd_msc_cfg.start_sector += (transfer_len / usbd_msc_cfg.scsi_blk_size);
     usbd_msc_cfg.nsectors -= (transfer_len / usbd_msc_cfg.scsi_blk_size);
@@ -730,7 +730,7 @@ static void usbd_msc_thread_memory_write_done()
         usbd_msc_send_csw(CSW_STATUS_CMD_PASSED);
     } else {
         data_len = MIN(usbd_msc_cfg.nsectors * usbd_msc_cfg.scsi_blk_size, CONFIG_USBDEV_MSC_BLOCK_SIZE);
-        usbd_ep_start_read(mass_ep_data[MSD_OUT_EP_IDX].ep_addr, &usbd_msc_cfg.block_buffer[usbd_msc_cfg.scsi_blk_addr % usbd_msc_cfg.scsi_blk_size], data_len);
+        usbd_ep_start_read(mass_ep_data[MSD_OUT_EP_IDX].ep_addr, usbd_msc_cfg.block_buffer, data_len);
     }
 
     usb_osal_leave_critical_section(flags);
@@ -945,7 +945,7 @@ struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t i
     msc_thread = usb_osal_thread_create("usbd_msc", CONFIG_USBDEV_MSC_STACKSIZE, CONFIG_USBDEV_MSC_PRIO, usbd_msc_thread, NULL);
     if (msc_thread == NULL) {
         USB_LOG_ERR("no enough memory to alloc msc thread\r\n");
-        return;
+        return NULL;
     }
 #endif
 
