@@ -90,7 +90,7 @@ static int hid_class_interface_request_handler(struct usb_setup_packet *setup, u
             break;
         case HID_REQUEST_SET_IDLE:
             /* report id, duration */
-            usbh_hid_set_idle(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wIndex));
+            usbh_hid_set_idle(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue));
             break;
         case HID_REQUEST_SET_PROTOCOL:
             /* protocol */
