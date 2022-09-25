@@ -84,13 +84,7 @@ int usbh_hid_set_idle(struct usbh_hid *hid_class, uint8_t report_id, uint8_t dur
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = HID_REQUEST_SET_IDLE;
-    //setup->wValue = report_id;
-    //setup->wIndex = (duration << 8) | hid_class->intf;
-    /* wValue, high-bytes sets the duration, or the max amount of time between reports 
-                  0x00 = hid will send a report only when report data has changed or duration time elapsed
-               low-bytes indicate the report id that the requeset applies to */
     setup->wValue = (duration << 8) | report_id;
-    /* wIndex, num of interface that supports the request */
     setup->wIndex = hid_class->intf;
     setup->wLength = 0;
 
