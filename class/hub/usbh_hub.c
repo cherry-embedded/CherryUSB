@@ -510,8 +510,6 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
                     USB_LOG_INFO("New %s device on Hub %u, Port %u connected\r\n", speed_table[speed], hub->index, port + 1);
 
-                    /* Allocate ep info for control endpoint */
-                    usbh_hport_activate_ep0(child);
                     if (usbh_enumerate(child) < 0) {
                         USB_LOG_ERR("Port %u enumerate fail\r\n", port + 1);
                     }

@@ -336,23 +336,21 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
     }
 }
 
-#ifdef CONFIG_USBHOST_XHCI
-
 static int usbh_get_default_mps(int speed)
 {
     switch (speed) {
-        case USB_SPEED_LOW:
+        case USB_SPEED_LOW: /* For low speed, we use 8 bytes */
             return 8;
-        case USB_SPEED_FULL:
+        case USB_SPEED_FULL: /* For full or high speed, we use 64 bytes */
         case USB_SPEED_HIGH:
             return 64;
-        case USB_SPEED_SUPER:
-        default:
+        case USB_SPEED_SUPER: /* For super speed , we must use 512 bytes */
+        case USB_SPEED_SUPER_PLUS:
             return 512;
+        default:
+            return 64;
     }
 }
-
-#endif
 
 int usbh_hport_activate_ep0(struct usbh_hubport *hport)
 {
@@ -360,11 +358,7 @@ int usbh_hport_activate_ep0(struct usbh_hubport *hport)
 
     ep0_cfg.ep_addr = 0x00;
     ep0_cfg.ep_interval = 0x00;
-#ifdef CONFIG_USBHOST_XHCI
     ep0_cfg.ep_mps = usbh_get_default_mps(hport->speed);
-#else
-    ep0_cfg.ep_mps = 0x08;
-#endif
     ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
     ep0_cfg.hport = hport;
 
@@ -374,9 +368,11 @@ int usbh_hport_activate_ep0(struct usbh_hubport *hport)
 
 int usbh_hport_deactivate_ep0(struct usbh_hubport *hport)
 {
+#ifndef CONFIG_USBHOST_XHCI
     if (hport->dev_addr > 0) {
         usbh_free_devaddr(&g_usbh_bus.devgen, hport->dev_addr);
     }
+#endif
     if (hport->ep0) {
         usbh_pipe_free(hport->ep0);
     }
@@ -411,7 +407,6 @@ int usbh_enumerate(struct usbh_hubport *hport)
 {
     struct usb_interface_descriptor *intf_desc;
     struct usb_setup_packet *setup;
-    uint8_t descsize;
     int dev_addr;
     uint16_t ep_mps;
     int ret;
@@ -419,30 +414,15 @@ int usbh_enumerate(struct usbh_hubport *hport)
 #define USB_REQUEST_BUFFER_SIZE 256
     setup = &hport->setup;
 
-    if ((hport->speed == USB_SPEED_SUPER) || (hport->speed == USB_SPEED_SUPER_PLUS)) {
-        /* For super speed , we must use 512 bytes */
-        ep_mps = 512;
-        descsize = 8;
-    } else if (hport->speed == USB_SPEED_LOW) {
-        /* For low speed, we use 8 bytes */
-        ep_mps = 8;
-        descsize = 8;
-    } else {
-        /* For full or high speed, we use 64 bytes */
-        ep_mps = 64;
-        descsize = 8;
-    }
-
-#ifdef CONFIG_USBHOST_XHCI
-
-    extern int usbh_get_xhci_devaddr(usbh_pipe_t * pipe);
+    /* Configure EP0 with the default maximum packet size */
+    usbh_hport_activate_ep0(hport);
 
     /* Read the first 8 bytes of the device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
     setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
     setup->wIndex = 0;
-    setup->wLength = descsize;
+    setup->wLength = 8;
 
     ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
     if (ret < 0) {
@@ -450,55 +430,31 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
-    parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer, descsize);
+    parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer, 8);
 
     /* Extract the correct max packetsize from the device descriptor */
     ep_mps = ((struct usb_device_descriptor *)ep0_request_buffer)->bMaxPacketSize0;
 
-    /* And reconfigure EP0 with the correct maximum packet size */
+    /* Reconfigure EP0 with the correct maximum packet size */
     usbh_ep0_pipe_reconfigure(hport->ep0, 0, ep_mps, hport->speed);
 
+#ifdef CONFIG_USBHOST_XHCI
+    extern int usbh_get_xhci_devaddr(usbh_pipe_t * pipe);
+
+    /* Assign a function address to the device connected to this port */
     dev_addr = usbh_get_xhci_devaddr(hport->ep0);
     if (dev_addr < 0) {
         USB_LOG_ERR("Failed to allocate devaddr,errorcode:%d\r\n", ret);
         goto errout;
     }
-
-    /* Assign the function address to the port */
-    hport->dev_addr = dev_addr;
-
 #else
-
-    /* Configure EP0 with the initial maximum packet size */
-    usbh_ep0_pipe_reconfigure(hport->ep0, 0, ep_mps, hport->speed);
-
-    /* Read the first 8 bytes of the device descriptor */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
-    setup->wIndex = 0;
-    setup->wLength = descsize;
-
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
-    if (ret < 0) {
-        USB_LOG_ERR("Failed to get device descriptor,errorcode:%d\r\n", ret);
-        goto errout;
-    }
-
-    parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer, descsize);
-
-    /* Extract the correct max packetsize from the device descriptor */
-    ep_mps = ((struct usb_device_descriptor *)ep0_request_buffer)->bMaxPacketSize0;
-
-    /* And reconfigure EP0 with the correct maximum packet size */
-    usbh_ep0_pipe_reconfigure(hport->ep0, 0, ep_mps, hport->speed);
-
     /* Assign a function address to the device connected to this port */
     dev_addr = usbh_allocate_devaddr(&g_usbh_bus.devgen);
     if (dev_addr < 0) {
         USB_LOG_ERR("Failed to allocate devaddr,errorcode:%d\r\n", ret);
         goto errout;
     }
+#endif
 
     /* Set the USB device address */
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
@@ -521,8 +477,6 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     /* And reconfigure EP0 with the correct address */
     usbh_ep0_pipe_reconfigure(hport->ep0, dev_addr, ep_mps, hport->speed);
-
-#endif
 
     /* Read the full device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
