@@ -58,7 +58,7 @@ struct usbh_urb {
     uint32_t num_of_iso_packets;
     usbh_complete_callback_t complete;
     void *arg;
-    struct usbh_iso_frame_packet iso_packet[];
+    struct usbh_iso_frame_packet iso_packet[0];
 };
 
 /**
