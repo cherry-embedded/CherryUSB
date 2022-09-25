@@ -19,7 +19,7 @@
 #define USB_SPEED_HIGH       3 /* USB 2.0 */
 #define USB_SPEED_WIRELESS   4 /* Wireless USB 2.5 */
 #define USB_SPEED_SUPER      5 /* USB 3.0 */
-#define USB_SPEED_SUPER_PLUS 5 /* USB 3.1 */
+#define USB_SPEED_SUPER_PLUS 6 /* USB 3.1 */
 
 /* Maximum number of devices per controller */
 #define USB_MAX_DEVICES (127)
