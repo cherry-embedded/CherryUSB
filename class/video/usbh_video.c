@@ -171,7 +171,7 @@ int usbh_videostreaming_set_cur_commit(struct usbh_video *video_class, uint8_t f
     video_class->commit.bFrameIndex = frameindex;
     video_class->commit.dwMaxVideoFrameSize = dwMaxVideoFrameSize;
     video_class->commit.dwMaxPayloadTransferSize = dwMaxPayloadTransferSize;
-    return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_COMMIT_CONTROL, (uint8_t *)&video_class->probe, 26);
+    return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_COMMIT_CONTROL, (uint8_t *)&video_class->commit, 26);
 }
 
 int usbh_video_open(struct usbh_video *video_class, uint8_t altsetting)
