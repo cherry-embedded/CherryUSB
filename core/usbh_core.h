@@ -163,12 +163,12 @@ struct usbh_hub {
     usb_slist_t hub_event_list;
 };
 
-int usbh_hport_activate_epx(usbh_pipe_t pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
+int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
 
 /* usb host transfer wrapper */
 
 /**
- * @brief Submit an bulk transfer to an endpoint.
+ * @brief Submit an control transfer to an endpoint.
  * This is a blocking method; this method will not return until the transfer has completed.
  * Default timeout is 500ms.
  *

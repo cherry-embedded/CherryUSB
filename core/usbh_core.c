@@ -382,7 +382,7 @@ int usbh_hport_deactivate_ep0(struct usbh_hubport *hport)
     return 0;
 }
 
-int usbh_hport_activate_epx(usbh_pipe_t pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc)
+int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
 
@@ -784,14 +784,20 @@ int lsusb(int argc, char **argv)
         usb_slist_for_each(i, &hub_class_head)
         {
             struct usbh_hub *hub = usb_slist_entry(i, struct usbh_hub, list);
+
+            if (hub->is_roothub) {
+                USB_LOG_RAW("/: Hub %02u, ports=%u, is roothub\r\n", hub->index, hub->hub_desc.bNbrPorts);
+            } else {
+                USB_LOG_RAW("/: Hub %02u, ports=%u, mounted on Hub %02u:Port %u\r\n",
+                            hub->index,
+                            hub->hub_desc.bNbrPorts,
+                            hub->parent->parent->index,
+                            hub->parent->port);
+            }
+
             for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
                 hport = &hub->child[port];
                 if (hport->connected) {
-                    USB_LOG_RAW("/: Hub %02u,VID:PID 0x%04x:0x%04x\r\n",
-                                hub->index,
-                                hport->device_desc.idVendor,
-                                hport->device_desc.idProduct);
-
                     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
                         if (hport->config.intf[i].class_driver->driver_name) {
                             USB_LOG_RAW("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n",
