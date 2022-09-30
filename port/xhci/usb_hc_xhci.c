@@ -60,8 +60,76 @@ static volatile struct xhci_pipe *cur_cmd_pipe = NULL; /* pass current command p
 /***************** Macros (Inline Functions) Definitions *********************/
 
 /************************** Function Prototypes ******************************/
+void usb_hc_dcache_invalidate(void *addr, unsigned long len);
 
 /*****************************************************************************/
+static void xhci_dump_slot_ctx(const struct xhci_slotctx *const sc)
+{
+    USB_LOG_DBG("ctx[0]=0x%x\n", sc->ctx[0]);
+    USB_LOG_DBG(" route=0x%x\n", 
+                 XHCI_SLOTCTX_0_ROUTE_GET(sc->ctx[0]));
+    USB_LOG_DBG("ctx[1]=0x%x\n", sc->ctx[1]);
+    USB_LOG_DBG("ctx[2]=0x%x\n", sc->ctx[2]);
+    USB_LOG_DBG(" tt-port=0x%x, tt-hub-slot=0x%x\n", 
+                 XHCI_SLOTCTX_2_HUB_PORT_GET(sc->ctx[2]),
+                 XHCI_SLOTCTX_2_HUB_SLOT_GET(sc->ctx[2]));
+    USB_LOG_DBG("ctx[3]=0x%x\n", sc->ctx[3]);
+}
+
+static void xhci_dump_ep_ctx(const struct xhci_epctx *const ec)
+{
+    USB_LOG_DBG("ctx[0]=0x%x\n", ec->ctx[0]);
+    USB_LOG_DBG("ctx[1]=0x%x\n", ec->ctx[1]);
+    USB_LOG_DBG(" ep_type=%d, mps=%d\n", 
+                XHCI_EPCTX_1_EPTYPE_GET(ec->ctx[1]),
+                XHCI_EPCTX_1_MPS_GET(ec->ctx[1]));
+    USB_LOG_DBG("deq_low=0x%x\n", ec->deq_low);
+    USB_LOG_DBG("deq_high=0x%x\n", ec->deq_high);
+    USB_LOG_DBG("length=0x%x\n", ec->length);
+}
+
+static void xhci_dump_input_ctx(struct xhci_s *xhci, const struct xhci_inctx *const inctx)
+{
+    USB_LOG_DBG("===input ctx====\n");
+    USB_LOG_DBG("add=0x%x\n", inctx->add);
+    USB_LOG_DBG("del=0x%x\n", inctx->del);
+    if (inctx->add & (0x1)) {
+        USB_LOG_DBG("===slot ctx====\n");
+        const struct xhci_slotctx *const sc = (void*)&inctx[1 << xhci->context64];
+        xhci_dump_slot_ctx(sc);
+    }
+
+    for (int epid = 1; epid <= 31; epid++){
+        if (inctx->add & (0x1 << (epid)))
+        {
+            USB_LOG_DBG("===ep-%d ctx====\n", epid);
+            const struct xhci_epctx *const ec = (void*)&inctx[(epid+1) << xhci->context64];
+            xhci_dump_ep_ctx(ec);
+        }
+    }
+    USB_LOG_DBG("\n");
+}
+
+static void xhci_dump_pipe(const struct xhci_pipe *const ppipe)
+{
+    USB_LOG_DBG("pipe@%p\n", ppipe);
+    if (NULL == ppipe)
+        return;
+
+    USB_LOG_DBG("epaddr=%d\n", ppipe->epaddr);
+    USB_LOG_DBG("speed=%d\n", ppipe->speed);
+    USB_LOG_DBG("interval=%d\n", ppipe->interval);
+    USB_LOG_DBG("maxpacket=%d\n", ppipe->maxpacket);
+    USB_LOG_DBG("eptype=%d\n", ppipe->eptype);
+    USB_LOG_DBG("slotid=%d\n", ppipe->slotid);
+    USB_LOG_DBG("epid=%d\n", ppipe->epid);
+    USB_LOG_DBG("timeout=%d\n", ppipe->timeout);
+    USB_LOG_DBG("waiter=%d\n", ppipe->waiter);
+    USB_LOG_DBG("waitsem=%p\n", ppipe->waitsem);
+    USB_LOG_DBG("hport=%p\n", ppipe->hport);
+    USB_LOG_DBG("urb=%p\n", ppipe->urb);
+}
+
 /* Wait until bit = value or timeout */
 static int wait_bit(unsigned long reg_off, uint32_t mask, uint32_t value, uint32_t timeout)
 {
@@ -258,7 +326,6 @@ static int xhci_cmd_submit(struct xhci_s *xhci, struct xhci_inctx *inctx,
     if (inctx) {
         struct xhci_slotctx *slot = (void*)&inctx[1 << xhci->context64];
         uint32_t port = XHCI_SLOTCTX_1_ROOT_PORT_GET(slot->ctx[1]) - 1;
-        USB_LOG_DBG("port=%d\n", port);
         uint32_t portsc = xhci_readl_port(xhci, port, XHCI_REG_OP_PORTS_PORTSC);
         if (!(portsc & XHCI_REG_OP_PORTS_PORTSC_CCS)) {
             /* Device no longer connected?! */
@@ -314,10 +381,13 @@ static int xhci_cmd_address_device(struct xhci_s *xhci, struct xhci_pipe *pipe, 
     return xhci_cmd_submit(xhci, inctx, pipe, TRB_TYPE_SET(CR_ADDRESS_DEVICE) | TRB_CR_SLOTID_SET(pipe->slotid));
 }
 
-static int xhci_cmd_configure_endpoint(struct xhci_s *xhci, struct xhci_pipe *pipe, struct xhci_inctx *inctx)
+static int xhci_cmd_configure_endpoint(struct xhci_s *xhci, struct xhci_pipe *pipe, 
+                                       struct xhci_inctx *inctx, bool defconfig)
 {
     USB_LOG_DBG("%s: slotid %d\n", __func__, pipe->slotid);
-    return xhci_cmd_submit(xhci, inctx, pipe, TRB_TYPE_SET(CR_CONFIGURE_ENDPOINT) | TRB_CR_SLOTID_SET(pipe->slotid));
+    return xhci_cmd_submit(xhci, inctx, pipe, TRB_TYPE_SET(CR_CONFIGURE_ENDPOINT) | 
+                                              TRB_CR_SLOTID_SET(pipe->slotid) |
+                                              (defconfig ? TRB_CR_DC : 0));
 }
 
 static int xhci_cmd_evaluate_context(struct xhci_s *xhci, struct xhci_pipe *pipe, struct xhci_inctx *inctx)
@@ -325,6 +395,13 @@ static int xhci_cmd_evaluate_context(struct xhci_s *xhci, struct xhci_pipe *pipe
     USB_LOG_DBG("%s: slotid %d\n", __func__, pipe->slotid);
     /* bit[15:10] TRB type, bit[31:24] Slot id */
     return xhci_cmd_submit(xhci, inctx, pipe, TRB_TYPE_SET(CR_EVALUATE_CONTEXT) | TRB_CR_SLOTID_SET(pipe->slotid));
+}
+static int xhci_cmd_reset_endpoint(struct xhci_s *xhci, struct xhci_pipe *pipe)
+{
+    USB_LOG_DBG("%s: slotid %d, epid %d\n", __func__, pipe->slotid, pipe->epid);
+    /* bit[15:10] TRB type, bit[31:24] Slot id */
+    return xhci_cmd_submit(xhci, NULL, pipe, TRB_TYPE_SET(CR_RESET_ENDPOINT) | TRB_CR_SLOTID_SET(pipe->slotid) | 
+                                              TRB_CR_EPID_SET(pipe->epid));
 }
 
 static int xhci_controller_configure(struct xhci_s *xhci)
@@ -482,6 +559,7 @@ static void xhci_check_xcap(struct xhci_s *xhci)
             addr += off << 2; /* addr of next ext-cap */
         } while (off > 0);
     }    
+        
 }
 
 static int xhci_controller_setup(struct xhci_s *xhci, unsigned long baseaddr)
@@ -516,7 +594,7 @@ static int xhci_controller_setup(struct xhci_s *xhci, unsigned long baseaddr)
     return 0;
 }
 
-static struct xhci_inctx *xhci_alloc_inctx(struct xhci_s *xhci, struct usbh_hubport *hport, int maxepid)
+static struct xhci_inctx *xhci_alloc_inctx_config_ep(struct xhci_s *xhci, struct usbh_hubport *hport, int maxepid)
 {
     USB_ASSERT(xhci && hport);
 
@@ -567,6 +645,43 @@ static struct xhci_inctx *xhci_alloc_inctx(struct xhci_s *xhci, struct usbh_hubp
     return in;
 }
 
+/* allocate input context to update max packet size of endpoint-0  */
+static struct xhci_inctx *xhci_alloc_inctx_set_ep_mps(struct xhci_s *xhci, uint32_t slotid, uint16_t ep_mps)
+{
+    USB_ASSERT(xhci);
+
+    int size = (sizeof(struct xhci_inctx) * XHCI_INCTX_ENTRY_NUM) << xhci->context64;
+    struct xhci_inctx *in = usb_align(XHCI_INCTX_ALIGMENT << xhci->context64, size);
+    if (!in) {
+        USB_LOG_ERR("allocate memory failed !!!\n");
+        return NULL;
+    }
+    memset(in, 0, size);
+
+    /* copy 32 entries after inctx controller field from devctx to inctx */
+#ifdef XHCI_AARCH64
+    struct xhci_slotctx *devctx = (struct xhci_slotctx *)(((uint64_t)xhci->devs[slotid].ptr_high << 32U) | 
+                                                            ((uint64_t)xhci->devs[slotid].ptr_low));
+#else
+    struct xhci_slotctx *devctx = (struct xhci_slotctx *)(unsigned long)xhci->devs[slotid].ptr_low;
+#endif
+    struct xhci_slotctx *input_devctx = (void*)&in[1 << xhci->context64]; 
+
+    memcpy(input_devctx, devctx, XHCI_SLOTCTX_ENTRY_NUM * sizeof(struct xhci_slotctx));
+
+    in->add = (1 << 1); /* update ep0 context */
+    in->del = (1 << 1);
+
+    /*
+        input ctrl context
+        slot
+        ep-0 context, offset = 2 * xhci->context64, e.g, for 64 bit (0x40), offset = 0x80 
+    */
+    struct xhci_epctx *ep = (void*)&in[2 << xhci->context64]; /* ep context */
+    ep->ctx[1] |= XHCI_EPCTX_1_MPS_SET(ep_mps); /* bit[31:16] update maxpacket size */
+
+    return in;
+}
 
 // Submit a USB "setup" message request to the pipe's ring
 static void xhci_xfer_setup(struct xhci_s *xhci, struct xhci_pipe *pipe, 
@@ -679,6 +794,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                 }
                 break;
             case HUB_REQUEST_GET_DESCRIPTOR:
+                USB_LOG_ERR("HUB_REQUEST_GET_DESCRIPTOR not implmented \n");
                 break;
             case HUB_REQUEST_GET_STATUS:
                 memset(buf, 0, 4);
@@ -819,23 +935,18 @@ int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps
 
     if (ep_mps != oldmaxpacket) {
         /* maxpacket has changed on control endpoint - update controller. */
-        struct xhci_inctx *in = xhci_alloc_inctx(xhci, ppipe->hport, 1); /* allocate input context */
+        USB_LOG_DBG("update ep0 mps from %d to %d\r\n", oldmaxpacket, ep_mps);
+        struct xhci_inctx *in = xhci_alloc_inctx_set_ep_mps(xhci, ppipe->slotid, ep_mps); /* allocate input context */
         if (!in)
             return -1;    
     
-        in->add = (1 << 1); /* update ep0 context */
-
-        /*
-            input ctrl context
-            slot
-            ep-0 context, offset = 2 * xhci->context64, e.g, for 64 bit (0x40), offset = 0x80 
-        */
-        struct xhci_epctx *ep = (void*)&in[2 << xhci->context64]; /* ep context */
-        ep->ctx[1] |= XHCI_EPCTX_1_MPS_SET(ppipe->maxpacket); /* bit[31:16] update maxpacket size */
+        usb_hc_dcache_invalidate(in, sizeof(struct xhci_inctx) * XHCI_INCTX_ENTRY_NUM);
+        xhci_dump_input_ctx(xhci, in);
+        
         int cc = xhci_cmd_evaluate_context(xhci, ppipe, in);
         if (cc != CC_SUCCESS) {
-            USB_LOG_ERR("%s: reconf ctl endpoint: failed (cc %d)\n",
-                        __func__, cc);
+            USB_LOG_ERR("%s: reconf ctl endpoint: failed (cc %d) (mps %d => %d)\n",
+                        __func__, cc, oldmaxpacket, ep_mps);
             ret = -1;
         } else {
             ppipe->maxpacket = ep_mps; /* mps update success */ 
@@ -893,14 +1004,14 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     ppipe->waiter = false;
     ppipe->urb = NULL;
 
-    USB_LOG_DBG("%s epid = %d, eptype = %d, mps = %d, speed = %d, urb = %p\n", 
-                __func__, ppipe->epid, ppipe->eptype, ppipe->maxpacket, 
+    USB_LOG_DBG("%s epid = %d, epaddr = 0x%x eptype = %d, mps = %d, speed = %d, urb = %p\n", 
+                __func__, ppipe->epid, ppipe->epaddr, ppipe->eptype, ppipe->maxpacket, 
                 ppipe->speed, ppipe->urb);
 
     ppipe->reqs.cs = 1; /* cycle state = 1 */     
 
     /* Allocate input context and initialize endpoint info. */
-    struct xhci_inctx *in = xhci_alloc_inctx(xhci, hport, epid);
+    struct xhci_inctx *in = xhci_alloc_inctx_config_ep(xhci, hport, epid);
     if (!in){
         ret = -1;
         goto fail;
@@ -908,7 +1019,7 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
 
     /* add slot context and ep context */
     in->add = 0x01 /* Slot Context */ | (1 << epid); /* EP Context */
-    struct xhci_epctx *ep = (void*)&in[(ppipe->epid+1) << xhci->context64];    
+    struct xhci_epctx *ep = (void*)&in[(epid + 1) << xhci->context64];    
     if (eptype == USB_ENDPOINT_TYPE_INTERRUPT)
         ep->ctx[0] = XHCI_EPCTX_0_INTERVAL_SET(usbh_get_period(ppipe->speed, ppipe->interval) + 3); /* bit[23:16] for interrupt ep, set interval to control interrupt period */
         
@@ -928,6 +1039,9 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
         ep->ctx[1] |= 1 << 5; /* ep_type 4 ~ 7 */
         
     ep->ctx[1]   |= XHCI_EPCTX_1_MPS_SET(ppipe->maxpacket); /* bit[31:16] max packet size */
+    if (eptype == USB_ENDPOINT_TYPE_INTERRUPT)
+        ep->ctx[1] |= XHCI_EPCTX_1_CERR_SET(3);
+
     ep->deq_low  = (uint32_t)((unsigned long)&ppipe->reqs.ring[0]); /* bit[63:4] tr dequeue pointer */
     ep->deq_low  |= 1;         /* bit[0] dequeue cycle state */
 #ifdef XHCI_AARCH64
@@ -935,7 +1049,14 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
 #else
     ep->deq_high = 0U;
 #endif
-    ep->length   = XHCI_EPCTX_AVE_TRB_LEN_SET(ppipe->maxpacket); /* bit[15:0] average trb length */
+
+    if (eptype == USB_ENDPOINT_TYPE_BULK){
+        ep->length   = XHCI_EPCTX_AVE_TRB_LEN_SET(256U); /* bit[15:0] average trb length */
+
+    } else if (eptype == USB_ENDPOINT_TYPE_INTERRUPT){
+        ep->length   = XHCI_EPCTX_AVE_TRB_LEN_SET(16U) | /* bit[15:0] average trb length */
+                       XHCI_EPCTX_MAX_ESIT_SET(ppipe->maxpacket); /* bit[31:16] max ESIT payload */
+    }
 
     if (ppipe->epid == 1) { /* when allocate ep-0, allocate device first */
         struct usbh_hub *hubdev = hport->parent;
@@ -989,6 +1110,8 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
         xhci->devs[slotid].ptr_high = 0;
 #endif  
 
+        usb_hc_dcache_invalidate(in, sizeof(struct xhci_inctx) * XHCI_INCTX_ENTRY_NUM);
+
         /* Send set_address command. */
         int cc = xhci_cmd_address_device(xhci, ppipe, in);
         if (cc != CC_SUCCESS) {
@@ -1011,12 +1134,39 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
         struct xhci_pipe *defpipe = (struct xhci_pipe *)hport->ep0;
         ppipe->slotid = defpipe->slotid;
 
+        /* reset if endpoint is not running */
+#ifdef XHCI_AARCH64
+        struct xhci_slotctx *devctx = (struct xhci_slotctx *)(((uint64_t)xhci->devs[ppipe->slotid].ptr_high << 32U) | 
+                                                            ((uint64_t)xhci->devs[ppipe->slotid].ptr_low));
+#else
+        struct xhci_slotctx *devctx = (struct xhci_slotctx *)(unsigned long)xhci->devs[ppipe->slotid].ptr_low;
+#endif
+        struct xhci_epctx *epctx = (void*)&devctx[epid << xhci->context64]; /* ep0 context */
+        uint32_t epstate = XHCI_EPCTX_0_EP_STATE_GET(epctx->ctx[0]);
+        int cc;
+
+        
+		/* Reset endpoint in case it is not running */
+        if (epstate > 1){
+            cc = xhci_cmd_reset_endpoint(xhci, ppipe);
+            if (cc != CC_SUCCESS) {
+                USB_LOG_ERR("%s: reset endpoint: failed (cc %d)\n", __func__, cc);
+                ret = -1;
+                goto fail;
+            } 
+        }
+ 
+        usb_hc_dcache_invalidate(in, sizeof(struct xhci_inctx) * XHCI_INCTX_ENTRY_NUM);
+        xhci_dump_input_ctx(xhci, in);
+
         /* Send configure command. */
-        int cc = xhci_cmd_configure_endpoint(xhci, defpipe, in);
+        cc = xhci_cmd_configure_endpoint(xhci, ppipe, in, false);
         if (cc != CC_SUCCESS) {
-            USB_LOG_ERR("%s: configure endpoint: failed (cc %d)\n", __func__, cc);
-            goto fail;
+            epctx = (void*)&devctx[epid << xhci->context64]; /* ep0 context */
+            epstate = XHCI_EPCTX_0_EP_STATE_GET(epctx->ctx[0]);
+            USB_LOG_ERR("%s: configure endpoint: failed (cc %d, epstate %d)\n", __func__, cc, epstate);
             ret = -1;
+            goto fail;
         }                
     }
 
@@ -1060,6 +1210,9 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     flags = usb_osal_enter_critical_section();
 
+    urb->errorcode = -EBUSY;
+    urb->actual_length = 0U;
+
     ppipe->waiter = false;
     ppipe->urb = urb;
     ppipe->timeout = urb->timeout;
@@ -1077,6 +1230,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
                 goto skip_req;
             }
 
+            USB_LOG_DBG("%s request-%d\n", __func__, setup->bRequest);
             /* send setup in/out for command */
             xhci_xfer_setup(xhci, ppipe, setup->bmRequestType & USB_EP_DIR_IN, (void*)setup, 
                             urb->transfer_buffer, urb->transfer_buffer_length);
@@ -1184,7 +1338,7 @@ void USBH_IRQHandler(void)
                                 if cc is Short Packet, value is the diff between expected trans size and actual recv bytes
                                 if cc is other error, value is the diff between expected trans size and actual recv bytes */
                     cur_urb->actual_length += cur_urb->transfer_buffer_length - 
-                                            (evt->status) & 0xffffff; /* bit [23:0] */                    
+                                            TRB_TR_TRANS_LEN_SET(evt->status); /* bit [23:0] */                    
                 }
             }            
         } else {
@@ -1216,5 +1370,6 @@ void USBH_IRQHandler(void)
         } 
     }
 
+    USB_LOG_DBG("%s exit\n", __func__);
     return;
 }
