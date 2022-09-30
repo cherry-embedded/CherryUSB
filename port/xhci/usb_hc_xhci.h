@@ -43,8 +43,11 @@ struct xhci_slotctx {
 #define XHCI_SLOTCTX_1_ROOT_PORT_GET(val)   XHCI32_GET_BITS(val, 23, 16)
 #define XHCI_SLOTCTX_1_ROOT_PORT_SET(port)  XHCI32_SET_BITS(port, 23, 16)
 #define XHCI_SLOTCTX_0_ROUTE_SET(route)     XHCI32_SET_BITS(route, 19, 0)
+#define XHCI_SLOTCTX_0_ROUTE_GET(route)     XHCI32_GET_BITS(route, 19, 0)
 #define XHCI_SLOTCTX_2_HUB_SLOT_SET(slot)   XHCI32_SET_BITS(slot, 7, 0)
+#define XHCI_SLOTCTX_2_HUB_SLOT_GET(slot)   XHCI32_GET_BITS(slot, 7, 0)
 #define XHCI_SLOTCTX_2_HUB_PORT_SET(port)   XHCI32_SET_BITS(port, 15, 8)
+#define XHCI_SLOTCTX_2_HUB_PORT_GET(port)   XHCI32_GET_BITS(port, 15, 8)
 #define XHCI_SLOTCTX_3_SLOT_STATE_GET(ctx)  XHCI32_GET_BITS(ctx, 31, 27)
     uint32_t reserved_01[4];
 #define XHCI_SLOTCTX_ENTRY_NUM     32U
@@ -60,12 +63,17 @@ enum xhci_slot_state {
 /* endpoint context */
 struct xhci_epctx {
     uint32_t ctx[2];
+#define XHCI_EPCTX_0_EP_STATE_GET(ctx)          XHCI32_GET_BITS(ctx, 2, 0)
 #define XHCI_EPCTX_0_INTERVAL_SET(interval)     XHCI32_SET_BITS(interval, 23, 16)
 #define XHCI_EPCTX_1_MPS_SET(mps)               XHCI32_SET_BITS(mps, 31, 16)    
+#define XHCI_EPCTX_1_MPS_GET(ctx)               XHCI32_GET_BITS(ctx, 31, 16)
+#define XHCI_EPCTX_1_EPTYPE_GET(ctx)            XHCI32_GET_BITS(ctx, 5, 3)
+#define XHCI_EPCTX_1_CERR_SET(cerr)             XHCI32_SET_BITS(cerr, 2, 1)      
     uint32_t deq_low;
     uint32_t deq_high;
     uint32_t length;
 #define XHCI_EPCTX_AVE_TRB_LEN_SET(len)         XHCI32_SET_BITS(len, 15, 0)  
+#define XHCI_EPCTX_MAX_ESIT_SET(esit)           XHCI32_SET_BITS(esit, 31, 16)
     uint32_t reserved_01[3];
 } __PACKED;
 

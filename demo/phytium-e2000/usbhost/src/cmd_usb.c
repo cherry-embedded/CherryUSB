@@ -49,6 +49,10 @@ static int USBCmdEntry(int argc, char *argv[])
     {
         ret = FFreeRTOSRecvInput();
     }
+    else if (!strcmp(argv[1], "lsusb"))
+    {
+        ret = FFreeRTOSListUsb(argc - 1, &argv[1]);
+    }
 
     return ret;
 }
