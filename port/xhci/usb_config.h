@@ -70,6 +70,7 @@
 #endif
 
 // #define CONFIG_USBHOST_GET_STRING_DESC
+#define CONFIG_USBHOST_GET_DEVICE_DESC
 
 // #define CONFIG_USBDEV_MSC_THREAD
 #define CONFIG_INPUT_MOUSE_WHEEL
@@ -95,7 +96,7 @@
 /* ================ USB HOST Stack Configuration ================== */
 
 #define CONFIG_USBHOST_MAX_RHPORTS          1
-#define CONFIG_USBHOST_MAX_EXTHUBS          1
+#define CONFIG_USBHOST_MAX_EXTHUBS          2
 #define CONFIG_USBHOST_MAX_EHPORTS          4
 #define CONFIG_USBHOST_MAX_INTERFACES       6
 #define CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 1

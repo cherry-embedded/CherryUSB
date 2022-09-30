@@ -351,6 +351,8 @@ enum
 #define TRB_TR_FRAMEID_SHIFT 20
 #define TRB_TR_FRAMEID_MASK 0x7ff
 #define TRB_TR_SIA          (1<<31)
+#define TRB_TR_TRANS_LEN_SET(len)  XHCI32_SET_BITS(len, 23, 0)    
+#define TRB_TR_TRANS_LEN_MASK      XHCI_GENMASK(23, 0)
 
 #define TRB_TR_DIR           (1<<16)
 #define TRB_TR_TYPE_SET(t)   XHCI32_SET_BITS(t, 17, 16)
@@ -369,6 +371,8 @@ enum
 
 #define TRB_CR_EPID_SHIFT   16
 #define TRB_CR_EPID_MASK    0x1f
+#define TRB_CR_EPID_SET(id)      XHCI32_SET_BITS(id, 20, 16)
+#define TRB_CR_EPID_GET(field)   XHCI32_GET_BITS(field, 20, 16)
 
 #define TRB_CR_BSR          (1<<9)
 #define TRB_CR_DC           (1<<9)
