@@ -12,50 +12,28 @@ static uint32_t g_devinuse = 0;
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[128];
 
-/****************************************************************************
- * Name: usbh_hid_devno_alloc
- *
- * Description:
- *   Allocate a unique /dev/input[n] minor number in the range 0-31.
- *
- ****************************************************************************/
-
 static int usbh_hid_devno_alloc(struct usbh_hid *hid_class)
 {
-    size_t flags;
     int devno;
 
-    flags = usb_osal_enter_critical_section();
     for (devno = 0; devno < 32; devno++) {
         uint32_t bitno = 1 << devno;
         if ((g_devinuse & bitno) == 0) {
             g_devinuse |= bitno;
             hid_class->minor = devno;
-            usb_osal_leave_critical_section(flags);
             return 0;
         }
     }
 
-    usb_osal_leave_critical_section(flags);
     return -EMFILE;
 }
-
-/****************************************************************************
- * Name: usbh_hid_devno_free
- *
- * Description:
- *   Free a /dev/input[n] minor number so that it can be used.
- *
- ****************************************************************************/
 
 static void usbh_hid_devno_free(struct usbh_hid *hid_class)
 {
     int devno = hid_class->minor;
 
     if (devno >= 0 && devno < 32) {
-        size_t flags = usb_osal_enter_critical_section();
         g_devinuse &= ~(1 << devno);
-        usb_osal_leave_critical_section(flags);
     }
 }
 
@@ -118,9 +96,9 @@ int usbh_hid_set_protocol(struct usbh_hid *hid_class, uint8_t protocol)
     setup->bRequest = HID_REQUEST_SET_PROTOCOL;
     setup->wValue = protocol;
     setup->wIndex = 0;
-    setup->wLength = 0;   
+    setup->wLength = 0;
 
-    return usbh_control_transfer(hid_class->hport->ep0, setup, NULL);     
+    return usbh_control_transfer(hid_class->hport->ep0, setup, NULL);
 }
 
 int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)

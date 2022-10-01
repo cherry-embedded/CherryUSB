@@ -34,14 +34,6 @@ extern int usbh_enumerate(struct usbh_hubport *hport);
 
 static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed", "wireless-speed", "super-speed", "superplus-speed" };
 
-/****************************************************************************
- * Name: usbh_hub_devno_alloc
- *
- * Description:
- *   Allocate a unique /dev/hub[n] minor number in the range 2-31.
- *
- ****************************************************************************/
-
 static int usbh_hub_devno_alloc(void)
 {
     int devno;
@@ -56,14 +48,6 @@ static int usbh_hub_devno_alloc(void)
 
     return -EMFILE;
 }
-
-/****************************************************************************
- * Name: usbh_hub_devno_free
- *
- * Description:
- *   Free a /dev/hub[n] minor number so that it can be used.
- *
- ****************************************************************************/
 
 static void usbh_hub_devno_free(struct usbh_hub *hub)
 {
