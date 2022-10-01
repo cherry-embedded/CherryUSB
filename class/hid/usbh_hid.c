@@ -127,7 +127,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     ret = usbh_hid_set_idle(hid_class, 0, 0);
     if (ret < 0) {
-        return ret;
+        USB_LOG_WRN("Do not support set idle\r\n");
     }
 
     ret = usbh_hid_get_report_descriptor(hid_class, hid_class->report_desc);
