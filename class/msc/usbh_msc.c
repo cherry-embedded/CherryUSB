@@ -13,50 +13,28 @@ static uint32_t g_devinuse = 0;
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[32];
 
-/****************************************************************************
- * Name: usbh_msc_devno_alloc
- *
- * Description:
- *   Allocate a unique /dev/sd[n] minor number in the range 0-31.
- *
- ****************************************************************************/
-
 static int usbh_msc_devno_alloc(struct usbh_msc *msc_class)
 {
-    size_t flags;
     int devno;
 
-    flags = usb_osal_enter_critical_section();
     for (devno = 0; devno < 26; devno++) {
         uint32_t bitno = 1 << devno;
         if ((g_devinuse & bitno) == 0) {
             g_devinuse |= bitno;
             msc_class->sdchar = 'a' + devno;
-            usb_osal_leave_critical_section(flags);
             return 0;
         }
     }
 
-    usb_osal_leave_critical_section(flags);
     return -EMFILE;
 }
-
-/****************************************************************************
- * Name: usbh_msc_devno_free
- *
- * Description:
- *   Free a /dev/sd[n] minor number so that it can be used.
- *
- ****************************************************************************/
 
 static void usbh_msc_devno_free(struct usbh_msc *msc_class)
 {
     int devno = msc_class->sdchar - 'a';
 
     if (devno >= 0 && devno < 26) {
-        size_t flags = usb_osal_enter_critical_section();
         g_devinuse &= ~(1 << devno);
-        usb_osal_leave_critical_section(flags);
     }
 }
 
