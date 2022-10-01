@@ -60,7 +60,6 @@ CherryUSB Device Stack has the following functions：
 - Support USB AUDIO CLASS (UAC1.0、UAC2.0)
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
-- Support Test and Measurement CLASS (TMC)
 - Support Remote NDIS (RNDIS)
 - Support WINUSB1.0、WINUSB2.0(with BOS)
 - Support Vendor class
@@ -104,6 +103,7 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
 |usbh_cdc_acm.c |  1004          | 7                               | 4                           | sizeof(struct usbh_cdc_acm) * x |
 |usbh_msc.c     |  1776          | 32                              | 4                           | sizeof(struct usbh_msc) * x     |
 |usbh_hid.c     |  822           | 128                             | 4                           | sizeof(struct usbh_hid) * x     |
+|usbh_video.c   |  3587          | 128                             | 4100(yuv2rgb)               | sizeof(struct usbh_video) * x   |
 
 Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affected by the following macros：
 
@@ -145,7 +145,7 @@ Note: After version 0.4.1, the dcd drivers have been refactored and some reposit
 |WCH    |  CH57x | ch58x |[ch57x_repo](https://github.com/CherryUSB/cherryusb_ch57x)|v0.4.1 |
 |Nuvoton    |  Nuc442 | nuvoton |[nuc442_repo](https://github.com/CherryUSB/cherryusb_nuc442)|v0.4.1 |
 |Geehy    |  APM32E10x APM32F0xx| fsdev |[apm32_repo](https://github.com/CherryUSB/cherryusb_apm32)|v0.4.1 |
-|Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|v0.4.1 |
+|Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|latest |
 |Espressif    |  esp32 | dwc2 |[esp32_repo](https://github.com/CherryUSB/cherryusb_esp32)|v0.4.1 |
 |Mindmotion    |  MM32L3xx | mm32 |[mm32_repo](https://github.com/CherryUSB/cherryusb_mm32)|v0.4.1 |
 
