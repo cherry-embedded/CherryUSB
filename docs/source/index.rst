@@ -16,6 +16,14 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 - 主从收发接口的使用等价于 uart tx/rx dma 的使用，长度也没有限制
 - 能够达到 USB 硬件理论带宽
 
+从机协议栈整体执行流程：
+
+.. figure:: usbdev.svg
+
+主机协议栈整体执行流程：
+
+.. figure:: usbhost.svg
+
 其他相关链接：
 
 - **从机协议栈视频教程** https://www.bilibili.com/video/BV1Ef4y1t73d
