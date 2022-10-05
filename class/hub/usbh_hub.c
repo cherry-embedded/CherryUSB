@@ -49,10 +49,8 @@ static int usbh_hub_devno_alloc(void)
     return -EMFILE;
 }
 
-static void usbh_hub_devno_free(struct usbh_hub *hub)
+static void usbh_hub_devno_free(uint8_t devno)
 {
-    int devno = hub->index;
-
     if (devno >= EXTHUB_FIRST_INDEX && devno < 32) {
         g_devinuse &= ~(1 << devno);
     }
@@ -239,7 +237,6 @@ static void hub_int_complete_callback(void *arg, int nbytes)
 
     if (nbytes > 0) {
         usbh_hub_thread_wakeup(hub);
-        usbh_submit_urb(&hub->intin_urb);
     }
 }
 
@@ -251,7 +248,9 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     int index;
 
     index = usbh_hub_devno_alloc();
-    if (index > (CONFIG_USBHOST_MAX_EXTHUBS + EXTHUB_FIRST_INDEX)) {
+    if (index > (CONFIG_USBHOST_MAX_EXTHUBS + EXTHUB_FIRST_INDEX - 1)) {
+        USB_LOG_ERR("No memory to alloc hub class\r\n");
+        usbh_hub_devno_free(index);
         return -ENOMEM;
     }
 
@@ -316,7 +315,7 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_hub *hub = (struct usbh_hub *)hport->config.intf[intf].priv;
 
     if (hub) {
-        usbh_hub_devno_free(hub);
+        usbh_hub_devno_free(hub->index);
 
         if (hub->intin) {
             usbh_pipe_free(hub->intin);
@@ -516,6 +515,11 @@ static void usbh_hub_events(struct usbh_hub *hub)
                 child->config.config_desc.bNumInterfaces = 0;
             }
         }
+    }
+
+    /* Start next hub int transfer */
+    if (!hub->is_roothub && hub->connected) {
+        usbh_submit_urb(&hub->intin_urb);
     }
 }
 
