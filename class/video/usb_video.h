@@ -696,8 +696,8 @@
 #define VIDEO_SET_CUR_EU_ERROR_RESILIENCY_CONTROL    0x0194U
 #endif
 
-/*! @brief The payload header structure for MJPEG payload format. */
-struct video_mjpeg_payload_header {
+/*! @brief The payload header structure. */
+struct video_payload_header {
     uint8_t bHeaderLength; /*!< The payload header length. */
     union {
         uint8_t bmheaderInfo; /*!< The payload header bitmap field. */
@@ -1118,7 +1118,7 @@ struct video_autoexposure_mode {
     0x00,                          /* bInterfaceProtocol : PC_PROTOCOL_UNDEFINED */         \
     0x00                           /* iInterface : unused */
 
-#define VIDEO_VS_HEADER_DESCRIPTOR_INIT(bNumFormats, wTotalLength, bEndpointAddress, bControlSize, ...) \
+#define VIDEO_VS_HEADER_DESCRIPTOR_INIT(bNumFormats, wTotalLength, bEndpointAddress, ...)               \
     /*Class-specific VideoStream Header Descriptor (Input) */                                           \
     0x0d + PP_NARG(__VA_ARGS__),                                                                        \
     0x24,                                                                                               \
@@ -1131,7 +1131,7 @@ struct video_autoexposure_mode {
     0x00, /* bStillCaptureMethod : Device supports still image capture method 0. */                     \
     0x00, /* bTriggerSupport : Hardware trigger supported for still image capture */                    \
     0x00, /* bTriggerUsage : Hardware trigger should initiate a still image capture. */                 \
-    bControlSize, /* bControlSize : Size of the bmaControls field */                                    \
+    PP_NARG(__VA_ARGS__), /* bControlSize : Size of the bmaControls field */                            \
     __VA_ARGS__  /* bmaControls : No VideoStreaming specific controls are supported.*/
 
 #define VIDEO_VS_FORMAT_UNCOMPRESSED_DESCRIPTOR_INIT(bFormatIndex, bNumFrameDescriptors, GUIDFormat)                                                              \
@@ -1191,7 +1191,7 @@ struct video_autoexposure_mode {
     DBVAL(dwMinBitRate),                     /* dwMinBitRate (4bytes): Min bit rate in bits/s  */                                                                                               \
     DBVAL(dwMaxBitRate),                     /* dwMaxBitRate (4bytes): Max bit rate in bits/s  */                                                                                               \
     DBVAL(dwMaxVideoFrameBufferSize),        /* dwMaxVideoFrameBufSize (4bytes): Maximum video or still frame size, in bytes. */                                                                \
-    DBVAL(dwDefaultFrameInterval),           /* dwDefaultFrameInterval : 1,000,000 * 100ns -> 10 FPS */                                                                                         \
+    dwDefaultFrameInterval,                  /* dwDefaultFrameInterval : 1,000,000 * 100ns -> 10 FPS */                                                                                         \
     bFrameIntervalType,                      /* bFrameIntervalType : Indicates how the frame interval can be programmed. 0: Continuous frame interval 1..255: The number of discrete frame   */ \
     __VA_ARGS__
 // clang-format on
