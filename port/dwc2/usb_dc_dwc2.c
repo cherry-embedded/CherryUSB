@@ -585,15 +585,16 @@ int usb_dc_init(void)
     /* Device mode configuration */
     USB_OTG_DEV->DCFG |= DCFG_FRAME_INTERVAL_80;
 
+#if CONFIG_USB_DWC2_PORT == HS_PORT
 #if defined(CONFIG_USB_HS)
     /* Set Core speed to High speed mode */
     USB_OTG_DEV->DCFG |= USB_OTG_SPEED_HIGH;
 #else
-#if CONFIG_USB_DWC2_PORT == HS_PORT
+
     USB_OTG_DEV->DCFG |= USB_OTG_SPEED_HIGH_IN_FULL;
+#endif
 #else
     USB_OTG_DEV->DCFG |= USB_OTG_SPEED_FULL;
-#endif
 #endif
 
     ret = dwc2_flush_txfifo(0x10U);
@@ -639,9 +640,8 @@ int usb_dc_init(void)
     USB_OTG_GLB->GINTSTS = 0xBFFFFFFFU;
 
     /* Enable interrupts matching to the Device mode ONLY */
-    USB_OTG_GLB->GINTMSK = USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
-                           USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IEPINT |
-                           USB_OTG_GINTMSK_WUIM;
+    USB_OTG_GLB->GINTMSK = USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
+                           USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IEPINT;
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_HBSTLEN_2;
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_DMAEN;
@@ -763,6 +763,35 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 
 int usbd_ep_close(const uint8_t ep)
 {
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint16_t ep_mps;
+
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        if ((USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) == USB_OTG_DOEPCTL_EPENA) {
+            USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
+            USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
+        }
+
+        USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
+        USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
+        USB_OTG_OUTEP(ep_idx)->DOEPCTL &= ~(USB_OTG_DOEPCTL_USBAEP |
+                                        USB_OTG_DOEPCTL_MPSIZ |
+                                        USB_OTG_DOEPCTL_SD0PID_SEVNFRM |
+                                        USB_OTG_DOEPCTL_EPTYP);
+    } else {
+        if ((USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) == USB_OTG_DIEPCTL_EPENA) {
+            USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SNAK;
+            USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
+        }
+
+        USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
+        USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
+        USB_OTG_INEP(ep_idx)->DIEPCTL &= ~(USB_OTG_DIEPCTL_USBAEP |
+                                       USB_OTG_DIEPCTL_MPSIZ |
+                                       USB_OTG_DIEPCTL_TXFNUM |
+                                       USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                       USB_OTG_DIEPCTL_EPTYP);
+    }
     return 0;
 }
 
@@ -1099,6 +1128,9 @@ void USBD_IRQHandler(void)
         }
         if (gint_status & USB_OTG_GINTSTS_USBSUSP) {
             USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_USBSUSP;
+        }
+        if (gint_status & USB_OTG_GINTSTS_WKUINT) {
+            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_WKUINT;
         }
         if (gint_status & USB_OTG_GINTSTS_OTGINT) {
             temp = USB_OTG_GLB->GOTGINT;
