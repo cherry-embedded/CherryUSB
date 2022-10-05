@@ -192,15 +192,12 @@ static void dwc2_pipe_init(uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uin
     switch (ep_type) {
         case USB_ENDPOINT_TYPE_CONTROL:
         case USB_ENDPOINT_TYPE_BULK:
-            //            if ((ep_addr & 0x80U) == 0x00U) {
-            //                regval |= USB_OTG_HCINTMSK_NYET;
-            //            }
             break;
         case USB_ENDPOINT_TYPE_INTERRUPT:
-            regval |= USB_OTG_HCINTMSK_FRMORM;
+            regval |= USB_OTG_HCINTMSK_NAKM;
             break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-            regval |= USB_OTG_HCINTMSK_FRMORM;
+            regval |= USB_OTG_HCINTMSK_NAKM;
             break;
     }
 
@@ -523,10 +520,7 @@ int usb_hc_init(void)
 
     /* Enable interrupts matching to the Host mode ONLY */
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_PRTIM | USB_OTG_GINTMSK_HCIM |
-                             USB_OTG_GINTSTS_DISCINT |
-                             USB_OTG_GINTMSK_PXFRM_IISOOXFRM | USB_OTG_GINTMSK_WUIM);
-
-    USB_OTG_GLB->GINTMSK |= USB_OTG_GINTMSK_SOFM;
+                             USB_OTG_GINTSTS_DISCINT);
 
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
@@ -958,10 +952,7 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
             }
         } else if (urb->errorcode == -EAGAIN) {
             /* re-activate the channel */
-            uint32_t tmpreg = USB_OTG_HC(ch_num)->HCCHAR;
-            tmpreg &= ~USB_OTG_HCCHAR_CHDIS;
-            tmpreg |= USB_OTG_HCCHAR_CHENA;
-            USB_OTG_HC(ch_num)->HCCHAR = tmpreg;
+            dwc2_other_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
         } else {
             dwc2_pipe_waitup(chan);
         }
@@ -1073,10 +1064,7 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
             }
         } else if (urb->errorcode == -EAGAIN) {
             /* re-activate the channel */
-            uint32_t tmpreg = USB_OTG_HC(ch_num)->HCCHAR;
-            tmpreg &= ~USB_OTG_HCCHAR_CHDIS;
-            tmpreg |= USB_OTG_HCCHAR_CHENA;
-            USB_OTG_HC(ch_num)->HCCHAR = tmpreg;
+            dwc2_other_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
         } else {
             dwc2_pipe_waitup(chan);
         }
@@ -1184,19 +1172,6 @@ void USBH_IRQHandler(void)
                 }
             }
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_HCINT;
-        }
-        if (gint_status & USB_OTG_GINTSTS_SOF) {
-            for (uint8_t index = 0; index < CONFIG_USBHOST_PIPE_NUM; index++) {
-                struct dwc2_pipe *chan = &g_dwc2_hcd.pipe_pool[index];
-                struct usbh_urb *urb = chan->urb;
-                if (chan->urb &&
-                    !(dwc2_get_current_frame() % chan->ep_interval) &&
-                    ((chan->ep_type == USB_ENDPOINT_TYPE_INTERRUPT) ||
-                     (chan->ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS))) {
-                    dwc2_other_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
-                }
-            }
-            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_SOF;
         }
     }
 }
