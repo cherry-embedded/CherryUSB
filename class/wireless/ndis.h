@@ -258,6 +258,13 @@ struct NDIS_PM_PACKET_PATTERN {
 #define NDIS_MAC_OPTION_8021P_PRIORITY      0x00000040
 #define NDIS_MAC_OPTION_RESERVED            0x80000000
 
+/** Hardware status of the underlying NIC */
+#define NDIS_HW_STS_READY        0x00000000UL
+#define NDIS_HW_STS_INITIALIZING 0x00000001UL
+#define NDIS_HW_STS_RESET        0x00000002UL
+#define NDIS_HW_STS_CLOSING      0x00000003UL
+#define NDIS_HW_STS_NOT_READY    0x00000004UL
+
 #endif /* _LINUX_NDIS_H */
 
 /** @} */
