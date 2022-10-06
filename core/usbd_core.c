@@ -602,7 +602,7 @@ static int usbd_standard_request_handler(struct usb_setup_packet *setup, uint8_t
  */
 static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-    usb_slist_t *i, *j;
+    usb_slist_t *i;
     if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_INTERFACE) {
         usb_slist_for_each(i, &usbd_intf_head)
         {

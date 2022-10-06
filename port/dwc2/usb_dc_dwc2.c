@@ -764,7 +764,6 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 int usbd_ep_close(const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    uint16_t ep_mps;
 
     if (USB_EP_DIR_IS_OUT(ep)) {
         if ((USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) == USB_OTG_DOEPCTL_EPENA) {
@@ -975,7 +974,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 
 void USBD_IRQHandler(void)
 {
-    uint32_t gint_status, temp, ep_idx, ep_intr, epint, read_count, write_count, data_len;
+    uint32_t gint_status, temp, ep_idx, ep_intr, epint;
     gint_status = dwc2_get_glb_intstatus();
 
     if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_DEVICE) {
