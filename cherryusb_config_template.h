@@ -93,6 +93,8 @@
 #define CONFIG_USBDEV_RNDIS_VENDOR_DESC "CherryUSB"
 #endif
 
+#define CONFIG_USBDEV_RNDIS_USING_LWIP
+
 /* ================ USB HOST Stack Configuration ================== */
 
 #define CONFIG_USBHOST_MAX_RHPORTS          1
@@ -136,8 +138,8 @@
 
 /* ================ EHCI Configuration ================ */
 
-#define CONFIG_USB_EHCI_HCCR_BASE   (0x20072000)
-#define CONFIG_USB_EHCI_HCOR_BASE   (0x20072000 + 0x10)
+#define CONFIG_USB_EHCI_HCCR_BASE       (0x20072000)
+#define CONFIG_USB_EHCI_HCOR_BASE       (0x20072000 + 0x10)
 #define CONFIG_USB_EHCI_FRAME_LIST_SIZE 1024
 // #define CONFIG_USB_EHCI_INFO_ENABLE
 // #define CONFIG_USB_ECHI_HCOR_RESERVED_DISABLE
