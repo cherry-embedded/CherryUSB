@@ -19,11 +19,11 @@
 #define EHCI_ADDR2QH(x)     ((struct ehci_qh_hw *)((uint32_t)(x) & ~0x1F))
 #define EHCI_ADDR2ITD(x)    ((struct ehci_itd_hw *)((uint32_t)(x) & ~0x1F))
 
-#if CONFIG_EHCI_FRAME_LIST_SIZE == 1024
+#if CONFIG_USB_EHCI_FRAME_LIST_SIZE == 1024
 #define EHCI_PERIOIDIC_QH_NUM 11
-#elif CONFIG_EHCI_FRAME_LIST_SIZE == 512
+#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 512
 #define EHCI_PERIOIDIC_QH_NUM 10
-#elif CONFIG_EHCI_FRAME_LIST_SIZE == 256
+#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 256
 #define EHCI_PERIOIDIC_QH_NUM 9
 #else
 #error Unsupported frame size list size
@@ -92,7 +92,7 @@ USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_async_qh_head;
 USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_periodic_qh_head[EHCI_PERIOIDIC_QH_NUM];
 
 /* The frame list */
-USB_NOCACHE_RAM_SECTION uint32_t g_framelist[CONFIG_EHCI_FRAME_LIST_SIZE] __attribute__((aligned(4096)));
+USB_NOCACHE_RAM_SECTION uint32_t g_framelist[CONFIG_USB_EHCI_FRAME_LIST_SIZE] __attribute__((aligned(4096)));
 
 usb_slist_t iso_pipe_list_head = USB_SLIST_OBJECT_INIT(iso_pipe_list_head);
 
@@ -931,7 +931,7 @@ int usb_hc_init(void)
     g_async_qh_head.hw.overlay.token = QTD_TOKEN_STATUS_HALTED;
     g_async_qh_head.first_qtd = QTD_LIST_END;
 
-    memset(g_framelist, 0, sizeof(uint32_t) * CONFIG_EHCI_FRAME_LIST_SIZE);
+    memset(g_framelist, 0, sizeof(uint32_t) * CONFIG_USB_EHCI_FRAME_LIST_SIZE);
 
     for (int i = EHCI_PERIOIDIC_QH_NUM - 1; i >= 0; i--) {
         memset(&g_periodic_qh_head[i], 0, sizeof(struct ehci_qh_hw));
@@ -943,7 +943,7 @@ int usb_hc_init(void)
         g_periodic_qh_head[i].first_qtd = QTD_LIST_END;
 
         interval = 1 << i;
-        for (uint32_t j = interval - 1; j < CONFIG_EHCI_FRAME_LIST_SIZE; j += interval) {
+        for (uint32_t j = interval - 1; j < CONFIG_USB_EHCI_FRAME_LIST_SIZE; j += interval) {
             if (g_framelist[j] == 0) {
                 g_framelist[j] = QH_HLP_QH(&g_periodic_qh_head[i]);
             } else {
@@ -989,11 +989,11 @@ int usb_hc_init(void)
     EHCI_HCOR->periodiclistbase = EHCI_PTR2ADDR(g_framelist);
 
     regval = 0;
-#if CONFIG_EHCI_FRAME_LIST_SIZE == 1024
+#if CONFIG_USB_EHCI_FRAME_LIST_SIZE == 1024
     regval |= EHCI_USBCMD_FLSIZE_1024;
-#elif CONFIG_EHCI_FRAME_LIST_SIZE == 512
+#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 512
     regval |= EHCI_USBCMD_FLSIZE_512;
-#elif CONFIG_EHCI_FRAME_LIST_SIZE == 256
+#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 256
     regval |= EHCI_USBCMD_FLSIZE_256;
 #else
 #error Unsupported frame size list size
