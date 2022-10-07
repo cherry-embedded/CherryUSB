@@ -698,8 +698,6 @@ int usbh_initialize(void)
     return 0;
 }
 
-/* usb host transfer wrapper */
-
 int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint8_t *buffer)
 {
     struct usbh_urb *urb;
@@ -709,42 +707,6 @@ int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint
     memset(urb, 0, sizeof(struct usbh_urb));
 
     usbh_control_urb_fill(urb, pipe, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
-
-    ret = usbh_submit_urb(urb);
-    if (ret == 0) {
-        ret = urb->actual_length;
-    }
-    usb_free(urb);
-    return ret;
-}
-
-int usbh_bulk_transfer(usbh_pipe_t pipe, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
-{
-    struct usbh_urb *urb;
-    int ret;
-
-    urb = usb_malloc(sizeof(struct usbh_urb));
-    memset(urb, 0, sizeof(struct usbh_urb));
-
-    usbh_bulk_urb_fill(urb, pipe, buffer, buflen, timeout, NULL, NULL);
-
-    ret = usbh_submit_urb(urb);
-    if (ret == 0) {
-        ret = urb->actual_length;
-    }
-    usb_free(urb);
-    return ret;
-}
-
-int usbh_int_transfer(usbh_pipe_t pipe, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
-{
-    struct usbh_urb *urb;
-    int ret;
-
-    urb = usb_malloc(sizeof(struct usbh_urb));
-    memset(urb, 0, sizeof(struct usbh_urb));
-
-    usbh_int_urb_fill(urb, pipe, buffer, buflen, timeout, NULL, NULL);
 
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
