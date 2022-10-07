@@ -409,7 +409,7 @@ static void dwc2_bulk_intr_pipe_init(struct dwc2_pipe *chan, uint8_t *buffer, ui
 
 static void dwc2_iso_pipe_init(struct dwc2_pipe *chan, struct usbh_iso_frame_packet *iso_packet)
 {
-    chan->num_packets = dwc2_calculate_packet_num(512, chan->ep_addr, chan->ep_mps, &chan->xferlen);
+    chan->num_packets = dwc2_calculate_packet_num(iso_packet->transfer_buffer_length, chan->ep_addr, chan->ep_mps, &chan->xferlen);
     dwc2_pipe_transfer(chan->chidx, chan->ep_addr, (uint32_t *)iso_packet->transfer_buffer, chan->xferlen, chan->num_packets, HC_PID_DATA0);
 }
 

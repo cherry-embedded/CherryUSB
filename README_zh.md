@@ -87,7 +87,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 支持 Communication Device Class (CDC)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
-- 支持 USB VIDEO CLASS (UVC1.0, only supports ehci)
+- 支持 USB VIDEO CLASS
 - 支持 Remote NDIS (RNDIS)
 - 支持 Vendor 类 class
 
