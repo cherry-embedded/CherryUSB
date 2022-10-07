@@ -2,6 +2,8 @@
 
 ## Support Chip List
 
+- AIR105
+
 ### ES32
 
 - ES32F3xx
