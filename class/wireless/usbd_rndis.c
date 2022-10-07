@@ -20,7 +20,7 @@ static struct usbd_endpoint rndis_ep_data[3];
 #ifdef CONFIG_USB_HS
 #define RNDIS_MAX_PACKET_SIZE 512
 #else
-#define RNDIS_MAX_PACKET_SIZE 512
+#define RNDIS_MAX_PACKET_SIZE 64
 #endif
 
 #ifndef CONFIG_USB_HS
