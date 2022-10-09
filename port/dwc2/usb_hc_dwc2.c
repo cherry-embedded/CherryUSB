@@ -48,6 +48,7 @@ struct dwc2_pipe {
     usb_osal_sem_t waitsem;
     struct usbh_hubport *hport;
     struct usbh_urb *urb;
+    uint32_t iso_frame_idx;
 };
 
 struct dwc2_hcd {
@@ -171,7 +172,7 @@ static inline void dwc2_drivebus(uint8_t state)
     }
 }
 
-static void dwc2_pipe_init(uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint8_t ep_mps, uint8_t speed)
+static void dwc2_pipe_init(uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
 {
     uint32_t regval;
 
@@ -197,7 +198,6 @@ static void dwc2_pipe_init(uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uin
             regval |= USB_OTG_HCINTMSK_NAKM;
             break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-            regval |= USB_OTG_HCINTMSK_NAKM;
             break;
     }
 
@@ -401,10 +401,16 @@ static void dwc2_control_pipe_init(struct dwc2_pipe *chan, struct usb_setup_pack
     }
 }
 
-static void dwc2_other_pipe_init(struct dwc2_pipe *chan, uint8_t *buffer, uint32_t buflen)
+static void dwc2_bulk_intr_pipe_init(struct dwc2_pipe *chan, uint8_t *buffer, uint32_t buflen)
 {
     chan->num_packets = dwc2_calculate_packet_num(buflen, chan->ep_addr, chan->ep_mps, &chan->xferlen);
     dwc2_pipe_transfer(chan->chidx, chan->ep_addr, (uint32_t *)buffer, chan->xferlen, chan->num_packets, chan->data_pid);
+}
+
+static void dwc2_iso_pipe_init(struct dwc2_pipe *chan, struct usbh_iso_frame_packet *iso_packet)
+{
+    chan->num_packets = dwc2_calculate_packet_num(iso_packet->transfer_buffer_length, chan->ep_addr, chan->ep_mps, &chan->xferlen);
+    dwc2_pipe_transfer(chan->chidx, chan->ep_addr, (uint32_t *)iso_packet->transfer_buffer, chan->xferlen, chan->num_packets, HC_PID_DATA0);
 }
 
 static int usbh_reset_port(const uint8_t port)
@@ -791,8 +797,11 @@ int usbh_submit_urb(struct usbh_urb *urb)
             break;
         case USB_ENDPOINT_TYPE_BULK:
         case USB_ENDPOINT_TYPE_INTERRUPT:
+            dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-            dwc2_other_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            chan->iso_frame_idx = 0;
+            dwc2_iso_pipe_init(chan, &urb->iso_packet[chan->iso_frame_idx]);
             break;
         default:
             break;
@@ -946,13 +955,23 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
                     urb->actual_length = chan->xfrd;
                     dwc2_pipe_waitup(chan);
                 }
+            } else if (chan->ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                urb->iso_packet[chan->iso_frame_idx].actual_length = chan->xfrd;
+                urb->iso_packet[chan->iso_frame_idx].errorcode = urb->errorcode;
+                chan->iso_frame_idx++;
+
+                if (chan->iso_frame_idx == urb->num_of_iso_packets) {
+                    dwc2_pipe_waitup(chan);
+                } else {
+                    dwc2_iso_pipe_init(chan, &urb->iso_packet[chan->iso_frame_idx]);
+                }
             } else {
                 urb->actual_length = chan->xfrd;
                 dwc2_pipe_waitup(chan);
             }
         } else if (urb->errorcode == -EAGAIN) {
             /* re-activate the channel */
-            dwc2_other_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
         } else {
             dwc2_pipe_waitup(chan);
         }
@@ -1058,13 +1077,23 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
                     urb->actual_length = chan->xfrd;
                     dwc2_pipe_waitup(chan);
                 }
+            } else if (chan->ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                urb->iso_packet[chan->iso_frame_idx].actual_length = chan->xfrd;
+                urb->iso_packet[chan->iso_frame_idx].errorcode = urb->errorcode;
+                chan->iso_frame_idx++;
+
+                if (chan->iso_frame_idx == urb->num_of_iso_packets) {
+                    dwc2_pipe_waitup(chan);
+                } else {
+                    dwc2_iso_pipe_init(chan, &urb->iso_packet[chan->iso_frame_idx]);
+                }
             } else {
                 urb->actual_length = chan->xfrd;
                 dwc2_pipe_waitup(chan);
             }
         } else if (urb->errorcode == -EAGAIN) {
             /* re-activate the channel */
-            dwc2_other_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
         } else {
             dwc2_pipe_waitup(chan);
         }

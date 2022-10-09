@@ -165,8 +165,6 @@ struct usbh_hub {
 
 int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
 
-/* usb host transfer wrapper */
-
 /**
  * @brief Submit an control transfer to an endpoint.
  * This is a blocking method; this method will not return until the transfer has completed.
@@ -178,50 +176,6 @@ int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struc
  * @return On success will return 0, and others indicate fail.
  */
 int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint8_t *buffer);
-
-/**
- * @brief  Submit an bulk transfer to an endpoint.
- * This is a blocking method; this method will not return until the transfer has completed.
- *
- * @param pipe The IN or OUT endpoint pipe info.
- * @param buffer A buffer containing the data to be sent (OUT endpoint) or received (IN endpoint).
- * @param buflen The length of the data to be sent or received.
- * @param timeout Timeout for transfer, unit is ms.
- * @return On success, a non-negative value is returned that indicates the number
- *   of bytes successfully transferred.  On a failure, a negated errno value
- *   is returned that indicates the nature of the failure:
- *
- *     -EAGAIN - If devices NAKs the transfer (or NYET or other error where
- *              it may be appropriate to restart the entire transaction).
- *     -EPERM  - If the endpoint stalls
- *     -EIO    - On a TX or data toggle error
- *     -EPIPE  - Overrun errors
- *     -ETIMEDOUT  - Sem wait timeout
- *
- */
-int usbh_bulk_transfer(usbh_pipe_t pipe, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
-
-/**
- * @brief  Submit an interrupt transfer to an endpoint.
- * This is a blocking method; this method will not return until the transfer has completed.
- *
- * @param pipe The IN or OUT endpoint pipe info.
- * @param buffer A buffer containing the data to be sent (OUT endpoint) or received (IN endpoint).
- * @param buflen The length of the data to be sent or received.
- * @param timeout Timeout for transfer, unit is ms.
- * @return On success, a non-negative value is returned that indicates the number
- *   of bytes successfully transferred.  On a failure, a negated errno value
- *   is returned that indicates the nature of the failure:
- *
- *     -EAGAIN - If devices NAKs the transfer (or NYET or other error where
- *              it may be appropriate to restart the entire transaction).
- *     -EPERM  - If the endpoint stalls
- *     -EIO    - On a TX or data toggle error
- *     -EPIPE  - Overrun errors
- *     -ETIMEDOUT  - Sem wait timeout
- *
- */
-int usbh_int_transfer(usbh_pipe_t pipe, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
 
 int usbh_initialize(void);
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
