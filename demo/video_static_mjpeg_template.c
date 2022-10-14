@@ -147,19 +147,20 @@ void usbd_configure_done_callback(void)
 }
 
 volatile bool tx_flag = 0;
+volatile bool iso_tx_busy = false;
 
 void usbd_video_open(uint8_t intf)
 {
     tx_flag = 1;
     USB_LOG_RAW("OPEN\r\n");
+    iso_tx_busy = false;
 }
 void usbd_video_close(uint8_t intf)
 {
     USB_LOG_RAW("CLOSE\r\n");
     tx_flag = 0;
+    iso_tx_busy = false;
 }
-
-volatile bool iso_tx_busy = false;
 
 void usbd_video_iso_callback(uint8_t ep, uint32_t nbytes)
 {
@@ -182,7 +183,7 @@ void video_init()
     usbd_initialize();
 }
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[10 * 1024];
+USB_MEM_ALIGNX uint8_t packet_buffer[10 * 1024];
 
 void video_test()
 {
@@ -196,6 +197,9 @@ void video_test()
             iso_tx_busy = true;
             usbd_ep_start_write(VIDEO_IN_EP, packet_buffer, out_len);
             while (iso_tx_busy) {
+                if (tx_flag == 0) {
+                    break;
+                }
             }
 #else
             /* dwc2 must use this method */
@@ -204,11 +208,17 @@ void video_test()
                     iso_tx_busy = true;
                     usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], out_len - (packets - 1) * MAX_PAYLOAD_SIZE);
                     while (iso_tx_busy) {
+                        if (tx_flag == 0) {
+                            break;
+                        }
                     }
                 } else {
                     iso_tx_busy = true;
                     usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE);
                     while (iso_tx_busy) {
+                        if (tx_flag == 0) {
+                            break;
+                        }
                     }
                 }
             }

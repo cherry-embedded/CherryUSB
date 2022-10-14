@@ -244,11 +244,12 @@ void hid_mouse_test(void)
     /*!< move mouse pointer */
     mouse_cfg.x += 10;
     mouse_cfg.y = 0;
-    hid_state = HID_STATE_BUSY;
+
     int ret = usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
     if (ret < 0) {
         return;
     }
+    hid_state = HID_STATE_BUSY;
     while (hid_state == HID_STATE_BUSY) {
     }
 }
