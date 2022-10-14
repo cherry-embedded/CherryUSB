@@ -22,18 +22,10 @@
  * environment as necessary to access the TLS-based errno variable.
  */
 
-#define errno *__errno()
-#define set_errno(e) \
-  do \
-    { \
-       errno = (int)(e); \
-    } \
-  while (0)
-#define get_errno() errno
-
 /* Definitions of error numbers and the string that would be
  * returned by strerror().
  */
+#ifndef CONFIG_USB_ERROR_USE_SYSTEM
 
 #define EPERM               1
 #define EPERM_STR           "Operation not permitted"
@@ -296,7 +288,9 @@
 #define ESTRPIPE_STR        "Streams pipe error"
 
 #define __ELASTERROR        2000                        /* Users can add values starting here */
-
+#else
+#include <errno.h>
+#endif
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
