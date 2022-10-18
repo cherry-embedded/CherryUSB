@@ -235,12 +235,7 @@ static volatile uint8_t hid_state = HID_STATE_IDLE;
 /* function ------------------------------------------------------------------*/
 static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
 {
-    /*!< endpoint call back */
-    /*!< transfer successfully */
-    if (hid_state == HID_STATE_BUSY) {
-        /*!< update the state  */
-        hid_state = HID_STATE_IDLE;
-    }
+    hid_state = HID_STATE_IDLE;
 }
 
 /*!< endpoint call back */
@@ -341,6 +336,7 @@ void hid_mouse_test(void)
     if (ret < 0) {
         return;
     }
+    hid_state = HID_STATE_BUSY;
     while (hid_state == HID_STATE_BUSY) {
     }
 }

@@ -10,10 +10,6 @@
 #include "usb_osal.h"
 #endif
 
-#ifndef CONFIG_USBDEV_MSC_BLOCK_SIZE
-#define CONFIG_USBDEV_MSC_BLOCK_SIZE 512
-#endif
-
 #define MSC_THREAD_OP_READ_MEM   1
 #define MSC_THREAD_OP_WRITE_MEM  2
 #define MSC_THREAD_OP_WRITE_DONE 3

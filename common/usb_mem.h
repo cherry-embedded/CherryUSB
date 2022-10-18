@@ -25,13 +25,6 @@ void *usb_hc_malloc_align(size_t align, size_t size);
 
 #endif
 
-#ifndef CONFIG_USB_ALIGN_SIZE
-#define CONFIG_USB_ALIGN_SIZE 4
-#endif
-
-#ifndef USB_NOCACHE_RAM_SECTION
-#define USB_NOCACHE_RAM_SECTION
-#endif
 #define USB_MEM_ALIGNX __attribute__((aligned(CONFIG_USB_ALIGN_SIZE)))
 
 #if (CONFIG_USB_ALIGN_SIZE > 4)

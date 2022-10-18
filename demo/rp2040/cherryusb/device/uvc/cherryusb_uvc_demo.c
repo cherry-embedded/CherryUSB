@@ -15,7 +15,7 @@
 // #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 3)) | (0x02 << 11))
 
 #else
-#define MAX_PAYLOAD_SIZE  1020
+#define MAX_PAYLOAD_SIZE  1023
 #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 1)) | (0x00 << 11))
 #endif
 
@@ -38,12 +38,12 @@
                                            9 +  \
                                            14 + \
                                            11 + \
-                                           30 + \
+                                           38 + \
                                            9 +  \
                                            7)
 
 #define VC_TERMINAL_SIZ (unsigned int)(13 + 18 + 12 + 9)
-#define VS_HEADER_SIZ   (unsigned int)(13 + 1 + 11 + 30)
+#define VS_HEADER_SIZ   (unsigned int)(13 + 1 + 11 + 38)
 
 #define USBD_VID           0xffff
 #define USBD_PID           0xffff
@@ -51,13 +51,13 @@
 #define USBD_LANGID_STRING 1033
 
 const uint8_t video_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xef, 0x02, 0x01, USBD_VID, USBD_PID, 0x0001, 0x01),
+    USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_VIDEO_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     VIDEO_VC_DESCRIPTOR_INIT(0x00, 0, 0x0100, VC_TERMINAL_SIZ, 48000000, 0x02),
     VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x00, 0x00),
-    VIDEO_VS_HEADER_DESCRIPTOR_INIT(0x01, VS_HEADER_SIZ, VIDEO_IN_EP, 0x00),
+    VIDEO_VS_HEADER_DESCRIPTOR_INIT(0x01, VS_HEADER_SIZ, VIDEO_IN_EP, 1, 0x00),
     VIDEO_VS_FORMAT_MJPEG_DESCRIPTOR_INIT(0x01, 0x01),
-    VIDEO_VS_FRAME_MJPEG_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, MAX_FRAME_SIZE, DBVAL(INTERVAL), 0x01, DBVAL(INTERVAL)),
+    VIDEO_VS_FRAME_MJPEG_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, MAX_FRAME_SIZE, INTERVAL, 0x00, DBVAL(INTERVAL), DBVAL(INTERVAL), DBVAL(0)),
     VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x01, 0x01),
     /* 1.2.2.2 Standard VideoStream Isochronous Video Data Endpoint Descriptor */
     0x07,                         /* bLength */
@@ -152,19 +152,15 @@ volatile bool iso_tx_busy = false;
 void usbd_video_open(uint8_t intf)
 {
     tx_flag = 1;
-    USB_LOG_RAW("OPEN\r\n");
     iso_tx_busy = false;
 }
 void usbd_video_close(uint8_t intf)
 {
-    USB_LOG_RAW("CLOSE\r\n");
     tx_flag = 0;
-    iso_tx_busy = false;
 }
 
 void usbd_video_iso_callback(uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
     iso_tx_busy = false;
 }
 
@@ -173,56 +169,60 @@ static struct usbd_endpoint video_in_ep = {
     .ep_addr = VIDEO_IN_EP
 };
 
-void video_init()
+void video_init(void)
 {
     usbd_desc_register(video_descriptor);
-    usbd_add_interface(usbd_video_alloc_intf(INTERVAL, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
-    usbd_add_interface(usbd_video_alloc_intf(INTERVAL, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
+    usbd_add_interface(usbd_video_alloc_intf(CAM_FPS, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
+    usbd_add_interface(usbd_video_alloc_intf(CAM_FPS, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
     usbd_add_endpoint(&video_in_ep);
 
     usbd_initialize();
 }
 
-USB_MEM_ALIGNX uint8_t packet_buffer[10 * 1024];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[10 * 1024];
 
-void video_test()
+extern uint32_t chey_board_millis(void);
+
+void video_task(void)
 {
-    uint32_t out_len;
-    uint32_t packets;
-    memset(packet_buffer, 0, 10 * 1024);
-    while (1) {
-        if (tx_flag) {
-            packets = usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
-#if 0
+    static uint32_t start_ms = 0;
+    static uint32_t already_sent = 0;
+    static uint32_t packets = 0;
+
+    if (tx_flag) {
+        uint32_t out_len;
+        packets = usbd_video_mjpeg_payload_fill((uint8_t *)jpeg_data, sizeof(jpeg_data), packet_buffer, &out_len);
+
+        if (!already_sent) {
+            already_sent = 1;
+            start_ms = chey_board_millis();
             iso_tx_busy = true;
-            usbd_ep_start_write(VIDEO_IN_EP, packet_buffer, out_len);
+            usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[0 * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE);
             while (iso_tx_busy) {
-                if (tx_flag == 0) {
-                    break;
-                }
             }
-#else
-            /* dwc2 must use this method */
-            for (uint32_t i = 0; i < packets; i++) {
-                if (i == (packets - 1)) {
-                    iso_tx_busy = true;
-                    usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], out_len - (packets - 1) * MAX_PAYLOAD_SIZE);
-                    while (iso_tx_busy) {
-                        if (tx_flag == 0) {
-                            break;
-                        }
-                    }
-                } else {
-                    iso_tx_busy = true;
-                    usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE);
-                    while (iso_tx_busy) {
-                        if (tx_flag == 0) {
-                            break;
-                        }
-                    }
-                }
-            }
-#endif
         }
+
+        for (uint16_t i = 1; i < packets; i++) {
+            while ((chey_board_millis() - start_ms) < (INTERVAL / 1000000)) {
+            }
+            start_ms += (INTERVAL / 1000000);
+
+            if (i == (packets - 1)) {
+                iso_tx_busy = true;
+                usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], out_len - (packets - 1) * MAX_PAYLOAD_SIZE);
+                while (iso_tx_busy) {
+                }
+            } else {
+                iso_tx_busy = true;
+                usbd_ep_start_write(VIDEO_IN_EP, &packet_buffer[i * MAX_PAYLOAD_SIZE], MAX_PAYLOAD_SIZE);
+                while (iso_tx_busy) {
+                }
+            }
+        }
+        already_sent = 0;
+    } else {
+        start_ms = 0;
+        already_sent = 0;
+        packets = 0;
     }
 }
