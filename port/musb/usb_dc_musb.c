@@ -618,6 +618,7 @@ static void handle_ep0(void)
             if (ep0_status & USB_CSRL0_RXRDY) {
                 read_count = HWREGH(USB_BASE + MUSB_IND_RXCOUNT_OFFSET);
 
+                musb_read_packet(0, g_musb_udc.out_ep[0].xfer_buf, read_count);
                 g_musb_udc.out_ep[0].xfer_buf += read_count;
                 g_musb_udc.out_ep[0].actual_xfer_len += read_count;
 
