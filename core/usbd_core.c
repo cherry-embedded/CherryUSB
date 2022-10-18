@@ -367,7 +367,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
         case USB_REQUEST_SET_FEATURE:
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
             } else if (value == USB_FEATURE_TEST_MODE) {
-#ifdef CONFIG_USBDEV_TEST_MODE
+#if CONFIG_USBDEV_TEST_MODE
                 usbd_core_cfg.test_mode = true;
                 usbd_execute_test_mode(setup);
 #endif
@@ -894,6 +894,7 @@ void usbd_event_ep_out_complete_handler(uint8_t ep, uint32_t nbytes)
         struct usb_setup_packet *setup = &usbd_core_cfg.setup;
 
         if (nbytes > 0) {
+            memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf,  nbytes);
             usbd_core_cfg.ep0_data_buf += nbytes;
             usbd_core_cfg.ep0_data_buf_residue -= nbytes;
 
