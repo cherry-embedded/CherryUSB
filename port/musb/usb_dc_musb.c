@@ -645,7 +645,7 @@ void USBD_IRQHandler(void)
     uint32_t txis;
     uint32_t rxis;
     uint8_t old_ep_idx;
-    uint8_t write_count, read_count;
+    uint16_t write_count, read_count;
 
     is = HWREGB(USB_BASE + MUSB_IS_OFFSET);
     txis = HWREGH(USB_BASE + MUSB_TXIS_OFFSET);
