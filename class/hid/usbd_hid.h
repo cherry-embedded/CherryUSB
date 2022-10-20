@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-/* Alloc hid interface driver */
-struct usbd_interface *usbd_hid_alloc_intf(const uint8_t *desc, uint32_t desc_len);
+/* Init hid interface driver */
+struct usbd_interface *usbd_hid_init_intf(struct usbd_interface *intf, const uint8_t *desc, uint32_t desc_len);
 
 /* Register desc api */
 void usbd_hid_descriptor_register(uint8_t intf_num, const uint8_t *desc);

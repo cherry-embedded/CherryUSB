@@ -12,10 +12,11 @@
 extern "C" {
 #endif
 
-/* Alloc video interface driver */
-struct usbd_interface *usbd_video_alloc_intf(uint32_t dwFrameInterval,
-                                             uint32_t dwMaxVideoFrameSize,
-                                             uint32_t dwMaxPayloadTransferSize);
+/* Init video interface driver */
+struct usbd_interface *usbd_video_init_intf(struct usbd_interface *intf,
+                                            uint32_t dwFrameInterval,
+                                            uint32_t dwMaxVideoFrameSize,
+                                            uint32_t dwMaxPayloadTransferSize);
 
 void usbd_video_open(uint8_t intf);
 void usbd_video_close(uint8_t intf);

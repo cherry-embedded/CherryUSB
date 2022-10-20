@@ -173,11 +173,14 @@ static struct usbd_endpoint video_in_ep = {
     .ep_addr = VIDEO_IN_EP
 };
 
+struct usbd_interface intf0;
+struct usbd_interface intf1;
+
 void video_init()
 {
     usbd_desc_register(video_descriptor);
-    usbd_add_interface(usbd_video_alloc_intf(INTERVAL, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
-    usbd_add_interface(usbd_video_alloc_intf(INTERVAL, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
+    usbd_add_interface(usbd_video_init_intf(&intf0, INTERVAL, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
+    usbd_add_interface(usbd_video_init_intf(&intf1, INTERVAL, MAX_FRAME_SIZE, MAX_PAYLOAD_SIZE));
     usbd_add_endpoint(&video_in_ep);
 
     usbd_initialize();

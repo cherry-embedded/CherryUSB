@@ -66,14 +66,14 @@ CherryUSB Device Stack has the following functions：
 
 CherryUSB Device Stack resource usage (GCC 10.2 with -O2):
 
-|   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)                      |
-|:-------------:|:--------------:|:-------------------------:|:-------------:|:---------------------------------:|
-|usbd_core.c    |  3263          | 384                       | 17            | 0                                 |
-|usbd_cdc.c     |  490           | 0                         | 0             | sizeof(struct usbd_interface) * x |
-|usbd_msc.c     |  2772          | 128 + 512(default)        | 16            | sizeof(struct usbd_interface) * x |
-|usbd_hid.c     |  501           | 0                         | 0             | sizeof(struct usbd_interface) * x |
-|usbd_audio.c   |  1208          | 0                         | 4             | sizeof(struct usbd_interface) * x |
-|usbd_video.c   |  2272          | 0                         | 82            | sizeof(struct usbd_interface) * x |
+|   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)     |
+|:-------------:|:--------------:|:-------------------------:|:-------------:|:----------------:|
+|usbd_core.c    |  3263          | 384                       | 17            | 0                |
+|usbd_cdc.c     |  490           | 0                         | 0             | 0                |
+|usbd_msc.c     |  2772          | 128 + 512(default)        | 16            | 0                |
+|usbd_hid.c     |  501           | 0                         | 0             | 0                |
+|usbd_audio.c   |  1208          | 0                         | 4             | 0                |
+|usbd_video.c   |  2272          | 0                         | 82            | 0                |
 
 ## Host Stack Overview
 

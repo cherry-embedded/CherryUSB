@@ -261,6 +261,8 @@ static struct usbd_endpoint dap_in_ep = {
 };
 
 struct usbd_interface dap_interface;
+struct usbd_interface intf1;
+struct usbd_interface intf2;
 
 void daplink_init(void)
 {
@@ -273,8 +275,8 @@ void daplink_init(void)
     usbd_add_endpoint(&dap_in_ep);
 
     /*!< cdc acm */
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf1));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf2));
     usbd_add_endpoint(&cdc_out_ep);
     usbd_add_endpoint(&cdc_in_ep);
 
