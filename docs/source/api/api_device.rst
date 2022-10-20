@@ -161,7 +161,7 @@ usbd_cdc_acm_init_intf
 
 ``usbd_cdc_acm_init_intf`` 用来初始化 USB CDC ACM 类接口，并实现该接口相关的函数。
 
-- ``cdc_acm_class_request_handler`` 用来处理 USB CDC ACM 类 Setup 请求。
+- ``cdc_acm_class_interface_request_handler`` 用来处理 USB CDC ACM 类 Setup 请求。
 - ``cdc_notify_handler`` 用来处理 USB CDC 其他中断回调函数。
 
 .. code-block:: C
@@ -241,8 +241,7 @@ usbd_hid_init_intf
 
 ``usbd_hid_init_intf`` 用来初始化 USB HID 类接口，并实现该接口相关的函数：
 
-- ``hid_class_request_handler`` 用来处理 USB HID 类的 Setup 请求。
-- ``hid_custom_request_handler`` 用来处理 USB HID 获取报告描述符请求。
+- ``hid_class_interface_request_handler`` 用来处理 USB HID 类的 Setup 请求。
 - ``hid_notify_handler`` 用来处理 USB HID 其他中断回调函数。
 
 .. code-block:: C
@@ -259,7 +258,7 @@ usbd_msc_init_intf
 """"""""""""""""""""""""""""""""""""
 ``usbd_msc_init_intf`` 用来初始化 MSC 类接口，并实现该接口相关函数，并且注册端点回调函数。（因为 msc bot 协议是固定的，所以不需要用于实现，因此端点回调函数自然不需要用户实现）。
 
-- ``msc_storage_class_request_handler`` 用于处理 USB MSC Setup 中断请求。
+- ``msc_storage_class_interface_request_handler`` 用于处理 USB MSC Setup 中断请求。
 - ``msc_storage_notify_handler`` 用于实现 USB MSC 其他中断回调函数。
 
 - ``mass_storage_bulk_out`` 用于处理 USB MSC 端点 out 中断。
@@ -319,7 +318,8 @@ usbd_audio_init_intf
 """"""""""""""""""""""""""""""""""""
 ``usbd_audio_init_intf``  用来初始化 USB Audio 类接口，并实现该接口相关的函数：
 
-- ``audio_class_request_handler`` 用于处理 USB Audio Setup 中断请求。
+- ``audio_class_interface_request_handler`` 用于处理 USB Audio Setup 接口接收者中断请求。
+- ``audio_class_endpoint_request_handler`` 用于处理 USB Audio Setup 端点接收者中断请求。
 - ``audio_notify_handler`` 用于实现 USB Audio 其他中断回调函数。
 
 .. code-block:: C
@@ -429,7 +429,7 @@ usbd_video_init_intf
 """"""""""""""""""""""""""""""""""""
 ``usbd_video_init_intf``  用来初始化 USB Video 类接口，并实现该接口相关的函数：
 
-- ``video_class_request_handler`` 用于处理 USB Video Setup 中断请求。
+- ``video_class_interface_request_handler`` 用于处理 USB Video Setup 中断请求。
 - ``video_notify_handler`` 用于实现 USB Video 其他中断回调函数。
 
 .. code-block:: C
