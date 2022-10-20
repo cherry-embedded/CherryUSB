@@ -742,14 +742,11 @@ void usbd_video_probe_and_commit_controls_init(uint32_t dwFrameInterval, uint32_
     usbd_video_cfg.commit.bMaxVersion = 0;
 }
 
-struct usbd_interface *usbd_video_alloc_intf(uint32_t dwFrameInterval, uint32_t dwMaxVideoFrameSize, uint32_t dwMaxPayloadTransferSize)
+struct usbd_interface *usbd_video_init_intf(struct usbd_interface *intf,
+                                            uint32_t dwFrameInterval,
+                                            uint32_t dwMaxVideoFrameSize,
+                                            uint32_t dwMaxPayloadTransferSize)
 {
-    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
-    if (intf == NULL) {
-        USB_LOG_ERR("no mem to alloc intf\r\n");
-        return NULL;
-    }
-
     intf->class_interface_handler = video_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
@@ -780,7 +777,7 @@ uint32_t usbd_video_mjpeg_payload_fill(uint8_t *input, uint32_t input_len, uint8
             picture_pos += usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2;
         }
     }
-    uvc_header[1] ^=1;
+    uvc_header[1] ^= 1;
     *out_len = (input_len + 2 * packets);
     return packets;
 }

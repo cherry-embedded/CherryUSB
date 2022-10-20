@@ -529,14 +529,11 @@ int usbd_rndis_eth_tx(struct pbuf *p)
     return usbd_ep_start_write(rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, g_rndis_tx_buffer, g_rndis_tx_data_length);
 }
 #endif
-struct usbd_interface *usbd_rndis_alloc_intf(uint8_t out_ep, uint8_t in_ep, uint8_t int_ep, uint8_t mac[6])
+struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
+                                             const uint8_t out_ep,
+                                             const uint8_t in_ep,
+                                             const uint8_t int_ep, uint8_t mac[6])
 {
-    struct usbd_interface *intf = (struct usbd_interface *)usb_malloc(sizeof(struct usbd_interface));
-    if (intf == NULL) {
-        USB_LOG_ERR("no mem to alloc intf\r\n");
-        return NULL;
-    }
-
     memcpy(usbd_rndis_cfg.mac, mac, 6);
 
     rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr = out_ep;

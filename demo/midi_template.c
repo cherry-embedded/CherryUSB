@@ -138,8 +138,8 @@ void usbd_midi_bulk_in(uint8_t ep, uint32_t nbytes)
 {
 }
 
-struct usbd_interface midi_cmd_intf;
-struct usbd_interface midi_data_intf;
+struct usbd_interface intf0;
+struct usbd_interface intf1;
 
 struct usbd_endpoint midi_out_ep = {
     .ep_addr = MIDI_OUT_EP,
@@ -154,8 +154,8 @@ struct usbd_endpoint midi_in_ep = {
 void midi_init(void)
 {
     usbd_desc_register(midi_descriptor);
-    usbd_add_interface(&midi_cmd_intf);
-    usbd_add_interface(&midi_data_intf);
+    usbd_add_interface(&intf0);
+    usbd_add_interface(&intf1);
     usbd_add_endpoint(&midi_out_ep);
     usbd_add_endpoint(&midi_in_ep);
 

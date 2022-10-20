@@ -912,14 +912,8 @@ static void usbd_msc_thread(void *argument)
 }
 #endif
 
-struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t in_ep)
+struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uint8_t out_ep, const uint8_t in_ep)
 {
-    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
-    if (intf == NULL) {
-        USB_LOG_ERR("no mem to alloc intf\r\n");
-        return NULL;
-    }
-
     intf->class_interface_handler = msc_storage_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;

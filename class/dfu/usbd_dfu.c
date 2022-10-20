@@ -477,14 +477,8 @@ static void dfu_notify_handler(uint8_t event, void *arg)
     }
 }
 
-struct usbd_interface *usbd_dfu_alloc_intf(void)
+struct usbd_interface *usbd_dfu_init_intf(struct usbd_interface *intf)
 {
-    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
-    if (intf == NULL) {
-        USB_LOG_ERR("no mem to alloc intf\r\n");
-        return NULL;
-    }
-
     intf->class_interface_handler = dfu_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;

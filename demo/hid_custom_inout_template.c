@@ -194,17 +194,12 @@ static struct usbd_endpoint custom_out_ep = {
     .ep_addr = HIDRAW_OUT_EP
 };
 
-/* function ------------------------------------------------------------------*/
-/**
-  * @brief            hid custom init
-  * @pre              none
-  * @param[in]        none
-  * @retval           none
-  */
+struct usbd_interface intf0;
+
 void hid_custom_keyboard_init(void)
 {
     usbd_desc_register(hid_descriptor);
-    usbd_add_interface(usbd_hid_alloc_intf(hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
+    usbd_add_interface(usbd_hid_init_intf(&intf0, hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
     usbd_add_endpoint(&custom_in_ep);
     usbd_add_endpoint(&custom_out_ep);
 

@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-/* Alloc cdc acm interface driver */
-struct usbd_interface *usbd_cdc_acm_alloc_intf(void);
+/* Init cdc acm interface driver */
+struct usbd_interface *usbd_cdc_acm_init_intf(struct usbd_interface *intf);
 
 /* Setup request command callback api */
 void usbd_cdc_acm_set_line_coding(uint8_t intf, struct cdc_line_coding *line_coding);

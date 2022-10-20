@@ -144,12 +144,14 @@ struct usbd_endpoint cdc_in_ep = {
     .ep_cb = usbd_cdc_acm_bulk_in
 };
 
-/* function ------------------------------------------------------------------*/
+struct usbd_interface intf0;
+struct usbd_interface intf1;
+
 void cdc_acm_init(void)
 {
     usbd_desc_register(cdc_descriptor);
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf0));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf1));
     usbd_add_endpoint(&cdc_out_ep);
     usbd_add_endpoint(&cdc_in_ep);
     usbd_initialize();

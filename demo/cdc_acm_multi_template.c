@@ -187,28 +187,36 @@ struct usbd_endpoint cdc_in_ep4 = {
     .ep_cb = usbd_cdc_acm_bulk_in
 };
 
-/* function ------------------------------------------------------------------*/
+struct usbd_interface intf0;
+struct usbd_interface intf1;
+struct usbd_interface intf2;
+struct usbd_interface intf3;
+struct usbd_interface intf4;
+struct usbd_interface intf5;
+struct usbd_interface intf6;
+struct usbd_interface intf7;
+
 void cdc_acm_multi_init(void)
 {
     usbd_desc_register(cdc_descriptor);
 
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf0));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf1));
     usbd_add_endpoint(&cdc_out_ep1);
     usbd_add_endpoint(&cdc_in_ep1);
 
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf2));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf3));
     usbd_add_endpoint(&cdc_out_ep2);
     usbd_add_endpoint(&cdc_in_ep2);
 
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf4));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf5));
     usbd_add_endpoint(&cdc_out_ep3);
     usbd_add_endpoint(&cdc_in_ep3);
 
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
-    usbd_add_interface(usbd_cdc_acm_alloc_intf());
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf6));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf7));
     usbd_add_endpoint(&cdc_out_ep4);
     usbd_add_endpoint(&cdc_in_ep4);
 

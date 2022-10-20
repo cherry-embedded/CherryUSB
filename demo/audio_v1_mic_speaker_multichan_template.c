@@ -193,12 +193,16 @@ static struct usbd_endpoint audio_out_ep = {
     .ep_addr = AUDIO_OUT_EP
 };
 
+struct usbd_interface intf0;
+struct usbd_interface intf1;
+struct usbd_interface intf2;
+
 void audio_init()
 {
     usbd_desc_register(audio_descriptor);
-    usbd_add_interface(usbd_audio_alloc_intf());
-    usbd_add_interface(usbd_audio_alloc_intf());
-    usbd_add_interface(usbd_audio_alloc_intf());
+    usbd_add_interface(usbd_audio_init_intf(&intf0));
+    usbd_add_interface(usbd_audio_init_intf(&intf1));
+    usbd_add_interface(usbd_audio_init_intf(&intf2));
     usbd_add_endpoint(&audio_in_ep);
     usbd_add_endpoint(&audio_out_ep);
 

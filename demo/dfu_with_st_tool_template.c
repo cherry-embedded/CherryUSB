@@ -1,9 +1,9 @@
 #include "usbd_core.h"
 #include "usbd_dfu.h"
 
-#define USBD_VID 0x0483
-#define USBD_PID 0xDF11
-#define USBD_MAX_POWER 100
+#define USBD_VID           0x0483
+#define USBD_PID           0xDF11
+#define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
 #define FLASH_DESC_STR "@Internal Flash   /0x08000000/16*001Ka,112*01Kg"
@@ -134,23 +134,19 @@ const uint8_t dfu_flash_descriptor[] = {
     0x01,
     0x00,
 #endif
-    0x00};
+    0x00
+};
 
 void usbd_configure_done_callback(void)
 {
     /* no out ep, do nothing */
 }
 
-/* function ------------------------------------------------------------------*/
-/**
- * @brief            dfu flash init
- * @pre              none
- * @param[in]        none
- * @retval           none
- */
+struct usbd_interface intf0;
+
 void dfu_flash_init(void)
 {
     usbd_desc_register(dfu_flash_descriptor);
-    usbd_add_interface(usbd_dfu_alloc_intf());
+    usbd_add_interface(usbd_dfu_init_intf(&intf0));
     usbd_initialize();
 }

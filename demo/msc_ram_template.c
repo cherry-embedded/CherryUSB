@@ -123,17 +123,12 @@ int usbd_msc_sector_write(uint32_t sector, uint8_t *buffer, uint32_t length)
     return 0;
 }
 
-/* function ------------------------------------------------------------------*/
-/**
-  * @brief            msc ram init
-  * @pre              none
-  * @param[in]        none
-  * @retval           none
-  */
+struct usbd_interface intf0;
+
 void msc_ram_init(void)
 {
     usbd_desc_register(msc_ram_descriptor);
-    usbd_add_interface(usbd_msc_alloc_intf(MSC_OUT_EP, MSC_IN_EP));
+    usbd_add_interface(usbd_msc_init_intf(&intf0, MSC_OUT_EP, MSC_IN_EP));
 
     usbd_initialize();
 }

@@ -206,8 +206,6 @@ void usbd_winusb_in(uint8_t ep, uint32_t nbytes)
 {
 }
 
-struct usbd_interface winusb_intf;
-
 struct usbd_endpoint winusb_out_ep = {
     .ep_addr = WINUSB_OUT_EP,
     .ep_cb = usbd_winusb_out
@@ -218,16 +216,15 @@ struct usbd_endpoint winusb_in_ep = {
     .ep_cb = usbd_winusb_in
 };
 
+struct usbd_interface intf0;
+
 void daplink_winusb_init(void)
 {
     usbd_desc_register(winusb_descriptor);
     usbd_msosv1_desc_register(&msosv1_desc);
-    usbd_add_interface(&winusb_intf);
+    usbd_add_interface(&intf0);
     usbd_add_endpoint(&winusb_out_ep);
     usbd_add_endpoint(&winusb_in_ep);
 
     usbd_initialize();
-
-    /* setup first out ep read transfer */
-    usbd_ep_start_read(WINUSB_OUT_EP, read_buffer, 2048);
 }

@@ -161,14 +161,16 @@ void usbd_configure_done_callback(void)
 
 #endif /* RT_USING_LWIP */
 
-/* function ------------------------------------------------------------------*/
+struct usbd_interface intf0;
+struct usbd_interface intf1;
+
 void cdc_rndis_init(void)
 {
 #ifdef RT_USING_LWIP
     rt_usbd_rndis_init();
 #endif
     usbd_desc_register(cdc_descriptor);
-    usbd_add_interface(usbd_rndis_alloc_intf(CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
-    usbd_add_interface(usbd_rndis_alloc_intf(CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_add_interface(usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_add_interface(usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
     usbd_initialize();
 }

@@ -373,14 +373,8 @@ static void audio_notify_handler(uint8_t event, void *arg)
     }
 }
 
-struct usbd_interface *usbd_audio_alloc_intf(void)
+struct usbd_interface *usbd_audio_init_intf(struct usbd_interface *intf)
 {
-    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
-    if (intf == NULL) {
-        USB_LOG_ERR("no mem to alloc intf\r\n");
-        return NULL;
-    }
-
     intf->class_interface_handler = audio_class_interface_request_handler;
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
     intf->class_endpoint_handler = audio_class_endpoint_request_handler;

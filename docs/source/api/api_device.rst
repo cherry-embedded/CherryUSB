@@ -4,7 +4,7 @@
 设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 `usbd_add_interface` 函数，记录传入的接口驱动保存到链表中，当主机进行类请求时就可以查找链表进行访问了。
 在调用 `usbd_desc_register` 以后需要进行接口注册和端点注册，口诀如下：
 
-- 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_alloc_intf`, 如果没有支持的，手动创建一个填入
+- 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_init_intf`, 如果没有支持的，手动创建一个填入
 - 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
 CORE
@@ -109,7 +109,7 @@ usbd_add_interface
 
     void usbd_add_interface(struct usbd_interface *intf);
 
-- **intf**  接口驱动句柄，通常从不同 class 的 `xxx_alloc_intf` 函数获取
+- **intf**  接口驱动句柄，通常从不同 class 的 `xxx_init_intf` 函数获取
 
 usbd_add_endpoint
 """"""""""""""""""""""""""""""""""""
@@ -156,17 +156,17 @@ usbd_initialize
 CDC ACM
 -----------------
 
-usbd_cdc_acm_alloc_intf
+usbd_cdc_acm_init_intf
 """"""""""""""""""""""""""""""""""""
 
-``usbd_cdc_acm_alloc_intf`` 用来申请一个 USB CDC ACM 类接口，并实现该接口相关的函数。
+``usbd_cdc_acm_init_intf`` 用来初始化 USB CDC ACM 类接口，并实现该接口相关的函数。
 
 - ``cdc_acm_class_request_handler`` 用来处理 USB CDC ACM 类 Setup 请求。
 - ``cdc_notify_handler`` 用来处理 USB CDC 其他中断回调函数。
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_cdc_acm_alloc_intf(void);
+    struct usbd_interface *usbd_cdc_acm_init_intf(struct usbd_interface *intf);
 
 - **return**  接口句柄
 
@@ -236,10 +236,10 @@ CDC_ACM_DESCRIPTOR_INIT
 HID
 -----------------
 
-usbd_hid_alloc_intf
+usbd_hid_init_intf
 """"""""""""""""""""""""""""""""""""
 
-``usbd_hid_alloc_intf`` 用来申请一个 USB HID 类接口，并实现该接口相关的函数：
+``usbd_hid_init_intf`` 用来初始化 USB HID 类接口，并实现该接口相关的函数：
 
 - ``hid_class_request_handler`` 用来处理 USB HID 类的 Setup 请求。
 - ``hid_custom_request_handler`` 用来处理 USB HID 获取报告描述符请求。
@@ -247,7 +247,7 @@ usbd_hid_alloc_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_hid_alloc_intf(const uint8_t *desc, uint32_t desc_len);
+    struct usbd_interface *usbd_hid_init_intf(struct usbd_interface *intf, const uint8_t *desc, uint32_t desc_len);
 
 - **desc** 报告描述符
 - **desc_len** 报告描述符长度
@@ -255,9 +255,9 @@ usbd_hid_alloc_intf
 MSC
 -----------------
 
-usbd_msc_alloc_intf
+usbd_msc_init_intf
 """"""""""""""""""""""""""""""""""""
-``usbd_msc_alloc_intf`` 用来申请一个 MSC 类接口，并实现该接口相关函数，并且注册端点回调函数。（因为 msc bot 协议是固定的，所以不需要用于实现，因此端点回调函数自然不需要用户实现）。
+``usbd_msc_init_intf`` 用来初始化 MSC 类接口，并实现该接口相关函数，并且注册端点回调函数。（因为 msc bot 协议是固定的，所以不需要用于实现，因此端点回调函数自然不需要用户实现）。
 
 - ``msc_storage_class_request_handler`` 用于处理 USB MSC Setup 中断请求。
 - ``msc_storage_notify_handler`` 用于实现 USB MSC 其他中断回调函数。
@@ -267,7 +267,7 @@ usbd_msc_alloc_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_msc_alloc_intf(const uint8_t out_ep, const uint8_t in_ep);
+    struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uint8_t out_ep, const uint8_t in_ep);
 
 - **out_ep**     out 端点地址
 - **in_ep**      in 端点地址
@@ -315,16 +315,16 @@ usbd_msc_sector_write
 UAC
 -----------------
 
-usbd_audio_alloc_intf
+usbd_audio_init_intf
 """"""""""""""""""""""""""""""""""""
-``usbd_audio_alloc_intf``  用来申请一个 USB Audio 类接口，并实现该接口相关的函数：
+``usbd_audio_init_intf``  用来初始化 USB Audio 类接口，并实现该接口相关的函数：
 
 - ``audio_class_request_handler`` 用于处理 USB Audio Setup 中断请求。
 - ``audio_notify_handler`` 用于实现 USB Audio 其他中断回调函数。
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_audio_alloc_intf(void);
+    struct usbd_interface *usbd_audio_init_intf(struct usbd_interface *intf);
 
 - **class** 类的句柄
 - **intf**  接口句柄
@@ -425,16 +425,17 @@ usbd_audio_set_pitch
 UVC
 -----------------
 
-usbd_video_alloc_intf
+usbd_video_init_intf
 """"""""""""""""""""""""""""""""""""
-``usbd_video_alloc_intf``  用来申请一个 USB Video 类接口，并实现该接口相关的函数：
+``usbd_video_init_intf``  用来初始化 USB Video 类接口，并实现该接口相关的函数：
 
 - ``video_class_request_handler`` 用于处理 USB Video Setup 中断请求。
 - ``video_notify_handler`` 用于实现 USB Video 其他中断回调函数。
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_video_alloc_intf(uint32_t dwFrameInterval,
+    struct usbd_interface *usbd_video_init_intf(struct usbd_interface *intf,
+                                             uint32_t dwFrameInterval,
                                              uint32_t dwMaxVideoFrameSize,
                                              uint32_t dwMaxPayloadTransferSize);
 
