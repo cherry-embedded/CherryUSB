@@ -691,33 +691,34 @@ void USBD_IRQHandler(void)
         txis &= ~USB_TXIE_EP0;
     }
 
-    for (uint32_t ep_idx = 1; ep_idx < USB_NUM_BIDIR_ENDPOINTS; ep_idx++) {
+    while (txis) {
         if (txis & (1 << ep_idx)) {
             musb_set_active_ep(ep_idx);
             HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << ep_idx);
             if (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_UNDRN) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_UNDRN;
             }
-            if (g_musb_udc.in_ep[ep_idx].xfer_len > g_musb_udc.in_ep[ep_idx].ep_mps) {
-                g_musb_udc.in_ep[ep_idx].xfer_buf += g_musb_udc.in_ep[ep_idx].ep_mps;
-                g_musb_udc.in_ep[ep_idx].actual_xfer_len += g_musb_udc.in_ep[ep_idx].ep_mps;
-                g_musb_udc.in_ep[ep_idx].xfer_len -= g_musb_udc.in_ep[ep_idx].ep_mps;
 
+            write_count = MIN(g_musb_udc.in_ep[ep_idx].xfer_len, g_musb_udc.in_ep[ep_idx].ep_mps);
+            g_musb_udc.in_ep[ep_idx].xfer_buf += write_count;
+            g_musb_udc.in_ep[ep_idx].actual_xfer_len += write_count;
+            g_musb_udc.in_ep[ep_idx].xfer_len -= write_count;
+
+            if (g_musb_udc.in_ep[ep_idx].xfer_len == 0) {
+                usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_musb_udc.in_ep[ep_idx].actual_xfer_len);
+            } else {
                 write_count = MIN(g_musb_udc.in_ep[ep_idx].xfer_len, g_musb_udc.in_ep[ep_idx].ep_mps);
 
                 musb_write_packet(ep_idx, g_musb_udc.in_ep[ep_idx].xfer_buf, write_count);
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
-            } else {
-                g_musb_udc.in_ep[ep_idx].xfer_buf += g_musb_udc.in_ep[ep_idx].xfer_len;
-                g_musb_udc.in_ep[ep_idx].actual_xfer_len += g_musb_udc.in_ep[ep_idx].xfer_len;
-                g_musb_udc.in_ep[ep_idx].xfer_len = 0;
-                usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_musb_udc.in_ep[ep_idx].actual_xfer_len);
             }
+
+            txis &= ~(1 << ep_idx);
         }
     }
 
     rxis &= HWREGH(USB_BASE + MUSB_RXIE_OFFSET);
-    for (uint32_t ep_idx = 1; ep_idx < USB_NUM_BIDIR_ENDPOINTS; ep_idx++) {
+    while (rxis) {
         if (rxis & (1 << ep_idx)) {
             musb_set_active_ep(ep_idx);
             HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << ep_idx);
@@ -737,6 +738,8 @@ void USBD_IRQHandler(void)
                 } else {
                 }
             }
+
+            rxis &= ~(1 << ep_idx);
         }
     }
 
