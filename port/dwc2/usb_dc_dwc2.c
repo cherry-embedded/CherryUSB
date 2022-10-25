@@ -422,8 +422,8 @@ static void dwc2_tx_fifo_empty_procecss(uint8_t ep_idx)
     uint32_t len32b;
     uint32_t fifoemptymsk;
 
-    len = g_dwc2_udc.in_ep[ep_idx].xfer_len;
-    if (g_dwc2_udc.in_ep[ep_idx].xfer_len > g_dwc2_udc.in_ep[ep_idx].ep_mps) {
+    len = g_dwc2_udc.in_ep[ep_idx].xfer_len - g_dwc2_udc.in_ep[ep_idx].actual_xfer_len;
+    if (len > g_dwc2_udc.in_ep[ep_idx].ep_mps) {
         len = g_dwc2_udc.in_ep[ep_idx].ep_mps;
     }
 
@@ -432,10 +432,11 @@ static void dwc2_tx_fifo_empty_procecss(uint8_t ep_idx)
     while (((USB_OTG_INEP(ep_idx)->DTXFSTS & USB_OTG_DTXFSTS_INEPTFSAV) >= len32b) &&
            (g_dwc2_udc.in_ep[ep_idx].actual_xfer_len < g_dwc2_udc.in_ep[ep_idx].xfer_len) && (g_dwc2_udc.in_ep[ep_idx].xfer_len != 0U)) {
         /* Write the FIFO */
-        len = g_dwc2_udc.in_ep[ep_idx].xfer_len;
-        if (g_dwc2_udc.in_ep[ep_idx].xfer_len > g_dwc2_udc.in_ep[ep_idx].ep_mps) {
+        len = g_dwc2_udc.in_ep[ep_idx].xfer_len - g_dwc2_udc.in_ep[ep_idx].actual_xfer_len;
+        if (len > g_dwc2_udc.in_ep[ep_idx].ep_mps) {
             len = g_dwc2_udc.in_ep[ep_idx].ep_mps;
         }
+
         dwc2_ep_write(ep_idx, g_dwc2_udc.in_ep[ep_idx].xfer_buf, len);
         g_dwc2_udc.in_ep[ep_idx].xfer_buf += len;
         g_dwc2_udc.in_ep[ep_idx].actual_xfer_len += len;
@@ -708,13 +709,10 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
                     break;
             }
         }
-        if ((USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DIEPCTL_USBAEP) == 0U) {
-            USB_OTG_OUTEP(ep_idx)->DOEPCTL |= (ep_mps & USB_OTG_DOEPCTL_MPSIZ) |
-                                              ((uint32_t)ep_cfg->ep_type << 18) |
-                                              USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
-                                              USB_OTG_DOEPCTL_USBAEP;
-        }
-
+        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= (ep_mps & USB_OTG_DOEPCTL_MPSIZ) |
+                                          ((uint32_t)ep_cfg->ep_type << 18) |
+                                          USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                          USB_OTG_DOEPCTL_USBAEP;
     } else {
         g_dwc2_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
         g_dwc2_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
@@ -722,12 +720,10 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 
         USB_OTG_DEV->DAINTMSK |= USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << ep_idx);
 
-        if ((USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_USBAEP) == 0U) {
-            USB_OTG_INEP(ep_idx)->DIEPCTL |= (ep_cfg->ep_mps & USB_OTG_DIEPCTL_MPSIZ) |
-                                             ((uint32_t)ep_cfg->ep_type << 18) | (ep_idx << 22) |
-                                             USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
-                                             USB_OTG_DIEPCTL_USBAEP;
-        }
+        USB_OTG_INEP(ep_idx)->DIEPCTL |= (ep_cfg->ep_mps & USB_OTG_DIEPCTL_MPSIZ) |
+                                         ((uint32_t)ep_cfg->ep_type << 18) | (ep_idx << 22) |
+                                         USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                         USB_OTG_DIEPCTL_USBAEP;
     }
     return 0;
 }
@@ -737,30 +733,26 @@ int usbd_ep_close(const uint8_t ep)
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
     if (USB_EP_DIR_IS_OUT(ep)) {
-        if ((USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) == USB_OTG_DOEPCTL_EPENA) {
-            USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
-            USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
-        }
+        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
+        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
         USB_OTG_OUTEP(ep_idx)->DOEPCTL &= ~(USB_OTG_DOEPCTL_USBAEP |
-                                        USB_OTG_DOEPCTL_MPSIZ |
-                                        USB_OTG_DOEPCTL_SD0PID_SEVNFRM |
-                                        USB_OTG_DOEPCTL_EPTYP);
+                                            USB_OTG_DOEPCTL_MPSIZ |
+                                            USB_OTG_DOEPCTL_SD0PID_SEVNFRM |
+                                            USB_OTG_DOEPCTL_EPTYP);
     } else {
-        if ((USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) == USB_OTG_DIEPCTL_EPENA) {
-            USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SNAK;
-            USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
-        }
+        USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SNAK;
+        USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_INEP(ep_idx)->DIEPCTL &= ~(USB_OTG_DIEPCTL_USBAEP |
-                                       USB_OTG_DIEPCTL_MPSIZ |
-                                       USB_OTG_DIEPCTL_TXFNUM |
-                                       USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
-                                       USB_OTG_DIEPCTL_EPTYP);
+                                           USB_OTG_DIEPCTL_MPSIZ |
+                                           USB_OTG_DIEPCTL_TXFNUM |
+                                           USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                           USB_OTG_DIEPCTL_EPTYP);
     }
     return 0;
 }
@@ -945,7 +937,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
 
 void USBD_IRQHandler(void)
 {
-    uint32_t gint_status, temp, ep_idx, ep_intr, epint;
+    uint32_t gint_status, temp, ep_idx, ep_intr, epint, read_count;
     gint_status = dwc2_get_glb_intstatus();
 
     if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_DEVICE) {
@@ -992,17 +984,13 @@ void USBD_IRQHandler(void)
                                 /* Out status, start reading setup */
                                 dwc2_ep0_start_read_setup((uint8_t *)&g_dwc2_udc.setup);
                             } else {
-                                if (g_dwc2_udc.out_ep[ep_idx].xfer_len > g_dwc2_udc.out_ep[ep_idx].ep_mps) {
-                                    g_dwc2_udc.out_ep[ep_idx].actual_xfer_len += g_dwc2_udc.out_ep[ep_idx].ep_mps;
-                                    g_dwc2_udc.out_ep[ep_idx].xfer_len -= g_dwc2_udc.out_ep[ep_idx].ep_mps;
-                                } else {
-                                    g_dwc2_udc.out_ep[ep_idx].actual_xfer_len += g_dwc2_udc.out_ep[ep_idx].xfer_len;
-                                    g_dwc2_udc.out_ep[ep_idx].xfer_len = 0;
-                                }
+                                g_dwc2_udc.out_ep[ep_idx].actual_xfer_len = g_dwc2_udc.out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
+                                g_dwc2_udc.out_ep[ep_idx].xfer_len = 0;
                                 usbd_event_ep_out_complete_handler(0x00, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                             }
                         } else {
                             g_dwc2_udc.out_ep[ep_idx].actual_xfer_len = g_dwc2_udc.out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
+                            g_dwc2_udc.out_ep[ep_idx].xfer_len = 0;
                             usbd_event_ep_out_complete_handler(ep_idx, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                         }
                     }
@@ -1026,18 +1014,8 @@ void USBD_IRQHandler(void)
 
                     if ((epint & USB_OTG_DIEPINT_XFRC) == USB_OTG_DIEPINT_XFRC) {
                         if (ep_idx == 0) {
-                            if (g_dwc2_udc.in_ep[ep_idx].xfer_len > g_dwc2_udc.in_ep[ep_idx].ep_mps) {
-#ifdef CONFIG_USB_DWC2_DMA_ENABLE
-                                g_dwc2_udc.in_ep[ep_idx].actual_xfer_len += g_dwc2_udc.in_ep[ep_idx].ep_mps;
-#endif
-                                g_dwc2_udc.in_ep[ep_idx].xfer_len -= g_dwc2_udc.in_ep[ep_idx].ep_mps;
-                            } else {
-#ifdef CONFIG_USB_DWC2_DMA_ENABLE
-                                g_dwc2_udc.in_ep[ep_idx].actual_xfer_len += g_dwc2_udc.in_ep[ep_idx].xfer_len;
-#endif
-                                g_dwc2_udc.in_ep[ep_idx].xfer_len = 0;
-                            }
-
+                            g_dwc2_udc.in_ep[ep_idx].actual_xfer_len = g_dwc2_udc.in_ep[ep_idx].xfer_len - ((USB_OTG_INEP(ep_idx)->DIEPTSIZ) & USB_OTG_DIEPTSIZ_XFRSIZ);
+                            g_dwc2_udc.in_ep[ep_idx].xfer_len = 0;
                             usbd_event_ep_in_complete_handler(0x80, g_dwc2_udc.in_ep[ep_idx].actual_xfer_len);
 
                             if (g_dwc2_udc.setup.wLength && ((g_dwc2_udc.setup.bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
@@ -1049,6 +1027,7 @@ void USBD_IRQHandler(void)
                             }
                         } else {
                             g_dwc2_udc.in_ep[ep_idx].actual_xfer_len = g_dwc2_udc.in_ep[ep_idx].xfer_len - ((USB_OTG_INEP(ep_idx)->DIEPTSIZ) & USB_OTG_DIEPTSIZ_XFRSIZ);
+                            g_dwc2_udc.in_ep[ep_idx].xfer_len = 0;
                             usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_dwc2_udc.in_ep[ep_idx].actual_xfer_len);
                         }
                     }
@@ -1072,8 +1051,8 @@ void USBD_IRQHandler(void)
                     USB_OTG_INEP(i)->DIEPCTL = USB_OTG_DIEPCTL_SNAK;
                     USB_OTG_OUTEP(i)->DOEPCTL = USB_OTG_DOEPCTL_SNAK;
                 } else {
-                    USB_OTG_INEP(i)->DIEPCTL = USB_OTG_DIEPCTL_EPDIS | USB_OTG_DIEPCTL_SNAK;
-                    USB_OTG_OUTEP(i)->DOEPCTL = USB_OTG_DOEPCTL_EPDIS | USB_OTG_DOEPCTL_SNAK;
+                    USB_OTG_INEP(i)->DIEPCTL = USB_OTG_DIEPCTL_SNAK;
+                    USB_OTG_OUTEP(i)->DOEPCTL = USB_OTG_DOEPCTL_SNAK;
                 }
                 USB_OTG_INEP(i)->DIEPTSIZ = 0U;
                 USB_OTG_INEP(i)->DIEPINT = 0xFB7FU;
