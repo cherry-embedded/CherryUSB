@@ -29,12 +29,18 @@
 #define GET_SETUP_PACKET(data_add) \
     *(struct usb_setup_packet *)data_add
 
-/*!< Set epid ep tx valid */
+/*!< Set epid ep tx valid // Not an isochronous endpoint  */
 #define EPn_SET_TX_VALID(epid) \
     EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_T_RES) | UEP_T_RES_ACK;
-/*!< Set epid ep rx valid */
+/*!< Set epid ep rx valid // Not an isochronous endpoint */
 #define EPn_SET_RX_VALID(epid) \
     EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_R_RES) | UEP_R_RES_ACK;
+/*!< Set epid ep tx valid // Isochronous endpoint */
+#define EPn_SET_TX_ISO_VALID(epid) \
+    EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_T_RES) | UEP_T_RES_TOUT;
+/*!< Set epid ep rx valid // Isochronous endpoint */
+#define EPn_SET_RX_ISO_VALID(epid) \
+    EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_R_RES) | UEP_R_RES_TOUT;
 /*!< Set epid ep tx nak */
 #define EPn_SET_TX_NAK(epid) \
     EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_T_RES) | UEP_T_RES_NAK;
@@ -47,6 +53,12 @@
 /*!< Set epid ep rx stall */
 #define EPn_SET_RX_STALL(epid) \
     EPn_CTRL(epid) = (EPn_CTRL(epid) & ~MASK_UEP_R_RES) | UEP_R_RES_STALL
+/*!< Clear epid ep tx stall */
+#define EPn_CLR_TX_STALL(epid) \
+    EPn_CTRL(epid) = (EPn_CTRL(epid) & ~(RB_UEP_T_TOG | MASK_UEP_T_RES)) | UEP_T_RES_NAK
+/*!< Clear epid ep rx stall */
+#define EPn_CLR_RX_STALL(epid) \
+    EPn_CTRL(epid) = (EPn_CTRL(epid) & ~(RB_UEP_R_TOG | MASK_UEP_R_RES)) | UEP_R_RES_ACK
 /*!< Set epid ep tx len */
 #define EPn_SET_TX_LEN(epid, len) \
     EPn_TX_LEN(epid) = len
@@ -152,12 +164,14 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     /*!< update ep max packet length */
     if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr)) {
         /*!< in */
-        usb_dc_cfg.ep_in[epid].mps = mps;
         usb_dc_cfg.ep_in[epid].ep_enable = true;
+        usb_dc_cfg.ep_in[epid].mps = mps;
+        usb_dc_cfg.ep_in[epid].eptype = ep_cfg->ep_type;
     } else if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
         /*!< out */
         usb_dc_cfg.ep_out[epid].ep_enable = true;
         usb_dc_cfg.ep_out[epid].mps = mps;
+        usb_dc_cfg.ep_out[epid].eptype = ep_cfg->ep_type;
     }
     return 0;
 }
@@ -221,7 +235,11 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         /*!< write 0 len data */
         EPn_SET_TX_LEN(ep_idx, 0);
         /*!< enable tx */
-        EPn_SET_TX_VALID(ep_idx);
+        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            EPn_SET_TX_VALID(ep_idx);
+        } else {
+            EPn_SET_TX_ISO_VALID(ep_idx);
+        }
         /*!< return */
         return 0;
     } else {
@@ -232,7 +250,11 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         /*!< write real_wt_nums len data */
         EPn_SET_TX_LEN(ep_idx, data_len);
         /*!< enable tx */
-        EPn_SET_TX_VALID(ep_idx);
+        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            EPn_SET_TX_VALID(ep_idx);
+        } else {
+            EPn_SET_TX_ISO_VALID(ep_idx);
+        }
     }
     return 0;
 }
@@ -276,7 +298,12 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     } else {
         data_len = MIN(data_len, usb_dc_cfg.ep_out[ep_idx].mps);
     }
-    EPn_SET_RX_VALID(ep_idx);
+
+    if (usb_dc_cfg.ep_out[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+        EPn_SET_RX_VALID(ep_idx);
+    } else {
+        EPn_SET_RX_ISO_VALID(ep_idx);
+    }
     return 0;
 }
 
@@ -290,8 +317,11 @@ int usbd_ep_set_stall(const uint8_t ep)
 {
     /*!< ep id */
     uint8_t epid = USB_EP_GET_IDX(ep);
-    EPn_SET_RX_STALL(epid);
-    EPn_SET_TX_STALL(epid);
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        EPn_SET_RX_STALL(epid);
+    } else {
+        EPn_SET_TX_STALL(epid);
+    }
     return 0;
 }
 
@@ -303,30 +333,13 @@ int usbd_ep_set_stall(const uint8_t ep)
  */
 int usbd_ep_clear_stall(const uint8_t ep)
 {
-    int ret;
-    switch (ep) {
-        case 0x82:
-            CH58x_USBFS_DEV->UEP2_CTRL = (CH58x_USBFS_DEV->UEP2_CTRL & ~(RB_UEP_T_TOG | MASK_UEP_T_RES)) | UEP_T_RES_NAK;
-            ret = 0;
-            break;
-        case 0x02:
-            CH58x_USBFS_DEV->UEP2_CTRL = (CH58x_USBFS_DEV->UEP2_CTRL & ~(RB_UEP_R_TOG | MASK_UEP_R_RES)) | UEP_R_RES_ACK;
-            ret = 0;
-            break;
-        case 0x81:
-            CH58x_USBFS_DEV->UEP1_CTRL = (CH58x_USBFS_DEV->UEP1_CTRL & ~(RB_UEP_T_TOG | MASK_UEP_T_RES)) | UEP_T_RES_NAK;
-            ret = 0;
-            break;
-        case 0x01:
-            CH58x_USBFS_DEV->UEP1_CTRL = (CH58x_USBFS_DEV->UEP1_CTRL & ~(RB_UEP_R_TOG | MASK_UEP_R_RES)) | UEP_R_RES_ACK;
-            ret = 0;
-            break;
-        default:
-            /*!< Unsupported endpoint */
-            ret = -1;
-            break;
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        EPn_CLR_RX_STALL(epid);
+    } else {
+        EPn_CLR_TX_STALL(epid);
     }
-    return ret;
+    return 0;
 }
 
 /**
@@ -336,8 +349,11 @@ int usbd_ep_clear_stall(const uint8_t ep)
  * @param[out]       stalled ： Outgoing endpoint status
  * @retval           >=0 success otherwise failure
  */
-int usbd_ep_get_stall(const uint8_t ep, uint8_t *stalled)
+int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 {
+    if (USB_EP_DIR_IS_OUT(ep)) {
+    } else {
+    }
     return 0;
 }
 
@@ -503,7 +519,11 @@ USBD_IRQHandler(void)
                             } else {
                                 memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].xfer_len);
                             }
-                            EPn_SET_TX_VALID(epid);
+                            if (usb_dc_cfg.ep_in[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                                EPn_SET_TX_VALID(epid);
+                            } else {
+                                EPn_SET_TX_ISO_VALID(epid);
+                            }
                         } else {
                             usb_dc_cfg.ep_in[epid].actual_xfer_len += usb_dc_cfg.ep_in[epid].xfer_len;
                             usb_dc_cfg.ep_in[epid].xfer_len = 0;
@@ -539,7 +559,11 @@ USBD_IRQHandler(void)
                             if ((read_count < usb_dc_cfg.ep_out[epid].mps) || (usb_dc_cfg.ep_out[epid].xfer_len == 0)) {
                                 usbd_event_ep_out_complete_handler(((epid)&0x7f), usb_dc_cfg.ep_out[epid].actual_xfer_len);
                             } else {
-                                EPn_SET_RX_VALID(epid);
+                                if (usb_dc_cfg.ep_out[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                                    EPn_SET_RX_VALID(epid);
+                                } else {
+                                    EPn_SET_RX_ISO_VALID(epid);
+                                }
                             }
                         }
                     }
@@ -559,16 +583,16 @@ USBD_IRQHandler(void)
              * If it is in, the host will send the data1 out packet to complete the status phase after the in completes.
              * If it is out, the host will send the data1 in packet to complete the status phase after the out completes.
              */
-            CH58x_USBFS_DEV->UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+            CH58x_USBFS_DEV->UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_T_RES_NAK;
             /*!< get setup packet */
             usb_dc_cfg.setup = GET_SETUP_PACKET(usb_dc_cfg.ep_out[0].ep_ram_addr);
             if (usb_dc_cfg.setup.bmRequestType >> USB_REQUEST_DIR_SHIFT == 0) {
                 /**
-                * Ep0 The next in must be the status stage.
-                * The device must reply to the host data 0 length packet.
-                * Here, set the transmission length to 0 and the transmission status to ACK,
-                * and wait for the host to send the in token to retrieve
-                */
+                 * Ep0 The next in must be the status stage.
+                 * The device must reply to the host data 0 length packet.
+                 * Here, set the transmission length to 0 and the transmission status to ACK,
+                 * and wait for the host to send the in token to retrieve
+                 */
                 EPn_SET_TX_LEN(0, 0);
                 EPn_SET_TX_VALID(0);
             }
@@ -579,10 +603,10 @@ USBD_IRQHandler(void)
     } else if (intflag & RB_UIF_BUS_RST) {
         /*!< Reset */
         CH58x_USBFS_DEV->USB_DEV_AD = 0;
-        CH58x_USBFS_DEV->USB_INT_FG = RB_UIF_BUS_RST;
         usbd_event_reset_handler();
         /*!< Set ep0 rx vaild to start receive setup packet */
         EPn_SET_RX_VALID(0);
+        CH58x_USBFS_DEV->USB_INT_FG = RB_UIF_BUS_RST;
     } else if (intflag & RB_UIF_SUSPEND) {
         if (CH58x_USBFS_DEV->USB_MIS_ST & RB_UMS_SUSPEND) {
             /*!< Suspend */
