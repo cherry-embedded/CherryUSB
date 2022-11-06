@@ -8,14 +8,13 @@
 
 /* ================ USB common Configuration ================ */
 
-#ifndef CONFIG_USB_DBG_LEVEL
-// #define CONFIG_USB_DBG_LEVEL USB_DBG_LOG
-#define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
-// #define CONFIG_USB_DBG_LEVEL -1
-#endif
+#define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
 
-#ifndef CONFIG_USB_PRINTF
-#define CONFIG_USB_PRINTF printf
+#define usb_malloc(size) malloc(size)
+#define usb_free(ptr)    free(ptr)
+
+#ifndef CONFIG_USB_DBG_LEVEL
+#define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
 #endif
 
 /* Enable print with color */
