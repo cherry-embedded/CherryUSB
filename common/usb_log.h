@@ -14,10 +14,6 @@
 #define USB_DBG_INFO    2
 #define USB_DBG_LOG     3
 
-#ifndef CONFIG_USB_DBG_LEVEL
-#define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
-#endif
-
 #ifndef USB_DBG_TAG
 #define USB_DBG_TAG "USB"
 #endif
@@ -32,9 +28,6 @@
  * CYAN     36
  * WHITE    37
  */
-#ifndef CONFIG_USB_PRINTF
-#define CONFIG_USB_PRINTF printf
-#endif
 
 #ifdef  CONFIG_USB_PRINTF_COLOR_ENABLE
 #define _USB_DBG_COLOR(n) CONFIG_USB_PRINTF("\033[" #n "m")
@@ -80,7 +73,7 @@
 #define USB_LOG_ERR(...)
 #endif
 
-#define USB_LOG_RAW CONFIG_USB_PRINTF
+#define USB_LOG_RAW(...) CONFIG_USB_PRINTF(__VA_ARGS__)
 
 void usb_assert(const char *filename, int linenum);
 #define USB_ASSERT(f)                       \
