@@ -32,9 +32,9 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
     rt_err_t result = RT_EOK;
 
     result = rt_sem_take((rt_sem_t)sem, rt_tick_from_millisecond(timeout));
-    if (result == RT_ETIMEOUT) {
+    if (result == -RT_ETIMEOUT) {
         ret = -ETIMEDOUT;
-    } else if (result == RT_ERROR) {
+    } else if (result == -RT_ERROR) {
         ret = -EINVAL;
     } else {
         ret = 0;
