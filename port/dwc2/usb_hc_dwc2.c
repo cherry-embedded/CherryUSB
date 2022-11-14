@@ -653,7 +653,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                 if (hprt0 & USB_OTG_HPRT_POCA) {
                     status |= (1 << HUB_PORT_FEATURE_OVERCURRENT);
                 }
-                if (hprt0 & USB_OTG_HPRT_PRES) {
+                if (hprt0 & USB_OTG_HPRT_PRST) {
                     status |= (1 << HUB_PORT_FEATURE_RESET);
                 }
                 if (hprt0 & USB_OTG_HPRT_PPWR) {
