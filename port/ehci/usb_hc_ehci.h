@@ -52,7 +52,7 @@
 #define EHCI_USBCMD_IAAD                (1 << 6)                        /* Bit 6: Interrupt on Async Advance Doorbell */
 #define EHCI_USBCMD_LRESET              (1 << 7)                        /* Bit 7: Light Host Controller Reset */
 #define EHCI_USBCMD_ASYNC_PARKCNT_SHIFT (8)                             /* Bits 8-9: Asynchronous Schedule Park Mode Count */
-#define EHCI_USBCMD_ASYNC_PARKCNT_MASK  (3 << EHCI_USBCMD_PARKCNT_SHIFT)
+#define EHCI_USBCMD_ASYNC_PARKCNT_MASK  (3 << EHCI_USBCMD_ASYNC_PARKCNT_SHIFT)
 #define EHCI_USBCMD_ASYNC_PARK          (1 << 11) /* Bit 11: Asynchronous Schedule Park Mode Enable */
 #define EHCI_USBCMD_ITHRE_SHIFT         (16)      /* Bits 16-23: Interrupt Threshold Control */
 #define EHCI_USBCMD_ITHRE_MASK          (0xff << EHCI_USBCMD_ITHRE_SHIFT)
