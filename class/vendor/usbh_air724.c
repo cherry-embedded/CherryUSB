@@ -39,38 +39,33 @@ int usbh_air724_connect(struct usbh_hubport *hport, uint8_t intf)
 
     hport->config.intf[intf].priv = cdc_custom_class;
 
-    for (uint8_t i = 0; i < hport->config.intf[intf].intf_desc.bNumEndpoints; i++) {
-        ep_desc = &hport->config.intf[intf].ep[i].ep_desc;
+    for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
+        ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
 
-        ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-        ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
-        ep_cfg.ep_interval = ep_desc->bInterval;
-        ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_pipe_alloc(&cdc_custom_class->bulkin, &ep_cfg);
+            usbh_hport_activate_epx(&cdc_custom_class->bulkin, hport, ep_desc);
         } else {
-            usbh_pipe_alloc(&cdc_custom_class->bulkout, &ep_cfg);
+            usbh_hport_activate_epx(&cdc_custom_class->bulkout, hport, ep_desc);
         }
     }
 
     USB_LOG_INFO("Register air724 Class:%s\r\n", hport->config.intf[intf].devname);
-    uint8_t cdc_buffer[32] = {0X41,0X54,0x0d,0x0a};
-    ret = usbh_ep_bulk_transfer(cdc_custom_class->bulkout, cdc_buffer, 4, 3000);
-    if (ret < 0) {
-        USB_LOG_ERR("bulk out error,ret:%d\r\n", ret);
-    } else {
-        USB_LOG_RAW("send over:%d\r\n", ret);
-    }
-    ret = usbh_ep_bulk_transfer(cdc_custom_class->bulkin, cdc_buffer, 10, 3000);
-    if (ret < 0) {
-        USB_LOG_ERR("bulk in error,ret:%d\r\n", ret);
-    } else {
-        USB_LOG_RAW("recv over:%d\r\n", ret);
-        for (size_t i = 0; i < ret; i++) {
-            USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
-        }
-    }
+//    uint8_t cdc_buffer[32] = {0X41,0X54,0x0d,0x0a};
+//    ret = usbh_ep_bulk_transfer(cdc_custom_class->bulkout, cdc_buffer, 4, 3000);
+//    if (ret < 0) {
+//        USB_LOG_ERR("bulk out error,ret:%d\r\n", ret);
+//    } else {
+//        USB_LOG_RAW("send over:%d\r\n", ret);
+//    }
+//    ret = usbh_ep_bulk_transfer(cdc_custom_class->bulkin, cdc_buffer, 10, 3000);
+//    if (ret < 0) {
+//        USB_LOG_ERR("bulk in error,ret:%d\r\n", ret);
+//    } else {
+//        USB_LOG_RAW("recv over:%d\r\n", ret);
+//        for (size_t i = 0; i < ret; i++) {
+//            USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
+//        }
+//    }
 
     return ret;
 }

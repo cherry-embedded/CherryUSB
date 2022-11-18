@@ -9,19 +9,23 @@
 
 #define DEV_FORMAT "/dev/rndis"
 
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[1024];
+
 static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 {
     struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
-    rndis_initialize_msg_t cmd;
-    rndis_initialize_cmplt_t resp;
+    rndis_initialize_msg_t *cmd;
+    rndis_initialize_cmplt_t *resp;
 
-    cmd.MessageType = REMOTE_NDIS_INITIALIZE_MSG;
-    cmd.MessageLength = sizeof(rndis_initialize_msg_t);
-    cmd.RequestId = rndis_class->request_id++;
-    cmd.MajorVersion = 1;
-    cmd.MinorVersion = 0;
-    cmd.MaxTransferSize = 0x4000;
+    cmd = (rndis_initialize_msg_t *)g_rndis_buf;
+
+    cmd->MessageType = REMOTE_NDIS_INITIALIZE_MSG;
+    cmd->MessageLength = sizeof(rndis_initialize_msg_t);
+    cmd->RequestId = rndis_class->request_id++;
+    cmd->MajorVersion = 1;
+    cmd->MinorVersion = 0;
+    cmd->MaxTransferSize = 0x4000;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
@@ -29,7 +33,7 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
     setup->wIndex = 0;
     setup->wLength = sizeof(rndis_initialize_msg_t);
 
-    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&cmd);
+    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)cmd);
     if (ret < 0) {
         USB_LOG_ERR("rndis_initialize_msg_t send error, ret: %d\r\n", ret);
         return ret;
@@ -37,13 +41,15 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 
     //ret = usbh_ep_intr_transfer()
 
+    resp = (rndis_initialize_cmplt_t *)g_rndis_buf;
+
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_GET_ENCAPSULATED_RESPONSE;
     setup->wValue = 0;
     setup->wIndex = 0;
     setup->wLength = 4096;
 
-    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&resp);
+    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)resp);
     if (ret < 0) {
         USB_LOG_ERR("rndis_initialize_cmplt_t recv error, ret: %d\r\n", ret);
         return ret;
@@ -56,16 +62,18 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
 {
     struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
-    rndis_query_msg_t cmd;
+    rndis_query_msg_t *cmd;
     rndis_query_cmplt_t *resp;
 
-    cmd.MessageType = REMOTE_NDIS_QUERY_MSG;
-    cmd.MessageLength = query_len + sizeof(rndis_query_msg_t);
-    cmd.RequestId = rndis_class->request_id++;
-    cmd.Oid = oid;
-    cmd.InformationBufferLength = query_len;
-    cmd.InformationBufferOffset = 20;
-    cmd.DeviceVcHandle = 0;
+    cmd = (rndis_query_msg_t *)g_rndis_buf;
+
+    cmd->MessageType = REMOTE_NDIS_QUERY_MSG;
+    cmd->MessageLength = query_len + sizeof(rndis_query_msg_t);
+    cmd->RequestId = rndis_class->request_id++;
+    cmd->Oid = oid;
+    cmd->InformationBufferLength = query_len;
+    cmd->InformationBufferOffset = 20;
+    cmd->DeviceVcHandle = 0;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
@@ -81,11 +89,8 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
 
     //ret = usbh_ep_intr_transfer()
 
-    resp = usb_iomalloc(sizeof(rndis_query_cmplt_t) + 512);
-    if (resp == NULL) {
-        USB_LOG_ERR("Fail to alloc resp\r\n");
-        return -ENOMEM;
-    }
+    resp = (rndis_query_cmplt_t *)g_rndis_buf;
+
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_GET_ENCAPSULATED_RESPONSE;
     setup->wValue = 0;
@@ -95,16 +100,12 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
     ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)resp);
     if (ret < 0) {
         USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", (unsigned int)oid, ret);
-        goto error_out;
+        return ret;
     }
 
     memcpy(info, ((uint8_t *)resp + sizeof(rndis_query_cmplt_t)), resp->InformationBufferLength);
     *info_len = resp->InformationBufferLength;
 
-error_out:
-    if (resp) {
-        usb_iofree(resp);
-    }
     return ret;
 }
 
@@ -113,13 +114,10 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
     rndis_set_msg_t *cmd;
-    rndis_set_cmplt_t resp;
+    rndis_set_cmplt_t *resp;
 
-    cmd = usb_iomalloc(sizeof(rndis_set_msg_t) + info_len);
-    if (cmd == NULL) {
-        USB_LOG_ERR("Fail to alloc cmd\r\n");
-        return -ENOMEM;
-    }
+    cmd = (rndis_set_msg_t *)g_rndis_buf;
+
     cmd->MessageType = REMOTE_NDIS_SET_MSG;
     cmd->MessageLength = info_len + sizeof(rndis_set_msg_t);
     cmd->RequestId = rndis_class->request_id++;
@@ -138,10 +136,12 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)cmd);
     if (ret < 0) {
         USB_LOG_ERR("oid:%08x send error, ret: %d\r\n", (unsigned int)oid, ret);
-        goto error_out;
+        return ret;
     }
 
     //ret = usbh_ep_intr_transfer(rndis_class->hport->intin,buf,len,500);
+
+    resp = (rndis_set_cmplt_t *)g_rndis_buf;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_GET_ENCAPSULATED_RESPONSE;
@@ -149,16 +149,12 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     setup->wIndex = 0;
     setup->wLength = 4096;
 
-    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&resp);
+    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)resp);
     if (ret < 0) {
         USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", (unsigned int)oid, ret);
-        goto error_out;
+        return ret;
     }
 
-error_out:
-    if (cmd) {
-        usb_iofree(cmd);
-    }
     return ret;
 }
 
@@ -166,12 +162,14 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
 {
     struct usb_setup_packet *setup = &rndis_class->hport->setup;
     int ret = 0;
-    rndis_keepalive_msg_t cmd;
-    rndis_keepalive_cmplt_t resp;
+    rndis_keepalive_msg_t *cmd;
+    rndis_keepalive_cmplt_t *resp;
 
-    cmd.MessageType = REMOTE_NDIS_KEEPALIVE_MSG;
-    cmd.MessageLength = sizeof(rndis_keepalive_msg_t);
-    cmd.RequestId = rndis_class->request_id++;
+    cmd = (rndis_keepalive_msg_t *)g_rndis_buf;
+
+    cmd->MessageType = REMOTE_NDIS_KEEPALIVE_MSG;
+    cmd->MessageLength = sizeof(rndis_keepalive_msg_t);
+    cmd->RequestId = rndis_class->request_id++;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
@@ -187,13 +185,15 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
 
     //ret = usbh_ep_intr_transfer(rndis_class->hport->intin,buf,len,500);
 
+    resp = (rndis_keepalive_cmplt_t *)g_rndis_buf;
+
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_GET_ENCAPSULATED_RESPONSE;
     setup->wValue = 0;
     setup->wIndex = 0;
     setup->wLength = 4096;
 
-    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&resp);
+    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)resp);
     if (ret < 0) {
         USB_LOG_ERR("keepalive recv error, ret: %d\r\n", ret);
         return ret;
@@ -211,6 +211,8 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     unsigned int oid = 0;
     unsigned int oid_num = 0;
     uint32_t data_len;
+    uint8_t tmp_buffer[512];
+    uint8_t data[32];
 
     struct usbh_rndis *rndis_class = usb_malloc(sizeof(struct usbh_rndis));
     if (rndis_class == NULL) {
@@ -231,7 +233,8 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
     ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;;
+    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    ;
     ep_cfg.ep_interval = ep_desc->bInterval;
     ep_cfg.hport = hport;
     usbh_pipe_alloc(&rndis_class->intin, &ep_cfg);
@@ -240,15 +243,10 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
 
-        ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-        ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
-        ep_cfg.ep_interval = ep_desc->bInterval;
-        ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_pipe_alloc(&rndis_class->bulkin, &ep_cfg);
+            usbh_hport_activate_epx(&rndis_class->bulkin, hport, ep_desc);
         } else {
-            usbh_pipe_alloc(&rndis_class->bulkout, &ep_cfg);
+            usbh_hport_activate_epx(&rndis_class->bulkout, hport, ep_desc);
         }
     }
 
@@ -258,12 +256,9 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     }
     USB_LOG_INFO("rndis init success\r\n");
 
-    uint8_t *tmp_buffer = usb_iomalloc(512);
-    uint8_t data[32];
-
     ret = usbh_rndis_query_msg_transfer(rndis_class, OID_GEN_SUPPORTED_LIST, 0, tmp_buffer, &data_len);
     if (ret < 0) {
-        goto query_errorout;
+        return ret;
     }
     oid_num = (data_len / 4);
     USB_LOG_INFO("rndis query OID_GEN_SUPPORTED_LIST success,oid num :%d\r\n", oid_num);
@@ -321,7 +316,6 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
         }
         USB_LOG_INFO("rndis query iod:%08x success\r\n", oid);
     }
-    usb_iofree(tmp_buffer);
 
     uint32_t packet_filter = 0x0f;
     usbh_rndis_set_msg_transfer(rndis_class, OID_GEN_CURRENT_PACKET_FILTER, (uint8_t *)&packet_filter, 4);
@@ -343,7 +337,6 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 query_errorout:
     USB_LOG_ERR("rndis query iod:%08x error\r\n", oid);
-    usb_iofree(tmp_buffer);
     return ret;
 }
 
@@ -361,15 +354,11 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
         if (rndis_class->bulkout) {
             usbh_pipe_free(rndis_class->bulkout);
         }
-
+        memset(rndis_class, 0, sizeof(struct usbh_rndis));
         usb_free(rndis_class);
 
         if (hport->config.intf[intf].devname[0] != '\0')
             USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
-
-        hport->config.intf[intf].priv = NULL;
-        hport->config.intf[intf + 1].priv = NULL;
     }
 
     return ret;
