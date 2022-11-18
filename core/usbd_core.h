@@ -62,10 +62,26 @@ struct usbd_interface {
     uint8_t intf_num;
 };
 
+struct usb_descriptor {
+    const uint8_t *device_descriptor;
+    const uint8_t **fs_config_descriptor;
+    const uint8_t **hs_config_descriptor;
+    const uint8_t *device_quality_descriptor;
+    const uint8_t *other_speed_descriptor;
+    const char **string_descriptor;
+    struct usb_msosv1_descriptor *msosv1_descriptor;
+    struct usb_msosv2_descriptor *msosv2_descriptor;
+    struct usb_bos_descriptor *bos_descriptor;
+};
+
+#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+void usbd_desc_register(struct usb_descriptor *desc);
+#else
 void usbd_desc_register(const uint8_t *desc);
 void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);
 void usbd_msosv2_desc_register(struct usb_msosv2_descriptor *desc);
 void usbd_bos_desc_register(struct usb_bos_descriptor *desc);
+#endif
 
 void usbd_add_interface(struct usbd_interface *intf);
 void usbd_add_endpoint(struct usbd_endpoint *ep);
