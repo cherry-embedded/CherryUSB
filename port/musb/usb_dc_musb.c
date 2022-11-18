@@ -268,6 +268,20 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
+uint8_t usbd_get_port_speed(const uint8_t port)
+{
+    uint8_t speed;
+
+    if (HWREGB(USB_BASE + MUSB_POWER_OFFSET) & USB_POWER_HSMODE)
+        speed = USB_SPEED_HIGH;
+    else if (HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) & USB_DEVCTL_FSDEV)
+        speed = USB_SPEED_FULL;
+    else if (HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) & USB_DEVCTL_LSDEV)
+        speed = USB_SPEED_LOW;
+
+    return speed;
+}
+
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
     uint16_t used = 0;

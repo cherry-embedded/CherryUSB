@@ -124,6 +124,11 @@ int usbd_set_address(const uint8_t address)
     return 0;
 }
 
+uint8_t usbd_get_port_speed(const uint8_t port)
+{
+    return USB_SPEED_FULL;
+}
+
 /**
  * @brief            Open endpoint
  * @pre              None
