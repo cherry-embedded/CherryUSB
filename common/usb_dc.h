@@ -21,6 +21,7 @@ struct usbd_endpoint_cfg {
     uint8_t ep_addr; /* Endpoint addr with direction */
     uint8_t ep_type; /* Endpoint type */
     uint16_t ep_mps; /* Endpoint max packet size */
+    uint8_t ep_mult; /* Endpoint additional transcations in micro frame */
 };
 
 /**
