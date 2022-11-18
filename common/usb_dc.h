@@ -45,6 +45,15 @@ int usb_dc_deinit(void);
 int usbd_set_address(const uint8_t addr);
 
 /**
+ * @brief Get USB device speed
+ *
+ * @param[in] port port index
+ *
+ * @return port speed, USB_SPEED_LOW or USB_SPEED_FULL or USB_SPEED_HIGH
+ */
+uint8_t usbd_get_port_speed(const uint8_t port);
+
+/**
  * @brief configure and enable endpoint.
  *
  * @param [in]  ep_cfg Endpoint config.

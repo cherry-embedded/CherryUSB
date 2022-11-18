@@ -168,7 +168,7 @@ static void usb_start_transfer(struct usb_dc_ep_state *ep, uint8_t *buf, uint16_
     ep->next_pid ^= 1u;
     /**
      * !Need delay some cycles
-     * nop for some clk_sys cycles to ensure that at least one clk_usb cycle has passed. For example if clk_sys was running 
+     * nop for some clk_sys cycles to ensure that at least one clk_usb cycle has passed. For example if clk_sys was running
      * at 125MHz and clk_usb was running at 48MHz then 125/48 rounded up would be 3 nop instructions
      */
     *ep->buffer_control = val & ~USB_BUF_CTRL_AVAIL;
@@ -198,6 +198,11 @@ int usbd_set_address(const uint8_t addr)
         g_rp2040_udc.dev_addr = addr;
     }
     return 0;
+}
+
+uint8_t usbd_get_port_speed(const uint8_t port)
+{
+    return USB_SPEED_FULL;
 }
 
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
@@ -573,7 +578,7 @@ void USBD_IRQHandler(void)
 #endif
     }
 
-    /** 
+    /**
      * Note from pico datasheet 4.1.2.6.4 (v1.2)
      * If you enable the suspend interrupt, it is likely you will see a suspend interrupt when
      * the device is first connected but the bus is idle. The bus can be idle for a few ms before

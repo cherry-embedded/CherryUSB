@@ -87,6 +87,25 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
+uint8_t usbd_get_port_speed(const uint8_t port)
+{
+    uint8_t speed;
+
+    speed = usb_get_port_speed(g_hpm_udc.handle->regs);
+
+    if (speed == 0x00) {
+        return USB_SPEED_FULL;
+    }
+    if (speed == 0x01) {
+        return USB_SPEED_LOW;
+    }
+    if (speed == 0x02) {
+        return USB_SPEED_HIGH;
+    }
+
+    return 0;
+}
+
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
     usb_endpoint_config_t tmp_ep_cfg;

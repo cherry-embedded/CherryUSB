@@ -116,6 +116,11 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
+uint8_t usbd_get_port_speed(const uint8_t port)
+{
+    return USB_SPEED_FULL;
+}
+
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);

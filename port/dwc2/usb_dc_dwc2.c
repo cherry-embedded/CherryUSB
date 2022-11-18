@@ -675,6 +675,23 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
+uint8_t usbd_get_port_speed(const uint8_t port)
+{
+    uint8_t speed;
+    uint32_t DevEnumSpeed = USB_OTG_DEV->DSTS & USB_OTG_DSTS_ENUMSPD;
+
+    if (DevEnumSpeed == DSTS_ENUMSPD_HS_PHY_30MHZ_OR_60MHZ) {
+        speed = USB_SPEED_HIGH;
+    } else if ((DevEnumSpeed == DSTS_ENUMSPD_FS_PHY_30MHZ_OR_60MHZ) ||
+               (DevEnumSpeed == DSTS_ENUMSPD_FS_PHY_48MHZ)) {
+        speed = USB_SPEED_FULL;
+    } else {
+        speed = USB_SPEED_FULL;
+    }
+
+    return speed;
+}
+
 int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
