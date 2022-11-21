@@ -181,9 +181,6 @@ int usbh_initialize(void);
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
 void *usbh_find_class_instance(const char *devname);
 
-void usbh_device_mount_done_callback(struct usbh_hubport *hport);
-void usbh_device_unmount_done_callback(struct usbh_hubport *hport);
-
 int lsusb(int argc, char **argv);
 #ifdef __cplusplus
 }

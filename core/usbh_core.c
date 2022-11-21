@@ -623,7 +623,6 @@ int usbh_enumerate(struct usbh_hubport *hport)
         }
     }
 
-    usbh_device_mount_done_callback(hport);
 errout:
     if (ret < 0) {
         usbh_hport_deactivate_ep0(hport);
@@ -794,12 +793,4 @@ int lsusb(int argc, char **argv)
     }
 
     return 0;
-}
-
-__WEAK void usbh_device_mount_done_callback(struct usbh_hubport *hport)
-{
-}
-
-__WEAK void usbh_device_unmount_done_callback(struct usbh_hubport *hport)
-{
 }

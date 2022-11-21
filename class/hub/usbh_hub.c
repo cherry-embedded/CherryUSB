@@ -511,7 +511,6 @@ static void usbh_hub_events(struct usbh_hub *hub)
                 }
 
                 USB_LOG_INFO("Device on Hub %u, Port %u disconnected\r\n", hub->index, port + 1);
-                usbh_device_unmount_done_callback(child);
                 child->config.config_desc.bNumInterfaces = 0;
             }
         }
