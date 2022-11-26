@@ -158,6 +158,34 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     return ret;
 }
 
+int usbh_rndis_bulk_out_transfer(struct usbh_rndis *rndis_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
+{
+    int ret;
+    struct usbh_urb *urb = &rndis_class->bulkout_urb;
+    memset(urb, 0, sizeof(struct usbh_urb));
+
+    usbh_bulk_urb_fill(urb, rndis_class->bulkout, buffer, buflen, timeout, NULL, NULL);
+    ret = usbh_submit_urb(urb);
+    if (ret == 0) {
+        ret = urb->actual_length;
+    }
+    return ret;
+}
+
+int usbh_rndis_bulk_in_transfer(struct usbh_rndis *rndis_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
+{
+    int ret;
+    struct usbh_urb *urb = &rndis_class->bulkin_urb;
+    memset(urb, 0, sizeof(struct usbh_urb));
+
+    usbh_bulk_urb_fill(urb, rndis_class->bulkin, buffer, buflen, timeout, NULL, NULL);
+    ret = usbh_submit_urb(urb);
+    if (ret == 0) {
+        ret = urb->actual_length;
+    }
+    return ret;
+}
+
 int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
 {
     struct usb_setup_packet *setup = &rndis_class->hport->setup;
@@ -285,11 +313,18 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                 if (ret < 0) {
                     goto query_errorout;
                 }
+
+                memcpy(&rndis_class->link_speed, data, 4);
                 break;
             case OID_GEN_MEDIA_CONNECT_STATUS:
                 ret = usbh_rndis_query_msg_transfer(rndis_class, OID_GEN_MEDIA_CONNECT_STATUS, 4, data, &data_len);
                 if (ret < 0) {
                     goto query_errorout;
+                }
+                if (NDIS_MEDIA_STATE_CONNECTED == data[0]) {
+                    rndis_class->link_status = true;
+                } else {
+                    rndis_class->link_status = false;
                 }
                 break;
             case OID_802_3_MAXIMUM_LIST_SIZE:
@@ -302,6 +337,10 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                 ret = usbh_rndis_query_msg_transfer(rndis_class, OID_802_3_CURRENT_ADDRESS, 6, data, &data_len);
                 if (ret < 0) {
                     goto query_errorout;
+                }
+
+                for (uint8_t j = 0; j < 6; j++) {
+                    rndis_class->mac[j] = data[j];
                 }
                 break;
             case OID_802_3_PERMANENT_ADDRESS:
@@ -334,6 +373,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_rndis_run(rndis_class);
     return ret;
 query_errorout:
     USB_LOG_ERR("rndis query iod:%08x error\r\n", oid);
@@ -354,6 +394,8 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
         if (rndis_class->bulkout) {
             usbh_pipe_free(rndis_class->bulkout);
         }
+
+        usbh_rndis_stop(rndis_class);
         memset(rndis_class, 0, sizeof(struct usbh_rndis));
         usb_free(rndis_class);
 
@@ -362,6 +404,14 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     return ret;
+}
+
+__WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)
+{
+}
+
+__WEAK void usbh_rndis_stop(struct usbh_rndis *rndis_class)
+{
 }
 
 static const struct usbh_class_driver rndis_class_driver = {
