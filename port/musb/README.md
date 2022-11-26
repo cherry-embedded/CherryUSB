@@ -2,6 +2,8 @@
 
 ## Support Chip List
 
+### HEZHOU
+
 - AIR105
 
 ### ES32

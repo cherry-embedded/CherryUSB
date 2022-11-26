@@ -26,6 +26,10 @@
 
 - HC32F4A0
 
+## Espressif
+
+- ESP32S2、ESP32S3
+
 ## Before Use
 
 Your should implement `usb_dc_low_level_init` and `usb_dc_low_level_deinit`.
