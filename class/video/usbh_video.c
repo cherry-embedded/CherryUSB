@@ -382,7 +382,8 @@ static int usbh_video_ctrl_intf_connect(struct usbh_hubport *hport, uint8_t intf
     inityuyv2rgb_table();
     USB_LOG_INFO("Register Video Class:%s\r\n", hport->config.intf[intf].devname);
 
-    return 0;
+    usbh_video_run(video_class);
+    return ret;
 }
 
 static int usbh_video_ctrl_intf_disconnect(struct usbh_hubport *hport, uint8_t intf)
@@ -402,6 +403,7 @@ static int usbh_video_ctrl_intf_disconnect(struct usbh_hubport *hport, uint8_t i
             usbh_pipe_free(video_class->isoout);
         }
 
+        usbh_video_stop(video_class);
         memset(video_class, 0, sizeof(struct usbh_video));
         usb_free(video_class);
 
@@ -539,6 +541,16 @@ void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_vid
             stream->bufoffset = 0;
         }
     }
+}
+
+__WEAK void usbh_video_run(struct usbh_video *video_class)
+{
+
+}
+
+__WEAK void usbh_video_stop(struct usbh_video *video_class)
+{
+
 }
 
 const struct usbh_class_driver video_class_ctrl_intf_driver = {

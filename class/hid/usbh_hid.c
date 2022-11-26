@@ -148,7 +148,8 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register HID Class:%s\r\n", hport->config.intf[intf].devname);
 
-    return 0;
+    usbh_hid_run(hid_class);
+    return ret;
 }
 
 int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
@@ -168,6 +169,7 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(hid_class->intout);
         }
 
+        usbh_hid_stop(hid_class);
         memset(hid_class, 0, sizeof(struct usbh_hid));
         usb_free(hid_class);
 
@@ -176,6 +178,16 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     return ret;
+}
+
+__WEAK void usbh_hid_run(struct usbh_hid *hid_class)
+{
+
+}
+
+__WEAK void usbh_hid_stop(struct usbh_hid *hid_class)
+{
+
 }
 
 const struct usbh_class_driver hid_class_driver = {

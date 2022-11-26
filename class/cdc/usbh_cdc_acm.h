@@ -32,6 +32,9 @@ int usbh_cdc_acm_set_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_
 int usbh_cdc_acm_get_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_line_coding *line_coding);
 int usbh_cdc_acm_set_line_state(struct usbh_cdc_acm *cdc_acm_class, bool dtr, bool rts);
 
+void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class);
+void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class);
+
 #ifdef __cplusplus
 }
 #endif

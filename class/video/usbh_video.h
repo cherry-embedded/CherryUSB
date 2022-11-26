@@ -65,6 +65,9 @@ void usbh_video_list_info(struct usbh_video *video_class);
 void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostreaming *stream);
 void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_videostreaming *stream);
 
+void usbh_video_run(struct usbh_video *video_class);
+void usbh_video_stop(struct usbh_video *video_class);
+
 #ifdef __cplusplus
 }
 #endif
