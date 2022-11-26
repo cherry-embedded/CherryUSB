@@ -94,7 +94,7 @@ static const uint8_t cdc_descriptor[] = {
 };
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
 
 volatile bool ep_tx_busy_flag = false;
 
@@ -149,6 +149,11 @@ struct usbd_interface intf1;
 
 void cdc_acm_init(void)
 {
+    const uint8_t data[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
+
+    memcpy(&write_buffer[0], data, 10);
+    memset(&write_buffer[10], 'a', 2038);
+
     usbd_desc_register(cdc_descriptor);
     usbd_add_interface(usbd_cdc_acm_init_intf(&intf0));
     usbd_add_interface(usbd_cdc_acm_init_intf(&intf1));
@@ -171,7 +176,6 @@ void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr)
 void cdc_acm_data_send_with_dtr_test(void)
 {
     if (dtr_enable) {
-        memset(&write_buffer[10], 'a', 2038);
         ep_tx_busy_flag = true;
         usbd_ep_start_write(CDC_IN_EP, write_buffer, 2048);
         while (ep_tx_busy_flag) {

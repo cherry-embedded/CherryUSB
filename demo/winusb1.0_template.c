@@ -93,39 +93,18 @@ struct usb_msosv1_descriptor msosv1_desc = {
 
 #define USB_CONFIG_SIZE (9 + 9 + 7 + 7)
 
+#ifdef CONFIG_USB_HS
+#define WINUSB_EP_MPS 512
+#else
+#define WINUSB_EP_MPS 64
+#endif
+
 const uint8_t winusb_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xff, 0xff, 0xff, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    ///////////////////////////////////////
-    /// interface descriptor
-    ///////////////////////////////////////
-    0x09,                          /* bLength */
-    USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType */
-    0x00,                          /* bInterfaceNumber */
-    0x00,                          /* bAlternateSetting */
-    0x02,                          /* bNumEndpoints */
-    0xff,                          /* bInterfaceClass */
-    0x01,                          /* bInterfaceSubClass */
-    0x00,                          /* bInterfaceProtocol */
-    0x02,                          /* iInterface */
-    ///////////////////////////////////////
-    /// endpoint descriptor
-    ///////////////////////////////////////
-    0x07,                         /* bLength */
-    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType */
-    WINUSB_OUT_EP,                /* bEndpointAddress */
-    0x02,                         /* bmAttributes */
-    0x00, 0x02,                   /* wMaxPacketSize */
-    0x00,                         /* bInterval */
-    ///////////////////////////////////////
-    /// endpoint descriptor
-    ///////////////////////////////////////
-    0x07,                         /* bLength */
-    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType */
-    WINUSB_IN_EP,                 /* bEndpointAddress */
-    0x02,                         /* bmAttributes */
-    0x00, 0x02,                   /* wMaxPacketSize */
-    0x00,                         /* bInterval */
+    USB_INTERFACE_DESCRIPTOR_INIT(0x00, 0x00, 0x02, 0xff, 0x01, 0x00, 0x02),
+    USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_IN_EP, 0x02, WINUSB_EP_MPS, 0x00),
+    USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_OUT_EP, 0x02, WINUSB_EP_MPS, 0x00),
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -147,10 +126,29 @@ const uint8_t winusb_descriptor[] = {
     ///////////////////////////////////////
     /// string2 descriptor
     ///////////////////////////////////////
-    26,
-    0x03,
-    'C', 0, 'M', 0, 'S', 0, 'I', 0, 'S', 0, '-', 0, 'D', 0, 'A', 0,
-    'P', 0, ' ', 0, 'v', 0, '2', 0,
+    0x2C,                       /* bLength */
+    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
+    'C', 0x00,                  /* wcChar0 */
+    'h', 0x00,                  /* wcChar1 */
+    'e', 0x00,                  /* wcChar2 */
+    'r', 0x00,                  /* wcChar3 */
+    'r', 0x00,                  /* wcChar4 */
+    'y', 0x00,                  /* wcChar5 */
+    'U', 0x00,                  /* wcChar6 */
+    'S', 0x00,                  /* wcChar7 */
+    'B', 0x00,                  /* wcChar8 */
+    ' ', 0x00,                  /* wcChar9 */
+    'W', 0x00,                  /* wcChar10 */
+    'I', 0x00,                  /* wcChar11 */
+    'N', 0x00,                  /* wcChar12 */
+    'U', 0x00,                  /* wcChar13 */
+    'S', 0x00,                  /* wcChar14 */
+    'B', 0x00,                  /* wcChar15 */
+    ' ', 0x00,                  /* wcChar16 */
+    'D', 0x00,                  /* wcChar17 */
+    'E', 0x00,                  /* wcChar18 */
+    'M', 0x00,                  /* wcChar19 */
+    'O', 0x00,                  /* wcChar20 */
     ///////////////////////////////////////
     /// string3 descriptor
     ///////////////////////////////////////
@@ -184,13 +182,10 @@ const uint8_t winusb_descriptor[] = {
     0x00
 };
 
-#ifdef CONFIG_USB_HS
-#define WINUSB_OUT_EP_MPS 512
-#else
-#define WINUSB_OUT_EP_MPS 64
-#endif
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
+
+volatile bool ep_tx_busy_flag = false;
 
 void usbd_configure_done_callback(void)
 {
@@ -200,10 +195,25 @@ void usbd_configure_done_callback(void)
 
 void usbd_winusb_out(uint8_t ep, uint32_t nbytes)
 {
+    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    // for (int i = 0; i < 100; i++) {
+    //     printf("%02x ", read_buffer[i]);
+    // }
+    // printf("\r\n");
+    /* setup next out ep read transfer */
+    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
 }
 
 void usbd_winusb_in(uint8_t ep, uint32_t nbytes)
 {
+    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+
+    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+        /* send zlp */
+        usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+    } else {
+        ep_tx_busy_flag = false;
+    }
 }
 
 struct usbd_endpoint winusb_out_ep = {
@@ -218,7 +228,7 @@ struct usbd_endpoint winusb_in_ep = {
 
 struct usbd_interface intf0;
 
-void daplink_winusb_init(void)
+void winusb_init(void)
 {
     usbd_desc_register(winusb_descriptor);
     usbd_msosv1_desc_register(&msosv1_desc);
