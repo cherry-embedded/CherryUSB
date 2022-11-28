@@ -218,12 +218,22 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
 
             break;
         case USB_DESCRIPTOR_TYPE_OTHER_SPEED:
-            if (usbd_core_cfg.descriptors->other_speed_descriptor) {
-                *data = (uint8_t *)usbd_core_cfg.descriptors->other_speed_descriptor;
-                *len = (usbd_core_cfg.descriptors->other_speed_descriptor[CONF_DESC_wTotalLength] |
-                        (usbd_core_cfg.descriptors->other_speed_descriptor[CONF_DESC_wTotalLength] << 8));
+            if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
+                if (usbd_core_cfg.descriptors->fs_other_speed_descriptor) {
+                    *data = (uint8_t *)usbd_core_cfg.descriptors->fs_other_speed_descriptor;
+                    *len = (usbd_core_cfg.descriptors->fs_other_speed_descriptor[CONF_DESC_wTotalLength] |
+                            (usbd_core_cfg.descriptors->fs_other_speed_descriptor[CONF_DESC_wTotalLength] << 8));
+                } else {
+                    found = false;
+                }
             } else {
-                found = false;
+                if (usbd_core_cfg.descriptors->hs_other_speed_descriptor) {
+                    *data = (uint8_t *)usbd_core_cfg.descriptors->hs_other_speed_descriptor;
+                    *len = (usbd_core_cfg.descriptors->hs_other_speed_descriptor[CONF_DESC_wTotalLength] |
+                            (usbd_core_cfg.descriptors->hs_other_speed_descriptor[CONF_DESC_wTotalLength] << 8));
+                } else {
+                    found = false;
+                }
             }
             break;
 
