@@ -63,12 +63,13 @@ struct usbd_interface {
 };
 
 struct usb_descriptor {
-    const uint8_t *device_descriptor;
-    const uint8_t **fs_config_descriptor;
-    const uint8_t **hs_config_descriptor;
+    const uint8_t *device_descriptor;  
     const uint8_t *device_quality_descriptor;
-    const uint8_t *other_speed_descriptor;
-    const char **string_descriptor;
+    const uint8_t *config_descriptor_head;  
+    const uint8_t *other_speed_descriptor_head;
+    const uint8_t *fs_config_descriptor;
+    const uint8_t *hs_config_descriptor;
+    const uint8_t *string_descriptor;
     struct usb_msosv1_descriptor *msosv1_descriptor;
     struct usb_msosv2_descriptor *msosv2_descriptor;
     struct usb_bos_descriptor *bos_descriptor;
