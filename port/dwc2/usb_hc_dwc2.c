@@ -887,6 +887,7 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
         CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
     } else if ((chan_intstatus & USB_OTG_HCINT_AHBERR) == USB_OTG_HCINT_AHBERR) {
         USB_UNMASK_HALT_HC_INT(ch_num);
+        dwc2_halt(ch_num);
         urb->errorcode = -EIO;
         CLEAR_HC_INT(ch_num, USB_OTG_HCINT_AHBERR);
     } else if ((chan_intstatus & USB_OTG_HCINT_STALL) == USB_OTG_HCINT_STALL) {
@@ -999,6 +1000,7 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
         USB_UNMASK_HALT_HC_INT(ch_num);
     } else if ((chan_intstatus & USB_OTG_HCINT_AHBERR) == USB_OTG_HCINT_AHBERR) {
         USB_UNMASK_HALT_HC_INT(ch_num);
+        dwc2_halt(ch_num);
         urb->errorcode = -EIO;
         CLEAR_HC_INT(ch_num, USB_OTG_HCINT_AHBERR);
     } else if ((chan_intstatus & USB_OTG_HCINT_STALL) == USB_OTG_HCINT_STALL) {
