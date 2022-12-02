@@ -14,7 +14,7 @@
 
 #define AUDIO_OUT_EP 0x01
 
-#define AUDIO_FREQ 48000
+#define AUDIO_FREQ      48000
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
 
@@ -146,11 +146,16 @@ const uint8_t audio_descriptor[] = {
 #endif
     0x00
 };
+
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
+
 volatile bool rx_flag = 0;
 
 void usbd_audio_open(uint8_t intf)
 {
     rx_flag = 1;
+    /* setup first out ep read transfer */
+    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_EP_MPS);
     USB_LOG_RAW("OPEN\r\n");
 }
 void usbd_audio_close(uint8_t intf)
@@ -165,12 +170,8 @@ void usbd_audio_close(uint8_t intf)
 #define AUDIO_OUT_EP_MPS 64
 #endif
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
-
 void usbd_configure_done_callback(void)
 {
-    /* setup first out ep read transfer */
-    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_EP_MPS);
 }
 
 void usbd_audio_iso_out_callback(uint8_t ep, uint32_t nbytes)

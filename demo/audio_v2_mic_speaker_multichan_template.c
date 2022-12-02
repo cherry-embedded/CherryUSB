@@ -192,6 +192,8 @@ uint8_t audio_descriptor[] = {
     0x00
 };
 
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
+
 volatile bool tx_flag = 0;
 volatile bool rx_flag = 0;
 
@@ -199,6 +201,8 @@ void usbd_audio_open(uint8_t intf)
 {
     if (intf == 1) {
         rx_flag = 1;
+        /* setup first out ep read transfer */
+        usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_EP_MPS);
         USB_LOG_RAW("OPEN1\r\n");
     } else {
         tx_flag = 1;
@@ -236,12 +240,8 @@ void usbd_audio_set_sampling_freq(uint8_t entity_id, uint8_t ep_ch, uint32_t sam
 #define AUDIO_OUT_EP_MPS 64
 #endif
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_EP_MPS];
-
 void usbd_configure_done_callback(void)
 {
-    /* setup first out ep read transfer */
-    usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_EP_MPS);
 }
 
 void usbd_audio_iso_out_callback(uint8_t ep, uint32_t nbytes)
