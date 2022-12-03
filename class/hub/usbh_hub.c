@@ -25,14 +25,16 @@ usb_osal_thread_t hub_thread;
 
 USB_NOCACHE_RAM_SECTION struct usbh_hub roothub;
 
+#if CONFIG_USBHOST_MAX_EXTHUBS > 0
 USB_NOCACHE_RAM_SECTION struct usbh_hub exthub[CONFIG_USBHOST_MAX_EXTHUBS];
-
+#endif
 extern int usbh_hport_activate_ep0(struct usbh_hubport *hport);
 extern int usbh_hport_deactivate_ep0(struct usbh_hubport *hport);
 extern int usbh_enumerate(struct usbh_hubport *hport);
 
 static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed", "wireless-speed", "super-speed", "superplus-speed" };
 
+#if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static int usbh_hub_devno_alloc(void)
 {
     int devno;
@@ -54,7 +56,7 @@ static void usbh_hub_devno_free(uint8_t devno)
         g_devinuse &= ~(1 << devno);
     }
 }
-
+#endif
 static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
@@ -238,7 +240,7 @@ static void hub_int_complete_callback(void *arg, int nbytes)
         usbh_hub_thread_wakeup(hub);
     }
 }
-
+#if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
@@ -341,7 +343,7 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
     }
     return ret;
 }
-
+#endif
 static void usbh_roothub_register(void)
 {
     memset(&roothub, 0, sizeof(struct usbh_hub));
@@ -572,7 +574,7 @@ int usbh_hub_initialize(void)
     }
     return 0;
 }
-
+#if CONFIG_USBHOST_MAX_EXTHUBS > 0
 const struct usbh_class_driver hub_driver = {
     .driver_name = "hub",
     .connect = usbh_hub_connect,
@@ -588,3 +590,4 @@ CLASS_INFO_DEFINE const struct usbh_class_info hub_info = {
     .pid = 0x00,
     .class_driver = &hub_driver
 };
+#endif
