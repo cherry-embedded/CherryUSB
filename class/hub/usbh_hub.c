@@ -484,6 +484,17 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
                     child = &hub->child[port];
 
+                    /* if last status is connected, free sources first, this does not happen normally,
+                      but there may be hardware issues in some ips */
+                    if (child->connected) {
+                        usbh_hport_deactivate_ep0(child);
+                        for (uint8_t i = 0; i < child->config.config_desc.bNumInterfaces; i++) {
+                            if (child->config.intf[i].class_driver && child->config.intf[i].class_driver->disconnect) {
+                                CLASS_DISCONNECT(child, i);
+                            }
+                        }
+                    }
+
                     memset(child, 0, sizeof(struct usbh_hubport));
                     child->parent = hub;
                     child->connected = true;
