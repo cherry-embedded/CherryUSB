@@ -24,7 +24,6 @@ usb_osal_sem_t hub_event_wait;
 usb_osal_thread_t hub_thread;
 
 USB_NOCACHE_RAM_SECTION struct usbh_hub roothub;
-struct usbh_hubport roothub_parent_port;
 
 USB_NOCACHE_RAM_SECTION struct usbh_hub exthub[CONFIG_USBHOST_MAX_EXTHUBS];
 
@@ -346,14 +345,12 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 static void usbh_roothub_register(void)
 {
     memset(&roothub, 0, sizeof(struct usbh_hub));
-    memset(&roothub_parent_port, 0, sizeof(struct usbh_hubport));
-    roothub_parent_port.port = 1;
-    roothub_parent_port.dev_addr = 1;
+
     roothub.connected = true;
     roothub.index = 1;
     roothub.is_roothub = true;
-    roothub.parent = &roothub_parent_port;
-    roothub.hub_addr = roothub_parent_port.dev_addr;
+    roothub.parent = NULL;
+    roothub.hub_addr = 1;
     roothub.hub_desc.bNbrPorts = CONFIG_USBHOST_MAX_RHPORTS;
     usbh_hub_register(&roothub);
 }
