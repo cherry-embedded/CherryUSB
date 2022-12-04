@@ -155,6 +155,8 @@ DWC2
 
 DWC2 IP 支持主从，并且由 **synopsys** 定义了一套标准的寄存器偏移。大部分厂家都使用标准的寄存器偏移，所以如果是从机仅需要修改 `USBD_IRQHandler` 、 `USB_BASE` 、 `USB_NUM_BIDIR_ENDPOINTS` ，主机仅需要修改 `USBH_IRQHandler` 、 `USB_BASE`  即可。
 
+其次还有需要注意 VBUS SENSING 这个项，也会影响 USB 的正常枚举，如何修改参考 `GD32 dwc2驱动的GCCFG_NOVBUSSENS寄存器兼容性和stm32存在区别 <https://github.com/sakumisu/CherryUSB/issues/64>`_。
+
 .. caution:: 主机 port 仅支持有高速功能的 dwc2 ip, 因为他支持 dma 模式，如果厂家买的 ip 不支持 dma 模式，则无法使用。
 
 下表为具体芯片从机相关宏的修改值：
