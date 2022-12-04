@@ -85,7 +85,3 @@
 其次将 `main.c` 中的 `SystemClock_Config` 替换掉 `board.c` 中的配置
 
 .. figure:: img/stm32_init2.png
-
-其他小伙伴的移植笔记
--------------------------
-- @kylongmu `stm32h743-st-nucleo移植CherryUSB- CDC串口 <https://club.rt-thread.org/ask/article/3719.html>`_。
