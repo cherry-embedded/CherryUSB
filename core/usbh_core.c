@@ -625,6 +625,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
 errout:
     if (ret < 0) {
+        hport->config.config_desc.bNumInterfaces = 0;
         usbh_hport_deactivate_ep0(hport);
     }
     if (hport->raw_config_desc) {
