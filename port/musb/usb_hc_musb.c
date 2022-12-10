@@ -702,7 +702,6 @@ errout_timeout:
     pipe->waiter = false;
     usbh_kill_urb(urb);
     return ret;
-    return -1;
 }
 
 int usbh_kill_urb(struct usbh_urb *urb)
