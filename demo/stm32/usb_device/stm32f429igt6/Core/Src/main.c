@@ -24,6 +24,8 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_core.h"
 #include "usbd_cdc.h"
+#include "FreeRTOS.h"
+#include "task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -126,10 +128,13 @@ int main(void)
   //MX_USB_OTG_HS_PCD_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-    
+
   extern void cdc_acm_msc_init(void);
 
   cdc_acm_msc_init();
+#ifdef CONFIG_USBDEV_TX_RX_THREAD
+  vTaskStartScheduler();
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
