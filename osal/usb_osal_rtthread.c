@@ -68,6 +68,33 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
     return (int)rt_mutex_release((rt_mutex_t)mutex);
 }
 
+usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
+{
+    return (usb_osal_mq_t)rt_mq_create("usbh_mq", 4, max_msgs, RT_IPC_FLAG_FIFO);
+}
+
+int usb_osal_mq_send(usb_osal_mq_t mq, uint32_t addr)
+{
+    return rt_mq_send((rt_mq_t)mq, &addr, 4);
+}
+
+int usb_osal_mq_recv(usb_osal_mq_t mq, uint32_t *addr, uint32_t timeout)
+{
+    int ret = 0;
+    rt_err_t result = RT_EOK;
+
+    result = rt_mq_recv((rt_mq_t)mq, addr, 4, rt_tick_from_millisecond(timeout));
+    if (result == -RT_ETIMEOUT) {
+        ret = -ETIMEDOUT;
+    } else if (result == -RT_ERROR) {
+        ret = -EINVAL;
+    } else {
+        ret = 0;
+    }
+
+    return (int)ret;
+}
+
 size_t usb_osal_enter_critical_section(void)
 {
     return rt_hw_interrupt_disable();

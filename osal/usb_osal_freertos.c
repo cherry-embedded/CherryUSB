@@ -43,7 +43,7 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 
-    return (ret == pdPASS) ? 0 : -EINVAL;
+    return (ret == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)
@@ -63,7 +63,30 @@ int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
-    return (xSemaphoreGive((SemaphoreHandle_t)mutex) == pdPASS) ? 0 : -EINVAL;
+    return (xSemaphoreGive((SemaphoreHandle_t)mutex) == pdPASS) ? 0 : -ETIMEDOUT;
+}
+
+usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
+{
+    return (usb_osal_mq_t)xQueueCreate(max_msgs, 4);
+}
+
+int usb_osal_mq_send(usb_osal_mq_t mq, uint32_t addr)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    ret = xQueueSendFromISR((usb_osal_mq_t)mq, &addr, &xHigherPriorityTaskWoken);
+    if (ret == pdPASS) {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+
+    return (ret == pdPASS) ? 0 : -ETIMEDOUT;
+}
+
+int usb_osal_mq_recv(usb_osal_mq_t mq, uint32_t *addr, uint32_t timeout)
+{
+    return (xQueueReceive((usb_osal_mq_t)mq, addr, timeout) == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
 size_t usb_osal_enter_critical_section(void)

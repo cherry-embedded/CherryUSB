@@ -160,7 +160,6 @@ struct usbh_hub {
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
     struct usbh_hubport *parent;
-    usb_slist_t hub_event_list;
 };
 
 int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
