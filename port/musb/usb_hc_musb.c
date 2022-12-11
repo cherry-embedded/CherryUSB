@@ -367,7 +367,7 @@ static int usbh_reset_port(const uint8_t port)
 
 static uint8_t usbh_get_port_speed(const uint8_t port)
 {
-    uint8_t speed;
+    uint8_t speed = USB_SPEED_UNKNOWN;
 
     if (HWREGB(USB_BASE + MUSB_POWER_OFFSET) & USB_POWER_HSMODE)
         speed = USB_SPEED_HIGH;
@@ -436,7 +436,6 @@ int usb_hc_init(void)
 
 int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
 {
-    __IO uint32_t hprt0;
     uint8_t nports;
     uint8_t port;
     uint32_t status;
