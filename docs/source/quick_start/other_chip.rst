@@ -38,12 +38,12 @@ USB Host 移植要点
 
 .. code-block:: C
 
-        define region CHERRYUSB_RAM  = [from 0x1080000 + 700k size 68k];  /* reserve for cherryusb region */
+        define block cherryusb_usbh_class_info { section .usbh_class_info };
 
-        define exported symbol __usbh_class_info_start__  = start of region CHERRYUSB_RAM;
-        define exported symbol __usbh_class_info_end__  = end of region CHERRYUSB_RAM + 1;
+        define exported symbol __usbh_class_info_start__  = start of block cherryusb_usbh_class_info;
+        define exported symbol __usbh_class_info_end__  = end of block cherryusb_usbh_class_info + 1;
 
-        place in CHERRYUSB_RAM                   { section  .usbh_class_info };
+        place in AXI_SRAM                         { block cherryusb_usbh_class_info };
         keep { section .usbh_class_info};
 
 - 编译使用。各个 class 如何使用，参考 demo 下的 `usb_host.c` 文件

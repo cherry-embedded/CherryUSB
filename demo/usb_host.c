@@ -195,6 +195,7 @@ int hid_test(void)
     return ret;
 }
 
+#if 0
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t video_buffer[10 * 1024]; /* just for reference , use ram larger than 4M */
 
 #define VIDEO_ISO_PACKETS 512
@@ -240,7 +241,7 @@ int video_test(void)
     usb_free(video_urb);
     return ret;
 }
-
+#endif
 static void usbh_class_test_thread(void *argument)
 {
     while (1) {
@@ -249,7 +250,7 @@ static void usbh_class_test_thread(void *argument)
         cdc_acm_test();
         msc_test();
         hid_test();
-        video_test();
+        //video_test();
     }
 }
 
