@@ -372,17 +372,20 @@ static bool usbd_set_configuration(uint8_t config_index, uint8_t alt_setting)
     uint8_t cur_config = 0xFF;
     bool found = false;
     uint8_t *p;
+    uint16_t len;
+    
 #if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
     if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
         p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor[0];
     } else {
         p = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor[0];
     }
+    len = p[CONF_DESC_wTotalLength] | p[CONF_DESC_wTotalLength + 1] << 8;
 #else
     p = (uint8_t *)usbd_core_cfg.descriptors;
 #endif
     /* configure endpoints for this configuration/altsetting */
-    while (p[DESC_bLength] != 0U) {
+    while (len) {
         switch (p[DESC_bDescriptorType]) {
             case USB_DESCRIPTOR_TYPE_CONFIGURATION:
                 /* remember current configuration index */
@@ -414,6 +417,7 @@ static bool usbd_set_configuration(uint8_t config_index, uint8_t alt_setting)
         }
 
         /* skip to next descriptor */
+        len -= p[DESC_bLength];
         p += p[DESC_bLength];
     }
 
