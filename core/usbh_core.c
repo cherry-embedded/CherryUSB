@@ -689,6 +689,11 @@ int usbh_initialize(void)
     extern uint32_t __usbh_class_info_end__;
     usbh_class_info_table_begin = (struct usbh_class_info *)&__usbh_class_info_start__;
     usbh_class_info_table_end = (struct usbh_class_info *)&__usbh_class_info_end__;
+#elif defined(__ICCARM__) || defined(__ICCRX__)
+    extern uint32_t __usbh_class_info_start__;
+    extern uint32_t __usbh_class_info_end__;
+    usbh_class_info_table_begin = (struct usbh_class_info *)__section_begin("usbh_class_info");
+    usbh_class_info_table_end = (struct usbh_class_info *)__section_end("usbh_class_info");
 #endif
 
     /* devaddr 1 is for roothub */
