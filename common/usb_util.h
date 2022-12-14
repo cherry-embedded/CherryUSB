@@ -44,12 +44,12 @@
 #ifndef __ALIGNED
 #define __ALIGNED(x) __attribute__((aligned(x)))
 #endif
-#elif defined(__ICCARM__)
+#elif defined(__ICCARM__) || defined(__ICCRX__)
 #ifndef __USED
 #if __ICCARM_V8
 #define __USED __attribute__((used))
 #else
-#define __USED _Pragma("__root")
+#define __USED __root
 #endif
 #endif
 
