@@ -769,8 +769,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -EINVAL;
     }
 
-    flags = usb_osal_enter_critical_section();
-
     if (!chan->hport->connected) {
         return -ENODEV;
     }
@@ -778,6 +776,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
     if (chan->urb) {
         return -EBUSY;
     }
+
+    flags = usb_osal_enter_critical_section();
 
     chan->waiter = false;
     chan->xfrd = 0;
@@ -836,6 +836,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     flags = usb_osal_enter_critical_section();
 
     dwc2_halt(pipe->chidx);
+    CLEAR_HC_INT(pipe->chidx, USB_OTG_HCINT_CHH);
     pipe->urb = NULL;
 
     usb_osal_leave_critical_section(flags);
