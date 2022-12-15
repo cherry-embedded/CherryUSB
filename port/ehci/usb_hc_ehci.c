@@ -1264,8 +1264,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -EINVAL;
     }
 
-    flags = usb_osal_enter_critical_section();
-
     if (!pipe->hport->connected) {
         return -ENODEV;
     }
@@ -1273,6 +1271,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
     if (pipe->urb) {
         return -EBUSY;
     }
+
+    flags = usb_osal_enter_critical_section();
 
     pipe->waiter = false;
     pipe->xfrd = 0;
