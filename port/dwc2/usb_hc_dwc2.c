@@ -192,6 +192,7 @@ static void dwc2_pipe_init(uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uin
 
     switch (ep_type) {
         case USB_ENDPOINT_TYPE_CONTROL:
+            regval |= USB_OTG_HCINTMSK_NAKM;
         case USB_ENDPOINT_TYPE_BULK:
             break;
         case USB_ENDPOINT_TYPE_INTERRUPT:
@@ -876,8 +877,6 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
     chan = &g_dwc2_hcd.pipe_pool[ch_num];
     urb = chan->urb;
     //printf("s1:%08x\r\n", chan_intstatus);
-    for (uint32_t i = 0; i < 0xf; i++) {
-    }
 
     if ((chan_intstatus & USB_OTG_HCINT_XFRC) == USB_OTG_HCINT_XFRC) {
         urb->errorcode = 0;
@@ -973,7 +972,13 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
             }
         } else if (urb->errorcode == -EAGAIN) {
             /* re-activate the channel */
-            dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            if (chan->ep_type == 0x00) {
+                dwc2_control_pipe_init(chan, urb->setup, urb->transfer_buffer, urb->transfer_buffer_length);
+            } else if (chan->ep_type == 0x03) {
+                dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            } else {
+            }
+
         } else {
             dwc2_pipe_waitup(chan);
         }
@@ -1096,7 +1101,13 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
             }
         } else if (urb->errorcode == -EAGAIN) {
             /* re-activate the channel */
-            dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            if (chan->ep_type == 0x00) {
+                dwc2_control_pipe_init(chan, urb->setup, urb->transfer_buffer, urb->transfer_buffer_length);
+            } else if (chan->ep_type == 0x03) {
+                dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            } else {
+            }
+
         } else {
             dwc2_pipe_waitup(chan);
         }
