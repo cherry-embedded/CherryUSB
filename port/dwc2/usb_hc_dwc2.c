@@ -348,11 +348,6 @@ static inline uint32_t dwc2_get_glb_intstatus(void)
     return tmpreg;
 }
 
-static inline uint32_t dwc2_get_current_frame(void)
-{
-    return (USB_OTG_HOST->HFNUM & USB_OTG_HFNUM_FRNUM);
-}
-
 static int dwc2_pipe_alloc(void)
 {
     int chidx;
@@ -532,6 +527,11 @@ int usb_hc_init(void)
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
     return 0;
+}
+
+uint16_t usbh_get_frame_number(void)
+{
+    return (USB_OTG_HOST->HFNUM & USB_OTG_HFNUM_FRNUM);
 }
 
 int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)

@@ -56,6 +56,7 @@ struct usbh_urb {
     uint32_t timeout;
     int errorcode;
     uint32_t num_of_iso_packets;
+    uint32_t start_frame;
     usbh_complete_callback_t complete;
     void *arg;
     struct usbh_iso_frame_packet iso_packet[0];
@@ -68,6 +69,12 @@ struct usbh_urb {
  */
 int usb_hc_init(void);
 
+/**
+ * @brief Get frame number.
+ *
+ * @return frame number.
+ */
+uint16_t usbh_get_frame_number(void);
 /**
  * @brief control roothub.
  *
