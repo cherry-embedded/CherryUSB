@@ -32,7 +32,7 @@ static int __s_b_1732446u[256] = { 0 };
 static int __s_g_337633u[256] = { 0 };
 static int __s_g_698001v[256] = { 0 };
 
-static void inityuyv2rgb_table(void)
+void usbh_video_inityuyv2rgb_table(void)
 {
     for (int i = 0; i < 256; i++) {
         __s_r_1370705v[i] = (1.370705 * (i - 128));
@@ -42,7 +42,7 @@ static void inityuyv2rgb_table(void)
     }
 }
 
-static void yuyv2rgb565(void *input, void *output, uint32_t len)
+void usbh_video_yuyv2rgb565(void *input, void *output, uint32_t len)
 {
     int y0, u, y1, v;
     uint8_t r, g, b;
@@ -134,47 +134,84 @@ int usbh_videostreaming_get_cur_probe(struct usbh_video *video_class)
     return usbh_video_get_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, (uint8_t *)&video_class->probe, 26);
 }
 
-int usbh_videostreaming_set_cur_probe(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex, uint32_t dwMaxVideoFrameSize, uint32_t dwMaxPayloadTransferSize)
+int usbh_videostreaming_set_cur_probe(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex)
 {
     video_class->probe.bFormatIndex = formatindex;
     video_class->probe.bFrameIndex = frameindex;
-    video_class->probe.dwMaxVideoFrameSize = dwMaxVideoFrameSize;
-    video_class->probe.dwMaxPayloadTransferSize = dwMaxPayloadTransferSize;
+    video_class->probe.dwMaxPayloadTransferSize = 0;
     return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, (uint8_t *)&video_class->probe, 26);
 }
 
-int usbh_videostreaming_set_cur_commit(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex, uint32_t dwMaxVideoFrameSize, uint32_t dwMaxPayloadTransferSize)
+int usbh_videostreaming_set_cur_commit(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex)
 {
+    memcpy(&video_class->commit, &video_class->probe, sizeof(struct video_probe_and_commit_controls));
     video_class->commit.bFormatIndex = formatindex;
     video_class->commit.bFrameIndex = frameindex;
-    video_class->commit.dwMaxVideoFrameSize = dwMaxVideoFrameSize;
-    video_class->commit.dwMaxPayloadTransferSize = dwMaxPayloadTransferSize;
     return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_COMMIT_CONTROL, (uint8_t *)&video_class->commit, 26);
 }
 
-int usbh_video_open(struct usbh_video *video_class, uint8_t altsetting)
+int usbh_video_open(struct usbh_video *video_class,
+                    uint8_t format_type,
+                    uint16_t wWidth,
+                    uint16_t wHeight,
+                    uint8_t altsetting)
 {
     struct usb_setup_packet *setup = &video_class->hport->setup;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
     int ret;
+    bool found = false;
+    uint8_t formatidx = 0;
+    uint8_t frameidx = 0;
 
     if (video_class->is_opened) {
         return -EMFILE;
+    }
+
+    for (uint8_t i = 0; i < video_class->num_of_formats; i++) {
+        if (format_type == video_class->format[i].format_type) {
+            formatidx = i + 1;
+            for (uint8_t j = 0; j < video_class->format[i].num_of_frames; j++) {
+                if ((wWidth == video_class->format[i].frame[j].wWidth) &&
+                    (wHeight == video_class->format[i].frame[j].wHeight)) {
+                    frameidx = j + 1;
+                    found = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (found == false) {
+        return -ENODEV;
     }
 
     if (altsetting > (video_class->num_of_intf_altsettings - 1)) {
         return -EINVAL;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = altsetting;
-    setup->wIndex = video_class->data_intf;
-    setup->wLength = 0;
-
-    ret = usbh_control_transfer(video_class->hport->ep0, setup, NULL);
+    ret = usbh_videostreaming_get_cur_probe(video_class);
+    if (ret < 0) {
+        return ret;
+    }
+    ret = usbh_videostreaming_set_cur_probe(video_class, formatidx, frameidx);
+    if (ret < 0) {
+        return ret;
+    }
+    ret = usbh_videostreaming_get_cur_probe(video_class);
+    if (ret < 0) {
+        return ret;
+    }
+    ret = usbh_videostreaming_set_cur_probe(video_class, formatidx, frameidx);
+    if (ret < 0) {
+        return ret;
+    }
+    ret = usbh_videostreaming_get_cur_probe(video_class);
+    if (ret < 0) {
+        return ret;
+    }
+    ret = usbh_videostreaming_set_cur_commit(video_class, formatidx, frameidx);
     if (ret < 0) {
         return ret;
     }
@@ -189,8 +226,21 @@ int usbh_video_open(struct usbh_video *video_class, uint8_t altsetting)
         video_class->isoout_mps = mps * (mult + 1);
         usbh_hport_activate_epx(&video_class->isoout, video_class->hport, ep_desc);
     }
-    USB_LOG_INFO("Open video and select altsetting:%u\r\n", altsetting);
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = USB_REQUEST_SET_INTERFACE;
+    setup->wValue = altsetting;
+    setup->wIndex = video_class->data_intf;
+    setup->wLength = 0;
+
+    ret = usbh_control_transfer(video_class->hport->ep0, setup, NULL);
+    if (ret < 0) {
+        return ret;
+    }
+
+    USB_LOG_INFO("Open video and select formatidx:%u, frameidx:%u, altsetting:%u\r\n", formatidx, frameidx, altsetting);
     video_class->is_opened = true;
+    video_class->current_format = format_type;
     return ret;
 }
 
@@ -226,7 +276,6 @@ int usbh_video_close(struct usbh_video *video_class)
 
 void usbh_video_list_info(struct usbh_video *video_class)
 {
-    struct usbh_hubport *hport;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
@@ -234,8 +283,6 @@ void usbh_video_list_info(struct usbh_video *video_class)
     USB_LOG_INFO("============= Video device information ===================\r\n");
     USB_LOG_INFO("bcdVDC:%04x\r\n", video_class->bcdVDC);
     USB_LOG_INFO("Num of altsettings:%02x\r\n", video_class->num_of_intf_altsettings);
-
-    hport = video_class->hport;
 
     for (uint8_t i = 1; i < video_class->num_of_intf_altsettings; i++) {
         ep_desc = &video_class->hport->config.intf[video_class->data_intf].altsetting[i].ep[0].ep_desc;
@@ -266,10 +313,6 @@ void usbh_video_list_info(struct usbh_video *video_class)
         }
     }
 
-    usbh_videostreaming_get_cur_probe(video_class);
-
-    USB_LOG_INFO("dwMaxVideoFrameSize:%u,dwMaxPayloadTransferSize:%u\r\n", (int)video_class->probe.dwMaxVideoFrameSize, (int)video_class->probe.dwMaxPayloadTransferSize);
-
     USB_LOG_INFO("============= Video device information ===================\r\n");
 }
 
@@ -277,7 +320,7 @@ static int usbh_video_ctrl_intf_connect(struct usbh_hubport *hport, uint8_t intf
 {
     int ret;
     uint8_t cur_iface = 0xff;
-    uint8_t cur_alt_setting = 0xff;
+    // uint8_t cur_alt_setting = 0xff;
     uint8_t frame_index = 0xff;
     uint8_t format_index = 0xff;
     uint8_t num_of_frames = 0xff;
@@ -378,8 +421,9 @@ static int usbh_video_ctrl_intf_connect(struct usbh_hubport *hport, uint8_t intf
     usbh_video_list_info(video_class);
 
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, video_class->minor);
-
+#ifdef CONFIG_USBHOST_UVC_YUV2RGB
     inityuyv2rgb_table();
+#endif
     USB_LOG_INFO("Register Video Class:%s\r\n", hport->config.intf[intf].devname);
 
     usbh_video_run(video_class);
@@ -429,9 +473,9 @@ void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostre
 {
     struct usbh_iso_frame_packet *iso_packet;
     uint32_t num_of_iso_packets;
-    uint8_t *tmp_buf;
     uint8_t data_offset;
     uint32_t data_len;
+    uint8_t header_len = 0;
 
     num_of_iso_packets = urb->num_of_iso_packets;
     iso_packet = urb->iso_packet;
@@ -450,11 +494,10 @@ void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostre
         if (iso_packet[i].actual_length == 0) { /* skip no data */
             continue;
         }
-        if (iso_packet[i].actual_length < iso_packet[i].transfer_buffer[0]) { /* do not be illegal */
-            while (1) {
-            }
-        }
-        if ((iso_packet[i].transfer_buffer[0] > 12) || (iso_packet[i].transfer_buffer[0] == 0)) { /* do not be illegal */
+
+        header_len = iso_packet[i].transfer_buffer[0];
+
+        if ((header_len > 12) || (header_len == 0)) { /* do not be illegal */
             while (1) {
             }
         }
@@ -463,20 +506,20 @@ void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostre
             continue;
         }
 
-        data_offset = iso_packet[i].transfer_buffer[0];
-        data_len = iso_packet[i].actual_length - iso_packet[i].transfer_buffer[0];
-
-        tmp_buf = stream->bufbase + stream->bufoffset;
-        stream->bufoffset += data_len;
-
-        memcpy(tmp_buf, &iso_packet[i].transfer_buffer[data_offset], data_len);
-        if ((stream->bufbase[0] != 0xff) && (stream->bufbase[1] != 0xd8)) {
+        if ((stream->bufoffset == 0) && (iso_packet[i].transfer_buffer[header_len] != 0xff) && (iso_packet[i].transfer_buffer[header_len + 1] != 0xd8)) {
             stream->bufoffset = 0;
             continue;
         }
 
+        data_offset = iso_packet[i].transfer_buffer[0];
+        data_len = iso_packet[i].actual_length - iso_packet[i].transfer_buffer[0];
+
+        usbh_videostreaming_output(&iso_packet[i].transfer_buffer[data_offset], data_len);
+
+        stream->bufoffset += data_len;
+
         if (iso_packet[i].transfer_buffer[1] & (1 << 1)) {
-            if ((stream->bufbase[stream->bufoffset - 2] != 0xff) && (stream->bufbase[stream->bufoffset - 1] != 0xd9)) {
+            if ((iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 2] != 0xff) && (iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 1] != 0xd9)) {
                 stream->bufoffset = 0;
                 continue;
             }
@@ -488,13 +531,13 @@ void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostre
     }
 }
 
-void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_videostreaming *stream)
+void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostreaming *stream)
 {
     struct usbh_iso_frame_packet *iso_packet;
     uint32_t num_of_iso_packets;
-    uint8_t *tmp_buf;
     uint8_t data_offset;
     uint32_t data_len;
+    uint8_t header_len = 0;
 
     num_of_iso_packets = urb->num_of_iso_packets;
     iso_packet = urb->iso_packet;
@@ -514,11 +557,10 @@ void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_vid
         if (iso_packet[i].actual_length == 0) { /* skip no data */
             continue;
         }
-        if (iso_packet[i].actual_length < iso_packet[i].transfer_buffer[0]) { /* do not be illegal */
-            while (1) {
-            }
-        }
-        if ((iso_packet[i].transfer_buffer[0] > 12) || (iso_packet[i].transfer_buffer[0] == 0)) { /* do not be illegal */
+
+        header_len = iso_packet[i].transfer_buffer[0];
+
+        if ((header_len > 12) || (header_len == 0)) { /* do not be illegal */
             while (1) {
             }
         }
@@ -530,10 +572,9 @@ void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_vid
         data_offset = iso_packet[i].transfer_buffer[0];
         data_len = iso_packet[i].actual_length - iso_packet[i].transfer_buffer[0];
 
-        tmp_buf = stream->bufbase + stream->bufoffset;
+        usbh_videostreaming_output(&iso_packet[i].transfer_buffer[data_offset], data_len);
         stream->bufoffset += data_len;
 
-        yuyv2rgb565(&iso_packet[i].transfer_buffer[data_offset], tmp_buf, data_len);
         if (iso_packet[i].transfer_buffer[1] & (1 << 1)) {
             if (stream->video_one_frame_callback) {
                 stream->video_one_frame_callback(stream);
@@ -545,12 +586,14 @@ void usbh_videostreaming_parse_yuyv2rgb565(struct usbh_urb *urb, struct usbh_vid
 
 __WEAK void usbh_video_run(struct usbh_video *video_class)
 {
-
 }
 
 __WEAK void usbh_video_stop(struct usbh_video *video_class)
 {
+}
 
+__WEAK void usbh_videostreaming_output(uint8_t *input, uint32_t input_len)
+{
 }
 
 const struct usbh_class_driver video_class_ctrl_intf_driver = {
