@@ -247,7 +247,7 @@
 #define ITD_TSCL_STATUS_XACTERR (1 << 28) /* Bit 28: Transaction error */
 #define ITD_TSCL_STATUS_BABBLE  (1 << 29) /* Bit 29: Babble Detected */
 #define ITD_TSCL_STATUS_DBERROR (1 << 30) /* Bit 30: Data Buffer Error */
-#define ITD_TSCL_STATUS_ACTIVE  (1 << 31) /* Bit 28: Transaction error */
+#define ITD_TSCL_STATUS_ACTIVE  (1 << 31) /* Bit 31: Active error */
 
 /* iTD Buffer Page Pointer List. Paragraph 3.3.4 */
 
