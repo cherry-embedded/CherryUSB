@@ -7,8 +7,9 @@
 
 #define DEV_FORMAT "/dev/hub%d"
 
-#define DEBOUNCE_TIMEOUT       400
-#define DEBOUNCE_TIME_STEP     25
+#define HUB_DEBOUNCE_TIMEOUT   1500
+#define HUB_DEBOUNCE_STEP      25
+#define HUB_DEBOUNCE_STABLE    100
 #define DELAY_TIME_AFTER_RESET 200
 
 #define EXTHUB_FIRST_INDEX 2
@@ -351,6 +352,20 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 }
 #endif
 
+static void usbh_hubport_release(struct usbh_hubport *child)
+{
+    if (child->connected) {
+        child->connected = false;
+        usbh_hport_deactivate_ep0(child);
+        for (uint8_t i = 0; i < child->config.config_desc.bNumInterfaces; i++) {
+            if (child->config.intf[i].class_driver && child->config.intf[i].class_driver->disconnect) {
+                CLASS_DISCONNECT(child, i);
+            }
+        }
+        child->config.config_desc.bNumInterfaces = 0;
+    }
+}
+
 static void usbh_hub_events(struct usbh_hub *hub)
 {
     struct usbh_hubport *child;
@@ -412,8 +427,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
         if (portchange & HUB_PORT_STATUS_C_CONNECTION) {
             uint16_t connection = 0;
             uint16_t debouncestable = 0;
-            for (uint32_t debouncetime = 0; debouncetime < DEBOUNCE_TIMEOUT; debouncetime += DEBOUNCE_TIME_STEP) {
-                usb_osal_msleep(DEBOUNCE_TIME_STEP);
+            for (uint32_t debouncetime = 0; debouncetime < HUB_DEBOUNCE_TIMEOUT; debouncetime += HUB_DEBOUNCE_STEP) {
                 /* Read hub port status */
                 ret = usbh_hub_get_portstatus(hub, port + 1, &port_status);
                 if (ret < 0) {
@@ -425,21 +439,29 @@ static void usbh_hub_events(struct usbh_hub *hub)
                 portchange = port_status.wPortChange;
 
                 USB_LOG_DBG("Port %u, status:0x%02x, change:0x%02x\r\n", port + 1, portstatus, portchange);
-                if ((portstatus & HUB_PORT_STATUS_CONNECTION) == connection) {
-                    if (connection) {
-                        if (++debouncestable == 4) {
-                            break;
-                        }
+
+                if (!(portchange & HUB_PORT_STATUS_C_CONNECTION) &&
+                    ((portstatus & HUB_PORT_STATUS_CONNECTION) == connection)) {
+                    debouncestable += HUB_DEBOUNCE_STEP;
+                    if (debouncestable >= HUB_DEBOUNCE_STABLE) {
+                        break;
                     }
                 } else {
                     debouncestable = 0;
+                    connection = portstatus & HUB_PORT_STATUS_CONNECTION;
                 }
-
-                connection = portstatus & HUB_PORT_STATUS_CONNECTION;
 
                 if (portchange & HUB_PORT_STATUS_C_CONNECTION) {
                     usbh_hub_clear_feature(hub, port + 1, HUB_PORT_FEATURE_C_CONNECTION);
                 }
+
+                usb_osal_msleep(HUB_DEBOUNCE_STEP);
+            }
+
+            /** check if debounce ok */
+            if (debouncestable < HUB_DEBOUNCE_STABLE) {
+                USB_LOG_ERR("Failed to debounce port %u\r\n", port + 1);
+                break;
             }
 
             /* Last, check connect status */
@@ -477,16 +499,8 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     }
 
                     child = &hub->child[port];
-                    if (child->connected) {
-                        child->connected = false;
-                        usbh_hport_deactivate_ep0(child);
-                        for (uint8_t i = 0; i < child->config.config_desc.bNumInterfaces; i++) {
-                            if (child->config.intf[i].class_driver && child->config.intf[i].class_driver->disconnect) {
-                                CLASS_DISCONNECT(child, i);
-                            }
-                        }
-                        child->config.config_desc.bNumInterfaces = 0;
-                    }
+                    /** release child sources first */
+                    usbh_hubport_release(child);
 
                     memset(child, 0, sizeof(struct usbh_hubport));
                     child->parent = hub;
@@ -503,30 +517,15 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     USB_LOG_ERR("Failed to enable port %u\r\n", port + 1);
 
                     child = &hub->child[port];
-                    if (child->connected) {
-                        child->connected = false;
-                        usbh_hport_deactivate_ep0(child);
-                        for (uint8_t i = 0; i < child->config.config_desc.bNumInterfaces; i++) {
-                            if (child->config.intf[i].class_driver && child->config.intf[i].class_driver->disconnect) {
-                                CLASS_DISCONNECT(child, i);
-                            }
-                        }
-                    }
-                    child->config.config_desc.bNumInterfaces = 0;
+                    /** release child sources */
+                    usbh_hubport_release(child);
+
                     continue;
                 }
             } else {
                 child = &hub->child[port];
-                child->connected = false;
-                usbh_hport_deactivate_ep0(child);
-                for (uint8_t i = 0; i < child->config.config_desc.bNumInterfaces; i++) {
-                    if (child->config.intf[i].class_driver && child->config.intf[i].class_driver->disconnect) {
-                        CLASS_DISCONNECT(child, i);
-                    }
-                }
-
-                USB_LOG_INFO("Device on Hub %u, Port %u disconnected\r\n", hub->index, port + 1);
-                child->config.config_desc.bNumInterfaces = 0;
+                /** release child sources */
+                usbh_hubport_release(child);
             }
         }
     }
