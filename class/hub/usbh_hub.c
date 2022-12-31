@@ -592,19 +592,19 @@ int usbh_hub_initialize(void)
     return 0;
 }
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
-const struct usbh_class_driver hub_driver = {
+const struct usbh_class_driver hub_class_driver = {
     .driver_name = "hub",
     .connect = usbh_hub_connect,
     .disconnect = usbh_hub_disconnect
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info hub_info = {
+CLASS_INFO_DEFINE const struct usbh_class_info hub_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS,
     .class = USB_DEVICE_CLASS_HUB,
     .subclass = 0,
     .protocol = 0,
     .vid = 0x00,
     .pid = 0x00,
-    .class_driver = &hub_driver
+    .class_driver = &hub_class_driver
 };
 #endif

@@ -178,6 +178,16 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
+static int usbh_cdc_data_connect(struct usbh_hubport *hport, uint8_t intf)
+{
+    return 0;
+}
+
+static int usbh_cdc_data_disconnect(struct usbh_hubport *hport, uint8_t intf)
+{
+    return 0;
+}
+
 __WEAK void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 
@@ -194,6 +204,12 @@ const struct usbh_class_driver cdc_acm_class_driver = {
     .disconnect = usbh_cdc_acm_disconnect
 };
 
+const struct usbh_class_driver cdc_data_class_driver = {
+    .driver_name = "cdc_data",
+    .connect = usbh_cdc_data_connect,
+    .disconnect = usbh_cdc_data_disconnect
+};
+
 CLASS_INFO_DEFINE const struct usbh_class_info cdc_acm_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
     .class = USB_DEVICE_CLASS_CDC,
@@ -202,4 +218,14 @@ CLASS_INFO_DEFINE const struct usbh_class_info cdc_acm_class_info = {
     .vid = 0x00,
     .pid = 0x00,
     .class_driver = &cdc_acm_class_driver
+};
+
+CLASS_INFO_DEFINE const struct usbh_class_info cdc_data_class_info = {
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS,
+    .class = USB_DEVICE_CLASS_CDC_DATA,
+    .subclass = 0x00,
+    .protocol = 0x00,
+    .vid = 0x00,
+    .pid = 0x00,
+    .class_driver = &cdc_data_class_driver
 };

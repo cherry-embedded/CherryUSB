@@ -316,7 +316,7 @@ void usbh_video_list_info(struct usbh_video *video_class)
     USB_LOG_INFO("============= Video device information ===================\r\n");
 }
 
-static int usbh_video_ctrl_intf_connect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret;
     uint8_t cur_iface = 0xff;
@@ -430,7 +430,7 @@ static int usbh_video_ctrl_intf_connect(struct usbh_hubport *hport, uint8_t intf
     return ret;
 }
 
-static int usbh_video_ctrl_intf_disconnect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
@@ -458,13 +458,12 @@ static int usbh_video_ctrl_intf_disconnect(struct usbh_hubport *hport, uint8_t i
     return ret;
 }
 
-static int usbh_video_data_intf_connect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_video_streaming_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    USB_LOG_WRN("Ignore video data intf\r\n");
     return 0;
 }
 
-static int usbh_video_data_intf_disconnect(struct usbh_hubport *hport, uint8_t intf)
+static int usbh_video_streaming_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     return 0;
 }
@@ -596,34 +595,34 @@ __WEAK void usbh_videostreaming_output(uint8_t *input, uint32_t input_len)
 {
 }
 
-const struct usbh_class_driver video_class_ctrl_intf_driver = {
-    .driver_name = "video",
-    .connect = usbh_video_ctrl_intf_connect,
-    .disconnect = usbh_video_ctrl_intf_disconnect
+const struct usbh_class_driver video_ctrl_class_driver = {
+    .driver_name = "video_ctrl",
+    .connect = usbh_video_ctrl_connect,
+    .disconnect = usbh_video_ctrl_disconnect
 };
 
-const struct usbh_class_driver video_class_data_intf_driver = {
-    .driver_name = "video",
-    .connect = usbh_video_data_intf_connect,
-    .disconnect = usbh_video_data_intf_disconnect
+const struct usbh_class_driver video_streaming_class_driver = {
+    .driver_name = "video_streaming",
+    .connect = usbh_video_streaming_connect,
+    .disconnect = usbh_video_streaming_disconnect
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info video_ctrl_intf_class_info = {
+CLASS_INFO_DEFINE const struct usbh_class_info video_ctrl_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
     .class = USB_DEVICE_CLASS_VIDEO,
     .subclass = VIDEO_SC_VIDEOCONTROL,
     .protocol = VIDEO_PC_PROTOCOL_UNDEFINED,
     .vid = 0x00,
     .pid = 0x00,
-    .class_driver = &video_class_ctrl_intf_driver
+    .class_driver = &video_ctrl_class_driver
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info video_data_intf_class_info = {
+CLASS_INFO_DEFINE const struct usbh_class_info video_streaming_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
     .class = USB_DEVICE_CLASS_VIDEO,
     .subclass = VIDEO_SC_VIDEOSTREAMING,
     .protocol = VIDEO_PC_PROTOCOL_UNDEFINED,
     .vid = 0x00,
     .pid = 0x00,
-    .class_driver = &video_class_data_intf_driver
+    .class_driver = &video_streaming_class_driver
 };
