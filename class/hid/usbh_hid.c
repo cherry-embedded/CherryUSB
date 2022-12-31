@@ -196,21 +196,11 @@ const struct usbh_class_driver hid_class_driver = {
     .disconnect = usbh_hid_disconnect
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info hid_keyboard_class_info = {
-    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+CLASS_INFO_DEFINE const struct usbh_class_info hid_custom_class_info = {
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS,
     .class = USB_DEVICE_CLASS_HID,
-    .subclass = HID_SUBCLASS_BOOTIF,
-    .protocol = HID_PROTOCOL_KEYBOARD,
-    .vid = 0x00,
-    .pid = 0x00,
-    .class_driver = &hid_class_driver
-};
-
-CLASS_INFO_DEFINE const struct usbh_class_info hid_mouse_class_info = {
-    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
-    .class = USB_DEVICE_CLASS_HID,
-    .subclass = HID_SUBCLASS_BOOTIF,
-    .protocol = HID_PROTOCOL_MOUSE,
+    .subclass = 0x00,
+    .protocol = 0x00,
     .vid = 0x00,
     .pid = 0x00,
     .class_driver = &hid_class_driver
