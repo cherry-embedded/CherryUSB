@@ -46,36 +46,6 @@ struct audio_entity_info {
 
 static usb_slist_t usbd_audio_entity_info_head = USB_SLIST_OBJECT_INIT(usbd_audio_entity_info_head);
 
-#if CONFIG_USBDEV_AUDIO_VERSION >= 0x0200
-const uint8_t default_sampling_freq_table[] = {
-    AUDIO_SAMPLE_FREQ_NUM(1),
-    // AUDIO_SAMPLE_FREQ_4B(8000),
-    // AUDIO_SAMPLE_FREQ_4B(8000),
-    // AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(16000),
-    AUDIO_SAMPLE_FREQ_4B(16000),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(32000),
-    AUDIO_SAMPLE_FREQ_4B(32000),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(44100),
-    AUDIO_SAMPLE_FREQ_4B(44100),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(48000),
-    AUDIO_SAMPLE_FREQ_4B(48000),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(88200),
-    AUDIO_SAMPLE_FREQ_4B(88200),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(96000),
-    AUDIO_SAMPLE_FREQ_4B(96000),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-    AUDIO_SAMPLE_FREQ_4B(192000),
-    AUDIO_SAMPLE_FREQ_4B(192000),
-    AUDIO_SAMPLE_FREQ_4B(0x00),
-};
-#endif
-
 #if CONFIG_USBDEV_AUDIO_VERSION < 0x0200
 static int audio_class_endpoint_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
@@ -109,6 +79,7 @@ static int audio_class_endpoint_request_handler(struct usb_setup_packet *setup, 
                 sampling_freq = 16000;
                 memcpy(*data, &sampling_freq, 4);
                 *len = 4;
+                USB_LOG_DBG("Get ep:%02x %d Hz\r\n", ep, (int)sampling_freq);
                 break;
             default:
                 USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x\r\n", setup->bRequest);
@@ -246,6 +217,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                             *len = 1;
                         } else {
                             mute = (*data)[0];
+                            current_feature_control->mute_bCUR = mute;
                             USB_LOG_DBG("Set UnitId:%d ch[%d] mute %s\r\n", entity_id, ch, mute_string[mute]);
                             usbd_audio_set_mute(entity_id, ch, mute);
                         }
@@ -299,6 +271,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                     case AUDIO_CS_CONTROL_SAM_FREQ:
                         if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
                             memcpy(*data, &sampling_freq[ch], sizeof(uint32_t));
+                            USB_LOG_DBG("Get ClockId:%d ch[%d] %d Hz\r\n", entity_id, ch, (int)sampling_freq[ch]);
                             *len = 4;
                         } else {
                             memcpy(&sampling_freq[ch], *data, setup->wLength);
@@ -329,6 +302,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                             num = (uint16_t)((uint16_t)(sampling_freq_table[1] << 8) | ((uint16_t)sampling_freq_table[0]));
                             *data = sampling_freq_table;
                             *len = (12 * num + 2);
+                            USB_LOG_DBG("Get sampling_freq_table entity_id:%d ch[%d] addr:%x\r\n", entity_id, ch, (uint32_t)sampling_freq_table);
                         } else {
                         }
                         break;
@@ -415,7 +389,7 @@ void usbd_audio_add_entity(uint8_t entity_id, uint16_t bDescriptorSubtype)
             control->volume.subrange[ch].wMax = 100;
             control->volume.subrange[ch].wRes = 1;
             control->mute[ch] = 0;
-            control->volume_bCUR = 50;
+            control->volume_bCUR = 0;
             control->mute_bCUR = 0;
         }
 #endif
@@ -446,12 +420,13 @@ __WEAK void usbd_audio_set_mute(uint8_t entity_id, uint8_t ch, uint8_t enable)
 __WEAK void usbd_audio_set_sampling_freq(uint8_t entity_id, uint8_t ep_ch, uint32_t sampling_freq)
 {
 }
+
 #if CONFIG_USBDEV_AUDIO_VERSION >= 0x0200
 __WEAK void usbd_audio_get_sampling_freq_table(uint8_t entity_id, uint8_t **sampling_freq_table)
 {
-    *sampling_freq_table = (uint8_t *)default_sampling_freq_table;
 }
 #endif
+
 __WEAK void usbd_audio_set_pitch(uint8_t ep, bool enable)
 {
 }
