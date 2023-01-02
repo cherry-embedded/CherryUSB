@@ -262,7 +262,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     ep_cfg.ep_addr = ep_desc->bEndpointAddress;
     ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    ;
+
     ep_cfg.ep_interval = ep_desc->bInterval;
     ep_cfg.hport = hport;
     usbh_pipe_alloc(&rndis_class->intin, &ep_cfg);
