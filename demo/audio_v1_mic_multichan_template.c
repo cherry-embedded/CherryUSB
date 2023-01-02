@@ -20,28 +20,28 @@
 #define IN_CHANNEL_NUM 1
 
 #if IN_CHANNEL_NUM == 1
-#define INPUT_CTRL      0x03
-#define INPUT_CH_ENABLE 0x0001
-#elif IN_CHANNEL_NUM == 2
 #define INPUT_CTRL      0x03, 0x03
+#define INPUT_CH_ENABLE 0x0000
+#elif IN_CHANNEL_NUM == 2
+#define INPUT_CTRL      0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x0003
 #elif IN_CHANNEL_NUM == 3
-#define INPUT_CTRL      0x03, 0x03, 0x03
+#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x0007
 #elif IN_CHANNEL_NUM == 4
-#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03
+#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x000f
 #elif IN_CHANNEL_NUM == 5
-#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03
+#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x001f
 #elif IN_CHANNEL_NUM == 6
-#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03
+#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x003F
 #elif IN_CHANNEL_NUM == 7
-#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03
+#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x007f
 #elif IN_CHANNEL_NUM == 8
-#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03
+#define INPUT_CTRL      0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03
 #define INPUT_CH_ENABLE 0x00ff
 #endif
 
@@ -52,13 +52,13 @@
 #define USB_AUDIO_CONFIG_DESC_SIZ (unsigned long)(9 +                                                    \
                                                   AUDIO_AC_DESCRIPTOR_INIT_LEN(1) +                      \
                                                   AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +                  \
-                                                  AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(1, IN_CHANNEL_NUM) + \
+                                                  AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(IN_CHANNEL_NUM, 1) + \
                                                   AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC +                 \
                                                   AUDIO_AS_DESCRIPTOR_INIT_LEN(1))
 
 #define AUDIO_AC_SIZ (AUDIO_SIZEOF_AC_HEADER_DESC(1) +                       \
                       AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +                  \
-                      AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(1, IN_CHANNEL_NUM) + \
+                      AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(IN_CHANNEL_NUM, 1) + \
                       AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC)
 
 const uint8_t audio_descriptor[] = {
@@ -68,7 +68,7 @@ const uint8_t audio_descriptor[] = {
     AUDIO_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x01, AUDIO_INTERM_MIC, IN_CHANNEL_NUM, INPUT_CH_ENABLE),
     AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x02, 0x01, 0x01, INPUT_CTRL),
     AUDIO_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x03, AUDIO_TERMINAL_STREAMING, 0x02),
-    AUDIO_AS_DESCRIPTOR_INIT(0x01, 0x03, IN_CHANNEL_NUM, AUDIO_IN_EP, AUDIO_IN_PACKET, EP_INTERVAL, AUDIO_SAMPLE_FREQ_3B(AUDIO_FREQ)),
+    AUDIO_AS_DESCRIPTOR_INIT(0x01, 0x03, IN_CHANNEL_NUM, 2, 16, AUDIO_IN_EP, AUDIO_IN_PACKET, EP_INTERVAL, AUDIO_SAMPLE_FREQ_3B(AUDIO_FREQ)),
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
