@@ -884,6 +884,12 @@ static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t *
     switch (setup->bmRequestType & USB_REQUEST_TYPE_MASK) {
         case USB_REQUEST_STANDARD:
             if (usbd_standard_request_handler(setup, data, len) < 0) {
+#ifndef CONFIG_USB_HS
+                if ((setup->bRequest == 0x06) && (setup->wValue = 0x0600)) {
+                    USB_LOG_WRN("Ignore device quality in full speed\r\n");
+                    return false;
+                }
+#endif
                 USB_LOG_ERR("standard request error\r\n");
                 usbd_print_setup(setup);
                 return false;
@@ -1012,7 +1018,6 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
 #if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
 #else
     /* check if the data buf addr matches align size,if not, copy into align buf */
-#ifndef CONFIG_USBDEV_ALIGN_CHECK_DISABLE
     if (((unsigned long)usbd_core_cfg.ep0_data_buf) & (CONFIG_USB_ALIGN_SIZE - 1)) {
         if (usbd_core_cfg.ep0_data_buf_residue > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
             USB_LOG_ERR("Request buffer too small\r\n");
@@ -1022,7 +1027,6 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
         memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
         usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
     }
-#endif
 #endif
     /* Send data or status to host */
     usbd_ep_start_write(USB_CONTROL_IN_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
