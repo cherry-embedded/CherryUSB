@@ -247,7 +247,25 @@ int usbh_video_open(struct usbh_video *video_class,
 int usbh_video_close(struct usbh_video *video_class)
 {
     struct usb_setup_packet *setup = &video_class->hport->setup;
-    int ret;
+    int ret = 0;
+
+    USB_LOG_INFO("Close video device\r\n");
+
+    if (video_class->is_opened == false) {
+        return 0;
+    }
+
+    video_class->is_opened = false;
+
+    if (video_class->isoin) {
+        usbh_pipe_free(video_class->isoin);
+        video_class->isoin = NULL;
+    }
+
+    if (video_class->isoout) {
+        usbh_pipe_free(video_class->isoout);
+        video_class->isoout = NULL;
+    }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = USB_REQUEST_SET_INTERFACE;
@@ -259,18 +277,6 @@ int usbh_video_close(struct usbh_video *video_class)
     if (ret < 0) {
         return ret;
     }
-    if (video_class->isoin) {
-        usbh_pipe_free(video_class->isoin);
-        video_class->isoin = NULL;
-    }
-
-    if (video_class->isoout) {
-        usbh_pipe_free(video_class->isoout);
-        video_class->isoout = NULL;
-    }
-
-    USB_LOG_INFO("Close video device\r\n");
-    video_class->is_opened = false;
     return ret;
 }
 
