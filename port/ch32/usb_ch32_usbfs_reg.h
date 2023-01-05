@@ -98,6 +98,71 @@ typedef struct __attribute__((packed)) {
     __IO uint32_t OTG_SR;
 } USBOTGH_FS_TypeDef;
 
+typedef struct
+{
+    __IO uint8_t BASE_CTRL;     /*!< 0x40008000 */
+    __IO uint8_t HOST_CTRL;     /*!< 0x40008001 */
+    __IO uint8_t INT_EN;        /*!< 0x40008002 */
+    __IO uint8_t DEV_ADDR;      /*!< 0x40008003 */
+    __IO uint8_t USB_STATUS0;   /*!< 0x40008004 */
+    __IO uint8_t MIS_ST;        /*!< 0x40008005 */
+    __IO uint8_t INT_FG;        /*!< 0x40008006 */
+    __IO uint8_t INT_ST;        /*!< 0x40008007 */
+    __IO uint8_t RX_LEN;        /*!< 0x40008008 */
+    __IO uint8_t Reserve1;      /*!< 0x40008009 */
+    __IO uint8_t Reserve2;      /*!< 0x4000800a */
+    __IO uint8_t Reserve3;      /*!< 0x4000800b */
+    __IO uint8_t UEP4_1_MOD;    /*!< 0x4000800c */
+    __IO uint8_t HOST_EP_MOD;   /*!< 0x4000800d */
+    __IO uint8_t UEP567_MOD;    /*!< 0x4000800e */
+    __IO uint8_t Reserve4;      /*!< 0x4000800f */
+    __IO uint16_t UEP0_DMA;     /*!< 0x40008010 */
+    __IO uint16_t Reserve5;     /*!< 0x40008012 */
+    __IO uint16_t UEP1_DMA;     /*!< 0x40008014 */
+    __IO uint16_t Reserve6;     /*!< 0x40008016 */
+    __IO uint16_t HOST_RX_DMA;  /*!< 0x40008018 */
+    __IO uint16_t Reserve7;     /*!< 0x4000801a */
+    __IO uint16_t HOST_TX_DMA;  /*!< 0x4000801c */
+    __IO uint16_t Reserve8;     /*!< 0x4000801e */
+    __IO uint8_t UEP0_T_LEN;    /*!< 0x40008020 */
+    __IO uint8_t Reserve9;      /*!< 0x40008021 */
+    __IO uint8_t UEP0_CTRL;     /*!< 0x40008022 */
+    __IO uint8_t Reserve10;     /*!< 0x40008023 */
+    __IO uint8_t UEP1_T_LEN;    /*!< 0x40008024 */
+    __IO uint8_t Reserve11;     /*!< 0x40008025 */
+    __IO uint8_t HOST_SETUP;    /*!< 0x40008026 */
+    __IO uint8_t Reserve12;     /*!< 0x40008027 */
+    __IO uint8_t HOST_EP_PID;   /*!< 0x40008028 */
+    __IO uint8_t Reserve13;     /*!< 0x40008029 */
+    __IO uint8_t HOST_RX_CTRL;  /*!< 0x4000802a */
+    __IO uint8_t Reserve14;     /*!< 0x4000802b */
+    __IO uint8_t HOST_TX_LEN;   /*!< 0x4000802c */
+    __IO uint8_t Reserve15;     /*!< 0x4000802d */
+    __IO uint8_t HOST_TX_CTRL;  /*!< 0x4000802e */
+    __IO uint8_t Reserve16;     /*!< 0x4000802f */
+    __IO uint8_t UEP4_T_LEN;    /*!< 0x40008030 */
+    __IO uint8_t Reserve17;     /*!< 0x40008031 */
+    __IO uint8_t UEP4_CTRL;     /*!< 0x40008032 */
+    __IO uint8_t Reserve18[33]; /*!< 0x40008033 */
+    __IO uint16_t UEP5_DMA;     /*!< 0x40008054 */
+    __IO uint16_t Reserve19;    /*!< 0x40008056 */
+    __IO uint16_t UEP6_DMA;     /*!< 0x40008058 */
+    __IO uint16_t Reserve20;    /*!< 0x4000805a */
+    __IO uint16_t UEP7_DMA;     /*!< 0x4000805c */
+    __IO uint8_t Reserve21[6];  /*!< 0x4000805e */
+    __IO uint8_t UEP5_T_LEN;    /*!< 0x40008064 */
+    __IO uint8_t Reserve22;     /*!< 0x40008065 */
+    __IO uint8_t UEP5_CTRL;     /*!< 0x40008066 */
+    __IO uint8_t Reserve23;     /*!< 0x40008067 */
+    __IO uint8_t UEP6_T_LEN;    /*!< 0x40008068 */
+    __IO uint8_t Reserve24;     /*!< 0x40008069 */
+    __IO uint8_t UEP6_CTRL;     /*!< 0x4000806a */
+    __IO uint8_t Reserve25;     /*!< 0x4000806b */
+    __IO uint8_t UEP7_T_LEN;    /*!< 0x4000806c */
+    __IO uint8_t Reserve26;     /*!< 0x4000806d */
+    __IO uint8_t UEP7_CTRL;     /*!< 0x4000806e */
+} USB_FS_TypeDef;
+
 #define USBFS_BASE ((uint32_t)0x50000000)
 
 #define USBFS_DEVICE ((USBOTG_FS_TypeDef *)USBFS_BASE)
