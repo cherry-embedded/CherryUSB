@@ -332,9 +332,6 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
     }
 
     if (found) {
-        /* found descriptor, save descriptor premiere address */
-        *data = p;
-
         if ((type == USB_DESCRIPTOR_TYPE_CONFIGURATION) || ((type == USB_DESCRIPTOR_TYPE_OTHER_SPEED))) {
             /* configuration or other speed descriptor is an
              * exception, length is at offset 2 and 3
@@ -345,6 +342,7 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
             /* normally length is at offset 0 */
             *len = p[DESC_bLength];
         }
+        memcpy(*data, p, *len);
     } else {
         /* nothing found */
         USB_LOG_ERR("descriptor <type:%x,index:%x> not found!\r\n", type, index);
@@ -1014,20 +1012,11 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
 #endif
     /* Send smallest of requested and offered length */
     usbd_core_cfg.ep0_data_buf_residue = MIN(usbd_core_cfg.ep0_data_buf_len, setup->wLength);
-
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
-#else
-    /* check if the data buf addr matches align size,if not, copy into align buf */
-    if (((unsigned long)usbd_core_cfg.ep0_data_buf) & (CONFIG_USB_ALIGN_SIZE - 1)) {
-        if (usbd_core_cfg.ep0_data_buf_residue > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
-            USB_LOG_ERR("Request buffer too small\r\n");
-            return;
-        }
-        /* copy data buf from misalignx addr to alignx addr */
-        memcpy(usbd_core_cfg.req_data, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
-        usbd_core_cfg.ep0_data_buf = usbd_core_cfg.req_data;
+    if (usbd_core_cfg.ep0_data_buf_residue > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
+        USB_LOG_ERR("Request buffer too small\r\n");
+        return;
     }
-#endif
+
     /* Send data or status to host */
     usbd_ep_start_write(USB_CONTROL_IN_EP0, usbd_core_cfg.ep0_data_buf, usbd_core_cfg.ep0_data_buf_residue);
     /*
