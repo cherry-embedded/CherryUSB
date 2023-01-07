@@ -113,7 +113,7 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
     ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
 
-    USB_LOG_INFO("Open endpoint:0x%x type:%u mps:%u\r\n",
+    USB_LOG_INFO("Open ep:0x%02x type:%u mps:%u\r\n",
                  ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
     return usbd_ep_open(&ep_cfg) == 0 ? true : false;
@@ -136,7 +136,7 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
     ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
     ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
 
-    USB_LOG_INFO("Close endpoint:0x%x type:%u\r\n",
+    USB_LOG_INFO("Close ep:0x%02x type:%u\r\n",
                  ep_cfg.ep_addr, ep_cfg.ep_type);
 
     return usbd_ep_close(ep_cfg.ep_addr) == 0 ? true : false;
@@ -884,7 +884,7 @@ static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t *
             if (usbd_standard_request_handler(setup, data, len) < 0) {
 #ifndef CONFIG_USB_HS
                 if ((setup->bRequest == 0x06) && (setup->wValue = 0x0600)) {
-                    USB_LOG_WRN("Ignore device quality in full speed\r\n");
+                    USB_LOG_WRN("Ignore DQD in fs\r\n"); /* Device Qualifier Descriptor */
                     return false;
                 }
 #endif
