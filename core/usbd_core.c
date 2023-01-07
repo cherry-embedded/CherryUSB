@@ -44,7 +44,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_cfg_priv {
     /** Zero length packet flag of control transfer */
     bool zlp_flag;
     /** Pointer to registered descriptors */
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
     struct usb_descriptor *descriptors;
 #else
     const uint8_t *descriptors;
@@ -154,7 +154,7 @@ static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
  *
  * @return true if the descriptor was found, false otherwise
  */
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
 static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *len)
 {
     uint8_t type = 0U;
@@ -370,7 +370,7 @@ static bool usbd_set_configuration(uint8_t config_index, uint8_t alt_setting)
     uint8_t cur_config = 0xFF;
     bool found = false;
     uint8_t *p;
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
     if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
         p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor[0];
     } else {
@@ -434,7 +434,7 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
     uint8_t cur_iface = 0xFF;
     bool ret = false;
     uint8_t *p;
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
     if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
         p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor[0];
     } else {
@@ -785,7 +785,7 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
  */
 static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
     if (usbd_core_cfg.descriptors->msosv1_descriptor) {
         if (setup->bRequest == usbd_core_cfg.descriptors->msosv1_descriptor->vendor_code) {
             switch (setup->wIndex) {
@@ -1135,7 +1135,7 @@ static void usbdev_tx_rx_thread(void *argument)
 }
 #endif
 
-#if defined(CHERRYUSB_VERSION) && (CHERRYUSB_VERSION > 0x000700)
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
 void usbd_desc_register(struct usb_descriptor *desc)
 {
     usbd_core_cfg.descriptors = desc;
