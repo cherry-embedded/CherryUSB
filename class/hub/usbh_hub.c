@@ -57,6 +57,7 @@ static void usbh_hub_devno_free(uint8_t devno)
         g_devinuse &= ~(1 << devno);
     }
 }
+#endif
 
 static void usbh_hub_register(struct usbh_hub *hub)
 {
@@ -68,7 +69,6 @@ static void usbh_hub_unregister(struct usbh_hub *hub)
     usb_slist_remove(&hub_class_head, &hub->list);
 }
 
-#endif
 static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
