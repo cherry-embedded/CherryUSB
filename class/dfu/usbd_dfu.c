@@ -130,7 +130,7 @@ static void dfu_request_upload(struct usb_setup_packet *setup, uint8_t **data, u
                 usbd_dfu_cfg.buffer.d8[2] = DFU_CMD_ERASE;
 
                 /* Send the status data over EP0 */
-                *data = usbd_dfu_cfg.buffer.d8;
+                memcpy(*data, usbd_dfu_cfg.buffer.d8, 3);
                 *len = 3;
             } else if (usbd_dfu_cfg.wblock_num > 1U) {
                 usbd_dfu_cfg.dev_state = DFU_STATE_DFU_UPLOAD_IDLE;
@@ -146,7 +146,7 @@ static void dfu_request_upload(struct usb_setup_packet *setup, uint8_t **data, u
                 phaddr = dfu_read_flash((uint8_t *)addr, usbd_dfu_cfg.buffer.d8, usbd_dfu_cfg.wlength);
 
                 /* Send the status data over EP0 */
-                *data = usbd_dfu_cfg.buffer.d8;
+                memcpy(*data, usbd_dfu_cfg.buffer.d8, usbd_dfu_cfg.wlength);
                 *len = usbd_dfu_cfg.wlength;
             } else /* unsupported usbd_dfu_cfg.wblock_num */
             {
@@ -369,9 +369,7 @@ static void dfu_request_getstatus(struct usb_setup_packet *setup, uint8_t **data
     }
 
     /* Send the status data over EP0 */
-    uint8_t temp_data[6];
-    memcpy(temp_data, usbd_dfu_cfg.dev_status, 6);
-    *data = temp_data;
+    memcpy(*data, usbd_dfu_cfg.dev_status, 6);
     *len = 6;
 
     if (usbd_dfu_cfg.firmwar_flag == 1) {
@@ -407,7 +405,7 @@ static void dfu_request_clrstatus(void)
 static void dfu_request_getstate(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     /* Return the current state of the DFU interface */
-    *data = &usbd_dfu_cfg.dev_state;
+    (*data)[0] = usbd_dfu_cfg.dev_state;
     *len = 1;
 }
 
