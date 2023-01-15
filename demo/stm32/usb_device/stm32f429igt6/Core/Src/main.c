@@ -132,7 +132,7 @@ int main(void)
   extern void cdc_acm_msc_init(void);
 
   cdc_acm_msc_init();
-#ifdef CONFIG_USBDEV_TX_RX_THREAD
+#if defined(CONFIG_USBDEV_TX_THREAD) || defined(CONFIG_USBDEV_RX_THREAD)
   vTaskStartScheduler();
 #endif
   /* USER CODE END 2 */
