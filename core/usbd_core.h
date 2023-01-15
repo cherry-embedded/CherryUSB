@@ -64,8 +64,8 @@ struct usbd_interface {
 
 struct usb_descriptor {
     const uint8_t *device_descriptor;
-    const uint8_t **fs_config_descriptor;
-    const uint8_t **hs_config_descriptor;
+    const uint8_t *fs_config_descriptor;
+    const uint8_t *hs_config_descriptor;
     const uint8_t *device_quality_descriptor;
     const uint8_t *fs_other_speed_descriptor;
     const uint8_t *hs_other_speed_descriptor;

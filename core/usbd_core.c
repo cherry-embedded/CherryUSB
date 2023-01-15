@@ -173,18 +173,18 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
         case USB_DESCRIPTOR_TYPE_CONFIGURATION:
             usbd_core_cfg.speed = usbd_get_port_speed(0);
             if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
-                if (usbd_core_cfg.descriptors->hs_config_descriptor[index]) {
-                    *data = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor[index];
-                    *len = (usbd_core_cfg.descriptors->hs_config_descriptor[index][CONF_DESC_wTotalLength] |
-                            (usbd_core_cfg.descriptors->hs_config_descriptor[index][CONF_DESC_wTotalLength + 1] << 8));
+                if (usbd_core_cfg.descriptors->hs_config_descriptor) {
+                    *data = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor;
+                    *len = (usbd_core_cfg.descriptors->hs_config_descriptor[CONF_DESC_wTotalLength] |
+                            (usbd_core_cfg.descriptors->hs_config_descriptor[CONF_DESC_wTotalLength + 1] << 8));
                 } else {
                     found = false;
                 }
             } else {
-                if (usbd_core_cfg.descriptors->fs_config_descriptor[index]) {
-                    *data = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor[index];
-                    *len = (usbd_core_cfg.descriptors->fs_config_descriptor[index][CONF_DESC_wTotalLength] |
-                            (usbd_core_cfg.descriptors->fs_config_descriptor[index][CONF_DESC_wTotalLength + 1] << 8));
+                if (usbd_core_cfg.descriptors->fs_config_descriptor) {
+                    *data = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor;
+                    *len = (usbd_core_cfg.descriptors->fs_config_descriptor[CONF_DESC_wTotalLength] |
+                            (usbd_core_cfg.descriptors->fs_config_descriptor[CONF_DESC_wTotalLength + 1] << 8));
                 } else {
                     found = false;
                 }
@@ -372,9 +372,9 @@ static bool usbd_set_configuration(uint8_t config_index, uint8_t alt_setting)
     uint8_t *p;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
-        p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor[0];
+        p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor;
     } else {
-        p = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor[0];
+        p = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor;
     }
 #else
     p = (uint8_t *)usbd_core_cfg.descriptors;
@@ -436,9 +436,9 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
     uint8_t *p;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     if (usbd_core_cfg.speed == USB_SPEED_HIGH) {
-        p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor[0];
+        p = (uint8_t *)usbd_core_cfg.descriptors->hs_config_descriptor;
     } else {
-        p = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor[0];
+        p = (uint8_t *)usbd_core_cfg.descriptors->fs_config_descriptor;
     }
 #else
     p = (uint8_t *)usbd_core_cfg.descriptors;
