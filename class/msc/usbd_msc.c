@@ -60,7 +60,7 @@ static int msc_storage_class_interface_request_handler(struct usb_setup_packet *
             break;
 
         case MSC_REQUEST_GET_MAX_LUN:
-            *data = (uint8_t *)(&usbd_msc_cfg.max_lun);
+            (*data)[0] = usbd_msc_cfg.max_lun;
             *len = 1;
             break;
 

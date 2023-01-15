@@ -300,7 +300,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
 
                             usbd_audio_get_sampling_freq_table(entity_id, &sampling_freq_table);
                             num = (uint16_t)((uint16_t)(sampling_freq_table[1] << 8) | ((uint16_t)sampling_freq_table[0]));
-                            *data = sampling_freq_table;
+                            memcpy(*data, sampling_freq_table, (12 * num + 2));
                             *len = (12 * num + 2);
                             USB_LOG_DBG("Get sampling_freq_table entity_id:%d ch[%d] addr:%x\r\n", entity_id, ch, (uint32_t)sampling_freq_table);
                         } else {
