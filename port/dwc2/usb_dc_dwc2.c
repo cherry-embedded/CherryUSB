@@ -751,7 +751,7 @@ int usbd_ep_close(const uint8_t ep)
 
     if (USB_EP_DIR_IS_OUT(ep)) {
         USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
-        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
+//        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
@@ -761,13 +761,13 @@ int usbd_ep_close(const uint8_t ep)
                                             USB_OTG_DOEPCTL_EPTYP);
     } else {
         USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SNAK;
-        USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
+//        USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_INEP(ep_idx)->DIEPCTL &= ~(USB_OTG_DIEPCTL_USBAEP |
                                            USB_OTG_DIEPCTL_MPSIZ |
-                                           USB_OTG_DIEPCTL_TXFNUM |
+//                                           USB_OTG_DIEPCTL_TXFNUM |
                                            USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
                                            USB_OTG_DIEPCTL_EPTYP);
     }
