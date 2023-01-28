@@ -48,7 +48,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[CONFIG_USBDEV_R
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t rndis_encapsulated_resp_buffer[CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t NOTIFY_RESPONSE_AVAILABLE[8] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t NOTIFY_RESPONSE_AVAILABLE[8];
 
 volatile uint8_t *g_rndis_rx_data_buffer;
 volatile uint32_t g_rndis_rx_data_length;
@@ -102,6 +102,8 @@ static int rndis_encapsulated_cmd_handler(uint8_t *data, uint32_t len);
 
 static void rndis_notify_rsp(void)
 {
+    memset(NOTIFY_RESPONSE_AVAILABLE, 0, 8);
+    NOTIFY_RESPONSE_AVAILABLE[0] = 0x01;
     usbd_ep_start_write(rndis_ep_data[RNDIS_INT_EP_IDX].ep_addr, NOTIFY_RESPONSE_AVAILABLE, 8);
 }
 
@@ -469,6 +471,11 @@ void rndis_bulk_in(uint8_t ep, uint32_t nbytes)
     }
 }
 
+void rndis_int_in(uint8_t ep, uint32_t nbytes)
+{
+    //USB_LOG_DBG("len:%d\r\n", nbytes);
+}
+
 #ifdef CONFIG_USBDEV_RNDIS_USING_LWIP
 #include <lwip/pbuf.h>
 
@@ -486,6 +493,7 @@ struct pbuf *usbd_rndis_eth_rx(void)
     memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
     p->len = g_rndis_rx_data_length;
 
+    USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_data_length);
     g_rndis_rx_data_length = 0;
     usbd_ep_start_read(rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
 
@@ -526,13 +534,14 @@ int usbd_rndis_eth_tx(struct pbuf *p)
 
     g_rndis_tx_data_length = sizeof(rndis_data_packet_t) + p->tot_len;
 
+    USB_LOG_DBG("txlen:%d\r\n", g_rndis_tx_data_length);
     return usbd_ep_start_write(rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, g_rndis_tx_buffer, g_rndis_tx_data_length);
 }
 #endif
 struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
-                                             const uint8_t out_ep,
-                                             const uint8_t in_ep,
-                                             const uint8_t int_ep, uint8_t mac[6])
+                                            const uint8_t out_ep,
+                                            const uint8_t in_ep,
+                                            const uint8_t int_ep, uint8_t mac[6])
 {
     memcpy(usbd_rndis_cfg.mac, mac, 6);
 
@@ -541,7 +550,7 @@ struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
     rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr = in_ep;
     rndis_ep_data[RNDIS_IN_EP_IDX].ep_cb = rndis_bulk_in;
     rndis_ep_data[RNDIS_INT_EP_IDX].ep_addr = int_ep;
-    rndis_ep_data[RNDIS_INT_EP_IDX].ep_cb = NULL;
+    rndis_ep_data[RNDIS_INT_EP_IDX].ep_cb = rndis_int_in;
 
     usbd_add_endpoint(&rndis_ep_data[RNDIS_OUT_EP_IDX]);
     usbd_add_endpoint(&rndis_ep_data[RNDIS_IN_EP_IDX]);
