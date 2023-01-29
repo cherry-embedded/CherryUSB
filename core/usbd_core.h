@@ -72,6 +72,7 @@ struct usb_descriptor {
     const char **string_descriptor;
     struct usb_msosv1_descriptor *msosv1_descriptor;
     struct usb_msosv2_descriptor *msosv2_descriptor;
+    struct usb_webusb_url_ex_descriptor *webusb_url_descriptor;
     struct usb_bos_descriptor *bos_descriptor;
 };
 
