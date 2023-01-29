@@ -821,6 +821,19 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
                     return -1;
             }
         }
+    } else if (usbd_core_cfg.descriptors->webusb_url_descriptor) {
+        if (setup->bRequest == usbd_core_cfg.descriptors->webusb_url_descriptor->vendor_code) {
+            switch (setup->wIndex) {
+                case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
+                    USB_LOG_INFO("GET Webusb url Descriptor\r\n");
+                    *data = (uint8_t *)usbd_core_cfg.descriptors->webusb_url_descriptor->string;
+                    *len = usbd_core_cfg.descriptors->webusb_url_descriptor->string_len;
+                    return 0;
+                default:
+                    USB_LOG_ERR("unknown vendor code\r\n");
+                    return -1;
+            }
+        }
     }
 #else
     if (msosv1_desc) {

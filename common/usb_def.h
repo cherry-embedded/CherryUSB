@@ -607,6 +607,12 @@ struct usb_webusb_url_descriptor {
     char URL[];
 } __PACKED;
 
+struct usb_webusb_url_ex_descriptor {
+    uint8_t vendor_code;
+    uint8_t *string;
+    uint32_t string_len;
+} __PACKED;
+
 struct usb_bos_descriptor {
     uint8_t *string;
     uint32_t string_len;
