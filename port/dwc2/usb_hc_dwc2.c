@@ -464,6 +464,12 @@ int usb_hc_init(void)
 
     usb_hc_low_level_init();
 
+    if ((USB_OTG_GLB->CID & (0x1U << 8)) == 0U) {
+        USB_LOG_ERR("This dwc2 version does not support dma, so stop working\r\n");
+        while (1) {
+        }
+    }
+
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
     ret = dwc2_core_init();
