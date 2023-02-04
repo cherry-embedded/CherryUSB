@@ -64,7 +64,7 @@
     EPn_TX_LEN(epid) = len
 /*!< Get epid ep rx len */
 #define EPn_GET_RX_LEN(epid) \
-    R8_USB_RX_LEN
+    CH58x_USBFS_DEV->USB_RX_LEN
 
 /*!< ep nums */
 #ifndef USB_NUM_BIDIR_ENDPOINTS
