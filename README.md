@@ -99,12 +99,13 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte)                    |
 |:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:-------------------------------:|
-|usbh_core.c    |  4261          | 512                             | 28                          | sizeof(struct usbh_urb)         |
-|usbh_hub.c     |  4633          | sizeof(struct usbh_hub) * (1+n) | 20                          | 0                               |
-|usbh_cdc_acm.c |  1004          | 7                               | 4                           | sizeof(struct usbh_cdc_acm) * x |
+|usbh_core.c    |  4417          | 512                             | 28                          | sizeof(struct usbh_urb)         |
+|usbh_hub.c     |  4895          | sizeof(struct usbh_hub) * (1+n) | 16                          | 0                               |
+|usbh_cdc_acm.c |  1064          | 7                               | 4                           | sizeof(struct usbh_cdc_acm) * x |
 |usbh_msc.c     |  1776          | 32                              | 4                           | sizeof(struct usbh_msc) * x     |
-|usbh_hid.c     |  822           | 128                             | 4                           | sizeof(struct usbh_hid) * x     |
-|usbh_video.c   |  3587          | 128                             | 4100(yuv2rgb, optional)     | sizeof(struct usbh_video) * x   |
+|usbh_hid.c     |  922           | 128                             | 4                           | sizeof(struct usbh_hid) * x     |
+|usbh_video.c   |  3592          | 128                             | 4                           | sizeof(struct usbh_video) * x   |
+|usbh_audio.c   |  3230          | 128                             | 4                           | sizeof(struct usbh_audio) * x   |
 
 Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affected by the following macros：
 
