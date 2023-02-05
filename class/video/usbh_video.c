@@ -216,17 +216,6 @@ int usbh_video_open(struct usbh_video *video_class,
         return ret;
     }
 
-    ep_desc = &video_class->hport->config.intf[video_class->data_intf].altsetting[altsetting].ep[0].ep_desc;
-    mult = (ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_MASK) >> USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_SHIFT;
-    mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    if (ep_desc->bEndpointAddress & 0x80) {
-        video_class->isoin_mps = mps * (mult + 1);
-        usbh_hport_activate_epx(&video_class->isoin, video_class->hport, ep_desc);
-    } else {
-        video_class->isoout_mps = mps * (mult + 1);
-        usbh_hport_activate_epx(&video_class->isoout, video_class->hport, ep_desc);
-    }
-
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = USB_REQUEST_SET_INTERFACE;
     setup->wValue = altsetting;
@@ -236,6 +225,17 @@ int usbh_video_open(struct usbh_video *video_class,
     ret = usbh_control_transfer(video_class->hport->ep0, setup, NULL);
     if (ret < 0) {
         return ret;
+    }
+
+    ep_desc = &video_class->hport->config.intf[video_class->data_intf].altsetting[altsetting].ep[0].ep_desc;
+    mult = (ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_MASK) >> USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_SHIFT;
+    mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    if (ep_desc->bEndpointAddress & 0x80) {
+        video_class->isoin_mps = mps * (mult + 1);
+        usbh_hport_activate_epx(&video_class->isoin, video_class->hport, ep_desc);
+    } else {
+        video_class->isoout_mps = mps * (mult + 1);
+        usbh_hport_activate_epx(&video_class->isoout, video_class->hport, ep_desc);
     }
 
     USB_LOG_INFO("Open video and select formatidx:%u, frameidx:%u, altsetting:%u\r\n", formatidx, frameidx, altsetting);
@@ -288,9 +288,13 @@ void usbh_video_list_info(struct usbh_video *video_class)
 
     USB_LOG_INFO("============= Video device information ===================\r\n");
     USB_LOG_INFO("bcdVDC:%04x\r\n", video_class->bcdVDC);
-    USB_LOG_INFO("Num of altsettings:%02x\r\n", video_class->num_of_intf_altsettings);
+    USB_LOG_INFO("Num of altsettings:%u\r\n", video_class->num_of_intf_altsettings);
 
-    for (uint8_t i = 1; i < video_class->num_of_intf_altsettings; i++) {
+    for (uint8_t i = 0; i < video_class->num_of_intf_altsettings; i++) {
+        if (i == 0) {
+            USB_LOG_INFO("Ingore altsetting 0\r\n");
+            continue;
+        }
         ep_desc = &video_class->hport->config.intf[video_class->data_intf].altsetting[i].ep[0].ep_desc;
 
         mult = (ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_MASK) >> USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_SHIFT;
