@@ -8,6 +8,14 @@
 
 #include "usb_audio.h"
 
+struct usbh_audio_format_type {
+    uint8_t channels;
+    uint8_t format_type;
+    uint8_t bitresolution;
+    uint8_t sampfreq_num;
+    uint32_t sampfreq[3];
+};
+
 /**
  * bSourceID in feature_unit = input_terminal_id
  * bSourceID in output_terminal = feature_unit_id
@@ -27,11 +35,7 @@ struct usbh_audio_module {
     uint8_t feature_unit_controlsize;
     uint8_t feature_unit_controls[8];
     uint8_t terminal_link_id;
-    uint8_t channels;
-    uint8_t format_type;
-    uint8_t bitresolution;
-    uint8_t sampfreq_num;
-    uint32_t sampfreq[3];
+    struct usbh_audio_format_type altsetting[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
 };
 
 struct usbh_audio {
@@ -46,6 +50,7 @@ struct usbh_audio {
     bool is_opened;
     uint16_t bcdADC;
     uint8_t bInCollection;
+    uint8_t num_of_intf_altsettings;
     struct usbh_audio_module module[2];
     uint8_t module_num;
 };
@@ -54,7 +59,7 @@ struct usbh_audio {
 extern "C" {
 #endif
 
-int usbh_audio_open(struct usbh_audio *audio_class, const char *name);
+int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t samp_freq);
 int usbh_audio_close(struct usbh_audio *audio_class, const char *name);
 
 void usbh_audio_run(struct usbh_audio *audio_class);
