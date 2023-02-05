@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F429xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hub;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\wireless;..\..\..\..\..\class\video;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F;..\..\..\..\..\third_party\fatfs-0.14\source</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\common;..\..\..\..\..\core;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hub;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\wireless;..\..\..\..\..\class\video;..\..\..\..\..\class\audio;..\..\..\..\..\osal;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM4F;..\..\..\..\..\third_party\fatfs-0.14\source</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -603,6 +603,11 @@
               <FileName>usbh_rndis.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\wireless\usbh_rndis.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbh_audio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\audio\usbh_audio.c</FilePath>
             </File>
             <File>
               <FileName>usbh_video.c</FileName>

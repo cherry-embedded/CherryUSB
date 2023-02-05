@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32H743xx,STM32H7</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\osal;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\class\wireless;..\..\..\..\..\class\video;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM7\r0p1</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\core;..\..\..\..\..\common;..\..\..\..\..\osal;..\..\..\..\..\class\cdc;..\..\..\..\..\class\hid;..\..\..\..\..\class\msc;..\..\..\..\..\class\hub;..\..\..\..\..\class\wireless;..\..\..\..\..\class\video;..\..\..\..\..\class\audio;..\..\..\..\..\third_party\FreeRTOS-10.4\include;..\..\..\..\..\third_party\FreeRTOS-10.4\portable\GCC\ARM_CM7\r0p1</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -615,14 +615,19 @@
               <FilePath>..\..\..\..\..\class\msc\usbh_msc.c</FilePath>
             </File>
             <File>
-              <FileName>usbh_video.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\class\video\usbh_video.c</FilePath>
-            </File>
-            <File>
               <FileName>usbh_rndis.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\class\wireless\usbh_rndis.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbh_audio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\audio\usbh_audio.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbh_video.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\class\video\usbh_video.c</FilePath>
             </File>
             <File>
               <FileName>usb_osal_freertos.c</FileName>
