@@ -4,7 +4,7 @@
 本节是基于 STM32 三个系列芯片的使用，涵盖 F1/F4/H7，其余芯片基本类似，不再赘述，具体区别有：
 
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
-- dwc2 ip 区别： fs port 和 hs port(带 dma 和不带 dma 功能)
+- dwc2 ip 区别： fs port(引脚是 PA11/PA12) 和 hs port(引脚是 PB14/PB15), 其中 hs port 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
 - F4 与 H7 cache 区别、USB BASE 区别
 
 
@@ -106,7 +106,7 @@ USB Device 移植要点
 USB Host 移植要点
 -----------------------
 
-前面 7 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port，所以 fs port 不做支持（没有 dma 你玩什么主机）。
+前面 7 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port (引脚是 PB14/PB15)，所以 fs port (引脚是 PA11/PA12)不做支持（没有 dma 你玩什么主机）。
 
 - 添加 CherryUSB 必须要的源码（ **usbh_core.c** 、 **usbh_hub.c** 、 **usb_hc_dwc2.c** 、以及 **osal** 目录下的适配层文件）,以及想要使用的 class 驱动，并且可以将对应的 **usb host.c** 添加方便测试。
 
