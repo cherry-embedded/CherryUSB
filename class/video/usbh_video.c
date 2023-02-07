@@ -251,10 +251,6 @@ int usbh_video_close(struct usbh_video *video_class)
 
     USB_LOG_INFO("Close video device\r\n");
 
-    if (video_class->is_opened == false) {
-        return 0;
-    }
-
     video_class->is_opened = false;
 
     if (video_class->isoin) {

@@ -90,7 +90,7 @@ freq_found:
     }
 
     ep_desc = &audio_class->hport->config.intf[intf].altsetting[altsetting].ep[0].ep_desc;
-    
+
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_ENDPOINT;
     setup->bRequest = AUDIO_REQUEST_SET_CUR;
     setup->wValue = (AUDIO_EP_CONTROL_SAMPLING_FEQ << 8) | 0x00;
@@ -125,10 +125,6 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
     int ret;
     uint8_t intf = 0xff;
     uint8_t altsetting = 1;
-
-    if (audio_class->is_opened == false) {
-        return 0;
-    }
 
     for (size_t i = 0; i < audio_class->module_num; i++) {
         if (strcmp(name, audio_class->module[i].name) == 0) {
