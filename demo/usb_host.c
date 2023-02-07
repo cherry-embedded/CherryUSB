@@ -26,9 +26,8 @@ void usbh_cdc_acm_callback(void *arg, int nbytes)
         for (size_t i = 0; i < nbytes; i++) {
             USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
         }
+        USB_LOG_RAW("nbytes:%d\r\n", nbytes);
     }
-
-    USB_LOG_RAW("nbytes:%d\r\n", nbytes);
 }
 
 static void usbh_cdc_acm_thread(void *argument)
@@ -102,10 +101,9 @@ void usbh_hid_callback(void *arg, int nbytes)
         for (size_t i = 0; i < nbytes; i++) {
             USB_LOG_RAW("0x%02x ", hid_buffer[i]);
         }
+        USB_LOG_RAW("nbytes:%d\r\n", nbytes);
+        usbh_submit_urb(&hid_intin_urb);
     }
-
-    USB_LOG_RAW("nbytes:%d\r\n", nbytes);
-    usbh_submit_urb(&hid_intin_urb);
 }
 
 static void usbh_hid_thread(void *argument)
