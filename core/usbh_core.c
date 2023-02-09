@@ -648,7 +648,7 @@ struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
         struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
         for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
             hport = &hub->child[port];
-            if (hport && hport->connected) {
+            if (hport->connected) {
                 if (hport->dev_addr == dev_addr) {
                     return &hub->child[port];
                 }
@@ -668,7 +668,7 @@ void *usbh_find_class_instance(const char *devname)
         struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
         for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
             hport = &hub->child[port];
-            if (hport && hport->connected) {
+            if (hport->connected) {
                 for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
                     if ((strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0) && hport->config.intf[itf].priv)
                         return hport->config.intf[itf].priv;
@@ -766,7 +766,7 @@ int lsusb(int argc, char **argv)
 
             for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
                 hport = &hub->child[port];
-                if (hport && hport->connected) {
+                if (hport->connected) {
                     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
                         if (hport->config.intf[i].class_driver->driver_name) {
                             USB_LOG_RAW("    |__Port %u,Port addr:0x%02x,If %u,ClassDriver=%s\r\n",
@@ -787,7 +787,7 @@ int lsusb(int argc, char **argv)
             struct usbh_hub *hub = usb_slist_entry(i, struct usbh_hub, list);
             for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
                 hport = &hub->child[port];
-                if (hport && hport->connected) {
+                if (hport->connected) {
                     USB_LOG_RAW("Hub %02u,Port %u,Port addr:0x%02x,VID:PID 0x%04x:0x%04x\r\n",
                                 hub->index,
                                 hport->port,
