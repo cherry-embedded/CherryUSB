@@ -84,7 +84,6 @@ struct chusb_hcd {
     volatile bool port_pe;
     volatile uint8_t current_token;
     volatile uint8_t ep0_state;
-    volatile uint8_t has_reseted;
     volatile bool prv_get_zero;
     volatile bool prv_set_zero;
     volatile bool main_pipe_using;
@@ -414,12 +413,11 @@ static void chusbh_set_self_speed(uint8_t speed)
 
 static int usbh_reset_port(const uint8_t port)
 {
-    g_chusb_hcd.has_reseted = 0x01;
     g_chusb_hcd.port_pe = 0;
     /*!< Set dev add 0 */
     USBFS_HOST->DEV_ADDR = (USBFS_HOST->DEV_ADDR & USBFS_UDA_GP_BIT) | (0x00 & USBFS_USB_ADDR_MASK);
     /*!< Close port */
-    USBFS_HOST->HOST_CTRL &= ~USBFS_UH_PORT_EN;
+    // USBFS_HOST->HOST_CTRL &= ~USBFS_UH_PORT_EN;
     /*!< Start reset */
     USBFS_HOST->HOST_CTRL |= USBFS_UH_BUS_RESET;
     usb_osal_msleep(30);
@@ -1254,23 +1252,12 @@ void USBH_IRQHandler(void)
         }
     } else if (intflag & USBFS_UIF_DETECT) {
         if (USBFS_HOST->MIS_ST & USBFS_UMS_DEV_ATTACH) {
-            if (g_chusb_hcd.has_reseted == 0x02) {
-                g_chusb_hcd.has_reseted = 0;
-                USB_LOG_INFO("USB bus reset and dev reconnect \r\n");
-            } else {
                 USB_LOG_INFO("Dev connect \r\n");
                 g_chusb_hcd.port_csc = 1;
                 g_chusb_hcd.port_pec = 1;
                 g_chusb_hcd.port_pe = 1;
                 usbh_roothub_thread_wakeup(1);
-            }
         } else {
-            if (g_chusb_hcd.has_reseted == 0x01) {
-                g_chusb_hcd.has_reseted = 0x02;
-                if (g_chusb_hcd.main_pipe_using) {
-                    g_chusb_hcd.main_pipe_using = false;
-                }
-            } else {
                 USB_LOG_INFO("Dev remove \r\n");
                 /**
                  * Device remove
@@ -1296,7 +1283,6 @@ void USBH_IRQHandler(void)
                     }
                 }
                 usbh_roothub_thread_wakeup(1);
-            }
         }
         USBFS_HOST->INT_FG = USBFS_UIF_DETECT;
     } else {
