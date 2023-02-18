@@ -1,1 +1,0 @@
-[bl_mcu_sdk_usb_examples](https://github.com/bouffalolab/bl_mcu_sdk/tree/master/examples/usb)
