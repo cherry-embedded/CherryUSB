@@ -123,11 +123,11 @@ struct usbh_interface_altsetting {
 };
 
 struct usbh_interface {
-    struct usbh_interface_altsetting altsetting[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
-    uint8_t altsetting_num;
     char devname[CONFIG_USBHOST_DEV_NAMELEN];
     struct usbh_class_driver *class_driver;
     void *priv;
+    struct usbh_interface_altsetting altsetting[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
+    uint8_t altsetting_num;
 };
 
 struct usbh_configuration {
@@ -146,8 +146,8 @@ struct usbh_hubport {
     const char *iManufacturer;
     const char *iProduct;
     const char *iSerialNumber;
-    uint8_t* raw_config_desc;
-    USB_MEM_ALIGNX struct usb_setup_packet setup;
+    uint8_t *raw_config_desc;
+    struct usb_setup_packet *setup;
     struct usbh_hub *parent;
 };
 
@@ -158,7 +158,7 @@ struct usbh_hub {
     uint8_t index;
     uint8_t hub_addr;
     usbh_pipe_t intin;
-    USB_MEM_ALIGNX uint8_t int_buffer[1];
+    uint8_t *int_buffer;
     struct usbh_urb intin_urb;
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
@@ -184,6 +184,7 @@ struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
 void *usbh_find_class_instance(const char *devname);
 
 int lsusb(int argc, char **argv);
+
 #ifdef __cplusplus
 }
 #endif

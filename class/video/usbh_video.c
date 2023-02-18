@@ -97,7 +97,7 @@ static void usbh_video_devno_free(struct usbh_video *video_class)
 
 int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
-    struct usb_setup_packet *setup = &video_class->hport->setup;
+    struct usb_setup_packet *setup = video_class->hport->setup;
     int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -116,7 +116,7 @@ int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t ent
 
 int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
-    struct usb_setup_packet *setup = &video_class->hport->setup;
+    struct usb_setup_packet *setup = video_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = VIDEO_REQUEST_SET_CUR;
@@ -156,7 +156,7 @@ int usbh_video_open(struct usbh_video *video_class,
                     uint16_t wHeight,
                     uint8_t altsetting)
 {
-    struct usb_setup_packet *setup = &video_class->hport->setup;
+    struct usb_setup_packet *setup = video_class->hport->setup;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
@@ -246,7 +246,7 @@ int usbh_video_open(struct usbh_video *video_class,
 
 int usbh_video_close(struct usbh_video *video_class)
 {
-    struct usb_setup_packet *setup = &video_class->hport->setup;
+    struct usb_setup_packet *setup = video_class->hport->setup;
     int ret = 0;
 
     USB_LOG_INFO("Close video device\r\n");

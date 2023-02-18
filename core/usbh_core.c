@@ -10,6 +10,7 @@ struct usbh_class_info *usbh_class_info_table_begin = NULL;
 struct usbh_class_info *usbh_class_info_table_end = NULL;
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t ep0_request_buffer[CONFIG_USBHOST_REQUEST_BUFFER_LEN];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct usb_setup_packet g_setup[CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USBHOST_MAX_EHPORTS];
 
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
@@ -415,8 +416,8 @@ int usbh_enumerate(struct usbh_hubport *hport)
     uint16_t ep_mps;
     int ret;
 
-#define USB_REQUEST_BUFFER_SIZE 256
-    setup = &hport->setup;
+    hport->setup = &g_setup[hport->parent->index - 1][hport->port - 1];
+    setup = hport->setup;
 
     /* Configure EP0 with the default maximum packet size */
     usbh_hport_activate_ep0(hport);

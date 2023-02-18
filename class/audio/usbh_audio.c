@@ -48,7 +48,7 @@ static void usbh_audio_devno_free(struct usbh_audio *audio_class)
 
 int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t samp_freq)
 {
-    struct usb_setup_packet *setup = &audio_class->hport->setup;
+    struct usb_setup_packet *setup = audio_class->hport->setup;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
@@ -120,7 +120,7 @@ freq_found:
 
 int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
 {
-    struct usb_setup_packet *setup = &audio_class->hport->setup;
+    struct usb_setup_packet *setup = audio_class->hport->setup;
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
     uint8_t intf = 0xff;

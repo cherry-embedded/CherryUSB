@@ -13,7 +13,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[1024];
 
 static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 {
-    struct usb_setup_packet *setup = &rndis_class->hport->setup;
+    struct usb_setup_packet *setup = rndis_class->hport->setup;
     int ret = 0;
     rndis_initialize_msg_t *cmd;
     rndis_initialize_cmplt_t *resp;
@@ -60,7 +60,7 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 
 int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, uint32_t query_len, uint8_t *info, uint32_t *info_len)
 {
-    struct usb_setup_packet *setup = &rndis_class->hport->setup;
+    struct usb_setup_packet *setup = rndis_class->hport->setup;
     int ret = 0;
     rndis_query_msg_t *cmd;
     rndis_query_cmplt_t *resp;
@@ -111,7 +111,7 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
 
 static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, uint8_t *info, uint32_t info_len)
 {
-    struct usb_setup_packet *setup = &rndis_class->hport->setup;
+    struct usb_setup_packet *setup = rndis_class->hport->setup;
     int ret = 0;
     rndis_set_msg_t *cmd;
     rndis_set_cmplt_t *resp;
@@ -188,7 +188,7 @@ int usbh_rndis_bulk_in_transfer(struct usbh_rndis *rndis_class, uint8_t *buffer,
 
 int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
 {
-    struct usb_setup_packet *setup = &rndis_class->hport->setup;
+    struct usb_setup_packet *setup = rndis_class->hport->setup;
     int ret = 0;
     rndis_keepalive_msg_t *cmd;
     rndis_keepalive_cmplt_t *resp;

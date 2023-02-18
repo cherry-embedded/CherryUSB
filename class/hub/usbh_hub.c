@@ -17,16 +17,17 @@
 static uint32_t g_devinuse = 0;
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_buf[32];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_intbuf[CONFIG_USBHOST_MAX_EXTHUBS + 1][1];
 
 usb_slist_t hub_class_head = USB_SLIST_OBJECT_INIT(hub_class_head);
 
 usb_osal_thread_t hub_thread;
 usb_osal_mq_t hub_mq;
 
-USB_NOCACHE_RAM_SECTION struct usbh_hub roothub;
+struct usbh_hub roothub;
 
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
-USB_NOCACHE_RAM_SECTION struct usbh_hub exthub[CONFIG_USBHOST_MAX_EXTHUBS];
+struct usbh_hub exthub[CONFIG_USBHOST_MAX_EXTHUBS];
 #endif
 extern int usbh_hport_activate_ep0(struct usbh_hubport *hport);
 extern int usbh_hport_deactivate_ep0(struct usbh_hubport *hport);
@@ -74,7 +75,7 @@ static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
     struct usb_setup_packet *setup;
     int ret;
 
-    setup = &hub->parent->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
@@ -95,7 +96,7 @@ static int _usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
     struct usb_setup_packet *setup;
     int ret;
 
-    setup = &hub->parent->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = HUB_REQUEST_GET_STATUS;
@@ -116,7 +117,7 @@ static int _usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct h
     struct usb_setup_packet *setup;
     int ret;
 
-    setup = &hub->parent->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_GET_STATUS;
@@ -136,7 +137,7 @@ static int _usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t fea
 {
     struct usb_setup_packet *setup;
 
-    setup = &hub->parent->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_SET_FEATURE;
@@ -151,7 +152,7 @@ static int _usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t f
 {
     struct usb_setup_packet *setup;
 
-    setup = &hub->parent->setup;
+    setup = hub->parent->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_OTHER;
     setup->bRequest = HUB_REQUEST_CLEAR_FEATURE;
@@ -310,6 +311,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_hub_register(hub);
     USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
+    hub->int_buffer = g_hub_intbuf[hub->index - 1];
     usbh_int_urb_fill(&hub->intin_urb, hub->intin, hub->int_buffer, 1, 0, hub_int_complete_callback, hub);
     usbh_submit_urb(&hub->intin_urb);
     return 0;
@@ -572,6 +574,7 @@ static void usbh_hub_thread_wakeup(struct usbh_hub *hub)
 
 void usbh_roothub_thread_wakeup(uint8_t port)
 {
+    roothub.int_buffer = g_hub_intbuf[roothub.index - 1];
     roothub.int_buffer[0] |= (1 << port);
     usbh_hub_thread_wakeup(&roothub);
 }
