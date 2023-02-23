@@ -100,7 +100,7 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte)                    |
 |:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:-------------------------------:|
 |usbh_core.c    |  4417          | 512                             | 28                          | sizeof(struct usbh_urb)         |
-|usbh_hub.c     |  4895          | sizeof(struct usbh_hub) * (1+n) | 16                          | 0                               |
+|usbh_hub.c     |  4895          | 32 + 1* (1+n) | 16 + sizeof(struct usbh_hub) * (1+n)          | 0                               |
 |usbh_cdc_acm.c |  1064          | 7                               | 4                           | sizeof(struct usbh_cdc_acm) * x |
 |usbh_msc.c     |  1776          | 32                              | 4                           | sizeof(struct usbh_msc) * x     |
 |usbh_hid.c     |  922           | 128                             | 4                           | sizeof(struct usbh_hid) * x     |
