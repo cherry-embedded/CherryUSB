@@ -509,18 +509,22 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     child->connected = true;
                     child->port = port + 1;
                     child->speed = speed;
-
+					
                     USB_LOG_INFO("New %s device on Hub %u, Port %u connected\r\n", speed_table[speed], hub->index, port + 1);
 
+                    /* Configure EP0 with the default maximum packet size */
+                    usbh_hport_activate_ep0(child);
+
                     if (usbh_enumerate(child) < 0) {
+						/** release child sources */
+                        usbh_hubport_release(child);
                         USB_LOG_ERR("Port %u enumerate fail\r\n", port + 1);
                     }
                 } else {
-                    USB_LOG_ERR("Failed to enable port %u\r\n", port + 1);
-
                     child = &hub->child[port];
                     /** release child sources */
                     usbh_hubport_release(child);
+                    USB_LOG_ERR("Failed to enable port %u\r\n", port + 1);
 
                     continue;
                 }
@@ -528,6 +532,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                 child = &hub->child[port];
                 /** release child sources */
                 usbh_hubport_release(child);
+                USB_LOG_INFO("Device on Hub %u, Port %u disconnected\r\n", hub->index, port + 1);
             }
         }
     }

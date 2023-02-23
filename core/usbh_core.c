@@ -419,9 +419,6 @@ int usbh_enumerate(struct usbh_hubport *hport)
     hport->setup = &g_setup[hport->parent->index - 1][hport->port - 1];
     setup = hport->setup;
 
-    /* Configure EP0 with the default maximum packet size */
-    usbh_hport_activate_ep0(hport);
-
     /* Read the first 8 bytes of the device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
@@ -629,10 +626,6 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
 
 errout:
-    if (ret < 0) {
-        hport->config.config_desc.bNumInterfaces = 0;
-        usbh_hport_deactivate_ep0(hport);
-    }
     if (hport->raw_config_desc) {
         usb_free(hport->raw_config_desc);
         hport->raw_config_desc = NULL;
