@@ -3,88 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "usbh_core.h"
-#include "usbh_hub.h"
-#include "usb_hc_ehci.h"
+#include "usb_ehci_priv.h"
 
-#ifndef USBH_IRQHandler
-#define USBH_IRQHandler USBH_IRQHandler
-#endif
-
-#define EHCI_HCCR ((struct ehci_hccr *)CONFIG_USB_EHCI_HCCR_BASE)
-#define EHCI_HCOR ((struct ehci_hcor *)CONFIG_USB_EHCI_HCOR_BASE)
-
-#define EHCI_PTR2ADDR(x)    ((uint32_t)x)
-#define EHCI_ADDRALIGN32(x) ((uint32_t)(x) & ~0x1F)
-#define EHCI_ADDR2QH(x)     ((struct ehci_qh_hw *)((uint32_t)(x) & ~0x1F))
-#define EHCI_ADDR2ITD(x)    ((struct ehci_itd_hw *)((uint32_t)(x) & ~0x1F))
-
-#if CONFIG_USB_EHCI_FRAME_LIST_SIZE == 1024
-#define EHCI_PERIOIDIC_QH_NUM 11
-#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 512
-#define EHCI_PERIOIDIC_QH_NUM 10
-#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 256
-#define EHCI_PERIOIDIC_QH_NUM 9
-#else
-#error Unsupported frame size list size
-#endif
-
-#define CONFIG_USB_EHCI_QH_NUM       CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USB_EHCI_QTD_NUM      (CONFIG_USBHOST_PIPE_NUM * 3)
-#define CONFIG_USB_EHCI_ITD_NUM      10
-#define CONFIG_USB_EHCI_ITD_POOL_NUM 2
-
-extern uint8_t usbh_get_port_speed(const uint8_t port);
-
-struct ehci_qh_hw;
-struct ehci_itd_hw;
-struct ehci_pipe {
-    uint8_t dev_addr;
-    uint8_t ep_addr;
-    uint8_t ep_type;
-    uint8_t ep_interval;
-    uint8_t speed;
-    uint8_t mult;
-    uint16_t ep_mps;
-    bool toggle;
-    bool inuse;
-    uint32_t xfrd;
-    bool waiter;
-    usb_osal_sem_t waitsem;
-    struct usbh_hubport *hport;
-    struct ehci_qh_hw *qh;
-    struct usbh_urb *urb;
-    uint8_t used_itd_num;
-    uint8_t id;
-    uint8_t mf_unmask;
-    uint8_t mf_valid;
-    usb_slist_t iso_list;
-};
-
-struct ehci_qh_hw {
-    struct ehci_qh hw;
-    uint32_t first_qtd;
-    struct ehci_pipe *pipe;
-} __attribute__((aligned(32)));
-
-struct ehci_qtd_hw {
-    struct ehci_qtd hw;
-} __attribute__((aligned(32)));
-
-struct ehci_itd_hw {
-    struct ehci_itd hw;
-} __attribute__((aligned(32)));
-
-struct ehci_hcd {
-    bool ehci_qh_used[CONFIG_USB_EHCI_QH_NUM];
-    bool ehci_qtd_used[CONFIG_USB_EHCI_QTD_NUM];
-    bool ehci_itd_pool_used[CONFIG_USB_EHCI_ITD_POOL_NUM];
-    struct ehci_pipe pipe_pool[CONFIG_USB_EHCI_QH_NUM];
-} g_ehci_hcd;
+struct ehci_hcd g_ehci_hcd;
 
 USB_NOCACHE_RAM_SECTION struct ehci_qh_hw ehci_qh_pool[CONFIG_USB_EHCI_QH_NUM];
 USB_NOCACHE_RAM_SECTION struct ehci_qtd_hw ehci_qtd_pool[CONFIG_USB_EHCI_QTD_NUM];
-USB_NOCACHE_RAM_SECTION struct ehci_itd_hw ehci_itd_pool[CONFIG_USB_EHCI_ITD_POOL_NUM][CONFIG_USB_EHCI_ITD_NUM];
 
 /* The head of the asynchronous queue */
 USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_async_qh_head;
@@ -93,10 +17,6 @@ USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_periodic_qh_head[EHCI_PERIOIDIC_QH_N
 
 /* The frame list */
 USB_NOCACHE_RAM_SECTION uint32_t g_framelist[CONFIG_USB_EHCI_FRAME_LIST_SIZE] __attribute__((aligned(4096)));
-
-usb_slist_t iso_pipe_list_head = USB_SLIST_OBJECT_INIT(iso_pipe_list_head);
-
-typedef void (*ehci_qh_cb)(struct ehci_qh_hw *head, struct ehci_qh_hw *qh);
 
 static const uint8_t g_ehci_speed[4] = {
     0, EHCI_LOW_SPEED, EHCI_FULL_SPEED, EHCI_HIGH_SPEED
@@ -156,22 +76,6 @@ static void ehci_qtd_free(struct ehci_qtd_hw *qtd)
     }
 }
 
-// static int ehci_itd_pool_alloc(void)
-// {
-//     for (uint32_t i = 0; i < CONFIG_USB_EHCI_ITD_POOL_NUM; i++) {
-//         if (!g_ehci_hcd.ehci_itd_pool_used[i]) {
-//             g_ehci_hcd.ehci_itd_pool_used[i] = true;
-//             return i;
-//         }
-//     }
-//     return -1;
-// }
-
-// static void ehci_itd_pool_free(uint8_t id)
-// {
-//     g_ehci_hcd.ehci_itd_pool_used[id] = false;
-// }
-
 static struct ehci_pipe *ehci_pipe_alloc(void)
 {
     int pipe;
@@ -189,16 +93,6 @@ static void ehci_pipe_free(struct ehci_pipe *pipe)
 {
     pipe->inuse = false;
 }
-
-// static inline void ehci_iso_pipe_add_tail(struct ehci_pipe *pipe)
-// {
-//     usb_slist_add_tail(&iso_pipe_list_head, &pipe->iso_list);
-// }
-
-// static inline void ehci_iso_pipe_remove(struct ehci_pipe *pipe)
-// {
-//     usb_slist_remove(&iso_pipe_list_head, &pipe->iso_list);
-// }
 
 static inline void ehci_qh_add_head(struct ehci_qh_hw *head, struct ehci_qh_hw *n)
 {
@@ -218,27 +112,6 @@ static inline void ehci_qh_remove(struct ehci_qh_hw *head, struct ehci_qh_hw *n)
         tmp->hw.hlp = n->hw.hlp;
     }
 }
-
-// static inline void ehci_itd_add_head(struct ehci_itd_hw *itd, uint32_t sched_frame)
-// {
-//     itd->hw.nlp = g_framelist[sched_frame];
-//     g_framelist[sched_frame] = ITD_NLP_ITD(itd);
-// }
-
-// static inline void ehci_itd_remove(struct ehci_itd_hw *itd, uint32_t sched_frame)
-// {
-//     if (g_framelist[sched_frame] == ITD_NLP_ITD(itd)) {
-//         g_framelist[sched_frame] = itd->hw.nlp;
-//     } else {
-//         struct ehci_itd_hw *tmp_itd = EHCI_ADDR2ITD(g_framelist[sched_frame]);
-//         while (tmp_itd && (EHCI_ADDR2ITD(tmp_itd->hw.nlp) != itd)) {
-//             tmp_itd = EHCI_ADDR2ITD(tmp_itd->hw.nlp);
-//         }
-//         if (tmp_itd) {
-//             tmp_itd->hw.nlp = itd->hw.nlp;
-//         }
-//     }
-// }
 
 static int ehci_caculate_smask(int binterval)
 {
@@ -336,7 +209,6 @@ static void ehci_qh_fill(struct ehci_qh_hw *qh,
     qh->hw.epcap = regval;
 
     qh->pipe = pipe;
-    pipe->qh = qh;
 }
 
 static void ehci_qtd_bpl_fill(struct ehci_qtd_hw *qtd, uint32_t bufaddr, size_t buflen)
@@ -386,40 +258,6 @@ static void ehci_qtd_fill(struct ehci_pipe *pipe, struct ehci_qtd_hw *qtd, uint3
     pipe->xfrd += buflen;
 }
 
-// static void ehci_itd_bpl_fill(struct ehci_itd_hw *itd, struct ehci_pipe *pipe, uint32_t start_addr)
-// {
-//     uint32_t buf_page_addr = start_addr & 0xFFFFF000; /* align 4k */
-
-//     for (uint32_t i = 0; i < 7; i++) {
-//         itd->hw.bpl[i] = buf_page_addr;
-//         buf_page_addr += 0x1000;
-//     }
-//     itd->hw.bpl[0] |= ((uint32_t)pipe->dev_addr << ITD_BUFPTR0_DEVADDR_SHIFT) |
-//                       ((uint32_t)(pipe->ep_addr & 0x7f) << ITD_BUFPTR0_ENDPT_SHIFT);
-
-//     itd->hw.bpl[1] |= (pipe->ep_mps << ITD_BUFPTR1_MAXPKT_SHIFT);
-//     if (pipe->ep_addr & 0x80) {
-//         itd->hw.bpl[1] |= ITD_BUFPTR1_DIRIN;
-//     } else {
-//         itd->hw.bpl[1] |= ITD_BUFPTR1_DIROUT;
-//     }
-//     itd->hw.bpl[2] |= (pipe->mult + 1); /* Mult */
-// }
-
-// static void ehci_itd_tscl_fill(struct ehci_itd_hw *itd,
-//                                struct ehci_pipe *pipe,
-//                                uint8_t mf,
-//                                uint32_t start_addr,
-//                                uint32_t bufaddr,
-//                                uint32_t buflen)
-// {
-//     uint32_t pg = (bufaddr & 0xFFFFF000) - (start_addr & 0xFFFFF000);
-//     itd->hw.tscl[mf] = (bufaddr & ITD_TSCL_XOFFS_MASK) |                       /* Transaction offset */
-//                        (pg & ITD_TSCL_PG_MASK) |                               /* PG */
-//                        (((uint32_t)buflen & 0xfff) << ITD_TSCL_LENGTH_SHIFT) | /* Transaction Length */
-//                        ITD_TSCL_STATUS_ACTIVE;                                 /* Status */
-// }
-
 static struct ehci_qh_hw *ehci_control_pipe_init(struct ehci_pipe *pipe, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
 {
     struct ehci_qh_hw *qh = NULL;
@@ -427,6 +265,7 @@ static struct ehci_qh_hw *ehci_control_pipe_init(struct ehci_pipe *pipe, struct 
     struct ehci_qtd_hw *qtd_data = NULL;
     struct ehci_qtd_hw *qtd_status = NULL;
     uint32_t token;
+    size_t flags;
 
     qh = ehci_qh_alloc();
     if (qh == NULL) {
@@ -501,8 +340,13 @@ static struct ehci_qh_hw *ehci_control_pipe_init(struct ehci_pipe *pipe, struct 
     /* record qh first qtd */
     qh->first_qtd = EHCI_PTR2ADDR(qtd_setup);
 
+    flags = usb_osal_enter_critical_section();
+
+    pipe->qh = qh;
     /* add qh into async list */
     ehci_qh_add_head(&g_async_qh_head, qh);
+
+    usb_osal_leave_critical_section(flags);
     return qh;
 }
 
@@ -515,6 +359,7 @@ static struct ehci_qh_hw *ehci_bulk_pipe_init(struct ehci_pipe *pipe, uint8_t *b
     uint32_t qtd_num = 0;
     uint32_t xfer_len = 0;
     uint32_t token;
+    size_t flags;
 
     qh = ehci_qh_alloc();
     if (qh == NULL) {
@@ -588,8 +433,13 @@ static struct ehci_qh_hw *ehci_bulk_pipe_init(struct ehci_pipe *pipe, uint8_t *b
     /* record qh first qtd */
     qh->first_qtd = EHCI_PTR2ADDR(first_qtd);
 
+    flags = usb_osal_enter_critical_section();
+
+    pipe->qh = qh;
     /* add qh into async list */
     ehci_qh_add_head(&g_async_qh_head, qh);
+
+    usb_osal_leave_critical_section(flags);
     return qh;
 }
 
@@ -602,6 +452,7 @@ static struct ehci_qh_hw *ehci_intr_pipe_init(struct ehci_pipe *pipe, uint8_t *b
     uint32_t qtd_num = 0;
     uint32_t xfer_len = 0;
     uint32_t token;
+    size_t flags;
 
     qh = ehci_qh_alloc();
     if (qh == NULL) {
@@ -675,23 +526,20 @@ static struct ehci_qh_hw *ehci_intr_pipe_init(struct ehci_pipe *pipe, uint8_t *b
     /* record qh first qtd */
     qh->first_qtd = EHCI_PTR2ADDR(first_qtd);
 
+    flags = usb_osal_enter_critical_section();
+
+    pipe->qh = qh;
     /* add qh into periodic list */
     if (pipe->speed == USB_SPEED_HIGH) {
         ehci_qh_add_head(ehci_get_periodic_qhead(pipe->ep_interval), qh);
     } else {
         ehci_qh_add_head(ehci_get_periodic_qhead(pipe->ep_interval * 8), qh);
     }
-
+    usb_osal_leave_critical_section(flags);
     return qh;
 }
 
-static int ehci_iso_pipe_init(struct ehci_pipe *pipe, struct usbh_iso_frame_packet *iso_packet, uint32_t num_of_iso_packets)
-{
-    /* if you want to use iso, please contact with me */
-    return 0;
-}
-
-static inline void ehci_pipe_waitup(struct ehci_pipe *pipe)
+void ehci_pipe_waitup(struct ehci_pipe *pipe)
 {
     struct usbh_urb *urb;
 
@@ -1146,27 +994,27 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     ppipe->dev_addr = ep_cfg->hport->dev_addr;
     ppipe->hport = ep_cfg->hport;
 
-    if ((ppipe->speed == USB_SPEED_HIGH) && (ppipe->ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
-        if (ep_cfg->ep_interval == 0x01) { /* transfer interval 1 mf */
-            ppipe->mf_unmask = 0xff;
-            ppipe->mf_valid = 8;
-        } else if (ep_cfg->ep_interval == 0x02) { /* transfer interval 2 mf */
-            ppipe->mf_unmask = 0x55;
-            ppipe->mf_valid = 4;
-        } else if (ep_cfg->ep_interval == 0x03) { /* transfer interval 4 mf */
-            ppipe->mf_unmask = 0x44;
-            ppipe->mf_valid = 2;
-        } else if (ep_cfg->ep_interval == 0x04) { /* transfer interval 8 mf */
-            ppipe->mf_unmask = 0x01;
-            ppipe->mf_valid = 1;
-        }
+    // if ((ppipe->speed == USB_SPEED_HIGH) && (ppipe->ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
+    //     if (ep_cfg->ep_interval == 0x01) { /* transfer interval 1 mf */
+    //         ppipe->mf_unmask = 0xff;
+    //         ppipe->mf_valid = 8;
+    //     } else if (ep_cfg->ep_interval == 0x02) { /* transfer interval 2 mf */
+    //         ppipe->mf_unmask = 0x55;
+    //         ppipe->mf_valid = 4;
+    //     } else if (ep_cfg->ep_interval == 0x03) { /* transfer interval 4 mf */
+    //         ppipe->mf_unmask = 0x44;
+    //         ppipe->mf_valid = 2;
+    //     } else if (ep_cfg->ep_interval == 0x04) { /* transfer interval 8 mf */
+    //         ppipe->mf_unmask = 0x01;
+    //         ppipe->mf_valid = 1;
+    //     }
 
-        ppipe->id = ehci_itd_pool_alloc();
-        if (ppipe->id == -1) {
-            printf("fail to alloc itd pool\r\n");
-            return -1;
-        }
-    }
+    //     ppipe->id = ehci_itd_pool_alloc();
+    //     if (ppipe->id == -1) {
+    //         printf("fail to alloc itd pool\r\n");
+    //         return -1;
+    //     }
+    // }
     /* restore variable */
     ppipe->inuse = true;
     ppipe->waitsem = waitsem;
@@ -1261,7 +1109,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
             }
             break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-            ehci_iso_pipe_init(pipe, urb->iso_packet, urb->num_of_iso_packets);
+            //ehci_iso_pipe_init(pipe, urb->iso_packet, urb->num_of_iso_packets);
             break;
         default:
             break;
@@ -1286,11 +1134,7 @@ errout_timeout:
 int usbh_kill_urb(struct usbh_urb *urb)
 {
     struct ehci_pipe *pipe;
-    struct ehci_pipe *iso_pipe;
     struct ehci_qh_hw *qh = NULL;
-    struct ehci_itd_hw *itd;
-    uint32_t sched_frame;
-    usb_slist_t *i;
 
     size_t flags;
 
@@ -1329,22 +1173,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
             qh = EHCI_ADDR2QH(qh->hw.hlp);
         }
     } else {
-        // usb_slist_for_each(i, &iso_pipe_list_head)
-        // {
-        //     iso_pipe = usb_slist_entry(i, struct ehci_pipe, iso_list);
-
-        //     if (pipe == iso_pipe) {
-        //         sched_frame = urb->start_frame;
-        //         for (uint32_t j = 0; j < pipe->used_itd_num; j++) {
-        //             itd = &ehci_itd_pool[pipe->id][j];
-        //             /* remove itd from list */
-        //             ehci_itd_remove(itd, sched_frame);
-        //             urb->start_frame = (sched_frame + 1) & 0x3ff;
-        //         }
-        //         pipe->used_itd_num = 0;
-        //         ehci_iso_pipe_remove(pipe);
-        //     }
-        // }
+        //ehci_remove_itd_urb(urb);
     }
 
     EHCI_HCOR->usbcmd |= (EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN);
@@ -1391,10 +1220,6 @@ static void ehci_scan_periodic_list(void)
     }
 }
 
-static void ehci_scan_isochronous_list(void)
-{
-}
-
 void USBH_IRQHandler(void)
 {
     uint32_t usbsts;
@@ -1405,13 +1230,13 @@ void USBH_IRQHandler(void)
     if (usbsts & EHCI_USBSTS_INT) {
         ehci_scan_async_list();
         ehci_scan_periodic_list();
-        ehci_scan_isochronous_list();
+        //ehci_scan_isochronous_list();
     }
 
     if (usbsts & EHCI_USBSTS_ERR) {
         ehci_scan_async_list();
         ehci_scan_periodic_list();
-        ehci_scan_isochronous_list();
+        //ehci_scan_isochronous_list();
     }
 
     if (usbsts & EHCI_USBSTS_PCD) {
