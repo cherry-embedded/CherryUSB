@@ -113,9 +113,69 @@ static inline int usbh_msc_bulk_out_transfer(struct usbh_msc *msc_class, uint8_t
     return ret;
 }
 
-static inline int usbh_msc_scsi_testunitready(struct usbh_msc *msc_class)
+int usbh_bulk_cbw_csw_xfer(struct usbh_msc *msc_class, struct CBW *cbw, struct CSW *csw, uint8_t *buffer)
 {
     int nbytes;
+
+    /* Send the CBW */
+    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
+    if (nbytes < 0)
+    {
+        USB_LOG_INFO("cbw transfer error\n");
+        goto __err_exit;
+    }
+
+    if (cbw->dDataLength != 0)
+    {
+        uint8_t *data;
+
+        data = buffer!=NULL ? buffer : (uint8_t *)cbw;
+
+        if (cbw->CB[0] == SCSI_CMD_WRITE10)
+        {
+            nbytes = usbh_msc_bulk_out_transfer(msc_class, data, cbw->dDataLength, CONFIG_USBHOST_MSC_TIMEOUT);
+        }
+        else
+        {
+            nbytes = usbh_msc_bulk_in_transfer(msc_class, data, cbw->dDataLength, CONFIG_USBHOST_MSC_TIMEOUT);
+        }
+
+        if (nbytes < 0)
+        {
+            USB_LOG_INFO("csw cbw data response error\n");
+            goto __err_exit;
+        }
+    }
+
+    /* Receive the CSW */
+    memset(csw, 0, USB_SIZEOF_MSC_CSW);
+    nbytes = usbh_msc_bulk_in_transfer(msc_class, (uint8_t *)csw, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
+    if (nbytes < 0)
+    {
+        USB_LOG_ERR("csw transfer error\r\n");
+        goto __err_exit;
+    }
+
+    usbh_msc_csw_dump(csw);
+
+    /* check csw status */
+    if(csw->dSignature != MSC_CSW_Signature || csw->dTag != 0)
+    {
+        USB_LOG_ERR("csw signature error\r\n");
+        return -EIO;
+    }
+
+    if(csw->bStatus != 0)
+    {
+        USB_LOG_ERR("csw bStatus %d\r\n",  csw->bStatus);
+        return -EBUSY;
+    }
+__err_exit:
+    return nbytes < 0 ? (int)nbytes : 0;
+}
+
+static inline int usbh_msc_scsi_testunitready(struct usbh_msc *msc_class)
+{
     struct CBW *cbw;
 
     /* Construct the CBW */
@@ -127,21 +187,12 @@ static inline int usbh_msc_scsi_testunitready(struct usbh_msc *msc_class)
     cbw->CB[0] = SCSI_CMD_TESTUNITREADY;
 
     usbh_msc_cbw_dump(cbw);
-    /* Send the CBW */
-    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
-    if (nbytes >= 0) {
-        /* Receive the CSW */
-        nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
-        if (nbytes >= 0) {
-            usbh_msc_csw_dump((struct CSW *)g_msc_buf);
-        }
-    }
-    return nbytes < 0 ? (int)nbytes : 0;
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, NULL);
 }
 
 static inline int usbh_msc_scsi_requestsense(struct usbh_msc *msc_class)
 {
-    int nbytes;
     struct CBW *cbw;
 
     /* Construct the CBW */
@@ -156,25 +207,12 @@ static inline int usbh_msc_scsi_requestsense(struct usbh_msc *msc_class)
     cbw->CB[4] = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
 
     usbh_msc_cbw_dump(cbw);
-    /* Send the CBW */
-    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
-    if (nbytes >= 0) {
-        /* Receive the sense data response */
-        nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, SCSIRESP_FIXEDSENSEDATA_SIZEOF, CONFIG_USBHOST_MSC_TIMEOUT);
-        if (nbytes >= 0) {
-            /* Receive the CSW */
-            nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
-            if (nbytes >= 0) {
-                usbh_msc_csw_dump((struct CSW *)g_msc_buf);
-            }
-        }
-    }
-    return nbytes < 0 ? (int)nbytes : 0;
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, NULL);
 }
 
 static inline int usbh_msc_scsi_inquiry(struct usbh_msc *msc_class)
 {
-    int nbytes;
     struct CBW *cbw;
 
     /* Construct the CBW */
@@ -189,26 +227,15 @@ static inline int usbh_msc_scsi_inquiry(struct usbh_msc *msc_class)
     cbw->CB[4] = SCSIRESP_INQUIRY_SIZEOF;
 
     usbh_msc_cbw_dump(cbw);
-    /* Send the CBW */
-    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
-    if (nbytes >= 0) {
-        /* Receive the sense data response */
-        nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, SCSIRESP_INQUIRY_SIZEOF, CONFIG_USBHOST_MSC_TIMEOUT);
-        if (nbytes >= 0) {
-            /* Receive the CSW */
-            nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
-            if (nbytes >= 0) {
-                usbh_msc_csw_dump((struct CSW *)g_msc_buf);
-            }
-        }
-    }
-    return nbytes < 0 ? (int)nbytes : 0;
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, NULL);
 }
 
 static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
 {
     int nbytes;
     struct CBW *cbw;
+    USB_MEM_ALIGNX uint8_t response[CONFIG_USB_ALIGN_SIZE]; //Both length and address need to be CONFIG_USB_ALIGN_SIZE byte aligned
 
     /* Construct the CBW */
     cbw = (struct CBW *)g_msc_buf;
@@ -221,28 +248,19 @@ static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
     cbw->CB[0] = SCSI_CMD_READCAPACITY10;
 
     usbh_msc_cbw_dump(cbw);
-    /* Send the CBW */
-    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
-    if (nbytes >= 0) {
-        /* Receive the sense data response */
-        nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, SCSIRESP_READCAPACITY10_SIZEOF, CONFIG_USBHOST_MSC_TIMEOUT);
-        if (nbytes >= 0) {
-            /* Save the capacity information */
-            msc_class->blocknum = GET_BE32(&g_msc_buf[0]) + 1;
-            msc_class->blocksize = GET_BE32(&g_msc_buf[4]);
-            /* Receive the CSW */
-            nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
-            if (nbytes >= 0) {
-                usbh_msc_csw_dump((struct CSW *)g_msc_buf);
-            }
-        }
+
+    nbytes = usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, response);
+    if (nbytes >= 0)
+    {
+        /* Save the capacity information */
+        msc_class->blocknum = GET_BE32(&response[0]) + 1;
+        msc_class->blocksize = GET_BE32(&response[4]);
     }
-    return nbytes < 0 ? (int)nbytes : 0;
+    return nbytes;
 }
 
 int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
 {
-    int nbytes;
     struct CBW *cbw;
 
     /* Construct the CBW */
@@ -258,25 +276,12 @@ int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, con
     SET_BE16(&cbw->CB[7], nsectors);
 
     usbh_msc_cbw_dump(cbw);
-    /* Send the CBW */
-    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
-    if (nbytes >= 0) {
-        /* Send the user data */
-        nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)buffer, msc_class->blocksize * nsectors, CONFIG_USBHOST_MSC_TIMEOUT);
-        if (nbytes >= 0) {
-            /* Receive the CSW */
-            nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
-            if (nbytes >= 0) {
-                usbh_msc_csw_dump((struct CSW *)g_msc_buf);
-            }
-        }
-    }
-    return nbytes < 0 ? (int)nbytes : 0;
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
 }
 
 int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
 {
-    int nbytes;
     struct CBW *cbw;
 
     /* Construct the CBW */
@@ -293,20 +298,8 @@ int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, cons
     SET_BE16(&cbw->CB[7], nsectors);
 
     usbh_msc_cbw_dump(cbw);
-    /* Send the CBW */
-    nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
-    if (nbytes >= 0) {
-        /* Receive the user data */
-        nbytes = usbh_msc_bulk_in_transfer(msc_class, (uint8_t *)buffer, msc_class->blocksize * nsectors, CONFIG_USBHOST_MSC_TIMEOUT);
-        if (nbytes >= 0) {
-            /* Receive the CSW */
-            nbytes = usbh_msc_bulk_in_transfer(msc_class, g_msc_buf, USB_SIZEOF_MSC_CSW, CONFIG_USBHOST_MSC_TIMEOUT);
-            if (nbytes >= 0) {
-                usbh_msc_csw_dump((struct CSW *)g_msc_buf);
-            }
-        }
-    }
-    return nbytes < 0 ? (int)nbytes : 0;
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
 }
 
 static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -345,8 +338,11 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 
     ret = usbh_msc_scsi_testunitready(msc_class);
     if (ret < 0) {
-        USB_LOG_ERR("Fail to scsi_testunitready\r\n");
-        return ret;
+        ret = usbh_msc_scsi_requestsense(msc_class);
+        if(ret < 0) {
+            USB_LOG_ERR("Fail to scsi_testunitready\r\n");
+            return ret;
+        }
     }
     ret = usbh_msc_scsi_inquiry(msc_class);
     if (ret < 0) {
