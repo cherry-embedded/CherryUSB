@@ -387,7 +387,7 @@
 #define HID_KBD_USAGE_PAGEDOWN        0x4e /* Keyboard PageDown */
 #define HID_KBD_USAGE_RIGHT           0x4f /* eyboard RightArrow */
 #define HID_KBD_USAGE_LEFT            0x50 /* Keyboard LeftArrow */
-#define HID_KBD_USAGE_DOWN            0x5a /* Keyboard DownArrow */
+#define HID_KBD_USAGE_DOWN            0x51 /* Keyboard DownArrow */
 #define HID_KBD_USAGE_UP              0x52 /* Keyboard UpArrow */
 #define HID_KBD_USAGE_KPDNUMLOCK      0x53 /* Keypad Num Lock and Clear */
 #define HID_KBD_USAGE_KPDNUMLOCKCLEAR 0x53 /* Keypad Num Lock and Clear */

@@ -900,7 +900,7 @@ static bool usbd_setup_request_handler(struct usb_setup_packet *setup, uint8_t *
         case USB_REQUEST_STANDARD:
             if (usbd_standard_request_handler(setup, data, len) < 0) {
 #ifndef CONFIG_USB_HS
-                if ((setup->bRequest == 0x06) && (setup->wValue = 0x0600)) {
+                if ((setup->bRequest == 0x06) && (setup->wValue == 0x0600)) {
                     USB_LOG_WRN("Ignore DQD in fs\r\n"); /* Device Qualifier Descriptor */
                     return false;
                 }
