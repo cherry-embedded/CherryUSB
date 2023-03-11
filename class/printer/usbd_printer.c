@@ -8,6 +8,7 @@
 
 struct printer_cfg_priv {
     uint8_t *device_id;
+    uint8_t device_id_len;
     uint8_t port_status;
 } usbd_printer_cfg;
 
@@ -19,7 +20,8 @@ static int printer_class_interface_request_handler(struct usb_setup_packet *setu
 
     switch (setup->bRequest) {
         case PRINTER_REQUEST_GET_DEVICE_ID:
-
+            memcpy(*data, usbd_printer_cfg.device_id, usbd_printer_cfg.device_id_len);
+            *len = usbd_printer_cfg.device_id_len;
             break;
         case PRINTER_REQUEST_GET_PORT_SATTUS:
 
@@ -46,18 +48,14 @@ static void printer_notify_handler(uint8_t event, void *arg)
     }
 }
 
-struct usbd_interface *usbd_printer_alloc_intf(void)
+struct usbd_interface *usbd_printer_init_intf(struct usbd_interface *intf, const uint8_t *device_id, uint8_t device_id_len)
 {
-    struct usbd_interface *intf = usb_malloc(sizeof(struct usbd_interface));
-    if (intf == NULL) {
-        USB_LOG_ERR("no mem to alloc intf\r\n");
-        return NULL;
-    }
-
     intf->class_interface_handler = printer_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = printer_notify_handler;
 
+    usbd_printer_cfg.device_id = device_id;
+    usbd_printer_cfg.device_id_len = device_id_len;
     return intf;
 }
