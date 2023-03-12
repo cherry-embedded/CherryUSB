@@ -576,10 +576,10 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
         case VIDEO_VS_PROBE_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_SET_CUR:
-                    //memcpy((uint8_t *)usbd_video_cfg.probe, *data, setup->wLength);
+                    //memcpy((uint8_t *)&usbd_video_cfg.probe, *data, setup->wLength);
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    *data = (uint8_t *)&usbd_video_cfg.probe;
+                    memcpy(*data, (uint8_t *)&usbd_video_cfg.probe, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -587,7 +587,7 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    *data = (uint8_t *)&usbd_video_cfg.probe;
+                    memcpy(*data, (uint8_t *)&usbd_video_cfg.probe, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_LEN:
@@ -608,17 +608,17 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
         case VIDEO_VS_COMMIT_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_SET_CUR:
-                    //memcpy((uint8_t *)usbd_video_cfg.commit, *data, setup->wLength);
+                    //memcpy((uint8_t *)&usbd_video_cfg.commit, *data, setup->wLength);
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    *data = (uint8_t *)&usbd_video_cfg.commit;
+                    memcpy(*data, (uint8_t *)&usbd_video_cfg.commit, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_MIN:
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    *data = (uint8_t *)&usbd_video_cfg.commit;
+                    memcpy(*data, (uint8_t *)&usbd_video_cfg.commit, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -640,7 +640,7 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
         case VIDEO_VS_STREAM_ERROR_CODE_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_GET_CUR:
-                    *data = &usbd_video_cfg.error_code;
+                    (*data)[0] = usbd_video_cfg.error_code;
                     *len = 1;
                     break;
                 case VIDEO_REQUEST_GET_INFO:
