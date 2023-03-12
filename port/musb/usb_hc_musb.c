@@ -738,6 +738,9 @@ void handle_ep0(void)
 
     pipe = (struct musb_pipe *)&g_musb_hcd.pipe_pool[0][0];
     urb = pipe->urb;
+    if (urb == NULL) {
+        return;
+    }
 
     musb_set_active_ep(0);
     ep0_status = HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET);
