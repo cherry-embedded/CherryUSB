@@ -669,24 +669,13 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     return 0;
 }
 
-int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
+int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
 {
     struct chusb_pipe *ppipe = (struct chusb_pipe *)pipe;
 
     ppipe->dev_addr = dev_addr;
     ppipe->ep_mps = ep_mps;
-    ppipe->speed = speed;
 
-    if (speed == USB_SPEED_HIGH) {
-        USB_LOG_INFO("ep0 reconfigure USB_SPEED_HIGH \r\n");
-        chusbh_set_self_speed(USB_SPEED_HIGH);
-    } else if (speed == USB_SPEED_FULL) {
-        USB_LOG_INFO("ep0 reconfigure USB_SPEED_FULL \r\n");
-        chusbh_set_self_speed(USB_SPEED_FULL);
-    } else if (speed == USB_SPEED_LOW) {
-        USB_LOG_INFO("ep0 reconfigure USB_SPEED_LOW \r\n");
-        chusbh_set_self_speed(USB_SPEED_LOW);
-    }
     USBHS_HOST->DEV_AD = dev_addr & 0x7f;
     return 0;
 }
@@ -723,6 +712,16 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     ppipe->hport = ep_cfg->hport;
 
     if (ep_cfg->ep_type == USB_ENDPOINT_TYPE_CONTROL) {
+        if (ppipe->speed == USB_SPEED_HIGH) {
+            USB_LOG_INFO("ep0 reconfigure USB_SPEED_HIGH \r\n");
+            chusbh_set_self_speed(USB_SPEED_HIGH);
+        } else if (ppipe->speed == USB_SPEED_FULL) {
+            USB_LOG_INFO("ep0 reconfigure USB_SPEED_FULL \r\n");
+            chusbh_set_self_speed(USB_SPEED_FULL);
+        } else if (ppipe->speed == USB_SPEED_LOW) {
+            USB_LOG_INFO("ep0 reconfigure USB_SPEED_LOW \r\n");
+            chusbh_set_self_speed(USB_SPEED_LOW);
+        }
     } else {
         if (ppipe->speed == USB_SPEED_HIGH) {
             if ((ep_cfg->ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) ||
@@ -914,7 +913,7 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
                 urb->errorcode = 0;
                 if (g_chusb_hcd.prv_set_zero == true) {
                     /**
-                     * It is unlikely to run here, 
+                     * It is unlikely to run here,
                      * because the device can probably receive 0 length byte packets
                      */
                     g_chusb_hcd.prv_set_zero = false;
@@ -1172,7 +1171,7 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
                     /*!< Ctrol endpoint */
                     /**
                      * Status stage
-                     * 
+                     *
                      * Setup ---> out data ---> in status stage
                      */
                     if ((g_chusb_hcd.ep0_state == USB_EP0_STATE_IN_STATUS) && (rx_len == 0)) {

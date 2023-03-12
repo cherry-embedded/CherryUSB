@@ -959,13 +959,13 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     return 0;
 }
 
-int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
+int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult)
 {
     struct ehci_pipe *ppipe = (struct ehci_pipe *)pipe;
 
     ppipe->dev_addr = dev_addr;
     ppipe->ep_mps = ep_mps;
-    ppipe->speed = speed;
+    ppipe->mult = mult;
 
     return 0;
 }

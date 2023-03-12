@@ -551,20 +551,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     return 0;
 }
 
-int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
+int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult)
 {
     struct musb_pipe *ppipe = (struct musb_pipe *)pipe;
 
     ppipe->dev_addr = dev_addr;
     ppipe->ep_mps = ep_mps;
-
-    if (speed == USB_SPEED_HIGH) {
-        ppipe->speed = USB_TYPE0_SPEED_HIGH;
-    } else if (speed == USB_SPEED_FULL) {
-        ppipe->speed = USB_TYPE0_SPEED_FULL;
-    } else if (speed == USB_SPEED_LOW) {
-        ppipe->speed = USB_TYPE0_SPEED_LOW;
-    }
 
     return 0;
 }
@@ -605,6 +597,13 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     ppipe->hport = ep_cfg->hport;
 
     if (ep_cfg->ep_type == USB_ENDPOINT_TYPE_CONTROL) {
+        if (ppipe->speed == USB_SPEED_HIGH) {
+            ppipe->speed = USB_TYPE0_SPEED_HIGH;
+        } else if (ppipe->speed == USB_SPEED_FULL) {
+            ppipe->speed = USB_TYPE0_SPEED_FULL;
+        } else if (ppipe->speed == USB_SPEED_LOW) {
+            ppipe->speed = USB_TYPE0_SPEED_LOW;
+        }
     } else {
         if (ppipe->speed == USB_SPEED_HIGH) {
             ppipe->speed = USB_TXTYPE1_SPEED_HIGH;

@@ -438,7 +438,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     ep_mps = ((struct usb_device_descriptor *)ep0_request_buffer)->bMaxPacketSize0;
 
     /* Reconfigure EP0 with the correct maximum packet size */
-    usbh_ep0_pipe_reconfigure(hport->ep0, 0, ep_mps, hport->speed);
+    usbh_ep_pipe_reconfigure(hport->ep0, 0, ep_mps, 0);
 
 #ifdef CONFIG_USBHOST_XHCI
     extern int usbh_get_xhci_devaddr(usbh_pipe_t * pipe);
@@ -478,7 +478,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     hport->dev_addr = dev_addr;
 
     /* And reconfigure EP0 with the correct address */
-    usbh_ep0_pipe_reconfigure(hport->ep0, dev_addr, ep_mps, hport->speed);
+    usbh_ep_pipe_reconfigure(hport->ep0, dev_addr, ep_mps, 0);
 
     /* Read the full device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;

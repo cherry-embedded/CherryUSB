@@ -676,7 +676,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     return 0;
 }
 
-int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed)
+int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult)
 {
     struct dwc2_pipe *chan;
 
@@ -684,7 +684,6 @@ int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps
 
     chan->dev_addr = dev_addr;
     chan->ep_mps = ep_mps;
-    chan->speed = speed;
 
     return 0;
 }
