@@ -553,7 +553,7 @@ int usb_dc_init(void)
         USB_OTG_GLB->DIEPTXF[i] = 0U;
     }
 
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) ||defined(STM32L4)
 #ifdef CONFIG_DWC2_VBUS_SENSING_ENABLE
     /* Enable HW VBUS sensing */
     USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBDEN;
