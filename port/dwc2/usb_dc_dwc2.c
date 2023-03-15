@@ -553,7 +553,7 @@ int usb_dc_init(void)
         USB_OTG_GLB->DIEPTXF[i] = 0U;
     }
 
-#if defined(STM32F7) || defined(STM32H7) ||defined(STM32L4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32L4)
 #ifdef CONFIG_DWC2_VBUS_SENSING_ENABLE
     /* Enable HW VBUS sensing */
     USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBDEN;
@@ -571,6 +571,9 @@ int usb_dc_init(void)
     USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_NOVBUSSENS;
     USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBUSBSEN;
 #else
+#ifdef CONFIG_DWC2_GD32
+    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBUSBSEN | USB_OTG_GCCFG_VBUSASEN;
+#else
     /*
      * Disable HW VBUS sensing. VBUS is internally considered to be always
      * at VBUS-Valid level (5V).
@@ -578,6 +581,7 @@ int usb_dc_init(void)
     USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
     USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
     USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
+#endif
 #endif
 #endif
     /* Restart the Phy Clock */
@@ -751,7 +755,7 @@ int usbd_ep_close(const uint8_t ep)
 
     if (USB_EP_DIR_IS_OUT(ep)) {
         USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
-//        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
+        //        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
@@ -761,13 +765,13 @@ int usbd_ep_close(const uint8_t ep)
                                             USB_OTG_DOEPCTL_EPTYP);
     } else {
         USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_SNAK;
-//        USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
+        //        USB_OTG_INEP(ep_idx)->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_INEP(ep_idx)->DIEPCTL &= ~(USB_OTG_DIEPCTL_USBAEP |
                                            USB_OTG_DIEPCTL_MPSIZ |
-//                                           USB_OTG_DIEPCTL_TXFNUM |
+                                           //                                           USB_OTG_DIEPCTL_TXFNUM |
                                            USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
                                            USB_OTG_DIEPCTL_EPTYP);
     }
