@@ -118,7 +118,7 @@ int usbh_bulk_cbw_csw_xfer(struct usbh_msc *msc_class, struct CBW *cbw, struct C
     /* Send the CBW */
     nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw, USB_SIZEOF_MSC_CBW, CONFIG_USBHOST_MSC_TIMEOUT);
     if (nbytes < 0) {
-        USB_LOG_ERR("cbw transfer error\n");
+        USB_LOG_ERR("cbw transfer error\r\n");
         goto __err_exit;
     }
 
@@ -137,7 +137,7 @@ int usbh_bulk_cbw_csw_xfer(struct usbh_msc *msc_class, struct CBW *cbw, struct C
         }
 
         if (nbytes < 0) {
-            USB_LOG_ERR("csw cbw data response error\n");
+            USB_LOG_ERR("msc data transfer error\r\n");
             goto __err_exit;
         }
     }
@@ -196,7 +196,7 @@ static inline int usbh_msc_scsi_requestsense(struct usbh_msc *msc_class)
     cbw->CB[0] = SCSI_CMD_REQUESTSENSE;
     cbw->CB[4] = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
 
-    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, NULL);
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, g_msc_buf);
 }
 
 static inline int usbh_msc_scsi_inquiry(struct usbh_msc *msc_class)
@@ -219,7 +219,6 @@ static inline int usbh_msc_scsi_inquiry(struct usbh_msc *msc_class)
 
 static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
 {
-    int nbytes;
     struct CBW *cbw;
 
     /* Construct the CBW */
