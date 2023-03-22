@@ -159,10 +159,70 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
     setup->wLength = 0;
 
     ret = usbh_control_transfer(audio_class->hport->ep0, setup, NULL);
-    if (ret < 0) {
-        return ret;
+
+    return ret;
+}
+
+int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint8_t ch, uint8_t volume)
+{
+    struct usb_setup_packet *setup = audio_class->hport->setup;
+    int ret;
+    uint8_t intf = 0xff;
+    uint8_t feature_id = 0xff;
+    uint16_t volume_hex;
+
+    for (size_t i = 0; i < audio_class->module_num; i++) {
+        if (strcmp(name, audio_class->module[i].name) == 0) {
+            intf = audio_class->ctrl_intf;
+            feature_id = audio_class->module[i].feature_unit_id;
+        }
     }
 
+    if (intf == 0xff) {
+        return -ENODEV;
+    }
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = AUDIO_REQUEST_SET_CUR;
+    setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+    setup->wIndex = (feature_id << 8) | intf;
+    setup->wLength = 2;
+
+    volume_hex = -0xDB00 / 100 * volume + 0xdb00;
+
+    memcpy(g_audio_buf, &volume_hex, 2);
+    ret = usbh_control_transfer(audio_class->hport->ep0, setup, NULL);
+
+    return ret;
+}
+
+int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_t ch, bool mute)
+{
+    struct usb_setup_packet *setup = audio_class->hport->setup;
+    int ret;
+    uint8_t intf = 0xff;
+    uint8_t feature_id = 0xff;
+
+    for (size_t i = 0; i < audio_class->module_num; i++) {
+        if (strcmp(name, audio_class->module[i].name) == 0) {
+            intf = audio_class->ctrl_intf;
+            feature_id = audio_class->module[i].feature_unit_id;
+        }
+    }
+
+    if (intf == 0xff) {
+        return -ENODEV;
+    }
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = AUDIO_REQUEST_SET_CUR;
+    setup->wValue = (AUDIO_FU_CONTROL_MUTE << 8) | ch;
+    setup->wIndex = (feature_id << 8) | intf;
+    setup->wLength = 1;
+
+    memcpy(g_audio_buf, &mute, 1);
+    ret = usbh_control_transfer(audio_class->hport->ep0, setup, g_audio_buf);
+    
     return ret;
 }
 

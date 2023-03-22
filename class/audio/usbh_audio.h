@@ -61,6 +61,8 @@ extern "C" {
 
 int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t samp_freq);
 int usbh_audio_close(struct usbh_audio *audio_class, const char *name);
+int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint8_t ch, uint8_t volume);
+int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_t ch, bool mute);
 
 void usbh_audio_run(struct usbh_audio *audio_class);
 void usbh_audio_stop(struct usbh_audio *audio_class);
