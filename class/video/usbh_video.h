@@ -17,14 +17,14 @@ struct usbh_video_resolution {
 };
 
 struct usbh_video_format {
-    struct usbh_video_resolution frame[8];
+    struct usbh_video_resolution frame[12];
     uint8_t format_type;
     uint8_t num_of_frames;
 };
 
 struct usbh_videostreaming {
-    uint8_t *bufbase;
     uint32_t bufoffset;
+    uint32_t buflen;
     void (*video_one_frame_callback)(struct usbh_videostreaming *stream);
 };
 

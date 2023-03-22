@@ -27,49 +27,6 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_video_buf[128];
 
 static const char *format_type[] = { "uncompressed", "mjpeg" };
 
-static int __s_r_1370705v[256] = { 0 };
-static int __s_b_1732446u[256] = { 0 };
-static int __s_g_337633u[256] = { 0 };
-static int __s_g_698001v[256] = { 0 };
-
-void usbh_video_inityuyv2rgb_table(void)
-{
-    for (int i = 0; i < 256; i++) {
-        __s_r_1370705v[i] = (1.370705 * (i - 128));
-        __s_b_1732446u[i] = (1.732446 * (i - 128));
-        __s_g_337633u[i] = (0.337633 * (i - 128));
-        __s_g_698001v[i] = (0.698001 * (i - 128));
-    }
-}
-
-void usbh_video_yuyv2rgb565(void *input, void *output, uint32_t len)
-{
-    int y0, u, y1, v;
-    uint8_t r, g, b;
-    int val;
-
-    for (uint32_t i = 0; i < len / 4; i++) {
-        y0 = (int)(((uint8_t *)input)[i * 4 + 0]);
-        u = (int)(((uint8_t *)input)[i * 4 + 1]);
-        y1 = (int)(((uint8_t *)input)[i * 4 + 2]);
-        v = (int)(((uint8_t *)input)[i * 4 + 3]);
-        val = y0 + __s_r_1370705v[v];
-        r = (val < 0) ? 0 : ((val > 255) ? 255 : (uint8_t)val);
-        val = y0 - __s_g_337633u[u] - __s_g_698001v[v];
-        g = (val < 0) ? 0 : ((val > 255) ? 255 : (uint8_t)val);
-        val = y0 + __s_b_1732446u[u];
-        b = (val < 0) ? 0 : ((val > 255) ? 255 : (uint8_t)val);
-        ((uint16_t *)output)[i * 2] = (uint16_t)(b >> 3) | ((uint16_t)(g >> 2) << 5) | ((uint16_t)(r >> 3) << 11);
-        val = y1 + __s_r_1370705v[v];
-        r = (val < 0) ? 0 : ((val > 255) ? 255 : (uint8_t)val);
-        val = y1 - __s_g_337633u[u] - __s_g_698001v[v];
-        g = (val < 0) ? 0 : ((val > 255) ? 255 : (uint8_t)val);
-        val = y1 + __s_b_1732446u[u];
-        b = (val < 0) ? 0 : ((val > 255) ? 255 : (uint8_t)val);
-        ((uint16_t *)output)[i * 2 + 1] = (uint16_t)(b >> 3) | ((uint16_t)(g >> 2) << 5) | ((uint16_t)(r >> 3) << 11);
-    }
-}
-
 static int usbh_video_devno_alloc(struct usbh_video *video_class)
 {
     int devno;
@@ -117,6 +74,7 @@ int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t ent
 int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
     struct usb_setup_packet *setup = video_class->hport->setup;
+    int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = VIDEO_REQUEST_SET_CUR;
@@ -126,7 +84,9 @@ int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t ent
 
     memcpy(g_video_buf, buf, len);
 
-    return usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
+    ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
+    usb_osal_msleep(5);
+    return ret;
 }
 
 int usbh_videostreaming_get_cur_probe(struct usbh_video *video_class)
@@ -427,9 +387,7 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_video_list_info(video_class);
 
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, video_class->minor);
-#ifdef CONFIG_USBHOST_UVC_YUV2RGB
-    inityuyv2rgb_table();
-#endif
+
     USB_LOG_INFO("Register Video Class:%s\r\n", hport->config.intf[intf].devname);
 
     usbh_video_run(video_class);
@@ -474,6 +432,7 @@ static int usbh_video_streaming_disconnect(struct usbh_hubport *hport, uint8_t i
     return 0;
 }
 
+#if 0
 void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostreaming *stream)
 {
     struct usbh_iso_frame_packet *iso_packet;
@@ -511,29 +470,33 @@ void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostre
             continue;
         }
 
-        if ((stream->bufoffset == 0) && (iso_packet[i].transfer_buffer[header_len] != 0xff) && (iso_packet[i].transfer_buffer[header_len + 1] != 0xd8)) {
+        if ((stream->bufoffset == 0) && ((iso_packet[i].transfer_buffer[header_len] != 0xff) || (iso_packet[i].transfer_buffer[header_len + 1] != 0xd8))) {
             stream->bufoffset = 0;
             continue;
         }
 
-        data_offset = iso_packet[i].transfer_buffer[0];
-        data_len = iso_packet[i].actual_length - iso_packet[i].transfer_buffer[0];
+        data_offset = header_len;
+        data_len = iso_packet[i].actual_length - header_len;
 
-        usbh_videostreaming_output(&iso_packet[i].transfer_buffer[data_offset], data_len);
+        /** do something here */
 
         stream->bufoffset += data_len;
 
         if (iso_packet[i].transfer_buffer[1] & (1 << 1)) {
-            if ((iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 2] != 0xff) && (iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 1] != 0xd9)) {
+            if ((iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 2] != 0xff) || (iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 1] != 0xd9)) {
                 stream->bufoffset = 0;
                 continue;
             }
+
+            /** do something here */
+
             if (stream->video_one_frame_callback) {
                 stream->video_one_frame_callback(stream);
             }
             stream->bufoffset = 0;
         }
     }
+    /** do something here */
 }
 
 void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostreaming *stream)
@@ -574,20 +537,26 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
             continue;
         }
 
-        data_offset = iso_packet[i].transfer_buffer[0];
-        data_len = iso_packet[i].actual_length - iso_packet[i].transfer_buffer[0];
+        data_offset = header_len;
+        data_len = iso_packet[i].actual_length - header_len;
 
-        usbh_videostreaming_output(&iso_packet[i].transfer_buffer[data_offset], data_len);
+        /** do something here */
+
         stream->bufoffset += data_len;
 
         if (iso_packet[i].transfer_buffer[1] & (1 << 1)) {
-            if (stream->video_one_frame_callback) {
+            /** do something here */
+
+            if (stream->video_one_frame_callback && (stream->bufoffset == stream->buflen)) {
                 stream->video_one_frame_callback(stream);
             }
             stream->bufoffset = 0;
         }
     }
+
+    /** do something here */
 }
+#endif
 
 __WEAK void usbh_video_run(struct usbh_video *video_class)
 {
