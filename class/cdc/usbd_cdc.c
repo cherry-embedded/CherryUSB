@@ -80,22 +80,12 @@ static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setu
     return 0;
 }
 
-static void cdc_notify_handler(uint8_t event, void *arg)
-{
-    switch (event) {
-        case USBD_EVENT_RESET:
-            break;
-        default:
-            break;
-    }
-}
-
 struct usbd_interface *usbd_cdc_acm_init_intf(struct usbd_interface *intf)
 {
     intf->class_interface_handler = cdc_acm_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
-    intf->notify_handler = cdc_notify_handler;
+    intf->notify_handler = NULL;
 
     return intf;
 }

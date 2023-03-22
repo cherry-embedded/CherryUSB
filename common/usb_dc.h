@@ -144,14 +144,36 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len);
 /* usb dcd irq callback */
 
 /**
+ * @brief Usb connect irq callback.
+ */
+void usbd_event_connect_handler(void);
+
+/**
+ * @brief Usb disconnect irq callback.
+ */
+void usbd_event_disconnect_handler(void);
+
+/**
+ * @brief Usb resume irq callback.
+ */
+void usbd_event_resume_handler(void);
+
+/**
+ * @brief Usb suspend irq callback.
+ */
+void usbd_event_suspend_handler(void);
+
+/**
  * @brief Usb reset irq callback.
  */
 void usbd_event_reset_handler(void);
+
 /**
  * @brief Usb setup packet recv irq callback.
  * @param[in]  psetup  setup packet.
  */
 void usbd_event_ep0_setup_complete_handler(uint8_t *psetup);
+
 /**
  * @brief In ep transfer complete irq callback.
  * @param[in]  ep        Endpoint address corresponding to the one
@@ -159,6 +181,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup);
  * @param[in]  nbytes    How many nbytes have transferred.
  */
 void usbd_event_ep_in_complete_handler(uint8_t ep, uint32_t nbytes);
+
 /**
  * @brief Out ep transfer complete irq callback.
  * @param[in]  ep        Endpoint address corresponding to the one
@@ -166,10 +189,6 @@ void usbd_event_ep_in_complete_handler(uint8_t ep, uint32_t nbytes);
  * @param[in]  nbytes    How many nbytes have transferred.
  */
 void usbd_event_ep_out_complete_handler(uint8_t ep, uint32_t nbytes);
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

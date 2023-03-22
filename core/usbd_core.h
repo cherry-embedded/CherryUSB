@@ -93,6 +93,8 @@ void usbd_configure_done_callback(void);
 int usbd_initialize(void);
 int usbd_deinitialize(void);
 
+void usbd_event_handler(uint8_t event);
+
 #ifdef __cplusplus
 }
 #endif

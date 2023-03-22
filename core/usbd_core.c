@@ -553,6 +553,7 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
                 usbd_core_cfg.configuration = value;
                 usbd_core_cfg.configured = true;
                 usbd_class_event_notify_handler(USBD_EVENT_CONFIGURED, NULL);
+                usbd_event_handler(USBD_EVENT_CONFIGURED);
                 usbd_configure_done_callback();
             }
             *len = 0;
@@ -947,22 +948,22 @@ static void usbd_class_event_notify_handler(uint8_t event, void *arg)
 
 void usbd_event_connect_handler(void)
 {
-    usbd_class_event_notify_handler(USBD_EVENT_CONNECTED, NULL);
+    usbd_event_handler(USBD_EVENT_CONNECTED);
 }
 
 void usbd_event_disconnect_handler(void)
 {
-    usbd_class_event_notify_handler(USBD_EVENT_DISCONNECTED, NULL);
+    usbd_event_handler(USBD_EVENT_DISCONNECTED);
 }
 
 void usbd_event_resume_handler(void)
 {
-    usbd_class_event_notify_handler(USBD_EVENT_RESUME, NULL);
+    usbd_event_handler(USBD_EVENT_RESUME);
 }
 
 void usbd_event_suspend_handler(void)
 {
-    usbd_class_event_notify_handler(USBD_EVENT_SUSPEND, NULL);
+    usbd_event_handler(USBD_EVENT_SUSPEND);
 }
 
 void usbd_event_reset_handler(void)
@@ -985,6 +986,7 @@ void usbd_event_reset_handler(void)
     usbd_ep_open(&ep0_cfg);
 
     usbd_class_event_notify_handler(USBD_EVENT_RESET, NULL);
+    usbd_event_handler(USBD_EVENT_RESET);
 }
 
 void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
@@ -1174,8 +1176,11 @@ static void usbdev_rx_thread(void *argument)
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 void usbd_desc_register(struct usb_descriptor *desc)
 {
+    memset(&usbd_core_cfg, 0, sizeof(struct usbd_core_cfg_priv));
+
     usbd_core_cfg.descriptors = desc;
     usbd_core_cfg.intf_offset = 0;
+
     tx_msg[0].ep = 0x80;
     tx_msg[0].cb = usbd_event_ep0_in_complete_handler;
     rx_msg[0].ep = 0x00;
@@ -1184,8 +1189,11 @@ void usbd_desc_register(struct usb_descriptor *desc)
 #else
 void usbd_desc_register(const uint8_t *desc)
 {
+    memset(&usbd_core_cfg, 0, sizeof(struct usbd_core_cfg_priv));
+
     usbd_core_cfg.descriptors = desc;
     usbd_core_cfg.intf_offset = 0;
+
     tx_msg[0].ep = 0x80;
     tx_msg[0].cb = usbd_event_ep0_in_complete_handler;
     rx_msg[0].ep = 0x00;
@@ -1266,4 +1274,25 @@ int usbd_deinitialize(void)
 #if defined(CONFIG_USBDEV_TX_THREAD) || defined(CONFIG_USBDEV_RX_THREAD)
 #endif
     return 0;
+}
+
+__WEAK void usbd_event_handler(uint8_t event)
+{
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+
+        default:
+            break;
+    }
 }
