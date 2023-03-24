@@ -610,7 +610,8 @@ static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
                     struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
 
                     if (intf->intf_num == intf_num) {
-                        *data = (uint8_t *)intf->hid_report_descriptor;
+                        //*data = (uint8_t *)intf->hid_report_descriptor;
+                        memcpy(*data, intf->hid_report_descriptor, intf->hid_report_descriptor_len);
                         *len = intf->hid_report_descriptor_len;
                         return true;
                     }
@@ -842,13 +843,15 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
             switch (setup->wIndex) {
                 case 0x04:
                     USB_LOG_INFO("get Compat ID\r\n");
-                    *data = (uint8_t *)msosv1_desc->compat_id;
+                    //*data = (uint8_t *)msosv1_desc->compat_id;
+                    memcpy(*data, msosv1_desc->compat_id, msosv1_desc->compat_id_len);
                     *len = msosv1_desc->compat_id_len;
 
                     return 0;
                 case 0x05:
                     USB_LOG_INFO("get Compat id properties\r\n");
-                    *data = (uint8_t *)msosv1_desc->comp_id_property;
+                    //*data = (uint8_t *)msosv1_desc->comp_id_property;
+                    memcpy(*data, msosv1_desc->comp_id_property, msosv1_desc->comp_id_property_len);
                     *len = msosv1_desc->comp_id_property_len;
 
                     return 0;
@@ -862,7 +865,8 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
             switch (setup->wIndex) {
                 case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
                     USB_LOG_INFO("GET MS OS 2.0 Descriptor\r\n");
-                    *data = (uint8_t *)msosv2_desc->compat_id;
+                    //*data = (uint8_t *)msosv2_desc->compat_id;
+                    memcpy(*data, msosv2_desc->compat_id, msosv2_desc->compat_id_len);
                     *len = msosv2_desc->compat_id_len;
                     return 0;
                 default:
