@@ -23,7 +23,7 @@
 #define HID_CUSTOM_REPORT_DESC_SIZE 34
 
 /*!< global descriptor */
-static const uint8_t hid_descriptor[] = {
+__ALIGNED(4) static const uint8_t hid_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0002, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_HID_CONFIG_DESC_SIZ, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     /************** Descriptor of Custom interface *****************/
@@ -136,7 +136,7 @@ static const uint8_t hid_descriptor[] = {
 };
 
 /*!< custom hid report descriptor */
-static const uint8_t hid_custom_report_desc[HID_CUSTOM_REPORT_DESC_SIZE] = {
+__ALIGNED(4) static const uint8_t hid_custom_report_desc[HID_CUSTOM_REPORT_DESC_SIZE] = {
     /* USER CODE BEGIN 0 */
     0x06, 0x00, 0xff, // USAGE_PAGE (Vendor Defined Page 1)
     0x09, 0x01,       // USAGE (Vendor Usage 1)
