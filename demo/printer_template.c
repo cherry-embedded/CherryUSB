@@ -155,7 +155,7 @@ static const uint8_t printer_device_id[] =
 void printer_init(void)
 {
   usbd_desc_register(printer_descriptor);
-  usbd_add_interface(usbd_printer_init_intf(&intf0), printer_device_id, sizeof(printer_device_id));
+  usbd_add_interface(usbd_printer_init_intf(&intf0, printer_device_id, sizeof(printer_device_id)));
   usbd_add_endpoint(&printer_out_ep);
   usbd_add_endpoint(&printer_in_ep);
 
