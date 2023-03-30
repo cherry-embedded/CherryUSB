@@ -7,7 +7,7 @@
 #include "usbd_printer.h"
 
 struct printer_cfg_priv {
-    uint8_t *device_id;
+    const uint8_t *device_id;
     uint8_t device_id_len;
     uint8_t port_status;
 } usbd_printer_cfg;
