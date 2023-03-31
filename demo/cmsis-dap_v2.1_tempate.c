@@ -227,7 +227,7 @@ void usb_dap_recv_callback(uint8_t ep, uint32_t nbytes)
     }
     actual_len = DAP_ProcessCommand(USB_Request, USB_Response);
 
-    usbd_ep_start_write(DAP_IN_EP, USB_Response, actual_len);
+    usbd_ep_start_write(DAP_IN_EP, USB_Response, actual_len & 0xffff);
     usbd_ep_start_read(ep, USB_Request, DAP_PACKET_SIZE);
 }
 
