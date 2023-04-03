@@ -11,6 +11,8 @@
 #define USB_2_0 0x0200
 /* Set USB version to 2.1 so that the host will request the BOS descriptor */
 #define USB_2_1 0x0210
+#define USB_3_0 0x0300
+#define USB_3_1 0x0310
 
 /* Device speeds */
 #define USB_SPEED_UNKNOWN    0 /* Transfer rate not yet set */

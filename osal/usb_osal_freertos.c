@@ -68,10 +68,10 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 {
-    return (usb_osal_mq_t)xQueueCreate(max_msgs, 4);
+    return (usb_osal_mq_t)xQueueCreate(max_msgs, sizeof(void *));
 }
 
-int usb_osal_mq_send(usb_osal_mq_t mq, uint32_t addr)
+int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     int ret;
@@ -84,7 +84,7 @@ int usb_osal_mq_send(usb_osal_mq_t mq, uint32_t addr)
     return (ret == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
-int usb_osal_mq_recv(usb_osal_mq_t mq, uint32_t *addr, uint32_t timeout)
+int usb_osal_mq_recv(usb_osal_mq_t mq, void *addr, uint32_t timeout)
 {
     return (xQueueReceive((usb_osal_mq_t)mq, addr, timeout) == pdPASS) ? 0 : -ETIMEDOUT;
 }
