@@ -75,6 +75,7 @@ int usb_hc_init()
     usb_hc_low_level_init(); /* set gic and memp */
 
     memset(xhci, 0, sizeof(*xhci));
+    xhci->id = CONFIG_USBHOST_XHCI_ID;
     if (rc = xhci_probe(xhci, usb_hc_get_register_base()) != 0) {
         goto err_open; 
     }

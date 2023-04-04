@@ -103,6 +103,10 @@ static void UsbMscTask(void *args)
             printf("[%d] disk read and write successfully.\r\n", loop++);
         }
 
+        if (loop > 10) {
+            break;
+        }
+
         vTaskDelay(100);
     }
 

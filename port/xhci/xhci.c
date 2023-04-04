@@ -525,7 +525,7 @@ int xhci_probe ( struct xhci_host *xhci, unsigned long baseaddr ) {
 	unsigned int i;
 
     xhci->base = (void *)baseaddr;
-	xhci->name[0] = '0' + 0U;
+	xhci->name[0] = '0' + xhci->id; /* Assert there are less than 10 xhci host */
     xhci->name[1] = '\0';
 
 	/* Initialise xHCI device */

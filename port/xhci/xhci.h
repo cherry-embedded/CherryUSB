@@ -775,6 +775,8 @@ struct xhci_slot {
 
 /** An xHCI device */
 struct xhci_host {
+	/** ID */
+	uint32_t			 id;
 	/** Name */
 	char           		 name[4];
 
