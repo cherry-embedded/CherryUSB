@@ -11,10 +11,10 @@
  * See the Phytium Public License for more details.
  *
  *
- * FilePath: xhci.c
+ * FilePath: xhci_dbg.c
  * Date: 2022-07-19 09:26:25
  * LastEditTime: 2022-07-19 09:26:25
- * Description:  This file is for xhci register access functions.
+ * Description:  This file is for implment xhci debug functions
  *
  * Modify History:
  *  Ver   Who        Date         Changes
@@ -32,17 +32,102 @@
 
 #include "xhci.h"
 
-#define XHCI_DUMP_TRB
-#define XHCI_DUMP_SLOT
-#define XHCI_DUMP_EP_CTX
-#define XHCI_DUMP_INPUT_CTX
-#define XHCI_DUMP_ENDPOINT
-#define XHCI_DUMP_PORT_STATUS
+/* macro to enable dump */
+#define XHCI_DUMP	   1
+#define XHCI_DUMP_PORT 1
+#define XHCI_DUMP_TRB  0
+#define XHCI_DUMP_SLOT 0
+#define XHCI_DUMP_EP_CTX 0
+#define XHCI_DUMP_INPUT_CTX 0
+#define XHCI_DUMP_ENDPOINT 0
+#define XHCI_DUMP_PORT_STATUS 0
 
+/**
+ * Dump host controller registers
+ *
+ * @v xhci		xHCI device
+ */
+void xhci_dump(struct xhci_host *xhci) {
+#if XHCI_DUMP
+	uint32_t usbcmd;
+	uint32_t usbsts;
+	uint32_t pagesize;
+	uint32_t dnctrl;
+	uint32_t config;
+
+	/* Dump USBCMD */
+	usbcmd = readl ( xhci->op + XHCI_OP_USBCMD );
+	USB_LOG_DBG ( xhci, "XHCI %s USBCMD %08x%s%s\n", xhci->name, usbcmd,
+	       ( ( usbcmd & XHCI_USBCMD_RUN ) ? " run" : "" ),
+	       ( ( usbcmd & XHCI_USBCMD_HCRST ) ? " hcrst" : "" ) );
+
+	/* Dump USBSTS */
+	usbsts = readl ( xhci->op + XHCI_OP_USBSTS );
+	USB_LOG_DBG ( xhci, "XHCI %s USBSTS %08x%s\n", xhci->name, usbsts,
+	       ( ( usbsts & XHCI_USBSTS_HCH ) ? " hch" : "" ) );
+
+	/* Dump PAGESIZE */
+	pagesize = readl ( xhci->op + XHCI_OP_PAGESIZE );
+	USB_LOG_DBG ( xhci, "XHCI %s PAGESIZE %08x\n", xhci->name, pagesize );
+
+	/* Dump DNCTRL */
+	dnctrl = readl ( xhci->op + XHCI_OP_DNCTRL );
+	USB_LOG_DBG ( xhci, "XHCI %s DNCTRL %08x\n", xhci->name, dnctrl );
+
+	/* Dump CONFIG */
+	config = readl ( xhci->op + XHCI_OP_CONFIG );
+	USB_LOG_DBG ( xhci, "XHCI %s CONFIG %08x\n", xhci->name, config );	
+#endif
+}
+
+/**
+ * Dump port registers
+ *
+ * @v xhci		xHCI device
+ * @v port		Port number
+ */
+void xhci_dump_port ( struct xhci_host *xhci,
+				      unsigned int port ) {
+#if  XHCI_DUMP_PORT
+	uint32_t portsc;
+	uint32_t portpmsc;
+	uint32_t portli;
+	uint32_t porthlpmc;
+
+	/* Dump PORTSC */
+	portsc = readl ( xhci->op + XHCI_OP_PORTSC ( port ) );
+	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTSC %08x%s%s%s%s psiv=%d\n",
+	       xhci->name, port, portsc,
+	       ( ( portsc & XHCI_PORTSC_CCS ) ? " ccs" : "" ),
+	       ( ( portsc & XHCI_PORTSC_PED ) ? " ped" : "" ),
+	       ( ( portsc & XHCI_PORTSC_PR ) ? " pr" : "" ),
+	       ( ( portsc & XHCI_PORTSC_PP ) ? " pp" : "" ),
+	       XHCI_PORTSC_PSIV ( portsc ) );
+
+	/* Dump PORTPMSC */
+	portpmsc = readl ( xhci->op + XHCI_OP_PORTPMSC ( port ) );
+	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTPMSC %08x\n", xhci->name, port, portpmsc );
+
+	/* Dump PORTLI */
+	portli = readl ( xhci->op + XHCI_OP_PORTLI ( port ) );
+	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTLI %08x\n", xhci->name, port, portli );
+
+	/* Dump PORTHLPMC */
+	porthlpmc = readl ( xhci->op + XHCI_OP_PORTHLPMC ( port ) );
+	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTHLPMC %08x\n",
+	       xhci->name, port, porthlpmc );
+#endif    						
+}
+
+/**
+ * Dump slot context
+ *
+ * @v sc		Slot context
+ */
 void xhci_dump_slot_ctx(const struct xhci_slot_context *const sc) {
+#if XHCI_DUMP_SLOT
 	const uint8_t *ctx = (uint8_t *)sc;
 
-#ifdef XHCI_DUMP_SLOT
 	USB_LOG_DBG("===== slot ctx ===== \r\n");
 	USB_LOG_DBG("ctx[0]=0x%x\n", *((uint32_t*)ctx));
 	USB_LOG_DBG("	info: 0x%x \r\n", sc->info);
@@ -61,10 +146,15 @@ void xhci_dump_slot_ctx(const struct xhci_slot_context *const sc) {
 #endif
 }
 
+/**
+ * Dump endpoint context
+ *
+ * @v ep		Endpoint context
+ */
 void xhci_dump_ep_ctx(const struct xhci_endpoint_context *ep) {
+#if XHCI_DUMP_EP_CTX
 	const uint8_t *ctx = (uint8_t *)ep;
 
-#ifdef XHCI_DUMP_EP_CTX
 	USB_LOG_DBG("===== ep ctx ===== \r\n");
 	USB_LOG_DBG("ctx[0]=0x%x\n", *((uint32_t*)ctx));
 	USB_LOG_DBG("	ep_state: 0x%x \r\n", ep->state);
@@ -90,7 +180,15 @@ void xhci_dump_ep_ctx(const struct xhci_endpoint_context *ep) {
 #endif
 }
 
-void xhci_dump_input_ctx( struct xhci_device *xhci, const struct xhci_endpoint *endpoint, const void *input) {
+/**
+ * Dump input context
+ *
+ * @v xhci		XHCI device
+ * @v endpoint  Endpoint
+ * @v input		Input context
+ */
+void xhci_dump_input_ctx( struct xhci_host *xhci, const struct xhci_endpoint *endpoint, const void *input) {
+#if XHCI_DUMP_INPUT_CTX
 	const struct xhci_control_context *control_ctx;
 	const struct xhci_slot_context *slot_ctx;
 	const struct xhci_endpoint_context *ep_ctx;
@@ -99,7 +197,6 @@ void xhci_dump_input_ctx( struct xhci_device *xhci, const struct xhci_endpoint *
 	slot_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_SLOT ));
 	ep_ctx = ( input + xhci_input_context_offset ( xhci, endpoint->ctx ) );
 
-#ifdef XHCI_DUMP_INPUT_CTX
 	USB_LOG_DBG("===input ctx====\n");
 	USB_LOG_DBG("ctrl@%p=0x%x\n", control_ctx, *control_ctx);
     USB_LOG_DBG("add=0x%x\n", control_ctx->add);
@@ -115,6 +212,12 @@ void xhci_dump_input_ctx( struct xhci_device *xhci, const struct xhci_endpoint *
 #endif
 }
 
+/**
+ * Get next TRB in ring
+ *
+ * @v trbs		TRB in ring
+ * @v trb  		Next TRB
+ */
 static const union xhci_trb * xhci_get_next_trb(const union xhci_trb *trbs) {
 	const struct xhci_trb_link *link = &(trbs->link);
 	if (link->type == XHCI_TRB_LINK) {
@@ -124,12 +227,18 @@ static const union xhci_trb * xhci_get_next_trb(const union xhci_trb *trbs) {
 	}
 }
 
+/**
+ * Dump TRB
+ *
+ * @v trbs		TRB header
+ * @v count  	Number of TRB to dump
+ */
 void xhci_dump_trbs(const union xhci_trb *trbs, unsigned int count) {
+#if XHCI_DUMP_TRB
 	const union xhci_trb *cur;
 	const struct xhci_trb_common *comm;
 	const uint8_t *dword;
-	
-#ifdef XHCI_DUMP_TRB
+
 	USB_LOG_DBG("===trbs    ====\n");
 	for (unsigned int i = 0; i < count; i++) {
 		cur = &(trbs[i]);
@@ -206,8 +315,13 @@ static const char *xhci_endpoint_type (unsigned int ep_type) {
 	return ep_name;
 }
 
+/**
+ * Dump Endpoint
+ *
+ * @v ep		Endpoint
+ */
 void xhci_dump_endpoint(const struct xhci_endpoint *ep) {
-#ifdef XHCI_DUMP_ENDPOINT
+#if XHCI_DUMP_ENDPOINT
 	USB_LOG_DBG("===endpoint====\n");
 	USB_LOG_DBG("xhci=0x%x\n", ep->xhci);
 	USB_LOG_DBG("slot=0x%x\n", ep->slot);
@@ -222,8 +336,14 @@ void xhci_dump_endpoint(const struct xhci_endpoint *ep) {
 #endif
 }
 
+/**
+ * Dump Port status
+ *
+ * @v port		Port number
+ * @v portsc	Port status
+ */
 void xhci_dump_port_status(uint32_t port, uint32_t portsc) {
-#ifdef XHCI_DUMP_PORT_STATUS
+#if XHCI_DUMP_PORT_STATUS
 	USB_LOG_DBG("====port-%d====\n");
 	USB_LOG_DBG("connect=%d \n", !!(XHCI_PORTSC_CCS & port));
 	USB_LOG_DBG("enabled=%d \n", !!(XHCI_PORTSC_PED & port));

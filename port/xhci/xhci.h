@@ -713,7 +713,7 @@ struct xhci_er_seg {
 struct xhci_endpoint {
     struct xhci_ring     reqs; /* DO NOT MOVE reqs from structure beg */
 	/** xHCI device */
-	struct xhci_device   *xhci;
+	struct xhci_host   *xhci;
 	/** xHCI slot */
 	struct xhci_slot     *slot;
 	/** Endpoint address */
@@ -748,7 +748,7 @@ struct xhci_endpoint {
 /** An xHCI device slot */
 struct xhci_slot {
 	/** xHCI device */
-	struct xhci_device *xhci;
+	struct xhci_host *xhci;
 	/** Slot ID */
 	unsigned int id;
 	/** Slot context */
@@ -772,9 +772,7 @@ struct xhci_slot {
 };
 
 /** An xHCI device */
-struct xhci_device {
-	/** USB bus */
-	struct usbh_bus      *bus;
+struct xhci_host {
 	/** Name */
 	char           		 name[4];
 
@@ -838,7 +836,7 @@ struct xhci_device {
  * @v xhci		xHCI device
  * @v ctx		Context index
  */
-static inline size_t xhci_input_context_offset ( struct xhci_device *xhci,
+static inline size_t xhci_input_context_offset ( struct xhci_host *xhci,
 						 unsigned int ctx ) {
 
 	return ( XHCI_ICI ( ctx ) << xhci->csz_shift );
@@ -850,44 +848,89 @@ static inline size_t xhci_input_context_offset ( struct xhci_device *xhci,
  * @v xhci		xHCI device
  * @v ctx		Context index
  */
-static inline size_t xhci_device_context_offset ( struct xhci_device *xhci,
+static inline size_t xhci_device_context_offset ( struct xhci_host *xhci,
 						  unsigned int ctx ) {
 
 	return ( XHCI_DCI ( ctx ) << xhci->csz_shift );
 }
 
-int xhci_probe ( struct xhci_device *xhci, unsigned long baseaddr );
-int xhci_open ( struct xhci_device *xhci );
-void xhci_close ( struct xhci_device *xhci );
-void xhci_remove ( struct xhci_device *xhci );
+/* Probe XCHI device */
+int xhci_probe ( struct xhci_host *xhci, unsigned long baseaddr );
 
-int xhci_port_enable (struct xhci_device *xhci, uint32_t port);
-uint32_t xhci_root_speed ( struct xhci_device *xhci, uint8_t port );
+/* Open XHCI device and start running */
+int xhci_open ( struct xhci_host *xhci );
 
-int xhci_device_open ( struct xhci_device *xhci, struct xhci_endpoint *pipe, int *slot_id );
-int xhci_device_address ( struct xhci_device *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe );
+/* Close XHCI device and stop running */
+void xhci_close ( struct xhci_host *xhci );
+
+/* Remove XHCI device and free allocated memory */
+void xhci_remove ( struct xhci_host *xhci );
+
+/* Enable port */
+int xhci_port_enable (struct xhci_host *xhci, uint32_t port);
+
+/* Get port speed */
+uint32_t xhci_root_speed ( struct xhci_host *xhci, uint8_t port );
+
+/* Open and enable device */
+int xhci_device_open ( struct xhci_host *xhci, struct xhci_endpoint *pipe, int *slot_id );
+
+/* Assign device address */
+int xhci_device_address ( struct xhci_host *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe );
+
+/* Close device and free allocated memory */
 void xhci_device_close ( struct xhci_slot *slot );
 
-int xhci_ctrl_endpoint_open ( struct xhci_device *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe );
-int xhci_work_endpoint_open ( struct xhci_device *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe );
+/* Open control endpoint for slot */
+int xhci_ctrl_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe );
+
+/* Open work endpoint for slot */
+int xhci_work_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe );
+
+/* Close endpoint and free allocated memory */
 void xhci_endpoint_close ( struct xhci_endpoint *ep );
 
+/* Update MTU (Max packet size) of endpoint */
 int xhci_endpoint_mtu ( struct xhci_endpoint *ep );
 
+/* Enqueue message transfer, usually for control transfer */
 void xhci_endpoint_message ( struct xhci_endpoint *ep, struct usb_setup_packet *packet,
 				   			void *data_buff, int datalen );
+
+/* Enqueue stream transfer, usually for bulk/interrupt transfer */
 void xhci_endpoint_stream ( struct xhci_endpoint *ep, void *data_buff, int datalen );
 
-struct xhci_endpoint *xhci_event_process(struct xhci_device *xhci);
-int xhci_event_wait(struct xhci_device *xhci,
+/* Process event ring in interrupt */
+struct xhci_endpoint *xhci_event_process(struct xhci_host *xhci);
+
+/* Wait for a ring to empty (all TRBs processed by hardware) */
+int xhci_event_wait(struct xhci_host *xhci,
 					struct xhci_endpoint *pipe,
 					struct xhci_ring *ring);
 
+/* Dump host controller registers */
+void xhci_dump(struct xhci_host *xhci);
+
+/* Dump port registers */
+void xhci_dump_port ( struct xhci_host *xhci,
+				      unsigned int port );
+
+/* Dump Port status */
 void xhci_dump_port_status(uint32_t port, uint32_t portsc);
-void xhci_dump_input_ctx( struct xhci_device *xhci, const struct xhci_endpoint *endpoint, const void *input);
+
+/* Dump input context */
+void xhci_dump_input_ctx( struct xhci_host *xhci, const struct xhci_endpoint *endpoint, const void *input);
+
+/* Dump Endpoint */
 void xhci_dump_endpoint(const struct xhci_endpoint *ep);
+
+/* Dump endpoint context */
 void xhci_dump_ep_ctx(const struct xhci_endpoint_context *ep);
+
+/* Dump TRB */
 void xhci_dump_trbs(const union xhci_trb *trbs, unsigned int count);
+
+/* Dump slot context */
 void xhci_dump_slot_ctx(const struct xhci_slot_context *const sc);
 
 #endif /* XHCI_H */

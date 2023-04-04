@@ -30,7 +30,6 @@
 #include "xhci.h"
 
 /************************** Constant Definitions *****************************/
-#define XHCI_DUMP
 
 /************************** Variable Definitions *****************************/
 
@@ -39,7 +38,7 @@
 /************************** Function Prototypes ******************************/
 
 /*****************************************************************************/
-__WEAK void usb_hc_low_level_init(uint32_t id)
+__WEAK void usb_hc_low_level_init(void)
 {
 }
 
@@ -58,33 +57,27 @@ __WEAK void usb_hc_free()
 }
 
 /* one may get xhci register base address by PCIe bus emuration */
-__WEAK unsigned long usb_hc_get_register_base(uint32_t id)
+__WEAK unsigned long usb_hc_get_register_base(void)
 {
     return 0U;
 }
 
-static inline struct xhci_device* xhci_get_inst_of_port(struct usbh_hubport *hport) {
-    USB_ASSERT(hport && hport->parent);
-    struct usbh_bus *usb = hport->parent->usb;
-    return (struct xhci_device*)usb->priv;
-}
-
-static struct xhci_device xhci_host[2];
+static struct xhci_host xhci_host;
 
 /* xhci hardware init */
-int usb_hc_init(uint32_t id)
+int usb_hc_init()
 {
     int rc = 0;
-    struct usbh_bus *bus = usbh_get_bus_of_index(id);
-    USB_ASSERT(bus);
-    struct xhci_device *xhci = &(xhci_host[id]);
+    struct xhci_host *xhci = &(xhci_host);
 
-    usb_hc_low_level_init(id); /* set gic and memp */
+    size_t flag = usb_osal_enter_critical_section(); /* no interrupt when init hc */
+
+    usb_hc_low_level_init(); /* set gic and memp */
 
     memset(xhci, 0, sizeof(*xhci));
     xhci->bus = bus;
     bus->priv = xhci;
-    if (rc = xhci_probe(xhci, usb_hc_get_register_base(id)) != 0) {
+    if (rc = xhci_probe(xhci, usb_hc_get_register_base()) != 0) {
         goto err_open; 
     }
 
@@ -93,17 +86,18 @@ int usb_hc_init(uint32_t id)
     }
 
  err_open:
+    usb_osal_leave_critical_section(flag);
 	return rc;
 }
 
-int usbh_roothub_control(struct usbh_bus *usb, struct usb_setup_packet *setup, uint8_t *buf)
+int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
 {
     uint8_t nports;
     uint8_t port;
     uint32_t portsc;
     uint32_t status;
     int ret = 0;
-    struct xhci_device *xhci = usb->priv;
+    struct xhci_host *xhci = &xhci_host;
     nports = CONFIG_USBHOST_MAX_RHPORTS;
 
     port = setup->wIndex;
@@ -295,13 +289,13 @@ int usbh_roothub_control(struct usbh_bus *usb, struct usb_setup_packet *setup, u
     return 0;
 }
 
-uint8_t usbh_get_port_speed(uint32_t id, const uint8_t port)
+uint8_t usbh_get_port_speed(const uint8_t port)
 {
-    struct xhci_device *xhci = &xhci_host[id];
+    struct xhci_host *xhci = &xhci_host;
     return xhci_root_speed(xhci, port);
 }
 
-int usbh_ep_pipe_reconfigure(struct usbh_bus *usb, usbh_pipe_t pipe, uint8_t dev_addr, uint8_t mtu, uint8_t speed)
+int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t mtu, uint8_t speed)
 {
     struct xhci_endpoint *ppipe = (struct xhci_endpoint *)pipe;
     size_t old_mtu = ppipe->mtu;
@@ -319,7 +313,7 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
 {
     int rc = 0;
     int slot_id = 0;
-    struct xhci_device *xhci = xhci_get_inst_of_port(ep_cfg->hport);
+    struct xhci_host *xhci = &xhci_host;
     struct usbh_hubport *hport = ep_cfg->hport;
     struct xhci_endpoint *ppipe = usb_align(XHCI_RING_SIZE, sizeof(struct xhci_endpoint));
     struct xhci_slot *slot;
@@ -407,13 +401,12 @@ int usbh_pipe_free(usbh_pipe_t pipe)
 int usbh_submit_urb(struct usbh_urb *urb)
 {
     int ret = 0;
-    if (!urb || !urb->pipe)
-    {
+    if (!urb || !urb->pipe) {
         return -EINVAL;
     }
 
     struct xhci_endpoint *ppipe = (struct xhci_endpoint *)urb->pipe;
-    struct xhci_device *xhci = ppipe->xhci;
+    struct xhci_host *xhci = ppipe->xhci;
     struct usb_setup_packet *setup = urb->setup;
     size_t flags = usb_osal_enter_critical_section();
 
@@ -477,8 +470,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
 void USBH_IRQHandler(void *param)
 {
     USB_ASSERT(param);
-    struct usbh_bus *bus = (struct usbh_bus *)param;
-	struct xhci_device *xhci = bus->priv;
+	struct xhci_host *xhci = &xhci_host;
     struct xhci_endpoint *work_pipe = NULL;
     USB_ASSERT(xhci);
 	uint32_t usbsts;

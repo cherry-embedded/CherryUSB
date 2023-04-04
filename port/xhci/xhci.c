@@ -14,7 +14,7 @@
  * FilePath: xhci.c
  * Date: 2022-07-19 09:26:25
  * LastEditTime: 2022-07-19 09:26:25
- * Description:  This file is for xhci register access functions.
+ * Description:  This file is for xhci functions implmentation.
  *
  * Modify History:
  *  Ver   Who        Date         Changes
@@ -36,7 +36,9 @@
  *
  */
 
-/** Define a USB speed
+#define XHCI_DUMP  1
+
+/** Define a XHCI speed in PSI
  *
  * @v mantissa		Mantissa
  * @v exponent		Exponent (in engineering terms: 1=k, 2=M, 3=G)
@@ -89,7 +91,7 @@ static inline size_t xhci_align ( size_t len ) {
  * @v reg		Register address
  * @ret rc		Return status code
  */
-static inline int xhci_writeq ( struct xhci_device *xhci, uintptr_t value, void *reg ) {
+static inline int xhci_writeq ( struct xhci_host *xhci, uintptr_t value, void *reg ) {
 
 	/* If this is a 32-bit build, then this can never fail
 	 * (allowing the compiler to optimise out the error path).
@@ -120,7 +122,7 @@ static inline int xhci_writeq ( struct xhci_device *xhci, uintptr_t value, void 
  * @v xhci		xHCI device
  * @v regs		MMIO registers
  */
-static void xhci_init ( struct xhci_device *xhci, void *regs ) {
+static void xhci_init ( struct xhci_host *xhci, void *regs ) {
 	uint32_t hcsparams1;
 	uint32_t hcsparams2;
 	uint32_t hccparams1;
@@ -186,12 +188,12 @@ static void xhci_init ( struct xhci_device *xhci, void *regs ) {
  *
  * @v xhci		xHCI device
  * @v id		Capability ID
- * @v offset		Offset to previous extended capability instance, or zero
- * @ret offset		Offset to extended capability, or zero if not found
+ * @v offset	Offset to previous extended capability instance, or zero
+ * @ret offset	Offset to extended capability, or zero if not found
  */
-static unsigned int xhci_extended_capability ( struct xhci_device *xhci,
-					       unsigned int id,
-					       unsigned int offset ) {
+static unsigned int xhci_extended_capability ( struct xhci_host *xhci,
+					       					   unsigned int id,
+					       					   unsigned int offset ) {
 	uint32_t xecp;
 	unsigned int next;
 
@@ -221,7 +223,7 @@ static unsigned int xhci_extended_capability ( struct xhci_device *xhci,
  *
  * @v xhci		xHCI device
  */
-static void xhci_legacy_init ( struct xhci_device *xhci ) {
+static void xhci_legacy_init ( struct xhci_host *xhci ) {
 	unsigned int legacy;
 	uint8_t bios;
 
@@ -255,7 +257,7 @@ static void xhci_legacy_init ( struct xhci_device *xhci ) {
  *
  * @v xhci		xHCI device
  */
-static void xhci_legacy_claim ( struct xhci_device *xhci ) {
+static void xhci_legacy_claim ( struct xhci_host *xhci ) {
 	uint32_t ctlsts;
 	uint8_t bios;
 	unsigned int i;
@@ -305,7 +307,7 @@ static int xhci_legacy_prevent_release;
  *
  * @v xhci		xHCI device
  */
-static void xhci_legacy_release ( struct xhci_device *xhci ) {
+static void xhci_legacy_release ( struct xhci_host *xhci ) {
 
 	/* Do nothing unless legacy support capability is present */
 	if ( ! xhci->legacy )
@@ -329,7 +331,7 @@ static void xhci_legacy_release ( struct xhci_device *xhci ) {
  * @v xhci		xHCI device
  * @ret rc		Return status code
  */
-static int xhci_stop ( struct xhci_device *xhci ) {
+static int xhci_stop ( struct xhci_host *xhci ) {
 	uint32_t usbcmd;
 	uint32_t usbsts;
 	unsigned int i;
@@ -361,7 +363,7 @@ static int xhci_stop ( struct xhci_device *xhci ) {
  * @v xhci		xHCI device
  * @ret rc		Return status code
  */
-static int xhci_reset ( struct xhci_device *xhci ) {
+static int xhci_reset ( struct xhci_host *xhci ) {
 	uint32_t usbcmd;
 	unsigned int i;
 	int rc;
@@ -401,8 +403,8 @@ static int xhci_reset ( struct xhci_device *xhci ) {
  * @v port		Port number
  * @ret supported	Offset to extended capability, or zero if not found
  */
-static unsigned int xhci_supported_protocol ( struct xhci_device *xhci,
-					      unsigned int port ) {
+static unsigned int xhci_supported_protocol ( struct xhci_host *xhci,
+					      					  unsigned int port ) {
 	unsigned int supported = 0;
 	unsigned int offset;
 	unsigned int count;
@@ -457,8 +459,8 @@ static inline const char * xhci_speed_name ( uint32_t psi ) {
  * @v port		Port number
  * @ret protocol	USB protocol, or zero if not found
  */
-static unsigned int xhci_port_protocol ( struct xhci_device *xhci,
-					 unsigned int port ) {
+static unsigned int xhci_port_protocol ( struct xhci_host *xhci,
+					 					 unsigned int port ) {
 	unsigned int supported = xhci_supported_protocol ( xhci, port );
 	union {
 		uint32_t raw;
@@ -483,9 +485,9 @@ static unsigned int xhci_port_protocol ( struct xhci_device *xhci,
 	protocol = XHCI_SUPPORTED_REVISION_VER ( revision );
 
 	/* Describe port protocol */
-#ifdef XHCI_DUMP 
+#if XHCI_DUMP 
     {
-		name.raw = cpu_to_le32 ( readl ( xhci->cap + supported +
+		name.raw = CPU_TO_LE32 ( readl ( xhci->cap + supported +
 						 XHCI_SUPPORTED_NAME ) );
 		name.text[4] = '\0';
 		slot = readl ( xhci->cap + supported + XHCI_SUPPORTED_SLOT );
@@ -512,17 +514,18 @@ static unsigned int xhci_port_protocol ( struct xhci_device *xhci,
 /**
  * Probe XCHI device
  *
- * @v pci		XCHI device
+ * @v xhci		XCHI device
+ * @v baseaddr  XHCI device register base address
  * @ret rc		Return status code
  */
-int xhci_probe ( struct xhci_device *xhci, unsigned long baseaddr ) {
+int xhci_probe ( struct xhci_host *xhci, unsigned long baseaddr ) {
     USB_ASSERT(xhci && (xhci->bus));
     int error = 0;
 	struct usbh_hubport *port;
 	unsigned int i;
 
     xhci->base = (void *)baseaddr;
-	xhci->name[0] = '0' + xhci->bus->id;
+	xhci->name[0] = '0' + 0U;
     xhci->name[1] = '\0';
 
 	/* Initialise xHCI device */
@@ -557,7 +560,7 @@ err_reset:
  * @v xhci		xHCI device
  * @ret rc		Return status code
  */
-static int xhci_dcbaa_alloc ( struct xhci_device *xhci ) {
+static int xhci_dcbaa_alloc ( struct xhci_host *xhci ) {
 	size_t len;
 	uintptr_t dcbaap;
 	int rc;
@@ -600,7 +603,7 @@ static int xhci_dcbaa_alloc ( struct xhci_device *xhci ) {
  * @v xhci		xHCI device
  * @ret rc		Return status code
  */
-static int xhci_scratchpad_alloc ( struct xhci_device *xhci ) {
+static int xhci_scratchpad_alloc ( struct xhci_host *xhci ) {
 	struct xhci_scratchpad *scratch = &xhci->scratch;
 	size_t buffer_len;
 	size_t array_len;
@@ -639,13 +642,13 @@ static int xhci_scratchpad_alloc ( struct xhci_device *xhci ) {
 	/* Populate scratchpad array */
 	addr = ( scratch->buffer + 0 );
 	for ( i = 0 ; i < scratch->count ; i++ ) {
-		scratch->array[i] = cpu_to_le64 ( addr );
+		scratch->array[i] = CPU_TO_LE64 ( addr );
 		addr += xhci->pagesize;
 	}
 
 	/* Set scratchpad array pointer */
 	USB_ASSERT ( xhci->dcbaa.context != NULL );
-	xhci->dcbaa.context[0] = cpu_to_le64 ( ( scratch->array ) );
+	xhci->dcbaa.context[0] = CPU_TO_LE64 ( ( scratch->array ) );
 
 	USB_LOG_DBG("XHCI %s scratchpad [%08lx,%08lx) array [%08lx,%08lx)\n",
 		xhci->name,  ( scratch->buffer, 0 ),
@@ -667,7 +670,7 @@ static int xhci_scratchpad_alloc ( struct xhci_device *xhci ) {
  * @v xhci		xHCI device
  * @ret rc		Return status code
  */
-static int xhci_command_alloc ( struct xhci_device *xhci ) {
+static int xhci_command_alloc ( struct xhci_host *xhci ) {
 	uintptr_t crp;
 	int rc;
 
@@ -706,7 +709,7 @@ static int xhci_command_alloc ( struct xhci_device *xhci ) {
  * @v xhci		xHCI device
  * @ret rc		Return status code
  */
-static int xhci_event_alloc ( struct xhci_device *xhci ) {
+static int xhci_event_alloc ( struct xhci_host *xhci ) {
 	unsigned int count;
 	size_t len;
 	int rc;
@@ -727,7 +730,7 @@ static int xhci_event_alloc ( struct xhci_device *xhci ) {
 		goto err_alloc_segment;
 	}
 	memset(xhci->eseg, 0U, sizeof(*xhci->eseg));
-    xhci->eseg->base = cpu_to_le64 ( ( xhci->evts ) );
+    xhci->eseg->base = CPU_TO_LE64 ( ( xhci->evts ) );
     xhci->eseg->count = XHCI_RING_ITEMS; /* items of event ring TRB */
 
 	/* Program event ring registers */
@@ -764,7 +767,7 @@ static int xhci_event_alloc ( struct xhci_device *xhci ) {
  *
  * @v xhci		xHCI device
  */
-static void xhci_run ( struct xhci_device *xhci ) {
+static void xhci_run ( struct xhci_host *xhci ) {
 	uint32_t config;
 	uint32_t usbcmd;
 	uint32_t runtime;
@@ -794,7 +797,7 @@ static void xhci_run ( struct xhci_device *xhci ) {
  *
  * @v xhci		xHCI device
  */
-static void xhci_event_free ( struct xhci_device *xhci ) {
+static void xhci_event_free ( struct xhci_host *xhci ) {
 	
     /* Clear event ring registers */
 	writel ( 0, xhci->run + XHCI_RUN_ERSTSZ ( 0 ) );
@@ -813,7 +816,7 @@ static void xhci_event_free ( struct xhci_device *xhci ) {
  *
  * @v xhci		xHCI device
  */
-static void xhci_command_free ( struct xhci_device *xhci ) {
+static void xhci_command_free ( struct xhci_host *xhci ) {
 
 	/* Sanity check */
 	USB_ASSERT ( ( readl ( xhci->op + XHCI_OP_CRCR ) & XHCI_CRCR_CRR ) == 0 );
@@ -830,7 +833,7 @@ static void xhci_command_free ( struct xhci_device *xhci ) {
  *
  * @v xhci		xHCI device
  */
-static void xhci_scratchpad_free ( struct xhci_device *xhci ) {
+static void xhci_scratchpad_free ( struct xhci_host *xhci ) {
 	struct xhci_scratchpad *scratch = &xhci->scratch;
 	size_t array_len;
 	size_t buffer_len;
@@ -857,7 +860,7 @@ static void xhci_scratchpad_free ( struct xhci_device *xhci ) {
  *
  * @v xhci		xHCI device
  */
-static void xhci_dcbaa_free ( struct xhci_device *xhci ) {
+static void xhci_dcbaa_free ( struct xhci_host *xhci ) {
 	size_t len;
 	unsigned int i;
 
@@ -879,7 +882,7 @@ static void xhci_dcbaa_free ( struct xhci_device *xhci ) {
  * @v xhci		XHCI device
  * @ret rc		Return status code
  */
-int xhci_open ( struct xhci_device *xhci ) {
+int xhci_open ( struct xhci_host *xhci ) {
 	int rc;
 
 	/* Allocate device slot array */
@@ -926,11 +929,11 @@ int xhci_open ( struct xhci_device *xhci ) {
 }
 
 /**
- * Close USB bus
+ * Close XHCI device
  *
- * @v bus		USB bus
+ * @v xhci		XHCI Device
  */
-void xhci_close ( struct xhci_device *xhci ) {
+void xhci_close ( struct xhci_host *xhci ) {
 	unsigned int i;
 
 	/* Sanity checks */
@@ -950,9 +953,9 @@ void xhci_close ( struct xhci_device *xhci ) {
 /**
  * Remove XHCI device
  *
- * @v pci		PCI device
+ * @v xhci		XHCI device
  */
-void xhci_remove ( struct xhci_device *xhci ) {
+void xhci_remove ( struct xhci_host *xhci ) {
 	xhci_reset ( xhci );
 	xhci_legacy_release ( xhci );
 	usb_free ( xhci );
@@ -968,11 +971,11 @@ void xhci_remove ( struct xhci_device *xhci ) {
 /**
  * Enable port
  *
- * @v hub		USB hub
- * @v port		USB port
+ * @v xhci		XHCI device
+ * @v port		Port number
  * @ret rc		Return status code
  */
-int xhci_port_enable(struct xhci_device *xhci, uint32_t port) {
+int xhci_port_enable(struct xhci_host *xhci, uint32_t port) {
 	uint32_t portsc = readl ( xhci->op + XHCI_OP_PORTSC ( port ) );
 
 	/* double check if connected */
@@ -1023,6 +1026,12 @@ int xhci_port_enable(struct xhci_device *xhci, uint32_t port) {
 	return 0;
 }
 
+/**
+ * Convert USB Speed to PSI
+ *
+ * @v speed		USB speed 
+ * @ret psi		USB speed in PSI
+ */
 static unsigned int xhci_speed_to_psi(int speed) {
 	unsigned int psi = USB_SPEED_UNKNOWN;
 	
@@ -1044,6 +1053,12 @@ static unsigned int xhci_speed_to_psi(int speed) {
 	return psi;
 }
 
+/**
+ * Convert USB PSI to Speed
+ *
+ * @v psi		USB speed in PSI 
+ * @ret speed	USB speed	
+ */
 static int xhci_psi_to_speed(int psi) {
 	int speed = USB_SPEED_UNKNOWN;
 	
@@ -1073,8 +1088,8 @@ static int xhci_psi_to_speed(int psi) {
  * @v psiv		Protocol speed ID value
  * @ret speed		Port speed, or negative error
  */
-static int xhci_port_speed ( struct xhci_device *xhci, unsigned int port,
-			     unsigned int psiv ) {
+static int xhci_port_speed ( struct xhci_host *xhci, unsigned int port,
+			     			 unsigned int psiv ) {
 	unsigned int supported = xhci_supported_protocol ( xhci, port );
 	unsigned int psic;
 	unsigned int mantissa;
@@ -1132,7 +1147,7 @@ static int xhci_port_speed ( struct xhci_device *xhci, unsigned int port,
  * @v speed		USB speed
  * @ret psiv		Protocol speed ID value, or negative error
  */
-static int xhci_port_psiv ( struct xhci_device *xhci, unsigned int port,
+static int xhci_port_psiv ( struct xhci_host *xhci, unsigned int port,
 			    			unsigned int speed ) {
 	unsigned int supported = xhci_supported_protocol ( xhci, port );
 	unsigned int psic;
@@ -1184,11 +1199,11 @@ static int xhci_port_psiv ( struct xhci_device *xhci, unsigned int port,
 /**
  * Update root hub port speed
  *
- * @v hub		USB hub
- * @v port		USB port
+ * @v xhci		XHCI device
+ * @v port		Port number
  * @ret rc		Return status code (speed)
  */
-uint32_t xhci_root_speed ( struct xhci_device *xhci, uint8_t port ) {
+uint32_t xhci_root_speed ( struct xhci_host *xhci, uint8_t port ) {
 	uint32_t portsc;
 	unsigned int psiv;
 	int ccs;
@@ -1234,7 +1249,12 @@ uint32_t xhci_root_speed ( struct xhci_device *xhci, uint8_t port ) {
 }
 
 /*********************************************************************/
-/* Add a TRB to the given ring */
+/**
+ * Add a TRB to the given ring
+ *
+ * @v ring		XHCI TRB ring
+ * @v trb		TRB content to be added
+ */
 static inline void xhci_trb_fill(struct xhci_ring *ring, union xhci_trb *trb) {
 	union xhci_trb *dst = &ring->ring[ring->nidx];
 	memcpy((void *)dst, (void *)trb, sizeof(*trb));
@@ -1242,7 +1262,12 @@ static inline void xhci_trb_fill(struct xhci_ring *ring, union xhci_trb *trb) {
 	xhci_dump_trbs(dst, 1);
 }
 
-/* Queue a TRB onto a ring, wrapping ring as needed */
+/**
+ * Queue a TRB onto a ring, wrapping ring as needed
+ *
+ * @v ring		XHCI TRB ring
+ * @v trb		TRB content to be added
+ */
 static void xhci_trb_queue(struct xhci_ring *ring, union xhci_trb *trb) {
 
 	if (ring->nidx >= XHCI_RING_ITEMS - 1) {
@@ -1250,7 +1275,7 @@ static void xhci_trb_queue(struct xhci_ring *ring, union xhci_trb *trb) {
 		union xhci_trb link_trb;
 		link_trb.link.type = XHCI_TRB_LINK;
 		link_trb.link.flags = XHCI_TRB_TC;
-		link_trb.link.next = cpu_to_le64((ring->ring));
+		link_trb.link.next = CPU_TO_LE64((ring->ring));
 
 		xhci_trb_fill(ring, &link_trb);
 
@@ -1262,15 +1287,21 @@ static void xhci_trb_queue(struct xhci_ring *ring, union xhci_trb *trb) {
 	ring->nidx++; /* ahead dequeue index */
 }
 
-/* Wait for a ring to empty (all TRBs processed by hardware) */
-int xhci_event_wait(struct xhci_device *xhci,
-					struct xhci_endpoint *pipe,
+/**
+ * Wait for a ring to empty (all TRBs processed by hardware)
+ *
+ * @v xhci      XHCI Device
+ * @v ep		Owner Endpoint of current TRB ring
+ * @  ring		XHCI TRB ring
+ */
+int xhci_event_wait(struct xhci_host *xhci,
+					struct xhci_endpoint *ep,
 					struct xhci_ring *ring) {
     int cc = XHCI_CMPLT_SUCCESS;
 
-    if (pipe->timeout > 0)
+    if (ep->timeout > 0)
     {
-        if (usb_osal_sem_take(pipe->waitsem, pipe->timeout) < 0)
+        if (usb_osal_sem_take(ep->waitsem, ep->timeout) < 0)
         {
             cc = XHCI_CMPLT_TIMEOUT;
         }
@@ -1286,9 +1317,11 @@ int xhci_event_wait(struct xhci_device *xhci,
 /**
  * Ring doorbell register
  *
- * @v ring		TRB ring
+ * @v xhci		XHCI device
+ * @v slotid	Slot id to ring
+ * @v value     Value send to doorbell
  */
-static inline void xhci_doorbell ( struct xhci_device *xhci, uint32_t slotid, uint32_t value ) {
+static inline void xhci_doorbell ( struct xhci_host *xhci, uint32_t slotid, uint32_t value ) {
 
 	DSB();
 	writel ( value, xhci->db + slotid * XHCI_REG_DB_SIZE ); /* bit[7:0] db target, is ep_id */
@@ -1299,7 +1332,7 @@ static inline void xhci_doorbell ( struct xhci_device *xhci, uint32_t slotid, ui
  *
  * @v xhci		xHCI device
  */
-static void xhci_abort ( struct xhci_device *xhci ) {
+static void xhci_abort ( struct xhci_host *xhci ) {
 	uintptr_t crp;
 
 	/* Abort the command */
@@ -1323,15 +1356,21 @@ static void xhci_abort ( struct xhci_device *xhci ) {
 	xhci_writeq ( xhci, ( (uint64_t)(uintptr_t)xhci->cmds | xhci->cmds->cs ), xhci->op + XHCI_OP_CRCR );
 }
 
-/* Submit a command to the xhci controller ring */
-static int xhci_cmd_submit(struct xhci_device *xhci, struct xhci_endpoint *pipe, union xhci_trb *trb) {
+/**
+ * Submit a command to the xhci controller ring
+ *
+ * @v xhci      XHCI Device
+ * @v ep		Owner Endpoint of current TRB ring
+ * @  trb		Command TRB to be sent
+ */
+static int xhci_cmd_submit(struct xhci_host *xhci, struct xhci_endpoint *ep, union xhci_trb *trb) {
     
 	int rc = 0;
 	usb_osal_mutex_take(xhci->cmds->lock); /* handle command one by one */
 
-    pipe->timeout = 5000;
-    pipe->waiter = true;
-	xhci->cur_cmd_pipe = pipe;
+    ep->timeout = 5000;
+    ep->waiter = true;
+	xhci->cur_cmd_pipe = ep;
 
 	xhci_trb_queue(xhci->cmds, trb);
 
@@ -1339,7 +1378,7 @@ static int xhci_cmd_submit(struct xhci_device *xhci, struct xhci_endpoint *pipe,
     DSB();
 
     xhci_doorbell(xhci, 0, 0); /* 0 = db host controller, 0 = db targe hc command */
-	int cc = xhci_event_wait(xhci, pipe, xhci->cmds);
+	int cc = xhci_event_wait(xhci, ep, xhci->cmds);
 	if (XHCI_CMPLT_SUCCESS != cc) {
 		USB_LOG_ERR("XHCI %s cmd failed, cc %d\n", xhci->name, cc);
 		xhci_abort(xhci); /* Abort command */
@@ -1355,9 +1394,10 @@ static int xhci_cmd_submit(struct xhci_device *xhci, struct xhci_endpoint *pipe,
  * Issue NOP and wait for completion
  *
  * @v xhci		xHCI device
+ * @v ep		Command Endpoint
  * @ret rc		Return status code
  */
-static int xhci_nop ( struct xhci_device *xhci, struct xhci_endpoint *pipe ) {
+static int xhci_nop ( struct xhci_host *xhci, struct xhci_endpoint *ep ) {
 	union xhci_trb trb;
 	struct xhci_trb_common *nop = &trb.common;
 	int rc;
@@ -1368,13 +1408,21 @@ static int xhci_nop ( struct xhci_device *xhci, struct xhci_endpoint *pipe ) {
 	nop->type = XHCI_TRB_NOP_CMD;
 
 	/* Issue command and wait for completion */
-	if ( ( rc = xhci_cmd_submit(xhci, pipe, &trb ) ) != 0 )
+	if ( ( rc = xhci_cmd_submit(xhci, ep, &trb ) ) != 0 )
 		return rc;
 
 	return 0;
 }
 
-static int xhci_enable_slot(struct xhci_device *xhci, struct xhci_endpoint *pipe, unsigned int type) {
+/**
+ * Issue Enable slot and wait for completion
+ *
+ * @v xhci		xHCI device
+ * @v ep		Command Endpoint
+ * @v type      Type of Slot to be enabled
+ * @ret rc		Return status code
+ */
+static int xhci_enable_slot(struct xhci_host *xhci, struct xhci_endpoint *ep, unsigned int type) {
 	union xhci_trb trb;
 	struct xhci_trb_enable_slot *enable = &trb.enable;
 	struct xhci_trb_complete *enabled;
@@ -1387,7 +1435,7 @@ static int xhci_enable_slot(struct xhci_device *xhci, struct xhci_endpoint *pipe
 	enable->type = XHCI_TRB_ENABLE_SLOT;
 
 	/* Issue command and Wait for completion */
-	if ( ( rc = xhci_cmd_submit(xhci, pipe, &trb) ) != 0 ) {
+	if ( ( rc = xhci_cmd_submit(xhci, ep, &trb) ) != 0 ) {
 		USB_LOG_ERR("XHCI %s could not enable new slot, type %d\n",
 		       xhci->name, type );
 		return rc;
@@ -1405,11 +1453,12 @@ static int xhci_enable_slot(struct xhci_device *xhci, struct xhci_endpoint *pipe
  * Disable slot
  *
  * @v xhci		xHCI device
+ * @v ep		Command Endpoint
  * @v slot		Device slot
  * @ret rc		Return status code
  */
-static int xhci_disable_slot ( struct xhci_device *xhci, struct xhci_endpoint *pipe,
-				      unsigned int slot ) {
+static int xhci_disable_slot ( struct xhci_host *xhci, struct xhci_endpoint *ep,
+				      		   unsigned int slot ) {
 	union xhci_trb trb;
 	struct xhci_trb_disable_slot *disable = &trb.disable;
 	int rc;
@@ -1420,7 +1469,7 @@ static int xhci_disable_slot ( struct xhci_device *xhci, struct xhci_endpoint *p
 	disable->slot = slot;
 
 	/* Issue command and wait for completion */
-	if ( ( rc = xhci_cmd_submit ( xhci, pipe, &trb ) ) != 0 ) {
+	if ( ( rc = xhci_cmd_submit ( xhci, ep, &trb ) ) != 0 ) {
 		USB_LOG_DBG("XHCI %s could not disable slot %d: %s\n",
 		       xhci->name, slot, strerror ( rc ) );
 		return rc;
@@ -1440,12 +1489,12 @@ static int xhci_disable_slot ( struct xhci_device *xhci, struct xhci_endpoint *p
  * @v populate	Input context populater
  * @ret rc		Return status code
  */
-static int xhci_context ( struct xhci_device *xhci, struct xhci_slot *slot,
-			  struct xhci_endpoint *pipe, unsigned int type,
-			  void ( * populate ) ( struct xhci_device *xhci,
-						struct xhci_slot *slot,
-						struct xhci_endpoint *pipe,
-						void *input ) ) {
+static int xhci_context ( struct xhci_host *xhci, struct xhci_slot *slot,
+						  struct xhci_endpoint *ep, unsigned int type,
+						  void ( * populate ) ( struct xhci_host *xhci,
+												struct xhci_slot *slot,
+												struct xhci_endpoint *ep,
+												void *input ) ) {
 	union xhci_trb trb;
 	struct xhci_trb_context *context = &trb.context;
 	size_t len;
@@ -1462,17 +1511,17 @@ static int xhci_context ( struct xhci_device *xhci, struct xhci_slot *slot,
 	memset ( input, 0, len );
 
 	/* Populate input context */
-	populate ( xhci, slot, pipe, input );
+	populate ( xhci, slot, ep, input );
 
 	/* Construct command */
 	memset ( context, 0, sizeof ( *context ) );
 	context->type = type;
-	context->input = cpu_to_le64 ( ( input ) );
+	context->input = CPU_TO_LE64 ( ( input ) );
 	context->slot = slot->id;
 
 	/* Issue command and wait for completion */
-	if ( ( rc = xhci_cmd_submit ( xhci, pipe, &trb ) ) != 0 ) {
-		xhci_dump_input_ctx(xhci, pipe, input);
+	if ( ( rc = xhci_cmd_submit ( xhci, ep, &trb ) ) != 0 ) {
+		xhci_dump_input_ctx(xhci, ep, input);
 		goto err_command;
 	}
 
@@ -1490,7 +1539,7 @@ static int xhci_context ( struct xhci_device *xhci, struct xhci_slot *slot,
  * @v endpoint		Endpoint
  * @v input		Input context
  */
-static void xhci_address_device_input ( struct xhci_device *xhci,
+static void xhci_address_device_input ( struct xhci_host *xhci,
 										struct xhci_slot *slot,
 										struct xhci_endpoint *endpoint,
 										void *input ) {
@@ -1503,12 +1552,12 @@ static void xhci_address_device_input ( struct xhci_device *xhci,
 
 	/* Populate control context, add slot context and ep context */
 	control_ctx = input;
-	control_ctx->add = cpu_to_le32 ( ( 1 << XHCI_CTX_SLOT ) |
+	control_ctx->add = CPU_TO_LE32 ( ( 1 << XHCI_CTX_SLOT ) |
 					 ( 1 << XHCI_CTX_EP0 ) );
 
 	/* Populate slot context */
 	slot_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_SLOT ));
-	slot_ctx->info = cpu_to_le32 ( XHCI_SLOT_INFO ( 1, 0, slot->psiv,
+	slot_ctx->info = CPU_TO_LE32 ( XHCI_SLOT_INFO ( 1, 0, slot->psiv,
 							slot->route ) );
 	slot_ctx->port = slot->port;
 	slot_ctx->tt_id = slot->tt_id;
@@ -1518,25 +1567,27 @@ static void xhci_address_device_input ( struct xhci_device *xhci,
 	ep_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_EP0 ) );
 	ep_ctx->type = XHCI_EP_TYPE_CONTROL; /* bit[5:3] endpoint type */
 	ep_ctx->burst = endpoint->burst; /* bit[16:8] max burst size */
-	ep_ctx->mtu = cpu_to_le16 ( endpoint->mtu ); /* bit[31:16] max packet size */
+	ep_ctx->mtu = CPU_TO_LE16 ( endpoint->mtu ); /* bit[31:16] max packet size */
 
 	/*
 		bit[63:4] tr dequeue pointer
 		bit[0] dequeue cycle state
 	*/
-	ep_ctx->dequeue = cpu_to_le64 ( (uint64_t)( &endpoint->reqs.ring[0] ) | XHCI_EP_DCS );
-	ep_ctx->trb_len = cpu_to_le16 ( XHCI_EP0_TRB_LEN );	/* bit[15:0] average trb length */
+	ep_ctx->dequeue = CPU_TO_LE64 ( (uint64_t)( &endpoint->reqs.ring[0] ) | XHCI_EP_DCS );
+	ep_ctx->trb_len = CPU_TO_LE16 ( XHCI_EP0_TRB_LEN );	/* bit[15:0] average trb length */
 }
 
 /**
  * Address device
  *
  * @v xhci		xHCI device
+ * @v endpoint	Endpoint
  * @v slot		Device slot
  * @ret rc		Return status code
  */
-static inline int xhci_address_device ( struct xhci_device *xhci, struct xhci_endpoint *pipe,
-					struct xhci_slot *slot ) {
+static inline int xhci_address_device ( struct xhci_host *xhci, 
+										struct xhci_endpoint *ep,
+										struct xhci_slot *slot ) {
 	struct xhci_slot_context *slot_ctx;
 	int rc;
 
@@ -1564,9 +1615,9 @@ static inline int xhci_address_device ( struct xhci_device *xhci, struct xhci_en
  * @v endpoint		Endpoint
  * @ret rc		Return status code
  */
-int xhci_reset_endpoint ( struct xhci_device *xhci,
-					struct xhci_slot *slot,
-					struct xhci_endpoint *endpoint ) {
+int xhci_reset_endpoint ( struct xhci_host *xhci,
+						  struct xhci_slot *slot,
+						  struct xhci_endpoint *endpoint ) {
 	union xhci_trb trb;
 	struct xhci_trb_reset_endpoint *reset = &trb.reset;
 	int rc;
@@ -1593,12 +1644,12 @@ int xhci_reset_endpoint ( struct xhci_device *xhci,
  *
  * @v xhci		xHCI device
  * @v slot		Device slot
- * @v endpoint		Endpoint
+ * @v endpoint	Endpoint
  * @ret rc		Return status code
  */
-static inline int xhci_stop_endpoint ( struct xhci_device *xhci,
-				       struct xhci_slot *slot,
-				       struct xhci_endpoint *endpoint ) {
+static inline int xhci_stop_endpoint ( struct xhci_host *xhci,
+				       				   struct xhci_slot *slot,
+				       			       struct xhci_endpoint *endpoint ) {
 	union xhci_trb trb;
 	struct xhci_trb_stop_endpoint *stop = &trb.stop;
 	int rc;
@@ -1627,9 +1678,9 @@ static inline int xhci_stop_endpoint ( struct xhci_device *xhci,
  *
  * @v xhci		xHCI device
  * @v port		Port number
- * @ret type		Slot type, or negative error
+ * @ret type	Slot type, or negative error
  */
-static int xhci_port_slot_type ( struct xhci_device *xhci, unsigned int port ) {
+static int xhci_port_slot_type ( struct xhci_host *xhci, unsigned int port ) {
 	unsigned int supported = xhci_supported_protocol ( xhci, port );
 	unsigned int type;
 	uint32_t slot;
@@ -1648,12 +1699,16 @@ static int xhci_port_slot_type ( struct xhci_device *xhci, unsigned int port ) {
 /**
  * Open device
  *
- * @v usb		USB device
+ * @v xhci		XHCI device
+ * @v ep		Endpoint
+ * @ret slot_id Return device slot id  
  * @ret rc		Return status code
  */
-int xhci_device_open ( struct xhci_device *xhci, struct xhci_endpoint *pipe, int *slot_id ) {
-	struct usbh_hubport *hport = pipe->hport;
+int xhci_device_open ( struct xhci_host *xhci, struct xhci_endpoint *ep, int *slot_id ) {
+	struct usbh_hubport *hport = ep->hport;
+	struct usbh_hubport *tt = usbh_transaction_translator(hport);	
 	struct xhci_slot *slot;
+	struct xhci_slot *tt_slot;
 	int type;
 	int rc;
 	int id;
@@ -1669,7 +1724,7 @@ int xhci_device_open ( struct xhci_device *xhci, struct xhci_endpoint *pipe, int
 	}
 
 	/* Allocate a device slot number */
-	id = xhci_enable_slot ( xhci, pipe, type );
+	id = xhci_enable_slot ( xhci, ep, type );
 	if ( id < 0 ) {
 		rc = id;
 		goto err_enable_slot;
@@ -1687,6 +1742,11 @@ int xhci_device_open ( struct xhci_device *xhci, struct xhci_endpoint *pipe, int
 	slot->id = id;
 	xhci->slot[id] = slot;
 	slot->xhci = xhci;
+	if ( tt ) {
+		tt_slot = xhci->slot[tt->dev_addr];
+		slot->tt_id = tt_slot->id;
+		slot->tt_port = tt->port;
+	}
 
 	/* Allocate a device context */
 	len = xhci_device_context_offset ( xhci, XHCI_CTX_END );
@@ -1699,7 +1759,7 @@ int xhci_device_open ( struct xhci_device *xhci, struct xhci_endpoint *pipe, int
 
 	/* Set device context base address */
 	USB_ASSERT ( xhci->dcbaa.context[id] == 0 );
-	xhci->dcbaa.context[id] = cpu_to_le64 ( ( slot->context ) );
+	xhci->dcbaa.context[id] = CPU_TO_LE64 ( ( slot->context ) );
 
 	USB_LOG_DBG("XHCI %s slot %d device context [%08lx,%08lx)\n",
 		xhci->name, slot->id,  ( slot->context ),
@@ -1714,7 +1774,7 @@ err_alloc_context:
 	xhci->slot[id] = NULL;
 	usb_free ( slot );
 err_alloc:
-	xhci_disable_slot ( xhci, pipe, id );	
+	xhci_disable_slot ( xhci, ep, id );	
 err_enable_slot:
 err_type:
 	return rc;
@@ -1725,20 +1785,23 @@ err_type:
 /**
  * Assign device address
  *
- * @v usb		USB device
+ * @v xhci		XHCI device
+ * @v slot		Slot
+ * @v ep		Endpoint
  * @ret rc		Return status code
  */
-int xhci_device_address ( struct xhci_device *xhci, struct xhci_slot *slot, struct xhci_endpoint *pipe ) {
-	USB_ASSERT((slot->xhci) && (pipe->hport));
-	struct usbh_hubport *hport = pipe->hport;
+int xhci_device_address ( struct xhci_host *xhci, struct xhci_slot *slot, struct xhci_endpoint *ep ) {
+	USB_ASSERT((slot->xhci) && (ep->hport));
+	struct usbh_hubport *hport = ep->hport;
 	int psiv;
 	int rc;
 
 	/* Calculate route string */
-	slot->route = 0U;
+	slot->route = usbh_route_string (hport);
 
 	/* Calculate root hub port number */
-	slot->port = hport->port;
+	struct usbh_hubport *root_port = usbh_root_hub_port (hport);
+	slot->port = root_port->port;
 
 	/* Calculate protocol speed ID */
 	psiv = xhci_port_psiv ( xhci, slot->port, hport->speed );
@@ -1749,7 +1812,7 @@ int xhci_device_address ( struct xhci_device *xhci, struct xhci_slot *slot, stru
 	slot->psiv = psiv;
 
 	/* Address device */
-	if ( ( rc = xhci_address_device ( xhci, pipe, slot ) ) != 0 )
+	if ( ( rc = xhci_address_device ( xhci, ep, slot ) ) != 0 )
 		return rc;
 
 	return 0;
@@ -1759,10 +1822,10 @@ int xhci_device_address ( struct xhci_device *xhci, struct xhci_slot *slot, stru
 /**
  * Close device
  *
- * @v usb		USB device
+ * @v slot		Slot
  */
 void xhci_device_close ( struct xhci_slot *slot ) {
-	struct xhci_device *xhci = slot->xhci;
+	struct xhci_host *xhci = slot->xhci;
 	size_t len = xhci_device_context_offset ( xhci, XHCI_CTX_END );
 	unsigned int id = slot->id;
 	int rc;
@@ -1800,7 +1863,7 @@ void xhci_device_close ( struct xhci_slot *slot ) {
  * @v endpoint		Endpoint
  * @v input		Input context
  */
-static void xhci_configure_endpoint_input ( struct xhci_device *xhci,
+static void xhci_configure_endpoint_input ( struct xhci_host *xhci,
 					    struct xhci_slot *slot,
 					    struct xhci_endpoint *endpoint,
 					    void *input ) {
@@ -1812,12 +1875,12 @@ static void xhci_configure_endpoint_input ( struct xhci_device *xhci,
 
 	/* Populate control context */
 	control_ctx = input;
-	control_ctx->add = cpu_to_le32 (( 1 << XHCI_CTX_SLOT ) | ( 1 << endpoint->ctx ) );
-	control_ctx->drop = cpu_to_le32 (( 1 << XHCI_CTX_SLOT ) | ( 1 << endpoint->ctx ) );
+	control_ctx->add = CPU_TO_LE32 (( 1 << XHCI_CTX_SLOT ) | ( 1 << endpoint->ctx ) );
+	control_ctx->drop = CPU_TO_LE32 (( 1 << XHCI_CTX_SLOT ) | ( 1 << endpoint->ctx ) );
 
 	/* Populate slot context */
 	slot_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_SLOT ));
-	slot_ctx->info = cpu_to_le32 ( XHCI_SLOT_INFO ( ( XHCI_CTX_END - 1 ),
+	slot_ctx->info = CPU_TO_LE32 ( XHCI_SLOT_INFO ( ( XHCI_CTX_END - 1 ),
 							( slot->ports ? 1 : 0 ),
 							slot->psiv, 0 ) );
 	slot_ctx->ports = slot->ports;
@@ -1838,15 +1901,15 @@ static void xhci_configure_endpoint_input ( struct xhci_device *xhci,
     */
 	ep_ctx->type = endpoint->ctx_type;
 	ep_ctx->burst = endpoint->burst;
-	ep_ctx->mtu = cpu_to_le16 ( endpoint->mtu ); /* bit[31:16] max packet size */
-	ep_ctx->dequeue = cpu_to_le64 ( (uint64_t)( &(endpoint->reqs.ring[0]) ) | XHCI_EP_DCS );
+	ep_ctx->mtu = CPU_TO_LE16 ( endpoint->mtu ); /* bit[31:16] max packet size */
+	ep_ctx->dequeue = CPU_TO_LE64 ( (uint64_t)( &(endpoint->reqs.ring[0]) ) | XHCI_EP_DCS );
 	
 	/* TODO: endpoint attached on hub may need different setting here */
 	if (endpoint->ep_type == USB_ENDPOINT_TYPE_BULK) {
-		ep_ctx->trb_len = cpu_to_le16 ( 256U ); /* bit[15:0] average trb length */
+		ep_ctx->trb_len = CPU_TO_LE16 ( 256U ); /* bit[15:0] average trb length */
 	} else if (endpoint->ep_type == USB_ENDPOINT_TYPE_INTERRUPT) {
-		ep_ctx->trb_len = cpu_to_le16 (16U);
-		ep_ctx->esit_low = cpu_to_le16 ( endpoint->mtu ); /* bit[31:16] max ESIT payload */
+		ep_ctx->trb_len = CPU_TO_LE16 (16U);
+		ep_ctx->esit_low = CPU_TO_LE16 ( endpoint->mtu ); /* bit[31:16] max ESIT payload */
 	}
 
 	xhci_dump_input_ctx(xhci, endpoint, input);
@@ -1860,7 +1923,7 @@ static void xhci_configure_endpoint_input ( struct xhci_device *xhci,
  * @v endpoint		Endpoint
  * @ret rc		Return status code
  */
-static inline int xhci_configure_endpoint ( struct xhci_device *xhci,
+static inline int xhci_configure_endpoint ( struct xhci_host *xhci,
 					    struct xhci_slot *slot,
 					    struct xhci_endpoint *endpoint ){
 	int rc;
@@ -1898,7 +1961,7 @@ static inline int xhci_configure_endpoint ( struct xhci_device *xhci,
  * @v input		Input context
  */
 static void
-xhci_deconfigure_endpoint_input ( struct xhci_device *xhci __unused,
+xhci_deconfigure_endpoint_input ( struct xhci_host *xhci __unused,
 				  struct xhci_slot *slot __unused,
 				  struct xhci_endpoint *endpoint,
 				  void *input ) {
@@ -1907,12 +1970,12 @@ xhci_deconfigure_endpoint_input ( struct xhci_device *xhci __unused,
 
 	/* Populate control context */
 	control_ctx = input;
-	control_ctx->add = cpu_to_le32 ( 1 << XHCI_CTX_SLOT );
-	control_ctx->drop = cpu_to_le32 ( 1 << endpoint->ctx );
+	control_ctx->add = CPU_TO_LE32 ( 1 << XHCI_CTX_SLOT );
+	control_ctx->drop = CPU_TO_LE32 ( 1 << endpoint->ctx );
 
 	/* Populate slot context */
 	slot_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_SLOT ));
-	slot_ctx->info = cpu_to_le32 ( XHCI_SLOT_INFO ( ( XHCI_CTX_END - 1 ),
+	slot_ctx->info = CPU_TO_LE32 ( XHCI_SLOT_INFO ( ( XHCI_CTX_END - 1 ),
 							0, 0, 0 ) );
 }
 
@@ -1924,9 +1987,9 @@ xhci_deconfigure_endpoint_input ( struct xhci_device *xhci __unused,
  * @v endpoint		Endpoint
  * @ret rc		Return status code
  */
-static inline int xhci_deconfigure_endpoint ( struct xhci_device *xhci,
-					      struct xhci_slot *slot,
-					      struct xhci_endpoint *endpoint ) {
+static inline int xhci_deconfigure_endpoint ( struct xhci_host *xhci,
+					      					  struct xhci_slot *slot,
+					      					  struct xhci_endpoint *endpoint ) {
 	int rc;
 
 	/* Deconfigure endpoint */
@@ -1945,10 +2008,12 @@ static inline int xhci_deconfigure_endpoint ( struct xhci_device *xhci,
 /**
  * Open control endpoint
  *
- * @v ep		USB endpoint
+ * @v xhci		XHCI device
+ * @v slot		Slot
+ * @v ep		Endpoint
  * @ret rc		Return status code
  */
-int xhci_ctrl_endpoint_open ( struct xhci_device *xhci, struct xhci_slot *slot, struct xhci_endpoint *ep ) {
+int xhci_ctrl_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, struct xhci_endpoint *ep ) {
 	unsigned int ctx;
 
 	/* Calculate context index */
@@ -1985,10 +2050,12 @@ int xhci_ctrl_endpoint_open ( struct xhci_device *xhci, struct xhci_slot *slot, 
 /**
  * Open work endpoint
  *
+ * @v xhci		XHCI device
+ * @v slot		Slot
  * @v ep		USB endpoint
  * @ret rc		Return status code
  */
-int xhci_work_endpoint_open ( struct xhci_device *xhci, struct xhci_slot *slot, struct xhci_endpoint *ep ) {
+int xhci_work_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, struct xhci_endpoint *ep ) {
 	unsigned int ctx;
 	unsigned int interval;
 	unsigned int ctx_type;
@@ -2061,7 +2128,7 @@ int xhci_work_endpoint_open ( struct xhci_device *xhci, struct xhci_slot *slot, 
  */
 void xhci_endpoint_close ( struct xhci_endpoint *ep ) {
 	struct xhci_slot *slot = ep->slot;
-	struct xhci_device *xhci = slot->xhci;
+	struct xhci_host *xhci = slot->xhci;
 	unsigned int ctx = ep->ctx;
 
 	/* Deconfigure endpoint, if applicable */
@@ -2078,12 +2145,16 @@ void xhci_endpoint_close ( struct xhci_endpoint *ep ) {
  * Enqueue message transfer
  *
  * @v ep		USB endpoint
- * @v iobuf		I/O buffer
+ * @v packet	Setup packet buffer
+ * @v data_buff	Data buffer
+ * @v datalen	Data length
  * @ret rc		Return status code
  */
-void xhci_endpoint_message ( struct xhci_endpoint *ep, struct usb_setup_packet *packet,
-				   			void *data_buff, int datalen ) {
-	struct xhci_device *xhci = ep->xhci;
+void xhci_endpoint_message ( struct xhci_endpoint *ep, 
+							 struct usb_setup_packet *packet,
+				   			 void *data_buff, 
+							 int datalen ) {
+	struct xhci_host *xhci = ep->xhci;
 	struct xhci_slot *slot = ep->slot;
 	union xhci_trb trb;
 	struct xhci_trb_setup *setup;
@@ -2096,10 +2167,10 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep, struct usb_setup_packet *
 	memset ( setup, 0, sizeof ( *setup ) );
 
 	memcpy ( &setup->packet, packet, sizeof ( setup->packet ) );
-	setup->len = cpu_to_le32 ( sizeof ( *packet ) ); /* bit[16:0] trb transfer length, always 8 */
+	setup->len = CPU_TO_LE32 ( sizeof ( *packet ) ); /* bit[16:0] trb transfer length, always 8 */
 	setup->flags = XHCI_TRB_IDT; /* bit[6] Immediate Data (IDT), parameters take effect */
 	setup->type = XHCI_TRB_SETUP; /* bit[15:10] trb type */
-	input = ( packet->bmRequestType & cpu_to_le16 ( USB_REQUEST_DIR_IN ) );
+	input = ( packet->bmRequestType & CPU_TO_LE16 ( USB_REQUEST_DIR_IN ) );
 	if (datalen > 0) {
 		/* bit[17:16] Transfer type, 2 = OUT Data, 3 = IN Data */
 		setup->direction = ( input ? XHCI_SETUP_IN : XHCI_SETUP_OUT );
@@ -2112,8 +2183,8 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep, struct usb_setup_packet *
 		data = &(trb.data);
 		memset ( data, 0, sizeof ( *data ) );
 
-		data->data = cpu_to_le64 ( data_buff );
-		data->len = cpu_to_le32 ( datalen );
+		data->data = CPU_TO_LE64 ( data_buff );
+		data->len = CPU_TO_LE32 ( datalen );
 		data->type = XHCI_TRB_DATA; /* bit[15:10] trb type */
 		data->direction = ( input ? XHCI_DATA_IN : XHCI_DATA_OUT ); /* bit[16] Direction, 0 = OUT, 1 = IN */
 
@@ -2144,12 +2215,14 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep, struct usb_setup_packet *
  * Enqueue stream transfer
  *
  * @v ep		USB endpoint
- * @v iobuf		I/O buffer
- * @v zlp		Append a zero-length packet
+ * @v data_buff	Data buffer
+ * @v datalen	Data length
  * @ret rc		Return status code
  */
-void xhci_endpoint_stream ( struct xhci_endpoint *ep, void *data_buff, int datalen ) {
-	struct xhci_device *xhci = ep->xhci;
+void xhci_endpoint_stream ( struct xhci_endpoint *ep, 
+							void *data_buff, 
+							int datalen ) {
+	struct xhci_host *xhci = ep->xhci;
 	struct xhci_slot *slot = ep->slot;
 	union xhci_trb trbs;
 	union xhci_trb *trb = &trbs;
@@ -2168,8 +2241,8 @@ void xhci_endpoint_stream ( struct xhci_endpoint *ep, void *data_buff, int datal
 	/* Construct normal TRBs */
 	normal = &trb->normal;
 	memset ( normal, 0, sizeof ( *normal ) );
-	normal->data = cpu_to_le64 ( (uintptr_t)data_buff );
-	normal->len = cpu_to_le32 ( trb_len );
+	normal->data = CPU_TO_LE64 ( (uintptr_t)data_buff );
+	normal->len = CPU_TO_LE32 ( trb_len );
 	normal->type = XHCI_TRB_NORMAL;
 	normal->flags = XHCI_TRB_IOC;
 
@@ -2194,27 +2267,27 @@ err_enqueue:
  * @v endpoint		Endpoint
  * @v input		Input context
  */
-static void xhci_evaluate_context_input ( struct xhci_device *xhci,
-					  struct xhci_slot *slot __unused,
-					  struct xhci_endpoint *endpoint,
-					  void *input ) {
+static void xhci_evaluate_context_input ( struct xhci_host *xhci,
+					  					  struct xhci_slot *slot __unused,
+					  					  struct xhci_endpoint *endpoint,
+					  					  void *input ) {
 	struct xhci_control_context *control_ctx;
 	struct xhci_slot_context *slot_ctx;
 	struct xhci_endpoint_context *ep_ctx;
 
 	/* Populate control context */
 	control_ctx = input;
-	control_ctx->add = cpu_to_le32 ( ( 1 << XHCI_CTX_SLOT ) |
+	control_ctx->add = CPU_TO_LE32 ( ( 1 << XHCI_CTX_SLOT ) |
 					 ( 1 << endpoint->ctx ) );
 
 	/* Populate slot context */
 	slot_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_SLOT ));
-	slot_ctx->info = cpu_to_le32 ( XHCI_SLOT_INFO ( ( XHCI_CTX_END - 1 ),
+	slot_ctx->info = CPU_TO_LE32 ( XHCI_SLOT_INFO ( ( XHCI_CTX_END - 1 ),
 							0, 0, 0 ) );
 
 	/* Populate endpoint context */
 	ep_ctx = ( input + xhci_input_context_offset ( xhci, endpoint->ctx ) );
-	ep_ctx->mtu = cpu_to_le16 ( endpoint->mtu );
+	ep_ctx->mtu = CPU_TO_LE16 ( endpoint->mtu );
 }
 
 /**
@@ -2225,9 +2298,9 @@ static void xhci_evaluate_context_input ( struct xhci_device *xhci,
  * @v endpoint		Endpoint
  * @ret rc		Return status code
  */
-static inline int xhci_evaluate_context ( struct xhci_device *xhci,
-					  struct xhci_slot *slot,
-					  struct xhci_endpoint *endpoint ) {
+static inline int xhci_evaluate_context ( struct xhci_host *xhci,
+					  					  struct xhci_slot *slot,
+					  					  struct xhci_endpoint *endpoint ) {
 	int rc;
 
 	/* Configure endpoint */
@@ -2250,7 +2323,7 @@ static inline int xhci_evaluate_context ( struct xhci_device *xhci,
 int xhci_endpoint_mtu ( struct xhci_endpoint *ep ) {
 	struct xhci_endpoint *endpoint = ( ep );
 	struct xhci_slot *slot = endpoint->slot;
-	struct xhci_device *xhci = slot->xhci;
+	struct xhci_host *xhci = slot->xhci;
 	int rc;
 
 	/* Evalulate context */
@@ -2268,11 +2341,8 @@ int xhci_endpoint_mtu ( struct xhci_endpoint *ep ) {
  * @v xhci		xHCI device
  * @v trb		Port status event
  */
-static void xhci_port_status ( struct xhci_device *xhci,
+static void xhci_port_status ( struct xhci_host *xhci,
 			       			   struct xhci_trb_port_status *trb ) {
-	struct usbh_bus *bus = xhci->bus;
-    USB_ASSERT(bus);
-
     uint32_t portsc;
 
 	/* Sanity check */
@@ -2284,7 +2354,7 @@ static void xhci_port_status ( struct xhci_device *xhci,
 
 	if (portsc & XHCI_PORTSC_CSC) {
 		/* Report port status change */
-		usbh_roothub_thread_wakeup ( bus->id, trb->port );
+		usbh_roothub_thread_wakeup ( trb->port );
 	}                                
 }
 
@@ -2294,8 +2364,8 @@ static void xhci_port_status ( struct xhci_device *xhci,
  * @v xhci		xHCI device
  * @v trb		Transfer event TRB
  */
-static void xhci_transfer ( struct xhci_device *xhci,
-			    struct xhci_trb_transfer *trb ) {
+static void xhci_transfer ( struct xhci_host *xhci,
+			    			struct xhci_trb_transfer *trb ) {
 	struct xhci_slot *slot;
 	struct xhci_endpoint *endpoint;	
 	union xhci_trb *trans_trb = (void *)(uintptr_t)(trb->transfer);
@@ -2371,7 +2441,7 @@ static void xhci_transfer ( struct xhci_device *xhci,
  * @v xhci		xHCI device
  * @v trb		Command completion event
  */
-static void xhci_complete ( struct xhci_device *xhci,
+static void xhci_complete ( struct xhci_host *xhci,
 			    			struct xhci_trb_complete *trb ) {
 	int rc;
 	union xhci_trb *cmd_trb = (void *)(uintptr_t)(trb->command);
@@ -2405,8 +2475,8 @@ static void xhci_complete ( struct xhci_device *xhci,
  * @v xhci		xHCI device
  * @v trb		Host controller event
  */
-static void xhci_host_controller ( struct xhci_device *xhci,
-				   struct xhci_trb_host_controller *trb ) {
+static void xhci_host_controller ( struct xhci_host *xhci,
+				   				   struct xhci_trb_host_controller *trb ) {
 	int rc;
 
 	/* Construct error */
@@ -2421,7 +2491,7 @@ static void xhci_host_controller ( struct xhci_device *xhci,
  * @v xhci		xHCI device
  * @r workpip   current work endpoint
  */
-struct xhci_endpoint *xhci_event_process(struct xhci_device *xhci) {
+struct xhci_endpoint *xhci_event_process(struct xhci_host *xhci) {
     struct xhci_endpoint *work_pipe = NULL;
     struct xhci_ring *evts = xhci->evts;
     unsigned int evt_type;
@@ -2483,7 +2553,7 @@ struct xhci_endpoint *xhci_event_process(struct xhci_device *xhci) {
 
         /* Update dequeue pointer if applicable */
         uint64_t erdp = (uint64_t)(unsigned long)(evts->ring + nidx);
-		xhci_writeq ( xhci, (uintptr)( erdp ) | XHCI_RUN_ERDP_EHB,
+		xhci_writeq ( xhci, (uintptr_t)( erdp ) | XHCI_RUN_ERDP_EHB,
 				xhci->run + XHCI_RUN_ERDP ( 0 ) );
    }
 

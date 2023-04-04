@@ -11,7 +11,7 @@
  * See the Phytium Public License for more details.
  *
  *
- * FilePath: xhci.h
+ * FilePath: xhci_reg.h
  * Date: 2022-07-19 09:26:25
  * LastEditTime: 2022-07-19 09:26:25
  * Description:  This file is for xhci register definition.
@@ -26,12 +26,12 @@
 #ifndef XHCI_REG_H
 #define XHCI_REG_H
 
-#include "fio.h"
-
 #if defined(__aarch64__)
 #define BITS_PER_LONG 64U
+#define XHCI_AARCH64
 #else
 #define BITS_PER_LONG 32U
+#define XHCI_AARCH32
 #endif
 
 #define XHCI_GENMASK(h, l) \
@@ -384,13 +384,26 @@ enum {
 /** Maximum transfer size */
 #define XHCI_MTU 65536
 
+/** Read/Write Data Barrier for ARM */
+#define BARRIER() __asm__ __volatile__("": : :"memory")
+
+#ifdef XHCI_AARCH64
+#define DSB() __asm__ __volatile__("dsb sy": : : "memory")
+#else
+#define DSB() __asm__ __volatile__("dsb": : : "memory")
+#endif
+
 /**
  * Read byte from memory-mapped device
  *
  * @v io_addr		I/O address
  * @ret data		Value read
  */
-#define readb( io_addr ) FtIn8((uintptr)(io_addr))
+static inline uint8_t readb(void *io_addr ) {
+    uint8_t val = *(volatile const uint8_t *)io_addr;
+    BARRIER();
+    return val;
+}
 
 /**
  * Read 16-bit word from memory-mapped device
@@ -398,7 +411,11 @@ enum {
  * @v io_addr		I/O address
  * @ret data		Value read
  */
-#define readw( io_addr ) FtIn16((uintptr_t)(io_addr))
+static inline uint16_t readw(void * io_addr ) {
+    uint16_t val = *(volatile const uint16_t *)io_addr;
+    BARRIER();
+    return val;
+}
 
 /**
  * Read 32-bit dword from memory-mapped device
@@ -406,7 +423,11 @@ enum {
  * @v io_addr		I/O address
  * @ret data		Value read
  */
-#define readl( io_addr ) FtIn32((uintptr_t)(io_addr))
+static inline uint32_t readl(void * io_addr ) {
+    uint32_t val = *(volatile const uint32_t *)io_addr;
+    BARRIER();
+    return val;
+}
 
 /**
  * Read 64-bit qword from memory-mapped device
@@ -414,7 +435,11 @@ enum {
  * @v io_addr		I/O address
  * @ret data		Value read
  */
-#define readq( io_addr ) FtIn64((uintptr_t)(io_addr))
+static inline uint64_t readq(void * io_addr ) {
+    uint64_t val = *(volatile const uint64_t *)io_addr;
+    BARRIER();
+    return val;
+}
 
 /**
  * Write byte to memory-mapped device
@@ -422,23 +447,32 @@ enum {
  * @v data		Value to write
  * @v io_addr		I/O address
  */
-#define writeb( data, io_addr ) FtOut8((uintptr_t)(io_addr), (data))
+static inline void writeb(uint8_t data, void * io_addr ) {
+    BARRIER();
+    *(volatile uint8_t *)io_addr = data;
+}
 
 /**
  * Write 16-bit word to memory-mapped device
  *
  * @v data		Value to write
- * @v io_addr		I/O address
+ * @v io_addr	I/O address
  */
-#define writew( data, io_addr ) FtOut16((uintptr_t)(io_addr), (data))
+static inline void writew(uint16_t data, void * io_addr ) {
+    BARRIER();
+    *(volatile uint16_t *)io_addr = data;
+}
 
 /**
  * Write 32-bit dword to memory-mapped device
  *
- * @v data		Value to write
+ * @v data		Value to writed
  * @v io_addr		I/O address
  */
-#define writel( data, io_addr ) FtOut32((uintptr_t)(io_addr), (uint32_t)(data))
+static inline void writel(uint32_t data, void * io_addr ) {
+    BARRIER();
+    *(volatile uint32_t *)io_addr = data;
+}
 
 /**
  * Write 64-bit qword to memory-mapped device
@@ -446,15 +480,20 @@ enum {
  * @v data		Value to write
  * @v io_addr		I/O address
  */
-#define writeq( data, io_addr ) FtOut64((uintptr_t)(io_addr), (data))
+static inline void writeq(uint64_t data, void * io_addr ) {
+    BARRIER();
+    *(volatile uint64_t *)io_addr = data;
+}
 
-#define cpu_to_le64(x) ((u64)(x))
-#define le64_to_cpu(x) ((u64)(x))
-#define cpu_to_le32(x) ((u32)(x))
-#define le32_to_cpu(x) ((u32)(x))
-#define cpu_to_le16(x) ((u16)(x))
-#define le16_to_cpu(x) ((u16)(x))
+/**
+ *  Byte-order converter for ARM-Little-End 
+ */
+#define CPU_TO_LE64(x) ((uint64_t)(x))
+#define LE64_to_CPU(x) ((uint64_t)(x))
+#define CPU_TO_LE32(x) ((uint32_t)(x))
+#define LE32_TO_CPU(x) ((uint32_t)(x))
+#define CPU_TO_LE16(x) ((uint16_t)(x))
+#define LE16_TO_CPU(x) ((uint16_t)(x))
 
-#define DSB() __asm__ __volatile__("dsb sy": : : "memory")
 
 #endif /* XHCI_REG_H */

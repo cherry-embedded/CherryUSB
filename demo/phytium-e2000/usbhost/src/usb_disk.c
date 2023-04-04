@@ -1,24 +1,25 @@
 /*
- * Copyright : (C) 2022 Phytium Information Technology, Inc. 
+ * Copyright : (C) 2022 Phytium Information Technology, Inc.
  * All Rights Reserved.
- *  
- * This program is OPEN SOURCE software: you can redistribute it and/or modify it  
- * under the terms of the Phytium Public License as published by the Phytium Technology Co.,Ltd,  
- * either version 1.0 of the License, or (at your option) any later version. 
- *  
- * This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;  
+ *
+ * This program is OPEN SOURCE software: you can redistribute it and/or modify it
+ * under the terms of the Phytium Public License as published by the Phytium Technology Co.,Ltd,
+ * either version 1.0 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the Phytium Public License for more details. 
- *  
- * 
+ * See the Phytium Public License for more details.
+ *
+ *
  * FilePath: usb_disk.c
  * Date: 2022-09-23 08:24:09
  * LastEditTime: 2022-09-23 08:24:10
- * Description:  This files is for 
- * 
- * Modify History: 
- *  Ver   Who        Date         Changes
+ * Description:  This file is for the usb disk functions.
+ *
+ * Modify History:
+ *  Ver   Who         Date         Changes
  * ----- ------     --------    --------------------------------------
+ * 1.0   zhugengyu  2022/10/19   init commit
  */
 /***************************** Include Files *********************************/
 #include <stdio.h>
@@ -27,10 +28,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "ft_assert.h"
-#include "interrupt.h"
-#include "cpu_info.h"
-#include "ft_debug.h"
+#include "fassert.h"
+#include "finterrupt.h"
+#include "fcpu_info.h"
+#include "fdebug.h"
 
 #include "usbh_core.h"
 #include "usbh_msc.h"
@@ -51,75 +52,79 @@
 
 
 /*****************************************************************************/
-
-static void UsbMscTask(void * args)
+static void UsbMscTask(void *args)
 {
     int ret;
     struct usbh_msc *msc_class;
-    static uint8_t partition_table[512] = {0};
+    static uint8_t rd_table[512] = {0};
+    static uint8_t wr_table[512] = {0};
+    u32 loop = 0;
+    const char *devname = (const char *)args;
+
+    msc_class = (struct usbh_msc *)usbh_find_class_instance(devname);
+    if (msc_class == NULL)
+    {
+        USB_LOG_RAW("Do not find %s. \r\n", devname);
+        goto err_exit;
+    }
 
     while (TRUE)
     {
-        msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
-        if (msc_class == NULL) 
+        /* write partition table */
+        memcpy(wr_table, rd_table, sizeof(rd_table));
+        for (uint32_t i = 0; i < 512; i++)
         {
-            USB_LOG_RAW("do not find /dev/sda\r\n");
+            wr_table[i] ^= 0xfffff;
+        }
+
+        ret = usbh_msc_scsi_write10(msc_class, 0, wr_table, 1);
+        if (ret < 0)
+        {
+            USB_LOG_ERR("Error in scsi_write10 error, ret:%d", ret);
             goto err_exit;
         }
 
         /* get the partition table */
-        ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
-        if (ret < 0) 
+        ret = usbh_msc_scsi_read10(msc_class, 0, rd_table, 1);
+        if (ret < 0)
         {
-            USB_LOG_RAW("scsi_read10 error,ret:%d\r\n", ret);
-            goto err_exit;
-        }
-        
-        for (uint32_t i = 0; i < 512; i++) 
-        {
-            if (i % 16 == 0) 
-            {
-                USB_LOG_RAW("\r\n");
-            }
-            USB_LOG_RAW("%02x ", partition_table[i]);
-        }
-        USB_LOG_RAW("\r\n");
-
-        /* write partition table */
-        for (uint32_t i = 0; i < 512; i++) 
-        {
-            partition_table[i] ^= 0xfffff;
-        }
-
-        ret = usbh_msc_scsi_write10(msc_class, 0, partition_table, 1);
-        if (ret < 0) 
-        {
-            USB_LOG_RAW("scsi_write10 error,ret:%d\r\n", ret);
+            USB_LOG_RAW("Error in scsi_read10, ret:%d", ret);
             goto err_exit;
         }
 
-        vTaskDelay(10);
+        /* check if read table == write table */
+        if (0 != memcmp(wr_table, rd_table, sizeof(rd_table)))
+        {
+            USB_LOG_ERR("Failed to check read and write.\r\n");
+            goto err_exit;
+        }
+        else
+        {
+            printf("[%d] disk read and write successfully.\r\n", loop++);
+        }
+
+        vTaskDelay(100);
     }
 
 err_exit:
     vTaskDelete(NULL);
 }
 
-BaseType_t FFreeRTOSWriteReadUsbDisk(void)
+BaseType_t FFreeRTOSRunUsbDisk(const char *devname)
 {
     BaseType_t ret = pdPASS;
 
     taskENTER_CRITICAL(); /* no schedule when create task */
 
-    ret = xTaskCreate((TaskFunction_t )UsbMscTask,
-                            (const char* )"UsbMscTask",
-                            (uint16_t )2048,
-                            NULL,
-                            (UBaseType_t )configMAX_PRIORITIES - 1,
-                            NULL);
+    ret = xTaskCreate((TaskFunction_t)UsbMscTask,
+                      (const char *)"UsbMscTask",
+                      (uint16_t)2048,
+                      (void *)devname,
+                      (UBaseType_t)configMAX_PRIORITIES - 1,
+                      NULL);
     FASSERT_MSG(pdPASS == ret, "create task failed");
 
     taskEXIT_CRITICAL(); /* allow schedule since task created */
 
-    return ret;    
+    return ret;
 }
