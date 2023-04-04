@@ -95,6 +95,8 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf);
  */
 int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult);
 
+uint8_t usbh_get_port_speed(const uint8_t port);
+
 /**
  * @brief Allocate pipe for endpoint
  *

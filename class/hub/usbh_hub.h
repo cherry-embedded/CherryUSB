@@ -20,6 +20,8 @@ extern "C" {
 #endif
 void usbh_roothub_thread_wakeup(uint8_t port);
 int usbh_hub_initialize(void);
+struct usbh_hubport *usbh_get_roothub_port (unsigned int address);
+
 #ifdef __cplusplus
 }
 #endif

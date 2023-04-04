@@ -29,7 +29,7 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex);
 
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs);
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr);
-int usb_osal_mq_recv(usb_osal_mq_t mq, void *addr, uint32_t timeout);
+int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout);
 
 size_t usb_osal_enter_critical_section(void);
 void usb_osal_leave_critical_section(size_t flag);

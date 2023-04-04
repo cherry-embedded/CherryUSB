@@ -149,7 +149,14 @@ struct usbh_hubport {
     uint8_t *raw_config_desc;
     struct usb_setup_packet *setup;
     struct usbh_hub *parent;
+    uint32_t protocol; /* Port protocol */
 };
+
+struct usbh_hubport *usbh_transaction_translator ( struct usbh_hubport *hport );
+
+unsigned int usbh_route_string ( struct usbh_hubport *hport );
+
+struct usbh_hubport * usbh_root_hub_port ( struct usbh_hubport *hport );
 
 struct usbh_hub {
     usb_slist_t list;
@@ -164,6 +171,8 @@ struct usbh_hub {
     struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
     struct usbh_hubport *parent;
 };
+
+struct usbh_hubport *usbh_get_port ( struct usbh_hub *hub, unsigned int address );
 
 int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
 

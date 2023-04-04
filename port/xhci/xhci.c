@@ -519,7 +519,7 @@ static unsigned int xhci_port_protocol ( struct xhci_host *xhci,
  * @ret rc		Return status code
  */
 int xhci_probe ( struct xhci_host *xhci, unsigned long baseaddr ) {
-    USB_ASSERT(xhci && (xhci->bus));
+    USB_ASSERT(xhci);
     int error = 0;
 	struct usbh_hubport *port;
 	unsigned int i;
@@ -541,7 +541,7 @@ int xhci_probe ( struct xhci_host *xhci, unsigned long baseaddr ) {
 
 	/* Set port protocols */
 	for ( i = 1 ; i <= xhci->ports ; i++ ) {
-		port = usbh_get_port ( &(xhci->bus->roothub), i );
+		port = usbh_get_roothub_port ( i );
 		port->protocol = xhci_port_protocol ( xhci, i );
 	}
 

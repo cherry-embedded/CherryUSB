@@ -73,17 +73,17 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
     return (usb_osal_mq_t)rt_mq_create("usbh_mq", 4, max_msgs, RT_IPC_FLAG_FIFO);
 }
 
-int usb_osal_mq_send(usb_osal_mq_t mq, uint32_t addr)
+int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 {
-    return rt_mq_send((rt_mq_t)mq, &addr, 4);
+    return rt_mq_send((rt_mq_t)mq, &addr, sizeof(uintptr_t));
 }
 
-int usb_osal_mq_recv(usb_osal_mq_t mq, uint32_t *addr, uint32_t timeout)
+int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 {
     int ret = 0;
     rt_err_t result = RT_EOK;
 
-    result = rt_mq_recv((rt_mq_t)mq, addr, 4, rt_tick_from_millisecond(timeout));
+    result = rt_mq_recv((rt_mq_t)mq, addr, sizeof(uintptr_t), rt_tick_from_millisecond(timeout));
     if (result == -RT_ETIMEOUT) {
         ret = -ETIMEDOUT;
     } else if (result == -RT_ERROR) {

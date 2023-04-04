@@ -75,8 +75,6 @@ int usb_hc_init()
     usb_hc_low_level_init(); /* set gic and memp */
 
     memset(xhci, 0, sizeof(*xhci));
-    xhci->bus = bus;
-    bus->priv = xhci;
     if (rc = xhci_probe(xhci, usb_hc_get_register_base()) != 0) {
         goto err_open; 
     }
@@ -425,8 +423,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     switch (ppipe->ep_type) {
         case USB_ENDPOINT_TYPE_CONTROL:
             USB_ASSERT(setup);
-            if (setup->bRequest == USB_REQUEST_SET_ADDRESS)
-            {
+            if (setup->bRequest == USB_REQUEST_SET_ADDRESS) {
                 /* Set address command sent during xhci_alloc_pipe. */
                 goto skip_req;
             }
@@ -469,7 +466,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
 void USBH_IRQHandler(void *param)
 {
-    USB_ASSERT(param);
 	struct xhci_host *xhci = &xhci_host;
     struct xhci_endpoint *work_pipe = NULL;
     USB_ASSERT(xhci);

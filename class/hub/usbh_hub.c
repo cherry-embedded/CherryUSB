@@ -1,4 +1,12 @@
 /*
+ * @Author: zhugengyu zhugengyu@phytium.com.cn
+ * @Date: 2023-04-03 09:38:32
+ * @LastEditors: zhugengyu zhugengyu@phytium.com.cn
+ * @LastEditTime: 2023-04-04 13:43:03
+ * @FilePath: \CherryUSB-dev\class\hub\usbh_hub.c
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
  * Copyright (c) 2022, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -37,6 +45,11 @@ extern int usbh_enumerate(struct usbh_hubport *hport);
 static void usbh_hub_thread_wakeup(struct usbh_hub *hub);
 
 static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed", "wireless-speed", "super-speed", "superplus-speed" };
+
+struct usbh_hubport *usbh_get_roothub_port (unsigned int address)
+{
+    return usbh_get_port(&roothub, address);
+}
 
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static int usbh_hub_devno_alloc(void)
@@ -558,7 +571,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     } else if (portstatus & HUB_PORT_STATUS_LOW_SPEED) {
                         speed = USB_SPEED_LOW;
                     } else {
-                        if (usbh_get_port_speed(hub->usb->id, port + 1)) {
+                        if (usbh_get_port_speed(port + 1)) {
                             /* assert that when using USB 3.0 ports, attached device must also be USB 3.0 speed */
                             speed = USB_SPEED_SUPER;
                         } else {
@@ -619,7 +632,7 @@ static void usbh_hub_thread(void *argument)
 
     usb_hc_init();
     while (1) {
-        ret = usb_osal_mq_recv(hub_mq, (uint32_t *)&hub, 0xffffffff);
+        ret = usb_osal_mq_recv(hub_mq, (uintptr_t *)&hub, 0xffffffff);
         if (ret < 0) {
             continue;
         }
@@ -642,7 +655,7 @@ static void usbh_roothub_register(void)
 
 static void usbh_hub_thread_wakeup(struct usbh_hub *hub)
 {
-    usb_osal_mq_send(hub_mq, (uint32_t)hub);
+    usb_osal_mq_send(hub_mq, (uintptr_t)hub);
 }
 
 void usbh_roothub_thread_wakeup(uint8_t port)

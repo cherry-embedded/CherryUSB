@@ -36,6 +36,82 @@ struct usbh_bus {
     struct usbh_devaddr_map devgen;
 } g_usbh_bus;
 
+/**
+ * Get USB transaction translator
+ *
+ * @v hport		Hub port of USB device
+ * @ret port    Transaction translator port, or NULL
+ */
+struct usbh_hubport *usbh_transaction_translator ( struct usbh_hubport *hport ) {
+	struct usbh_hubport *parent;
+
+    if (hport->parent->is_roothub) {
+        return NULL;
+    }
+
+	/* Navigate up to root hub.  If we find a low-speed or
+	 * full-speed device with a higher-speed parent hub, then that
+	 * device's port is the transaction translator.
+	 */
+    for (; (parent = hport->parent->parent); hport = parent) {
+        if ((hport->speed <= USB_SPEED_FULL) && 
+            (parent->speed > USB_SPEED_FULL)) {
+            return hport;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * Get USB route string
+ *
+ * @v hport		Hub Port of USB device
+ * @ret route	USB route string
+ */
+unsigned int usbh_route_string ( struct usbh_hubport *hport ) {
+    struct usbh_hubport *parent;
+	unsigned int route;
+
+    /* Navigate up to root hub, constructing route string as we go */
+    for (route = 0; (parent = hport->parent->parent); hport = parent) {
+        route <<= 4;
+		route |= ( ( hport->dev_addr > 0xf ) ?
+			   0xf : hport->dev_addr );
+    }
+
+    return route;
+}
+
+/**
+ * Get USB root hub port
+ *
+ * @v usb		USB device
+ * @ret port		Root hub port
+ */
+struct usbh_hubport * usbh_root_hub_port ( struct usbh_hubport *hport ) {
+    struct usbh_hubport *parent;
+
+    /* Navigate up to root hub */
+    while (parent = hport->parent->parent) {
+        hport = parent;
+    }
+    
+    return hport;
+}
+
+/**
+ * Get USB port
+ *
+ * @v hub		    USB hub
+ * @v address		Port address
+ * @ret port		USB port
+ */
+struct usbh_hubport *usbh_get_port ( struct usbh_hub *hub, unsigned int address ) {
+	return &hub->child[ address - 1 ];
+}
+
+
 static int usbh_allocate_devaddr(struct usbh_devaddr_map *devgen)
 {
     uint8_t startaddr = devgen->next;

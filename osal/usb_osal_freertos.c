@@ -1,4 +1,12 @@
 /*
+ * @Author: zhugengyu zhugengyu@phytium.com.cn
+ * @Date: 2023-04-03 09:38:33
+ * @LastEditors: zhugengyu zhugengyu@phytium.com.cn
+ * @LastEditTime: 2023-04-04 13:46:56
+ * @FilePath: \CherryUSB-dev\osal\usb_osal_freertos.c
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
  * Copyright (c) 2022, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -84,7 +92,7 @@ int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
     return (ret == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
-int usb_osal_mq_recv(usb_osal_mq_t mq, void *addr, uint32_t timeout)
+int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 {
     return (xQueueReceive((usb_osal_mq_t)mq, addr, timeout) == pdPASS) ? 0 : -ETIMEDOUT;
 }
