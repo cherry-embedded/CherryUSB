@@ -70,7 +70,7 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 {
-    return (usb_osal_mq_t)rt_mq_create("usbh_mq", 4, max_msgs, RT_IPC_FLAG_FIFO);
+    return (usb_osal_mq_t)rt_mq_create("usbh_mq", sizeof(uintptr_t), max_msgs, RT_IPC_FLAG_FIFO);
 }
 
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)

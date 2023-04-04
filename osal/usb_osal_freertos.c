@@ -68,7 +68,7 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 {
-    return (usb_osal_mq_t)xQueueCreate(max_msgs, sizeof(void *));
+    return (usb_osal_mq_t)xQueueCreate(max_msgs, sizeof(uintptr_t));
 }
 
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
