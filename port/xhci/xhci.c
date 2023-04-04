@@ -2277,8 +2277,10 @@ static void xhci_evaluate_context_input ( struct xhci_host *xhci,
 
 	/* Populate control context */
 	control_ctx = input;
-	control_ctx->add = CPU_TO_LE32 ( ( 1 << XHCI_CTX_SLOT ) |
-					 ( 1 << endpoint->ctx ) );
+	control_ctx->add = CPU_TO_LE32 ( ( 1 << XHCI_CTX_SLOT ) /*|
+					 ( 1 << endpoint->ctx )*/ );
+	control_ctx->drop = CPU_TO_LE32 ( ( 1 << XHCI_CTX_SLOT ) /* |
+					 ( 1 << endpoint->ctx )*/ );
 
 	/* Populate slot context */
 	slot_ctx = ( input + xhci_input_context_offset ( xhci, XHCI_CTX_SLOT ));

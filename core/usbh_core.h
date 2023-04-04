@@ -149,14 +149,10 @@ struct usbh_hubport {
     uint8_t *raw_config_desc;
     struct usb_setup_packet *setup;
     struct usbh_hub *parent;
-    uint32_t protocol; /* Port protocol */
+#ifdef CONFIG_USBHOST_XHCI
+    uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
+#endif
 };
-
-struct usbh_hubport *usbh_transaction_translator ( struct usbh_hubport *hport );
-
-unsigned int usbh_route_string ( struct usbh_hubport *hport );
-
-struct usbh_hubport * usbh_root_hub_port ( struct usbh_hubport *hport );
 
 struct usbh_hub {
     usb_slist_t list;
@@ -172,8 +168,6 @@ struct usbh_hub {
     struct usbh_hubport *parent;
 };
 
-struct usbh_hubport *usbh_get_port ( struct usbh_hub *hub, unsigned int address );
-
 int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
 
 /**
@@ -187,6 +181,30 @@ int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struc
  * @return On success will return 0, and others indicate fail.
  */
 int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint8_t *buffer);
+
+/**
+ * Get USB transaction translator
+ *
+ * @v hport		Hub port of USB device
+ * @ret port    Transaction translator port, or NULL
+ */
+struct usbh_hubport *usbh_transaction_translator ( struct usbh_hubport *hport );
+
+/**
+ * Get USB route string
+ *
+ * @v hport		Hub Port of USB device
+ * @ret route	USB route string
+ */
+unsigned int usbh_route_string ( struct usbh_hubport *hport );
+
+/**
+ * Get USB root hub port
+ *
+ * @v hport		Hub port of USB device
+ * @ret port	Root hub port
+ */
+struct usbh_hubport * usbh_root_hub_port ( struct usbh_hubport *hport );
 
 int usbh_initialize(void);
 struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);

@@ -57,26 +57,26 @@ void xhci_dump(struct xhci_host *xhci) {
 
 	/* Dump USBCMD */
 	usbcmd = readl ( xhci->op + XHCI_OP_USBCMD );
-	USB_LOG_DBG ( xhci, "XHCI %s USBCMD %08x%s%s\n", xhci->name, usbcmd,
+	USB_LOG_DBG ( "XHCI %s USBCMD %08x%s%s\n", xhci->name, usbcmd,
 	       ( ( usbcmd & XHCI_USBCMD_RUN ) ? " run" : "" ),
 	       ( ( usbcmd & XHCI_USBCMD_HCRST ) ? " hcrst" : "" ) );
 
 	/* Dump USBSTS */
 	usbsts = readl ( xhci->op + XHCI_OP_USBSTS );
-	USB_LOG_DBG ( xhci, "XHCI %s USBSTS %08x%s\n", xhci->name, usbsts,
+	USB_LOG_DBG ( "XHCI %s USBSTS %08x%s\n", xhci->name, usbsts,
 	       ( ( usbsts & XHCI_USBSTS_HCH ) ? " hch" : "" ) );
 
 	/* Dump PAGESIZE */
 	pagesize = readl ( xhci->op + XHCI_OP_PAGESIZE );
-	USB_LOG_DBG ( xhci, "XHCI %s PAGESIZE %08x\n", xhci->name, pagesize );
+	USB_LOG_DBG ( "XHCI %s PAGESIZE %08x\n", xhci->name, pagesize );
 
 	/* Dump DNCTRL */
 	dnctrl = readl ( xhci->op + XHCI_OP_DNCTRL );
-	USB_LOG_DBG ( xhci, "XHCI %s DNCTRL %08x\n", xhci->name, dnctrl );
+	USB_LOG_DBG ( "XHCI %s DNCTRL %08x\n", xhci->name, dnctrl );
 
 	/* Dump CONFIG */
 	config = readl ( xhci->op + XHCI_OP_CONFIG );
-	USB_LOG_DBG ( xhci, "XHCI %s CONFIG %08x\n", xhci->name, config );	
+	USB_LOG_DBG ( "XHCI %s CONFIG %08x\n", xhci->name, config );	
 #endif
 }
 
@@ -96,7 +96,7 @@ void xhci_dump_port ( struct xhci_host *xhci,
 
 	/* Dump PORTSC */
 	portsc = readl ( xhci->op + XHCI_OP_PORTSC ( port ) );
-	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTSC %08x%s%s%s%s psiv=%d\n",
+	USB_LOG_DBG ( "XHCI %s-%d PORTSC %08x%s%s%s%s psiv=%d\n",
 	       xhci->name, port, portsc,
 	       ( ( portsc & XHCI_PORTSC_CCS ) ? " ccs" : "" ),
 	       ( ( portsc & XHCI_PORTSC_PED ) ? " ped" : "" ),
@@ -106,15 +106,15 @@ void xhci_dump_port ( struct xhci_host *xhci,
 
 	/* Dump PORTPMSC */
 	portpmsc = readl ( xhci->op + XHCI_OP_PORTPMSC ( port ) );
-	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTPMSC %08x\n", xhci->name, port, portpmsc );
+	USB_LOG_DBG ( "XHCI %s-%d PORTPMSC %08x\n", xhci->name, port, portpmsc );
 
 	/* Dump PORTLI */
 	portli = readl ( xhci->op + XHCI_OP_PORTLI ( port ) );
-	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTLI %08x\n", xhci->name, port, portli );
+	USB_LOG_DBG ( "XHCI %s-%d PORTLI %08x\n", xhci->name, port, portli );
 
 	/* Dump PORTHLPMC */
 	porthlpmc = readl ( xhci->op + XHCI_OP_PORTHLPMC ( port ) );
-	USB_LOG_DBG ( xhci, "XHCI %s-%d PORTHLPMC %08x\n",
+	USB_LOG_DBG ( "XHCI %s-%d PORTHLPMC %08x\n",
 	       xhci->name, port, porthlpmc );
 #endif    						
 }

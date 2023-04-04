@@ -1,12 +1,4 @@
 /*
- * @Author: zhugengyu zhugengyu@phytium.com.cn
- * @Date: 2023-04-03 09:38:32
- * @LastEditors: zhugengyu zhugengyu@phytium.com.cn
- * @LastEditTime: 2023-04-04 13:43:03
- * @FilePath: \CherryUSB-dev\class\hub\usbh_hub.c
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-/*
  * Copyright (c) 2022, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -48,7 +40,7 @@ static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "
 
 struct usbh_hubport *usbh_get_roothub_port (unsigned int address)
 {
-    return usbh_get_port(&roothub, address);
+    return &roothub.child[ address - 1 ];
 }
 
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
@@ -294,6 +286,7 @@ static int usbh_hub_set_depth(struct usbh_hub *hub, uint16_t depth)
         setup->wValue = depth;
         setup->wIndex = 0;
         setup->wLength = 0;
+		return usbh_roothub_control(setup, NULL);
     } else {
         return _usbh_hub_set_depth(hub, depth);
     }    
@@ -570,14 +563,23 @@ static void usbh_hub_events(struct usbh_hub *hub)
                         speed = USB_SPEED_HIGH;
                     } else if (portstatus & HUB_PORT_STATUS_LOW_SPEED) {
                         speed = USB_SPEED_LOW;
-                    } else {
-                        if (usbh_get_port_speed(port + 1)) {
+                    } 
+#ifdef CONFIG_USBHOST_XHCI
+                    /* USB3.0 speed cannot get from portstatus, checkout port speed instead */
+                    else {
+                        uint8_t super_speed = usbh_get_port_speed(&hub->child[port], port + 1);
+                        if (super_speed > USB_SPEED_HIGH) {
                             /* assert that when using USB 3.0 ports, attached device must also be USB 3.0 speed */
-                            speed = USB_SPEED_SUPER;
+                            speed = super_speed;
                         } else {
                             speed = USB_SPEED_FULL;
                         }
                     }
+#else
+                    else {
+                            speed = USB_SPEED_FULL;
+                    }
+#endif
 
                     child = &hub->child[port];
                     /** release child sources first */

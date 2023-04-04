@@ -608,6 +608,8 @@ enum xhci_completion_code {
 	XHCI_CMPLT_ENDPOINT_NOT_ENABLED = 12,
 	/** Short packet */
 	XHCI_CMPLT_SHORT = 13,
+	/** Parameter Error */
+	XHCI_CMPLT_PARAMETER = 17,
 	/** Command ring stopped */
 	XHCI_CMPLT_CMD_STOPPED = 24,
 };

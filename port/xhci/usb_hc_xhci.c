@@ -287,10 +287,19 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     return 0;
 }
 
-uint8_t usbh_get_port_speed(const uint8_t port)
+uint8_t usbh_get_port_speed(struct usbh_hubport *hport, const uint8_t port)
 {
     struct xhci_host *xhci = &xhci_host;
-    return xhci_root_speed(xhci, port);
+
+    if (hport->parent->is_roothub) {
+        return xhci_root_speed(xhci, port);
+    } else {
+        struct usbh_hubport *roothub_port = usbh_root_hub_port(hport);
+        /* TODO, hanlde TT for low-speed device on high-speed hub, but it doesn't matter, since
+         we haven't well handle hub yet */
+        USB_ASSERT(roothub_port);
+        return xhci_root_speed(xhci, roothub_port->port);
+    }
 }
 
 int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t mtu, uint8_t speed)
