@@ -192,6 +192,7 @@ static int8_t chusb_host_pipe_transfer(struct chusb_pipe *pipe, uint8_t pid, uin
     // g_chusb_hcd.main_pipe_using = true;
 
     if (data == NULL && len > 0) {
+        USB_LOG_ERR("Please give correct data and len parameters\r\n");
         return -1;
     }
 
@@ -227,7 +228,7 @@ static int8_t chusb_host_pipe_transfer(struct chusb_pipe *pipe, uint8_t pid, uin
         }
 
         if ((uint32_t)data & 0x03) {
-            USB_LOG_INFO("OUT DMA address is not align \r\n");
+            USB_LOG_WRN("OUT DMA address is not align \r\n");
             return -3;
         }
 
@@ -481,11 +482,6 @@ static void chusbh_set_self_speed(uint8_t speed)
 static int usbh_reset_port(const uint8_t port)
 {
     USB_LOG_INFO("Reset port \r\n");
-    /*!< Disable detect interrupt */
-    USBHS_HOST->INT_EN &= (~USBHS_DETECT_EN);
-
-    USBHS_HOST->HOST_CTRL &= ~USBHS_SEND_SOF_EN;
-
     /*!< Clear flags that may not have been cleared */
     // g_chusb_hcd.main_pipe_using = false;
 
@@ -496,42 +492,29 @@ static int usbh_reset_port(const uint8_t port)
 
     /*!< Start reset */
     USBHS_HOST->HOST_CTRL |= USBHS_SEND_BUS_RESET;
-    usb_osal_msleep(30);
+    usb_osal_msleep(11);
     /*!< Stop reset */
     USBHS_HOST->HOST_CTRL &= ~USBHS_SEND_BUS_RESET;
-    usb_osal_msleep(20);
+    usb_osal_msleep(2);
     g_chusb_hcd.port_pe = 1;
 
-    if ((USBHS_HOST->HOST_CTRL & USBHS_SEND_SOF_EN) == 0) {
+    if (USBHS_HOST->MIS_ST & USBHS_ATTACH) {
         volatile uint8_t speed = USBHS_HOST->SPEED_TYPE & USBSPEED_MASK;
         if (speed == 0x02) {
             USB_LOG_INFO("Dev USB_SPEED_LOW \r\n");
             g_chusb_hcd.dev_speed = USB_SPEED_LOW;
+            chusbh_set_self_speed(USB_SPEED_LOW);
         } else if (speed == 0x00) {
             USB_LOG_INFO("Dev USB_SPEED_FULL \r\n");
             g_chusb_hcd.dev_speed = USB_SPEED_FULL;
+            chusbh_set_self_speed(USB_SPEED_FULL);
         } else if (speed == 0x01) {
             USB_LOG_INFO("Dev USB_SPEED_HIGH \r\n");
             g_chusb_hcd.dev_speed = USB_SPEED_HIGH;
+            chusbh_set_self_speed(USB_SPEED_HIGH);
         }
     }
 
-    if (g_chusb_hcd.dev_speed == USB_SPEED_HIGH) {
-        USBHS_HOST->HOST_CTRL |= USBHS_SEND_SOF_EN;
-        uint32_t timeout = 100000;
-        while (timeout--) {
-            if (USBHS_HOST->INT_FG & USBHS_DETECT_FLAG) {
-                if (USBHS_HOST->MIS_ST & USBHS_ATTACH) {
-                    USBHS_HOST->INT_FG = USBHS_DETECT_FLAG;
-                    break;
-                } else {
-                    USBHS_HOST->INT_FG = USBHS_DETECT_FLAG;
-                }
-            }
-        }
-    }
-
-    // USBHS_HOST->HOST_CTRL |= USBHS_SEND_SOF_EN;
     USBHS_HOST->INT_EN |= USBHS_DETECT_EN;
     return 0;
 }
@@ -539,30 +522,6 @@ static int usbh_reset_port(const uint8_t port)
 static uint8_t usbh_get_port_speed(const uint8_t port)
 {
     (void)port;
-#if 0
-    /*!< Stop reset */
-    USBHS_HOST->HOST_CTRL &= ~USBHS_SEND_BUS_RESET;
-    uint8_t speed = 0;
-    if (USBHS_HOST->MIS_ST & 0x02) {
-        if ((USBHS_HOST->HOST_CTRL & USBHS_SEND_SOF_EN) == 0) {
-            speed = USBHS_HOST->SPEED_TYPE & USBSPEED_MASK;
-
-            if (speed == 0x02) {
-                USB_LOG_INFO("Dev USB_SPEED_LOW \r\n");
-                speed = USB_SPEED_LOW;
-            } else if (speed == 0x00) {
-                USB_LOG_INFO("Dev USB_SPEED_FULL \r\n");
-                speed = USB_SPEED_FULL;
-            } else if (speed == 0x01) {
-                USB_LOG_INFO("Dev USB_SPEED_HIGH \r\n");
-                speed = USB_SPEED_HIGH;
-            }
-        }
-    }
-
-    USBHS_HOST->HOST_CTRL |= USBHS_SEND_SOF_EN;
-#endif
-    USBHS_HOST->HOST_CTRL |= USBHS_SEND_SOF_EN;
     return g_chusb_hcd.dev_speed;
 }
 
@@ -795,6 +754,30 @@ int usbh_pipe_free(usbh_pipe_t pipe)
     return 0;
 }
 
+static inline void chusb_pipe_waitup(struct chusb_pipe *pipe, bool callback)
+{
+    struct usbh_urb *urb;
+
+    urb = pipe->urb;
+    pipe->urb = NULL;
+    // g_chusb_hcd.main_pipe_using = false;
+
+    if (pipe->waiter) {
+        pipe->waiter = false;
+        usb_osal_sem_give(pipe->waitsem);
+    }
+
+    if (callback == true) {
+        if (urb->complete) {
+            if (urb->errorcode < 0) {
+                urb->complete(urb->arg, urb->errorcode);
+            } else {
+                urb->complete(urb->arg, urb->actual_length);
+            }
+        }
+    }
+}
+
 int usbh_submit_urb(struct usbh_urb *urb)
 {
     struct chusb_pipe *pipe;
@@ -874,6 +857,7 @@ errout_timeout:
     pipe->waiter = false;
     g_chusb_hcd.current_token = 0;
     // g_chusb_hcd.main_pipe_using = false;
+    chusb_pipe_waitup(pipe, false);
     usbh_kill_urb(urb);
     return ret;
 }
@@ -881,30 +865,6 @@ errout_timeout:
 int usbh_kill_urb(struct usbh_urb *urb)
 {
     return 0;
-}
-
-static inline void chusb_pipe_waitup(struct chusb_pipe *pipe, bool callback)
-{
-    struct usbh_urb *urb;
-
-    urb = pipe->urb;
-    pipe->urb = NULL;
-    // g_chusb_hcd.main_pipe_using = false;
-
-    if (pipe->waiter) {
-        pipe->waiter = false;
-        usb_osal_sem_give(pipe->waitsem);
-    }
-
-    if (callback == true) {
-        if (urb->complete) {
-            if (urb->errorcode < 0) {
-                urb->complete(urb->arg, urb->errorcode);
-            } else {
-                urb->complete(urb->arg, urb->actual_length);
-            }
-        }
-    }
 }
 
 static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
@@ -927,11 +887,19 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
             urb->errorcode = -EPERM;
             if (g_chusb_hcd.current_token == USB_PID_SETUP) {
                 USB_LOG_ERR("USB_PID_SETUP STALL \r\n");
+                USBHS_HOST->INT_FG = USBHS_TRANSFER_FLAG;
+                return -2;
             } else {
-                USB_LOG_ERR("USB_PID_OUT STALL \r\n");
+                if (g_chusb_hcd.current_pipe->waiter == true) {
+                    USB_LOG_WRN("USB_PID_OUT STALL \r\n");
+                    chusb_host_pipe_transfer(g_chusb_hcd.current_pipe, USB_PID_OUT,
+                                             g_chusb_hcd.current_pipe->buffer, g_chusb_hcd.current_pipe->xferlen);
+                } else {
+                    USB_LOG_ERR("USB_PID_OUT STALL \r\n");
+                    USBHS_HOST->INT_FG = USBHS_TRANSFER_FLAG;
+                    return -2;
+                }
             }
-            USBHS_HOST->INT_FG = USBHS_TRANSFER_FLAG;
-            return -2;
         case USB_PID_NAK:
             urb->errorcode = -EAGAIN;
             if (g_chusb_hcd.current_pipe->ep_type == USB_ENDPOINT_TYPE_CONTROL) {
@@ -945,7 +913,7 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
                     return -3;
                 } else {
                     if (g_chusb_hcd.current_pipe->waiter == true) {
-                        USB_LOG_DBG("Control endpoint out nak and retry\r\n");
+                        USB_LOG_DBG("Control endpoint out nak and retry, length:%d\r\n",g_chusb_hcd.current_pipe->xferlen);
                         chusb_host_pipe_transfer(g_chusb_hcd.current_pipe, USB_PID_OUT,
                                                  g_chusb_hcd.current_pipe->buffer, g_chusb_hcd.current_pipe->xferlen);
                     }
@@ -972,12 +940,15 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
                             /**
                              * The device received data but did not receive it completely
                              */
+                            urb->errorcode = 0;
+                            USB_LOG_WRN("The data is not sent completely, but the timeout is 0\r\n");
                             urb->actual_length = g_chusb_hcd.current_pipe->xfrd;
                             chusb_pipe_waitup(g_chusb_hcd.current_pipe, true);
                         } else {
                             /**
                              * The device may not be ready, make sure your device can receive data
                              */
+                            USB_LOG_WRN("The device may not be ready, make sure your device can receive data\r\n");
                             chusb_pipe_waitup(g_chusb_hcd.current_pipe, false);
                         }
                     }
@@ -1098,7 +1069,7 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
                         return -5;
                     }
                 } else {
-                    USB_LOG_ERR("OUT TIMEOUT \r\n");
+                    USB_LOG_ERR("Out Timeout \r\n");
                     if (g_chusb_hcd.current_pipe->ep_type != USB_ENDPOINT_TYPE_CONTROL) {
                         /**
                          * Reset data pid
@@ -1177,8 +1148,13 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
                                 /**
                                  * Some data has been transferred
                                  */
+                                USB_LOG_WRN("The device has not finished sending all data, but the timeout is 0\r\n");
                                 g_chusb_hcd.current_token = 0;
+                                /**
+                                 * Update the actual send length
+                                 */
                                 urb->actual_length = g_chusb_hcd.current_pipe->xfrd;
+                                urb->errorcode = 0;
                                 chusb_pipe_waitup(g_chusb_hcd.current_pipe, true);
                             }
                         } else {
@@ -1227,7 +1203,10 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
 
                 if (g_chusb_hcd.current_pipe->xferlen < rx_len) {
                     g_chusb_hcd.current_pipe->data_pid ^= 1;
-                    USB_LOG_ERR("Please provide the correct data length parameter\r\n");
+                    USB_LOG_ERR("Please provide the correct data length parameter xferlen:%d rxlen:%d\r\n",g_chusb_hcd.current_pipe->xferlen, rx_len);
+                    if (g_chusb_hcd.prv_get_zero == true) {
+                        g_chusb_hcd.prv_get_zero = false;
+                    }
                     USBHS_HOST->INT_FG = USBHS_TRANSFER_FLAG;
                     return -6;
                 }
@@ -1295,7 +1274,7 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
                 } else {
                     USB_LOG_DBG("ep%d rx_len:%d\r\n", (g_chusb_hcd.current_pipe->ep_addr & 0x0f), rx_len);
                     g_chusb_hcd.current_pipe->data_pid ^= 1;
-                    if (rx_len == 0 || (rx_len & (g_chusb_hcd.current_pipe->ep_mps - 1))) {
+                    if (rx_len == 0 || (rx_len & (g_chusb_hcd.current_pipe->ep_mps - 1)) || (g_chusb_hcd.current_pipe->xfrd == g_chusb_hcd.current_pipe->urb->transfer_buffer_length)) {
                         /**
                          * Receive a short package, in data has transfer completed
                          */
@@ -1375,9 +1354,11 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBH_IRQHandler(void)
             g_chusb_hcd.port_csc = 1;
             g_chusb_hcd.port_pec = 1;
             g_chusb_hcd.port_pe = 1;
+            USBHS_HOST->HOST_CTRL |= USBHS_SEND_SOF_EN;
             usbh_roothub_thread_wakeup(1);
         } else {
             USB_LOG_INFO("Dev remove \r\n");
+            USBHS_HOST->HOST_EP_PID = 0x00;
 #if 0
             if (g_chusb_hcd.main_pipe_using) {
                 g_chusb_hcd.main_pipe_using = false;
