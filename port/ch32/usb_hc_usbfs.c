@@ -88,6 +88,7 @@ struct chusb_hcd {
     volatile bool prv_set_zero;
     volatile bool main_pipe_using;
     // uint32_t current_pipe_timeout;
+    uint8_t dev_speed;
     struct chusb_pipe *current_pipe;
     struct chusb_pipe pipe_pool[CONFIG_USBHOST_PIPE_NUM][2]; /* Support Bidirectional ep */
 } g_chusb_hcd;
@@ -217,7 +218,7 @@ static int8_t chusb_host_pipe_transfer(struct chusb_pipe *pipe, uint8_t pid, uin
     /*!< Updata curretn pipe timeout */
     // g_chusb_hcd.current_pipe_timeout = pipe->urb->timeout;
     /*!< Updata main pipe using flag */
-    g_chusb_hcd.main_pipe_using = true;
+    // g_chusb_hcd.main_pipe_using = true;
 
     if (data == NULL && len > 0) {
         return -1;
@@ -413,20 +414,43 @@ static void chusbh_set_self_speed(uint8_t speed)
 
 static int usbh_reset_port(const uint8_t port)
 {
+    /*!< Disable detect interrupt */
+    USBFS_HOST->INT_EN &= (~USBFS_UIE_DETECT);
+    USBFS_HOST->HOST_CTRL &= ~USBFS_UH_SOF_EN;
+
     g_chusb_hcd.port_pe = 0;
     /*!< Set dev add 0 */
     USBFS_HOST->DEV_ADDR = (USBFS_HOST->DEV_ADDR & USBFS_UDA_GP_BIT) | (0x00 & USBFS_USB_ADDR_MASK);
+    chusbh_set_self_speed(USB_SPEED_FULL);
     /*!< Close port */
-    // USBFS_HOST->HOST_CTRL &= ~USBFS_UH_PORT_EN;
+    USBFS_HOST->HOST_CTRL &= ~USBFS_UH_PORT_EN;
     /*!< Start reset */
     USBFS_HOST->HOST_CTRL |= USBFS_UH_BUS_RESET;
     usb_osal_msleep(30);
     /*!< Stop reset */
     USBFS_HOST->HOST_CTRL &= ~USBFS_UH_BUS_RESET;
     usb_osal_msleep(20);
+
+    if ((USBFS_HOST->HOST_CTRL & USBFS_UH_PORT_EN) == 0) {
+        volatile uint8_t speed = (USBFS_HOST->MIS_ST & USBFS_UMS_DM_LEVEL) ? 0 : 1;
+        if (speed == 0) {
+            /*!< Low speed */
+            USB_LOG_INFO("Dev USB_SPEED_LOW \r\n");
+            USBFS_HOST->HOST_CTRL |= USBFS_UH_LOW_SPEED;
+            g_chusb_hcd.dev_speed = USB_SPEED_LOW;
+            chusbh_set_self_speed(USB_SPEED_LOW);
+        } else {
+            /*!< Full speed */
+            USB_LOG_INFO("Dev USB_SPEED_FULL \r\n");
+            USBFS_HOST->HOST_CTRL &= ~USBFS_UH_LOW_SPEED;
+            g_chusb_hcd.dev_speed = USB_SPEED_FULL;
+        }
+    }
+
     /*!< Enable HUB Port */
     USBFS_HOST->HOST_CTRL |= USBFS_UH_PORT_EN;
-    USBFS_HOST->HOST_SETUP |= USBFS_UH_SOF_EN;
+    // USBFS_HOST->HOST_SETUP |= USBFS_UH_SOF_EN;
+    USBFS_HOST->INT_EN |= USBFS_UIE_DETECT;
     g_chusb_hcd.port_pe = 1;
     return 0;
 }
@@ -434,22 +458,8 @@ static int usbh_reset_port(const uint8_t port)
 static uint8_t usbh_get_port_speed(const uint8_t port)
 {
     (void)port;
-    uint8_t speed = 0;
-
-    if (USBFS_HOST->MIS_ST & USBFS_UMS_DEV_ATTACH) {
-        speed = (USBFS_HOST->MIS_ST & USBFS_UMS_DM_LEVEL) ? 0 : 1;
-        if (speed == 0) {
-            /*!< Low speed */
-            USBFS_HOST->HOST_CTRL |= USBFS_UH_LOW_SPEED;
-            speed = USB_SPEED_LOW;
-        } else {
-            /*!< Full speed */
-            USBFS_HOST->HOST_CTRL &= ~USBFS_UH_LOW_SPEED;
-            speed = USB_SPEED_FULL;
-        }
-    }
-
-    return speed;
+    USBFS_HOST->HOST_SETUP |= USBFS_UH_SOF_EN;
+    return g_chusb_hcd.dev_speed;
 }
 
 __WEAK void usb_hc_low_level_init(void)
@@ -697,10 +707,12 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -EBUSY;
     }
 
+#if 0
     if (g_chusb_hcd.main_pipe_using == true) {
         USB_LOG_INFO("usbh_submit_urb//main pipe is using\r\n");
         return -EBUSY;
     }
+#endif
 
     flags = usb_osal_enter_critical_section();
 
@@ -762,7 +774,7 @@ static inline void chusb_pipe_waitup(struct chusb_pipe *pipe, bool callback)
 
     urb = pipe->urb;
     pipe->urb = NULL;
-    g_chusb_hcd.main_pipe_using = false;
+    // g_chusb_hcd.main_pipe_using = false;
 
     if (pipe->waiter) {
         pipe->waiter = false;
@@ -852,7 +864,7 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
                             /**
                              * The device received data but did not receive it completely
                              */
-                            urb->errorcode = -EBUSY;
+                            urb->errorcode = 0;
                             USB_LOG_WRN("The data is not sent completely, but the timeout is 0\r\n");
                             urb->actual_length = g_chusb_hcd.current_pipe->xfrd;
                             chusb_pipe_waitup(g_chusb_hcd.current_pipe, true);
@@ -981,7 +993,7 @@ static int8_t chusb_outpipe_irq_handler(uint8_t res_state)
                         return -5;
                     }
                 } else {
-                    USB_LOG_ERR("OUT TIMEOUT \r\n");
+                    USB_LOG_ERR("Out Timeout \r\n");
                     if (g_chusb_hcd.current_pipe->ep_type != USB_ENDPOINT_TYPE_CONTROL) {
                         /**
                          * Reset data pid
@@ -1071,7 +1083,7 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
                                  * Update the actual send length
                                  */
                                 urb->actual_length = g_chusb_hcd.current_pipe->xfrd;
-                                urb->errorcode = -EBUSY;
+                                urb->errorcode = 0;
                                 chusb_pipe_waitup(g_chusb_hcd.current_pipe, true);
                             }
                         } else {
@@ -1122,6 +1134,9 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
                 if (g_chusb_hcd.current_pipe->xferlen < rx_len) {
                     g_chusb_hcd.current_pipe->data_pid ^= 1;
                     USB_LOG_ERR("Please provide the correct data length parameter\r\n");
+                    if (g_chusb_hcd.prv_get_zero == true) {
+                        g_chusb_hcd.prv_get_zero = false;
+                    }
                     USBFS_HOST->INT_FG = USBFS_UIF_TRANSFER;
                     return -6;
                 }
@@ -1189,7 +1204,7 @@ static int8_t chusb_inpipe_irq_handler(uint8_t res_state)
                 } else {
                     USB_LOG_DBG("ep%d rx_len:%d\r\n", (g_chusb_hcd.current_pipe->ep_addr & 0x0f), rx_len);
                     g_chusb_hcd.current_pipe->data_pid ^= 1;
-                    if (rx_len == 0 || (rx_len & (g_chusb_hcd.current_pipe->ep_mps - 1))) {
+                    if (rx_len == 0 || (rx_len & (g_chusb_hcd.current_pipe->ep_mps - 1)) || ((g_chusb_hcd.current_pipe->xfrd == g_chusb_hcd.current_pipe->urb->transfer_buffer_length))) {
                         /**
                          * Receive a short package, in data has transfer completed
                          */
@@ -1274,14 +1289,16 @@ void USBH_IRQHandler(void)
         } else {
             USB_LOG_INFO("Dev remove \r\n");
             /**
-                 * Device remove
-                 * Disable port and stop send sof
-                 */
+             * Device remove
+             * Disable port and stop send sof
+             */
             USBFS_HOST->HOST_SETUP &= ~USBFS_UH_SOF_EN;
             USBFS_HOST->HOST_CTRL &= ~USBFS_UH_PORT_EN;
+#if 0
             if (g_chusb_hcd.main_pipe_using) {
                 g_chusb_hcd.main_pipe_using = false;
             }
+#endif
             g_chusb_hcd.port_csc = 1;
             g_chusb_hcd.port_pec = 1;
             g_chusb_hcd.port_pe = 0;
