@@ -27,10 +27,9 @@
 #error Unsupported frame size list size
 #endif
 
-#define CONFIG_USB_EHCI_QH_NUM       CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USB_EHCI_QTD_NUM      (CONFIG_USBHOST_PIPE_NUM * 3)
-#define CONFIG_USB_EHCI_ITD_NUM      10
-#define CONFIG_USB_EHCI_ITD_POOL_NUM 2
+#define CONFIG_USB_EHCI_QH_NUM  CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USB_EHCI_QTD_NUM (CONFIG_USBHOST_PIPE_NUM * 3)
+#define CONFIG_USB_EHCI_ITD_NUM 20
 
 extern uint8_t usbh_get_port_speed(const uint8_t port);
 
@@ -52,11 +51,10 @@ struct ehci_pipe {
     struct usbh_hubport *hport;
     struct ehci_qh_hw *qh;
     struct usbh_urb *urb;
-    uint8_t used_itd_num;
-    uint8_t id;
     uint8_t mf_unmask;
     uint8_t mf_valid;
-    usb_slist_t iso_list;
+    uint8_t iso_packet_idx;
+    uint8_t remain_itd_num;
 };
 
 struct ehci_qh_hw {
@@ -71,21 +69,23 @@ struct ehci_qtd_hw {
 
 struct ehci_itd_hw {
     struct ehci_itd hw;
+    struct usbh_urb *urb;
+    struct ehci_pipe *pipe;
+    uint16_t start_frame;
+    usb_slist_t list;
 } __attribute__((aligned(32)));
 
 struct ehci_hcd {
     bool ehci_qh_used[CONFIG_USB_EHCI_QH_NUM];
     bool ehci_qtd_used[CONFIG_USB_EHCI_QTD_NUM];
-    bool ehci_itd_pool_used[CONFIG_USB_EHCI_ITD_POOL_NUM];
+    bool ehci_itd_used[CONFIG_USB_EHCI_ITD_NUM];
     struct ehci_pipe pipe_pool[CONFIG_USB_EHCI_QH_NUM];
 };
 
 extern struct ehci_hcd g_ehci_hcd;
 extern uint32_t g_framelist[];
 
-int ehci_itd_pool_alloc(void);
-void ehci_itd_pool_free(uint8_t id);
-int ehci_iso_pipe_init(struct ehci_pipe *pipe, struct usbh_iso_frame_packet *iso_packet, uint32_t num_of_iso_packets);
+int ehci_iso_pipe_init(struct ehci_pipe *pipe, struct usbh_urb *urb);
 void ehci_remove_itd_urb(struct usbh_urb *urb);
 void ehci_scan_isochronous_list(void);
 
