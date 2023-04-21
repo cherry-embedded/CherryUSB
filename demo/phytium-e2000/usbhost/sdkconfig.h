@@ -18,6 +18,7 @@
 #define CONFIG_USE_MMU
 #define CONFIG_USE_SYS_TICK
 /* CONFIG_MMU_DEBUG_PRINTS is not set */
+/* CONFIG_BOOT_WITH_FLUSH_CACHE is not set */
 /* end of Arch Configuration */
 
 /* Board Configuration */
@@ -55,9 +56,7 @@
 /* CONFIG_USE_SDMMC is not set */
 /* CONFIG_USE_PCIE is not set */
 /* CONFIG_USE_WDT is not set */
-#define CONFIG_USE_DMA
-/* CONFIG_ENABLE_FGDMA is not set */
-#define CONFIG_ENABLE_FDDMA
+/* CONFIG_USE_DMA is not set */
 /* CONFIG_USE_NAND is not set */
 /* CONFIG_USE_RTC is not set */
 /* CONFIG_USE_SATA is not set */
@@ -65,6 +64,8 @@
 /* CONFIG_USE_ADC is not set */
 /* CONFIG_USE_PWM is not set */
 /* CONFIG_USE_IPC is not set */
+/* CONFIG_USE_MEDIA is not set */
+/* CONFIG_USE_SCMI_MHU is not set */
 /* end of Components Configuration */
 #define CONFIG_USE_NEW_LIBC
 /* end of Standalone Setting */
@@ -81,6 +82,7 @@
 #define CONFIG_INTERRUPT_ROLE_MASTER
 /* CONFIG_INTERRUPT_ROLE_SLAVE is not set */
 #define CONFIG_LOG_EXTRA_INFO
+/* CONFIG_LOG_DISPALY_CORE_NUM is not set */
 /* CONFIG_BOOTUP_DEBUG_PRINTS is not set */
 
 /* Linker Options */
@@ -101,6 +103,12 @@
 
 /* Compiler Options */
 
+/* Cross-Compiler Setting */
+
+#define CONFIG_GCC_OPTIMIZE_LEVEL 0
+/* CONFIG_USE_EXT_COMPILER is not set */
+/* CONFIG_USE_KLIN_SYS is not set */
+/* end of Cross-Compiler Setting */
 #define CONFIG_OUTPUT_BINARY
 /* end of Compiler Options */
 /* end of Building Option */
@@ -130,6 +138,7 @@
 /* Freertos Eth Drivers */
 
 /* CONFIG_FREERTOS_USE_XMAC is not set */
+/* CONFIG_FREERTOS_USE_GMAC is not set */
 /* end of Freertos Eth Drivers */
 
 /* Freertos Gpio Drivers */
@@ -144,26 +153,41 @@
 
 /* Freertos DMA Drivers */
 
-#define CONFIG_FREERTOS_USE_FDDMA
+/* CONFIG_FREERTOS_USE_FDDMA is not set */
 /* CONFIG_FREERTOS_USE_FGDMA is not set */
 /* end of Freertos DMA Drivers */
-
-/* Freertos MMC Drivers */
-
-/* CONFIG_FREERTOS_USE_FSDIO is not set */
-/* end of Freertos MMC Drivers */
 
 /* Freertos Adc Drivers */
 
 /* CONFIG_FREERTOS_USE_ADC is not set */
 /* end of Freertos Adc Drivers */
+
+/* Freertos Can Drivers */
+
+/* CONFIG_FREERTOS_USE_CAN is not set */
+/* end of Freertos Can Drivers */
+
+/* Freertos I2c Drivers */
+
+/* CONFIG_FREERTOS_USE_I2C is not set */
+/* end of Freertos I2c Drivers */
+
+/* Freertos Mio Drivers */
+
+/* CONFIG_FREERTOS_USE_MIO is not set */
+/* end of Freertos Mio Drivers */
+
+/* Freertos Timer Drivers */
+
+/* CONFIG_FREERTOS_USE_TIMER is not set */
+/* end of Freertos Timer Drivers */
 /* end of Component Configuration */
 
-/* FreeRTOS Setting */
+/* Third-Party Configuration */
 
 /* CONFIG_USE_LWIP is not set */
 #define CONFIG_USE_BACKTRACE
-/* CONFIG_USE_FATFS is not set */
+/* CONFIG_USE_FATFS_0_1_4 is not set */
 /* CONFIG_USE_SFUD is not set */
 /* CONFIG_USE_SPIFFS is not set */
 /* CONFIG_USE_AMP is not set */
@@ -189,12 +213,32 @@
 #define CONFIG_CHERRY_USB_HOST_HUB
 #define CONFIG_CHERRY_USB_HOST_MSC
 #define CONFIG_CHERRY_USB_HOST_HID
-/* CONFIG_CHERRY_USB_HOST_MTP is not set */
-/* CONFIG_CHERRY_USB_HOST_CDC is not set */
-/* CONFIG_CHERRY_USB_HOST_PRINTER is not set */
-/* CONFIG_CHERRY_USB_HOST_AXU_NET is not set */
-/* CONFIG_CHERRY_USB_HOST_RNDIS_WIRELESS is not set */
+#define CONFIG_CHERRY_USB_HOST_VEDIO
+#define CONFIG_CHERRY_USB_HOST_CDC
+#define CONFIG_CHERRY_USB_HOST_RNDIS_WIRELESS
 /* end of CherryUSB Configuration */
-/* end of FreeRTOS Setting */
+/* end of Third-Party Configuration */
+
+/* Kernel Configuration */
+
+#define CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
+#define CONFIG_FREERTOS_HZ 1000
+#define CONFIG_FREERTOS_MAX_PRIORITIES 32
+#define CONFIG_FREERTOS_KERNEL_INTERRUPT_PRIORITIES 13
+#define CONFIG_FREERTOS_MAX_API_CALL_INTERRUPT_PRIORITIES 11
+#define CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS 1
+#define CONFIG_FREERTOS_MINIMAL_TASK_STACKSIZE 1024
+#define CONFIG_FREERTOS_MAX_TASK_NAME_LEN 32
+#define CONFIG_FREERTOS_TIMER_TASK_PRIORITY 1
+#define CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH 2048
+#define CONFIG_FREERTOS_TIMER_QUEUE_LENGTH 10
+#define CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE 0
+#define CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
+#define CONFIG_FREERTOS_USE_TRACE_FACILITY
+#define CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+/* CONFIG_FREERTOS_USE_TICKLESS_IDLE is not set */
+#define CONFIG_FREERTOS_TOTAL_HEAP_SIZE 10240
+#define CONFIG_FREERTOS_TASK_FPU_SUPPORT 1
+/* end of Kernel Configuration */
 
 #endif

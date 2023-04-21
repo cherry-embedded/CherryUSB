@@ -49,7 +49,7 @@ CherryUSB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求�
 
 CherryUSB Device 协议栈当前实现以下功能：
 
-- 支持 USB2.0 全速和高速设备
+- 支持 USB2.0 全速和高速设备，USB3.0 超速设备
 - 支持端点中断注册功能，porting 给用户自己处理中断里的数据
 - 支持复合设备
 - 支持 Communication Device Class (CDC)
@@ -141,7 +141,7 @@ USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [Ch
 |HPMicro    |  HPM6750 | hpm/ehci |[hpm_repo](https://github.com/CherryUSB/cherryusb_hpmicro)|v0.6.0 |
 |Essemi    |  ES32F36xx | musb |[es32f369_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/es32)|latest |
 |AllwinnerTech    |  F1C100S | musb |[cherryusb_rtt_f1c100s](https://github.com/CherryUSB/cherryusb_rtt_f1c100s)|latest |
-|Phytium |  e2000 | xhci |[phytium _repo](https://gitee.com/phytium_embedded/phytium-standalone-sdk)|latest |
+|Phytium |  e2000 | xhci |[phytium _repo](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk)|latest |
 |Raspberry pi |  rp2040 | rp2040 |[rp2040_repo](https://github.com/sakumisu/CherryUSB/tree/master/demo/rp2040)|latest |
 |WCH    |  CH32V307/ch58x | ch32_usbfs/ch32_usbhs/ch58x |[wch_repo](https://github.com/CherryUSB/cherryusb_wch)|latest |
 |Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|latest |
