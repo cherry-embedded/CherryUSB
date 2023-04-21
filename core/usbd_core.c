@@ -770,7 +770,7 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
         {
             struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-            if (intf->class_endpoint_handler && (intf->intf_num == ((setup->wIndex >> 8) & 0xFF))) {
+            if (intf->class_endpoint_handler) {
                 return intf->class_endpoint_handler(setup, data, len);
             }
         }
