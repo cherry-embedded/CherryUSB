@@ -1123,7 +1123,7 @@ void usbd_event_ep_in_complete_handler(uint8_t ep, uint32_t nbytes)
     }
 #else
     tx_msg[ep & 0x7f].nbytes = nbytes;
-    usb_osal_mq_send(usbd_tx_mq, (uint32_t)&tx_msg[ep & 0x7f]);
+    usb_osal_mq_send(usbd_tx_mq, (uintptr_t)&tx_msg[ep & 0x7f]);
 #endif
 }
 
@@ -1135,7 +1135,7 @@ void usbd_event_ep_out_complete_handler(uint8_t ep, uint32_t nbytes)
     }
 #else
     rx_msg[ep & 0x7f].nbytes = nbytes;
-    usb_osal_mq_send(usbd_rx_mq, (uint32_t)&rx_msg[ep & 0x7f]);
+    usb_osal_mq_send(usbd_rx_mq, (uintptr_t)&rx_msg[ep & 0x7f]);
 #endif
 }
 
@@ -1146,7 +1146,7 @@ static void usbdev_tx_thread(void *argument)
     int ret;
 
     while (1) {
-        ret = usb_osal_mq_recv(usbd_tx_mq, (uint32_t *)&msg, 0xffffffff);
+        ret = usb_osal_mq_recv(usbd_tx_mq, (uintptr_t *)&msg, 0xffffffff);
         if (ret < 0) {
             continue;
         }
@@ -1165,7 +1165,7 @@ static void usbdev_rx_thread(void *argument)
     int ret;
 
     while (1) {
-        ret = usb_osal_mq_recv(usbd_rx_mq, (uint32_t *)&msg, 0xffffffff);
+        ret = usb_osal_mq_recv(usbd_rx_mq, (uintptr_t *)&msg, 0xffffffff);
         if (ret < 0) {
             continue;
         }

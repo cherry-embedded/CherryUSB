@@ -515,7 +515,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     child->connected = true;
                     child->port = port + 1;
                     child->speed = speed;
-                    
+
                     USB_LOG_INFO("New %s device on Hub %u, Port %u connected\r\n", speed_table[speed], hub->index, port + 1);
 
                     /* Configure EP0 with the default maximum packet size */
@@ -557,7 +557,7 @@ static void usbh_hub_thread(void *argument)
 
     usb_hc_init();
     while (1) {
-        ret = usb_osal_mq_recv(hub_mq, (uint32_t *)&hub, 0xffffffff);
+        ret = usb_osal_mq_recv(hub_mq, (uintptr_t *)&hub, 0xffffffff);
         if (ret < 0) {
             continue;
         }
@@ -580,7 +580,7 @@ static void usbh_roothub_register(void)
 
 static void usbh_hub_thread_wakeup(struct usbh_hub *hub)
 {
-    usb_osal_mq_send(hub_mq, (uint32_t)hub);
+    usb_osal_mq_send(hub_mq, (uintptr_t)hub);
 }
 
 void usbh_roothub_thread_wakeup(uint8_t port)
