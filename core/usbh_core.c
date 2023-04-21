@@ -412,6 +412,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 {
     struct usb_interface_descriptor *intf_desc;
     struct usb_setup_packet *setup;
+    struct usb_device_descriptor *dev_desc;
     int dev_addr;
     uint16_t ep_mps;
     int ret;
@@ -435,7 +436,16 @@ int usbh_enumerate(struct usbh_hubport *hport)
     parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer, 8);
 
     /* Extract the correct max packetsize from the device descriptor */
-    ep_mps = ((struct usb_device_descriptor *)ep0_request_buffer)->bMaxPacketSize0;
+    dev_desc = (struct usb_device_descriptor *)ep0_request_buffer;
+    if (dev_desc->bcdUSB >= USB_3_0) {
+        ep_mps = 1 << dev_desc->bMaxPacketSize0;
+    } else {
+        ep_mps = dev_desc->bMaxPacketSize0;
+    }
+
+    USB_LOG_DBG("Device rev=%04x cls=%02x sub=%02x proto=%02x size=%d\r\n",
+                dev_desc->bcdUSB, dev_desc->bDeviceClass, dev_desc->bDeviceSubClass,
+                dev_desc->bDeviceProtocol, ep_mps);
 
     /* Reconfigure EP0 with the correct maximum packet size */
     usbh_ep_pipe_reconfigure(hport->ep0, 0, ep_mps, 0);

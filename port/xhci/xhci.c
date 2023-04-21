@@ -29,6 +29,75 @@
 #include "xhci_reg.h"
 #include "xhci.h"
 
+extern struct usbh_hubport *usbh_get_roothub_port(unsigned int port);
+
+/**
+ * Get USB transaction translator
+ *
+ * @v hport		Hub port of USB device
+ * @ret port    Transaction translator port, or NULL
+ */
+struct usbh_hubport *usbh_transaction_translator(struct usbh_hubport *hport)
+{
+    struct usbh_hubport *parent;
+
+    if (hport->parent->is_roothub) {
+        return NULL;
+    }
+
+    /* Navigate up to root hub.  If we find a low-speed or
+	 * full-speed device with a higher-speed parent hub, then that
+	 * device's port is the transaction translator.
+	 */
+    for (; (parent = hport->parent->parent); hport = parent) {
+        if ((hport->speed <= USB_SPEED_FULL) &&
+            (parent->speed > USB_SPEED_FULL)) {
+            return hport;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * Get USB route string
+ *
+ * @v hport		Hub Port of USB device
+ * @ret route	USB route string
+ */
+unsigned int usbh_route_string(struct usbh_hubport *hport)
+{
+    struct usbh_hubport *parent;
+    unsigned int route;
+
+    /* Navigate up to root hub, constructing route string as we go */
+    for (route = 0; (parent = hport->parent->parent); hport = parent) {
+        route <<= 4;
+        route |= ((hport->dev_addr > 0xf) ?
+                      0xf :
+                      hport->dev_addr);
+    }
+
+    return route;
+}
+
+/**
+ * Get USB root hub port
+ *
+ * @v usb		Hub port of USB device
+ * @ret port	Root hub port
+ */
+struct usbh_hubport *usbh_root_hub_port(struct usbh_hubport *hport)
+{
+    struct usbh_hubport *parent;
+
+    /* Navigate up to root hub */
+    while (parent = hport->parent->parent) {
+        hport = parent;
+    }
+
+    return hport;
+}
 
 /** @file
  *
@@ -485,7 +554,7 @@ static unsigned int xhci_port_protocol ( struct xhci_host *xhci,
 	protocol = XHCI_SUPPORTED_REVISION_VER ( revision );
 
 	/* Describe port protocol */
-#if XHCI_DUMP 
+#if XHCI_DUMP
     {
 		name.raw = CPU_TO_LE32 ( readl ( xhci->cap + supported +
 						 XHCI_SUPPORTED_NAME ) );
@@ -798,7 +867,7 @@ static void xhci_run ( struct xhci_host *xhci ) {
  * @v xhci		xHCI device
  */
 static void xhci_event_free ( struct xhci_host *xhci ) {
-	
+
     /* Clear event ring registers */
 	writel ( 0, xhci->run + XHCI_RUN_ERSTSZ ( 0 ) );
 	xhci_writeq ( xhci, 0, xhci->run + XHCI_RUN_ERSTBA ( 0 ) );
@@ -1029,12 +1098,12 @@ int xhci_port_enable(struct xhci_host *xhci, uint32_t port) {
 /**
  * Convert USB Speed to PSI
  *
- * @v speed		USB speed 
+ * @v speed		USB speed
  * @ret psi		USB speed in PSI
  */
 static unsigned int xhci_speed_to_psi(int speed) {
 	unsigned int psi = USB_SPEED_UNKNOWN;
-	
+
 	switch (speed) {
 		case USB_SPEED_LOW:
 			psi = XCHI_PSI_LOW;
@@ -1056,12 +1125,12 @@ static unsigned int xhci_speed_to_psi(int speed) {
 /**
  * Convert USB PSI to Speed
  *
- * @v psi		USB speed in PSI 
- * @ret speed	USB speed	
+ * @v psi		USB speed in PSI
+ * @ret speed	USB speed
  */
 static int xhci_psi_to_speed(int psi) {
 	int speed = USB_SPEED_UNKNOWN;
-	
+
 	switch (psi) {
 		case XCHI_PSI_LOW:
 			speed = USB_SPEED_LOW;
@@ -1221,7 +1290,7 @@ uint32_t xhci_root_speed ( struct xhci_host *xhci, uint8_t port ) {
 	csc = ( portsc & XHCI_PORTSC_CSC );
 	psiv = XHCI_PORTSC_PSIV ( portsc );
 
-	USB_LOG_DBG("XHCI %s port-%d ccs: %d, ped: %d, csc: %d, psiv: 0x%x\n", 
+	USB_LOG_DBG("XHCI %s port-%d ccs: %d, ped: %d, csc: %d, psiv: 0x%x\n",
 				 xhci->name, port, !!ccs, !!ped, !!csc, psiv);
 
 	/* Port speed is not valid unless port is connected */
@@ -1348,7 +1417,7 @@ static void xhci_abort ( struct xhci_host *xhci ) {
 	/* Consume (and ignore) any final command status */
 	int cc = xhci_event_wait(xhci, xhci->cur_cmd_pipe, xhci->cmds);
 	if (XHCI_CMPLT_SUCCESS != cc) {
-		USB_LOG_ERR("XHCI %s abort command failed, cc %d\n", xhci->name, cc);	
+		USB_LOG_ERR("XHCI %s abort command failed, cc %d\n", xhci->name, cc);
 	}
 
  	/* Reset the command ring control register */
@@ -1364,7 +1433,7 @@ static void xhci_abort ( struct xhci_host *xhci ) {
  * @  trb		Command TRB to be sent
  */
 static int xhci_cmd_submit(struct xhci_host *xhci, struct xhci_endpoint *ep, union xhci_trb *trb) {
-    
+
 	int rc = 0;
 	usb_osal_mutex_take(xhci->cmds->lock); /* handle command one by one */
 
@@ -1382,7 +1451,7 @@ static int xhci_cmd_submit(struct xhci_host *xhci, struct xhci_endpoint *ep, uni
 	if (XHCI_CMPLT_SUCCESS != cc) {
 		USB_LOG_ERR("XHCI %s cmd failed, cc %d\n", xhci->name, cc);
 		xhci_abort(xhci); /* Abort command */
-		rc = -ENOTSUP;		
+		rc = -ENOTSUP;
 	}
 
     usb_osal_mutex_give(xhci->cmds->lock);
@@ -1528,7 +1597,7 @@ static int xhci_context ( struct xhci_host *xhci, struct xhci_slot *slot,
  err_command:
 	usb_free ( input );
  err_alloc:
-	return rc;		
+	return rc;
 }
 
 /**
@@ -1548,7 +1617,7 @@ static void xhci_address_device_input ( struct xhci_host *xhci,
 	struct xhci_endpoint_context *ep_ctx;
 
 	/* Sanity checks */
-	USB_ASSERT ( endpoint->ctx == XHCI_CTX_EP0 );	
+	USB_ASSERT ( endpoint->ctx == XHCI_CTX_EP0 );
 
 	/* Populate control context, add slot context and ep context */
 	control_ctx = input;
@@ -1585,7 +1654,7 @@ static void xhci_address_device_input ( struct xhci_host *xhci,
  * @v slot		Device slot
  * @ret rc		Return status code
  */
-static inline int xhci_address_device ( struct xhci_host *xhci, 
+static inline int xhci_address_device ( struct xhci_host *xhci,
 										struct xhci_endpoint *ep,
 										struct xhci_slot *slot ) {
 	struct xhci_slot_context *slot_ctx;
@@ -1595,7 +1664,7 @@ static inline int xhci_address_device ( struct xhci_host *xhci,
 	if ( ( rc = xhci_context ( xhci, slot, slot->endpoint[XHCI_CTX_EP0],
 				   XHCI_TRB_ADDRESS_DEVICE,
 				   xhci_address_device_input ) ) != 0 )
-	
+
 	USB_LOG_DBG("XHCI %s slot ctx 0x%x\n", xhci->name, slot->context);
 
 	/* Get assigned address for check */
@@ -1604,7 +1673,7 @@ static inline int xhci_address_device ( struct xhci_host *xhci,
 	USB_LOG_DBG("XHCI %s slot ctx 0x%x assigned address 0x%x\n",
 		xhci->name, slot_ctx, slot_ctx->address );
 
-	return rc;					
+	return rc;
 }
 
 /**
@@ -1701,12 +1770,12 @@ static int xhci_port_slot_type ( struct xhci_host *xhci, unsigned int port ) {
  *
  * @v xhci		XHCI device
  * @v ep		Endpoint
- * @ret slot_id Return device slot id  
+ * @ret slot_id Return device slot id
  * @ret rc		Return status code
  */
 int xhci_device_open ( struct xhci_host *xhci, struct xhci_endpoint *ep, int *slot_id ) {
 	struct usbh_hubport *hport = ep->hport;
-	struct usbh_hubport *tt = usbh_transaction_translator(hport);	
+	struct usbh_hubport *tt = usbh_transaction_translator(hport);
 	struct xhci_slot *slot;
 	struct xhci_slot *tt_slot;
 	int type;
@@ -1774,7 +1843,7 @@ err_alloc_context:
 	xhci->slot[id] = NULL;
 	usb_free ( slot );
 err_alloc:
-	xhci_disable_slot ( xhci, ep, id );	
+	xhci_disable_slot ( xhci, ep, id );
 err_enable_slot:
 err_type:
 	return rc;
@@ -1903,7 +1972,7 @@ static void xhci_configure_endpoint_input ( struct xhci_host *xhci,
 	ep_ctx->burst = endpoint->burst;
 	ep_ctx->mtu = CPU_TO_LE16 ( endpoint->mtu ); /* bit[31:16] max packet size */
 	ep_ctx->dequeue = CPU_TO_LE64 ( (uint64_t)( &(endpoint->reqs.ring[0]) ) | XHCI_EP_DCS );
-	
+
 	/* TODO: endpoint attached on hub may need different setting here */
 	if (endpoint->ep_type == USB_ENDPOINT_TYPE_BULK) {
 		ep_ctx->trb_len = CPU_TO_LE16 ( 256U ); /* bit[15:0] average trb length */
@@ -1933,7 +2002,7 @@ static inline int xhci_configure_endpoint ( struct xhci_host *xhci,
 				   XHCI_TRB_CONFIGURE_ENDPOINT,
 				   xhci_configure_endpoint_input ) ) != 0 ){
 		USB_LOG_ERR("XHCI %s slot %d ctx %d configure failed, error %d !!!\n",
-			xhci->name, slot->id, endpoint->ctx, rc );		
+			xhci->name, slot->id, endpoint->ctx, rc );
 		return rc;
 	}
 
@@ -1943,7 +2012,7 @@ static inline int xhci_configure_endpoint ( struct xhci_host *xhci,
 		xhci_dump_slot_ctx(endpoint->slot->context);
 		xhci_dump_ep_ctx(endpoint->context);
 		USB_LOG_ERR("XHCI %s slot %d ctx %d configure failed !!!\n",
-			xhci->name, slot->id, endpoint->ctx );	
+			xhci->name, slot->id, endpoint->ctx );
 		return -1;
 	}
 
@@ -2035,7 +2104,7 @@ int xhci_ctrl_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, st
 	ep->reqs.cs = 1; /* cycle state = 1 */
 
 	USB_LOG_DBG("XHCI %s slot %d endpoint 0x%x ep type %d xhci ep type 0x%x\n",
-		xhci->name, slot->id, ep->address, ep->ep_type, 
+		xhci->name, slot->id, ep->address, ep->ep_type,
 		(ep->ctx_type >> 3) );
 
 	USB_LOG_DBG("XHCI %s slot %d ctx %d ring [%08lx,%08lx)\n",
@@ -2090,7 +2159,7 @@ int xhci_work_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, st
 	ep->xhci = xhci;
 	ep->slot = slot;
 	ep->ctx = ctx;
-	
+
 	/* Calculate interval */
 	if ( ctx_type & XHCI_EP_TYPE_PERIODIC ) {
 		ep->interval = ( fls ( ep->interval ) - 1 );
@@ -2102,7 +2171,7 @@ int xhci_work_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, st
 	ep->reqs.cs = 1; /* cycle state = 1 */
 
 	USB_LOG_DBG("XHCI %s slot %d endpoint 0x%x ep type %d xhci ep type 0x%x\n",
-		xhci->name, slot->id, ep->address, ep->ep_type, 
+		xhci->name, slot->id, ep->address, ep->ep_type,
 		(ep->ctx_type >> 3) );
 
 	/* Configure endpoint */
@@ -2136,7 +2205,7 @@ void xhci_endpoint_close ( struct xhci_endpoint *ep ) {
 		(void)xhci_deconfigure_endpoint ( xhci, slot, ep );
 
 	slot->endpoint[ctx] = NULL;
-	usb_free(ep);	
+	usb_free(ep);
 }
 
 /*********************************************************************/
@@ -2150,9 +2219,9 @@ void xhci_endpoint_close ( struct xhci_endpoint *ep ) {
  * @v datalen	Data length
  * @ret rc		Return status code
  */
-void xhci_endpoint_message ( struct xhci_endpoint *ep, 
+void xhci_endpoint_message ( struct xhci_endpoint *ep,
 							 struct usb_setup_packet *packet,
-				   			 void *data_buff, 
+				   			 void *data_buff,
 							 int datalen ) {
 	struct xhci_host *xhci = ep->xhci;
 	struct xhci_slot *slot = ep->slot;
@@ -2219,8 +2288,8 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep,
  * @v datalen	Data length
  * @ret rc		Return status code
  */
-void xhci_endpoint_stream ( struct xhci_endpoint *ep, 
-							void *data_buff, 
+void xhci_endpoint_stream ( struct xhci_endpoint *ep,
+							void *data_buff,
 							int datalen ) {
 	struct xhci_host *xhci = ep->xhci;
 	struct xhci_slot *slot = ep->slot;
@@ -2254,7 +2323,7 @@ void xhci_endpoint_stream ( struct xhci_endpoint *ep,
 	xhci_doorbell(xhci, slot->id, ep->ctx);
 
 err_enqueue:
-	return;	
+	return;
 }
 
 /*********************************************************************/
@@ -2357,7 +2426,7 @@ static void xhci_port_status ( struct xhci_host *xhci,
 	if (portsc & XHCI_PORTSC_CSC) {
 		/* Report port status change */
 		usbh_roothub_thread_wakeup ( trb->port );
-	}                                
+	}
 }
 
 /**
@@ -2369,11 +2438,11 @@ static void xhci_port_status ( struct xhci_host *xhci,
 static void xhci_transfer ( struct xhci_host *xhci,
 			    			struct xhci_trb_transfer *trb ) {
 	struct xhci_slot *slot;
-	struct xhci_endpoint *endpoint;	
+	struct xhci_endpoint *endpoint;
 	union xhci_trb *trans_trb = (void *)(uintptr_t)(trb->transfer);
     struct xhci_ring *trans_ring = XHCI_RING(trans_trb); /* to align addr is ring base */
 	union xhci_trb *pending = &trans_ring->evt; /* preserve event trb pending to handle */
-    uint32_t eidx = trans_trb - trans_ring->ring + 1; /* calculate current evt trb index */	
+    uint32_t eidx = trans_trb - trans_ring->ring + 1; /* calculate current evt trb index */
 	int rc;
 
 	/* Identify slot */
@@ -2434,7 +2503,7 @@ static void xhci_transfer ( struct xhci_host *xhci,
         }
 	}
 
-	return;    
+	return;
 }
 
 /**
@@ -2559,5 +2628,5 @@ struct xhci_endpoint *xhci_event_process(struct xhci_host *xhci) {
 				xhci->run + XHCI_RUN_ERDP ( 0 ) );
    }
 
-   return work_pipe;    
+   return work_pipe;
 }

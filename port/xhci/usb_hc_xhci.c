@@ -62,6 +62,14 @@ __WEAK unsigned long usb_hc_get_register_base(void)
     return 0U;
 }
 
+/**
+ * Get USB root hub port
+ *
+ * @v hport		Hub port of USB device
+ * @ret port	Root hub port
+ */
+extern struct usbh_hubport *usbh_root_hub_port(struct usbh_hubport *hport);
+
 static struct xhci_host xhci_host;
 
 /* xhci hardware init */

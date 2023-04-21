@@ -38,6 +38,13 @@ static void usbh_hub_thread_wakeup(struct usbh_hub *hub);
 
 static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed", "wireless-speed", "super-speed", "superplus-speed" };
 
+#ifdef CONFIG_USBHOST_XHCI
+struct usbh_hubport *usbh_get_roothub_port(unsigned int port)
+{
+    return &roothub.child[port - 1];
+}
+#endif
+
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static int usbh_hub_devno_alloc(void)
 {
@@ -82,7 +89,16 @@ static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = HUB_DESCRIPTOR_TYPE_HUB << 8;
+
+    /* TODO: hub descriptor has some difference between USB 2.0 and USB 3.x,
+       and we havn't handle the difference here */
+    if ((hub->parent->speed == USB_SPEED_SUPER) ||
+        (hub->parent->speed == USB_SPEED_SUPER_PLUS)) {
+        setup->wValue = HUB_DESCRIPTOR_TYPE_HUB3 << 8;
+    } else {
+        setup->wValue = HUB_DESCRIPTOR_TYPE_HUB << 8;
+    }
+
     setup->wIndex = 0;
     setup->wLength = USB_SIZEOF_HUB_DESC;
 
@@ -167,6 +183,21 @@ static int _usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t f
     return usbh_control_transfer(hub->parent->ep0, setup, NULL);
 }
 
+static int _usbh_hub_set_depth(struct usbh_hub *hub, uint16_t depth)
+{
+    struct usb_setup_packet *setup;
+
+    setup = hub->parent->setup;
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = HUB_REQUEST_SET_HUB_DEPTH;
+    setup->wValue = depth;
+    setup->wIndex = 0;
+    setup->wLength = 0;
+
+    return usbh_control_transfer(hub->parent->ep0, setup, NULL);
+}
+
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length)
 {
@@ -245,6 +276,24 @@ static int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t fe
     }
 }
 
+static int usbh_hub_set_depth(struct usbh_hub *hub, uint16_t depth)
+{
+    struct usb_setup_packet roothub_setup;
+    struct usb_setup_packet *setup;
+
+    if (hub->is_roothub) {
+        setup = &roothub_setup;
+        setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
+        setup->bRequest = HUB_REQUEST_SET_HUB_DEPTH;
+        setup->wValue = depth;
+        setup->wIndex = 0;
+        setup->wLength = 0;
+        return usbh_roothub_control(setup, NULL);
+    } else {
+        return _usbh_hub_set_depth(hub, depth);
+    }
+}
+
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static void hub_int_complete_callback(void *arg, int nbytes)
 {
@@ -295,6 +344,20 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         usbh_hport_activate_epx(&hub->intin, hport, ep_desc);
     } else {
         return -1;
+    }
+
+    if (hport->speed == USB_SPEED_SUPER) {
+        uint16_t depth = 0;
+        struct usbh_hubport *parent = hport->parent->parent;
+        while (parent) {
+            depth++;
+            parent = parent->parent->parent;
+        }
+
+        ret = usbh_hub_set_depth(hub, depth);
+        if (ret < 0) {
+            return ret;
+        }
     }
 
     for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
@@ -502,9 +565,26 @@ static void usbh_hub_events(struct usbh_hub *hub)
                         speed = USB_SPEED_HIGH;
                     } else if (portstatus & HUB_PORT_STATUS_LOW_SPEED) {
                         speed = USB_SPEED_LOW;
-                    } else {
+                    }
+#ifdef CONFIG_USBHOST_XHCI
+                    extern uint8_t usbh_get_port_speed(struct usbh_hub * hub, const uint8_t port);
+
+                    /* USB3.0 speed cannot get from portstatus, checkout port speed instead */
+                    else
+                    {
+                        uint8_t super_speed = usbh_get_port_speed(hub, port + 1);
+                        if (super_speed > USB_SPEED_HIGH) {
+                            /* assert that when using USB 3.0 ports, attached device must also be USB 3.0 speed */
+                            speed = super_speed;
+                        } else {
+                            speed = USB_SPEED_FULL;
+                        }
+                    }
+#else
+                    else {
                         speed = USB_SPEED_FULL;
                     }
+#endif
 
                     child = &hub->child[port];
                     /** release child sources first */
@@ -530,7 +610,9 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     child = &hub->child[port];
                     /** release child sources */
                     usbh_hubport_release(child);
-                    USB_LOG_ERR("Failed to enable port %u\r\n", port + 1);
+
+                    /** some USB 3.0 ip may failed to enable USB 2.0 port for USB 3.0 device */
+                    USB_LOG_WRN("Failed to enable port %u\r\n", port + 1);
 
                     continue;
                 }

@@ -7,7 +7,8 @@
 #define USB_HUB_H
 
 /* HUB Class Descriptor Types */
-#define HUB_DESCRIPTOR_TYPE_HUB 0x29
+#define HUB_DESCRIPTOR_TYPE_HUB  0x29
+#define HUB_DESCRIPTOR_TYPE_HUB3 0x2A
 
 /* Hub class requests */
 #define HUB_REQUEST_GET_STATUS      USB_REQUEST_GET_STATUS
@@ -19,6 +20,7 @@
 #define HUB_REQUEST_RESET_TT        (0x09)
 #define HUB_REQUEST_GET_TT_STATE    (0x0a)
 #define HUB_REQUEST_STOP_TT         (0x0b)
+#define HUB_REQUEST_SET_HUB_DEPTH   (0x0C)
 
 /* Hub class features */
 #define HUB_FEATURE_HUB_C_LOCALPOWER  (0x0)
