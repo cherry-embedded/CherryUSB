@@ -59,9 +59,9 @@ const uint8_t audio_descriptor[] = {
     AUDIO_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x04, AUDIO_TERMINAL_STREAMING, 0x02, 0x0003),
     AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x05, 0x04, 0x01, 0x03, 0x00, 0x00),
     AUDIO_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x06, AUDIO_OUTTERM_SPEAKER, 0x05),
-    AUDIO_AS_DESCRIPTOR_INIT(0x01, 0x04, 0x02, AUDIO_SPEAKER_FRAME_SIZE_BYTE, AUDIO_SPEAKER_RESOLUTION_BIT, AUDIO_OUT_EP, AUDIO_OUT_PACKET,\
+    AUDIO_AS_DESCRIPTOR_INIT(0x01, 0x04, 0x02, AUDIO_SPEAKER_FRAME_SIZE_BYTE, AUDIO_SPEAKER_RESOLUTION_BIT, AUDIO_OUT_EP, AUDIO_OUT_PACKET,
                              EP_INTERVAL, AUDIO_SAMPLE_FREQ_3B(AUDIO_SPEAKER_FREQ)),
-    AUDIO_AS_DESCRIPTOR_INIT(0x02, 0x03, 0x02, AUDIO_MIC_FRAME_SIZE_BYTE, AUDIO_MIC_RESOLUTION_BIT, AUDIO_IN_EP, AUDIO_IN_PACKET,\
+    AUDIO_AS_DESCRIPTOR_INIT(0x02, 0x03, 0x02, AUDIO_MIC_FRAME_SIZE_BYTE, AUDIO_MIC_RESOLUTION_BIT, AUDIO_IN_EP, AUDIO_IN_PACKET,
                              EP_INTERVAL, AUDIO_SAMPLE_FREQ_3B(AUDIO_MIC_FREQ)),
     ///////////////////////////////////////
     /// string0 descriptor
@@ -137,7 +137,7 @@ const uint8_t audio_descriptor[] = {
     0x00
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[AUDIO_IN_PACKET];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_PACKET];
 
 volatile bool tx_flag = 0;
@@ -165,12 +165,6 @@ void usbd_audio_close(uint8_t intf)
         printf("CLOSE2\r\n");
     }
 }
-
-#ifdef CONFIG_USB_HS
-#define AUDIO_OUT_EP_MPS 512
-#else
-#define AUDIO_OUT_EP_MPS 64
-#endif
 
 volatile bool ep_tx_busy_flag = false;
 
@@ -223,11 +217,14 @@ void audio_test()
 {
     while (1) {
         if (tx_flag) {
-            //            memset(write_buffer, 'a', 2048);
-            //            ep_tx_busy_flag = true;
-            //            usbd_ep_start_write(AUDIO_IN_EP, write_buffer, 2048);
-            //            while (ep_tx_busy_flag) {
-            //            }
+            memset(write_buffer, 'a', AUDIO_IN_PACKET);
+            ep_tx_busy_flag = true;
+            usbd_ep_start_write(AUDIO_IN_EP, write_buffer, AUDIO_IN_PACKET);
+            while (ep_tx_busy_flag) {
+                if (tx_flag == false) {
+                    break;
+                }
+            }
         }
     }
 }
