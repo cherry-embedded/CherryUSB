@@ -19,7 +19,7 @@ static uint32_t g_devinuse = 0;
 #endif
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_buf[32];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_intbuf[CONFIG_USBHOST_MAX_EXTHUBS + 1][1];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_intbuf[CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USB_ALIGN_SIZE];
 
 usb_slist_t hub_class_head = USB_SLIST_OBJECT_INIT(hub_class_head);
 
