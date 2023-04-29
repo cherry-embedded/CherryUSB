@@ -567,11 +567,10 @@ static void usbh_hub_events(struct usbh_hub *hub)
                         speed = USB_SPEED_LOW;
                     }
 #ifdef CONFIG_USBHOST_XHCI
-                    extern uint8_t usbh_get_port_speed(struct usbh_hub * hub, const uint8_t port);
+                    else {
+                        extern uint8_t usbh_get_port_speed(struct usbh_hub * hub, const uint8_t port);
 
-                    /* USB3.0 speed cannot get from portstatus, checkout port speed instead */
-                    else
-                    {
+                        /* USB3.0 speed cannot get from portstatus, checkout port speed instead */
                         uint8_t super_speed = usbh_get_port_speed(hub, port + 1);
                         if (super_speed > USB_SPEED_HIGH) {
                             /* assert that when using USB 3.0 ports, attached device must also be USB 3.0 speed */
