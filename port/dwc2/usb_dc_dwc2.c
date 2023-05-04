@@ -931,7 +931,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
         if (data_len > g_dwc2_udc.out_ep[ep_idx].ep_mps) {
             data_len = g_dwc2_udc.out_ep[ep_idx].ep_mps;
         }
-        g_dwc2_udc.in_ep[ep_idx].xfer_len = data_len;
+        g_dwc2_udc.out_ep[ep_idx].xfer_len = data_len;
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19));
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & data_len);
     } else {
