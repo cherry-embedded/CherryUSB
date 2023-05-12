@@ -44,7 +44,7 @@ struct dfu_cfg_priv {
 
 static void dfu_reset(void)
 {
-    memset(&usbd_dfu_cfg, 0, sizeof(usbd_dfu_cfg));
+    usb_memset(&usbd_dfu_cfg, 0, sizeof(usbd_dfu_cfg));
 
     usbd_dfu_cfg.alt_setting = 0U;
     usbd_dfu_cfg.data_ptr = USBD_DFU_APP_DEFAULT_ADD;
@@ -130,7 +130,7 @@ static void dfu_request_upload(struct usb_setup_packet *setup, uint8_t **data, u
                 usbd_dfu_cfg.buffer.d8[2] = DFU_CMD_ERASE;
 
                 /* Send the status data over EP0 */
-                memcpy(*data, usbd_dfu_cfg.buffer.d8, 3);
+                usb_memcpy(*data, usbd_dfu_cfg.buffer.d8, 3);
                 *len = 3;
             } else if (usbd_dfu_cfg.wblock_num > 1U) {
                 usbd_dfu_cfg.dev_state = DFU_STATE_DFU_UPLOAD_IDLE;
@@ -146,7 +146,7 @@ static void dfu_request_upload(struct usb_setup_packet *setup, uint8_t **data, u
                 phaddr = dfu_read_flash((uint8_t *)addr, usbd_dfu_cfg.buffer.d8, usbd_dfu_cfg.wlength);
 
                 /* Send the status data over EP0 */
-                memcpy(*data, usbd_dfu_cfg.buffer.d8, usbd_dfu_cfg.wlength);
+                usb_memcpy(*data, usbd_dfu_cfg.buffer.d8, usbd_dfu_cfg.wlength);
                 *len = usbd_dfu_cfg.wlength;
             } else /* unsupported usbd_dfu_cfg.wblock_num */
             {
@@ -196,7 +196,7 @@ static void dfu_request_dnload(struct usb_setup_packet *setup, uint8_t **data, u
             usbd_dfu_cfg.dev_status[4] = usbd_dfu_cfg.dev_state;
 
             /*!< Data has received complete */
-            memcpy((uint8_t *)usbd_dfu_cfg.buffer.d8, (uint8_t *)*data, usbd_dfu_cfg.wlength);
+            usb_memcpy((uint8_t *)usbd_dfu_cfg.buffer.d8, (uint8_t *)*data, usbd_dfu_cfg.wlength);
             /*!< Set flag = 1 Write the firmware to the flash in the next dfu_request_getstatus */
             usbd_dfu_cfg.firmwar_flag = 1;
         }
@@ -369,7 +369,7 @@ static void dfu_request_getstatus(struct usb_setup_packet *setup, uint8_t **data
     }
 
     /* Send the status data over EP0 */
-    memcpy(*data, usbd_dfu_cfg.dev_status, 6);
+    usb_memcpy(*data, usbd_dfu_cfg.dev_status, 6);
     *len = 6;
 
     if (usbd_dfu_cfg.firmwar_flag == 1) {

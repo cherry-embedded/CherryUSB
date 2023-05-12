@@ -416,7 +416,7 @@ void USBD_IRQHandler(void)
         }
     }
     if (wIstr & USB_ISTR_RESET) {
-        memset(&g_fsdev_udc, 0, sizeof(struct fsdev_udc));
+        usb_memset(&g_fsdev_udc, 0, sizeof(struct fsdev_udc));
         g_fsdev_udc.pma_offset = USB_BTABLE_SIZE;
         usbd_event_reset_handler();
         /* start reading setup packet */

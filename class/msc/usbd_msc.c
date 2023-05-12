@@ -217,7 +217,7 @@ static bool SCSI_requestSense(uint8_t **data, uint32_t *len)
     request_sense[13] = 0x00;         /* Additional Sense Code Qualifier */
 #endif
 
-    memcpy(*data, (uint8_t *)request_sense, data_len);
+    usb_memcpy(*data, (uint8_t *)request_sense, data_len);
     *len = data_len;
     return true;
 }
@@ -265,9 +265,9 @@ static bool SCSI_inquiry(uint8_t **data, uint32_t *len)
         ' ', ' ', ' ', ' ' /* Version      : 4 Bytes */
     };
 
-    memcpy(&inquiry[8], CONFIG_USBDEV_MSC_MANUFACTURER_STRING, strlen(CONFIG_USBDEV_MSC_MANUFACTURER_STRING));
-    memcpy(&inquiry[16], CONFIG_USBDEV_MSC_PRODUCT_STRING, strlen(CONFIG_USBDEV_MSC_PRODUCT_STRING));
-    memcpy(&inquiry[32], CONFIG_USBDEV_MSC_VERSION_STRING, strlen(CONFIG_USBDEV_MSC_VERSION_STRING));
+    usb_memcpy(&inquiry[8], CONFIG_USBDEV_MSC_MANUFACTURER_STRING, strlen(CONFIG_USBDEV_MSC_MANUFACTURER_STRING));
+    usb_memcpy(&inquiry[16], CONFIG_USBDEV_MSC_PRODUCT_STRING, strlen(CONFIG_USBDEV_MSC_PRODUCT_STRING));
+    usb_memcpy(&inquiry[32], CONFIG_USBDEV_MSC_VERSION_STRING, strlen(CONFIG_USBDEV_MSC_VERSION_STRING));
 
     if (usbd_msc_cfg.cbw.dDataLength == 0U) {
         SCSI_SetSenseData(SCSI_KCQIR_INVALIDCOMMAND);
@@ -277,10 +277,10 @@ static bool SCSI_inquiry(uint8_t **data, uint32_t *len)
     if ((usbd_msc_cfg.cbw.CB[1] & 0x01U) != 0U) { /* Evpd is set */
         if (usbd_msc_cfg.cbw.CB[2] == 0U) {       /* Request for Supported Vital Product Data Pages*/
             data_len = 0x06;
-            memcpy(*data, (uint8_t *)inquiry00, data_len);
+            usb_memcpy(*data, (uint8_t *)inquiry00, data_len);
         } else if (usbd_msc_cfg.cbw.CB[2] == 0x80U) { /* Request for VPD page 0x80 Unit Serial Number */
             data_len = 0x08;
-            memcpy(*data, (uint8_t *)inquiry80, data_len);
+            usb_memcpy(*data, (uint8_t *)inquiry80, data_len);
         } else { /* Request Not supported */
             SCSI_SetSenseData(SCSI_KCQIR_INVALIDFIELDINCBA);
             return false;
@@ -289,7 +289,7 @@ static bool SCSI_inquiry(uint8_t **data, uint32_t *len)
         if (usbd_msc_cfg.cbw.CB[4] < SCSIRESP_INQUIRY_SIZEOF) {
             data_len = usbd_msc_cfg.cbw.CB[4];
         }
-        memcpy(*data, (uint8_t *)inquiry, data_len);
+        usb_memcpy(*data, (uint8_t *)inquiry, data_len);
     }
 
     *len = data_len;
@@ -352,7 +352,7 @@ static bool SCSI_modeSense6(uint8_t **data, uint32_t *len)
     if (usbd_msc_cfg.readonly) {
         sense6[2] = 0x80;
     }
-    memcpy(*data, (uint8_t *)sense6, data_len);
+    usb_memcpy(*data, (uint8_t *)sense6, data_len);
     *len = data_len;
     return true;
 }
@@ -399,7 +399,7 @@ static bool SCSI_modeSense10(uint8_t **data, uint32_t *len)
         0x00
     };
 
-    memcpy(*data, (uint8_t *)sense10, data_len);
+    usb_memcpy(*data, (uint8_t *)sense10, data_len);
     *len = data_len;
     return true;
 }
@@ -426,7 +426,7 @@ static bool SCSI_readFormatCapacity(uint8_t **data, uint32_t *len)
         (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 0) & 0xff),
     };
 
-    memcpy(*data, (uint8_t *)format_capacity, SCSIRESP_READFORMATCAPACITIES_SIZEOF);
+    usb_memcpy(*data, (uint8_t *)format_capacity, SCSIRESP_READFORMATCAPACITIES_SIZEOF);
     *len = SCSIRESP_READFORMATCAPACITIES_SIZEOF;
     return true;
 }
@@ -450,7 +450,7 @@ static bool SCSI_readCapacity10(uint8_t **data, uint32_t *len)
         (uint8_t)((usbd_msc_cfg.scsi_blk_size >> 0) & 0xff),
     };
 
-    memcpy(*data, (uint8_t *)capacity10, SCSIRESP_READCAPACITY10_SIZEOF);
+    usb_memcpy(*data, (uint8_t *)capacity10, SCSIRESP_READCAPACITY10_SIZEOF);
     *len = SCSIRESP_READCAPACITY10_SIZEOF;
     return true;
 }
@@ -823,7 +823,7 @@ struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uin
     usbd_add_endpoint(&mass_ep_data[MSD_OUT_EP_IDX]);
     usbd_add_endpoint(&mass_ep_data[MSD_IN_EP_IDX]);
 
-    memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
+    usb_memset((uint8_t *)&usbd_msc_cfg, 0, sizeof(struct usbd_msc_cfg_priv));
 
     usbd_msc_get_cap(0, &usbd_msc_cfg.scsi_blk_nbr, &usbd_msc_cfg.scsi_blk_size);
 

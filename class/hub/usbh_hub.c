@@ -106,7 +106,7 @@ static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hub_buf, USB_SIZEOF_HUB_DESC);
+    usb_memcpy(buffer, g_hub_buf, USB_SIZEOF_HUB_DESC);
     return ret;
 }
 
@@ -127,7 +127,7 @@ static int _usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hub_buf, 2);
+    usb_memcpy(buffer, g_hub_buf, 2);
     return ret;
 }
 #endif
@@ -149,7 +149,7 @@ static int _usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct h
     if (ret < 0) {
         return ret;
     }
-    memcpy(port_status, g_hub_buf, 4);
+    usb_memcpy(port_status, g_hub_buf, 4);
     return ret;
 }
 
@@ -320,7 +320,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_hub *hub = &exthub[index - EXTHUB_FIRST_INDEX];
 
-    memset(hub, 0, sizeof(struct usbh_hub));
+    usb_memset(hub, 0, sizeof(struct usbh_hub));
     hub->hub_addr = hport->dev_addr;
     hub->parent = hport;
     hub->index = index;
@@ -414,7 +414,7 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         usbh_hub_unregister(hub);
-        memset(hub, 0, sizeof(struct usbh_hub));
+        usb_memset(hub, 0, sizeof(struct usbh_hub));
 
         if (hport->config.intf[intf].devname[0] != '\0')
             USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
@@ -589,7 +589,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     /** release child sources first */
                     usbh_hubport_release(child);
 
-                    memset(child, 0, sizeof(struct usbh_hubport));
+                    usb_memset(child, 0, sizeof(struct usbh_hubport));
                     child->parent = hub;
                     child->connected = true;
                     child->port = port + 1;
@@ -648,7 +648,7 @@ static void usbh_hub_thread(void *argument)
 
 static void usbh_roothub_register(void)
 {
-    memset(&roothub, 0, sizeof(struct usbh_hub));
+    usb_memset(&roothub, 0, sizeof(struct usbh_hub));
 
     roothub.connected = true;
     roothub.index = 1;

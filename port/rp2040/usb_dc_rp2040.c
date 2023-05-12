@@ -94,8 +94,8 @@ static void rp2040_usb_init(void)
     unreset_block_wait(RESETS_RESET_USBCTRL_BITS);
 
     /*!< Clear any previous state just in case */
-    memset(usb_hw, 0, sizeof(*usb_hw));
-    memset(usb_dpram, 0, sizeof(*usb_dpram));
+    usb_memset(usb_hw, 0, sizeof(*usb_hw));
+    usb_memset(usb_dpram, 0, sizeof(*usb_dpram));
 
     /*!< Mux the controller to the onboard usb phy */
     usb_hw->muxing = USB_USB_MUXING_TO_PHY_BITS | USB_USB_MUXING_SOFTCON_BITS;
@@ -103,7 +103,7 @@ static void rp2040_usb_init(void)
 
 int usb_dc_init(void)
 {
-    memset(&g_rp2040_udc, 0, sizeof(struct rp2040_udc));
+    usb_memset(&g_rp2040_udc, 0, sizeof(struct rp2040_udc));
     rp2040_usb_init();
 #if FORCE_VBUS_DETECT
     /*!< Force VBUS detect so the device thinks it is plugged into a host */
@@ -156,7 +156,7 @@ static void usb_start_transfer(struct usb_dc_ep_state *ep, uint8_t *buf, uint16_
     if (USB_EP_DIR_IS_IN(ep->ep_addr)) {
         /*!< Need to copy the data from the user buffer to the usb memory */
         if (buf != NULL) {
-            memcpy((void *)ep->dpram_data_buf, (void *)buf, len);
+            usb_memcpy((void *)ep->dpram_data_buf, (void *)buf, len);
         }
         /*!< Mark as full */
         val |= USB_BUF_CTRL_FULL;
@@ -270,13 +270,13 @@ int usbd_ep_close(const uint8_t ep)
     if (USB_EP_DIR_IS_IN(ep)) {
         /*!< In */
         size = ((g_rp2040_udc.in_ep[epid].ep_mps + 64 - 1) / 64) * 64;
-        memset(g_rp2040_udc.in_ep[epid].dpram_data_buf, 0, size);
+        usb_memset(g_rp2040_udc.in_ep[epid].dpram_data_buf, 0, size);
         next_buffer_ptr -= size;
         g_rp2040_udc.in_ep[epid].ep_enable = false;
     } else if (USB_EP_DIR_IS_OUT(ep)) {
         /*!< Out */
         size = ((g_rp2040_udc.out_ep[epid].ep_mps + 64 - 1) / 64) * 64;
-        memset(g_rp2040_udc.out_ep[epid].dpram_data_buf, 0, size);
+        usb_memset(g_rp2040_udc.out_ep[epid].dpram_data_buf, 0, size);
         next_buffer_ptr -= size;
         g_rp2040_udc.out_ep[epid].ep_enable = false;
     }
@@ -425,7 +425,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
 
     } else if (ep->ep_addr == 0x00) {
         /*!< EP0 Out */
-        memcpy(g_rp2040_udc.out_ep[0].xfer_buf, g_rp2040_udc.out_ep[0].dpram_data_buf, read_count);
+        usb_memcpy(g_rp2040_udc.out_ep[0].xfer_buf, g_rp2040_udc.out_ep[0].dpram_data_buf, read_count);
         if (read_count == 0) {
             /*!< Normal status stage // Setup  in...in  out  */
             /**
@@ -442,7 +442,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
         uint16_t data_len = 0;
         if (USB_EP_DIR_IS_OUT(ep->ep_addr)) {
             /*!< flip the pid */
-            memcpy(g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].xfer_buf, g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].dpram_data_buf, read_count);
+            usb_memcpy(g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].xfer_buf, g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].dpram_data_buf, read_count);
             g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].xfer_buf += read_count;
             g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].actual_xfer_len += read_count;
             g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].xfer_len -= read_count;
@@ -525,7 +525,7 @@ void USBD_IRQHandler(void)
 
     if (status & USB_INTS_SETUP_REQ_BITS) {
         handled |= USB_INTS_SETUP_REQ_BITS;
-        memcpy((uint8_t *)&g_rp2040_udc.setup, (uint8_t const *)&usb_dpram->setup_packet, 8);
+        usb_memcpy((uint8_t *)&g_rp2040_udc.setup, (uint8_t const *)&usb_dpram->setup_packet, 8);
         /**
          * reset pid to both 1 (data and ack)
          */

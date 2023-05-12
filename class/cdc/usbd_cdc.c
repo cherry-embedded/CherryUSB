@@ -39,7 +39,7 @@ static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setu
             /*                                        4 - Space                            */
             /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
             /*******************************************************************************/
-            memcpy(&line_coding, *data, setup->wLength);
+            usb_memcpy(&line_coding, *data, setup->wLength);
             USB_LOG_DBG("Set intf:%d linecoding <%d %d %s %s>\r\n",
                         intf_num,
                         line_coding.dwDTERate,
@@ -62,7 +62,7 @@ static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setu
 
         case CDC_REQUEST_GET_LINE_CODING:
             usbd_cdc_acm_get_line_coding(intf_num, &line_coding);
-            memcpy(*data, &line_coding, 7);
+            usb_memcpy(*data, &line_coding, 7);
             *len = 7;
             USB_LOG_DBG("Get intf:%d linecoding %d %d %d %d\r\n",
                         intf_num,

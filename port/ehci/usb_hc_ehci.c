@@ -29,7 +29,7 @@ static struct ehci_qh_hw *ehci_qh_alloc(void)
         if (!g_ehci_hcd.ehci_qh_used[i]) {
             g_ehci_hcd.ehci_qh_used[i] = true;
             qh = &ehci_qh_pool[i];
-            memset(qh, 0, sizeof(struct ehci_qh_hw));
+            usb_memset(qh, 0, sizeof(struct ehci_qh_hw));
             qh->hw.hlp = QTD_LIST_END;
             qh->hw.overlay.next_qtd = QTD_LIST_END;
             qh->hw.overlay.alt_next_qtd = QTD_LIST_END;
@@ -56,7 +56,7 @@ static struct ehci_qtd_hw *ehci_qtd_alloc(void)
         if (!g_ehci_hcd.ehci_qtd_used[i]) {
             g_ehci_hcd.ehci_qtd_used[i] = true;
             qtd = &ehci_qtd_pool[i];
-            memset(qtd, 0, sizeof(struct ehci_qtd_hw));
+            usb_memset(qtd, 0, sizeof(struct ehci_qtd_hw));
             qtd->hw.next_qtd = QTD_LIST_END;
             qtd->hw.alt_next_qtd = QTD_LIST_END;
             qtd->hw.token = QTD_TOKEN_STATUS_HALTED;
@@ -685,7 +685,7 @@ int usb_hc_init(void)
     uint32_t timeout = 0;
     uint32_t regval;
 
-    memset(&g_ehci_hcd, 0, sizeof(struct ehci_hcd));
+    usb_memset(&g_ehci_hcd, 0, sizeof(struct ehci_hcd));
 
     if (sizeof(struct ehci_qh_hw) % 32) {
         USB_LOG_ERR("struct ehci_qh_hw is not align 32\r\n");
@@ -703,7 +703,7 @@ int usb_hc_init(void)
         pipe->waitsem = usb_osal_sem_create(0);
     }
 
-    memset(&g_async_qh_head, 0, sizeof(struct ehci_qh_hw));
+    usb_memset(&g_async_qh_head, 0, sizeof(struct ehci_qh_hw));
     g_async_qh_head.hw.hlp = QH_HLP_QH(&g_async_qh_head);
     g_async_qh_head.hw.epchar = QH_EPCHAR_H;
     g_async_qh_head.hw.overlay.next_qtd = QTD_LIST_END;
@@ -711,10 +711,10 @@ int usb_hc_init(void)
     g_async_qh_head.hw.overlay.token = QTD_TOKEN_STATUS_HALTED;
     g_async_qh_head.first_qtd = QTD_LIST_END;
 
-    memset(g_framelist, 0, sizeof(uint32_t) * CONFIG_USB_EHCI_FRAME_LIST_SIZE);
+    usb_memset(g_framelist, 0, sizeof(uint32_t) * CONFIG_USB_EHCI_FRAME_LIST_SIZE);
 
     for (int i = EHCI_PERIOIDIC_QH_NUM - 1; i >= 0; i--) {
-        memset(&g_periodic_qh_head[i], 0, sizeof(struct ehci_qh_hw));
+        usb_memset(&g_periodic_qh_head[i], 0, sizeof(struct ehci_qh_hw));
         g_periodic_qh_head[i].hw.hlp = QH_HLP_END;
         g_periodic_qh_head[i].hw.epchar = QH_EPCAPS_SSMASK(1);
         g_periodic_qh_head[i].hw.overlay.next_qtd = QTD_LIST_END;
@@ -849,7 +849,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
             case HUB_REQUEST_GET_DESCRIPTOR:
                 break;
             case HUB_REQUEST_GET_STATUS:
-                memset(buf, 0, 4);
+                usb_memset(buf, 0, 4);
                 break;
             default:
                 break;
@@ -950,7 +950,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                 if (temp & EHCI_PORTSC_PP) {
                     status |= (1 << HUB_PORT_FEATURE_POWER);
                 }
-                memcpy(buf, &status, 4);
+                usb_memcpy(buf, &status, 4);
                 break;
             default:
                 break;
@@ -983,7 +983,7 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     /* store variables */
     waitsem = ppipe->waitsem;
 
-    memset(ppipe, 0, sizeof(struct ehci_pipe));
+    usb_memset(ppipe, 0, sizeof(struct ehci_pipe));
 
     ppipe->ep_addr = ep_cfg->ep_addr;
     ppipe->ep_type = ep_cfg->ep_type;

@@ -346,7 +346,7 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
             /* normally length is at offset 0 */
             *len = p[DESC_bLength];
         }
-        memcpy(*data, p, *len);
+        usb_memcpy(*data, p, *len);
     } else {
         /* nothing found */
         USB_LOG_ERR("descriptor <type:%x,index:%x> not found!\r\n", type, index);
@@ -611,7 +611,7 @@ static bool usbd_std_interface_req_handler(struct usb_setup_packet *setup,
 
                     if (intf->intf_num == intf_num) {
                         //*data = (uint8_t *)intf->hid_report_descriptor;
-                        memcpy(*data, intf->hid_report_descriptor, intf->hid_report_descriptor_len);
+                        usb_memcpy(*data, intf->hid_report_descriptor, intf->hid_report_descriptor_len);
                         *len = intf->hid_report_descriptor_len;
                         return true;
                     }
@@ -844,14 +844,14 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
                 case 0x04:
                     USB_LOG_INFO("get Compat ID\r\n");
                     //*data = (uint8_t *)msosv1_desc->compat_id;
-                    memcpy(*data, msosv1_desc->compat_id, msosv1_desc->compat_id_len);
+                    usb_memcpy(*data, msosv1_desc->compat_id, msosv1_desc->compat_id_len);
                     *len = msosv1_desc->compat_id_len;
 
                     return 0;
                 case 0x05:
                     USB_LOG_INFO("get Compat id properties\r\n");
                     //*data = (uint8_t *)msosv1_desc->comp_id_property;
-                    memcpy(*data, msosv1_desc->comp_id_property, msosv1_desc->comp_id_property_len);
+                    usb_memcpy(*data, msosv1_desc->comp_id_property, msosv1_desc->comp_id_property_len);
                     *len = msosv1_desc->comp_id_property_len;
 
                     return 0;
@@ -866,7 +866,7 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
                 case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
                     USB_LOG_INFO("GET MS OS 2.0 Descriptor\r\n");
                     //*data = (uint8_t *)msosv2_desc->compat_id;
-                    memcpy(*data, msosv2_desc->compat_id, msosv2_desc->compat_id_len);
+                    usb_memcpy(*data, msosv2_desc->compat_id, msosv2_desc->compat_id_len);
                     *len = msosv2_desc->compat_id_len;
                     return 0;
                 default:
@@ -997,7 +997,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t *psetup)
 {
     struct usb_setup_packet *setup = &usbd_core_cfg.setup;
 
-    memcpy(setup, psetup, 8);
+    usb_memcpy(setup, psetup, 8);
 #ifdef CONFIG_USBDEV_SETUP_LOG_PRINT
     usbd_print_setup(setup);
 #endif
@@ -1180,7 +1180,7 @@ static void usbdev_rx_thread(void *argument)
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 void usbd_desc_register(struct usb_descriptor *desc)
 {
-    memset(&usbd_core_cfg, 0, sizeof(struct usbd_core_cfg_priv));
+    usb_memset(&usbd_core_cfg, 0, sizeof(struct usbd_core_cfg_priv));
 
     usbd_core_cfg.descriptors = desc;
     usbd_core_cfg.intf_offset = 0;
@@ -1193,7 +1193,7 @@ void usbd_desc_register(struct usb_descriptor *desc)
 #else
 void usbd_desc_register(const uint8_t *desc)
 {
-    memset(&usbd_core_cfg, 0, sizeof(struct usbd_core_cfg_priv));
+    usb_memset(&usbd_core_cfg, 0, sizeof(struct usbd_core_cfg_priv));
 
     usbd_core_cfg.descriptors = desc;
     usbd_core_cfg.intf_offset = 0;

@@ -60,7 +60,7 @@ int usb_dc_init(void)
 {
     usb_dc_low_level_init();
 
-    memset(&g_hpm_udc, 0, sizeof(struct hpm_udc));
+    usb_memset(&g_hpm_udc, 0, sizeof(struct hpm_udc));
     g_hpm_udc.handle = &usb_device_handle[0];
     g_hpm_udc.handle->regs = (USB_Type *)HPM_USB0_BASE;
     g_hpm_udc.handle->dcd_data = &_dcd_data;
@@ -219,8 +219,8 @@ void USBD_IRQHandler(void)
     }
 
     if (int_status & intr_reset) {
-        memset(g_hpm_udc.in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
-        memset(g_hpm_udc.out_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
+        usb_memset(g_hpm_udc.in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
+        usb_memset(g_hpm_udc.out_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
         usbd_event_reset_handler();
         usb_device_bus_reset(handle, 64);
     }

@@ -52,7 +52,7 @@ static int usbh_hid_get_report_descriptor(struct usbh_hid *hid_class, uint8_t *b
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hid_buf, ret - 8);
+    usb_memcpy(buffer, g_hid_buf, ret - 8);
     return ret;
 }
 
@@ -84,7 +84,7 @@ int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer)
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hid_buf, 1);
+    usb_memcpy(buffer, g_hid_buf, 1);
     return ret;
 }
 
@@ -112,7 +112,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(hid_class, 0, sizeof(struct usbh_hid));
+    usb_memset(hid_class, 0, sizeof(struct usbh_hid));
     usbh_hid_devno_alloc(hid_class);
     hid_class->hport = hport;
     hid_class->intf = intf;
@@ -170,7 +170,7 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         usbh_hid_stop(hid_class);
-        memset(hid_class, 0, sizeof(struct usbh_hid));
+        usb_memset(hid_class, 0, sizeof(struct usbh_hid));
         usb_free(hid_class);
 
         if (hport->config.intf[intf].devname[0] != '\0')

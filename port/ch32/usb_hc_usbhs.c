@@ -531,7 +531,7 @@ __WEAK void usb_hc_low_level_init(void)
 
 int usb_hc_init(void)
 {
-    memset(&g_chusb_hcd, 0, sizeof(struct chusb_hcd));
+    usb_memset(&g_chusb_hcd, 0, sizeof(struct chusb_hcd));
 
     for (uint8_t i = 0; i < CONFIG_USBHOST_PIPE_NUM; i++) {
         g_chusb_hcd.pipe_pool[i][0].waitsem = usb_osal_sem_create(0);
@@ -593,7 +593,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
             case HUB_REQUEST_GET_DESCRIPTOR:
                 break;
             case HUB_REQUEST_GET_STATUS:
-                memset(buf, 0, 4);
+                usb_memset(buf, 0, 4);
                 break;
             default:
                 break;
@@ -668,7 +668,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     }
                 }
 
-                memcpy(buf, &status, 4);
+                usb_memcpy(buf, &status, 4);
                 break;
             default:
                 break;
@@ -709,7 +709,7 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     /* store variables */
     waitsem = ppipe->waitsem;
 
-    memset(ppipe, 0, sizeof(struct chusb_pipe));
+    usb_memset(ppipe, 0, sizeof(struct chusb_pipe));
 
     ppipe->ep_addr = ep_cfg->ep_addr;
     ppipe->ep_type = ep_cfg->ep_type;

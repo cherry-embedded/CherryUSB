@@ -97,7 +97,7 @@ freq_found:
     setup->wIndex = ep_desc->bEndpointAddress;
     setup->wLength = 3;
 
-    memcpy(g_audio_buf, &samp_freq, 3);
+    usb_memcpy(g_audio_buf, &samp_freq, 3);
     ret = usbh_control_transfer(audio_class->hport->ep0, setup, g_audio_buf);
     if (ret < 0) {
         return ret;
@@ -190,7 +190,7 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
 
     volume_hex = -0xDB00 / 100 * volume + 0xdb00;
 
-    memcpy(g_audio_buf, &volume_hex, 2);
+    usb_memcpy(g_audio_buf, &volume_hex, 2);
     ret = usbh_control_transfer(audio_class->hport->ep0, setup, NULL);
 
     return ret;
@@ -220,7 +220,7 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
     setup->wIndex = (feature_id << 8) | intf;
     setup->wLength = 1;
 
-    memcpy(g_audio_buf, &mute, 1);
+    usb_memcpy(g_audio_buf, &mute, 1);
     ret = usbh_control_transfer(audio_class->hport->ep0, setup, g_audio_buf);
     
     return ret;
@@ -275,7 +275,7 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(audio_class, 0, sizeof(struct usbh_audio));
+    usb_memset(audio_class, 0, sizeof(struct usbh_audio));
     usbh_audio_devno_alloc(audio_class);
     audio_class->hport = hport;
     audio_class->ctrl_intf = intf;
@@ -423,7 +423,7 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         usbh_audio_stop(audio_class);
-        memset(audio_class, 0, sizeof(struct usbh_audio));
+        usb_memset(audio_class, 0, sizeof(struct usbh_audio));
         usb_free(audio_class);
 
         if (hport->config.intf[intf].devname[0] != '\0')

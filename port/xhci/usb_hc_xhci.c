@@ -82,7 +82,7 @@ int usb_hc_init()
 
     usb_hc_low_level_init(); /* set gic and memp */
 
-    memset(xhci, 0, sizeof(*xhci));
+    usb_memset(xhci, 0, sizeof(*xhci));
     xhci->id = CONFIG_USBHOST_XHCI_ID;
     if (rc = xhci_probe(xhci, usb_hc_get_register_base()) != 0) {
         goto err_open; 
@@ -150,7 +150,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                 break;
             case HUB_REQUEST_GET_STATUS:
 				USB_ASSERT(buf);
-                memset(buf, 0, 4);
+                usb_memset(buf, 0, 4);
                 break;
             default:
                 break;
@@ -286,7 +286,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     /* Port is not power off */
                     status |= (1 << HUB_PORT_FEATURE_POWER);
                 }
-                memcpy(buf, &status, 4);        
+                usb_memcpy(buf, &status, 4);        
                 break;
             default:
                 break;
@@ -341,7 +341,7 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
         return -ENOMEM;
     }
 
-    memset(ppipe, 0, sizeof(struct xhci_endpoint));
+    usb_memset(ppipe, 0, sizeof(struct xhci_endpoint));
 
     ppipe->waitsem = usb_osal_sem_create(0);
     ppipe->waiter = false;

@@ -46,7 +46,7 @@ int usbh_cdc_acm_set_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_
     setup->wIndex = cdc_acm_class->ctrl_intf;
     setup->wLength = 7;
 
-    memcpy((uint8_t *)&g_cdc_line_coding, line_coding, sizeof(struct cdc_line_coding));
+    usb_memcpy((uint8_t *)&g_cdc_line_coding, line_coding, sizeof(struct cdc_line_coding));
 
     return usbh_control_transfer(cdc_acm_class->hport->ep0, setup, (uint8_t *)&g_cdc_line_coding);
 }
@@ -66,7 +66,7 @@ int usbh_cdc_acm_get_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_
     if (ret < 0) {
         return ret;
     }
-    memcpy(line_coding, (uint8_t *)&g_cdc_line_coding, sizeof(struct cdc_line_coding));
+    usb_memcpy(line_coding, (uint8_t *)&g_cdc_line_coding, sizeof(struct cdc_line_coding));
     return ret;
 }
 
@@ -97,7 +97,7 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
+    usb_memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
     usbh_cdc_acm_devno_alloc(cdc_acm_class);
     cdc_acm_class->hport = hport;
     cdc_acm_class->ctrl_intf = intf;
@@ -168,7 +168,7 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         usbh_cdc_acm_stop(cdc_acm_class);
-        memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
+        usb_memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
         usb_free(cdc_acm_class);
 
         if (hport->config.intf[intf].devname[0] != '\0')

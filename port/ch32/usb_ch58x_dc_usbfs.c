@@ -246,7 +246,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         /*!< Not zlp */
         data_len = MIN(data_len, usb_dc_cfg.ep_in[ep_idx].mps);
         /*!< write buff */
-        memcpy(usb_dc_cfg.ep_in[ep_idx].ep_ram_addr, data, data_len);
+        usb_memcpy(usb_dc_cfg.ep_in[ep_idx].ep_ram_addr, data, data_len);
         /*!< write real_wt_nums len data */
         EPn_SET_TX_LEN(ep_idx, data_len);
         /*!< enable tx */
@@ -515,9 +515,9 @@ USBD_IRQHandler(void)
                             usb_dc_cfg.ep_in[epid].xfer_len -= usb_dc_cfg.ep_in[epid].mps;
                             usb_dc_cfg.ep_in[epid].actual_xfer_len += usb_dc_cfg.ep_in[epid].mps;
                             if (usb_dc_cfg.ep_in[epid].xfer_len > usb_dc_cfg.ep_in[epid].mps) {
-                                memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].mps);
+                                usb_memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].mps);
                             } else {
-                                memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].xfer_len);
+                                usb_memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].xfer_len);
                             }
                             if (usb_dc_cfg.ep_in[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                                 EPn_SET_TX_VALID(epid);
@@ -536,7 +536,7 @@ USBD_IRQHandler(void)
                         /*!< ep0 out */
                         CH58x_USBFS_DEV->UEP0_CTRL ^= RB_UEP_R_TOG;
                         uint32_t read_count = EPn_GET_RX_LEN(0);
-                        memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
+                        usb_memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
 
                         usb_dc_cfg.ep_out[0].actual_xfer_len += read_count;
                         usb_dc_cfg.ep_out[0].xfer_len -= read_count;
@@ -551,7 +551,7 @@ USBD_IRQHandler(void)
                                 CH58x_USBFS_DEV->UEP4_CTRL ^= RB_UEP_R_TOG;
                             }
                             uint32_t read_count = EPn_GET_RX_LEN(epid);
-                            memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
+                            usb_memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
                             usb_dc_cfg.ep_out[epid].xfer_buf += read_count;
                             usb_dc_cfg.ep_out[epid].actual_xfer_len += read_count;
                             usb_dc_cfg.ep_out[epid].xfer_len -= read_count;

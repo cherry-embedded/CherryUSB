@@ -15,7 +15,7 @@ static int usbh_xxx_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(xxx_class, 0, sizeof(struct usbh_xxx));
+    usb_memset(xxx_class, 0, sizeof(struct usbh_xxx));
 
     xxx_class->hport = hport;
     xxx_class->intf = intf;
@@ -61,7 +61,7 @@ static int usbh_xxx_disconnect(struct usbh_hubport *hport, uint8_t intf)
         usb_free(xxx_class);
 
         USB_LOG_INFO("Unregister xxx Class:%s\r\n", hport->config.intf[intf].devname);
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
+        usb_memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
 
         hport->config.intf[intf].priv = NULL;
     }

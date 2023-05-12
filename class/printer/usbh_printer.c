@@ -62,7 +62,7 @@ static int usbh_printer_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(printer_class, 0, sizeof(struct usbh_printer));
+    usb_memset(printer_class, 0, sizeof(struct usbh_printer));
 
     printer_class->hport = hport;
     printer_class->intf = intf;
@@ -113,7 +113,7 @@ static int usbh_printer_disconnect(struct usbh_hubport *hport, uint8_t intf)
         if (hport->config.intf[intf].devname[0] != '\0')
             USB_LOG_INFO("Unregister Printer Class:%s\r\n", hport->config.intf[intf].devname);
 
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
+        usb_memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
         hport->config.intf[intf].priv = NULL;
     }
 

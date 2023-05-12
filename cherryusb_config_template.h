@@ -14,6 +14,8 @@
 
 #define usb_malloc(size) malloc(size)
 #define usb_free(ptr)    free(ptr)
+#define usb_memcpy(dst, src, size) memcpy(dst, src, size)
+#define usb_memset(ptr, c, size) memset(ptr, c, size)
 
 #ifndef CONFIG_USB_DBG_LEVEL
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO

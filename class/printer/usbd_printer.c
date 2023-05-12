@@ -20,7 +20,7 @@ static int printer_class_interface_request_handler(struct usb_setup_packet *setu
 
     switch (setup->bRequest) {
         case PRINTER_REQUEST_GET_DEVICE_ID:
-            memcpy(*data, usbd_printer_cfg.device_id, usbd_printer_cfg.device_id_len);
+            usb_memcpy(*data, usbd_printer_cfg.device_id, usbd_printer_cfg.device_id_len);
             *len = usbd_printer_cfg.device_id_len;
             break;
         case PRINTER_REQUEST_GET_PORT_SATTUS:

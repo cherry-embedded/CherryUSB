@@ -536,7 +536,7 @@ int usb_dc_init(void)
 {
     int ret;
 
-    memset(&g_dwc2_udc, 0, sizeof(struct dwc2_udc));
+    usb_memset(&g_dwc2_udc, 0, sizeof(struct dwc2_udc));
 
     usb_dc_low_level_init();
 
@@ -1087,7 +1087,7 @@ void USBD_IRQHandler(void)
 
             USB_OTG_DEV->DIEPMSK = USB_OTG_DIEPMSK_XFRCM;
 
-            memset(&g_dwc2_udc, 0, sizeof(struct dwc2_udc));
+            usb_memset(&g_dwc2_udc, 0, sizeof(struct dwc2_udc));
             usbd_event_reset_handler();
             /* Start reading setup */
             dwc2_ep0_start_read_setup((uint8_t *)&g_dwc2_udc.setup);

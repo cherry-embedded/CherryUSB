@@ -20,7 +20,7 @@ static inline int usbh_air724_bulk_out_transfer(struct usbh_cdc_custom_air724 *c
 {
     int ret;
     struct usbh_urb *urb = &cdc_custom_class->bulkout_urb;
-    memset(urb, 0, sizeof(struct usbh_urb));
+    usb_memset(urb, 0, sizeof(struct usbh_urb));
 
     usbh_bulk_urb_fill(urb, cdc_custom_class->bulkout, buffer, buflen, timeout, NULL, NULL);
     ret = usbh_submit_urb(urb);
@@ -46,7 +46,7 @@ int usbh_air724_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(cdc_custom_class, 0, sizeof(struct usbh_cdc_custom_air724));
+    usb_memset(cdc_custom_class, 0, sizeof(struct usbh_cdc_custom_air724));
     cdc_custom_class->hport = hport;
 
     strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);

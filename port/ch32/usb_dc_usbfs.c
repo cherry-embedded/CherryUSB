@@ -208,7 +208,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
         } else {
             data_len = MIN(data_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
             USB_SET_TX_LEN(ep_idx, data_len);
-            memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], data, data_len);
+            usb_memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], data, data_len);
         }
         USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
     }
@@ -309,7 +309,7 @@ void USBD_IRQHandler(void)
 
                         write_count = MIN(g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len, g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps);
                         USB_SET_TX_LEN(ep_idx, write_count);
-                        memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf, write_count);
+                        usb_memcpy(&g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][64], g_ch32_usbfs_udc.in_ep[ep_idx].xfer_buf, write_count);
 
                         USB_SET_TX_CTRL(ep_idx, (USB_GET_TX_CTRL(ep_idx) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK);
                     } else {
@@ -344,7 +344,7 @@ void USBD_IRQHandler(void)
                         USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_NAK);
                         read_count = USBFS_DEVICE->RX_LEN;
 
-                        memcpy(g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf, &g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][0], read_count);
+                        usb_memcpy(g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf, &g_ch32_usbfs_udc.ep_databuf[ep_idx - 1][0], read_count);
 
                         g_ch32_usbfs_udc.out_ep[ep_idx].xfer_buf += read_count;
                         g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len += read_count;
@@ -382,7 +382,7 @@ void USBD_IRQHandler(void)
         ep0_tx_data_toggle = true;
         ep0_rx_data_toggle = true;
 
-        memset(&g_ch32_usbfs_udc, 0, sizeof(struct ch32_usbfs_udc));
+        usb_memset(&g_ch32_usbfs_udc, 0, sizeof(struct ch32_usbfs_udc));
         usbd_event_reset_handler();
         USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
         USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);

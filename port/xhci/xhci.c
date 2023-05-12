@@ -646,7 +646,7 @@ static int xhci_dcbaa_alloc ( struct xhci_host *xhci ) {
 		rc = -ENOMEM;
 		goto err_alloc;
 	}
-	memset ( xhci->dcbaa.context, 0, len );
+	usb_memset ( xhci->dcbaa.context, 0, len );
 
 	/* Program DCBAA pointer */
 	dcbaap =  (uintptr_t)( xhci->dcbaa.context );
@@ -696,7 +696,7 @@ static int xhci_scratchpad_alloc ( struct xhci_host *xhci ) {
 		rc = -ENOMEM;
 		goto err_alloc;
 	}
-	memset ( (void *)scratch->buffer, 0, buffer_len );
+	usb_memset ( (void *)scratch->buffer, 0, buffer_len );
 
 	/* Allocate scratchpad array */
 	array_len = ( scratch->count * sizeof ( scratch->array[0] ) );
@@ -748,7 +748,7 @@ static int xhci_command_alloc ( struct xhci_host *xhci ) {
     if (! xhci->cmds)
         goto err_ring_alloc;
 
-    memset(xhci->cmds, 0U, sizeof(*xhci->cmds));
+    usb_memset(xhci->cmds, 0U, sizeof(*xhci->cmds));
 
     xhci->cmds->lock = usb_osal_mutex_create();
     USB_ASSERT(xhci->cmds->lock);
@@ -790,7 +790,7 @@ static int xhci_event_alloc ( struct xhci_host *xhci ) {
 		goto err_alloc_trb;
 	}
 
-	memset(xhci->evts, 0U, sizeof(*xhci->evts));
+	usb_memset(xhci->evts, 0U, sizeof(*xhci->evts));
 
 	/* Allocate event ring segment table */
 	xhci->eseg = usb_align(XHCI_ALIGMENT, sizeof(*xhci->eseg)); /* event segment */
@@ -798,7 +798,7 @@ static int xhci_event_alloc ( struct xhci_host *xhci ) {
 		rc = -ENOMEM;
 		goto err_alloc_segment;
 	}
-	memset(xhci->eseg, 0U, sizeof(*xhci->eseg));
+	usb_memset(xhci->eseg, 0U, sizeof(*xhci->eseg));
     xhci->eseg->base = CPU_TO_LE64 ( ( xhci->evts ) );
     xhci->eseg->count = XHCI_RING_ITEMS; /* items of event ring TRB */
 
@@ -1326,7 +1326,7 @@ uint32_t xhci_root_speed ( struct xhci_host *xhci, uint8_t port ) {
  */
 static inline void xhci_trb_fill(struct xhci_ring *ring, union xhci_trb *trb) {
 	union xhci_trb *dst = &ring->ring[ring->nidx];
-	memcpy((void *)dst, (void *)trb, sizeof(*trb));
+	usb_memcpy((void *)dst, (void *)trb, sizeof(*trb));
 	dst->template.control |= (ring->cs ? XHCI_TRB_C : 0);
 	xhci_dump_trbs(dst, 1);
 }
@@ -1421,7 +1421,7 @@ static void xhci_abort ( struct xhci_host *xhci ) {
 	}
 
  	/* Reset the command ring control register */
-    memset(xhci->cmds->ring, 0U, XHCI_RING_ITEMS * sizeof(union xhci_trb));
+    usb_memset(xhci->cmds->ring, 0U, XHCI_RING_ITEMS * sizeof(union xhci_trb));
 	xhci_writeq ( xhci, ( (uint64_t)(uintptr_t)xhci->cmds | xhci->cmds->cs ), xhci->op + XHCI_OP_CRCR );
 }
 
@@ -1472,7 +1472,7 @@ static int xhci_nop ( struct xhci_host *xhci, struct xhci_endpoint *ep ) {
 	int rc;
 
 	/* Construct command */
-	memset ( nop, 0, sizeof ( *nop ) );
+	usb_memset ( nop, 0, sizeof ( *nop ) );
 	nop->flags = XHCI_TRB_IOC;
 	nop->type = XHCI_TRB_NOP_CMD;
 
@@ -1499,7 +1499,7 @@ static int xhci_enable_slot(struct xhci_host *xhci, struct xhci_endpoint *ep, un
 	int rc;
 
 	/* Construct command */
-	memset ( enable, 0, sizeof ( *enable ) );
+	usb_memset ( enable, 0, sizeof ( *enable ) );
 	enable->slot = type;
 	enable->type = XHCI_TRB_ENABLE_SLOT;
 
@@ -1533,7 +1533,7 @@ static int xhci_disable_slot ( struct xhci_host *xhci, struct xhci_endpoint *ep,
 	int rc;
 
 	/* Construct command */
-	memset ( disable, 0, sizeof ( *disable ) );
+	usb_memset ( disable, 0, sizeof ( *disable ) );
 	disable->type = XHCI_TRB_DISABLE_SLOT;
 	disable->slot = slot;
 
@@ -1577,13 +1577,13 @@ static int xhci_context ( struct xhci_host *xhci, struct xhci_slot *slot,
 		rc = -ENOMEM;
 		goto err_alloc;
 	}
-	memset ( input, 0, len );
+	usb_memset ( input, 0, len );
 
 	/* Populate input context */
 	populate ( xhci, slot, ep, input );
 
 	/* Construct command */
-	memset ( context, 0, sizeof ( *context ) );
+	usb_memset ( context, 0, sizeof ( *context ) );
 	context->type = type;
 	context->input = CPU_TO_LE64 ( ( input ) );
 	context->slot = slot->id;
@@ -1692,7 +1692,7 @@ int xhci_reset_endpoint ( struct xhci_host *xhci,
 	int rc;
 
 	/* Construct command */
-	memset ( reset, 0, sizeof ( *reset ) );
+	usb_memset ( reset, 0, sizeof ( *reset ) );
 	reset->slot = slot->id;
 	reset->endpoint = endpoint->ctx;
 	reset->type = XHCI_TRB_RESET_ENDPOINT;
@@ -1724,7 +1724,7 @@ static inline int xhci_stop_endpoint ( struct xhci_host *xhci,
 	int rc;
 
 	/* Construct command */
-	memset ( stop, 0, sizeof ( *stop ) );
+	usb_memset ( stop, 0, sizeof ( *stop ) );
 	stop->slot = slot->id;
 	stop->endpoint = endpoint->ctx;
 	stop->type = XHCI_TRB_STOP_ENDPOINT;
@@ -1824,7 +1824,7 @@ int xhci_device_open ( struct xhci_host *xhci, struct xhci_endpoint *ep, int *sl
 		rc = -ENOMEM;
 		goto err_alloc_context;
 	}
-	memset ( slot->context, 0, len );
+	usb_memset ( slot->context, 0, len );
 
 	/* Set device context base address */
 	USB_ASSERT ( xhci->dcbaa.context[id] == 0 );
@@ -2233,9 +2233,9 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep,
 
 	/* Construct setup stage TRB */
 	setup = &(trb.setup);
-	memset ( setup, 0, sizeof ( *setup ) );
+	usb_memset ( setup, 0, sizeof ( *setup ) );
 
-	memcpy ( &setup->packet, packet, sizeof ( setup->packet ) );
+	usb_memcpy ( &setup->packet, packet, sizeof ( setup->packet ) );
 	setup->len = CPU_TO_LE32 ( sizeof ( *packet ) ); /* bit[16:0] trb transfer length, always 8 */
 	setup->flags = XHCI_TRB_IDT; /* bit[6] Immediate Data (IDT), parameters take effect */
 	setup->type = XHCI_TRB_SETUP; /* bit[15:10] trb type */
@@ -2250,7 +2250,7 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep,
 	/* Construct data stage TRB, if applicable */
 	if (datalen > 0) {
 		data = &(trb.data);
-		memset ( data, 0, sizeof ( *data ) );
+		usb_memset ( data, 0, sizeof ( *data ) );
 
 		data->data = CPU_TO_LE64 ( data_buff );
 		data->len = CPU_TO_LE32 ( datalen );
@@ -2261,7 +2261,7 @@ void xhci_endpoint_message ( struct xhci_endpoint *ep,
 	}
 
 	status = &(trb.status);
-	memset ( status, 0, sizeof ( *status ) );
+	usb_memset ( status, 0, sizeof ( *status ) );
 	status->flags = XHCI_TRB_IOC;
 	status->type = XHCI_TRB_STATUS;
 	status->direction =
@@ -2309,7 +2309,7 @@ void xhci_endpoint_stream ( struct xhci_endpoint *ep,
 
 	/* Construct normal TRBs */
 	normal = &trb->normal;
-	memset ( normal, 0, sizeof ( *normal ) );
+	usb_memset ( normal, 0, sizeof ( *normal ) );
 	normal->data = CPU_TO_LE64 ( (uintptr_t)data_buff );
 	normal->len = CPU_TO_LE32 ( trb_len );
 	normal->type = XHCI_TRB_NORMAL;
@@ -2462,7 +2462,7 @@ static void xhci_transfer ( struct xhci_host *xhci,
 	}
 
 	/* Record completion */
-	memcpy(pending, trb, sizeof(*trb)); /* copy current trb to cmd/transfer ring */
+	usb_memcpy(pending, trb, sizeof(*trb)); /* copy current trb to cmd/transfer ring */
 	trans_ring->eidx = eidx;
 
 	/* Check for errors */
@@ -2529,7 +2529,7 @@ static void xhci_complete ( struct xhci_host *xhci,
 
 	/* Record completion */
 	USB_LOG_DBG("command-0x%x completed !!! \r\n", pending);
-	memcpy(pending, trb, sizeof(*trb)); /* copy current trb to cmd/transfer ring */
+	usb_memcpy(pending, trb, sizeof(*trb)); /* copy current trb to cmd/transfer ring */
 	cmd_ring->eidx = eidx;
 
 	USB_ASSERT(work_pipe);

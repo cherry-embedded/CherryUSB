@@ -406,7 +406,7 @@ static int access_eeprom_mac(struct usbnet *dev, u8 *buf, u8 offset, bool wflag)
             USB_LOG_ERR("Failed to read MAC address from EEPROM: %d\n", ret);
             return ret;
         }
-        // memcpy(dev->net->dev_addr, buf, ETH_ALEN);
+        // usb_memcpy(dev->net->dev_addr, buf, ETH_ALEN);
     } else {
         ax8817x_write_cmd(dev, AX_CMD_WRITE_EEPROM_DIS,
                           0, 0, 0, NULL);
@@ -528,7 +528,7 @@ static int ax8817x_get_mac(struct usbnet *dev, u8 *buf)
     //         }
     // }
 
-    // memcpy(dev->net->perm_addr, dev->net->dev_addr, ETH_ALEN);
+    // usb_memcpy(dev->net->perm_addr, dev->net->dev_addr, ETH_ALEN);
 
     // /* Set the MAC address */
     // ax8817x_write_cmd(dev, AX88772_CMD_WRITE_NODE_ID, 0, 0,
@@ -583,7 +583,7 @@ static rt_err_t rt_rndis_eth_control(rt_device_t dev, int cmd, void *args)
         if(args)
         {
             USB_LOG_INFO("%s L%d NIOCTL_GADDR\r\n", __FUNCTION__, __LINE__);
-            rt_memcpy(args, rndis_eth_dev->dev_addr, MAX_ADDR_LEN);
+            rt_usb_memcpy(args, rndis_eth_dev->dev_addr, MAX_ADDR_LEN);
         }
         else
         {
@@ -758,7 +758,7 @@ static void rt_thread_axusbnet_entry(void *parameter)
 		return;
 	}
     dump_hex(buf, ETH_ALEN);
-    memcpy(dev->dev_addr, buf, ETH_ALEN);
+    usb_memcpy(dev->dev_addr, buf, ETH_ALEN);
 
     uint16_t chipcode = 0xFFFF;
     {
@@ -880,7 +880,7 @@ static void rt_thread_axusbnet_entry(void *parameter)
 		goto err_out;
 	}
 
-	memset(buf, 0, 4);
+	usb_memset(buf, 0, 4);
 	ret = ax8817x_read_cmd(dev, AX_CMD_READ_IPG012, 0, 0, 3, buf);
 	*((u8 *)buf + 3) = 0x00;
 	if (ret < 0) {
@@ -1053,8 +1053,8 @@ static void rt_thread_axusbnet_entry(void *parameter)
                     send_buf[1] = sizeof(packet_bytes) >> 8;
                     send_buf[2] = ~send_buf[0];
                     send_buf[3] = ~send_buf[1];
-                    memcpy(send_buf+4, packet_bytes, sizeof(packet_bytes));
-                    memcpy(send_buf+4+6, dev->dev_addr, 6);// update src mac.
+                    usb_memcpy(send_buf+4, packet_bytes, sizeof(packet_bytes));
+                    usb_memcpy(send_buf+4+6, dev->dev_addr, 6);// update src mac.
 
                     ret = usbh_ep_bulk_transfer(class->bulkout, send_buf, 4 + sizeof(packet_bytes), 500);
                     USB_LOG_INFO("bulkout, ret=%d\r\n", ret);
@@ -1132,7 +1132,7 @@ static int usbh_axusbnet_connect(struct usbh_hubport *hport, uint8_t intf)
         USB_LOG_ERR("Fail to alloc class\r\n");
         return -ENOMEM;
     }
-    memset(class, 0, sizeof(struct usbh_axusbnet));
+    usb_memset(class, 0, sizeof(struct usbh_axusbnet));
     class->hport = hport;
 
     class->intf = intf;

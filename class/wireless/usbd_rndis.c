@@ -14,7 +14,7 @@
 /* Describe EndPoints configuration */
 static struct usbd_endpoint rndis_ep_data[3];
 
-#define RNDIS_INQUIRY_PUT(src, len)   (memcpy(infomation_buffer, src, len))
+#define RNDIS_INQUIRY_PUT(src, len)   (usb_memcpy(infomation_buffer, src, len))
 #define RNDIS_INQUIRY_PUT_LE32(value) (*(uint32_t *)infomation_buffer = (value))
 
 #ifdef CONFIG_USB_HS
@@ -102,7 +102,7 @@ static int rndis_encapsulated_cmd_handler(uint8_t *data, uint32_t len);
 
 static void rndis_notify_rsp(void)
 {
-    memset(NOTIFY_RESPONSE_AVAILABLE, 0, 8);
+    usb_memset(NOTIFY_RESPONSE_AVAILABLE, 0, 8);
     NOTIFY_RESPONSE_AVAILABLE[0] = 0x01;
     usbd_ep_start_write(rndis_ep_data[RNDIS_INT_EP_IDX].ep_addr, NOTIFY_RESPONSE_AVAILABLE, 8);
 }
@@ -490,7 +490,7 @@ struct pbuf *usbd_rndis_eth_rx(void)
     if (p == NULL) {
         return NULL;
     }
-    memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
+    usb_memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
     p->len = g_rndis_rx_data_length;
 
     USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_data_length);
@@ -520,13 +520,13 @@ int usbd_rndis_eth_tx(struct pbuf *p)
 
     buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
     for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
+        usb_memcpy(buffer, q->payload, q->len);
         buffer += q->len;
     }
 
     hdr = (rndis_data_packet_t *)g_rndis_tx_buffer;
 
-    memset(hdr, 0, sizeof(rndis_data_packet_t));
+    usb_memset(hdr, 0, sizeof(rndis_data_packet_t));
     hdr->MessageType = REMOTE_NDIS_PACKET_MSG;
     hdr->MessageLength = sizeof(rndis_data_packet_t) + p->tot_len;
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
@@ -543,7 +543,7 @@ struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
                                             const uint8_t in_ep,
                                             const uint8_t int_ep, uint8_t mac[6])
 {
-    memcpy(usbd_rndis_cfg.mac, mac, 6);
+    usb_memcpy(usbd_rndis_cfg.mac, mac, 6);
 
     rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr = out_ep;
     rndis_ep_data[RNDIS_OUT_EP_IDX].ep_cb = rndis_bulk_out;

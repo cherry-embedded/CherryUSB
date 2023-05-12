@@ -368,7 +368,7 @@ void USBD_IRQHandler(void)
             epx_tx_data_toggle[ep_idx - 1] = false;
         }
 
-        memset(&g_ch32_usbhs_udc, 0, sizeof(struct ch32_usbhs_udc));
+        usb_memset(&g_ch32_usbhs_udc, 0, sizeof(struct ch32_usbhs_udc));
         usbd_event_reset_handler();
         USBHS_DEVICE->UEP0_DMA = (uint32_t)&g_ch32_usbhs_udc.setup;
         USBHS_DEVICE->UEP0_RX_CTRL = USBHS_EP_R_RES_ACK;

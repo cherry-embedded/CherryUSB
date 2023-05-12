@@ -804,7 +804,7 @@ void USBD_IRQHandler(void)
 
     /* Receive a reset signal from the USB bus */
     if (is & USB_IS_RESET) {
-        memset(&g_musb_udc, 0, sizeof(struct musb_udc));
+        usb_memset(&g_musb_udc, 0, sizeof(struct musb_udc));
         g_musb_udc.fifo_size_offset = USB_CTRL_EP_MPS;
         usbd_event_reset_handler();
         HWREGH(USB_BASE + MUSB_TXIE_OFFSET) = USB_TXIE_EP0;

@@ -457,7 +457,7 @@ int usb_hc_init(void)
 {
     int ret;
 
-    memset(&g_dwc2_hcd, 0, sizeof(struct dwc2_hcd));
+    usb_memset(&g_dwc2_hcd, 0, sizeof(struct dwc2_hcd));
 
     for (uint8_t chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
         g_dwc2_hcd.pipe_pool[chidx].waitsem = usb_osal_sem_create(0);
@@ -575,7 +575,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
             case HUB_REQUEST_GET_DESCRIPTOR:
                 break;
             case HUB_REQUEST_GET_STATUS:
-                memset(buf, 0, 4);
+                usb_memset(buf, 0, 4);
                 break;
             default:
                 break;
@@ -668,7 +668,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     status |= (1 << HUB_PORT_FEATURE_POWER);
                 }
 
-                memcpy(buf, &status, 4);
+                usb_memcpy(buf, &status, 4);
                 break;
             default:
                 break;
@@ -705,7 +705,7 @@ int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
     /* store variables */
     waitsem = chan->waitsem;
 
-    memset(chan, 0, sizeof(struct dwc2_pipe));
+    usb_memset(chan, 0, sizeof(struct dwc2_pipe));
 
     chan->chidx = chidx;
     chan->ep_addr = ep_cfg->ep_addr;

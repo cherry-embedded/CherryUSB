@@ -216,7 +216,7 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
         p += USB_SIZEOF_CONFIG_DESC;
         desc_len = USB_SIZEOF_CONFIG_DESC;
 
-        memset(hport->config.intf, 0, sizeof(struct usbh_interface) * CONFIG_USBHOST_MAX_INTERFACES);
+        usb_memset(hport->config.intf, 0, sizeof(struct usbh_interface) * CONFIG_USBHOST_MAX_INTERFACES);
 
         while (p[DESC_bLength] && (desc_len <= length)) {
             switch (p[DESC_bDescriptorType]) {
@@ -250,12 +250,12 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                     USB_LOG_DBG("bInterfaceProtocol: 0x%02x \r\n", intf_desc->bInterfaceProtocol);
                     USB_LOG_DBG("iInterface: 0x%02x         \r\n", intf_desc->iInterface);
 #endif
-                    memcpy(&hport->config.intf[cur_iface].altsetting[cur_alt_setting].intf_desc, intf_desc, 9);
+                    usb_memcpy(&hport->config.intf[cur_iface].altsetting[cur_alt_setting].intf_desc, intf_desc, 9);
                     hport->config.intf[cur_iface].altsetting_num = cur_alt_setting + 1;
                     break;
                 case USB_DESCRIPTOR_TYPE_ENDPOINT:
                     ep_desc = (struct usb_endpoint_descriptor *)p;
-                    memcpy(&hport->config.intf[cur_iface].altsetting[cur_alt_setting].ep[cur_ep].ep_desc, ep_desc, 7);
+                    usb_memcpy(&hport->config.intf[cur_iface].altsetting[cur_alt_setting].ep[cur_ep].ep_desc, ep_desc, 7);
                     cur_ep++;
                     break;
 
@@ -551,7 +551,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
         USB_LOG_ERR("No memory to alloc for raw_config_desc\r\n");
         goto errout;
     }
-    memcpy(hport->raw_config_desc, ep0_request_buffer, wTotalLength);
+    usb_memcpy(hport->raw_config_desc, ep0_request_buffer, wTotalLength);
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     /* Get Manufacturer string */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
@@ -681,7 +681,7 @@ void *usbh_find_class_instance(const char *devname)
 
 int usbh_initialize(void)
 {
-    memset(&g_usbh_bus, 0, sizeof(struct usbh_bus));
+    usb_memset(&g_usbh_bus, 0, sizeof(struct usbh_bus));
 
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
@@ -711,7 +711,7 @@ int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint
     int ret;
 
     urb = usb_malloc(sizeof(struct usbh_urb));
-    memset(urb, 0, sizeof(struct usbh_urb));
+    usb_memset(urb, 0, sizeof(struct usbh_urb));
 
     usbh_control_urb_fill(urb, pipe, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
 

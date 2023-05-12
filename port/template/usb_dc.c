@@ -35,7 +35,7 @@ __WEAK void usb_dc_low_level_deinit(void)
 
 int usb_dc_init(void)
 {
-    memset(&g_xxx_udc, 0, sizeof(struct xxx_udc));
+    usb_memset(&g_xxx_udc, 0, sizeof(struct xxx_udc));
 
     usb_dc_low_level_init();
     return 0;

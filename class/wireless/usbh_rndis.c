@@ -103,7 +103,7 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
         return ret;
     }
 
-    memcpy(info, ((uint8_t *)resp + sizeof(rndis_query_cmplt_t)), resp->InformationBufferLength);
+    usb_memcpy(info, ((uint8_t *)resp + sizeof(rndis_query_cmplt_t)), resp->InformationBufferLength);
     *info_len = resp->InformationBufferLength;
 
     return ret;
@@ -126,7 +126,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     cmd->InformationBufferOffset = 20;
     cmd->DeviceVcHandle = 0;
 
-    memcpy(((uint8_t *)cmd + sizeof(rndis_set_msg_t)), info, info_len);
+    usb_memcpy(((uint8_t *)cmd + sizeof(rndis_set_msg_t)), info, info_len);
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
     setup->wValue = 0;
@@ -162,7 +162,7 @@ int usbh_rndis_bulk_out_transfer(struct usbh_rndis *rndis_class, uint8_t *buffer
 {
     int ret;
     struct usbh_urb *urb = &rndis_class->bulkout_urb;
-    memset(urb, 0, sizeof(struct usbh_urb));
+    usb_memset(urb, 0, sizeof(struct usbh_urb));
 
     usbh_bulk_urb_fill(urb, rndis_class->bulkout, buffer, buflen, timeout, NULL, NULL);
     ret = usbh_submit_urb(urb);
@@ -176,7 +176,7 @@ int usbh_rndis_bulk_in_transfer(struct usbh_rndis *rndis_class, uint8_t *buffer,
 {
     int ret;
     struct usbh_urb *urb = &rndis_class->bulkin_urb;
-    memset(urb, 0, sizeof(struct usbh_urb));
+    usb_memset(urb, 0, sizeof(struct usbh_urb));
 
     usbh_bulk_urb_fill(urb, rndis_class->bulkin, buffer, buflen, timeout, NULL, NULL);
     ret = usbh_submit_urb(urb);
@@ -248,7 +248,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(rndis_class, 0, sizeof(struct usbh_rndis));
+    usb_memset(rndis_class, 0, sizeof(struct usbh_rndis));
 
     rndis_class->hport = hport;
     rndis_class->ctrl_intf = intf;
@@ -314,7 +314,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                     goto query_errorout;
                 }
 
-                memcpy(&rndis_class->link_speed, data, 4);
+                usb_memcpy(&rndis_class->link_speed, data, 4);
                 break;
             case OID_GEN_MEDIA_CONNECT_STATUS:
                 ret = usbh_rndis_query_msg_transfer(rndis_class, OID_GEN_MEDIA_CONNECT_STATUS, 4, data, &data_len);
@@ -396,7 +396,7 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         usbh_rndis_stop(rndis_class);
-        memset(rndis_class, 0, sizeof(struct usbh_rndis));
+        usb_memset(rndis_class, 0, sizeof(struct usbh_rndis));
         usb_free(rndis_class);
 
         if (hport->config.intf[intf].devname[0] != '\0')

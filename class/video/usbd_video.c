@@ -93,22 +93,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                 switch (setup->bRequest) {
                                     case VIDEO_REQUEST_GET_CUR: {
                                         uint32_t dwExposureTimeAbsolute = 2500;
-                                        memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
+                                        usb_memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
                                         *len = 4;
                                     } break;
                                     case VIDEO_REQUEST_GET_MIN: {
                                         uint32_t dwExposureTimeAbsolute = 5; //0.0005sec
-                                        memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
+                                        usb_memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
                                         *len = 4;
                                     } break;
                                     case VIDEO_REQUEST_GET_MAX: {
                                         uint32_t dwExposureTimeAbsolute = 2500; //0.2500sec
-                                        memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
+                                        usb_memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
                                         *len = 4;
                                     } break;
                                     case VIDEO_REQUEST_GET_RES: {
                                         uint32_t dwExposureTimeAbsolute = 5; //0.0005sec
-                                        memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
+                                        usb_memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
                                         *len = 4;
                                     } break;
                                     case VIDEO_REQUEST_GET_INFO:
@@ -117,7 +117,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                         break;
                                     case VIDEO_REQUEST_GET_DEF: {
                                         uint32_t dwExposureTimeAbsolute = 2500; //0.2500sec
-                                        memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
+                                        usb_memcpy(*data, (uint8_t *)&dwExposureTimeAbsolute, 4);
                                         *len = 4;
                                     } break;
                                     default:
@@ -129,22 +129,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                 switch (setup->bRequest) {
                                     case VIDEO_REQUEST_GET_CUR: {
                                         uint16_t wFocusAbsolute = 0x0080;
-                                        memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_MIN: {
                                         uint16_t wFocusAbsolute = 0;
-                                        memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_MAX: {
                                         uint16_t wFocusAbsolute = 0x00ff;
-                                        memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_RES: {
                                         uint16_t wFocusAbsolute = 0x0001;
-                                        memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_INFO:
@@ -153,7 +153,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                         break;
                                     case VIDEO_REQUEST_GET_DEF: {
                                         uint16_t wFocusAbsolute = 0x0080;
-                                        memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wFocusAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     default:
@@ -165,22 +165,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                 switch (setup->bRequest) {
                                     case VIDEO_REQUEST_GET_CUR: {
                                         uint16_t wObjectiveFocalLength = 0x0064;
-                                        memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_MIN: {
                                         uint16_t wObjectiveFocalLength = 0x0064;
-                                        memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_MAX: {
                                         uint16_t wObjectiveFocalLength = 0x00c8;
-                                        memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_RES: {
                                         uint16_t wObjectiveFocalLength = 0x0001;
-                                        memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_INFO:
@@ -189,7 +189,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                         break;
                                     case VIDEO_REQUEST_GET_DEF: {
                                         uint16_t wObjectiveFocalLength = 0x0064;
-                                        memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wObjectiveFocalLength, 2);
                                         *len = 2;
                                     } break;
                                     default:
@@ -201,22 +201,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                 switch (setup->bRequest) {
                                     case VIDEO_REQUEST_GET_CUR: {
                                         uint16_t wRollAbsolute = 0x0000;
-                                        memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_MIN: {
                                         uint16_t wRollAbsolute = 0x0000;
-                                        memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_MAX: {
                                         uint16_t wRollAbsolute = 0x00ff;
-                                        memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_RES: {
                                         uint16_t wRollAbsolute = 0x0001;
-                                        memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     case VIDEO_REQUEST_GET_INFO:
@@ -225,7 +225,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                         break;
                                     case VIDEO_REQUEST_GET_DEF: {
                                         uint16_t wRollAbsolute = 0x0000;
-                                        memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wRollAbsolute, 2);
                                         *len = 2;
                                     } break;
                                     default:
@@ -237,7 +237,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                 switch (setup->bRequest) {
                                     case VIDEO_REQUEST_GET_CUR: {
                                         uint16_t wFocusAuto = 0x0000;
-                                        memcpy(*data, (uint8_t *)&wFocusAuto, 2);
+                                        usb_memcpy(*data, (uint8_t *)&wFocusAuto, 2);
                                         *len = 2;
                                     } break;
                                     default:
@@ -264,22 +264,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_CUR: {
                                     uint16_t wBacklightCompensation = 0x0004;
-                                    memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wBacklightCompensation = 0;
-                                    memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wBacklightCompensation = 8;
-                                    memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wBacklightCompensation = 1;
-                                    memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -288,7 +288,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wBacklightCompensation = 4;
-                                    memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBacklightCompensation, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -304,22 +304,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                 } break;
                                 case VIDEO_REQUEST_GET_CUR: {
                                     uint16_t wBrightness = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wBrightness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBrightness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wBrightness = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wBrightness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBrightness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wBrightness = 0x00ff;
-                                    memcpy(*data, (uint8_t *)&wBrightness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBrightness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wBrightness = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wBrightness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBrightness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -328,7 +328,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wBrightness = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wBrightness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wBrightness, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -340,22 +340,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_CUR: {
                                     uint16_t wContrast = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wContrast, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wContrast, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wContrast = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wContrast, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wContrast, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wContrast = 0x00ff;
-                                    memcpy(*data, (uint8_t *)&wContrast, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wContrast, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wContrast = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wContrast, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wContrast, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -364,7 +364,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wContrast = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wContrast, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wContrast, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -376,22 +376,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_CUR: {
                                     uint16_t wHue = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wHue, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wHue, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wHue = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wHue, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wHue, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wHue = 0x00ff;
-                                    memcpy(*data, (uint8_t *)&wHue, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wHue, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wHue = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wHue, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wHue, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -400,7 +400,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wHue = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wHue, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wHue, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -412,17 +412,17 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wSaturation = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wSaturation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSaturation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wSaturation = 0x00ff;
-                                    memcpy(*data, (uint8_t *)&wSaturation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSaturation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wSaturation = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wSaturation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSaturation, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -431,7 +431,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wSaturation = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wSaturation, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSaturation, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -443,17 +443,17 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wSharpness = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wSharpness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSharpness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wSharpness = 0x00ff;
-                                    memcpy(*data, (uint8_t *)&wSharpness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSharpness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wSharpness = 0x0001;
-                                    memcpy(*data, (uint8_t *)&wSharpness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSharpness, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -462,7 +462,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wSharpness = 0x0080;
-                                    memcpy(*data, (uint8_t *)&wSharpness, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wSharpness, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -474,17 +474,17 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wGain = 0;
-                                    memcpy(*data, (uint8_t *)&wGain, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wGain, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wGain = 255;
-                                    memcpy(*data, (uint8_t *)&wGain, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wGain, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wGain = 1;
-                                    memcpy(*data, (uint8_t *)&wGain, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wGain, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -493,7 +493,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wGain = 255;
-                                    memcpy(*data, (uint8_t *)&wGain, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wGain, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -505,22 +505,22 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_CUR: {
                                     uint16_t wWhiteBalance_Temprature = 417;
-                                    memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MIN: {
                                     uint16_t wWhiteBalance_Temprature = 300;
-                                    memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_MAX: {
                                     uint16_t wWhiteBalance_Temprature = 600;
-                                    memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_RES: {
                                     uint16_t wWhiteBalance_Temprature = 1;
-                                    memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
                                     *len = 2;
                                 } break;
                                 case VIDEO_REQUEST_GET_INFO:
@@ -529,7 +529,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                                     break;
                                 case VIDEO_REQUEST_GET_DEF: {
                                     uint16_t wWhiteBalance_Temprature = 417;
-                                    memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
+                                    usb_memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature, 2);
                                     *len = 2;
                                 } break;
                                 default:
@@ -541,7 +541,7 @@ static int usbd_video_control_unit_terminal_request_handler(struct usb_setup_pac
                             switch (setup->bRequest) {
                                 case VIDEO_REQUEST_GET_CUR: {
                                     uint16_t wWhiteBalance_Temprature_Auto = 1;
-                                    memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature_Auto, 1);
+                                    usb_memcpy(*data, (uint8_t *)&wWhiteBalance_Temprature_Auto, 1);
                                     *len = 1;
                                 } break;
                                 default:
@@ -576,10 +576,10 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
         case VIDEO_VS_PROBE_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_SET_CUR:
-                    //memcpy((uint8_t *)&usbd_video_cfg.probe, *data, setup->wLength);
+                    //usb_memcpy((uint8_t *)&usbd_video_cfg.probe, *data, setup->wLength);
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    memcpy(*data, (uint8_t *)&usbd_video_cfg.probe, setup->wLength);
+                    usb_memcpy(*data, (uint8_t *)&usbd_video_cfg.probe, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -587,7 +587,7 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    memcpy(*data, (uint8_t *)&usbd_video_cfg.probe, setup->wLength);
+                    usb_memcpy(*data, (uint8_t *)&usbd_video_cfg.probe, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_LEN:
@@ -608,17 +608,17 @@ static int usbd_video_stream_request_handler(struct usb_setup_packet *setup, uin
         case VIDEO_VS_COMMIT_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_SET_CUR:
-                    //memcpy((uint8_t *)&usbd_video_cfg.commit, *data, setup->wLength);
+                    //usb_memcpy((uint8_t *)&usbd_video_cfg.commit, *data, setup->wLength);
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    memcpy(*data, (uint8_t *)&usbd_video_cfg.commit, setup->wLength);
+                    usb_memcpy(*data, (uint8_t *)&usbd_video_cfg.commit, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_MIN:
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    memcpy(*data, (uint8_t *)&usbd_video_cfg.commit, setup->wLength);
+                    usb_memcpy(*data, (uint8_t *)&usbd_video_cfg.commit, setup->wLength);
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -770,10 +770,10 @@ uint32_t usbd_video_mjpeg_payload_fill(uint8_t *input, uint32_t input_len, uint8
         output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i] = uvc_header[0];
         output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i + 1] = uvc_header[1];
         if (i == (packets - 1)) {
-            memcpy(&output[2 + usbd_video_cfg.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], last_packet_size - 2);
+            usb_memcpy(&output[2 + usbd_video_cfg.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], last_packet_size - 2);
             output[usbd_video_cfg.probe.dwMaxPayloadTransferSize * i + 1] |= (1 << 1);
         } else {
-            memcpy(&output[2 + usbd_video_cfg.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2);
+            usb_memcpy(&output[2 + usbd_video_cfg.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2);
             picture_pos += usbd_video_cfg.probe.dwMaxPayloadTransferSize - 2;
         }
     }

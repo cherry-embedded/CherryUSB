@@ -392,8 +392,8 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     if (!CHECK_ADD_IS_RAM(data))
     {
       /*!< Data is not in ram */
-      /*!< Memcpy data to ram */
-      memcpy(usb_dc_cfg.ep_in[ep_idx].ep_buffer, data, data_len);
+      /*!< usb_memcpy data to ram */
+      usb_memcpy(usb_dc_cfg.ep_in[ep_idx].ep_buffer, data, data_len);
       nrf_usbd_ep_easydma_set_tx(ep_idx, (uint32_t)usb_dc_cfg.ep_in[ep_idx].ep_buffer, data_len);
     }
     else
@@ -561,7 +561,7 @@ int usb_dc_init(void)
   /*!< dc init */
   usb_dc_low_level_pre_init();
 
-  memset(&usb_dc_cfg, 0, sizeof(usb_dc_cfg));
+  usb_memset(&usb_dc_cfg, 0, sizeof(usb_dc_cfg));
   /*!< Clear USB Event Interrupt */
   NRF_USBD->EVENTS_USBEVENT = 0;
   NRF_USBD->EVENTCAUSE |= NRF_USBD->EVENTCAUSE;

@@ -67,7 +67,7 @@ int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t ent
     if (ret < 0) {
         return ret;
     }
-    memcpy(buf, g_video_buf, len);
+    usb_memcpy(buf, g_video_buf, len);
     return ret;
 }
 
@@ -82,7 +82,7 @@ int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t ent
     setup->wIndex = (entity_id << 8) | intf;
     setup->wLength = len;
 
-    memcpy(g_video_buf, buf, len);
+    usb_memcpy(g_video_buf, buf, len);
 
     ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
     usb_osal_msleep(5);
@@ -104,7 +104,7 @@ int usbh_videostreaming_set_cur_probe(struct usbh_video *video_class, uint8_t fo
 
 int usbh_videostreaming_set_cur_commit(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex)
 {
-    memcpy(&video_class->commit, &video_class->probe, sizeof(struct video_probe_and_commit_controls));
+    usb_memcpy(&video_class->commit, &video_class->probe, sizeof(struct video_probe_and_commit_controls));
     video_class->commit.bFormatIndex = formatindex;
     video_class->commit.bFrameIndex = frameindex;
     return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_COMMIT_CONTROL, (uint8_t *)&video_class->commit, 26);
@@ -298,7 +298,7 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
         return -ENOMEM;
     }
 
-    memset(video_class, 0, sizeof(struct usbh_video));
+    usb_memset(video_class, 0, sizeof(struct usbh_video));
     usbh_video_devno_alloc(video_class);
     video_class->hport = hport;
     video_class->ctrl_intf = intf;
@@ -412,7 +412,7 @@ static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         usbh_video_stop(video_class);
-        memset(video_class, 0, sizeof(struct usbh_video));
+        usb_memset(video_class, 0, sizeof(struct usbh_video));
         usb_free(video_class);
 
         if (hport->config.intf[intf].devname[0] != '\0')

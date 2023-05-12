@@ -92,7 +92,7 @@ static void usbd_mtp_send_info(uint8_t *data, uint32_t len)
     g_usbd_mtp.con_data.code = MTP_RESPONSE_OK;
     g_usbd_mtp.con_data.trans_id = g_usbd_mtp.con_command.trans_id;
 
-    memcpy(g_usbd_mtp.con_data.data, data, len);
+    usb_memcpy(g_usbd_mtp.con_data.data, data, len);
     usbd_ep_start_write(mtp_ep_data[MTP_IN_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_data, 12 + len);
 }
 
@@ -228,7 +228,7 @@ static void usbd_mtp_get_object_info(void)
 
     /* we have to get this value before object_info.Filename */
     object_info.Filename_len = sizeof(DefaultFileName);
-    memcpy(object_info.Filename, DefaultFileName, (uint32_t)object_info.Filename_len + 1U);
+    usb_memcpy(object_info.Filename, DefaultFileName, (uint32_t)object_info.Filename_len + 1U);
 
     object_info.CaptureDate = 0U;
     object_info.ModificationDate = 0U;
