@@ -21,37 +21,22 @@ static int usbh_mtp_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     memset(mtp_class, 0, sizeof(struct usbh_mtp));
-
     mtp_class->hport = hport;
-    mtp_class->ctrl_intf = intf;
-    mtp_class->data_intf = intf + 1;
+    mtp_class->intf = intf;
 
     hport->config.intf[intf].priv = mtp_class;
-    hport->config.intf[intf + 1].priv = NULL;
-    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
 #ifdef CONFIG_USBHOST_MTP_NOTIFY
-    ep_desc = &hport->config.intf[intf].ep[0].ep_desc;
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
-    ep_cfg.ep_interval = ep_desc->bInterval;
-    ep_cfg.hport = hport;
-    usbh_pipe_alloc(&mtp_class->intin, &ep_cfg);
-
+    ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
+    usbh_hport_activate_epx(&mtp_class->intin, hport, ep_desc);
 #endif
-    for (uint8_t i = 0; i < hport->config.intf[intf + 1].intf_desc.bNumEndpoints; i++) {
-        ep_desc = &hport->config.intf[intf + 1].ep[i].ep_desc;
+    for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
+        ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
 
-        ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-        ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;;
-        ep_cfg.ep_interval = ep_desc->bInterval;
-        ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_pipe_alloc(&mtp_class->bulkin, &ep_cfg);
+            usbh_hport_activate_epx(&mtp_class->bulkin, hport, ep_desc);
         } else {
-            usbh_pipe_alloc(&mtp_class->bulkout, &ep_cfg);
+            usbh_hport_activate_epx(&mtp_class->bulkout, hport, ep_desc);
         }
     }
 
@@ -77,14 +62,12 @@ static int usbh_mtp_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(mtp_class->bulkout);
         }
 
-        usb_free(mtp_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
+        if (hport->config.intf[intf].devname[0] != '\0') {
             USB_LOG_INFO("Unregister MTP Class:%s\r\n", hport->config.intf[intf].devname);
+        }
 
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
-        hport->config.intf[intf].priv = NULL;
-        hport->config.intf[intf + 1].priv = NULL;
+        memset(mtp_class, 0, sizeof(struct usbh_mtp));
+        usb_free(mtp_class);
     }
 
     return ret;

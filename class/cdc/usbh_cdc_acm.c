@@ -124,13 +124,7 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
 
 #ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
-    ep_cfg.ep_interval = ep_desc->bInterval;
-    ep_cfg.hport = hport;
-    usbh_pipe_alloc(&cdc_acm_class->intin, &ep_cfg);
-
+    usbh_hport_activate_epx(&cdc_acm_class->intin, hport, ep_desc);
 #endif
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
@@ -167,12 +161,13 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(cdc_acm_class->bulkout);
         }
 
-        usbh_cdc_acm_stop(cdc_acm_class);
+        if (hport->config.intf[intf].devname[0] != '\0') {
+            USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_cdc_acm_stop(cdc_acm_class);
+        }
+
         memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
         usb_free(cdc_acm_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
-            USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
     }
 
     return ret;
@@ -190,12 +185,10 @@ static int usbh_cdc_data_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
 __WEAK void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
-
 }
 
 __WEAK void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
 {
-
 }
 
 const struct usbh_class_driver cdc_acm_class_driver = {

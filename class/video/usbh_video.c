@@ -411,12 +411,13 @@ static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(video_class->isoout);
         }
 
-        usbh_video_stop(video_class);
+        if (hport->config.intf[intf].devname[0] != '\0') {
+            USB_LOG_INFO("Unregister Video Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_video_stop(video_class);
+        }
+
         memset(video_class, 0, sizeof(struct usbh_video));
         usb_free(video_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
-            USB_LOG_INFO("Unregister Video Class:%s\r\n", hport->config.intf[intf].devname);
     }
 
     return ret;

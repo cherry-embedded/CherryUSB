@@ -395,12 +395,13 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(rndis_class->bulkout);
         }
 
-        usbh_rndis_stop(rndis_class);
+        if (hport->config.intf[intf].devname[0] != '\0') {
+            USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_rndis_stop(rndis_class);
+        }
+
         memset(rndis_class, 0, sizeof(struct usbh_rndis));
         usb_free(rndis_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
-            USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
     }
 
     return ret;

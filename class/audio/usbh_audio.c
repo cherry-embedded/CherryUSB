@@ -222,7 +222,7 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
 
     memcpy(g_audio_buf, &mute, 1);
     ret = usbh_control_transfer(audio_class->hport->ep0, setup, g_audio_buf);
-    
+
     return ret;
 }
 
@@ -422,12 +422,13 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(audio_class->isoout);
         }
 
-        usbh_audio_stop(audio_class);
+        if (hport->config.intf[intf].devname[0] != '\0') {
+            USB_LOG_INFO("Unregister Audio Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_audio_stop(audio_class);
+        }
+
         memset(audio_class, 0, sizeof(struct usbh_audio));
         usb_free(audio_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
-            USB_LOG_INFO("Unregister Audio Class:%s\r\n", hport->config.intf[intf].devname);
     }
 
     return ret;

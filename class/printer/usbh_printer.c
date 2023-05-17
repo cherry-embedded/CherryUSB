@@ -69,18 +69,13 @@ static int usbh_printer_connect(struct usbh_hubport *hport, uint8_t intf)
 
     hport->config.intf[intf].priv = printer_class;
 
-    for (uint8_t i = 0; i < hport->config.intf[intf + 1].intf_desc.bNumEndpoints; i++) {
-        ep_desc = &hport->config.intf[intf + 1].ep[i].ep_desc;
+    for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
+        ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
 
-        ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-        ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-        ep_cfg.ep_interval = ep_desc->bInterval;
-        ep_cfg.hport = hport;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_pipe_alloc(&printer_class->bulkin, &ep_cfg);
+            usbh_hport_activate_epx(&printer_class->bulkin, hport, ep_desc);
         } else {
-            usbh_pipe_alloc(&printer_class->bulkout, &ep_cfg);
+            usbh_hport_activate_epx(&printer_class->bulkout, hport, ep_desc);
         }
     }
 
@@ -90,7 +85,7 @@ static int usbh_printer_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register Printer Class:%s\r\n", hport->config.intf[intf].devname);
 
-    return ret;
+    return 0;
 }
 
 static int usbh_printer_disconnect(struct usbh_hubport *hport, uint8_t intf)
@@ -108,13 +103,12 @@ static int usbh_printer_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(printer_class->bulkout);
         }
 
-        usb_free(printer_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
+        if (hport->config.intf[intf].devname[0] != '\0') {
             USB_LOG_INFO("Unregister Printer Class:%s\r\n", hport->config.intf[intf].devname);
+        }
 
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
-        hport->config.intf[intf].priv = NULL;
+        memset(printer_class, 0, sizeof(struct usbh_printer));
+        usb_free(printer_class);
     }
 
     return ret;

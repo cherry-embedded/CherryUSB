@@ -66,9 +66,9 @@ static void usbh_msc_cbw_dump(struct CBW *cbw)
     USB_LOG_DBG("CB:\r\n");
     for (i = 0; i < cbw->bCBLength; i += 8) {
         USB_LOG_DBG("  0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\r\n",
-                     cbw->CB[i], cbw->CB[i + 1], cbw->CB[i + 2],
-                     cbw->CB[i + 3], cbw->CB[i + 4], cbw->CB[i + 5],
-                     cbw->CB[i + 6], cbw->CB[i + 7]);
+                    cbw->CB[i], cbw->CB[i + 1], cbw->CB[i + 2],
+                    cbw->CB[i + 3], cbw->CB[i + 4], cbw->CB[i + 5],
+                    cbw->CB[i + 6], cbw->CB[i + 7]);
     }
 }
 
@@ -359,12 +359,13 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(msc_class->bulkout);
         }
 
-        usbh_msc_stop(msc_class);
+        if (hport->config.intf[intf].devname[0] != '\0') {
+            USB_LOG_INFO("Unregister MSC Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_msc_stop(msc_class);
+        }
+
         memset(msc_class, 0, sizeof(struct usbh_msc));
         usb_free(msc_class);
-
-        if (hport->config.intf[intf].devname[0] != '\0')
-            USB_LOG_INFO("Unregister MSC Class:%s\r\n", hport->config.intf[intf].devname);
     }
 
     return ret;
