@@ -517,6 +517,11 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
         case USB_REQUEST_CLEAR_FEATURE:
         case USB_REQUEST_SET_FEATURE:
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
+                if (setup->bRequest == USB_REQUEST_SET_FEATURE) {
+                    usbd_event_handler(USBD_EVENT_SET_REMOTE_WAKEUP);
+                } else {
+                    usbd_event_handler(USBD_EVENT_CLR_REMOTE_WAKEUP);
+                }
             } else if (value == USB_FEATURE_TEST_MODE) {
 #ifdef CONFIG_USBDEV_TEST_MODE
                 usbd_core_cfg.test_mode = true;
@@ -554,7 +559,6 @@ static bool usbd_std_device_req_handler(struct usb_setup_packet *setup, uint8_t 
                 usbd_core_cfg.configured = true;
                 usbd_class_event_notify_handler(USBD_EVENT_CONFIGURED, NULL);
                 usbd_event_handler(USBD_EVENT_CONFIGURED);
-                usbd_configure_done_callback();
             }
             *len = 0;
             break;
@@ -1294,6 +1298,11 @@ __WEAK void usbd_event_handler(uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
+            usbd_configure_done_callback();
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
             break;
 
         default:

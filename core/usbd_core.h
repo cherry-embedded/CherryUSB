@@ -35,8 +35,10 @@ enum usbd_event_type {
     USBD_EVENT_RESUME,       /** USB connection resumed by the HOST */
 
     /* USB DEVICE STATUS */
-    USBD_EVENT_CONFIGURED,    /** USB configuration done */
-    USBD_EVENT_SET_INTERFACE, /** USB interface selected */
+    USBD_EVENT_CONFIGURED,        /** USB configuration done */
+    USBD_EVENT_SET_INTERFACE,     /** USB interface selected */
+    USBD_EVENT_SET_REMOTE_WAKEUP, /** USB set remote wakeup */
+    USBD_EVENT_CLR_REMOTE_WAKEUP, /** USB clear remote wakeup */
     USBD_EVENT_UNKNOWN
 };
 
