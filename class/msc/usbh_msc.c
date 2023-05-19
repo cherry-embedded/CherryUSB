@@ -191,8 +191,8 @@ static inline int usbh_msc_scsi_requestsense(struct usbh_msc *msc_class)
     cbw->dSignature = MSC_CBW_Signature;
 
     cbw->bmFlags = 0x80;
-    cbw->bCBLength = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
-    cbw->dDataLength = SCSICMD_REQUESTSENSE_SIZEOF;
+    cbw->dDataLength = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
+    cbw->bCBLength = SCSICMD_REQUESTSENSE_SIZEOF;
     cbw->CB[0] = SCSI_CMD_REQUESTSENSE;
     cbw->CB[4] = SCSIRESP_FIXEDSENSEDATA_SIZEOF;
 
