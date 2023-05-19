@@ -9,7 +9,7 @@
   * @brief Register map for USB0 peripheral (USB0)
   */
 #ifdef CONFIG_USB_MUSB_SUNXI
-
+#if 0
 typedef __PACKED_STRUCT {                                    /*!< USB0 Structure                                                        */
   union {
     __IO uint8_t   FIFO0_BYTE;                      /*!< USB FIFO Endpoint 0                                                   */
@@ -146,9 +146,9 @@ typedef __PACKED_STRUCT {                                    /*!< USB0 Structure
   __IO uint8_t RXHUBADDR0;
   __IO uint8_t RXHUBPORT0;
 } USB0_Type;
-
+#endif
 #else
-
+#if 0
 typedef struct {                                    /*!< USB0 Structure                                                        */
   __IO uint8_t   FADDR;                             /*!< USB Device Functional Address                                         */
   __IO uint8_t   POWER;                             /*!< USB Power                                                             */
@@ -465,7 +465,7 @@ typedef struct {                                    /*!< USB0 Structure         
   __IO uint32_t  PC;                                /*!< USB Peripheral Configuration                                          */
   __IO uint32_t  CC;                                /*!< USB Clock Configuration                                               */
 } USB0_Type;
-
+#endif
 #endif // CONFIG_USB_MUSB_SUNXI
 
 //*****************************************************************************
