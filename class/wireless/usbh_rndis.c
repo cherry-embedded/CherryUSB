@@ -9,7 +9,7 @@
 
 #define DEV_FORMAT "/dev/rndis"
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[1024];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[4096];
 
 static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 {
@@ -81,7 +81,7 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
     setup->wIndex = 0;
     setup->wLength = sizeof(rndis_query_msg_t);
 
-    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&cmd);
+    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)cmd);
     if (ret < 0) {
         USB_LOG_ERR("oid:%08x send error, ret: %d\r\n", (unsigned int)oid, ret);
         return ret;
@@ -205,7 +205,7 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
     setup->wIndex = 0;
     setup->wLength = sizeof(rndis_keepalive_msg_t);
 
-    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)&cmd);
+    ret = usbh_control_transfer(rndis_class->hport->ep0, setup, (uint8_t *)cmd);
     if (ret < 0) {
         USB_LOG_ERR("keepalive send error, ret: %d\r\n", ret);
         return ret;
