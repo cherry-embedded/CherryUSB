@@ -259,14 +259,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
 
 #ifdef CONFIG_USBHOST_RNDIS_NOTIFY
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-
-    ep_cfg.ep_interval = ep_desc->bInterval;
-    ep_cfg.hport = hport;
-    usbh_pipe_alloc(&rndis_class->intin, &ep_cfg);
-
+    usbh_hport_activate_epx(&rndis_class->intin, hport, ep_desc);
 #endif
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
