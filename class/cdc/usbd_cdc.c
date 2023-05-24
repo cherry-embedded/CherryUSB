@@ -16,6 +16,7 @@ static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setu
                 setup->bRequest);
 
     struct cdc_line_coding line_coding;
+    struct cdc_line_coding line_coding_last;
     bool dtr, rts;
     uint8_t intf_num = LO_BYTE(setup->wIndex);
 
@@ -46,7 +47,13 @@ static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setu
                         line_coding.bDataBits,
                         parity_name[line_coding.bParityType],
                         stop_name[line_coding.bCharFormat]);
-            usbd_cdc_acm_set_line_coding(intf_num, &line_coding);
+
+            /* check if current line coding is the same with last, if they are the same, do not set line coding */
+            usbd_cdc_acm_get_line_coding(intf_num, &line_coding_last);
+            if (memcmp(&line_coding_last, &line_coding, sizeof(struct cdc_line_coding))) {
+                usbd_cdc_acm_set_line_coding(intf_num, &line_coding);
+            }
+
             break;
 
         case CDC_REQUEST_SET_CONTROL_LINE_STATE: {
