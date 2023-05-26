@@ -289,7 +289,8 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
             return false;
         }
 
-        *data = (uint8_t *)msosv1_desc->string;
+        //*data = (uint8_t *)msosv1_desc->string;
+        memcpy(*data, (uint8_t *)msosv1_desc->string, msosv1_desc->string_len);
         *len = msosv1_desc->string_len;
 
         return true;
@@ -300,7 +301,8 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
             return false;
         }
 
-        *data = bos_desc->string;
+        //*data = bos_desc->string;
+        memcpy(*data, (uint8_t *)bos_desc->string, bos_desc->string_len);
         *len = bos_desc->string_len;
         return true;
     }
