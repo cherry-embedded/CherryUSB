@@ -465,7 +465,15 @@ int usb_hc_init(void)
 
     usb_hc_low_level_init();
 
-    if ((USB_OTG_GLB->CID & (0x1U << 8)) == 0U) {
+    USB_LOG_INFO("========== DWC2 params ==========\r\n");
+    USB_LOG_INFO("CID:%08x\r\n",USB_OTG_GLB->CID);
+    USB_LOG_INFO("GSNPSID:%08x\r\n",USB_OTG_GLB->GSNPSID);
+    USB_LOG_INFO("GHWCFG1:%08x\r\n",USB_OTG_GLB->GHWCFG1);
+    USB_LOG_INFO("GHWCFG2:%08x\r\n",USB_OTG_GLB->GHWCFG2);
+    USB_LOG_INFO("GHWCFG3:%08x\r\n",USB_OTG_GLB->GHWCFG3);
+    USB_LOG_INFO("GHWCFG4:%08x\r\n",USB_OTG_GLB->GHWCFG4);
+
+    if ((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) == 0U) {
         USB_LOG_ERR("This dwc2 version does not support dma, so stop working\r\n");
         while (1) {
         }

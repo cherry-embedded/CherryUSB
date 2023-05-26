@@ -22,11 +22,11 @@ typedef struct
   uint32_t Reserved30[2];             /*!< Reserved                                     030h */
   __IO uint32_t GCCFG;                /*!< General Purpose IO Register                  038h */
   __IO uint32_t CID;                  /*!< User ID Register                             03Ch */
-  __IO uint32_t GSNPSID;              /* USB_OTG core ID                                040h*/
-  __IO uint32_t GHWCFG1;              /* User HW config1                                044h*/
-  __IO uint32_t GHWCFG2;              /* User HW config2                                048h*/
+  __IO uint32_t GSNPSID;              /*!< USB_OTG core ID                              040h */
+  __IO uint32_t GHWCFG1;              /*!< User HW config1                              044h */
+  __IO uint32_t GHWCFG2;              /*!< User HW config2                              048h */
   __IO uint32_t GHWCFG3;              /*!< User HW config3                              04Ch */
-  uint32_t  Reserved6;                /*!< Reserved                                     050h */
+  __IO uint32_t GHWCFG4;              /*!< User HW config4                              050h */
   __IO uint32_t GLPMCFG;              /*!< LPM Register                                 054h */
   __IO uint32_t GPWRDN;               /*!< Power Down Register                          058h */
   __IO uint32_t GDFIFOCFG;            /*!< DFIFO Software Config Register               05Ch */

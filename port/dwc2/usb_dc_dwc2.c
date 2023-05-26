@@ -619,6 +619,12 @@ int usb_dc_init(void)
     USB_OTG_GLB->GINTMSK = USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
                            USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IEPINT;
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
+    if ((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) == 0U) {
+        USB_LOG_ERR("This dwc2 version does not support dma, so stop working\r\n");
+        while (1) {
+        }
+    }
+
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_HBSTLEN_2;
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_DMAEN;
 #else
