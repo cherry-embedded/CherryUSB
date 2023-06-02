@@ -275,13 +275,6 @@ static inline void dwc2_pipe_transfer(uint8_t ch_num, uint8_t ep_addr, uint32_t 
     USB_OTG_HC(ch_num)->HCCHAR &= ~USB_OTG_HCCHAR_ODDFRM;
     USB_OTG_HC(ch_num)->HCCHAR |= (uint32_t)is_oddframe << 29;
 
-    /* make sure to set the correct ep direction */
-    if (ep_addr & 0x80) {
-        tmpreg |= USB_OTG_HCCHAR_EPDIR;
-    } else {
-        tmpreg &= ~USB_OTG_HCCHAR_EPDIR;
-    }
-
     /* Set host channel enable */
     tmpreg = USB_OTG_HC(ch_num)->HCCHAR;
     tmpreg &= ~USB_OTG_HCCHAR_CHDIS;
