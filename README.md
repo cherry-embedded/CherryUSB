@@ -2,19 +2,37 @@
 
 [中文版](./README_zh.md)
 
-CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system with USB ip.
+CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system with USB IP.
 
 ![CherryUSB](./docs/assets/usb_outline.png)
 
 ## Why choose
 
-- Streamlined code with small memory usage which also can be further trimmed
-- Comprehensive class drivers and all master and slave class drivers are templated,making it easy for users to add new class drivers and find patterns when learning
-- The APIs available to the users are very few and clearly categorised. Device: initialisation + registration apis, command callback apis, data sending and receiving apis; Host: initialisation + lookup apis, data sending and receiving apis
-- Tree-based programming with a hierarchy of code that makes it easy for the user to sort out function call relationships, enumerations and class-driven loading processes
-- Standardised porting interface, no need to rewrite the driver for the same ip, and porting drivers are templated to make it easier for users to add new ports
-- The use of the device or host transceiver apis are equivalent to the use of the uart tx/rx dma, and there is no limit to the length
-- Capable of achieving theoretical USB hardware bandwidth
+### Easy to study USB
+
+In order to make it easier for users to learn USB basics, enumeration, driver loading and IP drivers, the code has been written with the following advantages:
+
+- Lean code, simple logic, no complex C syntax
+- Tree-based programming with cascading code
+- Class-drivers and porting-drivers are templating and simplification
+- Clear API classification (slave: initialisation, registration api, command callback api, data sending and receiving api; host: initialisation, lookup api, data sending and receiving api)
+
+### Easy to use  USB
+
+In order to facilitate the use of the USB interface and to take into account the fact that users have learned about uart and dma, the following advantages have been designed for the data sending and receiving class of interface:
+
+- Equivalent to using uart tx dma/uart rx dma
+- There is no limit to the length of send and receive, the user does not need to care about the USB packetization process (the porting driver does the packetization process)
+
+### Easy to bring out USB performance
+
+Taking into account USB performance issues and trying to achieve the theoretical bandwidth of the USB hardware, the design of the data transceiver class interface has the following advantages:
+
+- Porting drivers directly to registers, no abstraction layer encapsulation
+- Memory zero copy
+- If IP has DMA then uses DMA mode (DMA with hardware packetization)
+- Unlimited length make it easier to interface with hardware DMA and take advantage of DMA
+- Subcontracting function is handled in interrupt
 
 ## Directoy Structure
 
