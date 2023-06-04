@@ -44,22 +44,20 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带
 ├── demo
 ├── docs
 ├── osal
-├── packet capture
 └── port
 └── tools
 ```
 
 |   目录名       |  描述                          |
-|:-------------:|:------------------------------:|
+|:-------------:|:-------------------------------:|
 |class          |  usb class 类主从驱动           |
 |common         |  usb spec 定义、常用宏、标准接口定义 |
-|core           |  usb 主从协议栈核心实现            |
-|demo           |  示例                          |
-|docs           |  文档                          |
+|core           |  usb 主从协议栈核心实现          |
+|demo           |  示例                            |
+|docs           |  文档                            |
 |osal           |  os 封装层                       |
-|packet capture |  抓包文件（需要使用力科软件打开）|
 |port           |  usb 主从需要实现的 porting 接口 |
-|tools           |  工具链接                       |
+|tools          |  工具链接                        |
 
 ## Device 协议栈简介
 

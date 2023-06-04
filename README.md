@@ -54,13 +54,12 @@ Taking into account USB performance issues and trying to achieve the theoretical
 |:-------------:|:---------------------------:|
 |class          |  usb class driver           |
 |common         |  usb spec macros and utils  |
-|core           |  usb core implementation  |
-|demo           |  different chips demo     |
-|osal           |  os wrapper              |
-|docs           |  doc for guiding         |
-|packet capture |  packet capture file     |
-|port           |  usb dcd and hcd porting |
-|tools           |  tool used url          |
+|core           |  usb core implementation    |
+|demo           |  different chips demo       |
+|osal           |  os wrapper                 |
+|docs           |  doc for guiding            |
+|port           |  usb dcd and hcd porting    |
+|tools          |  tool url                   |
 
 ## Device Stack Overview
 
