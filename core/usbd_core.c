@@ -950,8 +950,15 @@ static void usbd_class_event_notify_handler(uint8_t event, void *arg)
     {
         struct usbd_interface *intf = usb_slist_entry(i, struct usbd_interface, list);
 
-        if (intf->notify_handler) {
-            intf->notify_handler(event, arg);
+        if (arg) {
+            struct usb_interface_descriptor *desc = (struct usb_interface_descriptor *)arg;
+            if (intf->notify_handler && (desc->bInterfaceNumber == (intf->intf_num))) {
+                intf->notify_handler(event, arg);
+            }
+        } else {
+            if (intf->notify_handler) {
+                intf->notify_handler(event, arg);
+            }
         }
     }
 }
