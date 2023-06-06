@@ -1,26 +1,21 @@
-# Note
+# Support Chip List
 
-## Support Chip List
+## HEZHOU
 
-### HEZHOU
+- AIR105 (0x40000C00)
 
-- AIR105
+## ES32
 
-### ES32
+- ES32F3xx (0x40086400)
 
-- ES32F3xx
-
-### TI
+## TI
 
 - MSP432E4x
 
-### AllwinnerTech
+## AllwinnerTech
 
-- F1Cxxx
+- F1Cxxx (0x01c13000)
 
-## Before Use
+## Bekencorp
 
-Your should implement `usb_dc_low_level_init` and `usb_dc_low_level_deinit`.
-- Enable or disable USB clock and set USB clock for 48M.
-- Enable or disable gpio and gpio clk for usb dp and dm.
-- Enable or disable usb irq
+- BK72xx (0x46002000)

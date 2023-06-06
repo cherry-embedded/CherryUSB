@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "usbd_cdc.h"
+#include "usbd_cdc_acm.h"
 #include "DAP_config.h"
 #include "DAP.h"
 
@@ -116,7 +116,7 @@ const uint8_t daplink_descriptor[] = {
     USB_ENDPOINT_DESCRIPTOR_INIT(DAP_IN_EP, USB_ENDPOINT_TYPE_BULK, CDC_MAX_MPS, 0x00),
     /* Endpoint IN 2 */
     USB_ENDPOINT_DESCRIPTOR_INIT(DAP_OUT_EP, USB_ENDPOINT_TYPE_BULK, CDC_MAX_MPS, 0x00),
-    CDC_ACM_DESCRIPTOR_INIT(0x01, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, 0x00),
+    CDC_ACM_DESCRIPTOR_INIT(0x01, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x00),
     /* String 0 (LANGID) */
     USB_LANGID_INIT(USBD_LANGID_STRING),
     /* String 1 (Manufacturer) */
@@ -185,59 +185,81 @@ const uint8_t daplink_descriptor[] = {
     0x00
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_read_buffer[CDC_MAX_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_read_buffer[CONFIG_USBDEV_MAX_BUS][CDC_MAX_MPS];
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t USB_Request[DAP_PACKET_SIZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t USB_Response[DAP_PACKET_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t USB_Request[CONFIG_USBDEV_MAX_BUS][DAP_PACKET_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t USB_Response[CONFIG_USBDEV_MAX_BUS][DAP_PACKET_SIZE];
 
-volatile bool ep_tx_busy_flag = false;
+volatile bool ep_tx_busy_flag[CONFIG_USBDEV_MAX_BUS] = { 0 };
 
-void usbd_configure_done_callback(void)
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    /* setup first out ep read transfer */
-    usbd_ep_start_read(CDC_OUT_EP, cdc_read_buffer, CDC_MAX_MPS);
-    usbd_ep_start_read(DAP_OUT_EP, USB_Request, DAP_PACKET_SIZE);
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            /* setup first out ep read transfer */
+            /* setup first out ep read transfer */
+            usbd_ep_start_read(busid, CDC_OUT_EP, cdc_read_buffer[busid], CDC_MAX_MPS);
+            usbd_ep_start_read(busid, DAP_OUT_EP, USB_Request[busid], DAP_PACKET_SIZE);
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
 }
 
-void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
+void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     /* setup next out ep read transfer */
     if (1) {
-        usbd_ep_start_read(CDC_OUT_EP, cdc_read_buffer, CDC_MAX_MPS);
+        usbd_ep_start_read(busid, CDC_OUT_EP, cdc_read_buffer[busid], CDC_MAX_MPS);
     }
 }
 
-void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
+void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
         /* send zlp */
-        usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+        usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
     } else {
-        ep_tx_busy_flag = false;
+        ep_tx_busy_flag[busid] = false;
     }
 }
 
-void usb_dap_recv_callback(uint8_t ep, uint32_t nbytes)
+void usb_dap_recv_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     uint32_t actual_len;
-    if (USB_Request[0] == ID_DAP_TransferAbort) {
-        usbd_ep_start_read(ep, USB_Request, DAP_PACKET_SIZE);
+    if (USB_Request[busid][0] == ID_DAP_TransferAbort) {
+        usbd_ep_start_read(busid, ep, USB_Request[busid], DAP_PACKET_SIZE);
         DAP_TransferAbort = 1;
         return;
     }
-    actual_len = DAP_ProcessCommand(USB_Request, USB_Response);
+    actual_len = DAP_ProcessCommand(USB_Request[busid], USB_Response[busid]);
 
-    usbd_ep_start_write(DAP_IN_EP, USB_Response, actual_len & 0xffff);
-    usbd_ep_start_read(ep, USB_Request, DAP_PACKET_SIZE);
+    usbd_ep_start_write(busid, DAP_IN_EP, USB_Response[busid], actual_len & 0xffff);
+    usbd_ep_start_read(busid, ep, USB_Request[busid], DAP_PACKET_SIZE);
 }
 
-void usb_dap_send_callback(uint8_t ep, uint32_t nbytes)
+void usb_dap_send_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
         /* send zlp */
-        usbd_ep_start_write(DAP_IN_EP, NULL, 0);
+        usbd_ep_start_write(busid, DAP_IN_EP, NULL, 0);
     } else {
-        ep_tx_busy_flag = false;
+        ep_tx_busy_flag[busid] = false;
     }
 }
 
@@ -260,25 +282,25 @@ static struct usbd_endpoint dap_in_ep = {
     .ep_cb = usb_dap_send_callback
 };
 
-struct usbd_interface dap_interface;
-struct usbd_interface intf1;
-struct usbd_interface intf2;
+struct usbd_interface dap_interface[CONFIG_USBDEV_MAX_BUS];
+struct usbd_interface intf1[CONFIG_USBDEV_MAX_BUS];
+struct usbd_interface intf2[CONFIG_USBDEV_MAX_BUS];
 
-void daplink_init(void)
+void daplink_init(uint8_t busid)
 {
-    usbd_desc_register(daplink_descriptor);
-    usbd_msosv1_desc_register(&msosv1_desc);
+    usbd_desc_register(busid, daplink_descriptor);
+    usbd_msosv1_desc_register(busid, &msosv1_desc);
 
     /*!< winusb */
-    usbd_add_interface(&dap_interface);
-    usbd_add_endpoint(&dap_out_ep);
-    usbd_add_endpoint(&dap_in_ep);
+    usbd_add_interface(busid, &dap_interface[busid]);
+    usbd_add_endpoint(busid, &dap_out_ep);
+    usbd_add_endpoint(busid, &dap_in_ep);
 
     /*!< cdc acm */
-    usbd_add_interface(usbd_cdc_acm_init_intf(&intf1));
-    usbd_add_interface(usbd_cdc_acm_init_intf(&intf2));
-    usbd_add_endpoint(&cdc_out_ep);
-    usbd_add_endpoint(&cdc_in_ep);
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(&intf1[busid]));
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(&intf2[busid]));
+    usbd_add_endpoint(busid, &cdc_out_ep);
+    usbd_add_endpoint(busid, &cdc_in_ep);
 
-    usbd_initialize();
+    usbd_initialize(busid);
 }

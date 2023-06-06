@@ -158,30 +158,53 @@ static const uint8_t hid_custom_report_desc[HID_CUSTOM_REPORT_DESC_SIZE] = {
     0xC0 /*     END_COLLECTION	             */
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[CONFIG_USBDEV_MAX_BUS][64];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[CONFIG_USBDEV_MAX_BUS][64];
 
 #define HID_STATE_IDLE 0
 #define HID_STATE_BUSY 1
 
 /*!< hid state ! Data can be sent only when state is idle  */
-static volatile uint8_t custom_state = HID_STATE_IDLE;
+static volatile uint8_t custom_state[CONFIG_USBDEV_MAX_BUS] = { 0 };
 
-void usbd_configure_done_callback(void)
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    /* setup first out ep read transfer */
-    usbd_ep_start_read(HIDRAW_OUT_EP, read_buffer, 64);
+    switch (event) {
+        case USBD_EVENT_RESET:
+            custom_state[busid] = HID_STATE_IDLE;
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            /* setup first out ep read transfer */
+            usbd_ep_start_read(busid, HIDRAW_OUT_EP, read_buffer[busid], 64);
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
 }
 
-static void usbd_hid_custom_in_callback(uint8_t ep, uint32_t nbytes)
+static void usbd_hid_custom_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
-    custom_state = HID_STATE_IDLE;
+    custom_state[busid] = HID_STATE_IDLE;
 }
 
-static void usbd_hid_custom_out_callback(uint8_t ep, uint32_t nbytes)
+static void usbd_hid_custom_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual out len:%d\r\n", nbytes);
-    usbd_ep_start_read(HIDRAW_OUT_EP, read_buffer, 64);
+    usbd_ep_start_read(busid, HIDRAW_OUT_EP, read_buffer[busid], 64);
 }
 
 static struct usbd_endpoint custom_in_ep = {
@@ -194,27 +217,28 @@ static struct usbd_endpoint custom_out_ep = {
     .ep_addr = HIDRAW_OUT_EP
 };
 
-struct usbd_interface intf0;
+struct usbd_interface intf0[CONFIG_USBDEV_MAX_BUS];
 
-void hid_custom_keyboard_init(void)
+void hid_custom_inout_init(uint8_t busid)
 {
-    usbd_desc_register(hid_descriptor);
-    usbd_add_interface(usbd_hid_init_intf(&intf0, hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
-    usbd_add_endpoint(&custom_in_ep);
-    usbd_add_endpoint(&custom_out_ep);
+    usbd_desc_register(busid, hid_descriptor);
+    usbd_add_interface(busid, usbd_hid_init_intf(&intf0[busid], hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
+    usbd_add_endpoint(busid, &custom_in_ep);
+    usbd_add_endpoint(busid, &custom_out_ep);
 
-    usbd_initialize();
+    usbd_initialize(busid);
 }
 
-void hid_custom_test(void)
+void hid_custom_test(uint8_t busid)
 {
-    uint8_t sendbuffer[64] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    const uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-    int ret = usbd_ep_start_write(HIDRAW_IN_EP, sendbuffer, 8);
+    memcpy(write_buffer[busid], sendbuffer, 8);
+    int ret = usbd_ep_start_write(busid, HIDRAW_IN_EP, write_buffer[busid], 8);
     if (ret < 0) {
         return;
     }
-    custom_state = HID_STATE_BUSY;
-    while (custom_state == HID_STATE_BUSY) {
+    custom_state[busid] = HID_STATE_BUSY;
+    while (custom_state[busid] == HID_STATE_BUSY) {
     }
 }

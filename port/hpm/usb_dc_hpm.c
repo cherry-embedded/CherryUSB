@@ -2,14 +2,6 @@
 #include "hpm_usb_device.h"
 #include "board.h"
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USBD_IRQHandler // use actual usb irq name instead
-#endif
-
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS USB_SOC_DCD_MAX_ENDPOINT_COUNT
-#endif
-
 /* USBSTS, USBINTR */
 enum {
     intr_usb = HPM_BITSMASK(1, 0),
@@ -22,7 +14,7 @@ enum {
 };
 
 /* Endpoint state */
-struct hpm_ep_state {
+struct hpm_ep {
     uint16_t ep_mps;    /* Endpoint max packet size */
     uint8_t ep_type;    /* Endpoint type */
     uint8_t ep_stalled; /* Endpoint stall flag */
@@ -35,63 +27,98 @@ struct hpm_ep_state {
 /* Driver state */
 struct hpm_udc {
     usb_device_handle_t *handle;
-    struct hpm_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
-    struct hpm_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
-} g_hpm_udc;
+    struct hpm_ep in_ep[USB_SOC_DCD_MAX_ENDPOINT_COUNT];
+    struct hpm_ep out_ep[USB_SOC_DCD_MAX_ENDPOINT_COUNT];
+} g_hpm_udc[USB_SOC_MAX_COUNT];
 
-static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data;
+static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data0;
+#if defined(HPM_USB1_BASE)
+static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data1;
+#endif
 static ATTR_PLACE_AT_NONCACHEABLE usb_device_handle_t usb_device_handle[USB_SOC_MAX_COUNT];
 
+#if defined(HPM_USB0_BASE) && defined(HPM_USB1_BASE)
+const uint8_t hpm_irq_num[] = { IRQn_USB0, IRQn_USB1 };
+#else
+const uint8_t hpm_irq_num[] = { IRQn_USB0 };
+#endif
 /* Index to bit position in register */
 static inline uint8_t ep_idx2bit(uint8_t ep_idx)
 {
     return ep_idx / 2 + ((ep_idx % 2) ? 16 : 0);
 }
 
-__WEAK void usb_dc_low_level_init(void)
+int hpm_udc_init(struct usbd_bus *bus)
 {
-}
+    struct hpm_udc *udc;
 
-__WEAK void usb_dc_low_level_deinit(void)
-{
-}
+    if (bus->busid > (USB_SOC_MAX_COUNT - 1)) {
+        return -1;
+    }
+    //usbd_udc_low_level_init(bus->busid);
 
-int usb_dc_init(void)
-{
-    usb_dc_low_level_init();
+    USB_LOG_INFO("========== hpm udc params =========\r\n");
+    USB_LOG_INFO("hpm has %d endpoints\r\n", USB_SOC_DCD_MAX_ENDPOINT_COUNT);
+    USB_LOG_INFO("=================================\r\n");
 
-    memset(&g_hpm_udc, 0, sizeof(struct hpm_udc));
-    g_hpm_udc.handle = &usb_device_handle[0];
-    g_hpm_udc.handle->regs = (USB_Type *)HPM_USB0_BASE;
-    g_hpm_udc.handle->dcd_data = &_dcd_data;
+    udc = &g_hpm_udc[bus->busid];
+    bus->udc = udc;
+    bus->endpoints = USB_SOC_DCD_MAX_ENDPOINT_COUNT;
+    memset(udc, 0, sizeof(struct hpm_udc));
+
+    udc->handle = &usb_device_handle[bus->busid];
+    udc->handle->regs = (USB_Type *)bus->reg_base;
+    if (bus->busid == 0) {
+        udc->handle->dcd_data = &_dcd_data0;
+    } else {
+        udc->handle->dcd_data = &_dcd_data1;
+    }
 
     uint32_t int_mask;
     int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK |
                 USB_USBINTR_PCE_MASK | USB_USBINTR_URE_MASK);
 
-    usb_device_init(g_hpm_udc.handle, int_mask);
+    usb_device_init(udc->handle, int_mask);
 
-    intc_m_enable_irq(IRQn_USB0);
+    intc_m_enable_irq(hpm_irq_num[bus->busid]);
     return 0;
 }
 
-int usb_dc_deinit(void)
+int hpm_udc_deinit(struct usbd_bus *bus)
 {
+    struct hpm_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    //usbd_udc_low_level_deinit(bus->busid);
+
     return 0;
 }
 
-int usbd_set_address(const uint8_t addr)
+int hpm_set_address(struct usbd_bus *bus, const uint8_t addr)
 {
-    usb_device_handle_t *handle = g_hpm_udc.handle;
-    usb_dcd_set_address(handle->regs, addr);
+    struct hpm_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    usb_dcd_set_address(udc->handle->regs, addr);
     return 0;
 }
 
-uint8_t usbd_get_port_speed(const uint8_t port)
+uint8_t hpm_get_port_speed(struct usbd_bus *bus)
 {
     uint8_t speed;
+    struct hpm_udc *udc = bus->udc;
 
-    speed = usb_get_port_speed(g_hpm_udc.handle->regs);
+    if (udc == NULL) {
+        return -1;
+    }
+
+    speed = usb_get_port_speed(udc->handle->regs);
 
     if (speed == 0x00) {
         return USB_SPEED_FULL;
@@ -106,108 +133,153 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return 0;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int hpm_ep_open(struct usbd_bus *bus, const struct usb_endpoint_descriptor *ep_desc)
 {
     usb_endpoint_config_t tmp_ep_cfg;
-    usb_device_handle_t *handle = g_hpm_udc.handle;
+    uint8_t ep_idx = USB_EP_GET_IDX(ep_desc->bEndpointAddress);
+    uint16_t ep_mps;
+    uint8_t ep_type;
+    struct hpm_udc *udc = bus->udc;
 
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    if (udc == NULL) {
+        return -1;
+    }
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_hpm_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_hpm_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        g_hpm_udc.out_ep[ep_idx].ep_enable = true;
+    if (ep_idx > (USB_SOC_DCD_MAX_ENDPOINT_COUNT - 1)) {
+        USB_LOG_ERR("Ep addr 0x%02x overflow\r\n", ep_desc->bEndpointAddress);
+        return -2;
+    }
+
+    ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
+
+    if (USB_EP_DIR_IS_OUT(ep_desc->bEndpointAddress)) {
+        udc->out_ep[ep_idx].ep_mps = ep_mps;
+        udc->out_ep[ep_idx].ep_type = ep_type;
+        udc->out_ep[ep_idx].ep_enable = true;
     } else {
-        g_hpm_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_hpm_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        g_hpm_udc.in_ep[ep_idx].ep_enable = true;
+        udc->in_ep[ep_idx].ep_mps = ep_mps;
+        udc->in_ep[ep_idx].ep_type = ep_type;
+        udc->in_ep[ep_idx].ep_enable = true;
     }
 
-    tmp_ep_cfg.xfer = ep_cfg->ep_type;
-    tmp_ep_cfg.ep_addr = ep_cfg->ep_addr;
-    tmp_ep_cfg.max_packet_size = ep_cfg->ep_mps;
+    tmp_ep_cfg.xfer = ep_type;
+    tmp_ep_cfg.ep_addr = ep_desc->bEndpointAddress;
+    tmp_ep_cfg.max_packet_size = ep_mps;
 
-    usb_device_edpt_open(handle, &tmp_ep_cfg);
+    usb_device_edpt_open(udc->handle, &tmp_ep_cfg);
     return 0;
 }
 
-int usbd_ep_close(const uint8_t ep)
+int hpm_ep_close(struct usbd_bus *bus, const uint8_t ep)
 {
-    usb_device_handle_t *handle = g_hpm_udc.handle;
+    struct hpm_udc *udc = bus->udc;
 
-    usb_device_edpt_close(handle, ep);
-    return 0;
-}
-
-int usbd_ep_set_stall(const uint8_t ep)
-{
-    usb_device_handle_t *handle = g_hpm_udc.handle;
-
-    usb_device_edpt_stall(handle, ep);
-    return 0;
-}
-
-int usbd_ep_clear_stall(const uint8_t ep)
-{
-    usb_device_handle_t *handle = g_hpm_udc.handle;
-
-    usb_device_edpt_clear_stall(handle, ep);
-    return 0;
-}
-
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
-{
-    return 0;
-}
-
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
-{
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    usb_device_handle_t *handle = g_hpm_udc.handle;
-
-    if (!data && data_len) {
+    if (udc == NULL) {
         return -1;
     }
-    if (!g_hpm_udc.in_ep[ep_idx].ep_enable) {
-        return -2;
-    }
 
-    g_hpm_udc.in_ep[ep_idx].xfer_buf = (uint8_t *)data;
-    g_hpm_udc.in_ep[ep_idx].xfer_len = data_len;
-    g_hpm_udc.in_ep[ep_idx].actual_xfer_len = 0;
-
-    usb_device_edpt_xfer(handle, ep, (uint8_t *)data, data_len);
-
+    usb_device_edpt_close(udc->handle, ep);
     return 0;
 }
 
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+int hpm_ep_set_stall(struct usbd_bus *bus, const uint8_t ep)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-    usb_device_handle_t *handle = g_hpm_udc.handle;
+    struct hpm_udc *udc = bus->udc;
 
-    if (!data && data_len) {
+    if (udc == NULL) {
         return -1;
     }
-    if (!g_hpm_udc.out_ep[ep_idx].ep_enable) {
-        return -2;
+
+    usb_device_edpt_stall(udc->handle, ep);
+    return 0;
+}
+
+int hpm_ep_clear_stall(struct usbd_bus *bus, const uint8_t ep)
+{
+    struct hpm_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
     }
 
-    g_hpm_udc.out_ep[ep_idx].xfer_buf = (uint8_t *)data;
-    g_hpm_udc.out_ep[ep_idx].xfer_len = data_len;
-    g_hpm_udc.out_ep[ep_idx].actual_xfer_len = 0;
+    usb_device_edpt_clear_stall(udc->handle, ep);
+    return 0;
+}
 
-    usb_device_edpt_xfer(handle, ep, data, data_len);
+int hpm_ep_is_stalled(struct usbd_bus *bus, const uint8_t ep, uint8_t *stalled)
+{
+    struct hpm_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+int hpm_ep_start_write(struct usbd_bus *bus, const uint8_t ep, const uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    struct hpm_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (!data && data_len) {
+        return -2;
+    }
+    if (!udc->in_ep[ep_idx].ep_enable) {
+        return -3;
+    }
+
+    udc->in_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    udc->in_ep[ep_idx].xfer_len = data_len;
+    udc->in_ep[ep_idx].actual_xfer_len = 0;
+
+    usb_device_edpt_xfer(udc->handle, ep, (uint8_t *)data, data_len);
+
+    return 0;
+}
+
+int hpm_ep_start_read(struct usbd_bus *bus, const uint8_t ep, uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    struct hpm_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (!data && data_len) {
+        return -2;
+    }
+    if (!udc->out_ep[ep_idx].ep_enable) {
+        return -3;
+    }
+
+    udc->out_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    udc->out_ep[ep_idx].xfer_len = data_len;
+    udc->out_ep[ep_idx].actual_xfer_len = 0;
+
+    usb_device_edpt_xfer(udc->handle, ep, data, data_len);
+
+    return 0;
+}
+
+void hpm_udc_irq(struct usbd_bus *bus)
 {
     uint32_t int_status;
-    usb_device_handle_t *handle = g_hpm_udc.handle;
+    usb_device_handle_t *handle;
     uint32_t transfer_len;
+    struct hpm_udc *udc = bus->udc;
 
+    if (udc == NULL) {
+        return;
+    }
+
+    handle = udc->handle;
     /* Acknowledge handled interrupt */
     int_status = usb_device_status_flags(handle);
     int_status &= usb_device_interrupts(handle);
@@ -219,9 +291,9 @@ void USBD_IRQHandler(void)
     }
 
     if (int_status & intr_reset) {
-        memset(g_hpm_udc.in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
-        memset(g_hpm_udc.out_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
-        usbd_event_reset_handler();
+        memset(g_hpm_udc[bus->busid].in_ep, 0, sizeof(struct hpm_ep) * USB_SOC_DCD_MAX_ENDPOINT_COUNT);
+        memset(g_hpm_udc[bus->busid].out_ep, 0, sizeof(struct hpm_ep) * USB_SOC_DCD_MAX_ENDPOINT_COUNT);
+        usbd_event_reset_handler(bus->busid);
         usb_device_bus_reset(handle, 64);
     }
 
@@ -251,7 +323,7 @@ void USBD_IRQHandler(void)
             /*------------- Set up Received -------------*/
             usb_device_clear_setup_status(handle, edpt_setup_status);
             dcd_qhd_t *qhd0 = usb_device_qhd_get(handle, 0);
-            usbd_event_ep0_setup_complete_handler((uint8_t *)&qhd0->setup_request);
+            usbd_event_ep0_setup_complete_handler(bus->busid, (uint8_t *)&qhd0->setup_request);
         }
 
         if (edpt_complete) {
@@ -268,9 +340,9 @@ void USBD_IRQHandler(void)
                         transfer_len = p_qtd->expected_bytes - p_qtd->total_bytes;
 
                         if (ep_addr & 0x80) {
-                            usbd_event_ep_in_complete_handler(ep_addr, transfer_len);
+                            usbd_event_ep_in_complete_handler(bus->busid, ep_addr, transfer_len);
                         } else {
-                            usbd_event_ep_out_complete_handler(ep_addr, transfer_len);
+                            usbd_event_ep_out_complete_handler(bus->busid, ep_addr, transfer_len);
                         }
                     }
                 }
@@ -279,8 +351,34 @@ void USBD_IRQHandler(void)
     }
 }
 
+struct usbd_udc_driver hpm_udc_driver = {
+    .driver_name = "hpm udc",
+    .udc_init = hpm_udc_init,
+    .udc_deinit = hpm_udc_deinit,
+    .udc_set_address = hpm_set_address,
+    .udc_get_port_speed = hpm_get_port_speed,
+    .udc_ep_open = hpm_ep_open,
+    .udc_ep_close = hpm_ep_close,
+    .udc_ep_set_stall = hpm_ep_set_stall,
+    .udc_ep_clear_stall = hpm_ep_clear_stall,
+    .udc_ep_is_stalled = hpm_ep_is_stalled,
+    .udc_ep_start_write = hpm_ep_start_write,
+    .udc_ep_start_read = hpm_ep_start_read,
+    .udc_irq = hpm_udc_irq
+};
+
+#ifdef HPM_USB0_BASE
 void isr_usb0(void)
 {
-    USBD_IRQHandler();
+    usbd_irq(0);
 }
 SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usb0)
+#endif
+
+#ifdef HPM_USB1_BASE
+void isr_usb1(void)
+{
+    usbd_irq(1);
+}
+SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usb1)
+#endif

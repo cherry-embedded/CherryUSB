@@ -61,10 +61,16 @@ struct usb_msosv1_descriptor msosv1_desc = {
 /*!< config descriptor size */
 #define USB_CONFIG_SIZE (9 + MTP_DESCRIPTOR_LEN)
 
+#ifdef CONFIG_USB_HS
+#define MTP_MAX_MPS 512
+#else
+#define MTP_MAX_MPS 64
+#endif
+
 const uint8_t mtp_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0201, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    MTP_DESCRIPTOR_INIT(0x00, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, 2),
+    MTP_DESCRIPTOR_INIT(0x00, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, MTP_MAX_MPS, 0x02),
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -145,10 +151,6 @@ const uint8_t bos_descriptor[] = {
     0x0a, 0x10, 0x03, 0x00, 0x0f, 0x00, 0x01, 0x01, 0xf4, 0x01
 };
 
-void usbd_configure_done_callback(void)
-{
-}
-
 struct usbd_interface intf0;
 
 struct usb_bos_descriptor bos_desc = {
@@ -156,11 +158,36 @@ struct usb_bos_descriptor bos_desc = {
     .string_len = 22
 };
 
-void mtp_init(void)
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    usbd_desc_register(mtp_descriptor);
-    usbd_msosv1_desc_register(&msosv1_desc);
-    usbd_bos_desc_register(&bos_desc);
-    usbd_add_interface(usbd_mtp_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP));
-    usbd_initialize();
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
+}
+
+void mtp_init(uint8_t busid)
+{
+    usbd_desc_register(busid, mtp_descriptor);
+    usbd_msosv1_desc_register(busid, &msosv1_desc);
+    usbd_bos_desc_register(busid, &bos_desc);
+    usbd_add_interface(busid, usbd_mtp_init_intf(0, &intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP));
+    usbd_initialize(busid);
 }

@@ -15,6 +15,11 @@
 #define AUDIO_OUT_EP 0x02
 #define AUDIO_IN_EP  0x81
 
+#define AUDIO_OUT_CLOCK_ID 0x01
+#define AUDIO_OUT_FU_ID    0x03
+#define AUDIO_IN_CLOCK_ID  0x05
+#define AUDIO_IN_FU_ID     0x07
+
 #define AUDIO_FREQ      48000
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
@@ -49,35 +54,33 @@
 #define INPUT_CH_ENABLE 0x000000ff
 #endif
 
-
 #define OUT_CHANNEL_NUM 2
 
 #if OUT_CHANNEL_NUM == 1
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x00000000
 #elif OUT_CHANNEL_NUM == 2
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x00000003
 #elif OUT_CHANNEL_NUM == 3
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x00000007
 #elif OUT_CHANNEL_NUM == 4
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x0000000f
 #elif OUT_CHANNEL_NUM == 5
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x0000001f
 #elif OUT_CHANNEL_NUM == 6
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x0000003F
 #elif OUT_CHANNEL_NUM == 7
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x0000007f
 #elif OUT_CHANNEL_NUM == 8
-#define OUTPUT_CTRL     DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
+#define OUTPUT_CTRL      DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL), DBVAL(BMCONTROL)
 #define OUTPUT_CH_ENABLE 0x000000ff
 #endif
-
 
 /* AudioFreq * DataSize (2 bytes) * NumChannels */
 #define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
@@ -106,7 +109,7 @@
                       AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(IN_CHANNEL_NUM) +  \
                       AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC)
 
-uint8_t audio_descriptor[] = {
+uint8_t audio_v2_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_AUDIO_CONFIG_DESC_SIZ, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     AUDIO_V2_AC_DESCRIPTOR_INIT(0x00, 0x03, AUDIO_AC_SIZ, AUDIO_CATEGORY_UNDEF, 0x00, 0x00),
@@ -220,67 +223,69 @@ static const uint8_t mic_default_sampling_freq_table[] = {
     AUDIO_SAMPLE_FREQ_4B(0x00)
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t out_buffer[AUDIO_OUT_PACKET];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[CONFIG_USBDEV_MAX_BUS][AUDIO_OUT_PACKET];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[CONFIG_USBDEV_MAX_BUS][AUDIO_IN_PACKET];
 
-volatile bool tx_flag = 0;
-volatile bool rx_flag = 0;
+volatile bool tx_flag[CONFIG_USBDEV_MAX_BUS] = { 0 };
+volatile bool rx_flag[CONFIG_USBDEV_MAX_BUS] = { 0 };
+volatile bool ep_tx_busy_flag[CONFIG_USBDEV_MAX_BUS] = { 0 };
 
-void usbd_audio_open(uint8_t intf)
+void usbd_audio_open(uint8_t busid, uint8_t intf)
 {
     if (intf == 1) {
-        rx_flag = 1;
+        rx_flag[busid] = 1;
         /* setup first out ep read transfer */
-        usbd_ep_start_read(AUDIO_OUT_EP, out_buffer, AUDIO_OUT_PACKET);
+        usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer[busid], AUDIO_OUT_PACKET);
         USB_LOG_RAW("OPEN1\r\n");
     } else {
-        tx_flag = 1;
+        tx_flag[busid] = 1;
+        ep_tx_busy_flag[busid] = false;
         USB_LOG_RAW("OPEN2\r\n");
     }
 }
-void usbd_audio_close(uint8_t intf)
+void usbd_audio_close(uint8_t busid, uint8_t intf)
 {
     if (intf == 1) {
-        rx_flag = 1;
+        rx_flag[busid] = 1;
         USB_LOG_RAW("CLOSE1\r\n");
     } else {
-        tx_flag = 0;
+        tx_flag[busid] = 0;
+        ep_tx_busy_flag[busid] = false;
         USB_LOG_RAW("CLOSE2\r\n");
     }
 }
 
-void usbd_audio_get_sampling_freq_table(uint8_t entity_id, uint8_t **sampling_freq_table)
+void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sampling_freq_table)
 {
-    if (entity_id == 0x01) {
+    if (ep == AUDIO_OUT_EP) {
         *sampling_freq_table = (uint8_t *)speaker_default_sampling_freq_table;
-    } else if (entity_id == 0x05) {
+    } else if (ep == AUDIO_IN_EP) {
         *sampling_freq_table = (uint8_t *)mic_default_sampling_freq_table;
     } else {
     }
 }
 
-void usbd_audio_set_sampling_freq(uint8_t entity_id, uint8_t ep_ch, uint32_t sampling_freq)
+void usbd_audio_set_sampling_freq(uint8_t busid, uint8_t ep, uint32_t sampling_freq)
 {
     uint16_t packet_size = 0;
-    if (entity_id == 1) {
+    if (ep == AUDIO_OUT_EP) {
         packet_size = ((sampling_freq * 2 * OUT_CHANNEL_NUM) / 1000);
-        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 11] = packet_size;
-        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 10] = packet_size >> 8;
-    } else if (entity_id == 5) {
+        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 11] = packet_size;
+        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 10] = packet_size >> 8;
+    } else if (ep == AUDIO_IN_EP) {
         packet_size = ((sampling_freq * 2 * IN_CHANNEL_NUM) / 1000);
-        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 11] = packet_size;
-        audio_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 10] = packet_size >> 8;
+        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 11] = packet_size;
+        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 10] = packet_size >> 8;
     }
 }
 
-void usbd_configure_done_callback(void)
+void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer[busid], AUDIO_OUT_PACKET);
 }
 
-void usbd_audio_iso_out_callback(uint8_t ep, uint32_t nbytes)
-{
-}
-
-void usbd_audio_iso_in_callback(uint8_t ep, uint32_t nbytes)
+void usbd_audio_iso_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
 }
 
@@ -294,31 +299,41 @@ static struct usbd_endpoint audio_in_ep = {
     .ep_addr = AUDIO_IN_EP
 };
 
-struct usbd_interface intf0;
-struct usbd_interface intf1;
-struct usbd_interface intf2;
+struct usbd_interface intf0[CONFIG_USBDEV_MAX_BUS];
+struct usbd_interface intf1[CONFIG_USBDEV_MAX_BUS];
+struct usbd_interface intf2[CONFIG_USBDEV_MAX_BUS];
 
-void audio_init()
+struct audio_entity_info audio_entity_table[] = {
+    { .bEntityId = AUDIO_OUT_CLOCK_ID,
+      .bDescriptorSubtype = AUDIO_CONTROL_CLOCK_SOURCE,
+      .ep = AUDIO_OUT_EP },
+    { .bEntityId = AUDIO_OUT_FU_ID,
+      .bDescriptorSubtype = AUDIO_CONTROL_FEATURE_UNIT,
+      .ep = AUDIO_OUT_EP },
+    { .bEntityId = AUDIO_IN_CLOCK_ID,
+      .bDescriptorSubtype = AUDIO_CONTROL_CLOCK_SOURCE,
+      .ep = AUDIO_IN_EP },
+    { .bEntityId = AUDIO_IN_FU_ID,
+      .bDescriptorSubtype = AUDIO_CONTROL_FEATURE_UNIT,
+      .ep = AUDIO_IN_EP },
+};
+
+void audio_v2_init(uint8_t busid)
 {
-    usbd_desc_register(audio_descriptor);
-    usbd_add_interface(usbd_audio_init_intf(&intf0));
-    usbd_add_interface(usbd_audio_init_intf(&intf1));
-    usbd_add_interface(usbd_audio_init_intf(&intf2));
-    usbd_add_endpoint(&audio_in_ep);
-    usbd_add_endpoint(&audio_out_ep);
+    usbd_desc_register(busid, audio_v2_descriptor);
+    usbd_add_interface(busid, usbd_audio_init_intf(busid, &intf0[busid], 0x0200, audio_entity_table, 4));
+    usbd_add_interface(busid, usbd_audio_init_intf(busid, &intf1[busid], 0x0200, audio_entity_table, 4));
+    usbd_add_interface(busid, usbd_audio_init_intf(busid, &intf2[busid], 0x0200, audio_entity_table, 4));
+    usbd_add_endpoint(busid, &audio_in_ep);
+    usbd_add_endpoint(busid, &audio_out_ep);
 
-    usbd_audio_add_entity(0x01, AUDIO_CONTROL_CLOCK_SOURCE);
-    usbd_audio_add_entity(0x03, AUDIO_CONTROL_FEATURE_UNIT);
-    usbd_audio_add_entity(0x05, AUDIO_CONTROL_CLOCK_SOURCE);
-    usbd_audio_add_entity(0x07, AUDIO_CONTROL_FEATURE_UNIT);
-
-    usbd_initialize();
+    usbd_initialize(busid);
 }
 
-void audio_test()
+void audio_v2_test(uint8_t busid)
 {
-    while (1) {
-        if (tx_flag) {
-        }
+    if (tx_flag[busid]) {
+    }
+    if (rx_flag[busid]) {
     }
 }

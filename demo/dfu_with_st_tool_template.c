@@ -137,16 +137,36 @@ const uint8_t dfu_flash_descriptor[] = {
     0x00
 };
 
-void usbd_configure_done_callback(void)
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    /* no out ep, do nothing */
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
 }
 
 struct usbd_interface intf0;
 
 void dfu_flash_init(void)
 {
-    usbd_desc_register(dfu_flash_descriptor);
-    usbd_add_interface(usbd_dfu_init_intf(&intf0));
-    usbd_initialize();
+    usbd_desc_register(0, dfu_flash_descriptor);
+    usbd_add_interface(0, usbd_dfu_init_intf(&intf0));
+    usbd_initialize(0);
 }

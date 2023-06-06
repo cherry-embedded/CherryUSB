@@ -1,12 +1,8 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbhs_reg.h"
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USBHS_IRQHandler //use actual usb irq name instead
-#endif
-
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 16
+#ifndef CONFIG_CH32HS_BIDIR_ENDPOINTS
+#define CONFIG_CH32HS_BIDIR_ENDPOINTS 16
 #endif
 
 #define USB_SET_RX_DMA(ep_idx, addr) (*(volatile uint32_t *)((uint32_t)(&USBHS_DEVICE->UEP1_RX_DMA) + 4 * (ep_idx - 1)) = addr)
@@ -20,7 +16,7 @@
 #define USB_GET_RX_CTRL(ep_idx)      (*(volatile uint8_t *)((uint32_t)(&USBHS_DEVICE->UEP0_RX_CTRL) + 4 * ep_idx))
 
 /* Endpoint state */
-struct ch32_usbhs_ep_state {
+struct ch32_usbhs_ep {
     uint16_t ep_mps;    /* Endpoint max packet size */
     uint8_t ep_type;    /* Endpoint type */
     uint8_t ep_stalled; /* Endpoint stall flag */
@@ -34,28 +30,55 @@ struct ch32_usbhs_ep_state {
 struct ch32_usbhs_udc {
     __attribute__((aligned(4))) struct usb_setup_packet setup;
     volatile uint8_t dev_addr;
-    struct ch32_usbhs_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
-    struct ch32_usbhs_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
+    struct ch32_usbhs_ep in_ep[CONFIG_CH32HS_BIDIR_ENDPOINTS];
+    struct ch32_usbhs_ep out_ep[CONFIG_CH32HS_BIDIR_ENDPOINTS];
 } g_ch32_usbhs_udc;
-
-void USBHS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 volatile uint8_t mps_over_flag = 0;
 volatile bool ep0_rx_data_toggle;
 volatile bool ep0_tx_data_toggle;
-volatile bool epx_tx_data_toggle[USB_NUM_BIDIR_ENDPOINTS - 1];
+volatile bool epx_tx_data_toggle[CONFIG_CH32HS_BIDIR_ENDPOINTS - 1];
 
-__WEAK void usb_dc_low_level_init(void)
+int ch32hs_udc_init(struct usbd_bus *bus)
 {
-}
+    if (bus->busid != 1) {
+        USB_LOG_ERR("ch32hs busid must be 1\r\n");
+        return -1;
+    }
 
-__WEAK void usb_dc_low_level_deinit(void)
-{
-}
+    USB_LOG_INFO("========== ch32hs udc params =========\r\n");
+    USB_LOG_INFO("ch32hs has %d endpoints\r\n", CONFIG_CH32HS_BIDIR_ENDPOINTS);
+    USB_LOG_INFO("=================================\r\n");
 
-int usb_dc_init(void)
-{
-    usb_dc_low_level_init();
+    /* ===================== low level init start ===================== */
+    uint32_t *RCC = (uint32_t *)(0x40000000 + 0x20000 + 0x1000);
+    uint32_t *IENR = (uint32_t *)(0xE000E100);
+
+    /* RCC_USBCLK48MCLKSource_USBPHY */
+    RCC[11] &= ~(1 << 31);
+    RCC[11] |= 0x00000001 << 31;
+
+    /* RCC_HSBHSPLLCLKSource_HSE */
+    RCC[11] &= ~(1 << 27);
+    RCC[11] |= 0x00000000 << 27;
+
+    /* RCC_USBPLL_Div2 */
+    RCC[11] &= ~(7 << 24);
+    RCC[11] |= 0x00000001 << 24;
+
+    /* RCC_USBHSPLLCKREFCLK_4M */
+    RCC[11] &= ~(3 << 28);
+    RCC[11] |= 0x00000001 << 28;
+
+    /* Enable USBHS PHY control. */
+    RCC[11] |= 0x00000001 << 30;
+
+    /* ENABLE RCC_AHBPeriph_USBHS */
+    RCC[5] |= 0x00000800;
+
+    /* Enable Interrupt USBHS_IRQn */
+    IENR[((uint32_t)(85) >> 5)] = (1 << ((uint32_t)(85) & 0x1F));
+    /* ===================== low level init end ===================== */
 
     USBHS_DEVICE->HOST_CTRL = 0x00;
     USBHS_DEVICE->HOST_CTRL = USBHS_PHY_SUSPENDM;
@@ -82,12 +105,12 @@ int usb_dc_init(void)
     return 0;
 }
 
-int usb_dc_deinit(void)
+int ch32hs_udc_deinit(struct usbd_bus *bus)
 {
     return 0;
 }
 
-int usbd_set_address(const uint8_t addr)
+int ch32hs_set_address(struct usbd_bus *bus, const uint8_t addr)
 {
     if (addr == 0) {
         USBHS_DEVICE->DEV_AD = addr & 0xff;
@@ -96,38 +119,48 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
-uint8_t usbd_get_port_speed(const uint8_t port)
+uint8_t ch32hs_get_port_speed(struct usbd_bus *bus)
 {
     return USB_SPEED_HIGH;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int ch32hs_ep_open(struct usbd_bus *bus, const struct usb_endpoint_descriptor *ep_desc)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep_desc->bEndpointAddress);
+    uint16_t ep_mps;
+    uint8_t ep_type;
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_ch32_usbhs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_ch32_usbhs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+    if (ep_idx > (CONFIG_CH32HS_BIDIR_ENDPOINTS - 1)) {
+        USB_LOG_ERR("Ep addr 0x%02x overflow\r\n", ep_desc->bEndpointAddress);
+        return -1;
+    }
+
+    ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
+
+    if (USB_EP_DIR_IS_OUT(ep_desc->bEndpointAddress)) {
+        g_ch32_usbhs_udc.out_ep[ep_idx].ep_mps = ep_mps;
+        g_ch32_usbhs_udc.out_ep[ep_idx].ep_type = ep_type;
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_enable = true;
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx + 16));
         USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_RES_NAK | USBHS_EP_R_TOG_0 | USBHS_EP_R_AUTOTOG);
     } else {
-        g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_ch32_usbhs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps = ep_mps;
+        g_ch32_usbhs_udc.in_ep[ep_idx].ep_type = ep_type;
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_enable = true;
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx));
         USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0 | USBHS_EP_T_AUTOTOG);
     }
-    USB_SET_MAX_LEN(ep_idx, ep_cfg->ep_mps);
+    USB_SET_MAX_LEN(ep_idx, ep_mps);
     return 0;
 }
 
-int usbd_ep_close(const uint8_t ep)
+int ch32hs_ep_close(struct usbd_bus *bus, const uint8_t ep)
 {
     return 0;
 }
 
-int usbd_ep_set_stall(const uint8_t ep)
+int ch32hs_ep_set_stall(struct usbd_bus *bus, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -148,7 +181,7 @@ int usbd_ep_set_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_clear_stall(const uint8_t ep)
+int ch32hs_ep_clear_stall(struct usbd_bus *bus, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -160,12 +193,12 @@ int usbd_ep_clear_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
+int ch32hs_ep_is_stalled(struct usbd_bus *bus, const uint8_t ep, uint8_t *stalled)
 {
     return 0;
 }
 
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+int ch32hs_ep_start_write(struct usbd_bus *bus, const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t tmp;
@@ -211,7 +244,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     return 0;
 }
 
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+int ch32hs_ep_start_read(struct usbd_bus *bus, const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -245,7 +278,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void ch32hs_udc_irq(struct usbd_bus *bus)
 {
     uint32_t ep_idx, token, write_count, read_count;
     uint8_t intflag = 0;
@@ -268,7 +301,7 @@ void USBD_IRQHandler(void)
                     ep0_tx_data_toggle = true;
                 }
 
-                usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len);
+                usbd_event_ep_in_complete_handler(bus->busid, ep_idx | 0x80, g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len);
 
                 if (g_ch32_usbhs_udc.dev_addr > 0) {
                     USBHS_DEVICE->DEV_AD = g_ch32_usbhs_udc.dev_addr & 0xff;
@@ -309,7 +342,7 @@ void USBD_IRQHandler(void)
                     g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbhs_udc.in_ep[ep_idx].xfer_len;
                     g_ch32_usbhs_udc.in_ep[ep_idx].xfer_len = 0;
                     epx_tx_data_toggle[ep_idx - 1] ^= 1;
-                    usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len);
+                    usbd_event_ep_in_complete_handler(bus->busid, ep_idx | 0x80, g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len);
                 }
             }
         } else if (token == PID_OUT) {
@@ -319,7 +352,7 @@ void USBD_IRQHandler(void)
                 g_ch32_usbhs_udc.out_ep[ep_idx].actual_xfer_len += read_count;
                 g_ch32_usbhs_udc.out_ep[ep_idx].xfer_len -= read_count;
 
-                usbd_event_ep_out_complete_handler(0x00, g_ch32_usbhs_udc.out_ep[ep_idx].actual_xfer_len);
+                usbd_event_ep_out_complete_handler(bus->busid, 0x00, g_ch32_usbhs_udc.out_ep[ep_idx].actual_xfer_len);
 
                 if (read_count == 0) {
                     /* Out status, start reading setup */
@@ -340,7 +373,7 @@ void USBD_IRQHandler(void)
                     g_ch32_usbhs_udc.out_ep[ep_idx].xfer_len -= read_count;
 
                     if ((read_count < g_ch32_usbhs_udc.out_ep[ep_idx].ep_mps) || (g_ch32_usbhs_udc.out_ep[ep_idx].xfer_len == 0)) {
-                        usbd_event_ep_out_complete_handler(ep_idx, g_ch32_usbhs_udc.out_ep[ep_idx].actual_xfer_len);
+                        usbd_event_ep_out_complete_handler(bus->busid, ep_idx, g_ch32_usbhs_udc.out_ep[ep_idx].actual_xfer_len);
                     } else {
                         USB_SET_RX_DMA(ep_idx, (uint32_t)g_ch32_usbhs_udc.out_ep[ep_idx].xfer_buf);
                         USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBHS_EP_R_RES_MASK) | USBHS_EP_R_RES_ACK);
@@ -350,7 +383,7 @@ void USBD_IRQHandler(void)
         }
         USBHS_DEVICE->INT_FG = USBHS_TRANSFER_FLAG;
     } else if (intflag & USBHS_SETUP_FLAG) {
-        usbd_event_ep0_setup_complete_handler((uint8_t *)&g_ch32_usbhs_udc.setup);
+        usbd_event_ep0_setup_complete_handler(bus->busid, (uint8_t *)&g_ch32_usbhs_udc.setup);
         USBHS_DEVICE->INT_FG = USBHS_SETUP_FLAG;
     } else if (intflag & USBHS_DETECT_FLAG) {
         USBHS_DEVICE->ENDP_CONFIG = USBHS_EP0_T_EN | USBHS_EP0_R_EN;
@@ -361,7 +394,7 @@ void USBD_IRQHandler(void)
         ep0_tx_data_toggle = true;
         ep0_rx_data_toggle = true;
 
-        for (uint8_t ep_idx = 1; ep_idx < USB_NUM_BIDIR_ENDPOINTS; ep_idx++) {
+        for (uint8_t ep_idx = 1; ep_idx < CONFIG_CH32HS_BIDIR_ENDPOINTS; ep_idx++) {
             USB_SET_TX_LEN(ep_idx, 0);
             USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_AUTOTOG | USBHS_EP_T_RES_NAK); // autotog does not work
             USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_AUTOTOG | USBHS_EP_R_RES_NAK);
@@ -369,9 +402,32 @@ void USBD_IRQHandler(void)
         }
 
         memset(&g_ch32_usbhs_udc, 0, sizeof(struct ch32_usbhs_udc));
-        usbd_event_reset_handler();
+        usbd_event_reset_handler(bus->busid);
         USBHS_DEVICE->UEP0_DMA = (uint32_t)&g_ch32_usbhs_udc.setup;
         USBHS_DEVICE->UEP0_RX_CTRL = USBHS_EP_R_RES_ACK;
         USBHS_DEVICE->INT_FG = USBHS_DETECT_FLAG;
     }
+}
+
+struct usbd_udc_driver ch32hs_udc_driver = {
+    .driver_name = "ch32hs udc",
+    .udc_init = ch32hs_udc_init,
+    .udc_deinit = ch32hs_udc_deinit,
+    .udc_set_address = ch32hs_set_address,
+    .udc_get_port_speed = ch32hs_get_port_speed,
+    .udc_ep_open = ch32hs_ep_open,
+    .udc_ep_close = ch32hs_ep_close,
+    .udc_ep_set_stall = ch32hs_ep_set_stall,
+    .udc_ep_clear_stall = ch32hs_ep_clear_stall,
+    .udc_ep_is_stalled = ch32hs_ep_is_stalled,
+    .udc_ep_start_write = ch32hs_ep_start_write,
+    .udc_ep_start_read = ch32hs_ep_start_read,
+    .udc_irq = ch32hs_udc_irq
+};
+
+void USBHS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+
+void USBHS_IRQHandler(void)
+{
+    usbd_irq(1);
 }

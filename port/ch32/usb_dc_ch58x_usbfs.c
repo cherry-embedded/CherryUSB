@@ -2,20 +2,18 @@
 #include "usbd_core.h"
 #include "usb_ch58x_usbfs_reg.h"
 
+/*!< ep nums */
+#ifndef CONFIG_CH58XFS_BIDIR_ENDPOINTS
+#define CONFIG_CH58XFS_BIDIR_ENDPOINTS 5
+#endif
+
 /**
  * @brief   Related register macro
  */
 #define USB0_BASE 0x40008000u
 #define USB1_BASE 0x40008400u
 
-#ifndef USBD
-#define USBD USB0_BASE
-#endif
-#define CH58x_USBFS_DEV ((USB_FS_TypeDef *)USBD)
-
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_IRQHandler //use actual usb irq name instead
-#endif
+#define CH58x_USBFS_DEV ((USB_FS_TypeDef *)bus->reg_base)
 
 /*!< 8-bit value of endpoint control register */
 #define EPn_CTRL(epid) \
@@ -66,10 +64,6 @@
 #define EPn_GET_RX_LEN(epid) \
     CH58x_USBFS_DEV->USB_RX_LEN
 
-/*!< ep nums */
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 5
-#endif
 /*!< ep mps */
 #define EP_MPS 64
 /*!< set ep4 in mps 64 */
@@ -94,267 +88,40 @@ __attribute__((aligned(4))) uint8_t ep7_data_buff[64 + 64]; /*!< ep7_out(64)+ep7
 /**
  * @brief   Endpoint information structure
  */
-typedef struct _usbd_ep_info {
-    uint8_t mps;          /*!< Maximum packet length of endpoint */
-    uint8_t eptype;       /*!< Endpoint Type */
+struct ch58xfs_ep {
+    uint16_t ep_mps;      /* Endpoint max packet size */
+    uint8_t ep_type;      /* Endpoint type */
+    uint8_t ep_stalled;   /* Endpoint stall flag */
+    uint8_t ep_enable;    /* Endpoint enable */
     uint8_t *ep_ram_addr; /*!< Endpoint buffer address */
-
-    uint8_t ep_enable; /* Endpoint enable */
     uint8_t *xfer_buf;
     uint32_t xfer_len;
     uint32_t actual_xfer_len;
-} usbd_ep_info;
+};
 
 /*!< ch58x usb */
-static struct _ch58x_core_prvi {
-    uint8_t address; /*!< Address */
-    usbd_ep_info ep_in[USB_NUM_BIDIR_ENDPOINTS];
-    usbd_ep_info ep_out[USB_NUM_BIDIR_ENDPOINTS];
+static struct ch58xfs_udc {
+    volatile uint8_t address;
+    struct ch58xfs_udc_ep ep_in[CONFIG_CH58XFS_BIDIR_ENDPOINTS];
+    struct ch58xfs_udc_ep ep_out[CONFIG_CH58XFS_BIDIR_ENDPOINTS];
     struct usb_setup_packet setup;
-} usb_dc_cfg;
+    bool inuse;
+} g_ch58xfs_udc[2];
 
-__WEAK void usb_dc_low_level_init(void)
+struct ch58xfs_udc *ch58xfs_alloc_udc(void)
 {
-}
-
-__WEAK void usb_dc_low_level_deinit(void)
-{
-}
-
-/**
- * @brief            Set address
- * @pre              None
- * @param[in]        address ：8-bit valid address
- * @retval           >=0 success otherwise failure
- */
-int usbd_set_address(const uint8_t address)
-{
-    if (address == 0) {
-        CH58x_USBFS_DEV->USB_DEV_AD = (CH58x_USBFS_DEV->USB_DEV_AD & 0x80) | address;
-    }
-    usb_dc_cfg.address = address;
-    return 0;
-}
-
-uint8_t usbd_get_port_speed(const uint8_t port)
-{
-    return USB_SPEED_FULL;
-}
-
-/**
- * @brief            Open endpoint
- * @pre              None
- * @param[in]        ep_cfg : Endpoint configuration structure pointer
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
-{
-    /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep_cfg->ep_addr);
-    if (epid > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
-        /**
-         * If you use ch58x, you can change the EP_NUMS set to 8
-         */
-        USB_LOG_ERR("Ep addr %d overflow\r\n", ep_cfg->ep_addr);
-        return -1;
-    }
-
-    /*!< ep max packet length */
-    uint8_t mps = ep_cfg->ep_mps;
-    /*!< update ep max packet length */
-    if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr)) {
-        /*!< in */
-        usb_dc_cfg.ep_in[epid].ep_enable = true;
-        usb_dc_cfg.ep_in[epid].mps = mps;
-        usb_dc_cfg.ep_in[epid].eptype = ep_cfg->ep_type;
-    } else if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        /*!< out */
-        usb_dc_cfg.ep_out[epid].ep_enable = true;
-        usb_dc_cfg.ep_out[epid].mps = mps;
-        usb_dc_cfg.ep_out[epid].eptype = ep_cfg->ep_type;
-    }
-    return 0;
-}
-
-/**
- * @brief            Close endpoint
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_close(const uint8_t ep)
-{
-    /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep);
-    if (USB_EP_DIR_IS_IN(ep)) {
-        /*!< in */
-        usb_dc_cfg.ep_in[epid].ep_enable = false;
-    } else if (USB_EP_DIR_IS_OUT(ep)) {
-        /*!< out */
-        usb_dc_cfg.ep_out[epid].ep_enable = false;
-    }
-    return 0;
-}
-
-/**
- * @brief Setup in ep transfer setting and start transfer.
- *
- * This function is asynchronous.
- * This function is similar to uart with tx dma.
- *
- * This function is called to write data to the specified endpoint. The
- * supplied usbd_endpoint_callback function will be called when data is transmitted
- * out.
- *
- * @param[in]  ep        Endpoint address corresponding to the one
- *                       listed in the device configuration table
- * @param[in]  data      Pointer to data to write
- * @param[in]  data_len  Length of the data requested to write. This may
- *                       be zero for a zero length status packet.
- * @return 0 on success, negative errno code on fail.
- */
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
-{
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-    if (!data && data_len) {
-        return -1;
-    }
-    if (!usb_dc_cfg.ep_in[ep_idx].ep_enable) {
-        return -2;
-    }
-    if ((uint32_t)data & 0x03) {
-        return -3;
-    }
-
-    usb_dc_cfg.ep_in[ep_idx].xfer_buf = (uint8_t *)data;
-    usb_dc_cfg.ep_in[ep_idx].xfer_len = data_len;
-    usb_dc_cfg.ep_in[ep_idx].actual_xfer_len = 0;
-
-    if (data_len == 0) {
-        /*!< write 0 len data */
-        EPn_SET_TX_LEN(ep_idx, 0);
-        /*!< enable tx */
-        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-            EPn_SET_TX_VALID(ep_idx);
-        } else {
-            EPn_SET_TX_ISO_VALID(ep_idx);
-        }
-        /*!< return */
-        return 0;
-    } else {
-        /*!< Not zlp */
-        data_len = MIN(data_len, usb_dc_cfg.ep_in[ep_idx].mps);
-        /*!< write buff */
-        memcpy(usb_dc_cfg.ep_in[ep_idx].ep_ram_addr, data, data_len);
-        /*!< write real_wt_nums len data */
-        EPn_SET_TX_LEN(ep_idx, data_len);
-        /*!< enable tx */
-        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-            EPn_SET_TX_VALID(ep_idx);
-        } else {
-            EPn_SET_TX_ISO_VALID(ep_idx);
+    for (uint8_t i = 0; i < 2; i++) {
+        if (g_ch58xfs_udc[i].inuse == false) {
+            g_ch58xfs_udc[i].inuse = true;
+            return &g_ch58xfs_udc[i];
         }
     }
-    return 0;
+    return NULL;
 }
 
-/**
- * @brief Setup out ep transfer setting and start transfer.
- *
- * This function is asynchronous.
- * This function is similar to uart with rx dma.
- *
- * This function is called to read data to the specified endpoint. The
- * supplied usbd_endpoint_callback function will be called when data is received
- * in.
- *
- * @param[in]  ep        Endpoint address corresponding to the one
- *                       listed in the device configuration table
- * @param[in]  data      Pointer to data to read
- * @param[in]  data_len  Max length of the data requested to read.
- *
- * @return 0 on success, negative errno code on fail.
- */
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+void ch58xfs_free_udc(struct ch58xfs_udc *udc)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-    if (!data && data_len) {
-        return -1;
-    }
-    if (!usb_dc_cfg.ep_out[ep_idx].ep_enable) {
-        return -2;
-    }
-    if ((uint32_t)data & 0x03) {
-        return -3;
-    }
-
-    usb_dc_cfg.ep_out[ep_idx].xfer_buf = (uint8_t *)data;
-    usb_dc_cfg.ep_out[ep_idx].xfer_len = data_len;
-    usb_dc_cfg.ep_out[ep_idx].actual_xfer_len = 0;
-
-    if (data_len == 0) {
-    } else {
-        data_len = MIN(data_len, usb_dc_cfg.ep_out[ep_idx].mps);
-    }
-
-    if (usb_dc_cfg.ep_out[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-        EPn_SET_RX_VALID(ep_idx);
-    } else {
-        EPn_SET_RX_ISO_VALID(ep_idx);
-    }
-    return 0;
-}
-
-/**
- * @brief            Endpoint setting stall
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_set_stall(const uint8_t ep)
-{
-    /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep);
-    if (USB_EP_DIR_IS_OUT(ep)) {
-        EPn_SET_RX_STALL(epid);
-    } else {
-        EPn_SET_TX_STALL(epid);
-    }
-    return 0;
-}
-
-/**
- * @brief            Endpoint clear stall
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_clear_stall(const uint8_t ep)
-{
-    uint8_t epid = USB_EP_GET_IDX(ep);
-    if (USB_EP_DIR_IS_OUT(ep)) {
-        EPn_CLR_RX_STALL(epid);
-    } else {
-        EPn_CLR_TX_STALL(epid);
-    }
-    return 0;
-}
-
-/**
- * @brief            Check endpoint status
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @param[out]       stalled ： Outgoing endpoint status
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
-{
-    if (USB_EP_DIR_IS_OUT(ep)) {
-    } else {
-    }
-    return 0;
+    udc->inuse = false;
 }
 
 /**
@@ -363,31 +130,52 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
  * @param[in]        None
  * @retval           >=0 success otherwise failure
  */
-int usb_dc_init(void)
+int ch58xfs_udc_init(struct usbd_bus *bus)
 {
-    usb_dc_cfg.ep_in[0].ep_ram_addr = ep0_data_buff;
-    usb_dc_cfg.ep_out[0].ep_ram_addr = ep0_data_buff;
+    struct ch58xfs_udc *udc;
 
-    usb_dc_cfg.ep_in[1].ep_ram_addr = ep1_data_buff + 64;
-    usb_dc_cfg.ep_out[1].ep_ram_addr = ep1_data_buff;
+    udc = ch58xfs_alloc_udc();
+    if (udc == NULL) {
+        return -1;
+    }
 
-    usb_dc_cfg.ep_in[2].ep_ram_addr = ep2_data_buff + 64;
-    usb_dc_cfg.ep_out[2].ep_ram_addr = ep2_data_buff;
+    bus->udc = udc;
 
-    usb_dc_cfg.ep_in[3].ep_ram_addr = ep3_data_buff + 64;
-    usb_dc_cfg.ep_out[3].ep_ram_addr = ep3_data_buff;
+    USB_LOG_INFO("========== ch58x udc params =========\r\n");
+    USB_LOG_INFO("ch58x has %d endpoints\r\n", CONFIG_CH58XFS_BIDIR_ENDPOINTS);
+    USB_LOG_INFO("=================================\r\n");
 
-    usb_dc_cfg.ep_in[4].ep_ram_addr = ep0_data_buff + 64 + EP4_OUT_MPS;
-    usb_dc_cfg.ep_out[4].ep_ram_addr = ep0_data_buff + 64;
+    if (bus->busid == 0) {
+        uint32_t *IENR = (uint32_t *)(0xE000E100);
+        IENR[((uint32_t)(22) >> 5)] = (1 << ((uint32_t)(22) & 0x1F));
+    } else if (bus->busid == 1) {
+        uint32_t *IENR = (uint32_t *)(0xE000E100);
+        IENR[((uint32_t)(23) >> 5)] = (1 << ((uint32_t)(23) & 0x1F));
+    }
+
+    udc->ep_in[0].ep_ram_addr = ep0_data_buff;
+    udc->ep_out[0].ep_ram_addr = ep0_data_buff;
+
+    udc->ep_in[1].ep_ram_addr = ep1_data_buff + 64;
+    udc->ep_out[1].ep_ram_addr = ep1_data_buff;
+
+    udc->ep_in[2].ep_ram_addr = ep2_data_buff + 64;
+    udc->ep_out[2].ep_ram_addr = ep2_data_buff;
+
+    udc->ep_in[3].ep_ram_addr = ep3_data_buff + 64;
+    udc->ep_out[3].ep_ram_addr = ep3_data_buff;
+
+    udc->ep_in[4].ep_ram_addr = ep0_data_buff + 64 + EP4_OUT_MPS;
+    udc->ep_out[4].ep_ram_addr = ep0_data_buff + 64;
 #if (EP_NUMS == 8)
-    usb_dc_cfg.ep_in[5].ep_ram_addr = ep5_data_buff + 64;
-    usb_dc_cfg.ep_out[5].ep_ram_addr = ep5_data_buff;
+    udc->ep_in[5].ep_ram_addr = ep5_data_buff + 64;
+    udc->ep_out[5].ep_ram_addr = ep5_data_buff;
 
-    usb_dc_cfg.ep_in[6].ep_ram_addr = ep6_data_buff + 64;
-    usb_dc_cfg.ep_out[6].ep_ram_addr = ep6_data_buff;
+    udc->ep_in[6].ep_ram_addr = ep6_data_buff + 64;
+    udc->ep_out[6].ep_ram_addr = ep6_data_buff;
 
-    usb_dc_cfg.ep_in[7].ep_ram_addr = ep7_data_buff + 64;
-    usb_dc_cfg.ep_out[7].ep_ram_addr = ep7_data_buff;
+    udc->ep_in[7].ep_ram_addr = ep7_data_buff + 64;
+    udc->ep_out[7].ep_ram_addr = ep7_data_buff;
 #endif
     /*!< Set the mode first and cancel RB_UC_CLR_ALL */
     CH58x_USBFS_DEV->USB_CTRL = 0x00;
@@ -431,7 +219,288 @@ int usb_dc_init(void)
     CH58x_USBFS_DEV->UDEV_CTRL = RB_UD_PD_DIS | RB_UD_PORT_EN; /*!< Allow USB port */
     CH58x_USBFS_DEV->USB_INT_EN = RB_UIE_SUSPEND | RB_UIE_BUS_RST | RB_UIE_TRANSFER;
 
-    usb_dc_low_level_init();
+    return 0;
+}
+
+int ch58xfs_udc_deinit(struct usbd_bus *bus)
+{
+    return 0;
+}
+
+/**
+ * @brief            Set address
+ * @pre              None
+ * @param[in]        address ：8-bit valid address
+ * @retval           >=0 success otherwise failure
+ */
+int ch58xfs_set_address(struct usbd_bus *bus, const uint8_t address)
+{
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (address == 0) {
+        CH58x_USBFS_DEV->USB_DEV_AD = (CH58x_USBFS_DEV->USB_DEV_AD & 0x80) | address;
+    }
+    udc->address = address;
+    return 0;
+}
+
+uint8_t ch58xfs_get_port_speed(struct usbd_bus *bus)
+{
+    return USB_SPEED_FULL;
+}
+
+/**
+ * @brief            Open endpoint
+ * @pre              None
+ * @param[in]        ep_cfg : Endpoint configuration structure pointer
+ * @retval           >=0 success otherwise failure
+ */
+int ch58xfs_ep_open(struct usbd_bus *bus, const struct usb_endpoint_descriptor *ep_desc)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep_desc->bEndpointAddress);
+    uint16_t ep_mps;
+    uint8_t ep_type;
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (ep_idx > (CONFIG_CH58XFS_BIDIR_ENDPOINTS - 1)) {
+        /**
+         * If you use ch58x, you can change the EP_NUMS set to 8
+         */
+        USB_LOG_ERR("Ep addr 0x%02x overflow\r\n", ep_desc->bEndpointAddress);
+        return -2;
+    }
+
+    ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
+
+    if (USB_EP_DIR_IS_OUT(ep_desc->bEndpointAddress)) {
+        /*!< out */
+        udc->ep_out[ep_idx].ep_enable = true;
+        udc->ep_out[ep_idx].ep_mps = ep_mps;
+        udc->ep_out[ep_idx].ep_type = ep_type;
+    } else {
+        /*!< in */
+        udc->ep_in[ep_idx].ep_enable = true;
+        udc->ep_in[ep_idx].ep_mps = ep_mps;
+        udc->ep_in[ep_idx].ep_type = ep_type;
+    }
+    return 0;
+}
+
+/**
+ * @brief            Close endpoint
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @retval           >=0 success otherwise failure
+ */
+int ch58xfs_ep_close(struct usbd_bus *bus, const uint8_t ep)
+{
+    /*!< ep id */
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (USB_EP_DIR_IS_IN(ep)) {
+        /*!< in */
+        udc->ep_in[epid].ep_enable = false;
+    } else if (USB_EP_DIR_IS_OUT(ep)) {
+        /*!< out */
+        udc->ep_out[epid].ep_enable = false;
+    }
+    return 0;
+}
+
+/**
+ * @brief            Endpoint setting stall
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @retval           >=0 success otherwise failure
+ */
+int ch58xfs_ep_set_stall(struct usbd_bus *bus, const uint8_t ep)
+{
+    /*!< ep id */
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        EPn_SET_RX_STALL(epid);
+    } else {
+        EPn_SET_TX_STALL(epid);
+    }
+    return 0;
+}
+
+/**
+ * @brief            Endpoint clear stall
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @retval           >=0 success otherwise failure
+ */
+int ch58xfs_ep_clear_stall(struct usbd_bus *bus, const uint8_t ep)
+{
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        EPn_CLR_RX_STALL(epid);
+    } else {
+        EPn_CLR_TX_STALL(epid);
+    }
+    return 0;
+}
+
+/**
+ * @brief            Check endpoint status
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @param[out]       stalled ： Outgoing endpoint status
+ * @retval           >=0 success otherwise failure
+ */
+int ch58xfs_ep_is_stalled(struct usbd_bus *bus, const uint8_t ep, uint8_t *stalled)
+{
+    if (USB_EP_DIR_IS_OUT(ep)) {
+    } else {
+    }
+    return 0;
+}
+
+/**
+ * @brief Setup in ep transfer setting and start transfer.
+ *
+ * This function is asynchronous.
+ * This function is similar to uart with tx dma.
+ *
+ * This function is called to write data to the specified endpoint. The
+ * supplied usbd_endpoint_callback function will be called when data is transmitted
+ * out.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to write
+ * @param[in]  data_len  Length of the data requested to write. This may
+ *                       be zero for a zero length status packet.
+ * @return 0 on success, negative errno code on fail.
+ */
+int ch58xfs_ep_start_write(struct usbd_bus *bus, const uint8_t ep, const uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (!data && data_len) {
+        return -2;
+    }
+    if (!udc->ep_in[ep_idx].ep_enable) {
+        return -3;
+    }
+    if ((uint32_t)data & 0x03) {
+        return -4;
+    }
+
+    udc->ep_in[ep_idx].xfer_buf = (uint8_t *)data;
+    udc->ep_in[ep_idx].xfer_len = data_len;
+    udc->ep_in[ep_idx].actual_xfer_len = 0;
+
+    if (data_len == 0) {
+        /*!< write 0 len data */
+        EPn_SET_TX_LEN(ep_idx, 0);
+        /*!< enable tx */
+        if (udc->ep_in[ep_idx].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            EPn_SET_TX_VALID(ep_idx);
+        } else {
+            EPn_SET_TX_ISO_VALID(ep_idx);
+        }
+        /*!< return */
+        return 0;
+    } else {
+        /*!< Not zlp */
+        data_len = MIN(data_len, udc->ep_in[ep_idx].ep_mps);
+        /*!< write buff */
+        memcpy(udc->ep_in[ep_idx].ep_ram_addr, data, data_len);
+        /*!< write real_wt_nums len data */
+        EPn_SET_TX_LEN(ep_idx, data_len);
+        /*!< enable tx */
+        if (udc->ep_in[ep_idx].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            EPn_SET_TX_VALID(ep_idx);
+        } else {
+            EPn_SET_TX_ISO_VALID(ep_idx);
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief Setup out ep transfer setting and start transfer.
+ *
+ * This function is asynchronous.
+ * This function is similar to uart with rx dma.
+ *
+ * This function is called to read data to the specified endpoint. The
+ * supplied usbd_endpoint_callback function will be called when data is received
+ * in.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to read
+ * @param[in]  data_len  Max length of the data requested to read.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int ch58xfs_ep_start_read(struct usbd_bus *bus, const uint8_t ep, uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    struct ch58xfs_udc *udc = bus->udc;
+
+    if (udc == NULL) {
+        return -1;
+    }
+
+    if (!data && data_len) {
+        return -2;
+    }
+    if (!udc->ep_out[ep_idx].ep_enable) {
+        return -3;
+    }
+    if ((uint32_t)data & 0x03) {
+        return -4;
+    }
+
+    udc->ep_out[ep_idx].xfer_buf = (uint8_t *)data;
+    udc->ep_out[ep_idx].xfer_len = data_len;
+    udc->ep_out[ep_idx].actual_xfer_len = 0;
+
+    if (data_len == 0) {
+    } else {
+        data_len = MIN(data_len, udc->ep_out[ep_idx].ep_mps);
+    }
+
+    if (udc->ep_out[ep_idx].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+        EPn_SET_RX_VALID(ep_idx);
+    } else {
+        EPn_SET_RX_ISO_VALID(ep_idx);
+    }
     return 0;
 }
 
@@ -441,13 +510,16 @@ int usb_dc_init(void)
  * @param[in]        None
  * @retval           None
  */
-__attribute__((interrupt("WCH-Interrupt-fast")))
-__attribute__((section(".highcode"))) void
-USBD_IRQHandler(void)
+void ch58xfs_udc_irq(struct usbd_bus *bus)
 {
     volatile uint8_t intflag = 0;
-    intflag = CH58x_USBFS_DEV->USB_INT_FG;
+    struct ch58xfs_udc *udc = bus->udc;
 
+    if (udc == NULL) {
+        return -1;
+    }
+
+    intflag = CH58x_USBFS_DEV->USB_INT_FG;
     if (intflag & RB_UIF_TRANSFER) {
         if ((CH58x_USBFS_DEV->USB_INT_ST & MASK_UIS_TOKEN) != MASK_UIS_TOKEN) {
             uint8_t epid = ((CH58x_USBFS_DEV->USB_INT_ST & (MASK_UIS_TOKEN | MASK_UIS_ENDP)) & 0x0f);
@@ -457,7 +529,7 @@ USBD_IRQHandler(void)
                         /**
                          * IN  The host takes away the data that has been stored in FIFO
                          */
-                        switch (usb_dc_cfg.setup.bmRequestType >> USB_REQUEST_DIR_SHIFT) {
+                        switch (udc->setup.bmRequestType >> USB_REQUEST_DIR_SHIFT) {
                             case 1:
                                 /*!< Get */
                                 CH58x_USBFS_DEV->UEP0_CTRL ^= RB_UEP_T_TOG;
@@ -469,22 +541,22 @@ USBD_IRQHandler(void)
                                 EPn_SET_TX_NAK(0);
 
                                 /*!< IN */
-                                if (usb_dc_cfg.ep_in[0].xfer_len > usb_dc_cfg.ep_in[0].mps) {
-                                    usb_dc_cfg.ep_in[0].xfer_len -= usb_dc_cfg.ep_in[0].mps;
-                                    usb_dc_cfg.ep_in[0].actual_xfer_len += usb_dc_cfg.ep_in[0].mps;
-                                    usbd_event_ep_in_complete_handler(0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
+                                if (udc->ep_in[0].xfer_len > udc->ep_in[0].ep_mps) {
+                                    udc->ep_in[0].xfer_len -= udc->ep_in[0].ep_mps;
+                                    udc->ep_in[0].actual_xfer_len += udc->ep_in[0].ep_mps;
+                                    usbd_event_ep_in_complete_handler(bus->busid, 0 | 0x80, udc->ep_in[0].actual_xfer_len);
                                 } else {
-                                    usb_dc_cfg.ep_in[0].actual_xfer_len += usb_dc_cfg.ep_in[0].xfer_len;
-                                    usb_dc_cfg.ep_in[0].xfer_len = 0;
-                                    usbd_event_ep_in_complete_handler(0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
+                                    udc->ep_in[0].actual_xfer_len += udc->ep_in[0].xfer_len;
+                                    udc->ep_in[0].xfer_len = 0;
+                                    usbd_event_ep_in_complete_handler(bus->busid, 0 | 0x80, udc->ep_in[0].actual_xfer_len);
                                 }
                                 break;
                             case 0:
                                 /*!< Set */
-                                switch (usb_dc_cfg.setup.bRequest) {
+                                switch (udc->setup.bRequest) {
                                     case USB_REQUEST_SET_ADDRESS:
                                         /*!< Fill in the equipment address */
-                                        CH58x_USBFS_DEV->USB_DEV_AD = (CH58x_USBFS_DEV->USB_DEV_AD & RB_UDA_GP_BIT) | usb_dc_cfg.address;
+                                        CH58x_USBFS_DEV->USB_DEV_AD = (CH58x_USBFS_DEV->USB_DEV_AD & RB_UDA_GP_BIT) | udc->address;
                                         /**
                                          * In the state phase after setting the address, the host has sent an in token packet of data1 to take the packet of 0 length,
                                          * Ch58x USB IP needs to manually set the status of the in endpoint to NAK
@@ -509,25 +581,25 @@ USBD_IRQHandler(void)
                             CH58x_USBFS_DEV->UEP4_CTRL ^= RB_UEP_T_TOG;
                         }
                         EPn_SET_TX_NAK(epid);
-                        if (usb_dc_cfg.ep_in[epid].xfer_len > usb_dc_cfg.ep_in[epid].mps) {
+                        if (udc->ep_in[epid].xfer_len > udc->ep_in[epid].ep_mps) {
                             /*!< Need start in again */
-                            usb_dc_cfg.ep_in[epid].xfer_buf += usb_dc_cfg.ep_in[epid].mps;
-                            usb_dc_cfg.ep_in[epid].xfer_len -= usb_dc_cfg.ep_in[epid].mps;
-                            usb_dc_cfg.ep_in[epid].actual_xfer_len += usb_dc_cfg.ep_in[epid].mps;
-                            if (usb_dc_cfg.ep_in[epid].xfer_len > usb_dc_cfg.ep_in[epid].mps) {
-                                memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].mps);
+                            udc->ep_in[epid].xfer_buf += udc->ep_in[epid].ep_mps;
+                            udc->ep_in[epid].xfer_len -= udc->ep_in[epid].ep_mps;
+                            udc->ep_in[epid].actual_xfer_len += udc->ep_in[epid].ep_mps;
+                            if (udc->ep_in[epid].xfer_len > udc->ep_in[epid].ep_mps) {
+                                memcpy(udc->ep_in[epid].ep_ram_addr, udc->ep_in[epid].xfer_buf, udc->ep_in[epid].ep_mps);
                             } else {
-                                memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].xfer_len);
+                                memcpy(udc->ep_in[epid].ep_ram_addr, udc->ep_in[epid].xfer_buf, udc->ep_in[epid].xfer_len);
                             }
-                            if (usb_dc_cfg.ep_in[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                            if (udc->ep_in[epid].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                                 EPn_SET_TX_VALID(epid);
                             } else {
                                 EPn_SET_TX_ISO_VALID(epid);
                             }
                         } else {
-                            usb_dc_cfg.ep_in[epid].actual_xfer_len += usb_dc_cfg.ep_in[epid].xfer_len;
-                            usb_dc_cfg.ep_in[epid].xfer_len = 0;
-                            usbd_event_ep_in_complete_handler(epid | 0x80, usb_dc_cfg.ep_in[epid].actual_xfer_len);
+                            udc->ep_in[epid].actual_xfer_len += udc->ep_in[epid].xfer_len;
+                            udc->ep_in[epid].xfer_len = 0;
+                            usbd_event_ep_in_complete_handler(bus->busid, epid | 0x80, udc->ep_in[epid].actual_xfer_len);
                         }
                     }
                     break;
@@ -536,11 +608,11 @@ USBD_IRQHandler(void)
                         /*!< ep0 out */
                         CH58x_USBFS_DEV->UEP0_CTRL ^= RB_UEP_R_TOG;
                         uint32_t read_count = EPn_GET_RX_LEN(0);
-                        memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
+                        memcpy(udc->ep_out[epid].xfer_buf, udc->ep_out[epid].ep_ram_addr, read_count);
 
-                        usb_dc_cfg.ep_out[0].actual_xfer_len += read_count;
-                        usb_dc_cfg.ep_out[0].xfer_len -= read_count;
-                        usbd_event_ep_out_complete_handler(0x00, usb_dc_cfg.ep_out[0].actual_xfer_len);
+                        udc->ep_out[0].actual_xfer_len += read_count;
+                        udc->ep_out[0].xfer_len -= read_count;
+                        usbd_event_ep_out_complete_handler(bus->busid, 0x00, udc->ep_out[0].actual_xfer_len);
                         if (read_count == 0) {
                             /*!< Out status, start reading setup */
                             EPn_SET_RX_VALID(0);
@@ -551,15 +623,15 @@ USBD_IRQHandler(void)
                                 CH58x_USBFS_DEV->UEP4_CTRL ^= RB_UEP_R_TOG;
                             }
                             uint32_t read_count = EPn_GET_RX_LEN(epid);
-                            memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
-                            usb_dc_cfg.ep_out[epid].xfer_buf += read_count;
-                            usb_dc_cfg.ep_out[epid].actual_xfer_len += read_count;
-                            usb_dc_cfg.ep_out[epid].xfer_len -= read_count;
+                            memcpy(udc->ep_out[epid].xfer_buf, udc->ep_out[epid].ep_ram_addr, read_count);
+                            udc->ep_out[epid].xfer_buf += read_count;
+                            udc->ep_out[epid].actual_xfer_len += read_count;
+                            udc->ep_out[epid].xfer_len -= read_count;
 
-                            if ((read_count < usb_dc_cfg.ep_out[epid].mps) || (usb_dc_cfg.ep_out[epid].xfer_len == 0)) {
-                                usbd_event_ep_out_complete_handler(((epid)&0x7f), usb_dc_cfg.ep_out[epid].actual_xfer_len);
+                            if ((read_count < udc->ep_out[epid].ep_mps) || (udc->ep_out[epid].xfer_len == 0)) {
+                                usbd_event_ep_out_complete_handler(bus->busid, ((epid)&0x7f), udc->ep_out[epid].actual_xfer_len);
                             } else {
-                                if (usb_dc_cfg.ep_out[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                                if (udc->ep_out[epid].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                                     EPn_SET_RX_VALID(epid);
                                 } else {
                                     EPn_SET_RX_ISO_VALID(epid);
@@ -585,8 +657,8 @@ USBD_IRQHandler(void)
              */
             CH58x_USBFS_DEV->UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_T_RES_NAK;
             /*!< get setup packet */
-            usb_dc_cfg.setup = GET_SETUP_PACKET(usb_dc_cfg.ep_out[0].ep_ram_addr);
-            if (usb_dc_cfg.setup.bmRequestType >> USB_REQUEST_DIR_SHIFT == 0) {
+            udc->setup = GET_SETUP_PACKET(udc->ep_out[0].ep_ram_addr);
+            if (udc->setup.bmRequestType >> USB_REQUEST_DIR_SHIFT == 0) {
                 /**
                  * Ep0 The next in must be the status stage.
                  * The device must reply to the host data 0 length packet.
@@ -597,13 +669,13 @@ USBD_IRQHandler(void)
                 EPn_SET_TX_VALID(0);
             }
             EPn_SET_RX_NAK(0);
-            usbd_event_ep0_setup_complete_handler((uint8_t *)&(usb_dc_cfg.setup));
+            usbd_event_ep0_setup_complete_handler(bus->busid, (uint8_t *)&(udc->setup));
             CH58x_USBFS_DEV->USB_INT_FG = RB_UIF_TRANSFER;
         }
     } else if (intflag & RB_UIF_BUS_RST) {
         /*!< Reset */
         CH58x_USBFS_DEV->USB_DEV_AD = 0;
-        usbd_event_reset_handler();
+        usbd_event_reset_handler(bus->busid);
         /*!< Set ep0 rx vaild to start receive setup packet */
         EPn_SET_RX_VALID(0);
         CH58x_USBFS_DEV->USB_INT_FG = RB_UIF_BUS_RST;
@@ -617,4 +689,34 @@ USBD_IRQHandler(void)
     } else {
         CH58x_USBFS_DEV->USB_INT_FG = intflag;
     }
+}
+
+struct usbd_udc_driver ch58xfs_udc_driver = {
+    .driver_name = "ch58xfs udc",
+    .udc_init = ch58xfs_udc_init,
+    .udc_deinit = ch58xfs_udc_deinit,
+    .udc_set_address = ch58xfs_set_address,
+    .udc_get_port_speed = ch58xfs_get_port_speed,
+    .udc_ep_open = ch58xfs_ep_open,
+    .udc_ep_close = ch58xfs_ep_close,
+    .udc_ep_set_stall = ch58xfs_ep_set_stall,
+    .udc_ep_clear_stall = ch58xfs_ep_clear_stall,
+    .udc_ep_is_stalled = ch58xfs_ep_is_stalled,
+    .udc_ep_start_write = ch58xfs_ep_start_write,
+    .udc_ep_start_read = ch58xfs_ep_start_read,
+    .udc_irq = ch58xfs_udc_irq
+};
+
+__attribute__((interrupt("WCH-Interrupt-fast")))
+__attribute__((section(".highcode"))) void
+USB_IRQHandler(void)
+{
+    usbd_irq(0);
+}
+
+__attribute__((interrupt("WCH-Interrupt-fast")))
+__attribute__((section(".highcode"))) void
+USB2_IRQHandler(void)
+{
+    usbd_irq(1);
 }

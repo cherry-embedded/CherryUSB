@@ -32,6 +32,9 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
+/* Max bus of device controller */
+#define CONFIG_USBDEV_MAX_BUS 1
+
 /* Ep0 max transfer buffer, specially for receiving data from ep0 out */
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
 
@@ -79,14 +82,6 @@
 
 #ifndef CONFIG_USBDEV_MSC_VERSION_STRING
 #define CONFIG_USBDEV_MSC_VERSION_STRING "0.01"
-#endif
-
-#ifndef CONFIG_USBDEV_AUDIO_VERSION
-#define CONFIG_USBDEV_AUDIO_VERSION 0x0100
-#endif
-
-#ifndef CONFIG_USBDEV_AUDIO_MAX_CHANNEL
-#define CONFIG_USBDEV_AUDIO_MAX_CHANNEL 8
 #endif
 
 #ifndef CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE
@@ -137,12 +132,6 @@
 #ifndef CONFIG_USBHOST_MSC_TIMEOUT
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
 #endif
-
-/* ================ USB Device Port Configuration ================*/
-
-//#define USBD_IRQHandler USBD_IRQHandler
-//#define USB_BASE (0x40080000UL)
-//#define USB_NUM_BIDIR_ENDPOINTS 4
 
 /* ================ USB Host Port Configuration ==================*/
 

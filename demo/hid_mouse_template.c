@@ -186,23 +186,44 @@ struct hid_mouse {
 };
 
 /*!< mouse report */
-static struct hid_mouse mouse_cfg;
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct hid_mouse mouse_cfg;
 
 #define HID_STATE_IDLE 0
 #define HID_STATE_BUSY 1
 
 /*!< hid state ! Data can be sent only when state is idle  */
-static volatile uint8_t hid_state = HID_STATE_IDLE;
+static volatile uint8_t hid_state[CONFIG_USBDEV_MAX_BUS] = { 0 };
 
-void usbd_configure_done_callback(void)
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    /* no out ep, do nothing */
+    switch (event) {
+        case USBD_EVENT_RESET:
+            hid_state[busid] = HID_STATE_IDLE;
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
 }
 
 /* function ------------------------------------------------------------------*/
-static void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
+static void usbd_hid_int_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    hid_state = HID_STATE_IDLE;
+    hid_state[busid] = HID_STATE_IDLE;
 }
 
 /*!< endpoint call back */
@@ -211,15 +232,15 @@ static struct usbd_endpoint hid_in_ep = {
     .ep_addr = HID_INT_EP
 };
 
-struct usbd_interface intf0;
+struct usbd_interface intf0[CONFIG_USBDEV_MAX_BUS];
 
-void hid_mouse_init(void)
+void hid_mouse_init(uint8_t busid)
 {
-    usbd_desc_register(hid_descriptor);
-    usbd_add_interface(usbd_hid_init_intf(&intf0, hid_mouse_report_desc, HID_MOUSE_REPORT_DESC_SIZE));
-    usbd_add_endpoint(&hid_in_ep);
+    usbd_desc_register(busid, hid_descriptor);
+    usbd_add_interface(busid, usbd_hid_init_intf(&intf0[busid], hid_mouse_report_desc, HID_MOUSE_REPORT_DESC_SIZE));
+    usbd_add_endpoint(busid, &hid_in_ep);
 
-    usbd_initialize();
+    usbd_initialize(busid);
 
     /*!< init mouse report data */
     mouse_cfg.buttons = 0;
@@ -234,17 +255,17 @@ void hid_mouse_init(void)
   * @param[in]        none
   * @retval           none
   */
-void hid_mouse_test(void)
+void hid_mouse_test(uint8_t busid)
 {
     /*!< move mouse pointer */
     mouse_cfg.x += 10;
     mouse_cfg.y = 0;
 
-    int ret = usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+    int ret = usbd_ep_start_write(busid, HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
     if (ret < 0) {
         return;
     }
-    hid_state = HID_STATE_BUSY;
-    while (hid_state == HID_STATE_BUSY) {
+    hid_state[busid] = HID_STATE_BUSY;
+    while (hid_state[busid] == HID_STATE_BUSY) {
     }
 }

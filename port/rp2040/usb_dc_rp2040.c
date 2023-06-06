@@ -1,20 +1,16 @@
 #include "usbd_core.h"
 #include "usb_rp2040_reg.h"
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler isr_irq5
+#ifndef CONFIG_RP2040_BIDIR_ENDPOINTS
+#define CONFIG_RP2040_BIDIR_ENDPOINTS 16
 #endif
 
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 16
-#endif
-
-#ifndef FORCE_VBUS_DETECT
-#define FORCE_VBUS_DETECT 1
+#ifndef CONFIG_RP2040_FORCE_VBUS_DETECT
+#define CONFIG_RP2040_FORCE_VBUS_DETECT 1
 #endif
 
 /* Endpoint state */
-struct usb_dc_ep_state {
+struct rp2040_ep {
     uint16_t ep_mps;    /* Endpoint max packet size */
     uint8_t ep_type;    /* Endpoint type */
     uint8_t ep_stalled; /* Endpoint stall flag */
@@ -35,9 +31,9 @@ struct usb_dc_ep_state {
 /* Driver state */
 struct rp2040_udc {
     volatile uint8_t dev_addr;
-    struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
-    struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
-    struct usb_setup_packet setup;                          /*!< Setup package that may be used in interrupt processing (outside the protocol stack) */
+    struct rp2040_ep in_ep[CONFIG_RP2040_BIDIR_ENDPOINTS];
+    struct rp2040_ep out_ep[CONFIG_RP2040_BIDIR_ENDPOINTS];
+    struct usb_setup_packet setup; /*!< Setup package that may be used in interrupt processing (outside the protocol stack) */
 } g_rp2040_udc;
 
 static uint8_t *next_buffer_ptr;
@@ -58,7 +54,7 @@ static inline uint32_t usb_buffer_offset(volatile uint8_t *buf)
  *
  * @param ep
  */
-static int8_t rp2040_usb_config_ep(struct usb_dc_ep_state *ep)
+static int8_t rp2040_usb_config_ep(struct rp2040_ep *ep)
 {
     if (!ep->endpoint_control) {
         USB_LOG_WRN("Not valid for EP0 \r\n");
@@ -101,43 +97,6 @@ static void rp2040_usb_init(void)
     usb_hw->muxing = USB_USB_MUXING_TO_PHY_BITS | USB_USB_MUXING_SOFTCON_BITS;
 }
 
-int usb_dc_init(void)
-{
-    memset(&g_rp2040_udc, 0, sizeof(struct rp2040_udc));
-    rp2040_usb_init();
-#if FORCE_VBUS_DETECT
-    /*!< Force VBUS detect so the device thinks it is plugged into a host */
-    usb_hw->pwr = USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS;
-#endif
-
-    /**
-     * Initializes the USB peripheral for device mode and enables it.
-     * Don't need to enable the pull up here. Force VBUS
-     */
-    usb_hw->main_ctrl = USB_MAIN_CTRL_CONTROLLER_EN_BITS;
-
-    /**
-     * Enable individual controller IRQS here. Processor interrupt enable will be used
-     * for the global interrupt enable...
-     * Note: Force VBUS detect cause disconnection not detectable
-     */
-    usb_hw->sie_ctrl = USB_SIE_CTRL_EP0_INT_1BUF_BITS;
-    usb_hw->inte = USB_INTS_BUFF_STATUS_BITS | USB_INTS_BUS_RESET_BITS | USB_INTS_SETUP_REQ_BITS |
-                   USB_INTS_DEV_SUSPEND_BITS | USB_INTS_DEV_RESUME_FROM_HOST_BITS |
-                   (FORCE_VBUS_DETECT ? 0 : USB_INTS_DEV_CONN_DIS_BITS);
-
-    /**
-     * Enable interrupt
-     * Clear pending before enable
-     * (if IRQ is actually asserted, it will immediately re-pend)
-     */
-    *((io_rw_32 *)(PPB_BASE + M0PLUS_NVIC_ICPR_OFFSET)) = 1 << 5;
-    *((io_rw_32 *)(PPB_BASE + M0PLUS_NVIC_ISER_OFFSET)) = 1 << 5;
-
-    usb_hw_set->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
-    return 0;
-}
-
 /**
  * @brief Starts a transfer on a given endpoint.
  *
@@ -145,7 +104,7 @@ int usb_dc_init(void)
  * @param buf, the data buffer to send. Only applicable if the endpoint is TX
  * @param len, the length of the data in buf (this example limits max len to one packet - 64 bytes)
  */
-static void usb_start_transfer(struct usb_dc_ep_state *ep, uint8_t *buf, uint16_t len)
+static void usb_start_transfer(struct rp2040_ep *ep, uint8_t *buf, uint16_t len)
 {
     /*!< Prepare buffer control register value */
     uint32_t val = len | USB_BUF_CTRL_AVAIL;
@@ -187,12 +146,58 @@ static void usb_start_transfer(struct usb_dc_ep_state *ep, uint8_t *buf, uint16_
     *ep->buffer_control = val;
 }
 
-int usb_dc_deinit(void)
+int rp2040_udc_init(struct usbd_bus *bus)
+{
+    if (bus->busid != 0) {
+        USB_LOG_ERR("rp2040 busid must be 0\r\n");
+        return -1;
+    }
+
+    USB_LOG_INFO("========== rp2040 udc params =========\r\n");
+    USB_LOG_INFO("rp2040 has %d endpoints\r\n", CONFIG_RP2040_BIDIR_ENDPOINTS);
+    USB_LOG_INFO("=================================\r\n");
+
+    memset(&g_rp2040_udc, 0, sizeof(struct rp2040_udc));
+    rp2040_usb_init();
+#if CONFIG_RP2040_FORCE_VBUS_DETECT
+    /*!< Force VBUS detect so the device thinks it is plugged into a host */
+    usb_hw->pwr = USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS;
+#endif
+
+    /**
+     * Initializes the USB peripheral for device mode and enables it.
+     * Don't need to enable the pull up here. Force VBUS
+     */
+    usb_hw->main_ctrl = USB_MAIN_CTRL_CONTROLLER_EN_BITS;
+
+    /**
+     * Enable individual controller IRQS here. Processor interrupt enable will be used
+     * for the global interrupt enable...
+     * Note: Force VBUS detect cause disconnection not detectable
+     */
+    usb_hw->sie_ctrl = USB_SIE_CTRL_EP0_INT_1BUF_BITS;
+    usb_hw->inte = USB_INTS_BUFF_STATUS_BITS | USB_INTS_BUS_RESET_BITS | USB_INTS_SETUP_REQ_BITS |
+                   USB_INTS_DEV_SUSPEND_BITS | USB_INTS_DEV_RESUME_FROM_HOST_BITS |
+                   (CONFIG_RP2040_FORCE_VBUS_DETECT ? 0 : USB_INTS_DEV_CONN_DIS_BITS);
+
+    /**
+     * Enable interrupt
+     * Clear pending before enable
+     * (if IRQ is actually asserted, it will immediately re-pend)
+     */
+    *((io_rw_32 *)(PPB_BASE + M0PLUS_NVIC_ICPR_OFFSET)) = 1 << 5;
+    *((io_rw_32 *)(PPB_BASE + M0PLUS_NVIC_ISER_OFFSET)) = 1 << 5;
+
+    usb_hw_set->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
+    return 0;
+}
+
+int rp2040_udc_deinit(struct usbd_bus *bus)
 {
     return 0;
 }
 
-int usbd_set_address(const uint8_t addr)
+int rp2040_set_address(struct usbd_bus *bus, const uint8_t addr)
 {
     if (addr != 0) {
         g_rp2040_udc.dev_addr = addr;
@@ -200,14 +205,19 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
-uint8_t usbd_get_port_speed(const uint8_t port)
+uint8_t rp2040_get_port_speed(struct usbd_bus *bus)
 {
     return USB_SPEED_FULL;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int rp2040_ep_open(struct usbd_bus *bus, const struct usb_endpoint_descriptor *ep_desc)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep_desc->bEndpointAddress);
+    uint16_t ep_mps;
+    uint8_t ep_type;
+
+    ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
+    ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
 
     if (ep_idx == 0) {
         /**
@@ -222,10 +232,10 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         g_rp2040_udc.in_ep[ep_idx].dpram_data_buf = (uint8_t *)&usb_dpram->ep0_buf_a[0];
     }
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_rp2040_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_rp2040_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        g_rp2040_udc.out_ep[ep_idx].ep_addr = ep_cfg->ep_addr;
+    if (USB_EP_DIR_IS_OUT(ep_desc->bEndpointAddress)) {
+        g_rp2040_udc.out_ep[ep_idx].ep_mps = ep_mps;
+        g_rp2040_udc.out_ep[ep_idx].ep_type = ep_type;
+        g_rp2040_udc.out_ep[ep_idx].ep_addr = ep_desc->bEndpointAddress;
         g_rp2040_udc.out_ep[ep_idx].ep_enable = true;
         /*!< Get control reg */
         g_rp2040_udc.out_ep[ep_idx].buffer_control = &usb_dpram->ep_buf_ctrl[ep_idx].out;
@@ -241,9 +251,9 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         }
 
     } else {
-        g_rp2040_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_rp2040_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        g_rp2040_udc.in_ep[ep_idx].ep_addr = ep_cfg->ep_addr;
+        g_rp2040_udc.in_ep[ep_idx].ep_mps = ep_mps;
+        g_rp2040_udc.in_ep[ep_idx].ep_type = ep_type;
+        g_rp2040_udc.in_ep[ep_idx].ep_addr = ep_desc->bEndpointAddress;
         g_rp2040_udc.in_ep[ep_idx].ep_enable = true;
         /*!< Get control reg */
         g_rp2040_udc.in_ep[ep_idx].buffer_control = &usb_dpram->ep_buf_ctrl[ep_idx].in;
@@ -261,7 +271,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     return 0;
 }
 
-int usbd_ep_close(const uint8_t ep)
+int rp2040_ep_close(struct usbd_bus *bus, const uint8_t ep)
 {
     /*!< Ep id */
     uint16_t size = 0;
@@ -283,7 +293,7 @@ int usbd_ep_close(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_set_stall(const uint8_t ep)
+int rp2040_ep_set_stall(struct usbd_bus *bus, const uint8_t ep)
 {
     if (USB_EP_GET_IDX(ep) == 0) {
         /**
@@ -301,7 +311,7 @@ int usbd_ep_set_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_clear_stall(const uint8_t ep)
+int rp2040_ep_clear_stall(struct usbd_bus *bus, const uint8_t ep)
 {
     volatile uint32_t value = 0;
     if (USB_EP_GET_IDX(ep)) {
@@ -318,12 +328,12 @@ int usbd_ep_clear_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
+int rp2040_ep_is_stalled(struct usbd_bus *bus, const uint8_t ep, uint8_t *stalled)
 {
     return 0;
 }
 
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+int rp2040_ep_start_write(struct usbd_bus *bus, const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -350,7 +360,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     return 0;
 }
 
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+int rp2040_ep_start_read(struct usbd_bus *bus, const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -380,7 +390,7 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
  *
  * @param ep, the endpoint to notify.
  */
-static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
+static void usb_handle_ep_buff_done(struct rp2040_ep *ep)
 {
     uint32_t buffer_control = *ep->buffer_control;
     /*!< Get the transfer length for this endpoint */
@@ -397,7 +407,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
                 if (g_rp2040_udc.in_ep[0].xfer_len > g_rp2040_udc.in_ep[0].ep_mps) {
                     g_rp2040_udc.in_ep[0].xfer_len -= g_rp2040_udc.in_ep[0].ep_mps;
                     g_rp2040_udc.in_ep[0].actual_xfer_len += g_rp2040_udc.in_ep[0].ep_mps;
-                    usbd_event_ep_in_complete_handler(0 | 0x80, g_rp2040_udc.in_ep[0].actual_xfer_len);
+                    usbd_event_ep_in_complete_handler(0, 0 | 0x80, g_rp2040_udc.in_ep[0].actual_xfer_len);
                 } else {
                     g_rp2040_udc.in_ep[0].actual_xfer_len += g_rp2040_udc.in_ep[0].xfer_len;
                     g_rp2040_udc.in_ep[0].xfer_len = 0;
@@ -406,7 +416,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
                      * In the next usbd_event_ep_in_complete_handler, stack will start read 0 length packet
                      * and host must send data1 packet.We resest the ep0 next_pid = 1 in setup interrupt head.
                      */
-                    usbd_event_ep_in_complete_handler(0 | 0x80, g_rp2040_udc.in_ep[0].actual_xfer_len);
+                    usbd_event_ep_in_complete_handler(0, 0 | 0x80, g_rp2040_udc.in_ep[0].actual_xfer_len);
                 }
                 break;
             case 0:
@@ -436,7 +446,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
         g_rp2040_udc.out_ep[0].actual_xfer_len += read_count;
         g_rp2040_udc.out_ep[0].xfer_len -= read_count;
 
-        usbd_event_ep_out_complete_handler(0x00, g_rp2040_udc.out_ep[0].actual_xfer_len);
+        usbd_event_ep_out_complete_handler(0, 0x00, g_rp2040_udc.out_ep[0].actual_xfer_len);
     } else {
         /*!< Others ep */
         uint16_t data_len = 0;
@@ -449,7 +459,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
 
             if (read_count < g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].ep_mps || g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].xfer_len == 0) {
                 /*!< Out complete */
-                usbd_event_ep_out_complete_handler(ep->ep_addr, g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].actual_xfer_len);
+                usbd_event_ep_out_complete_handler(0, ep->ep_addr, g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].actual_xfer_len);
             } else {
                 /*!< Need read again */
                 data_len = MIN(g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].xfer_len, g_rp2040_udc.out_ep[(ep->ep_addr) & 0x0f].ep_mps);
@@ -467,7 +477,7 @@ static void usb_handle_ep_buff_done(struct usb_dc_ep_state *ep)
                 /*!< In complete */
                 g_rp2040_udc.in_ep[(ep->ep_addr) & 0x0f].actual_xfer_len += g_rp2040_udc.in_ep[(ep->ep_addr) & 0x0f].xfer_len;
                 g_rp2040_udc.in_ep[(ep->ep_addr) & 0x0f].xfer_len = 0;
-                usbd_event_ep_in_complete_handler(ep->ep_addr, g_rp2040_udc.in_ep[(ep->ep_addr) & 0x0f].actual_xfer_len);
+                usbd_event_ep_in_complete_handler(0, ep->ep_addr, g_rp2040_udc.in_ep[(ep->ep_addr) & 0x0f].actual_xfer_len);
             }
         }
     }
@@ -513,7 +523,7 @@ static void usb_handle_buff_status()
     }
 }
 
-void USBD_IRQHandler(void)
+void rp2040_udc_irq(struct usbd_bus *bus)
 {
     uint32_t const status = usb_hw->ints;
     uint32_t handled = 0;
@@ -531,11 +541,11 @@ void USBD_IRQHandler(void)
          */
         g_rp2040_udc.in_ep[0].next_pid = 1;
         g_rp2040_udc.out_ep[0].next_pid = 1;
-        usbd_event_ep0_setup_complete_handler((uint8_t *)&g_rp2040_udc.setup);
+        usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&g_rp2040_udc.setup);
         usb_hw_clear->sie_status = USB_SIE_STATUS_SETUP_REC_BITS;
     }
 
-#if FORCE_VBUS_DETECT == 0
+#if CONFIG_RP2040_FORCE_VBUS_DETECT == 0
     /**
      * Since we force VBUS detect On, device will always think it is connected and
      * couldn't distinguish between disconnect and suspend
@@ -558,7 +568,7 @@ void USBD_IRQHandler(void)
         handled |= USB_INTS_BUS_RESET_BITS;
         usb_hw->dev_addr_ctrl = 0;
 
-        for (uint8_t i = 0; i < USB_NUM_BIDIR_ENDPOINTS - 1; i++) {
+        for (uint8_t i = 0; i < CONFIG_RP2040_BIDIR_ENDPOINTS - 1; i++) {
             /*!< Start at ep1 */
             usb_dpram->ep_ctrl[i].in = 0;
             usb_dpram->ep_ctrl[i].out = 0;
@@ -566,7 +576,7 @@ void USBD_IRQHandler(void)
         /*!< reclaim buffer space */
         next_buffer_ptr = &usb_dpram->epx_data[0];
 
-        usbd_event_reset_handler();
+        usbd_event_reset_handler(0);
         usb_hw_clear->sie_status = USB_SIE_STATUS_BUS_RESET_BITS;
 
 #if CHERRYUSB_OPT_RP2040_USB_DEVICE_ENUMERATION_FIX
@@ -602,4 +612,25 @@ void USBD_IRQHandler(void)
     if (status ^ handled) {
         USB_LOG_INFO("Unhandled IRQ 0x%x\n", (uint32_t)(status ^ handled));
     }
+}
+
+struct usbd_udc_driver rp2040_udc_driver = {
+    .driver_name = "rp2040 udc",
+    .udc_init = rp2040_udc_init,
+    .udc_deinit = rp2040_udc_deinit,
+    .udc_set_address = rp2040_set_address,
+    .udc_get_port_speed = rp2040_get_port_speed,
+    .udc_ep_open = rp2040_ep_open,
+    .udc_ep_close = rp2040_ep_close,
+    .udc_ep_set_stall = rp2040_ep_set_stall,
+    .udc_ep_clear_stall = rp2040_ep_clear_stall,
+    .udc_ep_is_stalled = rp2040_ep_is_stalled,
+    .udc_ep_start_write = rp2040_ep_start_write,
+    .udc_ep_start_read = rp2040_ep_start_read,
+    .udc_irq = rp2040_udc_irq
+};
+
+void isr_irq5(void)
+{
+    usbd_irq(0);
 }

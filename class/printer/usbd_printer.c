@@ -6,13 +6,13 @@
 #include "usbd_core.h"
 #include "usbd_printer.h"
 
-struct printer_cfg_priv {
+struct usbd_printer_priv {
     const uint8_t *device_id;
     uint8_t device_id_len;
     uint8_t port_status;
-} usbd_printer_cfg;
+} g_usbd_printer[CONFIG_USBDEV_MAX_BUS];
 
-static int printer_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int printer_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("Printer Class request: "
                 "bRequest 0x%02x\r\n",
@@ -20,8 +20,8 @@ static int printer_class_interface_request_handler(struct usb_setup_packet *setu
 
     switch (setup->bRequest) {
         case PRINTER_REQUEST_GET_DEVICE_ID:
-            memcpy(*data, usbd_printer_cfg.device_id, usbd_printer_cfg.device_id_len);
-            *len = usbd_printer_cfg.device_id_len;
+            memcpy(*data, g_usbd_printer[busid].device_id, g_usbd_printer[busid].device_id_len);
+            *len = g_usbd_printer[busid].device_id_len;
             break;
         case PRINTER_REQUEST_GET_PORT_SATTUS:
 
@@ -37,7 +37,7 @@ static int printer_class_interface_request_handler(struct usb_setup_packet *setu
     return 0;
 }
 
-static void printer_notify_handler(uint8_t event, void *arg)
+static void printer_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -48,14 +48,14 @@ static void printer_notify_handler(uint8_t event, void *arg)
     }
 }
 
-struct usbd_interface *usbd_printer_init_intf(struct usbd_interface *intf, const uint8_t *device_id, uint8_t device_id_len)
+struct usbd_interface *usbd_printer_init_intf(uint8_t busid, struct usbd_interface *intf, const uint8_t *device_id, uint8_t device_id_len)
 {
     intf->class_interface_handler = printer_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = printer_notify_handler;
 
-    usbd_printer_cfg.device_id = device_id;
-    usbd_printer_cfg.device_id_len = device_id_len;
+    g_usbd_printer[busid].device_id = device_id;
+    g_usbd_printer[busid].device_id_len = device_id_len;
     return intf;
 }

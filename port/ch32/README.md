@@ -1,12 +1,4 @@
-# Note
+# Support Chip List
 
-## Support Chip List
-
-- CH32V30x
-
-## Before Use
-
-Your should implement `usb_dc_low_level_init` and `usb_dc_low_level_deinit`.
-- Enable or disable USB clock and set USB clock for 48M.
-- Enable or disable gpio and gpio clk for usb dp and dm.
-- Enable or disable usb irq
+- CH58x (port0:0x40008000, port1:0x40008400)
+- CH32V30x (usbfs:0x50000000, usbhs:0x40023400)

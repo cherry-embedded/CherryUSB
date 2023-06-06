@@ -13,7 +13,10 @@ extern "C" {
 #endif
 
 /* Init printer interface driver */
-struct usbd_interface *usbd_printer_init_intf(struct usbd_interface *intf, const uint8_t *device_id, uint8_t device_id_len);
+struct usbd_interface *usbd_printer_init_intf(uint8_t busid,
+                                              struct usbd_interface *intf,
+                                              const uint8_t *device_id,
+                                              uint8_t device_id_len);
 
 #ifdef __cplusplus
 }

@@ -16,10 +16,11 @@ extern "C" {
 struct usbd_interface *usbd_dfu_init_intf(struct usbd_interface *intf);
 
 /* Interface functions that need to be implemented by the user */
-uint8_t *dfu_read_flash(uint8_t *src, uint8_t *dest, uint32_t len);
-uint16_t dfu_write_flash(uint8_t *src, uint8_t *dest, uint32_t len);
-uint16_t dfu_erase_flash(uint32_t add);
-void dfu_leave(void);
+uint8_t *dfu_read_flash(uint8_t busid, uint8_t *src, uint8_t *dest, uint32_t len);
+uint16_t dfu_write_flash(uint8_t busid, uint8_t *src, uint8_t *dest, uint32_t len);
+uint16_t dfu_erase_flash(uint8_t busid, uint32_t add);
+void dfu_leave(uint8_t busid);
+
 #ifdef __cplusplus
 }
 #endif

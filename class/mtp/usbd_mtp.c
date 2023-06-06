@@ -16,7 +16,7 @@ enum Stage {
     MTP_WAIT_RESPONSE = 4,
 };
 
-USB_NOCACHE_RAM_SECTION struct usbd_mtp {
+USB_NOCACHE_RAM_SECTION struct usbd_mtp_priv {
     USB_MEM_ALIGNX struct mtp_container_command con_command;
     USB_MEM_ALIGNX struct mtp_container_data con_data;
     USB_MEM_ALIGNX struct mtp_container_response con_response;
@@ -37,9 +37,9 @@ USB_NOCACHE_RAM_SECTION struct usbd_mtp {
 #define MTP_INT_EP_IDX 2
 
 /* Describe EndPoints configuration */
-static struct usbd_endpoint mtp_ep_data[3];
+static struct usbd_endpoint mtp_ep_data[CONFIG_USBDEV_MAX_BUS][3];
 
-static int mtp_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int mtp_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("MTP Class request: "
                 "bRequest 0x%02x\r\n",
@@ -67,7 +67,7 @@ static int mtp_class_interface_request_handler(struct usb_setup_packet *setup, u
     return 0;
 }
 
-static void usbd_mtp_send_response(uint32_t code)
+static void usbd_mtp_send_response(uint8_t busid, uint32_t code)
 {
     USB_LOG_DBG("Send response\r\n");
 
@@ -78,10 +78,10 @@ static void usbd_mtp_send_response(uint32_t code)
     g_usbd_mtp.con_response.code = code;
     g_usbd_mtp.con_response.trans_id = g_usbd_mtp.con_command.trans_id;
 
-    usbd_ep_start_write(mtp_ep_data[MTP_IN_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_response, 12);
+    usbd_ep_start_write(busid, mtp_ep_data[busid][MTP_IN_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_response, 12);
 }
 
-static void usbd_mtp_send_info(uint8_t *data, uint32_t len)
+static void usbd_mtp_send_info(uint8_t busid, uint8_t *data, uint32_t len)
 {
     USB_LOG_DBG("Send info\r\n");
 
@@ -93,10 +93,10 @@ static void usbd_mtp_send_info(uint8_t *data, uint32_t len)
     g_usbd_mtp.con_data.trans_id = g_usbd_mtp.con_command.trans_id;
 
     memcpy(g_usbd_mtp.con_data.data, data, len);
-    usbd_ep_start_write(mtp_ep_data[MTP_IN_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_data, 12 + len);
+    usbd_ep_start_write(busid, mtp_ep_data[busid][MTP_IN_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_data, 12 + len);
 }
 
-static void usbd_mtp_get_device_info(void)
+static void usbd_mtp_get_device_info(uint8_t busid)
 {
     struct mtp_device_info device_info;
     uint16_t i;
@@ -163,25 +163,25 @@ static void usbd_mtp_get_device_info(void)
         device_info.SerialNumber[i] = SerialNbr[i];
     }
 
-    usbd_mtp_send_info((uint8_t *)&device_info, sizeof(struct mtp_device_info));
+    usbd_mtp_send_info(busid, (uint8_t *)&device_info, sizeof(struct mtp_device_info));
 }
 
-static void usbd_mtp_open_session(void)
+static void usbd_mtp_open_session(uint8_t busid)
 {
-    usbd_mtp_send_response(MTP_RESPONSE_OK);
+    usbd_mtp_send_response(busid, MTP_RESPONSE_OK);
 }
 
-static void usbd_mtp_get_storage_ids(void)
+static void usbd_mtp_get_storage_ids(uint8_t busid)
 {
     struct mtp_storage_id storage_id;
 
     storage_id.StorageIDS_len = CONFIG_MTP_STORAGE_ID_LEN;
     storage_id.StorageIDS[0] = MTP_STORAGE_ID;
 
-    usbd_mtp_send_info((uint8_t *)&storage_id, sizeof(struct mtp_storage_id));
+    usbd_mtp_send_info(busid, (uint8_t *)&storage_id, sizeof(struct mtp_storage_id));
 }
 
-static void usbd_mtp_get_storage_info(void)
+static void usbd_mtp_get_storage_info(uint8_t busid)
 {
     struct mtp_storage_info storage_info;
 
@@ -194,19 +194,19 @@ static void usbd_mtp_get_storage_info(void)
     storage_info.StorageDescription = 0U;
     storage_info.VolumeLabel = 0U;
 
-    usbd_mtp_send_info((uint8_t *)&storage_info, sizeof(struct mtp_storage_info));
+    usbd_mtp_send_info(busid, (uint8_t *)&storage_info, sizeof(struct mtp_storage_info));
 }
 
-static void usbd_mtp_get_object_handles(void)
+static void usbd_mtp_get_object_handles(uint8_t busid)
 {
     struct mtp_object_handle object_handle;
 
     // todo
 
-    usbd_mtp_send_info((uint8_t *)&object_handle, sizeof(struct mtp_object_handle));
+    usbd_mtp_send_info(busid, (uint8_t *)&object_handle, sizeof(struct mtp_object_handle));
 }
 
-static void usbd_mtp_get_object_info(void)
+static void usbd_mtp_get_object_info(uint8_t busid)
 {
     struct mtp_object_info object_info;
 
@@ -234,10 +234,10 @@ static void usbd_mtp_get_object_info(void)
     object_info.ModificationDate = 0U;
     object_info.Keywords = 0U;
 
-    usbd_mtp_send_info((uint8_t *)&object_info, sizeof(struct mtp_object_info));
+    usbd_mtp_send_info(busid, (uint8_t *)&object_info, sizeof(struct mtp_object_info));
 }
 
-static void usbd_mtp_get_object_prop_desc(void)
+static void usbd_mtp_get_object_prop_desc(uint8_t busid)
 {
     struct mtp_object_prop_desc object_prop_desc;
 
@@ -322,10 +322,10 @@ static void usbd_mtp_get_object_prop_desc(void)
             break;
     }
     // todo
-    usbd_mtp_send_info((uint8_t *)&object_prop_desc, sizeof(struct mtp_object_prop_desc));
+    usbd_mtp_send_info(busid, (uint8_t *)&object_prop_desc, sizeof(struct mtp_object_prop_desc));
 }
 
-static void usbd_mtp_get_object_props_supported(void)
+static void usbd_mtp_get_object_props_supported(uint8_t busid)
 {
     struct mtp_object_props_support object_props_support;
     uint32_t i;
@@ -335,10 +335,10 @@ static void usbd_mtp_get_object_props_supported(void)
     for (i = 0U; i < CONFIG_MTP_SUPP_OBJ_PROP_LEN; i++) {
         object_props_support.ObjectPropCode[i] = ObjectPropCode[i];
     }
-    usbd_mtp_send_info((uint8_t *)&object_props_support, sizeof(struct mtp_object_props_support));
+    usbd_mtp_send_info(busid, (uint8_t *)&object_props_support, sizeof(struct mtp_object_props_support));
 }
 
-static void usbd_mtp_get_object_prop_list(void)
+static void usbd_mtp_get_object_prop_list(uint8_t busid)
 {
     struct mtp_object_prop_list object_prop_list;
 
@@ -409,10 +409,10 @@ static void usbd_mtp_get_object_prop_list(void)
         }
     }
     // todo
-    usbd_mtp_send_info((uint8_t *)&object_prop_list, sizeof(struct mtp_object_prop_list));
+    usbd_mtp_send_info(busid, (uint8_t *)&object_prop_list, sizeof(struct mtp_object_prop_list));
 }
 
-static void usbd_mtp_get_device_prop_desc(void)
+static void usbd_mtp_get_device_prop_desc(uint8_t busid)
 {
     struct mtp_device_prop_desc device_prop_desc;
     uint32_t i;
@@ -434,48 +434,48 @@ static void usbd_mtp_get_device_prop_desc(void)
 
     device_prop_desc.FormFlag = 0U;
 
-    usbd_mtp_send_info((uint8_t *)&device_prop_desc, sizeof(struct mtp_device_prop_desc));
+    usbd_mtp_send_info(busid, (uint8_t *)&device_prop_desc, sizeof(struct mtp_device_prop_desc));
 }
 
-static int usbd_mtp_decode_command(struct mtp_container_command *command)
+static int usbd_mtp_decode_command(uint8_t busid, struct mtp_container_command *command)
 {
     printf("code:%04x\r\n", command->code);
     switch (command->code) {
         case MTP_OP_GET_DEVICE_INFO:
-            usbd_mtp_get_device_info();
+            usbd_mtp_get_device_info(busid);
             break;
         case MTP_OP_OPEN_SESSION:
-            usbd_mtp_open_session();
+            usbd_mtp_open_session(busid);
             break;
         case MTP_OP_CLOSE_SESSION:
             break;
         case MTP_OP_GET_STORAGE_IDS:
-            usbd_mtp_get_storage_ids();
+            usbd_mtp_get_storage_ids(busid);
             break;
         case MTP_OP_GET_STORAGE_INFO:
-            usbd_mtp_get_storage_info();
+            usbd_mtp_get_storage_info(busid);
             break;
         case MTP_OP_GET_OBJECT_HANDLES:
-            usbd_mtp_get_object_handles();
+            usbd_mtp_get_object_handles(busid);
             break;
         case MTP_OP_GET_OBJECT_INFO:
-            usbd_mtp_get_object_info();
+            usbd_mtp_get_object_info(busid);
             break;
         case MTP_OP_GET_OBJECT_PROP_REFERENCES:
             break;
         case MTP_OP_GET_OBJECT_PROPS_SUPPORTED:
-            usbd_mtp_get_object_props_supported();
+            usbd_mtp_get_object_props_supported(busid);
             break;
         case MTP_OP_GET_OBJECT_PROP_DESC:
-            usbd_mtp_get_object_prop_desc();
+            usbd_mtp_get_object_prop_desc(busid);
             break;
         case MTP_OP_GET_OBJECT_PROPLIST:
-            usbd_mtp_get_object_prop_list();
+            usbd_mtp_get_object_prop_list(busid);
             break;
         case MTP_OP_GET_OBJECT_PROP_VALUE:
             break;
         case MTP_OP_GET_DEVICE_PROP_DESC:
-            usbd_mtp_get_device_prop_desc();
+            usbd_mtp_get_device_prop_desc(busid);
             break;
         case MTP_OP_GET_OBJECT:
             break;
@@ -492,11 +492,11 @@ static int usbd_mtp_decode_command(struct mtp_container_command *command)
     return 0;
 }
 
-static void usbd_mtp_bulk_out(uint8_t ep, uint32_t nbytes)
+static void usbd_mtp_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     switch (g_usbd_mtp.stage) {
         case MTP_READ_COMMAND:
-            usbd_mtp_decode_command(&g_usbd_mtp.con_command);
+            usbd_mtp_decode_command(busid, &g_usbd_mtp.con_command);
             break;
         case MTP_DATA_OUT:
             break;
@@ -505,7 +505,7 @@ static void usbd_mtp_bulk_out(uint8_t ep, uint32_t nbytes)
     }
 }
 
-static void usbd_mtp_bulk_in(uint8_t ep, uint32_t nbytes)
+static void usbd_mtp_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     printf("send:%d\r\n", nbytes);
     switch (g_usbd_mtp.stage) {
@@ -517,7 +517,7 @@ static void usbd_mtp_bulk_in(uint8_t ep, uint32_t nbytes)
         case MTP_WAIT_RESPONSE:
             USB_LOG_DBG("Start reading command\r\n");
             g_usbd_mtp.stage = MTP_READ_COMMAND;
-            usbd_ep_start_read(mtp_ep_data[MTP_OUT_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_command, MTP_BULK_EP_MPS);
+            usbd_ep_start_read(mtp_ep_data[busid][MTP_OUT_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_command, MTP_BULK_EP_MPS);
             break;
 
         default:
@@ -525,7 +525,7 @@ static void usbd_mtp_bulk_in(uint8_t ep, uint32_t nbytes)
     }
 }
 
-static void mtp_notify_handler(uint8_t event, void *arg)
+static void mtp_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -533,7 +533,7 @@ static void mtp_notify_handler(uint8_t event, void *arg)
         case USBD_EVENT_CONFIGURED:
             USB_LOG_DBG("Start reading command\r\n");
             g_usbd_mtp.stage = MTP_READ_COMMAND;
-            usbd_ep_start_read(mtp_ep_data[MTP_OUT_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_command, MTP_BULK_EP_MPS);
+            usbd_ep_start_read(mtp_ep_data[busid][MTP_OUT_EP_IDX].ep_addr, (uint8_t *)&g_usbd_mtp.con_command, MTP_BULK_EP_MPS);
             break;
 
         default:
@@ -541,7 +541,8 @@ static void mtp_notify_handler(uint8_t event, void *arg)
     }
 }
 
-struct usbd_interface *usbd_mtp_init_intf(struct usbd_interface *intf,
+struct usbd_interface *usbd_mtp_init_intf(uint8_t busid,
+                                          struct usbd_interface *intf,
                                           const uint8_t out_ep,
                                           const uint8_t in_ep,
                                           const uint8_t int_ep)
@@ -551,16 +552,16 @@ struct usbd_interface *usbd_mtp_init_intf(struct usbd_interface *intf,
     intf->vendor_handler = NULL;
     intf->notify_handler = mtp_notify_handler;
 
-    mtp_ep_data[MTP_OUT_EP_IDX].ep_addr = out_ep;
-    mtp_ep_data[MTP_OUT_EP_IDX].ep_cb = usbd_mtp_bulk_out;
-    mtp_ep_data[MTP_IN_EP_IDX].ep_addr = in_ep;
-    mtp_ep_data[MTP_IN_EP_IDX].ep_cb = usbd_mtp_bulk_in;
-    mtp_ep_data[MTP_INT_EP_IDX].ep_addr = int_ep;
-    mtp_ep_data[MTP_INT_EP_IDX].ep_cb = NULL;
+    mtp_ep_data[busid][MTP_OUT_EP_IDX].ep_addr = out_ep;
+    mtp_ep_data[busid][MTP_OUT_EP_IDX].ep_cb = usbd_mtp_bulk_out;
+    mtp_ep_data[busid][MTP_IN_EP_IDX].ep_addr = in_ep;
+    mtp_ep_data[busid][MTP_IN_EP_IDX].ep_cb = usbd_mtp_bulk_in;
+    mtp_ep_data[busid][MTP_INT_EP_IDX].ep_addr = int_ep;
+    mtp_ep_data[busid][MTP_INT_EP_IDX].ep_cb = NULL;
 
-    usbd_add_endpoint(&mtp_ep_data[MTP_OUT_EP_IDX]);
-    usbd_add_endpoint(&mtp_ep_data[MTP_IN_EP_IDX]);
-    usbd_add_endpoint(&mtp_ep_data[MTP_INT_EP_IDX]);
+    usbd_add_endpoint(&mtp_ep_data[busid][MTP_OUT_EP_IDX]);
+    usbd_add_endpoint(&mtp_ep_data[busid][MTP_IN_EP_IDX]);
+    usbd_add_endpoint(&mtp_ep_data[busid][MTP_INT_EP_IDX]);
 
     return intf;
 }

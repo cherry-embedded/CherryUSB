@@ -12,7 +12,7 @@
 #define RNDIS_INT_EP_IDX 2
 
 /* Describe EndPoints configuration */
-static struct usbd_endpoint rndis_ep_data[3];
+static struct usbd_endpoint rndis_ep_data[CONFIG_USBDEV_MAX_BUS][3];
 
 #define RNDIS_INQUIRY_PUT(src, len)   (memcpy(infomation_buffer, src, len))
 #define RNDIS_INQUIRY_PUT_LE32(value) (*(uint32_t *)infomation_buffer = (value))
@@ -30,7 +30,7 @@ static struct usbd_endpoint rndis_ep_data[3];
 #endif
 
 /* Device data structure */
-struct usbd_rndis_cfg_priv {
+struct usbd_rndis_priv {
     uint32_t drv_version;
     uint32_t link_status;
     uint32_t speed;
@@ -38,21 +38,17 @@ struct usbd_rndis_cfg_priv {
     usb_eth_stat_t eth_state;
     rndis_state_t init_state;
     uint8_t mac[6];
-} usbd_rndis_cfg = { .drv_version = 0x0001,
-                     .link_status = NDIS_MEDIA_STATE_DISCONNECTED,
-                     .speed = RNDIS_LINK_SPEED,
-                     .init_state = rndis_uninitialized,
-                     .mac = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 } };
+} g_usbd_rndis[CONFIG_USBDEV_MAX_BUS];
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[CONFIG_USBDEV_MAX_BUS][CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[CONFIG_USBDEV_MAX_BUS][CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t rndis_encapsulated_resp_buffer[CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t NOTIFY_RESPONSE_AVAILABLE[8];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t rndis_encapsulated_resp_buffer[CONFIG_USBDEV_MAX_BUS][CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t NOTIFY_RESPONSE_AVAILABLE[CONFIG_USBDEV_MAX_BUS][8];
 
-volatile uint8_t *g_rndis_rx_data_buffer;
-volatile uint32_t g_rndis_rx_data_length;
-volatile uint32_t g_rndis_tx_data_length;
+volatile uint8_t *g_rndis_rx_data_buffer[CONFIG_USBDEV_MAX_BUS];
+volatile uint32_t g_rndis_rx_data_length[CONFIG_USBDEV_MAX_BUS];
+volatile uint32_t g_rndis_tx_data_length[CONFIG_USBDEV_MAX_BUS];
 
 /* RNDIS options list */
 const uint32_t oid_supported_list[] = {
@@ -98,24 +94,24 @@ const uint32_t oid_supported_list[] = {
     OID_802_3_MAC_OPTIONS,
 };
 
-static int rndis_encapsulated_cmd_handler(uint8_t *data, uint32_t len);
+static int rndis_encapsulated_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
 
-static void rndis_notify_rsp(void)
+static void rndis_notify_rsp(uint8_t busid)
 {
-    memset(NOTIFY_RESPONSE_AVAILABLE, 0, 8);
-    NOTIFY_RESPONSE_AVAILABLE[0] = 0x01;
-    usbd_ep_start_write(rndis_ep_data[RNDIS_INT_EP_IDX].ep_addr, NOTIFY_RESPONSE_AVAILABLE, 8);
+    memset(NOTIFY_RESPONSE_AVAILABLE[busid], 0, 8);
+    NOTIFY_RESPONSE_AVAILABLE[busid][0] = 0x01;
+    usbd_ep_start_write(busid, rndis_ep_data[busid][RNDIS_INT_EP_IDX].ep_addr, NOTIFY_RESPONSE_AVAILABLE[busid], 8);
 }
 
-static int rndis_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int rndis_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     switch (setup->bRequest) {
         case CDC_REQUEST_SEND_ENCAPSULATED_COMMAND:
-            rndis_encapsulated_cmd_handler(*data, setup->wLength);
+            rndis_encapsulated_cmd_handler(busid, *data, setup->wLength);
             break;
         case CDC_REQUEST_GET_ENCAPSULATED_RESPONSE:
-            *data = rndis_encapsulated_resp_buffer;
-            *len = ((rndis_generic_msg_t *)rndis_encapsulated_resp_buffer)->MessageLength;
+            *data = rndis_encapsulated_resp_buffer[busid];
+            *len = ((rndis_generic_msg_t *)rndis_encapsulated_resp_buffer[busid])->MessageLength;
             break;
 
         default:
@@ -125,28 +121,28 @@ static int rndis_class_interface_request_handler(struct usb_setup_packet *setup,
     return 0;
 }
 
-static int rndis_init_cmd_handler(uint8_t *data, uint32_t len);
-static int rndis_halt_cmd_handler(uint8_t *data, uint32_t len);
-static int rndis_query_cmd_handler(uint8_t *data, uint32_t len);
-static int rndis_set_cmd_handler(uint8_t *data, uint32_t len);
-static int rndis_reset_cmd_handler(uint8_t *data, uint32_t len);
-static int rndis_keepalive_cmd_handler(uint8_t *data, uint32_t len);
+static int rndis_init_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
+static int rndis_halt_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
+static int rndis_query_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
+static int rndis_set_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
+static int rndis_reset_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
+static int rndis_keepalive_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len);
 
-static int rndis_encapsulated_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_encapsulated_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     switch (((rndis_generic_msg_t *)data)->MessageType) {
         case REMOTE_NDIS_INITIALIZE_MSG:
-            return rndis_init_cmd_handler(data, len);
+            return rndis_init_cmd_handler(busid, data, len);
         case REMOTE_NDIS_HALT_MSG:
-            return rndis_halt_cmd_handler(data, len);
+            return rndis_halt_cmd_handler(busid, data, len);
         case REMOTE_NDIS_QUERY_MSG:
-            return rndis_query_cmd_handler(data, len);
+            return rndis_query_cmd_handler(busid, data, len);
         case REMOTE_NDIS_SET_MSG:
-            return rndis_set_cmd_handler(data, len);
+            return rndis_set_cmd_handler(busid, data, len);
         case REMOTE_NDIS_RESET_MSG:
-            return rndis_reset_cmd_handler(data, len);
+            return rndis_reset_cmd_handler(busid, data, len);
         case REMOTE_NDIS_KEEPALIVE_MSG:
-            return rndis_keepalive_cmd_handler(data, len);
+            return rndis_keepalive_cmd_handler(busid, data, len);
 
         default:
             break;
@@ -154,12 +150,12 @@ static int rndis_encapsulated_cmd_handler(uint8_t *data, uint32_t len)
     return -1;
 }
 
-static int rndis_init_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_init_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     rndis_initialize_msg_t *cmd = (rndis_initialize_msg_t *)data;
     rndis_initialize_cmplt_t *resp;
 
-    resp = ((rndis_initialize_cmplt_t *)rndis_encapsulated_resp_buffer);
+    resp = ((rndis_initialize_cmplt_t *)rndis_encapsulated_resp_buffer[busid]);
     resp->RequestId = cmd->RequestId;
     resp->MessageType = REMOTE_NDIS_INITIALIZE_CMPLT;
     resp->MessageLength = sizeof(rndis_initialize_cmplt_t);
@@ -174,32 +170,32 @@ static int rndis_init_cmd_handler(uint8_t *data, uint32_t len)
     resp->AfListOffset = 0;
     resp->AfListSize = 0;
 
-    usbd_rndis_cfg.init_state = rndis_initialized;
+    g_usbd_rndis[busid].init_state = rndis_initialized;
 
-    rndis_notify_rsp();
+    rndis_notify_rsp(busid);
     return 0;
 }
 
-static int rndis_halt_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_halt_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     rndis_halt_msg_t *resp;
 
-    resp = ((rndis_halt_msg_t *)rndis_encapsulated_resp_buffer);
+    resp = ((rndis_halt_msg_t *)rndis_encapsulated_resp_buffer[busid]);
     resp->MessageLength = 0;
 
-    usbd_rndis_cfg.init_state = rndis_uninitialized;
+    g_usbd_rndis[busid].init_state = rndis_uninitialized;
 
     return 0;
 }
 
-static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_query_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     rndis_query_msg_t *cmd = (rndis_query_msg_t *)data;
     rndis_query_cmplt_t *resp;
     uint8_t *infomation_buffer;
     uint32_t infomation_len = 0;
 
-    resp = ((rndis_query_cmplt_t *)rndis_encapsulated_resp_buffer);
+    resp = ((rndis_query_cmplt_t *)rndis_encapsulated_resp_buffer[busid]);
     resp->MessageType = REMOTE_NDIS_QUERY_CMPLT;
     resp->RequestId = cmd->RequestId;
     resp->InformationBufferOffset = sizeof(rndis_query_cmplt_t) - sizeof(rndis_generic_msg_t);
@@ -241,7 +237,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             break;
         case OID_802_3_CURRENT_ADDRESS:
         case OID_802_3_PERMANENT_ADDRESS:
-            RNDIS_INQUIRY_PUT(usbd_rndis_cfg.mac, 6);
+            RNDIS_INQUIRY_PUT(g_usbd_rndis[busid].mac, 6);
             infomation_len = 6;
             break;
         case OID_GEN_PHYSICAL_MEDIUM:
@@ -253,7 +249,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             infomation_len = 4;
             break;
         case OID_GEN_CURRENT_PACKET_FILTER:
-            RNDIS_INQUIRY_PUT_LE32(usbd_rndis_cfg.net_filter);
+            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis[busid].net_filter);
             infomation_len = 4;
             break;
         case OID_GEN_MAXIMUM_TOTAL_SIZE:
@@ -261,7 +257,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             infomation_len = 4;
             break;
         case OID_GEN_MEDIA_CONNECT_STATUS:
-            RNDIS_INQUIRY_PUT_LE32(usbd_rndis_cfg.link_status);
+            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis[busid].link_status);
             infomation_len = 4;
             break;
         case OID_GEN_RNDIS_CONFIG_PARAMETER:
@@ -301,19 +297,19 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             infomation_len = 4;
             break;
         case OID_GEN_XMIT_OK:
-            RNDIS_INQUIRY_PUT_LE32(usbd_rndis_cfg.eth_state.txok);
+            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis[busid].eth_state.txok);
             infomation_len = 4;
             break;
         case OID_GEN_RCV_OK:
-            RNDIS_INQUIRY_PUT_LE32(usbd_rndis_cfg.eth_state.rxok);
+            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis[busid].eth_state.rxok);
             infomation_len = 4;
             break;
         case OID_GEN_RCV_ERROR:
-            RNDIS_INQUIRY_PUT_LE32(usbd_rndis_cfg.eth_state.rxbad);
+            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis[busid].eth_state.rxbad);
             infomation_len = 4;
             break;
         case OID_GEN_XMIT_ERROR:
-            RNDIS_INQUIRY_PUT_LE32(usbd_rndis_cfg.eth_state.txbad);
+            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis[busid].eth_state.txbad);
             infomation_len = 4;
             break;
         case OID_GEN_RCV_NO_BUFFER:
@@ -330,17 +326,17 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
     resp->MessageLength = sizeof(rndis_query_cmplt_t) + infomation_len;
     resp->InformationBufferLength = infomation_len;
 
-    rndis_notify_rsp();
+    rndis_notify_rsp(busid);
     return 0;
 }
 
-static int rndis_set_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_set_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     rndis_set_msg_t *cmd = (rndis_set_msg_t *)data;
     rndis_set_cmplt_t *resp;
     rndis_config_parameter_t *param;
 
-    resp = ((rndis_set_cmplt_t *)rndis_encapsulated_resp_buffer);
+    resp = ((rndis_set_cmplt_t *)rndis_encapsulated_resp_buffer[busid]);
     resp->RequestId = cmd->RequestId;
     resp->MessageType = REMOTE_NDIS_SET_CMPLT;
     resp->MessageLength = sizeof(rndis_set_cmplt_t);
@@ -354,7 +350,7 @@ static int rndis_set_cmd_handler(uint8_t *data, uint32_t len)
                         param->ParameterValueOffset, param->ParameterValueLength);
             break;
         case OID_GEN_CURRENT_PACKET_FILTER:
-            if (cmd->InformationBufferLength < sizeof(usbd_rndis_cfg.net_filter)) {
+            if (cmd->InformationBufferLength < sizeof(g_usbd_rndis[busid].net_filter)) {
                 USB_LOG_WRN("PACKET_FILTER!\r\n");
                 resp->Status = RNDIS_STATUS_INVALID_DATA;
             } else {
@@ -362,12 +358,12 @@ static int rndis_set_cmd_handler(uint8_t *data, uint32_t len)
                 /* Parameter starts at offset buf_offset of the req_id field */
                 filter = (uint32_t *)((uint8_t *)&(cmd->RequestId) + cmd->InformationBufferOffset);
 
-                //usbd_rndis_cfg.net_filter = param->ParameterNameOffset;
-                usbd_rndis_cfg.net_filter = *(uint32_t *)filter;
-                if (usbd_rndis_cfg.net_filter) {
-                    usbd_rndis_cfg.init_state = rndis_data_initialized;
+                //g_usbd_rndis[busid].net_filter = param->ParameterNameOffset;
+                g_usbd_rndis[busid].net_filter = *(uint32_t *)filter;
+                if (g_usbd_rndis[busid].net_filter) {
+                    g_usbd_rndis[busid].init_state = rndis_data_initialized;
                 } else {
-                    usbd_rndis_cfg.init_state = rndis_initialized;
+                    g_usbd_rndis[busid].init_state = rndis_initialized;
                 }
             }
             break;
@@ -386,56 +382,56 @@ static int rndis_set_cmd_handler(uint8_t *data, uint32_t len)
             break;
     }
 
-    rndis_notify_rsp();
+    rndis_notify_rsp(busid);
 
     return 0;
 }
 
-static int rndis_reset_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_reset_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     rndis_reset_msg_t *cmd = (rndis_reset_msg_t *)data;
     rndis_reset_cmplt_t *resp;
 
-    resp = ((rndis_reset_cmplt_t *)rndis_encapsulated_resp_buffer);
+    resp = ((rndis_reset_cmplt_t *)rndis_encapsulated_resp_buffer[busid]);
     resp->MessageType = REMOTE_NDIS_RESET_CMPLT;
     resp->MessageLength = sizeof(rndis_reset_cmplt_t);
     resp->Status = RNDIS_STATUS_SUCCESS;
     resp->AddressingReset = 1;
 
-    usbd_rndis_cfg.init_state = rndis_uninitialized;
+    g_usbd_rndis[busid].init_state = rndis_uninitialized;
 
-    rndis_notify_rsp();
+    rndis_notify_rsp(busid);
 
     return 0;
 }
 
-static int rndis_keepalive_cmd_handler(uint8_t *data, uint32_t len)
+static int rndis_keepalive_cmd_handler(uint8_t busid, uint8_t *data, uint32_t len)
 {
     rndis_keepalive_msg_t *cmd = (rndis_keepalive_msg_t *)data;
     rndis_keepalive_cmplt_t *resp;
 
-    resp = ((rndis_keepalive_cmplt_t *)rndis_encapsulated_resp_buffer);
+    resp = ((rndis_keepalive_cmplt_t *)rndis_encapsulated_resp_buffer[busid]);
     resp->RequestId = cmd->RequestId;
     resp->MessageType = REMOTE_NDIS_KEEPALIVE_CMPLT;
     resp->MessageLength = sizeof(rndis_keepalive_cmplt_t);
     resp->Status = RNDIS_STATUS_SUCCESS;
 
-    rndis_notify_rsp();
+    rndis_notify_rsp(busid);
 
     return 0;
 }
 
-static void rndis_notify_handler(uint8_t event, void *arg)
+static void rndis_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:
-            usbd_rndis_cfg.link_status = NDIS_MEDIA_STATE_DISCONNECTED;
+            g_usbd_rndis[busid].link_status = NDIS_MEDIA_STATE_DISCONNECTED;
             break;
         case USBD_EVENT_CONFIGURED:
-            g_rndis_rx_data_length = 0;
-            g_rndis_tx_data_length = 0;
-            usbd_rndis_cfg.link_status = NDIS_MEDIA_STATE_CONNECTED;
-            usbd_ep_start_read(rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
+            g_rndis_rx_data_length[busid] = 0;
+            g_rndis_tx_data_length[busid] = 0;
+            g_usbd_rndis[busid].link_status = NDIS_MEDIA_STATE_CONNECTED;
+            usbd_ep_start_read(busid, rndis_ep_data[busid][RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer[busid], sizeof(g_rndis_rx_buffer[busid]));
             break;
 
         default:
@@ -443,35 +439,35 @@ static void rndis_notify_handler(uint8_t event, void *arg)
     }
 }
 
-void rndis_bulk_out(uint8_t ep, uint32_t nbytes)
+void rndis_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     rndis_data_packet_t *hdr;
 
-    hdr = (rndis_data_packet_t *)g_rndis_rx_buffer;
-    g_rndis_rx_data_buffer = g_rndis_rx_buffer;
+    hdr = (rndis_data_packet_t *)g_rndis_rx_buffer[busid];
+    g_rndis_rx_data_buffer[busid] = g_rndis_rx_buffer[busid];
     if ((hdr->MessageType != NDIS_PACKET_TYPE_DIRECTED) || (nbytes != hdr->MessageLength)) {
-        usbd_ep_start_read(rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
+        usbd_ep_start_read(busid, rndis_ep_data[busid][RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer[busid], sizeof(g_rndis_rx_buffer[busid]));
         return;
     }
 
     /* Point to the payload and update the message length */
-    g_rndis_rx_data_buffer += hdr->DataOffset + sizeof(rndis_generic_msg_t);
-    g_rndis_rx_data_length = hdr->DataLength;
+    g_rndis_rx_data_buffer[busid] += hdr->DataOffset + sizeof(rndis_generic_msg_t);
+    g_rndis_rx_data_length[busid] = hdr->DataLength;
 
-    usbd_rndis_data_recv((uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
+    usbd_rndis_data_recv_done(busid);
 }
 
-void rndis_bulk_in(uint8_t ep, uint32_t nbytes)
+void rndis_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     if ((nbytes % RNDIS_MAX_PACKET_SIZE) == 0 && nbytes) {
         /* send zlp */
-        usbd_ep_start_write(ep, NULL, 0);
+        usbd_ep_start_write(busid, ep, NULL, 0);
     } else {
-        g_rndis_tx_data_length = 0;
+        g_rndis_tx_data_length[busid] = 0;
     }
 }
 
-void rndis_int_in(uint8_t ep, uint32_t nbytes)
+void rndis_int_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     //USB_LOG_DBG("len:%d\r\n", nbytes);
 }
@@ -479,52 +475,52 @@ void rndis_int_in(uint8_t ep, uint32_t nbytes)
 #ifdef CONFIG_USBDEV_RNDIS_USING_LWIP
 #include <lwip/pbuf.h>
 
-struct pbuf *usbd_rndis_eth_rx(void)
+struct pbuf *usbd_rndis_eth_rx(uint8_t busid)
 {
     struct pbuf *p;
 
-    if (g_rndis_rx_data_length == 0) {
+    if (g_rndis_rx_data_length[busid] == 0) {
         return NULL;
     }
-    p = pbuf_alloc(PBUF_RAW, g_rndis_rx_data_length, PBUF_POOL);
+    p = pbuf_alloc(PBUF_RAW, g_rndis_rx_data_length[busid], PBUF_POOL);
     if (p == NULL) {
         return NULL;
     }
-    memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
-    p->len = g_rndis_rx_data_length;
+    memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer[busid], g_rndis_rx_data_length[busid]);
+    p->len = g_rndis_rx_data_length[busid];
 
-    USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_data_length);
-    g_rndis_rx_data_length = 0;
-    usbd_ep_start_read(rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
+    USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_data_length[busid]);
+    g_rndis_rx_data_length[busid] = 0;
+    usbd_ep_start_read(busid, rndis_ep_data[busid][RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer[busid], sizeof(g_rndis_rx_buffer[busid]));
 
     return p;
 }
 
-int usbd_rndis_eth_tx(struct pbuf *p)
+int usbd_rndis_eth_tx(uint8_t busid, struct pbuf *p)
 {
     struct pbuf *q;
     uint8_t *buffer;
     rndis_data_packet_t *hdr;
 
-    if (usbd_rndis_cfg.link_status == NDIS_MEDIA_STATE_DISCONNECTED) {
+    if (g_usbd_rndis[busid].link_status == NDIS_MEDIA_STATE_DISCONNECTED) {
         return 0;
     }
 
-    if (g_rndis_tx_data_length > 0) {
+    if (g_rndis_tx_data_length[busid] > 0) {
         return -EBUSY;
     }
 
-    if (p->tot_len > sizeof(g_rndis_tx_buffer)) {
-        p->tot_len = sizeof(g_rndis_tx_buffer);
+    if (p->tot_len > sizeof(g_rndis_tx_buffer[busid])) {
+        p->tot_len = sizeof(g_rndis_tx_buffer[busid]);
     }
 
-    buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
+    buffer = (uint8_t *)(g_rndis_tx_buffer[busid] + sizeof(rndis_data_packet_t));
     for (q = p; q != NULL; q = q->next) {
         memcpy(buffer, q->payload, q->len);
         buffer += q->len;
     }
 
-    hdr = (rndis_data_packet_t *)g_rndis_tx_buffer;
+    hdr = (rndis_data_packet_t *)g_rndis_tx_buffer[busid];
 
     memset(hdr, 0, sizeof(rndis_data_packet_t));
     hdr->MessageType = REMOTE_NDIS_PACKET_MSG;
@@ -532,29 +528,33 @@ int usbd_rndis_eth_tx(struct pbuf *p)
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
     hdr->DataLength = p->tot_len;
 
-    g_rndis_tx_data_length = sizeof(rndis_data_packet_t) + p->tot_len;
+    g_rndis_tx_data_length[busid] = sizeof(rndis_data_packet_t) + p->tot_len;
 
-    USB_LOG_DBG("txlen:%d\r\n", g_rndis_tx_data_length);
-    return usbd_ep_start_write(rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, g_rndis_tx_buffer, g_rndis_tx_data_length);
+    USB_LOG_DBG("txlen:%d\r\n", g_rndis_tx_data_length[busid]);
+    return usbd_ep_start_write(busid, rndis_ep_data[busid][RNDIS_IN_EP_IDX].ep_addr, g_rndis_tx_buffer[busid], g_rndis_tx_data_length[busid]);
 }
 #endif
-struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
+struct usbd_interface *usbd_rndis_init_intf(uint8_t busid, struct usbd_interface *intf,
                                             const uint8_t out_ep,
                                             const uint8_t in_ep,
                                             const uint8_t int_ep, uint8_t mac[6])
 {
-    memcpy(usbd_rndis_cfg.mac, mac, 6);
+    memcpy(g_usbd_rndis[busid].mac, mac, 6);
 
-    rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr = out_ep;
-    rndis_ep_data[RNDIS_OUT_EP_IDX].ep_cb = rndis_bulk_out;
-    rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr = in_ep;
-    rndis_ep_data[RNDIS_IN_EP_IDX].ep_cb = rndis_bulk_in;
-    rndis_ep_data[RNDIS_INT_EP_IDX].ep_addr = int_ep;
-    rndis_ep_data[RNDIS_INT_EP_IDX].ep_cb = rndis_int_in;
+    g_usbd_rndis[busid].drv_version = 0x0001;
+    g_usbd_rndis[busid].link_status = NDIS_MEDIA_STATE_DISCONNECTED;
+    g_usbd_rndis[busid].speed = RNDIS_LINK_SPEED;
 
-    usbd_add_endpoint(&rndis_ep_data[RNDIS_OUT_EP_IDX]);
-    usbd_add_endpoint(&rndis_ep_data[RNDIS_IN_EP_IDX]);
-    usbd_add_endpoint(&rndis_ep_data[RNDIS_INT_EP_IDX]);
+    rndis_ep_data[busid][RNDIS_OUT_EP_IDX].ep_addr = out_ep;
+    rndis_ep_data[busid][RNDIS_OUT_EP_IDX].ep_cb = rndis_bulk_out;
+    rndis_ep_data[busid][RNDIS_IN_EP_IDX].ep_addr = in_ep;
+    rndis_ep_data[busid][RNDIS_IN_EP_IDX].ep_cb = rndis_bulk_in;
+    rndis_ep_data[busid][RNDIS_INT_EP_IDX].ep_addr = int_ep;
+    rndis_ep_data[busid][RNDIS_INT_EP_IDX].ep_cb = rndis_int_in;
+
+    usbd_add_endpoint(busid, &rndis_ep_data[busid][RNDIS_OUT_EP_IDX]);
+    usbd_add_endpoint(busid, &rndis_ep_data[busid][RNDIS_IN_EP_IDX]);
+    usbd_add_endpoint(busid, &rndis_ep_data[busid][RNDIS_INT_EP_IDX]);
 
     intf->class_interface_handler = rndis_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
@@ -562,4 +562,8 @@ struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
     intf->notify_handler = rndis_notify_handler;
 
     return intf;
+}
+
+__WEAK void usbd_rndis_data_recv_done(uint8_t busid)
+{
 }

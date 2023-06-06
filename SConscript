@@ -17,12 +17,13 @@ CPPDEFINES = []
 # USB DEVICE
 if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     src += Glob('core/usbd_core.c')
+    src += Glob('core/usbd_udc.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC']):
-        src += Glob('class/cdc/usbd_cdc.c')
+        src += Glob('class/cdc/usbd_cdc_acm.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HID']):
         src += Glob('class/hid/usbd_hid.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC']):

@@ -2,10 +2,10 @@
 #include "usb_printer.h"
 
 /*!< endpoint address */
-#define PRINTER_IN_EP          0x81
-#define PRINTER_IN_EP_SIZE     0x40
-#define PRINTER_OUT_EP         0x02
-#define PRINTER_OUT_EP_SIZE    0x40
+#define PRINTER_IN_EP       0x81
+#define PRINTER_IN_EP_SIZE  0x40
+#define PRINTER_OUT_EP      0x02
+#define PRINTER_OUT_EP_SIZE 0x40
 
 #define USBD_VID           0x5A5A
 #define USBD_PID           0xA5A5
@@ -98,16 +98,39 @@ static const uint8_t printer_descriptor[] = {
     0x00
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[PRINTER_OUT_EP_SIZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[PRINTER_IN_EP_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[CONFIG_USBDEV_MAX_BUS][PRINTER_OUT_EP_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[CONFIG_USBDEV_MAX_BUS][PRINTER_IN_EP_SIZE];
 
-void usbd_configure_done_callback(void)
+volatile bool ep_tx_busy_flag[CONFIG_USBDEV_MAX_BUS] = { 0 };
+
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    /* setup first out ep read transfer */
-    usbd_ep_start_read(PRINTER_OUT_EP, read_buffer, PRINTER_OUT_EP_SIZE);
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            /* setup first out ep read transfer */
+            usbd_ep_start_read(busid, PRINTER_OUT_EP, read_buffer, PRINTER_OUT_EP_SIZE);
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
 }
 
-void usbd_printer_bulk_out(uint8_t ep, uint32_t nbytes)
+void usbd_printer_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual out len:%d\r\n", nbytes);
     // for (int i = 0; i < 100; i++) {
@@ -115,17 +138,18 @@ void usbd_printer_bulk_out(uint8_t ep, uint32_t nbytes)
     // }
     // printf("\r\n");
     /* setup next out ep read transfer */
-    usbd_ep_start_read(PRINTER_OUT_EP, read_buffer, PRINTER_OUT_EP_SIZE);
+    usbd_ep_start_read(busid, PRINTER_OUT_EP, read_buffer[busid], PRINTER_OUT_EP_SIZE);
 }
 
-void usbd_printer_bulk_in(uint8_t ep, uint32_t nbytes)
+void usbd_printer_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
 
     if ((nbytes % PRINTER_IN_EP_SIZE) == 0 && nbytes) {
         /* send zlp */
-        usbd_ep_start_write(PRINTER_IN_EP, NULL, 0);
+        usbd_ep_start_write(busid, PRINTER_IN_EP, NULL, 0);
     } else {
+        ep_tx_busy_flag[busid] = false;
     }
 }
 
@@ -140,24 +164,23 @@ struct usbd_endpoint printer_in_ep = {
     .ep_cb = usbd_printer_bulk_in
 };
 
-struct usbd_interface intf0;
+struct usbd_interface intf0[CONFIG_USBDEV_MAX_BUS];
 
-static const uint8_t printer_device_id[] =
-{
-  0x00, 51,
-  'M','F','G',':','C','B','M',';',
-  'C','M','D',':','G','D','I',';',
-  'M','D','L',':','C','B','M','1','0','0','0',';',
-  'C','L','S',':','P','R','I','N','T','E','R',';',
-  'M','O','D','E',':','G','D','I',';'
+static const uint8_t printer_device_id[] = {
+    0x00, 51,
+    'M', 'F', 'G', ':', 'C', 'B', 'M', ';',
+    'C', 'M', 'D', ':', 'G', 'D', 'I', ';',
+    'M', 'D', 'L', ':', 'C', 'B', 'M', '1', '0', '0', '0', ';',
+    'C', 'L', 'S', ':', 'P', 'R', 'I', 'N', 'T', 'E', 'R', ';',
+    'M', 'O', 'D', 'E', ':', 'G', 'D', 'I', ';'
 };
 
-void printer_init(void)
+void printer_init(uint8_t busid)
 {
-  usbd_desc_register(printer_descriptor);
-  usbd_add_interface(usbd_printer_init_intf(&intf0, printer_device_id, sizeof(printer_device_id)));
-  usbd_add_endpoint(&printer_out_ep);
-  usbd_add_endpoint(&printer_in_ep);
+    usbd_desc_register(busid, printer_descriptor);
+    usbd_add_interface(busid, usbd_printer_init_intf(busid, &intf0[busid], printer_device_id, sizeof(printer_device_id)));
+    usbd_add_endpoint(busid, &printer_out_ep);
+    usbd_add_endpoint(busid, &printer_in_ep);
 
-  usbd_initialize();
+    usbd_initialize(busid);
 }

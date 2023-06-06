@@ -11,10 +11,16 @@
 
 #define USB_CONFIG_SIZE (9 + MSC_DESCRIPTOR_LEN)
 
+#ifdef CONFIG_USB_HS
+#define MSC_MAX_MPS 512
+#else
+#define MSC_MAX_MPS 64
+#endif
+
 const uint8_t msc_ram_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0200, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    MSC_DESCRIPTOR_INIT(0x00, MSC_OUT_EP, MSC_IN_EP, 0x02),
+    MSC_DESCRIPTOR_INIT(0x00, MSC_OUT_EP, MSC_IN_EP, MSC_MAX_MPS, 0x02),
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -89,9 +95,29 @@ const uint8_t msc_ram_descriptor[] = {
     0x00
 };
 
-void usbd_configure_done_callback(void)
+void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    /* do nothing */
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
 }
 
 #define BLOCK_SIZE  512
@@ -102,33 +128,34 @@ typedef struct
     uint8_t BlockSpace[BLOCK_SIZE];
 } BLOCK_TYPE;
 
-BLOCK_TYPE mass_block[BLOCK_COUNT];
+BLOCK_TYPE mass_block[CONFIG_USBDEV_MAX_BUS][BLOCK_COUNT];
 
-void usbd_msc_get_cap(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
+void usbd_msc_get_cap(uint8_t busid, uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
     *block_num = 1000; //Pretend having so many buffer,not has actually.
     *block_size = BLOCK_SIZE;
 }
-int usbd_msc_sector_read(uint32_t sector, uint8_t *buffer, uint32_t length)
+
+int usbd_msc_sector_read(uint8_t busid, uint32_t sector, uint8_t *buffer, uint32_t length)
 {
     if (sector < 10)
-        memcpy(buffer, mass_block[sector].BlockSpace, length);
+        memcpy(buffer, mass_block[busid][sector].BlockSpace, length);
     return 0;
 }
 
-int usbd_msc_sector_write(uint32_t sector, uint8_t *buffer, uint32_t length)
+int usbd_msc_sector_write(uint8_t busid, uint32_t sector, uint8_t *buffer, uint32_t length)
 {
     if (sector < 10)
-        memcpy(mass_block[sector].BlockSpace, buffer, length);
+        memcpy(mass_block[busid][sector].BlockSpace, buffer, length);
     return 0;
 }
 
-struct usbd_interface intf0;
+struct usbd_interface intf0[CONFIG_USBDEV_MAX_BUS];
 
-void msc_ram_init(void)
+void msc_ram_init(uint8_t busid)
 {
-    usbd_desc_register(msc_ram_descriptor);
-    usbd_add_interface(usbd_msc_init_intf(&intf0, MSC_OUT_EP, MSC_IN_EP));
+    usbd_desc_register(busid, msc_ram_descriptor);
+    usbd_add_interface(busid, usbd_msc_init_intf(busid, &intf0[busid], MSC_OUT_EP, MSC_IN_EP));
 
-    usbd_initialize();
+    usbd_initialize(busid);
 }

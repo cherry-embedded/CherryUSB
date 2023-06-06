@@ -85,7 +85,7 @@ int fputc(int ch, FILE *f)
     return ch;
 }
 
-void usb_dc_low_level_init(void)
+void usbd_udc_low_level_init(uint8_t busid)
 {
     /* Peripheral clock enable */
     __HAL_RCC_USB_CLK_ENABLE();
@@ -95,7 +95,12 @@ void usb_dc_low_level_init(void)
 
 }
 
-uint8_t *dfu_read_flash(uint8_t *src, uint8_t *dest, uint32_t len)
+void usbd_udc_low_level_deinit(uint8_t busid)
+{
+
+}
+
+uint8_t *dfu_read_flash(uint8_t busid, uint8_t *src, uint8_t *dest, uint32_t len)
 {
   uint32_t i = 0;
   uint8_t *psrc = src;
@@ -108,7 +113,7 @@ uint8_t *dfu_read_flash(uint8_t *src, uint8_t *dest, uint32_t len)
   return (uint8_t *)(dest);
 }
 
-uint16_t dfu_write_flash(uint8_t *src, uint8_t *dest, uint32_t len)
+uint16_t dfu_write_flash(uint8_t busid, uint8_t *src, uint8_t *dest, uint32_t len)
 {
   HAL_FLASH_Unlock();
   uint32_t i = 0;
@@ -136,7 +141,7 @@ uint16_t dfu_write_flash(uint8_t *src, uint8_t *dest, uint32_t len)
   return 0;
 }
 
-uint16_t dfu_erase_flash(uint32_t add)
+uint16_t dfu_erase_flash(uint8_t busid, uint32_t add)
 {
   HAL_FLASH_Unlock();
   uint32_t PageError;
@@ -151,7 +156,7 @@ uint16_t dfu_erase_flash(uint32_t add)
   return 0;
 }
 
-void dfu_leave(void)
+void dfu_leave(uint8_t busid)
 {
   NVIC_SystemReset();
 }
