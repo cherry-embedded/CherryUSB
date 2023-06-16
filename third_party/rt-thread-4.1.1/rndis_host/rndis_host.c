@@ -29,7 +29,12 @@
 /* rndis device keepalive time 5000ms*/
 #define RNDIS_DEV_KEEPALIVE_TIMEOUT 5000
 /*should be the usb Integer multiple of maximum packet length  N*64*/
-#define RNDIS_ETH_BUFFER_LEN (sizeof(struct rndis_packet_msg) + USB_ETH_MTU + 42)
+#define RNDIS_ETH_BUFFER_LEN ((sizeof(struct rndis_packet_msg) + USB_ETH_MTU + 42) * 5)
+
+struct usbh_user_rndis {
+    struct usbh_rndis *rndis_class;
+    void *user_data;
+};
 
 struct rndis_packet_msg
 {
@@ -52,7 +57,7 @@ struct rt_rndis_eth {
     /* inherit from ethernet device */
     struct eth_device parent;
 
-    struct usbh_rndis *rndis_class;
+    struct usbh_user_rndis *rndis_class;
     rt_mutex_t rndis_mutex;
     /* interface address info */
     rt_uint8_t dev_addr[MAX_ADDR_LEN];
@@ -61,10 +66,7 @@ struct rt_rndis_eth {
     rt_uint32_t res32;
 
     rt_uint8_t tx_buffer[RNDIS_ETH_BUFFER_LEN];
-    rt_uint8_t rx_bufferA[RNDIS_ETH_BUFFER_LEN];
-    rt_uint8_t rx_bufferB[RNDIS_ETH_BUFFER_LEN];
-    rt_size_t rx_lengthA;
-    rt_size_t rx_lengthB;
+    rt_uint8_t rx_buffer[RNDIS_ETH_BUFFER_LEN];
     rt_uint8_t *rx_buf_ptr;
     rt_uint32_t frame_debug;
     rt_uint32_t send_packet_counter;
@@ -75,6 +77,9 @@ struct rt_rndis_eth {
     rt_timer_t keepalive_timer;
 };
 typedef struct rt_rndis_eth *rt_rndis_eth_t;
+
+struct usbh_user_rndis *g_user_rndis;
+USB_NOCACHE_RAM_SECTION struct rt_rndis_eth usbh_rndis_eth_device;
 
 void hex_data_print(const char *name, const rt_uint8_t *buf, rt_size_t size)
 {
@@ -121,8 +126,6 @@ void hex_data_print(const char *name, const rt_uint8_t *buf, rt_size_t size)
 #define RNDIS_DEV_PRINTF(...)
 #endif /* RNDIS_DEBUG */
 
-static struct rt_rndis_eth usbh_rndis_eth_device;
-
 /**
  * This function send the rndis data.
  *
@@ -130,7 +133,7 @@ static struct rt_rndis_eth usbh_rndis_eth_device;
  *
  * @return the error code, RT_EOK on successfully.
  */
-static rt_err_t rt_rndis_msg_data_send(struct usbh_rndis *rndis_class, rt_uint8_t *buffer, int nbytes)
+static rt_err_t rt_rndis_msg_data_send(struct usbh_user_rndis *rndis_class, rt_uint8_t *buffer, int nbytes)
 {
     int ret = 0;
 
@@ -141,17 +144,12 @@ static rt_err_t rt_rndis_msg_data_send(struct usbh_rndis *rndis_class, rt_uint8_
     rt_rndis_eth_t info = RT_NULL;
 
     info = (rt_rndis_eth_t)rndis_class->user_data;
-
-    ret = usbh_rndis_bulk_out_transfer(rndis_class, buffer, nbytes, 5000);
+    rt_mutex_take(usbh_rndis_eth_device.rndis_mutex, RT_WAITING_FOREVER);
+    ret = usbh_rndis_bulk_out_transfer(rndis_class->rndis_class, buffer, nbytes, 5000);
+    rt_mutex_release(usbh_rndis_eth_device.rndis_mutex);
     if (ret != nbytes) {
         rt_kprintf("rndis msg send fial\r\n");
     }
-    rt_mutex_take(usbh_rndis_eth_device.rndis_mutex, RT_WAITING_FOREVER);
-    if (info->keepalive_timer) {
-        rt_timer_start(info->keepalive_timer);
-    }
-    rt_mutex_release(usbh_rndis_eth_device.rndis_mutex);
-
     return ret;
 }
 
@@ -162,24 +160,14 @@ static rt_err_t rt_rndis_msg_data_send(struct usbh_rndis *rndis_class, rt_uint8_
  *
  * @return the error code, RT_EOK on successfully.
  */
-static rt_err_t rndis_msg_data_recv(struct usbh_rndis *rndis_class, rt_uint8_t *buffer, int nbytes)
+static rt_err_t rndis_msg_data_recv(struct usbh_user_rndis *rndis_class, rt_uint8_t *buffer, int nbytes)
 {
     int ret = 0;
 
     if (rndis_class == RT_NULL) {
         return -RT_ERROR;
     }
-
-    rt_rndis_eth_t info = RT_NULL;
-
-    info = (rt_rndis_eth_t)rndis_class->user_data;
-
-    ret = usbh_rndis_bulk_in_transfer(rndis_class, buffer, nbytes, 3);
-    rt_mutex_take(usbh_rndis_eth_device.rndis_mutex, RT_WAITING_FOREVER);
-    if (info->keepalive_timer) {
-        rt_timer_start(info->keepalive_timer);
-    }
-    rt_mutex_release(usbh_rndis_eth_device.rndis_mutex);
+    ret = usbh_rndis_bulk_in_transfer(rndis_class->rndis_class, buffer, nbytes, RT_WAITING_FOREVER);
 
     return ret;
 }
@@ -191,9 +179,9 @@ static rt_err_t rndis_msg_data_recv(struct usbh_rndis *rndis_class, rt_uint8_t *
  *
  * @return the error code, RT_EOK on successfully.
  */
-static rt_err_t rt_rndis_keepalive_msg(struct usbh_rndis *rndis_class)
+static rt_err_t rt_rndis_keepalive_msg(struct usbh_user_rndis *rndis_class)
 {
-    return usbh_rndis_keepalive(rndis_class);
+    return usbh_rndis_keepalive(rndis_class->rndis_class);
 }
 
 /**
@@ -209,108 +197,70 @@ static rt_err_t rt_rndis_keepalive_msg(struct usbh_rndis *rndis_class)
 void rt_usbh_rndis_data_recv_entry(void *pdata)
 {
     int ret = 0;
-    struct usbh_rndis *rndis_class = (struct usbh_rndis *)pdata;
+    struct usbh_user_rndis *rndis_class = (struct usbh_user_rndis *)pdata;
     rt_rndis_eth_t device = RT_NULL;
-    rndis_packet_msg_t pmsg = RT_NULL;
     device = (rt_rndis_eth_t)rndis_class->user_data;
+    err_t err;
+    struct pbuf *p;
+    rndis_data_packet_t *pmsg;
+    int pmg_offset;
+    int payload_offset;
 
     if ((pdata == RT_NULL) || (rndis_class == RT_NULL) ||
         (device == RT_NULL)) {
         return;
     }
 
+    device->rx_buf_ptr = device->rx_buffer;
+
     while (1) {
-        ret = rndis_msg_data_recv(rndis_class, device->rx_buf_ptr, RNDIS_ETH_BUFFER_LEN);
-        if (ret > 0) {
-            pmsg = (rndis_packet_msg_t)device->rx_buf_ptr;
-
-            if (device->frame_debug == RT_TRUE) {
-                hex_data_print("rndis eth rx", device->rx_buf_ptr, ret);
-            }
-            if (device->rx_buf_ptr == device->rx_bufferA) {
-                if (device->rx_lengthA) {
-                    RNDIS_DEV_PRINTF("Rndis deivce rx bufferA overwrite!\n");
-                }
-                device->rx_lengthA = ret;
-                device->rx_buf_ptr = device->rx_bufferB;
-            } else {
-                if (device->rx_lengthB) {
-                    RNDIS_DEV_PRINTF("Rndis deivce rx bufferB overwrite!\n");
-                }
-                device->rx_lengthB = ret;
-                device->rx_buf_ptr = device->rx_bufferA;
-            }
-
-            if ((pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) && (pmsg->MessageLength == ret)) {
-                device->recv_packet_counter++;
-                eth_device_ready((struct eth_device *)device);
-            } else {
-                RNDIS_DEV_PRINTF("Rndis deivce recv data error!\n");
-            }
+        pmg_offset = 0;
+        payload_offset = 0;
+        ret = usbh_rndis_bulk_in_transfer(rndis_class->rndis_class, device->rx_buf_ptr, RNDIS_ETH_BUFFER_LEN, RT_WAITING_FOREVER);
+        if (ret <= 0) {
+            rt_thread_mdelay(1);
+            continue;
         }
-
-        if (ret == 0) {
-            ret = 0;
-            rt_thread_mdelay(10);
-        } else {
-            ret -= 1;
-            device->recv_packet_counter += 0;
-            rt_thread_mdelay(10);
+        while (ret > 0) {
+            pmsg = (rndis_data_packet_t *)(device->rx_buf_ptr + pmg_offset);
+            if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) {
+                /* allocate buffer */
+                p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, PBUF_POOL);
+                if (p != NULL) {
+                    struct pbuf *q;
+                    for (q = p; q != NULL; q = q->next) {
+                        /* Copy the received frame into buffer from memory pointed by the current ETHERNET DMA Rx descriptor */
+                        memcpy(q->payload, ((uint8_t *)(&pmsg->DataOffset) + pmsg->DataOffset + payload_offset), q->len);
+                        payload_offset += q->len;
+                    }
+                    /* entry point to the LwIP stack */
+                    /* notify to upper layer */
+                    if(device->parent.netif->input(p, device->parent.netif)!= ERR_OK )
+                    {
+                        LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: Input error\n"));
+                        pbuf_free(p);
+                        p = NULL;
+                    }
+                    pmg_offset += pmsg->MessageLength;
+                    ret -= pmsg->MessageLength;
+                }
+            }
         }
     }
 }
 
-/**
- * This function power off the rndis device and power up it again.
- *
- * @rndis_class intf the usb interface instance.
- *
- * @return the error code, RT_EOK on successfully.
- */
-static rt_err_t rt_rndis_dev_power(struct usbh_rndis *rndis_class, rt_uint32_t time)
-{
-    /*power off the rndis device*/
-    // rt_usbh_hub_clear_port_feature(intf->device->parent_hub, intf->device->port, PORT_FEAT_POWER);
-    // if(time)
-    // {
-    //     rt_thread_mdelay(time);
-    //     /*power up the rndis device */
-    //     rt_usbh_hub_set_port_feature(intf->device->parent_hub, intf->device->port, PORT_FEAT_POWER);
-    // }
-
-    return RT_EOK;
-}
-
 void rt_rndis_dev_keepalive_timeout(void *pdata)
 {
-    struct usbh_rndis *rndis_class = (struct usbh_rndis *)pdata;
+    struct usbh_user_rndis *rndis_class = (struct usbh_user_rndis *)pdata;
     static rt_uint32_t keepalive_error = 0;
 
     if (rndis_class == RT_NULL) {
         return;
     }
 
-    rt_rndis_eth_t info = RT_NULL;
-
-    info = (rt_rndis_eth_t)rndis_class->user_data;
-
-    if (RT_EOK == rt_rndis_keepalive_msg(rndis_class)) {
-        RNDIS_DEV_PRINTF("rndis dev keepalive success!\n");
-        keepalive_error = 0;
-        rt_mutex_take(usbh_rndis_eth_device.rndis_mutex, RT_WAITING_FOREVER);
-        if (info->keepalive_timer) {
-            rt_timer_start(info->keepalive_timer);
-        }
-        rt_mutex_release(usbh_rndis_eth_device.rndis_mutex);
-    } else {
-        keepalive_error++;
-        RNDIS_DEV_PRINTF("rndis dev keepalive timeout!\n");
-        if (keepalive_error > 3) {
-            keepalive_error = 0;
-            rt_rndis_dev_power(rndis_class, RNDIS_DEV_POWER_OFF_TIME);
-            info->rndis_state = RNDIS_BUS_INITIALIZED;
-        }
-    }
+    rt_mutex_take(usbh_rndis_eth_device.rndis_mutex, RT_WAITING_FOREVER);
+    rt_rndis_keepalive_msg(rndis_class);
+    rt_mutex_release(usbh_rndis_eth_device.rndis_mutex);
 }
 
 /**
@@ -320,7 +270,7 @@ void rt_rndis_dev_keepalive_timeout(void *pdata)
  *
  * @return the error code, RT_EOK on successfully.
  */
-rt_err_t rt_rndis_run(struct usbh_rndis *rndis_class, struct rndis_dev_info *dev_info)
+rt_err_t rt_rndis_run(struct usbh_user_rndis *rndis_class)
 {
     rt_err_t ret = 0;
     // urndis_t rndis = RT_NULL;
@@ -344,20 +294,20 @@ rt_err_t rt_rndis_run(struct usbh_rndis *rndis_class, struct rndis_dev_info *dev
     usbh_rndis_eth_device.keepalive_timer = rt_timer_create("keeplive", rt_rndis_dev_keepalive_timeout,
                                                             rndis_class,
                                                             RT_TICK_PER_SECOND * RNDIS_DEV_KEEPALIVE_TIMEOUT / 1000,
-                                                            RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
+                                                            RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
 
     if (usbh_rndis_eth_device.keepalive_timer == RT_NULL) {
         ret = -RT_ENOMEM;
         goto __exit;
     }
-
+    rt_timer_start(usbh_rndis_eth_device.keepalive_timer);
     rndis_class->user_data = (struct rt_device *)&usbh_rndis_eth_device;
 
     usbh_rndis_eth_device.rndis_recv = rt_thread_create("rndis",
                                                         (void (*)(void *parameter))rt_usbh_rndis_data_recv_entry,
                                                         rndis_class,
                                                         1024 + 512,
-                                                        15,
+                                                        5,
                                                         20);
 
     if (usbh_rndis_eth_device.rndis_recv == RT_NULL) {
@@ -366,12 +316,12 @@ rt_err_t rt_rndis_run(struct usbh_rndis *rndis_class, struct rndis_dev_info *dev
     }
 
     /*the LINK SPEED is 100Mbps*/
-    usbh_rndis_eth_device.rndis_speed = dev_info->rndis_speed;
+    usbh_rndis_eth_device.rndis_speed = rndis_class->rndis_class->link_speed;
 
-    eth_device_linkchange(&usbh_rndis_eth_device.parent, dev_info->up);
+    eth_device_linkchange(&usbh_rndis_eth_device.parent, rndis_class->rndis_class->link_status);
 
     for (j = 0; j < MAX_ADDR_LEN; j++) {
-        usbh_rndis_eth_device.dev_addr[j] = dev_info->dev_addr[j];
+        usbh_rndis_eth_device.dev_addr[j] = rndis_class->rndis_class->mac[j];
     }
 
     /* update the mac addr to netif interface */
@@ -397,14 +347,23 @@ __exit:
 
     } else {
         RNDIS_DEV_PRINTF("rndis dev faile!\n");
-        /*rndis device run error, power off the device, try it agin*/
-        rt_rndis_dev_power(rndis_class, RNDIS_DEV_POWER_OFF_TIME);
     }
 
     return ret;
 }
 
-rt_err_t rt_rndis_stop(struct usbh_rndis *rndis_class)
+void usbh_rndis_run(struct usbh_rndis *rndis_class)
+{
+    g_user_rndis = usb_malloc(sizeof(struct usbh_user_rndis));
+    RT_ASSERT(g_user_rndis != RT_NULL);
+    g_user_rndis->rndis_class = rndis_class;
+    if (rt_rndis_run(g_user_rndis) == RT_EOK) {
+        eth_device_init(&usbh_rndis_eth_device.parent, RNDIS_NET_DEV_NAME);
+        eth_device_linkchange(&usbh_rndis_eth_device.parent, RT_FALSE);
+    }
+}
+
+rt_err_t rt_rndis_stop(struct usbh_user_rndis *rndis_class)
 {
     rt_rndis_eth_t info = RT_NULL;
 
@@ -432,6 +391,12 @@ rt_err_t rt_rndis_stop(struct usbh_rndis *rndis_class)
     return RT_EOK;
 }
 
+void usbh_rndis_stop(struct usbh_rndis *rndis_class)
+{
+    RT_ASSERT(g_user_rndis != RT_NULL);
+    rt_rndis_stop(g_user_rndis);
+    usb_free(g_user_rndis);
+}
 /**
  * This function rndis eth device.
  *
@@ -480,21 +445,6 @@ static rt_err_t rt_rndis_eth_control(rt_device_t dev, int cmd, void *args)
             }
             break;
 
-        case NIOTCTL_GTXCOUNTER:
-            if (args) {
-                *(rt_uint32_t *)args = rndis_eth_dev->send_packet_counter;
-            } else {
-                return -RT_ERROR;
-            }
-            break;
-
-        case NIOTCTL_GRXCOUNTER:
-            if (args) {
-                *(rt_uint32_t *)args = rndis_eth_dev->recv_packet_counter;
-            } else {
-                return -RT_ERROR;
-            }
-            break;
         default:
             break;
     }
@@ -504,52 +454,12 @@ static rt_err_t rt_rndis_eth_control(rt_device_t dev, int cmd, void *args)
 
 /* ethernet device interface */
 
-/* reception packet. */
-struct pbuf *rt_rndis_eth_rx(rt_device_t dev)
-{
-    struct pbuf *p = RT_NULL;
-    rt_uint32_t offset = 0;
-    rt_rndis_eth_t device = (rt_rndis_eth_t)dev;
-    rt_uint32_t recv_len = 0;
-
-    rndis_packet_msg_t pmsg = RT_NULL;
-
-    if (device->rx_buf_ptr == device->rx_bufferA) {
-        pmsg = (rndis_packet_msg_t)device->rx_bufferB;
-        recv_len = device->rx_lengthB;
-    } else {
-        pmsg = (rndis_packet_msg_t)device->rx_bufferA;
-        recv_len = device->rx_lengthA;
-    }
-
-    if ((recv_len == 0) || (pmsg->DataLength == 0)) {
-        return RT_NULL;
-    }
-
-    /* allocate buffer */
-    p = pbuf_alloc(PBUF_LINK, pmsg->DataLength, PBUF_RAM);
-    if (p != RT_NULL) {
-        struct pbuf *q;
-
-        for (q = p; q != RT_NULL; q = q->next) {
-            /* Copy the received frame into buffer from memory pointed by the current ETHERNET DMA Rx descriptor */
-            rt_memcpy(q->payload,
-                      (rt_uint8_t *)((pmsg->data) + offset),
-                      q->len);
-            offset += q->len;
-        }
-    }
-
-    if (device->rx_buf_ptr == device->rx_bufferA) {
-        device->rx_lengthB = 0;
-    } else {
-        device->rx_lengthA = 0;
-    }
-
-    return p;
-}
 
 /* transmit packet. */
+extern int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
+                                         uint32_t oid, uint32_t query_len,
+                                         uint8_t *info, uint32_t *info_len);
+
 rt_err_t rt_rndis_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     struct pbuf *q;
@@ -557,9 +467,36 @@ rt_err_t rt_rndis_eth_tx(rt_device_t dev, struct pbuf *p)
     rt_err_t result = RT_EOK;
     rt_rndis_eth_t device = (rt_rndis_eth_t)dev;
     rndis_packet_msg_t msg = RT_NULL;
+    int recount = 5;
+    int ret;
+    uint8_t data[4];
+    uint32_t info_len = 0;
 
     if (!device->parent.link_status) {
+        while (RT_TRUE) {
+            if (device->rndis_class == RT_NULL) {
+                rt_thread_delay(1000);
+                continue;
+            }
+            break;
+        }
         RNDIS_DEV_PRINTF("linkdown, drop pkg\r\n");
+        while(recount--) {
+            ret = usbh_rndis_query_msg_transfer(device->rndis_class->rndis_class, OID_GEN_MEDIA_CONNECT_STATUS, sizeof(data), data, &info_len);
+            if (ret < 0) {
+                return -EBUSY;
+            }
+            if (NDIS_MEDIA_STATE_CONNECTED == data[0]) {
+                device->rndis_class->rndis_class->link_status = true;
+                eth_device_linkchange(&usbh_rndis_eth_device.parent, RT_TRUE);
+                RNDIS_DEV_PRINTF("linkup, drop pkg\r\n");
+                break;
+            } else {
+                device->rndis_class->rndis_class->link_status = false;
+                eth_device_linkchange(&usbh_rndis_eth_device.parent, RT_FALSE);
+            }
+            rt_thread_delay(100);
+        }
         return RT_EOK;
     }
 
@@ -616,6 +553,11 @@ const static struct rt_device_ops rndis_device_ops = {
 #endif
 #endif
 
+__WEAK void lowlevel_usb_init(void)
+{
+
+}
+
 int usbh_rndis_eth_device_init(void)
 {
     /* OUI 00-00-00, only for test. */
@@ -645,21 +587,18 @@ int usbh_rndis_eth_device_init(void)
 #endif
     usbh_rndis_eth_device.parent.parent.user_data = RT_NULL;
 
-    usbh_rndis_eth_device.parent.eth_rx = rt_rndis_eth_rx;
+    usbh_rndis_eth_device.parent.eth_rx = RT_NULL;
     usbh_rndis_eth_device.parent.eth_tx = rt_rndis_eth_tx;
 
     /* register eth device */
-    usbh_rndis_eth_device.rx_lengthA = 0;
-    usbh_rndis_eth_device.rx_lengthB = 0;
-    usbh_rndis_eth_device.rx_buf_ptr = usbh_rndis_eth_device.rx_bufferA;
+    usbh_rndis_eth_device.rx_buf_ptr = usbh_rndis_eth_device.rx_buffer;
     usbh_rndis_eth_device.frame_debug = RT_FALSE;
 
     usbh_rndis_eth_device.send_packet_counter = 0;
     usbh_rndis_eth_device.recv_packet_counter = 0;
 
-    eth_device_init(&usbh_rndis_eth_device.parent, RNDIS_NET_DEV_NAME);
+    lowlevel_usb_init();
 
-    eth_device_linkchange(&usbh_rndis_eth_device.parent, RT_FALSE);
     return RT_EOK;
 }
 INIT_APP_EXPORT(usbh_rndis_eth_device_init);
