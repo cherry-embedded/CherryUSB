@@ -14,15 +14,6 @@
 #define RNDIS_DATA_INITIALIZED      3
 
 #define USB_ETH_MTU               1500 + 14
-#define RNDIS_MESSAGE_BUFFER_SIZE 128
-#define RNDIS_INFO_BUFFER_OFFSET  20
-
-// #define RESPONSE_AVAILABLE              0x00000001
-
-/* rndis device power off time, unit:ms, 0:power off always */
-#ifndef RNDIS_DEV_POWER_OFF_TIME
-#define RNDIS_DEV_POWER_OFF_TIME 0
-#endif
 
 #define RNDIS_NET_DEV_NAME "u0"
 #define MAX_ADDR_LEN       6
@@ -273,15 +264,7 @@ void rt_rndis_dev_keepalive_timeout(void *pdata)
 rt_err_t rt_rndis_run(struct usbh_user_rndis *rndis_class)
 {
     rt_err_t ret = 0;
-    // urndis_t rndis = RT_NULL;
-    rt_uint8_t *recv_buf = RT_NULL;
-    rt_uint32_t recv_len = 256;
-    rt_uint32_t *psupport_oid_list = RT_NULL;
-    rt_uint32_t *poid = RT_NULL;
-    rt_uint32_t *pquery_rlt = RT_NULL;
     rt_uint32_t i = 0, j = 0;
-    rt_uint32_t oid_len = 0;
-    struct netdev *netdev = RT_NULL;
 
     /* check parameter */
     RT_ASSERT(rndis_class != RT_NULL);
@@ -322,15 +305,6 @@ rt_err_t rt_rndis_run(struct usbh_user_rndis *rndis_class)
 
     for (j = 0; j < MAX_ADDR_LEN; j++) {
         usbh_rndis_eth_device.dev_addr[j] = rndis_class->rndis_class->mac[j];
-    }
-
-    /* update the mac addr to netif interface */
-    rt_device_control((rt_device_t)&usbh_rndis_eth_device.parent, NIOCTL_GADDR,
-                      usbh_rndis_eth_device.parent.netif->hwaddr);
-
-    netdev = netdev_get_by_name(RNDIS_NET_DEV_NAME);
-    if (netdev) {
-        rt_memcpy(netdev->hwaddr, recv_buf, MAX_ADDR_LEN);
     }
 
 __exit:
