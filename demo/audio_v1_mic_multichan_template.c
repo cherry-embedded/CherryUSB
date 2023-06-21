@@ -145,19 +145,40 @@ const uint8_t audio_v1_descriptor[] = {
     0x00
 };
 
-void usbd_configure_done_callback(void)
-{
-    /* no out ep, do nothing */
-}
-
 volatile bool tx_flag = 0;
 volatile bool ep_tx_busy_flag = false;
+
+void usbd_event_handler(uint8_t event)
+{
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
+}
 
 void usbd_audio_open(uint8_t intf)
 {
     tx_flag = 1;
     USB_LOG_RAW("OPEN\r\n");
 }
+
 void usbd_audio_close(uint8_t intf)
 {
     USB_LOG_RAW("CLOSE\r\n");

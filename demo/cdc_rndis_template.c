@@ -110,11 +110,6 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
 struct eth_device rndis_dev;
 
-void usbd_configure_done_callback(void)
-{
-    eth_device_linkchange(&rndis_dev, RT_TRUE);
-}
-
 static rt_err_t rt_usbd_rndis_control(rt_device_t dev, int cmd, void *args)
 {
     switch (cmd) {
@@ -161,10 +156,6 @@ void rt_usbd_rndis_init(void)
     eth_device_linkchange(&rndis_dev, RT_FALSE);
 }
 #else
-void usbd_configure_done_callback(void)
-{
-}
-
 #include "lwip/err.h"
 #include "lwip/netif.h"
 #include "netif/ethernet.h"
@@ -259,6 +250,34 @@ void rndis_input_poll(void)
     rndisif_input(&rndis_netif);
 }
 #endif /* RT_USING_LWIP */
+
+void usbd_event_handler(uint8_t event)
+{
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+#ifdef RT_USING_LWIP
+            eth_device_linkchange(&rndis_dev, RT_TRUE);
+#endif
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
+}
 
 struct usbd_interface intf0;
 struct usbd_interface intf1;

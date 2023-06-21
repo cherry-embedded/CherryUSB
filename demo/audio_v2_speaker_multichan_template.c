@@ -173,6 +173,31 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[AUDIO_OUT_PACKET];
 
 volatile bool rx_flag = 0;
 
+void usbd_event_handler(uint8_t event)
+{
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
+}
+
 void usbd_audio_open(uint8_t intf)
 {
     rx_flag = 1;
@@ -180,6 +205,7 @@ void usbd_audio_open(uint8_t intf)
     usbd_ep_start_read(AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
     USB_LOG_RAW("OPEN\r\n");
 }
+
 void usbd_audio_close(uint8_t intf)
 {
     USB_LOG_RAW("CLOSE\r\n");
@@ -191,10 +217,6 @@ void usbd_audio_get_sampling_freq_table(uint8_t ep, uint8_t **sampling_freq_tabl
     if (ep == AUDIO_OUT_EP) {
         *sampling_freq_table = (uint8_t *)default_sampling_freq_table;
     }
-}
-
-void usbd_configure_done_callback(void)
-{
 }
 
 void usbd_audio_iso_out_callback(uint8_t ep, uint32_t nbytes)

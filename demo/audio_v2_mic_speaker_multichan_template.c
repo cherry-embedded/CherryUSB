@@ -229,6 +229,31 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[AUDIO_IN_PACKET];
 volatile bool tx_flag = 0;
 volatile bool rx_flag = 0;
 
+void usbd_event_handler(uint8_t event)
+{
+    switch (event) {
+        case USBD_EVENT_RESET:
+            break;
+        case USBD_EVENT_CONNECTED:
+            break;
+        case USBD_EVENT_DISCONNECTED:
+            break;
+        case USBD_EVENT_RESUME:
+            break;
+        case USBD_EVENT_SUSPEND:
+            break;
+        case USBD_EVENT_CONFIGURED:
+            break;
+        case USBD_EVENT_SET_REMOTE_WAKEUP:
+            break;
+        case USBD_EVENT_CLR_REMOTE_WAKEUP:
+            break;
+
+        default:
+            break;
+    }
+}
+
 void usbd_audio_open(uint8_t intf)
 {
     if (intf == 1) {
@@ -241,6 +266,7 @@ void usbd_audio_open(uint8_t intf)
         USB_LOG_RAW("OPEN2\r\n");
     }
 }
+
 void usbd_audio_close(uint8_t intf)
 {
     if (intf == 1) {
@@ -274,10 +300,6 @@ void usbd_audio_set_sampling_freq(uint8_t ep, uint32_t sampling_freq)
         audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 11] = packet_size;
         audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 10] = packet_size >> 8;
     }
-}
-
-void usbd_configure_done_callback(void)
-{
 }
 
 void usbd_audio_iso_out_callback(uint8_t ep, uint32_t nbytes)

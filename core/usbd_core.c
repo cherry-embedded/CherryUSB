@@ -1301,7 +1301,6 @@ __WEAK void usbd_event_handler(uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
-            usbd_configure_done_callback();
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
