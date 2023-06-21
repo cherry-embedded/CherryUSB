@@ -535,10 +535,50 @@ __WEAK void usb_dc_low_level_deinit(void)
 int usb_dc_init(void)
 {
     int ret;
+    uint8_t fsphy_type;
+    uint8_t hsphy_type;
+    uint8_t dma_support;
+    uint8_t endpoints;
 
     memset(&g_dwc2_udc, 0, sizeof(struct dwc2_udc));
 
     usb_dc_low_level_init();
+
+    /*
+        Full-Speed PHY Interface Type (FSPhyType)
+        2'b00: Full-speed interface not supported
+        2'b01: Dedicated full-speed interface
+        2'b10: FS pins shared with UTMI+ pins
+        2'b11: FS pins shared with ULPI pins
+
+        High-Speed PHY Interface Type (HSPhyType)
+        2'b00: High-Speed interface not supported
+        2'b01: UTMI+
+        2'b10: ULPI
+        2'b11: UTMI+ and ULPI
+
+        Architecture (OtgArch)
+        2'b00: Slave-Only
+        2'b01: External DMA
+        2'b10: Internal DMA
+        Others: Reserved
+    */
+    fsphy_type = ((USB_OTG_GLB->GHWCFG2 & (0x03 << 8)) >> 8);
+    hsphy_type = ((USB_OTG_GLB->GHWCFG2 & (0x03 << 6)) >> 6);
+    dma_support = ((USB_OTG_GLB->GHWCFG2 & (0x03 << 3)) >> 3);
+    endpoints = ((USB_OTG_GLB->GHWCFG2 & (0x0f << 10)) >> 10) + 1;
+
+    USB_LOG_INFO("========== dwc2 udc params ==========\r\n");
+    USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
+    USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
+    USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
+    USB_LOG_INFO("GHWCFG2:%08x\r\n", USB_OTG_GLB->GHWCFG2);
+    USB_LOG_INFO("GHWCFG3:%08x\r\n", USB_OTG_GLB->GHWCFG3);
+    USB_LOG_INFO("GHWCFG4:%08x\r\n", USB_OTG_GLB->GHWCFG4);
+
+    USB_LOG_INFO("dwc2 fsphy type:%d, hsphy type:%d, dma support:%d\r\n", fsphy_type, hsphy_type, dma_support);
+    USB_LOG_INFO("dwc2 has %d endpoints, default config: %d endpoints\r\n", endpoints, USB_NUM_BIDIR_ENDPOINTS);
+    USB_LOG_INFO("=================================\r\n");
 
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
