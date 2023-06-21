@@ -200,17 +200,18 @@ void usbd_winusb_out(uint8_t ep, uint32_t nbytes)
     //     printf("%02x ", read_buffer[i]);
     // }
     // printf("\r\n");
+	usbd_ep_start_write(WINUSB_IN_EP, read_buffer, nbytes);
     /* setup next out ep read transfer */
-    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
+    usbd_ep_start_read(WINUSB_OUT_EP, read_buffer, 2048);
 }
 
 void usbd_winusb_in(uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
 
-    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+    if ((nbytes % WINUSB_EP_MPS) == 0 && nbytes) {
         /* send zlp */
-        usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+        usbd_ep_start_write(WINUSB_IN_EP, NULL, 0);
     } else {
         ep_tx_busy_flag = false;
     }
