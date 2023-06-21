@@ -16,7 +16,7 @@ enum Stage {
     MTP_WAIT_RESPONSE = 4,
 };
 
-USB_NOCACHE_RAM_SECTION struct usbd_mtp {
+USB_NOCACHE_RAM_SECTION struct usbd_mtp_priv {
     USB_MEM_ALIGNX struct mtp_container_command con_command;
     USB_MEM_ALIGNX struct mtp_container_data con_data;
     USB_MEM_ALIGNX struct mtp_container_response con_response;

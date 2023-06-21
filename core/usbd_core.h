@@ -46,15 +46,12 @@ typedef int (*usbd_request_handler)(struct usb_setup_packet *setup, uint8_t **da
 typedef void (*usbd_endpoint_callback)(uint8_t ep, uint32_t nbytes);
 typedef void (*usbd_notify_handler)(uint8_t event, void *arg);
 
-extern usb_slist_t usbd_intf_head;
-
 struct usbd_endpoint {
     uint8_t ep_addr;
     usbd_endpoint_callback ep_cb;
 };
 
 struct usbd_interface {
-    usb_slist_t list;
     usbd_request_handler class_interface_handler;
     usbd_request_handler class_endpoint_handler;
     usbd_request_handler vendor_handler;
