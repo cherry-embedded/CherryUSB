@@ -204,11 +204,14 @@ void hid_keyboard_init(void)
     usbd_initialize();
 }
 
-void hid_keyboard_test(void)
-{
-    uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 }; //A
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[64];
 
-    int ret = usbd_ep_start_write(HID_INT_EP, sendbuffer, 8);
+void hid_keyboard_test(uint8_t busid)
+{
+    const uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    memcpy(write_buffer, sendbuffer, 8);
+    int ret = usbd_ep_start_write(HID_INT_EP, write_buffer, 8);
     if (ret < 0) {
         return;
     }

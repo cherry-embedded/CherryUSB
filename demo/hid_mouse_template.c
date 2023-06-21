@@ -186,7 +186,7 @@ struct hid_mouse {
 };
 
 /*!< mouse report */
-static struct hid_mouse mouse_cfg;
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct hid_mouse mouse_cfg;
 
 #define HID_STATE_IDLE 0
 #define HID_STATE_BUSY 1

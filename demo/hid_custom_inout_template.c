@@ -158,7 +158,8 @@ static const uint8_t hid_custom_report_desc[HID_CUSTOM_REPORT_DESC_SIZE] = {
     0xC0 /*     END_COLLECTION	             */
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[64];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[64];
 
 #define HID_STATE_IDLE 0
 #define HID_STATE_BUSY 1
@@ -208,9 +209,10 @@ void hid_custom_keyboard_init(void)
 
 void hid_custom_test(void)
 {
-    uint8_t sendbuffer[64] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    const uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-    int ret = usbd_ep_start_write(HIDRAW_IN_EP, sendbuffer, 8);
+    memcpy(write_buffer, sendbuffer, 8);
+    int ret = usbd_ep_start_write(HIDRAW_IN_EP, write_buffer, 8);
     if (ret < 0) {
         return;
     }

@@ -101,6 +101,8 @@ static const uint8_t cdc_descriptor[] = {
     0x00
 };
 
+const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+
 #ifdef RT_USING_LWIP
 #include <rtthread.h>
 #include <rtdevice.h>
@@ -112,8 +114,6 @@ void usbd_configure_done_callback(void)
 {
     eth_device_linkchange(&rndis_dev, RT_TRUE);
 }
-
-uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
 static rt_err_t rt_usbd_rndis_control(rt_device_t dev, int cmd, void *args)
 {
@@ -145,7 +145,7 @@ rt_err_t rt_usbd_rndis_eth_tx(rt_device_t dev, struct pbuf *p)
     return usbd_rndis_eth_tx(p);
 }
 
-void usbd_rndis_data_recv(uint8_t *data, uint32_t len)
+void usbd_rndis_data_recv_done(void)
 {
     eth_device_ready(&rndis_dev);
 }
@@ -165,6 +165,99 @@ void usbd_configure_done_callback(void)
 {
 }
 
+#include "lwip/err.h"
+#include "lwip/netif.h"
+#include "netif/ethernet.h"
+#include "netif/etharp.h"
+
+/*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
+#define IP_ADDR0      (uint8_t)192
+#define IP_ADDR1      (uint8_t)168
+#define IP_ADDR2      (uint8_t)123
+#define IP_ADDR3      (uint8_t)100
+
+/*NETMASK*/
+#define NETMASK_ADDR0 (uint8_t)255
+#define NETMASK_ADDR1 (uint8_t)255
+#define NETMASK_ADDR2 (uint8_t)255
+#define NETMASK_ADDR3 (uint8_t)0
+
+/*Gateway Address*/
+#define GW_ADDR0      (uint8_t)192
+#define GW_ADDR1      (uint8_t)168
+#define GW_ADDR2      (uint8_t)123
+#define GW_ADDR3      (uint8_t)1
+
+static struct netif rndis_netif; //network interface
+
+const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+
+/* Network interface name */
+#define IFNAME0       'C'
+#define IFNAME1       'R'
+
+err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
+{
+    static int ret;
+    ret = usbd_rndis_eth_tx(0, p);
+
+    if (ret == 0)
+        return ERR_OK;
+    else
+        return ERR_BUF;
+}
+
+err_t rndisif_init(struct netif *netif)
+{
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+    netif->mtu = 1500;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->state = NULL;
+    netif->name[0] = IFNAME0;
+    netif->name[1] = IFNAME1;
+    netif->output = etharp_output;
+    netif->linkoutput = linkoutput_fn;
+    return ERR_OK;
+}
+
+err_t rndisif_input(struct netif *netif)
+{
+    static err_t err;
+    static struct pbuf *p;
+    p = usbd_rndis_eth_rx(0);
+    if (p != NULL) {
+        err = netif->input(p, netif);
+        if (err != ERR_OK) {
+            pbuf_free(p);
+        }
+    } else {
+        return ERR_BUF;
+    }
+    return err;
+}
+
+void rndis_lwip_init(void)
+{
+    struct netif *netif = &rndis_netif;
+
+    lwip_init();
+
+    netif = netif_add(netif, &ipaddr, &netmask, &gateway, NULL, rndisif_init, ethernet_input);
+    netif_set_default(netif);
+    // while (!netif_is_up(netif)) {
+    // }
+
+    // while (dhserv_init(&dhcp_config)) {}
+
+    // while (dnserv_init(&ipaddr, PORT_DNS, dns_query_proc)) {}
+}
+
+void rndis_input_poll(void)
+{
+    rndisif_input(&rndis_netif);
+}
 #endif /* RT_USING_LWIP */
 
 struct usbd_interface intf0;
@@ -174,6 +267,8 @@ void cdc_rndis_init(void)
 {
 #ifdef RT_USING_LWIP
     rt_usbd_rndis_init();
+#else
+    rndis_lwip_init();
 #endif
     usbd_desc_register(cdc_descriptor);
     usbd_add_interface(usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
