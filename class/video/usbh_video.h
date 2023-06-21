@@ -52,9 +52,6 @@ struct usbh_video {
 extern "C" {
 #endif
 
-void usbh_video_inityuyv2rgb_table(void);
-void usbh_video_yuyv2rgb565(void *input, void *output, uint32_t len);
-
 int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len);
 int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len);
 int usbh_videostreaming_get_cur_probe(struct usbh_video *video_class);
@@ -69,10 +66,6 @@ int usbh_video_open(struct usbh_video *video_class,
 int usbh_video_close(struct usbh_video *video_class);
 
 void usbh_video_list_info(struct usbh_video *video_class);
-
-void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostreaming *stream);
-void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostreaming *stream);
-void usbh_videostreaming_output(uint8_t *input, uint32_t input_len);
 
 void usbh_video_run(struct usbh_video *video_class);
 void usbh_video_stop(struct usbh_video *video_class);

@@ -254,6 +254,132 @@ find_class:
 }
 #endif
 
+#if 0
+void usbh_videostreaming_parse_mjpeg(struct usbh_urb *urb, struct usbh_videostreaming *stream)
+{
+    struct usbh_iso_frame_packet *iso_packet;
+    uint32_t num_of_iso_packets;
+    uint8_t data_offset;
+    uint32_t data_len;
+    uint8_t header_len = 0;
+
+    num_of_iso_packets = urb->num_of_iso_packets;
+    iso_packet = urb->iso_packet;
+
+    for (uint32_t i = 0; i < num_of_iso_packets; i++) {
+        /*
+            uint8_t frameIdentifier : 1U;
+            uint8_t endOfFrame      : 1U;
+            uint8_t presentationTimeStamp    : 1U;
+            uint8_t sourceClockReference : 1U;
+            uint8_t reserved             : 1U;
+            uint8_t stillImage           : 1U;
+            uint8_t errorBit             : 1U;
+            uint8_t endOfHeader          : 1U;
+        */
+        if (iso_packet[i].actual_length == 0) { /* skip no data */
+            continue;
+        }
+
+        header_len = iso_packet[i].transfer_buffer[0];
+
+        if ((header_len > 12) || (header_len == 0)) { /* do not be illegal */
+            while (1) {
+            }
+        }
+        if (iso_packet[i].transfer_buffer[1] & (1 << 6)) { /* error bit, re-receive */
+            stream->bufoffset = 0;
+            continue;
+        }
+
+        if ((stream->bufoffset == 0) && ((iso_packet[i].transfer_buffer[header_len] != 0xff) || (iso_packet[i].transfer_buffer[header_len + 1] != 0xd8))) {
+            stream->bufoffset = 0;
+            continue;
+        }
+
+        data_offset = header_len;
+        data_len = iso_packet[i].actual_length - header_len;
+
+        /** do something here */
+
+        stream->bufoffset += data_len;
+
+        if (iso_packet[i].transfer_buffer[1] & (1 << 1)) {
+            if ((iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 2] != 0xff) || (iso_packet[i].transfer_buffer[iso_packet[i].actual_length - 1] != 0xd9)) {
+                stream->bufoffset = 0;
+                continue;
+            }
+
+            /** do something here */
+
+            if (stream->video_one_frame_callback) {
+                stream->video_one_frame_callback(stream);
+            }
+            stream->bufoffset = 0;
+        }
+    }
+    /** do something here */
+}
+
+void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostreaming *stream)
+{
+    struct usbh_iso_frame_packet *iso_packet;
+    uint32_t num_of_iso_packets;
+    uint8_t data_offset;
+    uint32_t data_len;
+    uint8_t header_len = 0;
+
+    num_of_iso_packets = urb->num_of_iso_packets;
+    iso_packet = urb->iso_packet;
+
+    for (uint32_t i = 0; i < num_of_iso_packets; i++) {
+        /*
+            uint8_t frameIdentifier : 1U;
+            uint8_t endOfFrame      : 1U;
+            uint8_t presentationTimeStamp    : 1U;
+            uint8_t sourceClockReference : 1U;
+            uint8_t reserved             : 1U;
+            uint8_t stillImage           : 1U;
+            uint8_t errorBit             : 1U;
+            uint8_t endOfHeader          : 1U;
+        */
+
+        if (iso_packet[i].actual_length == 0) { /* skip no data */
+            continue;
+        }
+
+        header_len = iso_packet[i].transfer_buffer[0];
+
+        if ((header_len > 12) || (header_len == 0)) { /* do not be illegal */
+            while (1) {
+            }
+        }
+        if (iso_packet[i].transfer_buffer[1] & (1 << 6)) { /* error bit, re-receive */
+            stream->bufoffset = 0;
+            continue;
+        }
+
+        data_offset = header_len;
+        data_len = iso_packet[i].actual_length - header_len;
+
+        /** do something here */
+
+        stream->bufoffset += data_len;
+
+        if (iso_packet[i].transfer_buffer[1] & (1 << 1)) {
+            /** do something here */
+
+            if (stream->video_one_frame_callback && (stream->bufoffset == stream->buflen)) {
+                stream->video_one_frame_callback(stream);
+            }
+            stream->bufoffset = 0;
+        }
+    }
+
+    /** do something here */
+}
+#endif
+
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 }
