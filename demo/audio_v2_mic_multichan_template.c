@@ -14,6 +14,9 @@
 
 #define AUDIO_IN_EP 0x81
 
+#define AUDIO_IN_CLOCK_ID 0x01
+#define AUDIO_IN_FU_ID    0x03
+
 #define AUDIO_FREQ      48000
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
@@ -50,7 +53,6 @@
 
 #define AUDIO_IN_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * IN_CHANNEL_NUM) / 1000))
 
-
 #define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                    \
                                    AUDIO_V2_AC_DESCRIPTOR_INIT_LEN +                      \
                                    AUDIO_V2_SIZEOF_AC_CLOCK_SOURCE_DESC +                 \
@@ -65,7 +67,7 @@
                       AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(IN_CHANNEL_NUM) + \
                       AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC)
 
-const uint8_t audio_descriptor[] = {
+const uint8_t audio_v2_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_AUDIO_CONFIG_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     AUDIO_V2_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, AUDIO_CATEGORY_MICROPHONE, 0x00, 0x00),
@@ -168,9 +170,9 @@ void usbd_audio_close(uint8_t intf)
     tx_flag = 0;
 }
 
-void usbd_audio_get_sampling_freq_table(uint8_t entity_id, uint8_t **sampling_freq_table)
+void usbd_audio_get_sampling_freq_table(uint8_t ep, uint8_t **sampling_freq_table)
 {
-    if (entity_id == 0x01) {
+    if (ep == AUDIO_IN_EP) {
         *sampling_freq_table = (uint8_t *)mic_default_sampling_freq_table;
     }
 }
@@ -192,23 +194,27 @@ static struct usbd_endpoint audio_in_ep = {
 struct usbd_interface intf0;
 struct usbd_interface intf1;
 
-void audio_init()
-{
-    usbd_desc_register(audio_descriptor);
-    usbd_add_interface(usbd_audio_init_intf(&intf0));
-    usbd_add_interface(usbd_audio_init_intf(&intf1));
-    usbd_add_endpoint(&audio_in_ep);
+struct audio_entity_info audio_entity_table[] = {
+    { .bEntityId = AUDIO_IN_CLOCK_ID,
+      .bDescriptorSubtype = AUDIO_CONTROL_CLOCK_SOURCE,
+      .ep = AUDIO_IN_EP },
+    { .bEntityId = AUDIO_IN_FU_ID,
+      .bDescriptorSubtype = AUDIO_CONTROL_FEATURE_UNIT,
+      .ep = AUDIO_IN_EP },
+};
 
-    usbd_audio_add_entity(0x01, AUDIO_CONTROL_CLOCK_SOURCE);
-    usbd_audio_add_entity(0x03, AUDIO_CONTROL_FEATURE_UNIT);
+void audio_v2_init(void)
+{
+    usbd_desc_register(audio_v2_descriptor);
+    usbd_add_interface(usbd_audio_init_intf(&intf0, 0x0200, audio_entity_table, 2));
+    usbd_add_interface(usbd_audio_init_intf(&intf1, 0x0200, audio_entity_table, 2));
+    usbd_add_endpoint(&audio_in_ep);
 
     usbd_initialize();
 }
 
-void audio_test()
+void audio_v2_test(void)
 {
-    while (1) {
-        if (tx_flag) {
-        }
+    if (tx_flag) {
     }
 }
