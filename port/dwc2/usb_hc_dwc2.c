@@ -459,12 +459,14 @@ int usb_hc_init(void)
     usb_hc_low_level_init();
 
     USB_LOG_INFO("========== DWC2 params ==========\r\n");
-    USB_LOG_INFO("CID:%08x\r\n",USB_OTG_GLB->CID);
-    USB_LOG_INFO("GSNPSID:%08x\r\n",USB_OTG_GLB->GSNPSID);
-    USB_LOG_INFO("GHWCFG1:%08x\r\n",USB_OTG_GLB->GHWCFG1);
-    USB_LOG_INFO("GHWCFG2:%08x\r\n",USB_OTG_GLB->GHWCFG2);
-    USB_LOG_INFO("GHWCFG3:%08x\r\n",USB_OTG_GLB->GHWCFG3);
-    USB_LOG_INFO("GHWCFG4:%08x\r\n",USB_OTG_GLB->GHWCFG4);
+    USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
+    USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
+    USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
+    USB_LOG_INFO("GHWCFG2:%08x\r\n", USB_OTG_GLB->GHWCFG2);
+    USB_LOG_INFO("GHWCFG3:%08x\r\n", USB_OTG_GLB->GHWCFG3);
+    USB_LOG_INFO("GHWCFG4:%08x\r\n", USB_OTG_GLB->GHWCFG4);
+
+    USB_LOG_INFO("dwc2 has %d channels\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1);
 
     if ((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) == 0U) {
         USB_LOG_ERR("This dwc2 version does not support dma, so stop working\r\n");
@@ -747,7 +749,9 @@ int usbh_pipe_free(usbh_pipe_t pipe)
     if (!chan) {
         return -EINVAL;
     }
+
     urb = chan->urb;
+
     if (urb) {
         usbh_kill_urb(urb);
     }
@@ -758,7 +762,7 @@ int usbh_pipe_free(usbh_pipe_t pipe)
 
 int usbh_submit_urb(struct usbh_urb *urb)
 {
-    struct dwc2_pipe *chan;
+    struct dwc2_pipe *pipe;
     size_t flags;
     int ret = 0;
 
@@ -766,9 +770,9 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -EINVAL;
     }
 
-    chan = urb->pipe;
+    pipe = urb->pipe;
 
-    if (!chan) {
+    if (!pipe) {
         return -EINVAL;
     }
 
@@ -777,46 +781,46 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -EINVAL;
     }
 
-    if (!chan->hport->connected) {
+    if (!pipe->hport->connected) {
         return -ENODEV;
     }
 
-    if (chan->urb) {
+    if (pipe->urb) {
         return -EBUSY;
     }
 
     flags = usb_osal_enter_critical_section();
 
-    chan->waiter = false;
-    chan->xfrd = 0;
-    chan->urb = urb;
+    pipe->waiter = false;
+    pipe->xfrd = 0;
+    pipe->urb = urb;
     urb->errorcode = -EBUSY;
     urb->actual_length = 0;
 
     if (urb->timeout > 0) {
-        chan->waiter = true;
+        pipe->waiter = true;
     }
     usb_osal_leave_critical_section(flags);
 
-    switch (chan->ep_type) {
+    switch (pipe->ep_type) {
         case USB_ENDPOINT_TYPE_CONTROL:
-            chan->ep0_state = DWC2_EP0_STATE_SETUP;
-            dwc2_control_pipe_init(chan, urb->setup, urb->transfer_buffer, urb->transfer_buffer_length);
+            pipe->ep0_state = DWC2_EP0_STATE_SETUP;
+            dwc2_control_pipe_init(pipe, urb->setup, urb->transfer_buffer, urb->transfer_buffer_length);
             break;
         case USB_ENDPOINT_TYPE_BULK:
         case USB_ENDPOINT_TYPE_INTERRUPT:
-            dwc2_bulk_intr_pipe_init(chan, urb->transfer_buffer, urb->transfer_buffer_length);
+            dwc2_bulk_intr_pipe_init(pipe, urb->transfer_buffer, urb->transfer_buffer_length);
             break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-            chan->iso_frame_idx = 0;
-            dwc2_iso_pipe_init(chan, &urb->iso_packet[chan->iso_frame_idx]);
+            pipe->iso_frame_idx = 0;
+            dwc2_iso_pipe_init(pipe, &urb->iso_packet[pipe->iso_frame_idx]);
             break;
         default:
             break;
     }
     if (urb->timeout > 0) {
         /* wait until timeout or sem give */
-        ret = usb_osal_sem_take(chan->waitsem, urb->timeout);
+        ret = usb_osal_sem_take(pipe->waitsem, urb->timeout);
         if (ret < 0) {
             goto errout_timeout;
         }
@@ -825,7 +829,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
     return ret;
 errout_timeout:
-    chan->waiter = false;
+    pipe->waiter = false;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -846,6 +850,12 @@ int usbh_kill_urb(struct usbh_urb *urb)
     dwc2_halt(pipe->chidx);
     CLEAR_HC_INT(pipe->chidx, USB_OTG_HCINT_CHH);
     pipe->urb = NULL;
+
+    if (pipe->waiter) {
+        pipe->waiter = false;
+        urb->errorcode = -ESHUTDOWN;
+        usb_osal_sem_give(pipe->waitsem);
+    }
 
     usb_osal_leave_critical_section(flags);
 
