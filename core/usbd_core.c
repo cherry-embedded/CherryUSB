@@ -288,8 +288,8 @@ static bool usbd_get_descriptor(uint16_t type_index, uint8_t **data, uint32_t *l
         }
 
         //*data = (uint8_t *)g_usbd_core.msosv1_desc->string;
-        memcpy(*data, (uint8_t *)g_usbd_core.msosv1_desc->string, g_usbd_core.msosv1_desc->string_len);
-        *len = g_usbd_core.msosv1_desc->string_len;
+        memcpy(*data, (uint8_t *)g_usbd_core.msosv1_desc->string, g_usbd_core.msosv1_desc->string[0]);
+        *len = g_usbd_core.msosv1_desc->string[0];
 
         return true;
     } else if (type == USB_DESCRIPTOR_TYPE_BINARY_OBJECT_STORE) {
@@ -789,19 +789,30 @@ static int usbd_class_request_handler(struct usb_setup_packet *setup, uint8_t **
  */
 static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
+    uint32_t desclen;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     if (g_usbd_core.descriptors->msosv1_descriptor) {
         if (setup->bRequest == g_usbd_core.descriptors->msosv1_descriptor->vendor_code) {
             switch (setup->wIndex) {
                 case 0x04:
                     USB_LOG_INFO("get Compat ID\r\n");
+                    desclen = g_usbd_core.msosv1_desc->compat_id[0] +
+                              (g_usbd_core.msosv1_desc->compat_id[1] << 8) +
+                              (g_usbd_core.msosv1_desc->compat_id[2] << 16) +
+                              (g_usbd_core.msosv1_desc->compat_id[3] << 24);
+
                     *data = (uint8_t *)g_usbd_core.descriptors->msosv1_descriptor->compat_id;
-                    *len = g_usbd_core.descriptors->msosv1_descriptor->compat_id_len;
+                    *len = desclen;
                     return 0;
                 case 0x05:
                     USB_LOG_INFO("get Compat id properties\r\n");
-                    *data = (uint8_t *)g_usbd_core.descriptors->msosv1_descriptor->comp_id_property;
-                    *len = g_usbd_core.descriptors->msosv1_descriptor->comp_id_property_len;
+                    desclen = g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][0] +
+                              (g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][1] << 8) +
+                              (g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][2] << 16) +
+                              (g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][3] << 24);
+
+                    *data = (uint8_t *)g_usbd_core.descriptors->msosv1_descriptor->comp_id_property[setup->wValue];
+                    *len = desclen;
                     return 0;
                 default:
                     USB_LOG_ERR("unknown vendor code\r\n");
@@ -842,16 +853,22 @@ static int usbd_vendor_request_handler(struct usb_setup_packet *setup, uint8_t *
                 case 0x04:
                     USB_LOG_INFO("get Compat ID\r\n");
                     //*data = (uint8_t *)msosv1_desc->compat_id;
-                    memcpy(*data, g_usbd_core.msosv1_desc->compat_id, g_usbd_core.msosv1_desc->compat_id_len);
-                    *len = g_usbd_core.msosv1_desc->compat_id_len;
-
+                    desclen = g_usbd_core.msosv1_desc->compat_id[0] +
+                              (g_usbd_core.msosv1_desc->compat_id[1] << 8) +
+                              (g_usbd_core.msosv1_desc->compat_id[2] << 16) +
+                              (g_usbd_core.msosv1_desc->compat_id[3] << 24);
+                    memcpy(*data, g_usbd_core.msosv1_desc->compat_id, desclen);
+                    *len = desclen;
                     return 0;
                 case 0x05:
                     USB_LOG_INFO("get Compat id properties\r\n");
-                    //*data = (uint8_t *)msosv1_desc->comp_id_property;
-                    memcpy(*data, g_usbd_core.msosv1_desc->comp_id_property, g_usbd_core.msosv1_desc->comp_id_property_len);
-                    *len = g_usbd_core.msosv1_desc->comp_id_property_len;
-
+                    //*data = (uint8_t *)msosv1_desc->comp_id_property[setup->wValue];
+                    desclen = g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][0] +
+                              (g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][1] << 8) +
+                              (g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][2] << 16) +
+                              (g_usbd_core.msosv1_desc->comp_id_property[setup->wValue][3] << 24);
+                    memcpy(*data, g_usbd_core.msosv1_desc->comp_id_property[setup->wValue], desclen);
+                    *len = desclen;
                     return 0;
                 default:
                     USB_LOG_ERR("unknown vendor code\r\n");

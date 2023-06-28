@@ -75,12 +75,9 @@ __ALIGN_BEGIN const uint8_t WINUSB_IF0_WCIDProperties[142] __ALIGN_END = {
 
 struct usb_msosv1_descriptor msosv1_desc = {
     .string = (uint8_t *)WCID_StringDescriptor_MSOS,
-    .string_len = 18,
     .vendor_code = WCID_VENDOR_CODE,
     .compat_id = (uint8_t *)WINUSB_WCIDDescriptor,
-    .compat_id_len = sizeof(WINUSB_WCIDDescriptor),
-    .comp_id_property = (uint8_t *)WINUSB_IF0_WCIDProperties,
-    .comp_id_property_len = sizeof(WINUSB_IF0_WCIDProperties),
+    .comp_id_property = (uint8_t **)&WINUSB_IF0_WCIDProperties,
 };
 
 #define WINUSB_IN_EP  0x81
