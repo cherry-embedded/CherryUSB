@@ -15,8 +15,8 @@
 #define USB_BASE (0x40040000UL)
 #endif
 
-#if CONFIG_USBHOST_PIPE_NUM != 12
-#error dwc2 ip only supports 12 pipe num.
+#ifndef CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USBHOST_PIPE_NUM 12
 #endif
 
 #if defined(STM32F7) || defined(STM32H7)
@@ -234,29 +234,6 @@ static void dwc2_pipe_init(uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uin
     USB_OTG_HC((uint32_t)ch_num)->HCCHAR = regval;
 }
 
-static uint8_t dwc2_calculate_packet_num(uint32_t input_size, uint8_t ep_addr, uint16_t ep_mps, uint32_t *output_size)
-{
-    uint16_t num_packets;
-
-    num_packets = (uint16_t)((input_size + ep_mps - 1U) / ep_mps);
-
-    if (num_packets > 256) {
-        num_packets = 256;
-    }
-
-    if (input_size == 0) {
-        num_packets = 1;
-    }
-
-    if (ep_addr & 0x80) {
-        input_size = num_packets * ep_mps;
-    } else {
-    }
-
-    *output_size = input_size;
-    return num_packets;
-}
-
 /* For IN channel HCTSIZ.XferSize is expected to be an integer multiple of ep_mps size.*/
 static inline void dwc2_pipe_transfer(uint8_t ch_num, uint8_t ep_addr, uint32_t *buf, uint32_t size, uint8_t num_packets, uint8_t pid)
 {
@@ -284,7 +261,7 @@ static inline void dwc2_pipe_transfer(uint8_t ch_num, uint8_t ep_addr, uint32_t 
 
 static void dwc2_halt(uint8_t ch_num)
 {
-    uint32_t count = 0U;
+    volatile uint32_t count = 0U;
     uint32_t HcEpType = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_EPTYP) >> 18;
     uint32_t ChannelEna = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) >> 31;
 
@@ -361,6 +338,29 @@ static void dwc2_pipe_free(struct dwc2_pipe *pipe)
     pipe->inuse = false;
 }
 
+static uint8_t dwc2_calculate_packet_num(uint32_t input_size, uint8_t ep_addr, uint16_t ep_mps, uint32_t *output_size)
+{
+    uint16_t num_packets;
+
+    num_packets = (uint16_t)((input_size + ep_mps - 1U) / ep_mps);
+
+    if (num_packets > 256) {
+        num_packets = 256;
+    }
+
+    if (input_size == 0) {
+        num_packets = 1;
+    }
+
+    if (ep_addr & 0x80) {
+        input_size = num_packets * ep_mps;
+    } else {
+    }
+
+    *output_size = input_size;
+    return num_packets;
+}
+
 static void dwc2_control_pipe_init(struct dwc2_pipe *chan, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
 {
     if (chan->ep0_state == DWC2_EP0_STATE_SETUP) /* fill setup */
@@ -418,6 +418,7 @@ static int usbh_reset_port(const uint8_t port)
     usb_osal_msleep(10U);
 
     while (!(USB_OTG_HPRT & USB_OTG_HPRT_PENA)) {
+        usb_osal_msleep(10U);
     }
     return 0;
 }
@@ -513,9 +514,6 @@ int usb_hc_init(void)
         USB_OTG_HC(i)->HCINTMSK = 0U;
     }
 
-    dwc2_drivebus(1);
-    usb_osal_msleep(200);
-
     /* Disable all interrupts. */
     USB_OTG_GLB->GINTMSK = 0U;
 
@@ -533,6 +531,9 @@ int usb_hc_init(void)
     /* Enable interrupts matching to the Host mode ONLY */
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_PRTIM | USB_OTG_GINTMSK_HCIM |
                              USB_OTG_GINTSTS_DISCINT);
+
+    dwc2_drivebus(1);
+    usb_osal_msleep(200);
 
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
@@ -766,22 +767,18 @@ int usbh_submit_urb(struct usbh_urb *urb)
     size_t flags;
     int ret = 0;
 
-    if (!urb) {
+    if (!urb || !urb->pipe) {
         return -EINVAL;
     }
 
     pipe = urb->pipe;
-
-    if (!pipe) {
-        return -EINVAL;
-    }
 
     /* dma addr must be aligned 4 bytes */
     if ((((uint32_t)urb->setup) & 0x03) || (((uint32_t)urb->transfer_buffer) & 0x03)) {
         return -EINVAL;
     }
 
-    if (!pipe->hport->connected) {
+    if (!(USB_OTG_HPRT & USB_OTG_HPRT_PCSTS) || !pipe->hport->connected) {
         return -ENODEV;
     }
 
@@ -818,6 +815,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
         default:
             break;
     }
+    
     if (urb->timeout > 0) {
         /* wait until timeout or sem give */
         ret = usb_osal_sem_take(pipe->waitsem, urb->timeout);
@@ -951,11 +949,11 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
 
         if (urb->errorcode == 0) {
             uint32_t count = chan->xferlen - (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ);                          /* size that has received */
-            uint32_t has_sent_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) >> 19); /*how many packets has sent*/
+            uint32_t has_sent_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) >> 19); /* how many packets have sent*/
 
-            chan->xfrd += count;
+            chan->xfrd = count;
 
-            if ((has_sent_packets % 2) == 1) /* Flip in odd numbers */
+            if ((has_sent_packets % 2) == 1) /* toggle in odd numbers */
             {
                 if (chan->data_pid == HC_PID_DATA0) {
                     chan->data_pid = HC_PID_DATA1;
@@ -1016,6 +1014,7 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
     chan = &g_dwc2_hcd.pipe_pool[ch_num];
     urb = chan->urb;
     //printf("s2:%08x\r\n", chan_intstatus);
+
     if ((chan_intstatus & USB_OTG_HCINT_XFRC) == USB_OTG_HCINT_XFRC) {
         CLEAR_HC_INT(ch_num, USB_OTG_HCINT_XFRC);
         dwc2_halt(ch_num);
@@ -1070,11 +1069,12 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
         if (urb->errorcode == 0) {
             uint32_t count = (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ); /* last send size */
             if (count == chan->ep_mps) {
-                chan->xfrd += chan->num_packets * chan->ep_mps;
+                chan->xfrd = chan->num_packets * chan->ep_mps;
             } else {
-                chan->xfrd += (chan->num_packets - 1) * chan->ep_mps + count;
+                chan->xfrd = (chan->num_packets - 1) * chan->ep_mps + count;
             }
-            if ((chan->num_packets % 2) == 1) /* Flip in odd numbers */
+
+            if (chan->num_packets % 2) /* toggle in odd numbers */
             {
                 if (chan->data_pid == HC_PID_DATA0) {
                     chan->data_pid = HC_PID_DATA1;
@@ -1082,6 +1082,7 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
                     chan->data_pid = HC_PID_DATA0;
                 }
             }
+
             if (chan->ep_type == 0x00) {
                 if (chan->ep0_state == DWC2_EP0_STATE_SETUP) {
                     if (urb->setup->wLength) {
