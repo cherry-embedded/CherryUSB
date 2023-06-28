@@ -1,4 +1,3 @@
-#include "usb_dc.h"
 #include "usbd_core.h"
 #include "usb_ch58x_usbfs_reg.h"
 
@@ -88,7 +87,7 @@ __attribute__((aligned(4))) uint8_t ep7_data_buff[64 + 64]; /*!< ep7_out(64)+ep7
 /**
  * @brief   Endpoint information structure
  */
-struct ch58xfs_ep {
+struct ch58xfs_udc_ep {
     uint16_t ep_mps;      /* Endpoint max packet size */
     uint8_t ep_type;      /* Endpoint type */
     uint8_t ep_stalled;   /* Endpoint stall flag */
@@ -516,7 +515,7 @@ void ch58xfs_udc_irq(struct usbd_bus *bus)
     struct ch58xfs_udc *udc = bus->udc;
 
     if (udc == NULL) {
-        return -1;
+        return;
     }
 
     intflag = CH58x_USBFS_DEV->USB_INT_FG;
