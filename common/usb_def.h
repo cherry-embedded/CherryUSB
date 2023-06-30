@@ -484,10 +484,10 @@ struct usb_msosv1_comp_id_function_descriptor {
     };
 
 struct usb_msosv1_descriptor {
-    uint8_t *string;
+    const uint8_t *string;
     uint8_t vendor_code;
-    uint8_t *compat_id;
-    uint8_t **comp_id_property;
+    const uint8_t *compat_id;
+    const uint8_t **comp_id_property;
 };
 
 /* MS OS 2.0 Header descriptor */
