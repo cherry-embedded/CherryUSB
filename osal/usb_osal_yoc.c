@@ -17,6 +17,11 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     return task_handle;
 }
 
+void usb_osal_thread_delete(usb_osal_thread_t thread)
+{
+    aos_task_exit(0);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     aos_sem_t sem = NULL;

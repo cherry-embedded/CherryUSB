@@ -906,17 +906,6 @@ void USBH_IRQHandler(void)
         g_musb_hcd.port_csc = 1;
         g_musb_hcd.port_pec = 1;
         g_musb_hcd.port_pe = 0;
-        for (uint8_t index = 0; index < CONFIG_USBHOST_PIPE_NUM; index++) {
-            for (uint8_t j = 0; j < 2; j++) {
-                struct musb_pipe *pipe = &g_musb_hcd.pipe_pool[index][j];
-                struct usbh_urb *urb = pipe->urb;
-                if (pipe->waiter) {
-                    pipe->waiter = false;
-                    urb->errorcode = -ESHUTDOWN;
-                    usb_osal_sem_give(pipe->waitsem);
-                }
-            }
-        }
         usbh_roothub_thread_wakeup(1);
     }
 

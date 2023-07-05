@@ -152,6 +152,7 @@ struct usbh_hubport {
 #ifdef CONFIG_USBHOST_XHCI
     uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
 #endif
+    usb_osal_thread_t thread;
 };
 
 struct usbh_hub {

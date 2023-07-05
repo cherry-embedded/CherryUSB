@@ -1218,15 +1218,6 @@ void USBH_IRQHandler(void)
         }
         if (gint_status & USB_OTG_GINTSTS_DISCINT) {
             g_dwc2_hcd.port_csc = 1;
-            for (uint8_t index = 0; index < CONFIG_USBHOST_PIPE_NUM; index++) {
-                struct dwc2_pipe *chan = &g_dwc2_hcd.pipe_pool[index];
-                struct usbh_urb *urb = chan->urb;
-                if (chan->waiter) {
-                    chan->waiter = false;
-                    urb->errorcode = -ESHUTDOWN;
-                    usb_osal_sem_give(chan->waitsem);
-                }
-            }
             usbh_roothub_thread_wakeup(1);
 
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_DISCINT;

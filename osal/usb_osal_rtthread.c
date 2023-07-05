@@ -16,6 +16,11 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     return (usb_osal_thread_t)htask;
 }
 
+void usb_osal_thread_delete(usb_osal_thread_t thread)
+{
+    rt_thread_delete(thread);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     return (usb_osal_sem_t)rt_sem_create("usbh_sem", initial_count, RT_IPC_FLAG_FIFO);

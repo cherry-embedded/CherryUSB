@@ -1177,6 +1177,12 @@ int usbh_kill_urb(struct usbh_urb *urb)
     pipe->qh = NULL;
     pipe->urb = NULL;
 
+    if (pipe->waiter) {
+        pipe->waiter = false;
+        urb->errorcode = -ESHUTDOWN;
+        usb_osal_sem_give(pipe->waitsem);
+    }
+
     usb_osal_leave_critical_section(flags);
 
     return 0;
@@ -1246,17 +1252,6 @@ void USBH_IRQHandler(void)
             if (portsc & EHCI_PORTSC_CSC) {
                 if ((portsc & EHCI_PORTSC_CCS) == EHCI_PORTSC_CCS) {
                 } else {
-                    for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
-                        struct ehci_pipe *pipe = &g_ehci_hcd.pipe_pool[index];
-                        struct usbh_urb *urb = pipe->urb;
-
-                        if (pipe->waiter) {
-                            pipe->waiter = false;
-                            urb->errorcode = -ESHUTDOWN;
-                            usb_osal_sem_give(pipe->waitsem);
-                        }
-                    }
-
                     for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
                         g_ehci_hcd.ehci_qh_used[index] = false;
                     }

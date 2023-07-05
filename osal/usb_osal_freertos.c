@@ -14,8 +14,13 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 {
     TaskHandle_t htask = NULL;
     stack_size /= sizeof(StackType_t);
-    xTaskCreate(entry, name, stack_size, args, prio, &htask);
+    xTaskCreate(entry, name, stack_size, args, configMAX_PRIORITIES - 1 - prio, &htask);
     return (usb_osal_thread_t)htask;
+}
+
+void usb_osal_thread_delete(usb_osal_thread_t thread)
+{
+    vTaskDelete(thread);
 }
 
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
