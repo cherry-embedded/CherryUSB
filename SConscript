@@ -114,6 +114,11 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
         src += Glob('demo/usb_host.c')
 
+    if GetDepend(['PKG_CHERRYUSB_HOST_CP210X']):
+        path += [cwd + '/class/vendor/cp201x']
+        src += Glob('class/vendor/cp201x/usbh_cp210x.c')
+        src += Glob('third_party/rt-thread-4.1.1/dfs/drv_usbh_cp210x_rtt.c')
+
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 
 Return('group')
