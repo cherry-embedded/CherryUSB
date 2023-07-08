@@ -156,10 +156,10 @@ void rt_usbd_rndis_init(void)
     eth_device_linkchange(&rndis_dev, RT_FALSE);
 }
 #else
-#include "lwip/err.h"
-#include "lwip/netif.h"
-#include "netif/ethernet.h"
 #include "netif/etharp.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
+#include "lwip/pbuf.h"
 
 /*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
 #define IP_ADDR0      (uint8_t)192
@@ -186,14 +186,14 @@ const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMA
 const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 
 /* Network interface name */
-#define IFNAME0       'C'
-#define IFNAME1       'R'
+#define IFNAME0       'E'
+#define IFNAME1       'X'
 
 err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
     static int ret;
-    ret = usbd_rndis_eth_tx(0, p);
 
+    ret = usbd_rndis_eth_tx(p);
     if (ret == 0)
         return ERR_OK;
     else
@@ -203,6 +203,7 @@ err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 err_t rndisif_init(struct netif *netif)
 {
     LWIP_ASSERT("netif != NULL", (netif != NULL));
+    
     netif->mtu = 1500;
     netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
     netif->state = NULL;
@@ -217,7 +218,8 @@ err_t rndisif_input(struct netif *netif)
 {
     static err_t err;
     static struct pbuf *p;
-    p = usbd_rndis_eth_rx(0);
+
+    p = usbd_rndis_eth_rx();
     if (p != NULL) {
         err = netif->input(p, netif);
         if (err != ERR_OK) {
@@ -235,10 +237,13 @@ void rndis_lwip_init(void)
 
     lwip_init();
 
-    netif = netif_add(netif, &ipaddr, &netmask, &gateway, NULL, rndisif_init, ethernet_input);
+    netif->hwaddr_len = 6;
+    memcpy(netif->hwaddr, mac, 6);
+
+    netif = netif_add(netif, &ipaddr, &netmask, &gateway, NULL, rndisif_init, netif_input);
     netif_set_default(netif);
-    // while (!netif_is_up(netif)) {
-    // }
+    while (!netif_is_up(netif)) {
+    }
 
     // while (dhserv_init(&dhcp_config)) {}
 
