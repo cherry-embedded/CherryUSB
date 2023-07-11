@@ -30,6 +30,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
     USB_MEM_ALIGNX struct CSW csw;
 
     bool readonly;
+    bool popup;
     uint8_t sKey; /* Sense key */
     uint8_t ASC;  /* Additional Sense Code */
     uint8_t ASQ;  /* Additional Sense Qualifier */
@@ -309,6 +310,7 @@ static bool SCSI_startStopUnit(uint8_t **data, uint32_t *len)
     } else if ((g_usbd_msc.cbw.CB[4] & 0x3U) == 0x2U) /* START=0 and LOEJ Load Eject=1 */
     {
         //SCSI_MEDIUM_EJECTED;
+        g_usbd_msc.popup = true;
     } else if ((g_usbd_msc.cbw.CB[4] & 0x3U) == 0x3U) /* START=1 and LOEJ Load Eject=1 */
     {
         //SCSI_MEDIUM_UNLOCKED;
@@ -838,4 +840,9 @@ struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uin
 void usbd_msc_set_readonly(bool readonly)
 {
     g_usbd_msc.readonly = readonly;
+}
+
+bool usbd_msc_set_popup(void)
+{
+    return g_usbd_msc.popup;
 }
