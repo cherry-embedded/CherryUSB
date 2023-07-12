@@ -449,7 +449,7 @@ static void usbh_hubport_enumerate_thread(void *argument)
         usbh_hubport_release(child);
         USB_LOG_ERR("Port %u enumerate fail\r\n", child->port);
     }
-    usb_osal_thread_delete(child->thread);
+    usb_osal_thread_delete(NULL);
 }
 
 static void usbh_hub_events(struct usbh_hub *hub)

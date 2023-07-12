@@ -18,6 +18,10 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 
 void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
+    if (thread == NULL) {
+        return;
+    }
+
     rt_thread_delete(thread);
 }
 
