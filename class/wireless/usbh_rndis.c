@@ -7,9 +7,37 @@
 #include "usbh_rndis.h"
 #include "rndis_protocol.h"
 
-#define DEV_FORMAT "/dev/rndis"
+#define DEV_FORMAT "/dev/rndis%d"
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[4096];
+
+static struct usbh_rndis g_rndis_class[CONFIG_USBHOST_MAX_RNDIS_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_rndis *usbd_rndis_class_alloc(void)
+{
+    int devno;
+
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_RNDIS_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_rndis_class[devno], 0, sizeof(struct usbh_rndis));
+            g_rndis_class[devno].minor = devno;
+            return &g_rndis_class[devno];
+        }
+    }
+    return NULL;
+}
+
+static void usbd_rndis_class_free(struct usbh_rndis *rndis_class)
+{
+    int devno = rndis_class->minor;
+
+    if (devno >= 0 && devno < 32) {
+        g_devinuse &= ~(1 << devno);
+    }
+    memset(rndis_class, 0, sizeof(struct usbh_rndis));
+}
 
 static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 {
@@ -242,13 +270,11 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t tmp_buffer[512];
     uint8_t data[32];
 
-    struct usbh_rndis *rndis_class = usb_malloc(sizeof(struct usbh_rndis));
+    struct usbh_rndis *rndis_class = usbd_rndis_class_alloc();
     if (rndis_class == NULL) {
         USB_LOG_ERR("Fail to alloc rndis_class\r\n");
         return -ENOMEM;
     }
-
-    memset(rndis_class, 0, sizeof(struct usbh_rndis));
 
     rndis_class->hport = hport;
     rndis_class->ctrl_intf = intf;
@@ -363,7 +389,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     }
     USB_LOG_INFO("rndis set OID_802_3_MULTICAST_LIST success\r\n");
 
-    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, rndis_class->minor);
 
     USB_LOG_INFO("Register RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_rndis_run(rndis_class);
@@ -393,8 +419,7 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_rndis_stop(rndis_class);
         }
 
-        memset(rndis_class, 0, sizeof(struct usbh_rndis));
-        usb_free(rndis_class);
+        usbd_rndis_class_free(rndis_class);
     }
 
     return ret;

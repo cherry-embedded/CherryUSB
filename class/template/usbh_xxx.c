@@ -3,43 +3,47 @@
 
 #define DEV_FORMAT "/dev/xxx"
 
+static struct usbh_xxx g_xxx_class[CONFIG_USBHOST_MAX_CUSTOM_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_xxx *usbd_xxx_class_alloc(void)
+{
+    int devno;
+
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_CUSTOM_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_xxx_class[devno], 0, sizeof(struct usbh_xxx));
+            g_xxx_class[devno].minor = devno;
+            return &g_xxx_class[devno];
+        }
+    }
+    return NULL;
+}
+
+static void usbd_xxx_class_free(struct usbh_xxx *xxx_class)
+{
+    int devno = xxx_class->minor;
+
+    if (devno >= 0 && devno < 32) {
+        g_devinuse &= ~(1 << devno);
+    }
+    memset(xxx_class, 0, sizeof(struct usbh_xxx));
+}
+
 static int usbh_xxx_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_xxx *xxx_class = usb_malloc(sizeof(struct usbh_xxx));
+    struct usbh_xxx *xxx_class = usbd_xxx_class_alloc();
     if (xxx_class == NULL) {
         USB_LOG_ERR("Fail to alloc xxx_class\r\n");
         return -ENOMEM;
     }
 
-    memset(xxx_class, 0, sizeof(struct usbh_xxx));
-
-    xxx_class->hport = hport;
-    xxx_class->intf = intf;
-
-    hport->config.intf[intf].priv = xxx_class;
-    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
-
-    for (uint8_t i = 0; i < hport->config.intf[intf + 1].intf_desc.bNumEndpoints; i++) {
-        ep_desc = &hport->config.intf[intf + 1].ep[i].ep_desc;
-
-        ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-        ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-        ep_cfg.ep_mps = ep_desc->wMaxPacketSize;
-        ep_cfg.ep_interval = ep_desc->bInterval;
-        ep_cfg.hport = hport;
-        if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_pipe_alloc(&rndis_class->bulkin, &ep_cfg);
-        } else {
-            usbh_pipe_alloc(&rndis_class->bulkout, &ep_cfg);
-        }
-    }
-
     return ret;
-
 }
 
 
@@ -58,17 +62,24 @@ static int usbh_xxx_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_pipe_free(xxx_class->bulkout);
         }
 
-        usb_free(xxx_class);
+        if (hport->config.intf[intf].devname[0] != '\0') {
+            USB_LOG_INFO("Unregister xxx Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_xxx_stop(xxx_class);
+        }
 
-        USB_LOG_INFO("Unregister xxx Class:%s\r\n", hport->config.intf[intf].devname);
-        memset(hport->config.intf[intf].devname, 0, CONFIG_USBHOST_DEV_NAMELEN);
-
-        hport->config.intf[intf].priv = NULL;
+        usbd_xxx_class_free(xxx_class);
     }
 
     return ret;
 }
 
+__WEAK void usbh_xxx_run(struct usbh_xxx *xxx_class)
+{
+}
+
+__WEAK void usbh_xxx_stop(struct usbh_xxx *xxx_class)
+{
+}
 
 static const struct usbh_class_driver xxx_class_driver = {
     .driver_name = "xxx",

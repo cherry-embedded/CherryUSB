@@ -8,6 +8,34 @@
 
 #define DEV_FORMAT "/dev/printer"
 
+static struct usbh_printer g_printer_class[CONFIG_USBHOST_MAX_PRINTER_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_printer *usbd_printer_class_alloc(void)
+{
+    int devno;
+
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_PRINTER_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_printer_class[devno], 0, sizeof(struct usbh_printer));
+            g_printer_class[devno].minor = devno;
+            return &g_printer_class[devno];
+        }
+    }
+    return NULL;
+}
+
+static void usbd_printer_class_free(struct usbh_printer *printer_class)
+{
+    int devno = printer_class->minor;
+
+    if (devno >= 0 && devno < 32) {
+        g_devinuse &= ~(1 << devno);
+    }
+    memset(printer_class, 0, sizeof(struct usbh_printer));
+}
+
 static int usbh_printer_get_device_id(struct usbh_printer *printer_class, uint8_t *buffer)
 {
     struct usb_setup_packet *setup = &printer_class->hport->setup;
@@ -56,13 +84,11 @@ static int usbh_printer_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_printer *printer_class = usb_malloc(sizeof(struct usbh_printer));
+    struct usbh_printer *printer_class = usbd_printer_class_alloc();
     if (printer_class == NULL) {
         USB_LOG_ERR("Fail to alloc printer_class\r\n");
         return -ENOMEM;
     }
-
-    memset(printer_class, 0, sizeof(struct usbh_printer));
 
     printer_class->hport = hport;
     printer_class->intf = intf;
@@ -107,8 +133,7 @@ static int usbh_printer_disconnect(struct usbh_hubport *hport, uint8_t intf)
             USB_LOG_INFO("Unregister Printer Class:%s\r\n", hport->config.intf[intf].devname);
         }
 
-        memset(printer_class, 0, sizeof(struct usbh_printer));
-        usb_free(printer_class);
+        usbd_printer_class_free(printer_class);
     }
 
     return ret;

@@ -14,10 +14,6 @@
 
 #define EXTHUB_FIRST_INDEX 2
 
-#if CONFIG_USBHOST_MAX_EXTHUBS > 0
-static uint32_t g_devinuse = 0;
-#endif
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_buf[32];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_intbuf[CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USB_ALIGN_SIZE];
 
@@ -28,9 +24,6 @@ usb_osal_mq_t hub_mq;
 
 struct usbh_hub roothub;
 
-#if CONFIG_USBHOST_MAX_EXTHUBS > 0
-struct usbh_hub exthub[CONFIG_USBHOST_MAX_EXTHUBS];
-#endif
 extern int usbh_hport_activate_ep0(struct usbh_hubport *hport);
 extern int usbh_hport_deactivate_ep0(struct usbh_hubport *hport);
 extern int usbh_enumerate(struct usbh_hubport *hport);
@@ -46,26 +39,32 @@ struct usbh_hubport *usbh_get_roothub_port(unsigned int port)
 #endif
 
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
-static int usbh_hub_devno_alloc(void)
+static struct usbh_hub g_hub_class[CONFIG_USBHOST_MAX_EXTHUBS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_hub *usbd_hub_class_alloc(void)
 {
     int devno;
 
-    for (devno = EXTHUB_FIRST_INDEX; devno < 32; devno++) {
-        uint32_t bitno = 1 << devno;
-        if ((g_devinuse & bitno) == 0) {
-            g_devinuse |= bitno;
-            return devno;
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_EXTHUBS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_hub_class[devno], 0, sizeof(struct usbh_hub));
+            g_hub_class[devno].index = EXTHUB_FIRST_INDEX + devno;
+            return &g_hub_class[devno];
         }
     }
-
-    return -EMFILE;
+    return NULL;
 }
 
-static void usbh_hub_devno_free(uint8_t devno)
+static void usbd_hub_class_free(struct usbh_hub *hub_class)
 {
-    if (devno >= EXTHUB_FIRST_INDEX && devno < 32) {
+    int devno = hub_class->index - EXTHUB_FIRST_INDEX;
+
+    if (devno >= 0 && devno < 32) {
         g_devinuse &= ~(1 << devno);
     }
+    memset(hub_class, 0, sizeof(struct usbh_hub));
 }
 #endif
 
@@ -309,21 +308,15 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     struct hub_port_status port_status;
     int ret;
-    int index;
 
-    index = usbh_hub_devno_alloc();
-    if (index > (CONFIG_USBHOST_MAX_EXTHUBS + EXTHUB_FIRST_INDEX - 1)) {
-        USB_LOG_ERR("No memory to alloc hub class\r\n");
-        usbh_hub_devno_free(index);
+    struct usbh_hub *hub = usbd_hub_class_alloc();
+    if (hub == NULL) {
+        USB_LOG_ERR("Fail to alloc cdc_acm_class\r\n");
         return -ENOMEM;
     }
 
-    struct usbh_hub *hub = &exthub[index - EXTHUB_FIRST_INDEX];
-
-    memset(hub, 0, sizeof(struct usbh_hub));
     hub->hub_addr = hport->dev_addr;
     hub->parent = hport;
-    hub->index = index;
 
     hport->config.intf[intf].priv = hub;
 
@@ -394,8 +387,6 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_hub *hub = (struct usbh_hub *)hport->config.intf[intf].priv;
 
     if (hub) {
-        usbh_hub_devno_free(hub->index);
-
         if (hub->intin) {
             usbh_pipe_free(hub->intin);
         }
@@ -413,11 +404,12 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
             child->parent = NULL;
         }
 
-        usbh_hub_unregister(hub);
-        memset(hub, 0, sizeof(struct usbh_hub));
-
-        if (hport->config.intf[intf].devname[0] != '\0')
+        if (hport->config.intf[intf].devname[0] != '\0') {
             USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
+            usbh_hub_unregister(hub);
+        }
+
+        usbd_hub_class_free(hub);
     }
     return ret;
 }

@@ -21,35 +21,36 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-static uint32_t g_devinuse = 0;
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_video_buf[128];
 
 static const char *format_type[] = { "uncompressed", "mjpeg" };
 
-static int usbh_video_devno_alloc(struct usbh_video *video_class)
+static struct usbh_video g_video_class[CONFIG_USBHOST_MAX_VIDEO_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_video *usbd_video_class_alloc(void)
 {
     int devno;
 
-    for (devno = 0; devno < 32; devno++) {
-        uint32_t bitno = 1 << devno;
-        if ((g_devinuse & bitno) == 0) {
-            g_devinuse |= bitno;
-            video_class->minor = devno;
-            return 0;
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_VIDEO_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_video_class[devno], 0, sizeof(struct usbh_video));
+            g_video_class[devno].minor = devno;
+            return &g_video_class[devno];
         }
     }
-
-    return -EMFILE;
+    return NULL;
 }
 
-static void usbh_video_devno_free(struct usbh_video *video_class)
+static void usbd_video_class_free(struct usbh_video *video_class)
 {
     int devno = video_class->minor;
 
     if (devno >= 0 && devno < 32) {
         g_devinuse &= ~(1 << devno);
     }
+    memset(video_class, 0, sizeof(struct usbh_video));
 }
 
 int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
@@ -292,14 +293,12 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t num_of_frames = 0xff;
     uint8_t *p;
 
-    struct usbh_video *video_class = usb_malloc(sizeof(struct usbh_video));
+    struct usbh_video *video_class = usbd_video_class_alloc();
     if (video_class == NULL) {
         USB_LOG_ERR("Fail to alloc video_class\r\n");
         return -ENOMEM;
     }
 
-    memset(video_class, 0, sizeof(struct usbh_video));
-    usbh_video_devno_alloc(video_class);
     video_class->hport = hport;
     video_class->ctrl_intf = intf;
     video_class->data_intf = intf + 1;
@@ -401,8 +400,6 @@ static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_video *video_class = (struct usbh_video *)hport->config.intf[intf].priv;
 
     if (video_class) {
-        usbh_video_devno_free(video_class);
-
         if (video_class->isoin) {
             usbh_pipe_free(video_class->isoin);
         }
@@ -416,8 +413,7 @@ static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_video_stop(video_class);
         }
 
-        memset(video_class, 0, sizeof(struct usbh_video));
-        usb_free(video_class);
+        usbd_video_class_free(video_class);
     }
 
     return ret;

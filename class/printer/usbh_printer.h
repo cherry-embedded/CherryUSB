@@ -12,6 +12,7 @@ struct usbh_printer {
     struct usbh_hubport *hport;
 
     uint8_t intf;          /* interface number */
+    uint8_t minor;
     usbh_pipe_t bulkin;  /* BULK IN endpoint */
     usbh_pipe_t bulkout; /* BULK OUT endpoint */
 };

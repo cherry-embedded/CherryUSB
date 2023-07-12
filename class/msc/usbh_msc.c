@@ -9,33 +9,34 @@
 
 #define DEV_FORMAT "/dev/sd%c"
 
-static uint32_t g_devinuse = 0;
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[32];
 
-static int usbh_msc_devno_alloc(struct usbh_msc *msc_class)
+static struct usbh_msc g_msc_class[CONFIG_USBHOST_MAX_MSC_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_msc *usbd_msc_class_alloc(void)
 {
     int devno;
 
-    for (devno = 0; devno < 26; devno++) {
-        uint32_t bitno = 1 << devno;
-        if ((g_devinuse & bitno) == 0) {
-            g_devinuse |= bitno;
-            msc_class->sdchar = 'a' + devno;
-            return 0;
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_MSC_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_msc_class[devno], 0, sizeof(struct usbh_msc));
+            g_msc_class[devno].sdchar = 'a' + devno;
+            return &g_msc_class[devno];
         }
     }
-
-    return -EMFILE;
+    return NULL;
 }
 
-static void usbh_msc_devno_free(struct usbh_msc *msc_class)
+static void usbd_msc_class_free(struct usbh_msc *msc_class)
 {
     int devno = msc_class->sdchar - 'a';
 
-    if (devno >= 0 && devno < 26) {
+    if (devno >= 0 && devno < 32) {
         g_devinuse &= ~(1 << devno);
     }
+    memset(msc_class, 0, sizeof(struct usbh_msc));
 }
 
 static int usbh_msc_get_maxlun(struct usbh_msc *msc_class, uint8_t *buffer)
@@ -278,14 +279,12 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_msc *msc_class = usb_malloc(sizeof(struct usbh_msc));
+    struct usbh_msc *msc_class = usbd_msc_class_alloc();
     if (msc_class == NULL) {
         USB_LOG_ERR("Fail to alloc msc_class\r\n");
         return -ENOMEM;
     }
 
-    memset(msc_class, 0, sizeof(struct usbh_msc));
-    usbh_msc_devno_alloc(msc_class);
     msc_class->hport = hport;
     msc_class->intf = intf;
 
@@ -349,8 +348,6 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_msc *msc_class = (struct usbh_msc *)hport->config.intf[intf].priv;
 
     if (msc_class) {
-        usbh_msc_devno_free(msc_class);
-
         if (msc_class->bulkin) {
             usbh_pipe_free(msc_class->bulkin);
         }
@@ -364,8 +361,7 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_msc_stop(msc_class);
         }
 
-        memset(msc_class, 0, sizeof(struct usbh_msc));
-        usb_free(msc_class);
+        usbd_msc_class_free(msc_class);
     }
 
     return ret;

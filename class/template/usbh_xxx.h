@@ -7,8 +7,9 @@ struct usbh_xxx {
     struct usbh_hubport *hport;
 
     uint8_t intf; /* interface number */
-    usbh_pipe_t intin;  /* INTR IN endpoint */
-    usbh_pipe_t intout; /* INTR OUT endpoint */
+    uint8_t minor;
+    usbh_pipe_t bulkin;  /* bulk IN endpoint */
+    usbh_pipe_t bulkout; /* bulk OUT endpoint */
 };
 
 #endif

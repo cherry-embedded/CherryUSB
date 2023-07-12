@@ -8,33 +8,34 @@
 
 #define DEV_FORMAT "/dev/input%d"
 
-static uint32_t g_devinuse = 0;
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[128];
 
-static int usbh_hid_devno_alloc(struct usbh_hid *hid_class)
+static struct usbh_hid g_hid_class[CONFIG_USBHOST_MAX_HID_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_hid *usbd_hid_class_alloc(void)
 {
     int devno;
 
-    for (devno = 0; devno < 32; devno++) {
-        uint32_t bitno = 1 << devno;
-        if ((g_devinuse & bitno) == 0) {
-            g_devinuse |= bitno;
-            hid_class->minor = devno;
-            return 0;
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_HID_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_hid_class[devno], 0, sizeof(struct usbh_hid));
+            g_hid_class[devno].minor = devno;
+            return &g_hid_class[devno];
         }
     }
-
-    return -EMFILE;
+    return NULL;
 }
 
-static void usbh_hid_devno_free(struct usbh_hid *hid_class)
+static void usbd_hid_class_free(struct usbh_hid *hid_class)
 {
     int devno = hid_class->minor;
 
     if (devno >= 0 && devno < 32) {
         g_devinuse &= ~(1 << devno);
     }
+    memset(hid_class, 0, sizeof(struct usbh_hid));
 }
 
 static int usbh_hid_get_report_descriptor(struct usbh_hid *hid_class, uint8_t *buffer)
@@ -106,14 +107,12 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_hid *hid_class = usb_malloc(sizeof(struct usbh_hid));
+    struct usbh_hid *hid_class = usbd_hid_class_alloc();
     if (hid_class == NULL) {
         USB_LOG_ERR("Fail to alloc hid_class\r\n");
         return -ENOMEM;
     }
 
-    memset(hid_class, 0, sizeof(struct usbh_hid));
-    usbh_hid_devno_alloc(hid_class);
     hid_class->hport = hport;
     hid_class->intf = intf;
 
@@ -159,8 +158,6 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_hid *hid_class = (struct usbh_hid *)hport->config.intf[intf].priv;
 
     if (hid_class) {
-        usbh_hid_devno_free(hid_class);
-
         if (hid_class->intin) {
             usbh_pipe_free(hid_class->intin);
         }
@@ -174,8 +171,7 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_hid_stop(hid_class);
         }
 
-        memset(hid_class, 0, sizeof(struct usbh_hid));
-        usb_free(hid_class);
+        usbd_hid_class_free(hid_class);
     }
 
     return ret;

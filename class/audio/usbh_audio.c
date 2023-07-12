@@ -17,33 +17,38 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-static uint32_t g_devinuse = 0;
+#ifndef CONFIG_USBHOST_MAX_AUDIO_CLASS
+#define CONFIG_USBHOST_MAX_AUDIO_CLASS 4
+#endif
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_audio_buf[128];
 
-static int usbh_audio_devno_alloc(struct usbh_audio *audio_class)
+static struct usbh_audio g_audio_class[CONFIG_USBHOST_MAX_AUDIO_CLASS];
+static uint32_t g_devinuse = 0;
+
+static struct usbh_audio *usbd_audio_class_alloc(void)
 {
     int devno;
 
-    for (devno = 0; devno < 32; devno++) {
-        uint32_t bitno = 1 << devno;
-        if ((g_devinuse & bitno) == 0) {
-            g_devinuse |= bitno;
-            audio_class->minor = devno;
-            return 0;
+    for (devno = 0; devno < CONFIG_USBHOST_MAX_AUDIO_CLASS; devno++) {
+        if ((g_devinuse & (1 << devno)) == 0) {
+            g_devinuse |= (1 << devno);
+            memset(&g_audio_class[devno], 0, sizeof(struct usbh_audio));
+            g_audio_class[devno].minor = devno;
+            return &g_audio_class[devno];
         }
     }
-
-    return -EMFILE;
+    return NULL;
 }
 
-static void usbh_audio_devno_free(struct usbh_audio *audio_class)
+static void usbd_audio_class_free(struct usbh_audio *audio_class)
 {
     int devno = audio_class->minor;
 
     if (devno >= 0 && devno < 32) {
         g_devinuse &= ~(1 << devno);
     }
+    memset(audio_class, 0, sizeof(struct usbh_audio));
 }
 
 int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t samp_freq)
@@ -269,14 +274,12 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t format_offset = 0;
     uint8_t *p;
 
-    struct usbh_audio *audio_class = usb_malloc(sizeof(struct usbh_audio));
+    struct usbh_audio *audio_class = usbd_audio_class_alloc();
     if (audio_class == NULL) {
         USB_LOG_ERR("Fail to alloc audio_class\r\n");
         return -ENOMEM;
     }
 
-    memset(audio_class, 0, sizeof(struct usbh_audio));
-    usbh_audio_devno_alloc(audio_class);
     audio_class->hport = hport;
     audio_class->ctrl_intf = intf;
     audio_class->num_of_intf_altsettings = hport->config.intf[intf + 1].altsetting_num;
@@ -412,8 +415,6 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_audio *audio_class = (struct usbh_audio *)hport->config.intf[intf].priv;
 
     if (audio_class) {
-        usbh_audio_devno_free(audio_class);
-
         if (audio_class->isoin) {
             usbh_pipe_free(audio_class->isoin);
         }
@@ -427,8 +428,7 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_audio_stop(audio_class);
         }
 
-        memset(audio_class, 0, sizeof(struct usbh_audio));
-        usb_free(audio_class);
+        usbd_audio_class_free(audio_class);
     }
 
     return ret;
