@@ -250,6 +250,10 @@ void rndis_lwip_init(void)
     // while (dnserv_init(&ipaddr, PORT_DNS, dns_query_proc)) {}
 }
 
+void usbd_rndis_data_recv_done(void)
+{
+}
+
 void rndis_input_poll(void)
 {
     rndisif_input(&rndis_netif);
