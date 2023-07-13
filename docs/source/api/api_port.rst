@@ -153,19 +153,19 @@ usbh_roothub_control
 - **buf** 接收缓冲区
 - **return** 返回 0 表示正确，其他表示错误
 
-usbh_ep0_pipe_reconfigure
+usbh_ep_pipe_reconfigure
 """"""""""""""""""""""""""""""""""""
 
-``usbh_ep0_pipe_reconfigure`` 重新设置端点 0 的 pipe 属性。 **此函数不对用户开放**。
+``usbh_ep_pipe_reconfigure`` 重新设置端点 0 的 pipe 属性。 **此函数不对用户开放**。
 
 .. code-block:: C
 
-    int usbh_ep0_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t speed);
+    int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult);
 
 - **pipe** pipe 句柄
 - **dev_addr** 端点所在设备地址
 - **ep_mps** 端点最大包长
-- **speed** 端点所在设备的速度
+- **mult** 端点一次传输个数
 - **return** 返回 0 表示正确，其他表示错误
 
 usbh_pipe_alloc

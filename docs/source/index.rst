@@ -8,23 +8,41 @@ CherryUSB 使用指南
 
 CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 USB 主从协议栈。同时 CherryUSB 具有以下优点：
 
-- 代码精简，并且内存占用极小，而且还可进一步的裁剪
-- 全面的 class 驱动，并且主从 class 驱动全部模板化，方便用户增加新的 class 驱动以及学习的时候查找规律
-- 可供用户使用的 API 非常少，并且分类清晰。从机：初始化 + 注册、命令回调类、数据收发类；主机：初始化 + 查找类、数据收发类
-- 树状化编程，代码层层递进，方便用户理清函数调用关系、枚举和 class 驱动加载过程
-- 标准化的 porting 接口，相同 ip 无需重写驱动，并且 porting 驱动也进行了模板化，方便用户新增 porting。
-- 主从收发接口的使用等价于 uart tx/rx dma 的使用，长度也没有限制
-- 能够达到 USB 硬件理论带宽
+**易于学习 USB**
 
-从机协议栈整体执行流程：
+为了方便用户学习 USB 基本知识、枚举、驱动加载、IP 驱动，因此，编写的代码具备以下优点：
+
+- 代码精简，逻辑简单，无复杂 C 语言语法
+- 树状化编程，代码层层递进
+- Class 驱动和 porting 驱动模板化、精简化
+- API 分类清晰（从机：初始化、注册类、命令回调类、数据收发类；主机：初始化、查找类、数据收发类）
+
+**易于使用 USB**
+
+为了方便用户使用 USB 接口，考虑到用户学习过 uart 和 dma，因此，设计的数据收发类接口具备以下优点：
+
+- 等价于使用 uart tx dma/uart rx dma
+- 收发长度没有限制，用户不需要关心 USB 分包过程（porting 驱动做分包过程）
+
+**易于发挥 USB 性能**
+
+考虑到 USB 性能问题，尽量达到 USB 硬件理论带宽，因此，设计的数据收发类接口具备以下优点：
+
+- Porting 驱动直接对接寄存器，无抽象层封装
+- Memory zero copy
+- IP 如果带 DMA 则使用 DMA 模式（DMA 带硬件分包功能）
+- 长度无限制，方便对接硬件 DMA 并且发挥 DMA 的优势
+- 分包功能在中断中处理
+
+**从机协议栈整体执行流程**
 
 .. figure:: usbdev.svg
 
-主机协议栈整体执行流程：
+**主机协议栈整体执行流程**
 
 .. figure:: usbhost.svg
 
-其他相关链接：
+**其他相关链接**
 
 - **CherryUSB 大纲** https://www.bilibili.com/video/BV1st4y1H7K2
 - **从机协议栈视频教程** https://www.bilibili.com/video/BV1Ef4y1t73d
@@ -59,7 +77,6 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    api/api_device
    api/api_host
    api/api_port
-   api/api_common
    api/api_config
 
 .. toctree::

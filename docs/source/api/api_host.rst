@@ -82,11 +82,13 @@ hubport 结构体
         const char *iManufacturer;
         const char *iProduct;
         const char *iSerialNumber;
-    #if 0
-        uint8_t* raw_config_desc;
-    #endif
-        USB_MEM_ALIGNX struct usb_setup_packet setup;
+        uint8_t *raw_config_desc;
+        struct usb_setup_packet *setup;
         struct usbh_hub *parent;
+    #ifdef CONFIG_USBHOST_XHCI
+        uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
+    #endif
+        usb_osal_thread_t thread;
     };
 
 hub 结构体
@@ -101,12 +103,11 @@ hub 结构体
         uint8_t index;
         uint8_t hub_addr;
         usbh_pipe_t intin;
-        USB_MEM_ALIGNX uint8_t int_buffer[1];
+        uint8_t *int_buffer;
         struct usbh_urb intin_urb;
         struct usb_hub_descriptor hub_desc;
         struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
         struct usbh_hubport *parent;
-        usb_slist_t hub_event_list;
     };
 
 usbh_initialize
