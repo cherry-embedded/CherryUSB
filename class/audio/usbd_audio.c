@@ -68,7 +68,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
     uint8_t ch;
     uint8_t mute;
     uint16_t volume;
-    int volume_db;
+    int volume_db = 0;
     uint32_t sampling_freq = 0;
 
     const char *mute_string[2] = { "off", "on" };

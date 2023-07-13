@@ -16,7 +16,6 @@ static int cdc_acm_class_interface_request_handler(struct usb_setup_packet *setu
                 setup->bRequest);
 
     struct cdc_line_coding line_coding;
-    struct cdc_line_coding line_coding_last;
     bool dtr, rts;
     uint8_t intf_num = LO_BYTE(setup->wIndex);
 

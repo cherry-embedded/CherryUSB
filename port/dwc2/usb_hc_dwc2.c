@@ -501,8 +501,6 @@ int usb_hc_init(void)
     USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
     USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
 #endif
-    /*!< FS/LS PHY clock select  */
-    USB_OTG_HOST->HCFG |= USB_OTG_HCFG_FSLSPCS_0;
 
     /* Set default Max speed support */
     USB_OTG_HOST->HCFG &= ~(USB_OTG_HCFG_FSLSS);

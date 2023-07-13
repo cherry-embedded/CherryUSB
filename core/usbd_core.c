@@ -68,8 +68,6 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     struct usbd_tx_rx_msg rx_msg[USB_EP_OUT_NUM];
 } g_usbd_core;
 
-usb_slist_t usbd_intf_head = USB_SLIST_OBJECT_INIT(usbd_intf_head);
-
 #if defined(CONFIG_USBDEV_TX_THREAD)
 usb_osal_mq_t usbd_tx_mq;
 usb_osal_thread_t usbd_tx_thread;
