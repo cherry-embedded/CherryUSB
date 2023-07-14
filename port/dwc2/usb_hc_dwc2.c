@@ -461,7 +461,7 @@ int usb_hc_init(void)
 
     usb_hc_low_level_init();
 
-    USB_LOG_INFO("========== DWC2 params ==========\r\n");
+    USB_LOG_INFO("========== dwc2 hcd params ==========\r\n");
     USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
     USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
     USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
