@@ -17,27 +17,27 @@ static int hid_class_interface_request_handler(struct usb_setup_packet *setup, u
     switch (setup->bRequest) {
         case HID_REQUEST_GET_REPORT:
             /* report id ,report type */
-            usbh_hid_get_report(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue), data, len);
+            usbd_hid_get_report(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue), data, len);
             break;
         case HID_REQUEST_GET_IDLE:
-            (*data)[0] = usbh_hid_get_idle(intf_num, LO_BYTE(setup->wValue));
+            (*data)[0] = usbd_hid_get_idle(intf_num, LO_BYTE(setup->wValue));
             *len = 1;
             break;
         case HID_REQUEST_GET_PROTOCOL:
-            (*data)[0] = usbh_hid_get_protocol(intf_num);
+            (*data)[0] = usbd_hid_get_protocol(intf_num);
             *len = 1;
             break;
         case HID_REQUEST_SET_REPORT:
             /* report id ,report type, report, report len */
-            usbh_hid_set_report(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue), *data, *len);
+            usbd_hid_set_report(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue), *data, *len);
             break;
         case HID_REQUEST_SET_IDLE:
             /* report id, duration */
-            usbh_hid_set_idle(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue));
+            usbd_hid_set_idle(intf_num, LO_BYTE(setup->wValue), HI_BYTE(setup->wValue));
             break;
         case HID_REQUEST_SET_PROTOCOL:
             /* protocol */
-            usbh_hid_set_protocol(intf_num, LO_BYTE(setup->wValue));
+            usbd_hid_set_protocol(intf_num, LO_BYTE(setup->wValue));
             break;
 
         default:
@@ -60,30 +60,30 @@ struct usbd_interface *usbd_hid_init_intf(struct usbd_interface *intf, const uin
     return intf;
 }
 
-__WEAK void usbh_hid_get_report(uint8_t intf, uint8_t report_id, uint8_t report_type, uint8_t **data, uint32_t *len)
+__WEAK void usbd_hid_get_report(uint8_t intf, uint8_t report_id, uint8_t report_type, uint8_t **data, uint32_t *len)
 {
     (*data[0]) = 0;
     *len = 1;
 }
 
-__WEAK uint8_t usbh_hid_get_idle(uint8_t intf, uint8_t report_id)
+__WEAK uint8_t usbd_hid_get_idle(uint8_t intf, uint8_t report_id)
 {
     return 0;
 }
 
-__WEAK uint8_t usbh_hid_get_protocol(uint8_t intf)
+__WEAK uint8_t usbd_hid_get_protocol(uint8_t intf)
 {
     return 0;
 }
 
-__WEAK void usbh_hid_set_report(uint8_t intf, uint8_t report_id, uint8_t report_type, uint8_t *report, uint32_t report_len)
+__WEAK void usbd_hid_set_report(uint8_t intf, uint8_t report_id, uint8_t report_type, uint8_t *report, uint32_t report_len)
 {
 }
 
-__WEAK void usbh_hid_set_idle(uint8_t intf, uint8_t report_id, uint8_t duration)
+__WEAK void usbd_hid_set_idle(uint8_t intf, uint8_t report_id, uint8_t duration)
 {
 }
 
-__WEAK void usbh_hid_set_protocol(uint8_t intf, uint8_t protocol)
+__WEAK void usbd_hid_set_protocol(uint8_t intf, uint8_t protocol)
 {
 }
