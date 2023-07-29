@@ -103,7 +103,7 @@ usbd_bos_desc_register
 usbd_add_interface
 """"""""""""""""""""""""""""""""""""
 
-``usbd_add_interface`` 添加一个接口驱动。
+``usbd_add_interface`` 添加一个接口驱动。 **添加顺序必须按照描述符顺序**。
 
 .. code-block:: C
 
@@ -122,36 +122,23 @@ usbd_add_endpoint
 
 - **ep**    端点句柄
 
-usb_device_is_configured
-""""""""""""""""""""""""""""""""""""
-
-``usb_device_is_configured`` 用来检查 USB 设备是否被配置（枚举）。
-
-.. code-block:: C
-
-    bool usb_device_is_configured(void);
-
-- **return** 配置状态， 0 表示未配置， 1 表示配置成功
-
-usbd_configure_done_callback
-""""""""""""""""""""""""""""""""""""
-
-``usbd_configure_done_callback`` 在执行 set_configuration 命令后触发，表示配置完成，用户需要实现该函数， **此函数一般用作启动第一次数据接收**，如果没有使用到 out 端点，则函数为空即可。
-
-.. code-block:: C
-
-    bool usbd_configure_done_callback(void);
-
-.. warning:: msc 端点不需要在该函数中手动启动，协议栈会自动启动第一次接收
-
 usbd_initialize
 """"""""""""""""""""""""""""""""""""
 
-``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。
+``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。 **如果使用 os，必须放在线程中执行**。
 
 .. code-block:: C
 
     int usbd_initialize(void);
+
+usbd_event_handler
+""""""""""""""""""""""""""""""""""""
+
+``usbd_event_handler`` 是协议栈中中断或者协议栈一些状态的回调函数。大部分 IP 仅支持 USBD_EVENT_RESET 和 USBD_EVENT_CONFIGURED
+
+.. code-block:: C
+
+    void usbd_event_handler(uint8_t event);
 
 CDC ACM
 -----------------
