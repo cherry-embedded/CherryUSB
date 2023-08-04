@@ -9,7 +9,7 @@
 #define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
-#define USB_CONFIG_SIZE (9 + 9 + 9 + 9 + 7 + MIDI_SIZEOF_JACK_DESC + 7 + 5 + 7 + 5)
+#define USB_CONFIG_SIZE (9 + 9 + 9 + 9 + 7 + MIDI_SIZEOF_JACK_DESC + 9 + 5 + 9 + 5)
 
 #ifdef CONFIG_USB_HS
 #define MIDI_EP_MPS 512
@@ -64,11 +64,11 @@ const uint8_t midi_descriptor[] = {
     // MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, 0x04, 0x01),
     MIDI_JACK_DESCRIPTOR_INIT(0x01),
     // OUT endpoint descriptor
-    USB_ENDPOINT_DESCRIPTOR_INIT(MIDI_OUT_EP, 0x02, MIDI_EP_MPS, 0x00),
+    0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
     0x05, 0x25, 0x01, 0x01, 0x01,
 
     // IN endpoint descriptor
-    USB_ENDPOINT_DESCRIPTOR_INIT(MIDI_IN_EP, 0x02, MIDI_EP_MPS, 0x00),
+    0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
     0x05, 0x25, 0x01, 0x01, 0x03,
 
     ///////////////////////////////////////

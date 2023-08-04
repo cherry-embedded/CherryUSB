@@ -812,6 +812,19 @@ struct audio_cs_ep_ep_general_descriptor {
 
 #define AUDIO_AS_DESCRIPTOR_INIT_LEN(n) (0x09 + 0x09 + 0x07 + 0x08 + 3 * n + 0x09 + 0x07)
 
+#define AUDIO_MS_STANDARD_DESCRIPTOR_INIT(bInterfaceNumber, bNumEndpoints)                                               \
+    0x09,                            /* bLength */                                                                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,   /* bDescriptorType */                                                               \
+    bInterfaceNumber,                /* bInterfaceNumber */                                                              \
+    0x00,                            /* bAlternateSetting */                                                             \
+    bNumEndpoints,                   /* bNumEndpoints */                                                                 \
+    USB_DEVICE_CLASS_AUDIO,          /* bInterfaceClass */                                                               \
+    AUDIO_SUBCLASS_MIDISTREAMING,    /* bInterfaceSubClass */                                                            \
+    AUDIO_PROTOCOL_UNDEFINED,        /* bInterfaceProtocol */                                                            \
+    0x00                             /* iInterface */
+
+#define AUDIO_MS_STANDARD_DESCRIPTOR_INIT_LEN 0x09
+
 struct audio_v2_channel_cluster_descriptor {
     uint8_t bNrChannels;
     uint32_t bmChannelConfig;
@@ -1072,7 +1085,7 @@ struct audio_v2_control_range3_param_block {
     USB_DESCRIPTOR_TYPE_ENDPOINT,    /* bDescriptorType */                                                                                                                \
     bEndpointAddress,                /* bEndpointAddress 3 out endpoint for Audio */                                                                                      \
     bmAttributes,                    /* bmAttributes */                                                                                                                   \
-    WBVAL(wMaxPacketSize),           /* XXXX wMaxPacketSize in Bytes (SampleRate * SlotByteSize * NumChannels) */                                                               \
+    WBVAL(wMaxPacketSize),           /* XXXX wMaxPacketSize in Bytes (SampleRate * SlotByteSize * NumChannels) */                                                         \
     bInterval,                       /* bInterval */                                                                                                                      \
     0x08,                            /* bLength */                                                                                                                        \
     AUDIO_ENDPOINT_DESCRIPTOR_TYPE,  /* bDescriptorType */                                                                                                                \
