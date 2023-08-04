@@ -23,6 +23,26 @@
 #define MIDI_PITCHBEND_MIN -8192
 #define MIDI_PITCHBEND_MAX 8191
 
+/*! Enumeration of MIDI code index number */
+enum MidiCodeIndexNumber {
+    MIDI_CIN_MISC              = 0,
+    MIDI_CIN_CABLE_EVENT       = 1,
+    MIDI_CIN_SYSCOM_2BYTE      = 2, ///< 2 byte system common message e.g MTC, SongSelect
+    MIDI_CIN_SYSCOM_3BYTE      = 3, ///< 3 byte system common message e.g SPP
+    MIDI_CIN_SYSEX_START       = 4, ///< SysEx starts or continue
+    MIDI_CIN_SYSEX_END_1BYTE   = 5, ///< SysEx ends with 1 data, or 1 byte system common message
+    MIDI_CIN_SYSEX_END_2BYTE   = 6, ///< SysEx ends with 2 data
+    MIDI_CIN_SYSEX_END_3BYTE   = 7, ///< SysEx ends with 3 data
+    MIDI_CIN_NOTE_OFF          = 8,
+    MIDI_CIN_NOTE_ON           = 9,
+    MIDI_CIN_POLY_KEYPRESS     = 10,
+    MIDI_CIN_CONTROL_CHANGE    = 11,
+    MIDI_CIN_PROGRAM_CHANGE    = 12,
+    MIDI_CIN_CHANNEL_PRESSURE  = 13,
+    MIDI_CIN_PITCH_BEND_CHANGE = 14,
+    MIDI_CIN_1BYTE_DATA        = 15
+};
+
 /*! Enumeration of MIDI types */
 enum MidiType {
     InvalidType = 0x00,          ///< For notifying errors
@@ -181,6 +201,13 @@ struct midi_cs_ep_ms_general_descriptor {
 #define MIDI_SIZEOF_MS_GENERAL_DESC(n) (4 + n)
 
 // clang-format off
+#define MIDI_CS_HEADER_DESCRIPTOR_INIT(wTotalLength)                                              \
+    0x07,                                             /* bLength */                               \
+    USB_CS_DESCRIPTOR_TYPE_INTERFACE,                 /* bDescriptorType */                       \
+    MIDI_MS_HEADER_DESCRIPTOR_SUBTYPE,                /* bDescriptorSubtype */                    \
+    WBVAL(0x0100),                                    /* bcdMSC */                                \
+    WBVAL(wTotalLength)                               /* wTotalLength */
+
 #define MIDI_IN_JACK_DESCRIPTOR_INIT(bJackType, bJackID) \
     0x06,                                                \
     0x24,                                                \
