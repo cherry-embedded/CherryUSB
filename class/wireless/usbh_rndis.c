@@ -14,7 +14,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[4096];
 static struct usbh_rndis g_rndis_class[CONFIG_USBHOST_MAX_RNDIS_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_rndis *usbd_rndis_class_alloc(void)
+static struct usbh_rndis *usbh_rndis_class_alloc(void)
 {
     int devno;
 
@@ -29,7 +29,7 @@ static struct usbh_rndis *usbd_rndis_class_alloc(void)
     return NULL;
 }
 
-static void usbd_rndis_class_free(struct usbh_rndis *rndis_class)
+static void usbh_rndis_class_free(struct usbh_rndis *rndis_class)
 {
     int devno = rndis_class->minor;
 
@@ -270,7 +270,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t tmp_buffer[512];
     uint8_t data[32];
 
-    struct usbh_rndis *rndis_class = usbd_rndis_class_alloc();
+    struct usbh_rndis *rndis_class = usbh_rndis_class_alloc();
     if (rndis_class == NULL) {
         USB_LOG_ERR("Fail to alloc rndis_class\r\n");
         return -ENOMEM;
@@ -419,7 +419,7 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_rndis_stop(rndis_class);
         }
 
-        usbd_rndis_class_free(rndis_class);
+        usbh_rndis_class_free(rndis_class);
     }
 
     return ret;
