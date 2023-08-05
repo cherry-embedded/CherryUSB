@@ -14,7 +14,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[32];
 static struct usbh_msc g_msc_class[CONFIG_USBHOST_MAX_MSC_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_msc *usbd_msc_class_alloc(void)
+static struct usbh_msc *usbh_msc_class_alloc(void)
 {
     int devno;
 
@@ -29,7 +29,7 @@ static struct usbh_msc *usbd_msc_class_alloc(void)
     return NULL;
 }
 
-static void usbd_msc_class_free(struct usbh_msc *msc_class)
+static void usbh_msc_class_free(struct usbh_msc *msc_class)
 {
     int devno = msc_class->sdchar - 'a';
 
@@ -279,7 +279,7 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_msc *msc_class = usbd_msc_class_alloc();
+    struct usbh_msc *msc_class = usbh_msc_class_alloc();
     if (msc_class == NULL) {
         USB_LOG_ERR("Fail to alloc msc_class\r\n");
         return -ENOMEM;
@@ -361,7 +361,7 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_msc_stop(msc_class);
         }
 
-        usbd_msc_class_free(msc_class);
+        usbh_msc_class_free(msc_class);
     }
 
     return ret;

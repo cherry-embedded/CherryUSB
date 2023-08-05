@@ -28,7 +28,7 @@ static const char *format_type[] = { "uncompressed", "mjpeg" };
 static struct usbh_video g_video_class[CONFIG_USBHOST_MAX_VIDEO_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_video *usbd_video_class_alloc(void)
+static struct usbh_video *usbh_video_class_alloc(void)
 {
     int devno;
 
@@ -43,7 +43,7 @@ static struct usbh_video *usbd_video_class_alloc(void)
     return NULL;
 }
 
-static void usbd_video_class_free(struct usbh_video *video_class)
+static void usbh_video_class_free(struct usbh_video *video_class)
 {
     int devno = video_class->minor;
 
@@ -293,7 +293,7 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t num_of_frames = 0xff;
     uint8_t *p;
 
-    struct usbh_video *video_class = usbd_video_class_alloc();
+    struct usbh_video *video_class = usbh_video_class_alloc();
     if (video_class == NULL) {
         USB_LOG_ERR("Fail to alloc video_class\r\n");
         return -ENOMEM;
@@ -413,7 +413,7 @@ static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_video_stop(video_class);
         }
 
-        usbd_video_class_free(video_class);
+        usbh_video_class_free(video_class);
     }
 
     return ret;

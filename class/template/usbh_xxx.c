@@ -6,7 +6,7 @@
 static struct usbh_xxx g_xxx_class[CONFIG_USBHOST_MAX_CUSTOM_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_xxx *usbd_xxx_class_alloc(void)
+static struct usbh_xxx *usbh_xxx_class_alloc(void)
 {
     int devno;
 
@@ -21,7 +21,7 @@ static struct usbh_xxx *usbd_xxx_class_alloc(void)
     return NULL;
 }
 
-static void usbd_xxx_class_free(struct usbh_xxx *xxx_class)
+static void usbh_xxx_class_free(struct usbh_xxx *xxx_class)
 {
     int devno = xxx_class->minor;
 
@@ -37,7 +37,7 @@ static int usbh_xxx_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_xxx *xxx_class = usbd_xxx_class_alloc();
+    struct usbh_xxx *xxx_class = usbh_xxx_class_alloc();
     if (xxx_class == NULL) {
         USB_LOG_ERR("Fail to alloc xxx_class\r\n");
         return -ENOMEM;
@@ -67,7 +67,7 @@ static int usbh_xxx_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_xxx_stop(xxx_class);
         }
 
-        usbd_xxx_class_free(xxx_class);
+        usbh_xxx_class_free(xxx_class);
     }
 
     return ret;

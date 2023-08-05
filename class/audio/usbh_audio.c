@@ -26,7 +26,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_audio_buf[128];
 static struct usbh_audio g_audio_class[CONFIG_USBHOST_MAX_AUDIO_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_audio *usbd_audio_class_alloc(void)
+static struct usbh_audio *usbh_audio_class_alloc(void)
 {
     int devno;
 
@@ -41,7 +41,7 @@ static struct usbh_audio *usbd_audio_class_alloc(void)
     return NULL;
 }
 
-static void usbd_audio_class_free(struct usbh_audio *audio_class)
+static void usbh_audio_class_free(struct usbh_audio *audio_class)
 {
     int devno = audio_class->minor;
 
@@ -274,7 +274,7 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t format_offset = 0;
     uint8_t *p;
 
-    struct usbh_audio *audio_class = usbd_audio_class_alloc();
+    struct usbh_audio *audio_class = usbh_audio_class_alloc();
     if (audio_class == NULL) {
         USB_LOG_ERR("Fail to alloc audio_class\r\n");
         return -ENOMEM;
@@ -428,7 +428,7 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_audio_stop(audio_class);
         }
 
-        usbd_audio_class_free(audio_class);
+        usbh_audio_class_free(audio_class);
     }
 
     return ret;

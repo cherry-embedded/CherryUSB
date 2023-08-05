@@ -42,7 +42,7 @@ struct usbh_hubport *usbh_get_roothub_port(unsigned int port)
 static struct usbh_hub g_hub_class[CONFIG_USBHOST_MAX_EXTHUBS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_hub *usbd_hub_class_alloc(void)
+static struct usbh_hub *usbh_hub_class_alloc(void)
 {
     int devno;
 
@@ -57,7 +57,7 @@ static struct usbh_hub *usbd_hub_class_alloc(void)
     return NULL;
 }
 
-static void usbd_hub_class_free(struct usbh_hub *hub_class)
+static void usbh_hub_class_free(struct usbh_hub *hub_class)
 {
     int devno = hub_class->index - EXTHUB_FIRST_INDEX;
 
@@ -309,7 +309,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     struct hub_port_status port_status;
     int ret;
 
-    struct usbh_hub *hub = usbd_hub_class_alloc();
+    struct usbh_hub *hub = usbh_hub_class_alloc();
     if (hub == NULL) {
         USB_LOG_ERR("Fail to alloc cdc_acm_class\r\n");
         return -ENOMEM;
@@ -409,7 +409,7 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_hub_unregister(hub);
         }
 
-        usbd_hub_class_free(hub);
+        usbh_hub_class_free(hub);
     }
     return ret;
 }

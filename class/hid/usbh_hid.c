@@ -13,7 +13,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[128];
 static struct usbh_hid g_hid_class[CONFIG_USBHOST_MAX_HID_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_hid *usbd_hid_class_alloc(void)
+static struct usbh_hid *usbh_hid_class_alloc(void)
 {
     int devno;
 
@@ -28,7 +28,7 @@ static struct usbh_hid *usbd_hid_class_alloc(void)
     return NULL;
 }
 
-static void usbd_hid_class_free(struct usbh_hid *hid_class)
+static void usbh_hid_class_free(struct usbh_hid *hid_class)
 {
     int devno = hid_class->minor;
 
@@ -107,7 +107,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_hid *hid_class = usbd_hid_class_alloc();
+    struct usbh_hid *hid_class = usbh_hid_class_alloc();
     if (hid_class == NULL) {
         USB_LOG_ERR("Fail to alloc hid_class\r\n");
         return -ENOMEM;
@@ -171,7 +171,7 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_hid_stop(hid_class);
         }
 
-        usbd_hid_class_free(hid_class);
+        usbh_hid_class_free(hid_class);
     }
 
     return ret;

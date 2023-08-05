@@ -13,7 +13,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct cdc_line_coding g_cdc_line_coding;
 static struct usbh_cdc_acm g_cdc_acm_class[CONFIG_USBHOST_MAX_CDC_ACM_CLASS];
 static uint32_t g_devinuse = 0;
 
-static struct usbh_cdc_acm *usbd_cdc_acm_class_alloc(void)
+static struct usbh_cdc_acm *usbh_cdc_acm_class_alloc(void)
 {
     int devno;
 
@@ -28,7 +28,7 @@ static struct usbh_cdc_acm *usbd_cdc_acm_class_alloc(void)
     return NULL;
 }
 
-static void usbd_cdc_acm_class_free(struct usbh_cdc_acm *cdc_acm_class)
+static void usbh_cdc_acm_class_free(struct usbh_cdc_acm *cdc_acm_class)
 {
     int devno = cdc_acm_class->minor;
 
@@ -93,7 +93,7 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
-    struct usbh_cdc_acm *cdc_acm_class = usbd_cdc_acm_class_alloc();
+    struct usbh_cdc_acm *cdc_acm_class = usbh_cdc_acm_class_alloc();
     if (cdc_acm_class == NULL) {
         USB_LOG_ERR("Fail to alloc cdc_acm_class\r\n");
         return -ENOMEM;
@@ -164,7 +164,7 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
             usbh_cdc_acm_stop(cdc_acm_class);
         }
 
-        usbd_cdc_acm_class_free(cdc_acm_class);
+        usbh_cdc_acm_class_free(cdc_acm_class);
     }
 
     return ret;
