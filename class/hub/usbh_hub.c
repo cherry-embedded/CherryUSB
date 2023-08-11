@@ -460,9 +460,10 @@ static void usbh_hub_events(struct usbh_hub *hub)
         return;
     }
 
-    for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-        portchange_index = hub->int_buffer[0];
+    portchange_index = hub->int_buffer[0];
+    hub->int_buffer[0] = 0;
 
+    for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
         USB_LOG_DBG("Port change:0x%02x\r\n", portchange_index);
 
         if (!(portchange_index & (1 << (port + 1)))) {
@@ -625,7 +626,6 @@ static void usbh_hub_events(struct usbh_hub *hub)
         }
     }
 
-    hub->int_buffer[0] = 0;
     /* Start next hub int transfer */
     if (!hub->is_roothub && hub->connected) {
         usbh_submit_urb(&hub->intin_urb);
