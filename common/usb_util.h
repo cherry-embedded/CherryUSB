@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, sakumisu
+ * Copyright (c) 2022-2023, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,9 +44,9 @@
 #ifndef __ALIGNED
 #define __ALIGNED(x) __attribute__((aligned(x)))
 #endif
-#elif defined(__ICCARM__) || defined(__ICCRX__)
+#elif defined(__ICCARM__) || defined(__ICCRX__) || defined(__ICCRISCV__)
 #ifndef __USED
-#if __ICCARM_V8
+#if defined(__ICCARM_V8) || defined (__ICCRISCV__)
 #define __USED __attribute__((used))
 #else
 #define __USED __root
@@ -54,7 +54,7 @@
 #endif
 
 #ifndef __WEAK
-#if __ICCARM_V8
+#if defined(__ICCARM_V8) || defined (__ICCRISCV__)
 #define __WEAK __attribute__((weak))
 #else
 #define __WEAK _Pragma("__weak")
@@ -62,7 +62,7 @@
 #endif
 
 #ifndef __PACKED
-#if __ICCARM_V8
+#if defined(__ICCARM_V8) || defined (__ICCRISCV__)
 #define __PACKED __attribute__((packed, aligned(1)))
 #else
 /* Needs IAR language extensions */
@@ -71,7 +71,7 @@
 #endif
 
 #ifndef __PACKED_STRUCT
-#if __ICCARM_V8
+#if defined(__ICCARM_V8) || defined (__ICCRISCV__)
 #define __PACKED_STRUCT struct __attribute__((packed, aligned(1)))
 #else
 /* Needs IAR language extensions */
@@ -80,7 +80,7 @@
 #endif
 
 #ifndef __PACKED_UNION
-#if __ICCARM_V8
+#if defined(__ICCARM_V8) || defined (__ICCRISCV__)
 #define __PACKED_UNION union __attribute__((packed, aligned(1)))
 #else
 /* Needs IAR language extensions */
@@ -89,7 +89,7 @@
 #endif
 
 #ifndef __ALIGNED
-#if __ICCARM_V8
+#if defined(__ICCARM_V8) || defined (__ICCRISCV__)
 #define __ALIGNED(x) __attribute__((aligned(x)))
 #elif (__VER__ >= 7080000)
 /* Needs IAR language extensions */
