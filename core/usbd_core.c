@@ -459,7 +459,7 @@ static bool usbd_set_interface(uint8_t iface, uint8_t alt_setting)
                     if_desc = (void *)p;
                 }
 
-                USB_LOG_DBG("Current iface %u alt setting %u",
+                USB_LOG_DBG("Current iface %u alt setting %u\r\n",
                             cur_iface, cur_alt_setting);
                 break;
 
