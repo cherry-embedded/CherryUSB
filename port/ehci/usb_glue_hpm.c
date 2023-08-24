@@ -3,39 +3,9 @@
 #include "hpm_soc.h"
 #include "hpm_usb_drv.h"
 
-#define USB_PHY_INIT_DELAY_COUNT (16U) /**< a delay count for USB phy initialization */
-
-/* Initialize USB phy */
-static void usb_phy_init(USB_Type *ptr)
-{
-    uint32_t status;
-
-    ptr->OTG_CTRL0 |= USB_OTG_CTRL0_OTG_UTMI_RESET_SW_MASK;     /* set otg_utmi_reset_sw for naneng usbphy */
-    ptr->OTG_CTRL0 &= ~USB_OTG_CTRL0_OTG_UTMI_SUSPENDM_SW_MASK; /* clr otg_utmi_suspend_m for naneng usbphy */
-    ptr->PHY_CTRL1 &= ~USB_PHY_CTRL1_UTMI_CFG_RST_N_MASK;       /* clr cfg_rst_n */
-
-    do {
-        status = USB_OTG_CTRL0_OTG_UTMI_RESET_SW_GET(ptr->OTG_CTRL0); /* wait for reset status */
-    } while (status == 0);
-
-    ptr->OTG_CTRL0 |= USB_OTG_CTRL0_OTG_UTMI_SUSPENDM_SW_MASK; /* set otg_utmi_suspend_m for naneng usbphy */
-
-    for (int i = 0; i < USB_PHY_INIT_DELAY_COUNT; i++) {
-        ptr->PHY_CTRL0 = USB_PHY_CTRL0_GPIO_ID_SEL_N_SET(0); /* used for delay */
-    }
-
-    ptr->OTG_CTRL0 &= ~USB_OTG_CTRL0_OTG_UTMI_RESET_SW_MASK; /* clear otg_utmi_reset_sw for naneng usbphy */
-
-    /* otg utmi clock detection */
-    ptr->PHY_STATUS |= USB_PHY_STATUS_UTMI_CLK_VALID_MASK; /* write 1 to clear valid status */
-    do {
-        status = USB_PHY_STATUS_UTMI_CLK_VALID_GET(ptr->PHY_STATUS); /* get utmi clock status */
-    } while (status == 0);
-
-    ptr->PHY_CTRL1 |= USB_PHY_CTRL1_UTMI_CFG_RST_N_MASK; /* set cfg_rst_n */
-
-    ptr->PHY_CTRL1 |= USB_PHY_CTRL1_UTMI_OTG_SUSPENDM_MASK; /* set otg_suspendm */
-}
+#if !defined(CONFIG_USB_EHCI_HPMICRO) || !CONFIG_USB_EHCI_HPMICRO
+#error "hpm ehci must set CONFIG_USB_EHCI_HPMICRO=1"
+#endif
 
 static void usb_host_mode_init(USB_Type *ptr)
 {
