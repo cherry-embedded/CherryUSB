@@ -9,13 +9,13 @@
 #define USBH_IRQHandler USBH_IRQHandler
 #endif
 
-#define EHCI_HCCR           ((struct ehci_hccr *)CONFIG_USB_EHCI_HCCR_BASE)
-#define EHCI_HCOR           ((struct ehci_hcor *)CONFIG_USB_EHCI_HCOR_BASE)
+#define EHCI_HCCR        ((struct ehci_hccr *)CONFIG_USB_EHCI_HCCR_BASE)
+#define EHCI_HCOR        ((struct ehci_hcor *)CONFIG_USB_EHCI_HCOR_BASE)
 
-#define EHCI_PTR2ADDR(x)    ((uint32_t)x)
-#define EHCI_ADDRALIGN32(x) ((uint32_t)(x) & ~0x1F)
-#define EHCI_ADDR2QH(x)     ((struct ehci_qh_hw *)((uint32_t)(x) & ~0x1F))
-#define EHCI_ADDR2ITD(x)    ((struct ehci_itd_hw *)((uint32_t)(x) & ~0x1F))
+#define EHCI_PTR2ADDR(x) ((uint32_t)(x) & ~0x1F)
+#define EHCI_ADDR2QH(x)  ((struct ehci_qh_hw *)((uint32_t)(x) & ~0x1F))
+#define EHCI_ADDR2QTD(x) ((struct ehci_qtd_hw *)((uint32_t)(x) & ~0x1F))
+#define EHCI_ADDR2ITD(x) ((struct ehci_itd_hw *)((uint32_t)(x) & ~0x1F))
 
 #if CONFIG_USB_EHCI_FRAME_LIST_SIZE == 1024
 #define EHCI_PERIOIDIC_QH_NUM 11
@@ -49,7 +49,6 @@ struct ehci_pipe {
     bool waiter;
     usb_osal_sem_t waitsem;
     struct usbh_hubport *hport;
-    struct ehci_qh_hw *qh;
     struct usbh_urb *urb;
     uint8_t mf_unmask;
     uint8_t mf_valid;
@@ -60,11 +59,14 @@ struct ehci_pipe {
 struct ehci_qh_hw {
     struct ehci_qh hw;
     uint32_t first_qtd;
-    struct ehci_pipe *pipe;
+    struct usbh_urb *urb;
+    uint8_t remove_in_iaad;
 } __attribute__((aligned(32)));
 
 struct ehci_qtd_hw {
     struct ehci_qtd hw;
+    struct usbh_urb *urb;
+    uint32_t total_len;
 } __attribute__((aligned(32)));
 
 struct ehci_itd_hw {
