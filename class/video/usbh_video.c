@@ -53,32 +53,45 @@ static void usbh_video_class_free(struct usbh_video *video_class)
     memset(video_class, 0, sizeof(struct usbh_video));
 }
 
-int usbh_video_get_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
+int usbh_video_get(struct usbh_video *video_class, uint8_t request, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
     struct usb_setup_packet *setup = video_class->hport->setup;
     int ret;
+    uint8_t retry;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = VIDEO_REQUEST_GET_CUR;
+    setup->bRequest = request;
     setup->wValue = cs << 8;
     setup->wIndex = (entity_id << 8) | intf;
     setup->wLength = len;
 
-    ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
-    if (ret < 0) {
-        return ret;
+    retry = 0;
+    while (1) {
+        ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
+        if (ret > 0) {
+            break;
+        }
+        retry++;
+
+        if (retry == 3) {
+            return ret;
+        }
     }
-    memcpy(buf, g_video_buf, len);
+
+    if (buf) {
+        memcpy(buf, g_video_buf, len);
+    }
+
     return ret;
 }
 
-int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
+int usbh_video_set(struct usbh_video *video_class, uint8_t request, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
     struct usb_setup_packet *setup = video_class->hport->setup;
     int ret;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = VIDEO_REQUEST_SET_CUR;
+    setup->bRequest = request;
     setup->wValue = cs << 8;
     setup->wIndex = (entity_id << 8) | intf;
     setup->wLength = len;
@@ -86,13 +99,13 @@ int usbh_video_set_cur(struct usbh_video *video_class, uint8_t intf, uint8_t ent
     memcpy(g_video_buf, buf, len);
 
     ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
-    usb_osal_msleep(5);
+    usb_osal_msleep(50);
     return ret;
 }
 
 int usbh_videostreaming_get_cur_probe(struct usbh_video *video_class)
 {
-    return usbh_video_get_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, (uint8_t *)&video_class->probe, 26);
+    return usbh_video_get(video_class, VIDEO_REQUEST_GET_CUR, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, (uint8_t *)&video_class->probe, 26);
 }
 
 int usbh_videostreaming_set_cur_probe(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex)
@@ -100,7 +113,8 @@ int usbh_videostreaming_set_cur_probe(struct usbh_video *video_class, uint8_t fo
     video_class->probe.bFormatIndex = formatindex;
     video_class->probe.bFrameIndex = frameindex;
     video_class->probe.dwMaxPayloadTransferSize = 0;
-    return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, (uint8_t *)&video_class->probe, 26);
+    video_class->probe.dwFrameInterval = 333333;
+    return usbh_video_set(video_class, VIDEO_REQUEST_SET_CUR, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, (uint8_t *)&video_class->probe, 26);
 }
 
 int usbh_videostreaming_set_cur_commit(struct usbh_video *video_class, uint8_t formatindex, uint8_t frameindex)
@@ -108,7 +122,8 @@ int usbh_videostreaming_set_cur_commit(struct usbh_video *video_class, uint8_t f
     memcpy(&video_class->commit, &video_class->probe, sizeof(struct video_probe_and_commit_controls));
     video_class->commit.bFormatIndex = formatindex;
     video_class->commit.bFrameIndex = frameindex;
-    return usbh_video_set_cur(video_class, video_class->data_intf, 0x00, VIDEO_VS_COMMIT_CONTROL, (uint8_t *)&video_class->commit, 26);
+    video_class->commit.dwFrameInterval = 333333;
+    return usbh_video_set(video_class, VIDEO_REQUEST_SET_CUR, video_class->data_intf, 0x00, VIDEO_VS_COMMIT_CONTROL, (uint8_t *)&video_class->commit, 26);
 }
 
 int usbh_video_open(struct usbh_video *video_class,
@@ -125,6 +140,7 @@ int usbh_video_open(struct usbh_video *video_class,
     bool found = false;
     uint8_t formatidx = 0;
     uint8_t frameidx = 0;
+    uint8_t step;
 
     if (video_class->is_opened) {
         return -EMFILE;
@@ -152,31 +168,65 @@ int usbh_video_open(struct usbh_video *video_class,
         return -EINVAL;
     }
 
+    /* Open video step:
+     * Get CUR request (probe)
+     * Set CUR request (probe)
+     * Get CUR request (probe)
+     * Get MAX request (probe)
+     * Get MIN request (probe)
+     * Get CUR request (probe)
+     * Set CUR request (commit)
+     *    
+    */
+    step = 0;
     ret = usbh_videostreaming_get_cur_probe(video_class);
     if (ret < 0) {
-        return ret;
-    }
-    ret = usbh_videostreaming_set_cur_probe(video_class, formatidx, frameidx);
-    if (ret < 0) {
-        return ret;
-    }
-    ret = usbh_videostreaming_get_cur_probe(video_class);
-    if (ret < 0) {
-        return ret;
-    }
-    ret = usbh_videostreaming_set_cur_probe(video_class, formatidx, frameidx);
-    if (ret < 0) {
-        return ret;
-    }
-    ret = usbh_videostreaming_get_cur_probe(video_class);
-    if (ret < 0) {
-        return ret;
-    }
-    ret = usbh_videostreaming_set_cur_commit(video_class, formatidx, frameidx);
-    if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
+    step = 1;
+    ret = usbh_videostreaming_set_cur_probe(video_class, formatidx, frameidx);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 2;
+    ret = usbh_videostreaming_get_cur_probe(video_class);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 3;
+    ret = usbh_video_get(video_class, VIDEO_REQUEST_GET_MAX, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, NULL, 26);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 4;
+    ret = usbh_video_get(video_class, VIDEO_REQUEST_GET_MIN, video_class->data_intf, 0x00, VIDEO_VS_PROBE_CONTROL, NULL, 26);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 5;
+    ret = usbh_videostreaming_set_cur_probe(video_class, formatidx, frameidx);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 6;
+    ret = usbh_videostreaming_get_cur_probe(video_class);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 7;
+    ret = usbh_videostreaming_set_cur_commit(video_class, formatidx, frameidx);
+    if (ret < 0) {
+        goto errout;
+    }
+
+    step = 8;
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = USB_REQUEST_SET_INTERFACE;
     setup->wValue = altsetting;
@@ -185,7 +235,7 @@ int usbh_video_open(struct usbh_video *video_class,
 
     ret = usbh_control_transfer(video_class->hport->ep0, setup, NULL);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
     ep_desc = &video_class->hport->config.intf[video_class->data_intf].altsetting[altsetting].ep[0].ep_desc;
@@ -202,6 +252,10 @@ int usbh_video_open(struct usbh_video *video_class,
     USB_LOG_INFO("Open video and select formatidx:%u, frameidx:%u, altsetting:%u\r\n", formatidx, frameidx, altsetting);
     video_class->is_opened = true;
     video_class->current_format = format_type;
+    return ret;
+
+errout:
+    USB_LOG_ERR("Fail to open video in step %u\r\n", step);
     return ret;
 }
 
