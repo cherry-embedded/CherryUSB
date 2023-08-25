@@ -10,6 +10,10 @@
 #define USB_NUM_BIDIR_ENDPOINTS USB_SOC_DCD_MAX_ENDPOINT_COUNT
 #endif
 
+#if !defined(CONFIG_HPM_USB_BASE) || !defined(CONFIG_HPM_USB_IRQn)
+#error "hpm dcd must config CONFIG_HPM_USB_BASE and CONFIG_HPM_USB_IRQn"
+#endif
+
 /* USBSTS, USBINTR */
 enum {
     intr_usb = HPM_BITSMASK(1, 0),
@@ -62,7 +66,7 @@ int usb_dc_init(void)
 
     memset(&g_hpm_udc, 0, sizeof(struct hpm_udc));
     g_hpm_udc.handle = &usb_device_handle[0];
-    g_hpm_udc.handle->regs = (USB_Type *)HPM_USB0_BASE;
+    g_hpm_udc.handle->regs = (USB_Type *)CONFIG_HPM_USB_BASE;
     g_hpm_udc.handle->dcd_data = &_dcd_data;
 
     uint32_t int_mask;
@@ -71,7 +75,7 @@ int usb_dc_init(void)
 
     usb_device_init(g_hpm_udc.handle, int_mask);
 
-    intc_m_enable_irq(IRQn_USB0);
+    intc_m_enable_irq(CONFIG_HPM_USB_IRQn);
     return 0;
 }
 
@@ -279,8 +283,8 @@ void USBD_IRQHandler(void)
     }
 }
 
-void isr_usb0(void)
+void isr_usb(void)
 {
     USBD_IRQHandler();
 }
-SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usb0)
+SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USB_IRQn, isr_usb)
