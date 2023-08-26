@@ -7,8 +7,8 @@
 #error "hpm ehci must set CONFIG_USB_EHCI_HPMICRO=1"
 #endif
 
-#if !defined(CONFIG_HPM_USB_BASE) || !defined(CONFIG_HPM_USB_IRQn)
-#error "hpm ehci must config CONFIG_HPM_USB_BASE and CONFIG_HPM_USB_IRQn"
+#if !defined(CONFIG_HPM_USBH_BASE) || !defined(CONFIG_HPM_USBH_IRQn)
+#error "hpm ehci must config CONFIG_HPM_USBH_BASE and CONFIG_HPM_USBH_IRQn"
 #endif
 
 static void usb_host_mode_init(USB_Type *ptr)
@@ -32,20 +32,20 @@ static void usb_host_mode_init(USB_Type *ptr)
 
 void usb_hc_low_level_init()
 {
-    usb_phy_init((USB_Type *)CONFIG_HPM_USB_BASE);
-    intc_m_enable_irq(CONFIG_HPM_USB_IRQn);
+    usb_phy_init((USB_Type *)CONFIG_HPM_USBH_BASE);
+    intc_m_enable_irq(CONFIG_HPM_USBH_IRQn);
 }
 
 void usb_hc_low_level2_init()
 {
-    usb_host_mode_init((USB_Type *)CONFIG_HPM_USB_BASE);
+    usb_host_mode_init((USB_Type *)CONFIG_HPM_USBH_BASE);
 }
 
 uint8_t usbh_get_port_speed(const uint8_t port)
 {
     uint8_t speed;
 
-    speed = usb_get_port_speed((USB_Type *)CONFIG_HPM_USB_BASE);
+    speed = usb_get_port_speed((USB_Type *)CONFIG_HPM_USBH_BASE);
 
     if (speed == 0x00) {
         return USB_SPEED_FULL;
@@ -66,4 +66,4 @@ void isr_usb(void)
 {
     USBH_IRQHandler();
 }
-SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USB_IRQn, isr_usb)
+SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USBH_IRQn, isr_usb)
