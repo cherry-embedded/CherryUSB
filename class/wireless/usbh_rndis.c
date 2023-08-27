@@ -260,7 +260,6 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
 
 static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
     uint32_t *oid_support_list;

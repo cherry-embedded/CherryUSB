@@ -16,6 +16,8 @@ struct usbh_cdc_custom_air724 {
     struct usbh_urb bulkout_urb; /* Bulk OUT urb */
 };
 
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_air724_buf[32];
+
 static inline int usbh_air724_bulk_out_transfer(struct usbh_cdc_custom_air724 *cdc_custom_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
 {
     int ret;
@@ -30,12 +32,26 @@ static inline int usbh_air724_bulk_out_transfer(struct usbh_cdc_custom_air724 *c
     return ret;
 }
 
+static inline int usbh_air724_bulk_in_transfer(struct usbh_cdc_custom_air724 *cdc_custom_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
+{
+    int ret;
+    struct usbh_urb *urb = &cdc_custom_class->bulkin_urb;
+    memset(urb, 0, sizeof(struct usbh_urb));
+
+    usbh_bulk_urb_fill(urb, cdc_custom_class->bulkin, buffer, buflen, timeout, NULL, NULL);
+    ret = usbh_submit_urb(urb);
+    if (ret == 0) {
+        ret = urb->actual_length;
+    }
+    return ret;
+}
+
 int usbh_air724_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
+    /* interface 3 is AT command */
     if (intf != 3) {
         USB_LOG_WRN("ignore intf:%d\r\n", intf);
         return 0;
@@ -65,20 +81,22 @@ int usbh_air724_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register air724 Class:%s\r\n", hport->config.intf[intf].devname);
 
-    uint8_t cdc_buffer[32] = { 0x41, 0x54, 0x0d, 0x0a };
-    ret = usbh_air724_bulk_out_transfer(cdc_custom_class->bulkout, cdc_buffer, 4, 3000);
+    const uint8_t AT[4] = { 0x41, 0x54, 0x0d, 0x0a };
+
+    memcpy(g_air724_buf, AT, 4);
+    ret = usbh_air724_bulk_out_transfer(cdc_custom_class, g_air724_buf, 4, 3000);
     if (ret < 0) {
         USB_LOG_ERR("bulk out error,ret:%d\r\n", ret);
     } else {
         USB_LOG_RAW("send over:%d\r\n", ret);
     }
-    ret = usbh_air724_bulk_out_transfer(cdc_custom_class->bulkin, cdc_buffer, 10, 3000);
+    ret = usbh_air724_bulk_in_transfer(cdc_custom_class, g_air724_buf, 10, 3000);
     if (ret < 0) {
         USB_LOG_ERR("bulk in error,ret:%d\r\n", ret);
     } else {
         USB_LOG_RAW("recv over:%d\r\n", ret);
         for (size_t i = 0; i < ret; i++) {
-            USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
+            USB_LOG_RAW("0x%02x ", g_air724_buf[i]);
         }
     }
 

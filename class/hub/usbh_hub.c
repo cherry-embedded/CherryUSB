@@ -108,7 +108,7 @@ static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
     memcpy(buffer, g_hub_buf, USB_SIZEOF_HUB_DESC);
     return ret;
 }
-
+#if 0
 static int _usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
 {
     struct usb_setup_packet *setup;
@@ -129,6 +129,7 @@ static int _usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
     memcpy(buffer, g_hub_buf, 2);
     return ret;
 }
+#endif
 #endif
 
 static int _usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct hub_port_status *port_status)
