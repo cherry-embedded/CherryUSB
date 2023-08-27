@@ -6,9 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "usbd_core.h"
-#if defined(CONFIG_USBDEV_TX_THREAD) || defined(CONFIG_USBDEV_RX_THREAD)
-#include "usb_osal.h"
-#endif
 
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
@@ -67,15 +64,6 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     struct usbd_tx_rx_msg tx_msg[USB_EP_IN_NUM];
     struct usbd_tx_rx_msg rx_msg[USB_EP_OUT_NUM];
 } g_usbd_core;
-
-#if defined(CONFIG_USBDEV_TX_THREAD)
-usb_osal_mq_t usbd_tx_mq;
-usb_osal_thread_t usbd_tx_thread;
-#endif
-#if defined(CONFIG_USBDEV_RX_THREAD)
-usb_osal_mq_t usbd_rx_mq;
-usb_osal_thread_t usbd_rx_thread;
-#endif
 
 static void usbd_class_event_notify_handler(uint8_t event, void *arg);
 
@@ -1140,65 +1128,17 @@ void usbd_event_ep0_out_complete_handler(uint8_t ep, uint32_t nbytes)
 
 void usbd_event_ep_in_complete_handler(uint8_t ep, uint32_t nbytes)
 {
-#ifndef CONFIG_USBDEV_TX_THREAD
     if (g_usbd_core.tx_msg[ep & 0x7f].cb) {
         g_usbd_core.tx_msg[ep & 0x7f].cb(ep, nbytes);
     }
-#else
-    g_usbd_core.tx_msg[ep & 0x7f].nbytes = nbytes;
-    usb_osal_mq_send(usbd_tx_mq, (uintptr_t)&g_usbd_core.tx_msg[ep & 0x7f]);
-#endif
 }
 
 void usbd_event_ep_out_complete_handler(uint8_t ep, uint32_t nbytes)
 {
-#ifndef CONFIG_USBDEV_RX_THREAD
     if (g_usbd_core.rx_msg[ep & 0x7f].cb) {
         g_usbd_core.rx_msg[ep & 0x7f].cb(ep, nbytes);
     }
-#else
-    g_usbd_core.rx_msg[ep & 0x7f].nbytes = nbytes;
-    usb_osal_mq_send(usbd_rx_mq, (uintptr_t)&g_usbd_core.rx_msg[ep & 0x7f]);
-#endif
 }
-
-#ifdef CONFIG_USBDEV_TX_THREAD
-static void usbdev_tx_thread(void *argument)
-{
-    struct usbd_tx_rx_msg *msg;
-    int ret;
-
-    while (1) {
-        ret = usb_osal_mq_recv(usbd_tx_mq, (uintptr_t *)&msg, 0xffffffff);
-        if (ret < 0) {
-            continue;
-        }
-
-        if (msg->cb) {
-            msg->cb(msg->ep, msg->nbytes);
-        }
-    }
-}
-#endif
-
-#ifdef CONFIG_USBDEV_RX_THREAD
-static void usbdev_rx_thread(void *argument)
-{
-    struct usbd_tx_rx_msg *msg;
-    int ret;
-
-    while (1) {
-        ret = usb_osal_mq_recv(usbd_rx_mq, (uintptr_t *)&msg, 0xffffffff);
-        if (ret < 0) {
-            continue;
-        }
-
-        if (msg->cb) {
-            msg->cb(msg->ep, msg->nbytes);
-        }
-    }
-}
-#endif
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 void usbd_desc_register(struct usb_descriptor *desc)
@@ -1270,26 +1210,6 @@ bool usb_device_is_configured(void)
 
 int usbd_initialize(void)
 {
-#ifdef CONFIG_USBDEV_TX_THREAD
-    usbd_tx_mq = usb_osal_mq_create(16);
-    if (usbd_tx_mq == NULL) {
-        return -1;
-    }
-    usbd_tx_thread = usb_osal_thread_create("usbd_tx", CONFIG_USBDEV_TX_STACKSIZE, CONFIG_USBDEV_TX_PRIO, usbdev_tx_thread, NULL);
-    if (usbd_tx_thread == NULL) {
-        return -1;
-    }
-#endif
-#ifdef CONFIG_USBDEV_RX_THREAD
-    usbd_rx_mq = usb_osal_mq_create(16);
-    if (usbd_rx_mq == NULL) {
-        return -1;
-    }
-    usbd_rx_thread = usb_osal_thread_create("usbd_rx", CONFIG_USBDEV_RX_STACKSIZE, CONFIG_USBDEV_RX_PRIO, usbdev_rx_thread, NULL);
-    if (usbd_rx_thread == NULL) {
-        return -1;
-    }
-#endif
     return usb_dc_init();
 }
 
@@ -1297,8 +1217,6 @@ int usbd_deinitialize(void)
 {
     g_usbd_core.intf_offset = 0;
     usb_dc_deinit();
-#if defined(CONFIG_USBDEV_TX_THREAD) || defined(CONFIG_USBDEV_RX_THREAD)
-#endif
     return 0;
 }
 
