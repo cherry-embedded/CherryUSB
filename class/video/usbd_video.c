@@ -769,14 +769,14 @@ uint32_t usbd_video_mjpeg_payload_fill(uint8_t *input, uint32_t input_len, uint8
     uint32_t picture_pos = 0;
     static uint8_t uvc_header[2] = { 0x02, 0x80 };
 
-    packets = input_len / g_usbd_video.probe.dwMaxPayloadTransferSize + 1;
-    last_packet_size = input_len - ((packets - 1) * (g_usbd_video.probe.dwMaxPayloadTransferSize - 2)) + 2;
+    packets = (input_len + (g_usbd_video.probe.dwMaxPayloadTransferSize - 2) ) / (g_usbd_video.probe.dwMaxPayloadTransferSize - 2);
+    last_packet_size = input_len - ((packets - 1) * (g_usbd_video.probe.dwMaxPayloadTransferSize - 2));
 
     for (size_t i = 0; i < packets; i++) {
         output[g_usbd_video.probe.dwMaxPayloadTransferSize * i] = uvc_header[0];
         output[g_usbd_video.probe.dwMaxPayloadTransferSize * i + 1] = uvc_header[1];
         if (i == (packets - 1)) {
-            memcpy(&output[2 + g_usbd_video.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], last_packet_size - 2);
+            memcpy(&output[2 + g_usbd_video.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], last_packet_size);
             output[g_usbd_video.probe.dwMaxPayloadTransferSize * i + 1] |= (1 << 1);
         } else {
             memcpy(&output[2 + g_usbd_video.probe.dwMaxPayloadTransferSize * i], &input[picture_pos], g_usbd_video.probe.dwMaxPayloadTransferSize - 2);
