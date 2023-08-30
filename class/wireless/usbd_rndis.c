@@ -394,7 +394,7 @@ static int rndis_set_cmd_handler(uint8_t *data, uint32_t len)
 
 static int rndis_reset_cmd_handler(uint8_t *data, uint32_t len)
 {
-    rndis_reset_msg_t *cmd = (rndis_reset_msg_t *)data;
+    // rndis_reset_msg_t *cmd = (rndis_reset_msg_t *)data;
     rndis_reset_cmplt_t *resp;
 
     resp = ((rndis_reset_cmplt_t *)rndis_encapsulated_resp_buffer);
