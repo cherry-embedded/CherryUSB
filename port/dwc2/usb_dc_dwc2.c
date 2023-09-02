@@ -888,9 +888,11 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     if (!data && data_len) {
         return -1;
     }
+#if 0 /* some chips have confused with this, so disable as default */
     if (USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
         return -2;
     }
+#endif
     if (ep_idx && !(USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_MPSIZ)) {
         return -3;
     }
@@ -959,9 +961,11 @@ int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
     if (!data && data_len) {
         return -1;
     }
+#if 0 /* some chips have confused with this, so disable as default */
     if (USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) {
         return -2;
     }
+#endif
     if (ep_idx && !(USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_MPSIZ)) {
         return -3;
     }
