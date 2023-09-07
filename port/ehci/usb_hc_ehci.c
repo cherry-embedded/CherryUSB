@@ -1151,7 +1151,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     pipe = urb->pipe;
 
-    if (!pipe->inuse || !(EHCI_HCOR->portsc[0] & EHCI_PORTSC_CCS) || !pipe->hport->connected) {
+    if (!pipe->inuse /*|| !(EHCI_HCOR->portsc[pipe->hport->port-1] & EHCI_PORTSC_CCS)*/ || !pipe->hport->connected) {
         return -ENODEV;
     }
 

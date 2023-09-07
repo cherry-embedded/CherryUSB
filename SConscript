@@ -97,6 +97,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/msc/usbh_msc.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_RNDIS']):
         src += Glob('class/wireless/usbh_rndis.c')
+        src += Glob('third_party/rt-thread-4.1.1/rndis_host/rndis_host.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
@@ -118,6 +119,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         path += [cwd + '/class/vendor/cp201x']
         src += Glob('class/vendor/cp201x/usbh_cp210x.c')
         src += Glob('third_party/rt-thread-4.1.1/dfs/drv_usbh_cp210x_rtt.c')
+
+src += Glob('third_party/rt-thread-4.1.1/msh_cmd.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 

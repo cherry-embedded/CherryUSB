@@ -241,6 +241,10 @@ typedef struct
 #define USB_OTG_DCFG_ERRATIM_Msk                 (0x1UL << USB_OTG_DCFG_ERRATIM_Pos) /*!< 0x00008000 */
 #define USB_OTG_DCFG_ERRATIM                     USB_OTG_DCFG_ERRATIM_Msk        /*!< Erratic error interrupt mask */
 
+#define USB_OTG_DCFG_DESCDMA_Pos                 (23U)
+#define USB_OTG_DCFG_DESCDMA_Msk                 (0x1UL << USB_OTG_DCFG_DESCDMA_Pos)
+#define USB_OTG_DCFG_DESCDMA                     USB_OTG_DCFG_DESCDMA_Msk
+
 #define USB_OTG_DCFG_PERSCHIVL_Pos               (24U)
 #define USB_OTG_DCFG_PERSCHIVL_Msk               (0x3UL << USB_OTG_DCFG_PERSCHIVL_Pos) /*!< 0x03000000 */
 #define USB_OTG_DCFG_PERSCHIVL                   USB_OTG_DCFG_PERSCHIVL_Msk    /*!< Periodic scheduling interval */

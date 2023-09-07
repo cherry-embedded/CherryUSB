@@ -325,14 +325,17 @@ static void dwc2_set_turnaroundtime(uint32_t hclk, uint8_t speed)
         UsbTrd = USBD_DEFAULT_TRDT_VALUE;
     }
 
+    USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_TOCAL;
+
     USB_OTG_GLB->GUSBCFG &= ~USB_OTG_GUSBCFG_TRDT;
-    USB_OTG_GLB->GUSBCFG |= (uint32_t)((UsbTrd << 10) & USB_OTG_GUSBCFG_TRDT);
+    USB_OTG_GLB->GUSBCFG |= (uint32_t)((UsbTrd << USB_OTG_GUSBCFG_TRDT_Pos) & USB_OTG_GUSBCFG_TRDT);
 }
 
 static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
 {
     uint8_t i;
     uint32_t Tx_Offset;
+    uint32_t Tx_Size;
 
     /*  TXn min size = 16 words. (n  : Transmit FIFO index)
       When a TxFIFO is not used, the Configuration should be as follows:
@@ -348,6 +351,7 @@ static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
 
     if (fifo == 0U) {
         USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ = ((uint32_t)size << 16) | Tx_Offset;
+        Tx_Size = USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ;
     } else {
         Tx_Offset += (USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ) >> 16;
         for (i = 0U; i < (fifo - 1U); i++) {
@@ -356,7 +360,11 @@ static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
 
         /* Multiply Tx_Size by 2 to get higher performance */
         USB_OTG_GLB->DIEPTXF[fifo - 1U] = ((uint32_t)size << 16) | Tx_Offset;
+
+        Tx_Size = USB_OTG_GLB->DIEPTXF[fifo - 1U];
     }
+
+    USB_LOG_INFO("fifo-%02d size:%04d %08x\n", fifo, size, Tx_Size);
 }
 
 static uint8_t dwc2_get_devspeed(void)
@@ -665,8 +673,9 @@ int usb_dc_init(void)
         }
     }
 
-    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_HBSTLEN_2;
-    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_DMAEN;
+    USB_OTG_DEV->DCFG &= ~USB_OTG_DCFG_DESCDMA;
+    USB_OTG_GLB->GAHBCFG |= (USB_OTG_GAHBCFG_DMAEN | USB_OTG_GAHBCFG_HBSTLEN_2);
+
 #else
     USB_OTG_GLB->GINTMSK |= USB_OTG_GINTMSK_RXFLVLM;
 #endif
@@ -688,6 +697,15 @@ int usb_dc_init(void)
 #endif
 #if USB_NUM_BIDIR_ENDPOINTS > 5
     dwc2_set_txfifo(5, CONFIG_USB_DWC2_TX5_FIFO_SIZE / 4);
+#endif
+#if USB_NUM_BIDIR_ENDPOINTS > 6
+    dwc2_set_txfifo(6, CONFIG_USB_DWC2_TX6_FIFO_SIZE / 4);
+#endif
+#if USB_NUM_BIDIR_ENDPOINTS > 7
+    dwc2_set_txfifo(7, CONFIG_USB_DWC2_TX7_FIFO_SIZE / 4);
+#endif
+#if USB_NUM_BIDIR_ENDPOINTS > 8
+    dwc2_set_txfifo(8, CONFIG_USB_DWC2_TX8_FIFO_SIZE / 4);
 #endif
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
     USB_OTG_DEV->DCTL &= ~USB_OTG_DCTL_SDIS;
@@ -821,7 +839,7 @@ int usbd_ep_close(const uint8_t ep)
             /* Clear and unmask endpoint disabled interrupt */
             USB_OTG_INEP(ep_idx)->DIEPINT |= USB_OTG_DIEPINT_EPDISD;
         }
-        
+
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_DEV->DAINTMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
         USB_OTG_INEP(ep_idx)->DIEPCTL = 0;

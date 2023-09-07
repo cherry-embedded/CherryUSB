@@ -256,15 +256,20 @@ void hid_mouse_init(void)
   */
 void hid_mouse_test(void)
 {
-    /*!< move mouse pointer */
-    mouse_cfg.x += 10;
-    mouse_cfg.y = 0;
+    int counter = 0;
+    while (counter < 1000) {
+        /*!< move mouse pointer */
+        mouse_cfg.x += 40;
+        mouse_cfg.y += 0;
 
-    int ret = usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
-    if (ret < 0) {
-        return;
-    }
-    hid_state = HID_STATE_BUSY;
-    while (hid_state == HID_STATE_BUSY) {
+        int ret = usbd_ep_start_write(HID_INT_EP, (uint8_t *)&mouse_cfg, 4);
+        if (ret < 0) {
+            return;
+        }
+        hid_state = HID_STATE_BUSY;
+        while (hid_state == HID_STATE_BUSY) {
+        }
+
+        counter++;
     }
 }
