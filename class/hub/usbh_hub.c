@@ -299,7 +299,9 @@ static void hub_int_complete_callback(void *arg, int nbytes)
 {
     struct usbh_hub *hub = (struct usbh_hub *)arg;
 
-    if (nbytes > 0) {
+    // >=0 can pass device enumeration on EXT hub.
+    if (nbytes >= 0)
+    {
         usbh_hub_thread_wakeup(hub);
     }
 }

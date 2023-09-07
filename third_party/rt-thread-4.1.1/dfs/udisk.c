@@ -15,6 +15,7 @@
 #include "usbh_msc.h"
 
 #define MAX_PARTITION_COUNT 5
+#define CONFIG_DFS_MOUNT_POINT "/"
 
 struct ustor_data {
     struct dfs_partition part;
@@ -251,7 +252,7 @@ rt_err_t rt_udisk_run(struct usbh_msc *msc_class)
 
             stor_r->dev_cnt++;
 
-            if (dfs_mount(stor_r->dev[i].parent.name, "/", "elm", 0, 0) == 0) {
+            if (dfs_mount(stor_r->dev[i].parent.name, CONFIG_DFS_MOUNT_POINT, "elm", 0, 0) == 0) {
                 rt_kprintf("udisk part %d mount successfully\n", i);
             } else {
                 rt_kprintf("udisk part %d mount failed\n", i);
@@ -285,7 +286,7 @@ rt_err_t rt_udisk_run(struct usbh_msc *msc_class)
                 rt_device_register(&stor_r->dev[0], dname, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_REMOVABLE | RT_DEVICE_FLAG_STANDALONE);
 
                 stor_r->dev_cnt++;
-                if (dfs_mount(stor_r->dev[0].parent.name, "/", "elm", 0, 0) == 0) {
+                if (dfs_mount(stor_r->dev[0].parent.name, CONFIG_DFS_MOUNT_POINT, "elm", 0, 0) == 0) {
                     rt_kprintf("Mount FAT on Udisk successful.\n");
                 } else {
                     rt_kprintf("Mount FAT on Udisk failed.\n");
@@ -325,7 +326,7 @@ rt_err_t rt_udisk_stop(struct usbh_msc *msc_class)
         data = (struct ustor_data *)dev->user_data;
 
         /* unmount filesystem */
-        dfs_unmount("/");
+        dfs_unmount(CONFIG_DFS_MOUNT_POINT);
 
         /* delete semaphore */
         rt_sem_delete(data->part.lock);
