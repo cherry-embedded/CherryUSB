@@ -205,7 +205,7 @@ struct audio_entity_info audio_entity_table[] = {
       .ep = AUDIO_IN_EP },
 };
 
-void audio_v1_init(uint8_t busid)
+void audio_v1_init(void)
 {
     usbd_desc_register(audio_v1_descriptor);
     usbd_add_interface(usbd_audio_init_intf(&intf0, 0x0100, audio_entity_table, 1));
