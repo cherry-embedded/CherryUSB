@@ -305,6 +305,17 @@ void USBD_IRQHandler(void)
                     tmp |= USBHS_EP_T_RES_ACK;
                     tmp |= (epx_tx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
                     USB_SET_TX_CTRL(ep_idx, tmp);
+                } else if ((g_ch32_usbhs_udc.in_ep[ep_idx].ep_type == 0x02) && (g_ch32_usbhs_udc.in_ep[ep_idx].xfer_len == g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps)) {
+                    g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps;
+                    g_ch32_usbhs_udc.in_ep[ep_idx].xfer_len = 0;
+                    epx_tx_data_toggle[ep_idx - 1] ^= 1;
+
+                    USB_SET_TX_LEN(ep_idx, 0);
+                    uint32_t tmp = USB_GET_TX_CTRL(ep_idx);
+                    tmp &= ~(USBHS_EP_T_RES_MASK | USBHS_EP_T_TOG_MASK);
+                    tmp |= USBHS_EP_T_RES_ACK;
+                    tmp |= (epx_tx_data_toggle[ep_idx - 1] ? USBHS_EP_T_TOG_1 : USBHS_EP_T_TOG_0);
+                    USB_SET_TX_CTRL(ep_idx, tmp);
                 } else {
                     g_ch32_usbhs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbhs_udc.in_ep[ep_idx].xfer_len;
                     g_ch32_usbhs_udc.in_ep[ep_idx].xfer_len = 0;
