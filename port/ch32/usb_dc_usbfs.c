@@ -270,7 +270,7 @@ void USBD_IRQHandler(void)
 
             case USBFS_UIS_TOKEN_IN:
                 if (ep_idx == 0x00) {
-                    if (g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len > g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
+                    if (g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len >= g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps) {
                         g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len -= g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
                         g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps;
                         ep0_tx_data_toggle ^= 1;
