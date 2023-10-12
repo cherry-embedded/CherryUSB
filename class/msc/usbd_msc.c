@@ -845,7 +845,7 @@ static void usbdev_msc_thread(void *argument)
     int ret;
 
     while (1) {
-        ret = usb_osal_mq_recv(g_usbd_msc.usbd_msc_mq, (uintptr_t *)&event, 0xffffffff);
+        ret = usb_osal_mq_recv(g_usbd_msc.usbd_msc_mq, (uintptr_t *)&event, USB_OSAL_WAITING_FOREVER);
         if (ret < 0) {
             continue;
         }

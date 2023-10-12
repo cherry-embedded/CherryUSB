@@ -159,7 +159,7 @@ static void lwip_rx_handle(void *pdata)
     while (1) {
         pmg_offset = 0;
         payload_offset = 0;
-        ret = usbh_rndis_bulk_in_transfer(rndis_class, rx_buf_ptr, RNDIS_RXETH_BUFFER_LEN, portMAX_DELAY);
+        ret = usbh_rndis_bulk_in_transfer(rndis_class, rx_buf_ptr, RNDIS_RXETH_BUFFER_LEN, USB_OSAL_WAITING_FOREVER);
         if (ret <= 0) {
             vTaskDelay(1);
             continue;
