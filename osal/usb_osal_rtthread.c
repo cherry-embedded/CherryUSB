@@ -40,7 +40,11 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
     int ret = 0;
     rt_err_t result = RT_EOK;
 
-    result = rt_sem_take((rt_sem_t)sem, rt_tick_from_millisecond(timeout));
+    if (timeout == USB_OSAL_WAITING_FOREVER) {
+        result = rt_sem_take((rt_sem_t)sem, RT_WAITING_FOREVER);
+    } else {
+        result = rt_sem_take((rt_sem_t)sem, rt_tick_from_millisecond(timeout));
+    }
     if (result == -RT_ETIMEOUT) {
         ret = -ETIMEDOUT;
     } else if (result == -RT_ERROR) {
@@ -92,7 +96,11 @@ int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
     int ret = 0;
     rt_err_t result = RT_EOK;
 
-    result = rt_mq_recv((rt_mq_t)mq, addr, sizeof(uintptr_t), rt_tick_from_millisecond(timeout));
+    if (timeout == USB_OSAL_WAITING_FOREVER) {
+        result = rt_mq_recv((rt_mq_t)mq, addr, sizeof(uintptr_t), RT_WAITING_FOREVER);
+    } else {
+        result = rt_mq_recv((rt_mq_t)mq, addr, sizeof(uintptr_t), rt_tick_from_millisecond(timeout));
+    }
     if (result == -RT_ETIMEOUT) {
         ret = -ETIMEDOUT;
     } else if (result == -RT_ERROR) {

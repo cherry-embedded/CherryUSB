@@ -38,7 +38,11 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    return aos_sem_wait((aos_sem_t *)&sem, timeout);
+    if (timeout == USB_OSAL_WAITING_FOREVER) {
+        return aos_sem_wait((aos_sem_t *)&sem, AOS_WAIT_FOREVER);
+    } else {
+        return aos_sem_wait((aos_sem_t *)&sem, timeout);
+    }
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -88,7 +92,11 @@ int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 {
     size_t recv_size;
-    return aos_queue_recv((aos_queue_t *)&mq, timeout, addr, &recv_size);
+    if (timeout == USB_OSAL_WAITING_FOREVER) {
+        return aos_queue_recv((aos_queue_t *)&mq, AOS_WAIT_FOREVER, addr, &recv_size);
+    } else {
+        return aos_queue_recv((aos_queue_t *)&mq, timeout, addr, &recv_size);
+    }
 }
 
 size_t usb_osal_enter_critical_section(void)

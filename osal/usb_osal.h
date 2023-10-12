@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define USB_OSAL_WAITING_FOREVER (0xFFFFFFFFU)
+
 typedef void *usb_osal_thread_t;
 typedef void *usb_osal_sem_t;
 typedef void *usb_osal_mutex_t;

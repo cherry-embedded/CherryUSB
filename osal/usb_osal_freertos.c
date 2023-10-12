@@ -35,7 +35,11 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -ETIMEDOUT;
+    if (timeout == USB_OSAL_WAITING_FOREVER) {
+        return (xSemaphoreTake((SemaphoreHandle_t)sem, portMAX_DELAY) == pdPASS) ? 0 : -ETIMEDOUT;
+    } else {
+        return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -ETIMEDOUT;
+    }
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -95,7 +99,11 @@ int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 
 int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 {
-    return (xQueueReceive((usb_osal_mq_t)mq, addr, timeout) == pdPASS) ? 0 : -ETIMEDOUT;
+    if (timeout == USB_OSAL_WAITING_FOREVER) {
+        return (xQueueReceive((usb_osal_mq_t)mq, addr, portMAX_DELAY) == pdPASS) ? 0 : -ETIMEDOUT;
+    } else {
+        return (xQueueReceive((usb_osal_mq_t)mq, addr, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -ETIMEDOUT;
+    }
 }
 
 size_t usb_osal_enter_critical_section(void)

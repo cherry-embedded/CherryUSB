@@ -164,7 +164,7 @@ static rt_err_t rndis_msg_data_recv(struct usbh_user_rndis *rndis_class, rt_uint
     if (rndis_class == RT_NULL) {
         return -RT_ERROR;
     }
-    ret = usbh_rndis_bulk_in_transfer(rndis_class->rndis_class, buffer, nbytes, RT_WAITING_FOREVER);
+    ret = usbh_rndis_bulk_in_transfer(rndis_class->rndis_class, buffer, nbytes, USB_OSAL_WAITING_FOREVER);
 
     return ret;
 }
@@ -242,7 +242,7 @@ void rt_usbh_rndis_data_recv_entry(void *pdata)
     while (1) {
         pmg_offset = 0;
         payload_offset = 0;
-        ret = usbh_rndis_bulk_in_transfer(rndis_class->rndis_class, device->rx_buf_ptr, RNDIS_ETH_BUFFER_LEN, RT_WAITING_FOREVER);
+        ret = usbh_rndis_bulk_in_transfer(rndis_class->rndis_class, device->rx_buf_ptr, RNDIS_ETH_BUFFER_LEN, USB_OSAL_WAITING_FOREVER);
         if (ret <= 0) {
             rt_thread_mdelay(1);
             continue;
