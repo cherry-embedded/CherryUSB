@@ -1,12 +1,40 @@
-基于 STM32F1/F4/H7 开发指南
-=============================
+基于现有 demo 快速验证
+=========================
 
-本节是基于 STM32 三个系列芯片的使用，涵盖 F1/F4/H7，其余芯片基本类似，不再赘述，具体区别有：
+在学习 USB 或者是学习 CherryUSB 代码之前，我们需要先基于现有的 demo 进行快速验证，为什么？是为了提升对 USB 的兴趣，能有信心进行下一步的动作，如果 demo 都跑不起来，或者自己摸索写代码，或者先看 USB 基本概念，结果看到最后，
+发现一点都看不懂，概念好多，根本记不住，从而丧失对 USB 的兴趣。因此，先跑 demo 非常重要。下面我将给大家罗列目前支持的 demo 仓库。
+
+
+基于 bouffalolab 系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_bouffalolab
+
+- BL702 是一个 USB2.0 全速芯片，共 8 个端点（包含端点0）。仅支持从机。
+- BL616/BL808 是一个 USB2.0 并且内置高速 PHY 芯片，共 5个端点（包含端点0）。支持主从机。
+- USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，根据官方环境搭建完成后，即可编译使用。 
+
+
+基于 ST 系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_stm32
+
+默认提供以下 demo 工程：
+
+- F103 使用 fsdev ip
+- F429 主从使用 hs port,并且均用 dma 模式
+- H7 设备使用 fs port，主机使用 hs port，并且主机带 cache 支持
+
+默认删除 Drivers ，所以需要使用 stm32cubemx 生成一下 Drivers 目录下的文件，demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
+
+.. caution:: 生成完以后，请使用 git reset 功能将被覆盖的 `main.c` 和 `stm32xxx_it.c` 文件撤回，禁止被 cubemx 覆盖。
+
+涵盖 F1/F4/H7，其余芯片基本类似，不再赘述，具体区别有：
 
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
 - dwc2 ip 区别： fs port(引脚是 PA11/PA12) 和 hs port(引脚是 PB14/PB15), 其中 hs port 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
 - F4 与 H7 cache 区别、USB BASE 区别
-
 
 如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
 
@@ -38,22 +66,8 @@
 
 .. figure:: img/keil.png
 
-工程样例试用
------------------------
-
-默认提供以下 demo 工程：
-
-- F103 使用 fsdev ip
-- F429 主从使用 hs port,并且均用 dma 模式
-- H7 设备使用 fs port，主机使用 hs port，并且主机带 cache 支持
-
-
-默认删除 Drivers ，所以需要使用 stm32cubemx 生成一下 Drivers 目录下的文件，demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
-
-.. caution:: 生成完以后，请使用 git reset 功能将被覆盖的 `main.c` 和 `stm32xxx_it.c` 文件撤回，禁止被 cubemx 覆盖。
-
 USB Device 移植要点
------------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 - 使用 **stm32cubemx** 创建工程，配置基本的 RCC、UART (作为log使用)
 
@@ -106,7 +120,7 @@ USB Device 移植要点
 .. figure:: img/stm32_15.png
 
 USB Host 移植要点
------------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 前面 7 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port (引脚是 PB14/PB15)，所以 fs port (引脚是 PA11/PA12)不做支持（没有 dma 你玩什么主机）。
 
@@ -132,3 +146,11 @@ USB Host 移植要点
 - 如果使用 **msc**，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 **fatfs_usbh.c** 文件。
 
 .. figure:: img/stm32_21.png
+
+基于 HPMicro 系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
+
+- HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机
+- USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。 

@@ -1,6 +1,0 @@
-基于 BL 系列开发指南
-=========================
-
-BL 系列 USB 的开发主要使用 bl_mcu_sdk，参考 `bl_mcu_sdk <https://github.com/bouffalolab/bl_mcu_sdk>`_。
-
-USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，环境搭建完成后，即可编译使用。
