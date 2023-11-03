@@ -656,17 +656,15 @@ void ehci_pipe_waitup(struct ehci_pipe *pipe)
     }
 }
 
-static void ehci_qh_scan_qtds(struct ehci_qh_hw *qh)
+static void ehci_qh_scan_qtds(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
 {
     struct ehci_qtd_hw *qtd;
+
+    ehci_qh_remove(qhead, qh);
 
     qtd = EHCI_ADDR2QTD(qh->first_qtd);
 
     while (qtd) {
-        // if (qtd->hw.token & QTD_TOKEN_STATUS_ACTIVE) {
-        //     continue;
-        // }
-
         qtd->urb->actual_length += (qtd->total_len - ((qtd->hw.token & QTD_TOKEN_NBYTES_MASK) >> QTD_TOKEN_NBYTES_SHIFT));
 
         ehci_qtd_free(qtd);
@@ -679,43 +677,56 @@ static void ehci_check_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
 {
     struct usbh_urb *urb;
     struct ehci_pipe *pipe;
+    struct ehci_qtd_hw *qtd;
     uint32_t token;
 
     token = qh->hw.overlay.token;
 
     if (token & QTD_TOKEN_STATUS_ACTIVE) {
-    } else {
-        urb = qh->urb;
-        pipe = urb->pipe;
+        return;
+    }
 
-        ehci_qh_scan_qtds(qh);
-        if (qh->first_qtd & QTD_LIST_END) {
-            /* remove qh from list */
-            ehci_qh_remove(qhead, qh);
+    qtd = EHCI_ADDR2QTD(qh->first_qtd);
 
-            if ((token & QTD_TOKEN_STATUS_ERRORS) == 0) {
-                if (token & QTD_TOKEN_TOGGLE) {
-                    pipe->toggle = true;
-                } else {
-                    pipe->toggle = false;
-                }
-                urb->errorcode = 0;
-            } else {
-                if (token & QTD_TOKEN_STATUS_BABBLE) {
-                    urb->errorcode = -EPERM;
-                    pipe->toggle = 0;
-                } else if (token & QTD_TOKEN_STATUS_HALTED) {
-                    urb->errorcode = -EPERM;
-                    pipe->toggle = 0;
-                } else if (token & (QTD_TOKEN_STATUS_DBERR | QTD_TOKEN_STATUS_XACTERR)) {
-                    urb->errorcode = -EIO;
-                }
-            }
-
-            qh->remove_in_iaad = 1;
-
-            EHCI_HCOR->usbcmd |= EHCI_USBCMD_IAAD;
+    while (qtd) {
+        if (qtd->hw.token & QTD_TOKEN_STATUS_ACTIVE) {
+            return;
         }
+        qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
+    }
+
+    urb = qh->urb;
+    pipe = urb->pipe;
+
+    ehci_qh_scan_qtds(qhead, qh);
+
+    if ((token & QTD_TOKEN_STATUS_ERRORS) == 0) {
+        if (token & QTD_TOKEN_TOGGLE) {
+            pipe->toggle = true;
+        } else {
+            pipe->toggle = false;
+        }
+        urb->errorcode = 0;
+    } else {
+        if (token & QTD_TOKEN_STATUS_BABBLE) {
+            urb->errorcode = -EPERM;
+            pipe->toggle = 0;
+        } else if (token & QTD_TOKEN_STATUS_HALTED) {
+            urb->errorcode = -EPERM;
+            pipe->toggle = 0;
+        } else if (token & (QTD_TOKEN_STATUS_DBERR | QTD_TOKEN_STATUS_XACTERR)) {
+            urb->errorcode = -EIO;
+        }
+    }
+
+    if (pipe->ep_type == USB_ENDPOINT_TYPE_INTERRUPT) {
+        qh->remove_in_iaad = 0;
+        ehci_qh_free(qh);
+        ehci_pipe_waitup(pipe);
+    } else {
+        qh->remove_in_iaad = 1;
+
+        EHCI_HCOR->usbcmd |= EHCI_USBCMD_IAAD;
     }
 }
 
