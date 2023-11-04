@@ -170,6 +170,7 @@ struct usbh_hub {
 };
 
 int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
+int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output);
 
 /**
  * @brief Submit an control transfer to an endpoint.

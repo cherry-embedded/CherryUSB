@@ -13,8 +13,8 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t ep0_request_buffer[CONFIG_USBHOST
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct usb_setup_packet g_setup[CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USBHOST_MAX_EHPORTS];
 
 /* general descriptor field offsets */
-#define DESC_bLength         0 /** Length offset */
-#define DESC_bDescriptorType 1 /** Descriptor type offset */
+#define DESC_bLength             0 /** Length offset */
+#define DESC_bDescriptorType     1 /** Descriptor type offset */
 
 #define USB_DEV_ADDR_MAX         0x7f
 #define USB_DEV_ADDR_MARK_OFFSET 5
@@ -270,23 +270,6 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
     return 0;
 }
 
-#ifdef CONFIG_USBHOST_GET_STRING_DESC
-void usbh_print_string(char *lead, uint8_t *str)
-{
-    uint8_t string[64 + 1] = { 0 };
-
-    int len, i = 2, j = 0;
-
-    len = str[0];
-    while (i < len) {
-        string[j] = str[i];
-        i += 2;
-        j++;
-    }
-    USB_LOG_RAW("%s%s\r\n", lead, string);
-}
-#endif
-
 static void usbh_print_hubport_info(struct usbh_hubport *hport)
 {
     USB_LOG_RAW("Device Descriptor:\r\n");
@@ -406,6 +389,41 @@ int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struc
                  ep_cfg.mult);
 
     return usbh_pipe_alloc(pipe, &ep_cfg);
+}
+
+int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output)
+{
+    struct usb_setup_packet *setup = hport->setup;
+    int ret;
+    uint8_t *src;
+    uint8_t *dst;
+    uint16_t len;
+    uint16_t i = 2;
+    uint16_t j = 0;
+
+    /* Get Manufacturer string */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | index);
+    setup->wIndex = 0x0409;
+    setup->wLength = 255;
+
+    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    if (ret < 0) {
+        return ret;
+    }
+
+    src = ep0_request_buffer;
+    dst = output;
+    len = src[0];
+
+    while (i < len) {
+        dst[j] = src[i];
+        i += 2;
+        j++;
+    }
+
+    return 0;
 }
 
 int usbh_enumerate(struct usbh_hubport *hport)
@@ -553,50 +571,37 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
     memcpy(hport->raw_config_desc, ep0_request_buffer, wTotalLength);
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
-    /* Get Manufacturer string */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | USB_STRING_MFC_INDEX);
-    setup->wIndex = 0x0409;
-    setup->wLength = 255;
+    uint8_t string_buffer[128];
 
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    /* Get Manufacturer string */
+    memset(string_buffer, 0, 128);
+    ret = usbh_get_string_desc(hport, USB_STRING_MFC_INDEX, string_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get Manufacturer string,errorcode:%d\r\n", ret);
         goto errout;
     }
 
-    usbh_print_string("Manufacturer: ", ep0_request_buffer);
+    USB_LOG_INFO("Manufacturer: %s\r\n", string_buffer);
 
     /* Get Product string */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | USB_STRING_PRODUCT_INDEX);
-    setup->wIndex = 0x0409;
-    setup->wLength = 255;
-
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    memset(string_buffer, 0, 128);
+    ret = usbh_get_string_desc(hport, USB_STRING_PRODUCT_INDEX, string_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get get Product string,errorcode:%d\r\n", ret);
         goto errout;
     }
 
-    usbh_print_string("Product: ", ep0_request_buffer);
+    USB_LOG_INFO("Product: %s\r\n", string_buffer);
 
     /* Get SerialNumber string */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | USB_STRING_SERIAL_INDEX);
-    setup->wIndex = 0x0409;
-    setup->wLength = 255;
-
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    memset(string_buffer, 0, 128);
+    ret = usbh_get_string_desc(hport, USB_STRING_SERIAL_INDEX, string_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get get SerialNumber string,errorcode:%d\r\n", ret);
         goto errout;
     }
 
-    usbh_print_string("SerialNumber: ", ep0_request_buffer);
+    USB_LOG_INFO("SerialNumber: %s\r\n", string_buffer);
 #endif
     /* Select device configuration 1 */
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
