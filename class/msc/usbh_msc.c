@@ -13,6 +13,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[32];
 
 static struct usbh_msc g_msc_class[CONFIG_USBHOST_MAX_MSC_CLASS];
 static uint32_t g_devinuse = 0;
+static struct usbh_msc_modeswitch_config *g_msc_modeswitch_config = NULL;
 
 static struct usbh_msc *usbh_msc_class_alloc(void)
 {
@@ -274,10 +275,32 @@ int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, cons
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
 }
 
+void usbh_msc_modeswitch_enable(struct usbh_msc_modeswitch_config *config)
+{
+    if (config) {
+        g_msc_modeswitch_config = config;
+    } else {
+        g_msc_modeswitch_config = NULL;
+    }
+}
+
+void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
+{
+    struct CBW *cbw;
+
+    /* Construct the CBW */
+    cbw = (struct CBW *)g_msc_buf;
+
+    memcpy(g_msc_buf, message, 31);
+
+    usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, NULL);
+}
+
 static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
+    struct usbh_msc_modeswitch_config *config;
 
     struct usbh_msc *msc_class = usbh_msc_class_alloc();
     if (msc_class == NULL) {
@@ -314,6 +337,24 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
             return ret;
         }
     }
+
+    if (g_msc_modeswitch_config) {
+        uint8_t num = 0;
+        while (1) {
+            config = &g_msc_modeswitch_config[num];
+            if (config) {
+                if ((hport->device_desc.idVendor == config->vid) &&
+                    (hport->device_desc.idProduct == config->pid)) {
+                    USB_LOG_INFO("%s usb_modeswitch enable\r\n", config->name);
+                    usbh_msc_modeswitch(msc_class, config->message_content);
+                    return 0;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
     ret = usbh_msc_scsi_inquiry(msc_class);
     if (ret < 0) {
         USB_LOG_ERR("Fail to scsi_inquiry\r\n");
