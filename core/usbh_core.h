@@ -169,8 +169,17 @@ struct usbh_hub {
     struct usbh_hubport *parent;
 };
 
+/**
+ * @brief Activates an endpoint for a USB host pipe on a specific hub port.
+ *
+ * This function is responsible for activating the specified endpoint
+ * described by the given endpoint descriptor on the USB host pipe.
+ * @param pipe Pointer to the USB host pipe structure.
+ * @param hport Pointer to the USB hub port structure.
+ * @param ep_desc Pointer to the USB endpoint descriptor.
+ * @return On success will return 0, and others indicate fail.
+ */
 int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc);
-int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output);
 
 /**
  * @brief Submit an control transfer to an endpoint.
@@ -184,8 +193,35 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
  */
 int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint8_t *buffer);
 
+/**
+ * @brief Retrieves a USB string descriptor from a specific hub port.
+ * 
+ * This function is responsible for retrieving the USB string descriptor
+ * with the specified index from the USB device connected to the given hub port.
+ * The retrieved descriptor is stored in the output buffer provided.
+ * 
+ * @param hport Pointer to the USB hub port structure.
+ * @param index Index of the string descriptor to retrieve.
+ * @param output Pointer to the buffer where the retrieved descriptor will be stored.
+ * @return On success will return 0, and others indicate fail.
+ */
+int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output);
+
+/**
+ * @brief Sets the alternate setting for a USB interface on a specific hub port.
+ * 
+ * This function is responsible for setting the alternate setting of the
+ * specified USB interface on the USB device connected to the given hub port.
+ * The interface and alternate setting are identified by the respective parameters.
+ * 
+ * @param hport Pointer to the USB hub port structure.
+ * @param intf Interface number to set the alternate setting for.
+ * @param altsetting Alternate setting value to set for the interface.
+ * @return On success will return 0, and others indicate fail.
+ */
+int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
+
 int usbh_initialize(void);
-struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr);
 void *usbh_find_class_instance(const char *devname);
 
 int lsusb(int argc, char **argv);

@@ -426,6 +426,19 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
     return 0;
 }
 
+int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting)
+{
+    struct usb_setup_packet *setup = hport->setup;
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = USB_REQUEST_SET_INTERFACE;
+    setup->wValue = intf;
+    setup->wIndex = altsetting;
+    setup->wLength = 0;
+
+    return usbh_control_transfer(hport->ep0, setup, NULL);
+}
+
 int usbh_enumerate(struct usbh_hubport *hport)
 {
     struct usb_interface_descriptor *intf_desc;
@@ -642,25 +655,6 @@ errout:
         hport->raw_config_desc = NULL;
     }
     return ret;
-}
-
-struct usbh_hubport *usbh_find_hubport(uint8_t dev_addr)
-{
-    struct usbh_hubport *hport;
-    usb_slist_t *hub_list;
-    usb_slist_for_each(hub_list, &hub_class_head)
-    {
-        struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
-        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-            hport = &hub->child[port];
-            if (hport->connected) {
-                if (hport->dev_addr == dev_addr) {
-                    return &hub->child[port];
-                }
-            }
-        }
-    }
-    return NULL;
 }
 
 void *usbh_find_class_instance(const char *devname)
