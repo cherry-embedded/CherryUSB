@@ -11,6 +11,7 @@
 #define TEST_USBH_MSC_FATFS 0
 #define TEST_USBH_AUDIO     0
 #define TEST_USBH_VIDEO     0
+#define TEST_USBH_CDC_ECM   0
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
@@ -380,6 +381,66 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 }
 #endif
 
+#if TEST_USBH_CDC_ECM
+#include "usbh_cdc_ecm.h"
+
+#include "netif/etharp.h"
+#include "lwip/netif.h"
+#include "lwip/pbuf.h"
+#include "lwip/tcpip.h"
+#if LWIP_DHCP
+#include "lwip/dhcp.h"
+#endif
+
+struct netif g_cdc_ecm_netif;
+
+static err_t usbh_cdc_ecm_if_init(struct netif *netif)
+{
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    netif->mtu = 1500;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->state = NULL;
+    netif->name[0] = 'E';
+    netif->name[1] = 'X';
+    netif->output = etharp_output;
+    netif->linkoutput = usbh_cdc_ecm_linkoutput;
+    return ERR_OK;
+}
+
+void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
+{
+    struct netif *netif = &g_cdc_ecm_netif;
+
+    netif->hwaddr_len = 6;
+    memcpy(netif->hwaddr, cdc_ecm_class->mac, 6);
+
+    IP4_ADDR(&cdc_ecm_class->ipaddr, 0, 0, 0, 0);
+    IP4_ADDR(&cdc_ecm_class->netmask, 0, 0, 0, 0);
+    IP4_ADDR(&cdc_ecm_class->gateway, 0, 0, 0, 0);
+
+    netif = netif_add(netif, &cdc_ecm_class->ipaddr, &cdc_ecm_class->netmask, &cdc_ecm_class->gateway, NULL, usbh_cdc_ecm_if_init, tcpip_input);
+    netif_set_default(netif);
+    while (!netif_is_up(netif)) {
+    }
+
+#if LWIP_DHCP
+    dhcp_start(netif);
+#endif
+}
+
+void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
+{
+    struct netif *netif = &g_cdc_ecm_netif;
+#if LWIP_DHCP
+    dhcp_stop(netif);
+    dhcp_cleanup(netif);
+#endif
+    netif_set_down(netif);
+    netif_remove(netif);
+}
+#endif
+
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 }
@@ -438,5 +499,11 @@ void usbh_class_test(void)
 #if TEST_USBH_VIDEO
 #error "if you want to use iso, please contact with me"
     usb_osal_thread_create("usbh_video", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_video_thread, NULL);
+#endif
+#if TEST_USBH_CDC_ECM
+    /* Initialize the LwIP stack */
+    tcpip_init(NULL, NULL);
+
+    usbh_cdc_ecm_lwip_thread_init(&g_cdc_ecm_netif);
 #endif
 }
