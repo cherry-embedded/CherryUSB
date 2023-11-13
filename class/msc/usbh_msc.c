@@ -329,15 +329,6 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    ret = usbh_msc_scsi_testunitready(msc_class);
-    if (ret < 0) {
-        ret = usbh_msc_scsi_requestsense(msc_class);
-        if (ret < 0) {
-            USB_LOG_ERR("Fail to scsi_testunitready\r\n");
-            return ret;
-        }
-    }
-
     if (g_msc_modeswitch_config) {
         uint8_t num = 0;
         while (1) {
@@ -352,6 +343,15 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
             } else {
                 break;
             }
+        }
+    }
+
+    ret = usbh_msc_scsi_testunitready(msc_class);
+    if (ret < 0) {
+        ret = usbh_msc_scsi_requestsense(msc_class);
+        if (ret < 0) {
+            USB_LOG_ERR("Fail to scsi_testunitready\r\n");
+            return ret;
         }
     }
 
