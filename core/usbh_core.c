@@ -629,6 +629,19 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
+#ifdef CONFIG_USBHOST_MSOS_ENABLE
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = CONFIG_USBHOST_MSOS_VENDOR_CODE;
+    setup->wValue = 0;
+    setup->wIndex = 0x0004;
+    setup->wLength = 16;
+
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
+    if (ret < 0 && (ret != -EPERM)) {
+        USB_LOG_ERR("Failed to get msosv1 compat id,errorcode:%d\r\n", ret);
+        goto errout;
+    }
+#endif
     USB_LOG_INFO("Enumeration success, start loading class driver\r\n");
     /*search supported class driver*/
     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
