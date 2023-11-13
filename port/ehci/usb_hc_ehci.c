@@ -682,25 +682,24 @@ static void ehci_check_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
 
     token = qh->hw.overlay.token;
 
-    if (token & QTD_TOKEN_STATUS_ACTIVE) {
+    /* Check if token is only in active status without errors */
+    if ((token & (QTD_TOKEN_STATUS_ERRORS | QTD_TOKEN_STATUS_ACTIVE)) == QTD_TOKEN_STATUS_ACTIVE) {
         return;
-    }
-
-    qtd = EHCI_ADDR2QTD(qh->first_qtd);
-
-    while (qtd) {
-        if (qtd->hw.token & QTD_TOKEN_STATUS_ACTIVE) {
-            return;
-        }
-        qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
     }
 
     urb = qh->urb;
     pipe = urb->pipe;
 
-    ehci_qh_scan_qtds(qhead, qh);
-
     if ((token & QTD_TOKEN_STATUS_ERRORS) == 0) {
+		qtd = EHCI_ADDR2QTD(qh->first_qtd);
+
+		while (qtd) {
+			if (qtd->hw.token & QTD_TOKEN_STATUS_ACTIVE) {
+				return;
+			}
+			qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
+		}
+
         if (token & QTD_TOKEN_TOGGLE) {
             pipe->toggle = true;
         } else {
@@ -718,6 +717,8 @@ static void ehci_check_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
             urb->errorcode = -EIO;
         }
     }
+
+    ehci_qh_scan_qtds(qhead, qh);
 
     if (pipe->ep_type == USB_ENDPOINT_TYPE_INTERRUPT) {
         qh->remove_in_iaad = 0;
