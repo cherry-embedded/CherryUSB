@@ -50,7 +50,7 @@ int usbh_cdc_acm_set_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_
 
     memcpy((uint8_t *)&g_cdc_line_coding, line_coding, sizeof(struct cdc_line_coding));
 
-    return usbh_control_transfer(cdc_acm_class->hport->ep0, setup, (uint8_t *)&g_cdc_line_coding);
+    return usbh_control_transfer(cdc_acm_class->hport, setup, (uint8_t *)&g_cdc_line_coding);
 }
 
 int usbh_cdc_acm_get_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_line_coding *line_coding)
@@ -64,7 +64,7 @@ int usbh_cdc_acm_get_line_coding(struct usbh_cdc_acm *cdc_acm_class, struct cdc_
     setup->wIndex = cdc_acm_class->ctrl_intf;
     setup->wLength = 7;
 
-    ret = usbh_control_transfer(cdc_acm_class->hport->ep0, setup, (uint8_t *)&g_cdc_line_coding);
+    ret = usbh_control_transfer(cdc_acm_class->hport, setup, (uint8_t *)&g_cdc_line_coding);
     if (ret < 0) {
         return ret;
     }
@@ -85,7 +85,7 @@ int usbh_cdc_acm_set_line_state(struct usbh_cdc_acm *cdc_acm_class, bool dtr, bo
     cdc_acm_class->dtr = dtr;
     cdc_acm_class->rts = rts;
 
-    return usbh_control_transfer(cdc_acm_class->hport->ep0, setup, NULL);
+    return usbh_control_transfer(cdc_acm_class->hport, setup, NULL);
 }
 
 static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -124,15 +124,15 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
 
 #ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
-    usbh_hport_activate_epx(&cdc_acm_class->intin, hport, ep_desc);
+    USBH_EP_INIT(cdc_acm_class->intin, ep_desc);
 #endif
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
 
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_hport_activate_epx(&cdc_acm_class->bulkin, hport, ep_desc);
+            USBH_EP_INIT(cdc_acm_class->bulkin, ep_desc);
         } else {
-            usbh_hport_activate_epx(&cdc_acm_class->bulkout, hport, ep_desc);
+            USBH_EP_INIT(cdc_acm_class->bulkout, ep_desc);
         }
     }
 
@@ -152,12 +152,18 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (cdc_acm_class) {
         if (cdc_acm_class->bulkin) {
-            usbh_pipe_free(cdc_acm_class->bulkin);
+            usbh_kill_urb(&cdc_acm_class->bulkin_urb);
         }
 
         if (cdc_acm_class->bulkout) {
-            usbh_pipe_free(cdc_acm_class->bulkout);
+            usbh_kill_urb(&cdc_acm_class->bulkout_urb);
         }
+
+#ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
+        if (cdc_acm_class->intin) {
+            usbh_kill_urb(&cdc_acm_class->intin_urb);
+        }
+#endif
 
         if (hport->config.intf[intf].devname[0] != '\0') {
             USB_LOG_INFO("Unregister CDC ACM Class:%s\r\n", hport->config.intf[intf].devname);
@@ -167,6 +173,32 @@ static int usbh_cdc_acm_disconnect(struct usbh_hubport *hport, uint8_t intf)
         usbh_cdc_acm_class_free(cdc_acm_class);
     }
 
+    return ret;
+}
+
+int usbh_cdc_acm_bulk_in_transfer(struct usbh_cdc_acm *cdc_acm_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
+{
+    int ret;
+    struct usbh_urb *urb = &cdc_acm_class->bulkin_urb;
+
+    usbh_bulk_urb_fill(urb, cdc_acm_class->hport, cdc_acm_class->bulkin, buffer, buflen, timeout, NULL, NULL);
+    ret = usbh_submit_urb(urb);
+    if (ret == 0) {
+        ret = urb->actual_length;
+    }
+    return ret;
+}
+
+int usbh_cdc_acm_bulk_out_transfer(struct usbh_cdc_acm *cdc_acm_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout)
+{
+    int ret;
+    struct usbh_urb *urb = &cdc_acm_class->bulkout_urb;
+
+    usbh_bulk_urb_fill(urb, cdc_acm_class->hport, cdc_acm_class->bulkout, buffer, buflen, timeout, NULL, NULL);
+    ret = usbh_submit_urb(urb);
+    if (ret == 0) {
+        ret = urb->actual_length;
+    }
     return ret;
 }
 

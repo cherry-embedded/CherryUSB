@@ -67,7 +67,7 @@ int usbh_video_get(struct usbh_video *video_class, uint8_t request, uint8_t intf
 
     retry = 0;
     while (1) {
-        ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
+        ret = usbh_control_transfer(video_class->hport, setup, g_video_buf);
         if (ret > 0) {
             break;
         }
@@ -98,7 +98,7 @@ int usbh_video_set(struct usbh_video *video_class, uint8_t request, uint8_t intf
 
     memcpy(g_video_buf, buf, len);
 
-    ret = usbh_control_transfer(video_class->hport->ep0, setup, g_video_buf);
+    ret = usbh_control_transfer(video_class->hport, setup, g_video_buf);
     usb_osal_msleep(50);
     return ret;
 }
@@ -233,7 +233,7 @@ int usbh_video_open(struct usbh_video *video_class,
     setup->wIndex = video_class->data_intf;
     setup->wLength = 0;
 
-    ret = usbh_control_transfer(video_class->hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(video_class->hport, setup, NULL);
     if (ret < 0) {
         goto errout;
     }
@@ -243,10 +243,10 @@ int usbh_video_open(struct usbh_video *video_class,
     mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
     if (ep_desc->bEndpointAddress & 0x80) {
         video_class->isoin_mps = mps * (mult + 1);
-        usbh_hport_activate_epx(&video_class->isoin, video_class->hport, ep_desc);
+        USBH_EP_INIT(video_class->isoin, ep_desc);
     } else {
         video_class->isoout_mps = mps * (mult + 1);
-        usbh_hport_activate_epx(&video_class->isoout, video_class->hport, ep_desc);
+        USBH_EP_INIT(video_class->isoout, ep_desc);
     }
 
     USB_LOG_INFO("Open video and select formatidx:%u, frameidx:%u, altsetting:%u\r\n", formatidx, frameidx, altsetting);
@@ -269,12 +269,10 @@ int usbh_video_close(struct usbh_video *video_class)
     video_class->is_opened = false;
 
     if (video_class->isoin) {
-        usbh_pipe_free(video_class->isoin);
         video_class->isoin = NULL;
     }
 
     if (video_class->isoout) {
-        usbh_pipe_free(video_class->isoout);
         video_class->isoout = NULL;
     }
 
@@ -284,7 +282,7 @@ int usbh_video_close(struct usbh_video *video_class)
     setup->wIndex = video_class->data_intf;
     setup->wLength = 0;
 
-    ret = usbh_control_transfer(video_class->hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(video_class->hport, setup, NULL);
     if (ret < 0) {
         return ret;
     }
@@ -455,11 +453,9 @@ static int usbh_video_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (video_class) {
         if (video_class->isoin) {
-            usbh_pipe_free(video_class->isoin);
         }
 
         if (video_class->isoout) {
-            usbh_pipe_free(video_class->isoout);
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {

@@ -64,7 +64,7 @@ static int usbh_allocate_devaddr(struct usbh_devaddr_map *devgen)
     }
 }
 
-static int usbh_free_devaddr(struct usbh_devaddr_map *devgen, uint8_t devaddr)
+static int __usbh_free_devaddr(struct usbh_devaddr_map *devgen, uint8_t devaddr)
 {
     int index;
     int bitno;
@@ -340,55 +340,16 @@ static int usbh_get_default_mps(int speed)
     }
 }
 
-int usbh_hport_activate_ep0(struct usbh_hubport *hport)
-{
-    struct usbh_endpoint_cfg ep0_cfg = { 0 };
-
-    ep0_cfg.ep_addr = 0x00;
-    ep0_cfg.ep_interval = 0x00;
-    ep0_cfg.ep_mps = usbh_get_default_mps(hport->speed);
-    ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
-    ep0_cfg.hport = hport;
-
-    usbh_pipe_alloc(&hport->ep0, &ep0_cfg);
-    return 0;
-}
-
-int usbh_hport_deactivate_ep0(struct usbh_hubport *hport)
+int usbh_free_devaddr(struct usbh_hubport *hport)
 {
 #ifndef CONFIG_USBHOST_XHCI
     if (hport->dev_addr > 0) {
-        usbh_free_devaddr(&g_usbh_bus.devgen, hport->dev_addr);
+        __usbh_free_devaddr(&g_usbh_bus.devgen, hport->dev_addr);
     }
 #endif
-    if (hport->ep0) {
-        usbh_pipe_free(hport->ep0);
-    }
 
-    hport->ep0 = NULL;
     hport->dev_addr = 0;
     return 0;
-}
-
-int usbh_hport_activate_epx(usbh_pipe_t *pipe, struct usbh_hubport *hport, struct usb_endpoint_descriptor *ep_desc)
-{
-    struct usbh_endpoint_cfg ep_cfg = { 0 };
-
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    ep_cfg.ep_interval = ep_desc->bInterval;
-    ep_cfg.mult = (ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_MASK) >> USB_MAXPACKETSIZE_ADDITIONAL_TRANSCATION_SHIFT;
-    ep_cfg.hport = hport;
-
-    USB_LOG_INFO("Ep=%02x Attr=%02u Mps=%d Interval=%02u Mult=%02u\r\n",
-                 ep_cfg.ep_addr,
-                 ep_desc->bmAttributes,
-                 ep_cfg.ep_mps,
-                 ep_cfg.ep_interval,
-                 ep_cfg.mult);
-
-    return usbh_pipe_alloc(pipe, &ep_cfg);
 }
 
 int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output)
@@ -408,7 +369,7 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
     setup->wIndex = 0x0409;
     setup->wLength = 255;
 
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
     if (ret < 0) {
         return ret;
     }
@@ -436,7 +397,7 @@ int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsett
     setup->wIndex = altsetting;
     setup->wLength = 0;
 
-    return usbh_control_transfer(hport->ep0, setup, NULL);
+    return usbh_control_transfer(hport, setup, NULL);
 }
 
 int usbh_enumerate(struct usbh_hubport *hport)
@@ -444,12 +405,25 @@ int usbh_enumerate(struct usbh_hubport *hport)
     struct usb_interface_descriptor *intf_desc;
     struct usb_setup_packet *setup;
     struct usb_device_descriptor *dev_desc;
+    struct usb_endpoint_descriptor *ep;
     int dev_addr;
     uint16_t ep_mps;
     int ret;
 
     hport->setup = &g_setup[hport->parent->index - 1][hport->port - 1];
     setup = hport->setup;
+    ep = &hport->ep0;
+
+    /* Config EP0 mps from speed */
+    ep->bEndpointAddress = 0x00;
+    ep->bDescriptorType = USB_DESCRIPTOR_TYPE_ENDPOINT;
+    ep->bmAttributes = USB_ENDPOINT_TYPE_CONTROL;
+    ep->wMaxPacketSize = usbh_get_default_mps(hport->speed);
+    ep->bInterval = 0;
+    ep->bLength = 7;
+
+    /* Configure EP0 with zero address */
+    hport->dev_addr = 0;
 
     /* Read the first 8 bytes of the device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
@@ -458,7 +432,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0;
     setup->wLength = 8;
 
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get device descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -479,7 +453,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
                 dev_desc->bDeviceProtocol, ep_mps);
 
     /* Reconfigure EP0 with the correct maximum packet size */
-    usbh_ep_pipe_reconfigure(hport->ep0, 0, ep_mps, 0);
+    ep->wMaxPacketSize = ep_mps;
 
 #ifdef CONFIG_USBHOST_XHCI
     extern int usbh_get_xhci_devaddr(usbh_pipe_t * pipe);
@@ -506,7 +480,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0;
     setup->wLength = 0;
 
-    ret = usbh_control_transfer(hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(hport, setup, NULL);
     if (ret < 0) {
         USB_LOG_ERR("Failed to set devaddr,errorcode:%d\r\n", ret);
         goto errout;
@@ -515,11 +489,8 @@ int usbh_enumerate(struct usbh_hubport *hport)
     /* Wait device set address completely */
     usb_osal_msleep(2);
 
-    /* Assign the function address to the port */
+    /*Reconfigure EP0 with the correct address */
     hport->dev_addr = dev_addr;
-
-    /* And reconfigure EP0 with the correct address */
-    usbh_ep_pipe_reconfigure(hport->ep0, dev_addr, ep_mps, 0);
 
     /* Read the full device descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
@@ -528,7 +499,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0;
     setup->wLength = USB_SIZEOF_DEVICE_DESC;
 
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get full device descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -547,7 +518,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0;
     setup->wLength = USB_SIZEOF_CONFIG_DESC;
 
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get config descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -564,7 +535,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0;
     setup->wLength = wTotalLength;
 
-    ret = usbh_control_transfer(hport->ep0, setup, ep0_request_buffer);
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get full config descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -623,7 +594,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0;
     setup->wLength = 0;
 
-    ret = usbh_control_transfer(hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(hport, setup, NULL);
     if (ret < 0) {
         USB_LOG_ERR("Failed to set configuration,errorcode:%d\r\n", ret);
         goto errout;
@@ -670,27 +641,6 @@ errout:
     return ret;
 }
 
-void *usbh_find_class_instance(const char *devname)
-{
-    struct usbh_hubport *hport;
-    usb_slist_t *hub_list;
-
-    usb_slist_for_each(hub_list, &hub_class_head)
-    {
-        struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
-        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-            hport = &hub->child[port];
-            if (hport->connected) {
-                for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
-                    if ((strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0) && hport->config.intf[itf].priv)
-                        return hport->config.intf[itf].priv;
-                }
-            }
-        }
-    }
-    return NULL;
-}
-
 int usbh_initialize(void)
 {
     memset(&g_usbh_bus, 0, sizeof(struct usbh_bus));
@@ -717,7 +667,7 @@ int usbh_initialize(void)
     return 0;
 }
 
-int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint8_t *buffer)
+int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *setup, uint8_t *buffer)
 {
     struct usbh_urb *urb;
     int ret;
@@ -725,7 +675,7 @@ int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint
     urb = usb_malloc(sizeof(struct usbh_urb));
     memset(urb, 0, sizeof(struct usbh_urb));
 
-    usbh_control_urb_fill(urb, pipe, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
+    usbh_control_urb_fill(urb, hport, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
 
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
@@ -733,6 +683,27 @@ int usbh_control_transfer(usbh_pipe_t pipe, struct usb_setup_packet *setup, uint
     }
     usb_free(urb);
     return ret;
+}
+
+void *usbh_find_class_instance(const char *devname)
+{
+    struct usbh_hubport *hport;
+    usb_slist_t *hub_list;
+
+    usb_slist_for_each(hub_list, &hub_class_head)
+    {
+        struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
+        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
+            hport = &hub->child[port];
+            if (hport->connected) {
+                for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
+                    if ((strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0) && hport->config.intf[itf].priv)
+                        return hport->config.intf[itf].priv;
+                }
+            }
+        }
+    }
+    return NULL;
 }
 
 int lsusb(int argc, char **argv)

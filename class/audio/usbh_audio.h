@@ -40,11 +40,11 @@ struct usbh_audio_module {
 
 struct usbh_audio {
     struct usbh_hubport *hport;
+    struct usb_endpoint_descriptor *isoin;  /* ISO IN endpoint */
+    struct usb_endpoint_descriptor *isoout; /* ISO OUT endpoint */
 
     uint8_t ctrl_intf; /* interface number */
     uint8_t minor;
-    usbh_pipe_t isoin;  /* ISO IN endpoint */
-    usbh_pipe_t isoout; /* ISO OUT endpoint */
     uint16_t isoin_mps;
     uint16_t isoout_mps;
     bool is_opened;

@@ -32,12 +32,12 @@ struct usbh_videostreaming {
 
 struct usbh_video {
     struct usbh_hubport *hport;
+    struct usb_endpoint_descriptor *isoin;  /* ISO IN endpoint */
+    struct usb_endpoint_descriptor *isoout; /* ISO OUT endpoint */
 
     uint8_t ctrl_intf; /* interface number */
     uint8_t data_intf; /* interface number */
     uint8_t minor;
-    usbh_pipe_t isoin;  /* ISO IN endpoint */
-    usbh_pipe_t isoout; /* ISO OUT endpoint */
     struct video_probe_and_commit_controls probe;
     struct video_probe_and_commit_controls commit;
     uint16_t isoin_mps;

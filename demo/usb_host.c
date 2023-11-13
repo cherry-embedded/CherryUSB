@@ -16,9 +16,6 @@
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
 
-struct usbh_urb cdc_bulkin_urb;
-struct usbh_urb cdc_bulkout_urb;
-
 void usbh_cdc_acm_callback(void *arg, int nbytes)
 {
     //struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)arg;
@@ -48,13 +45,13 @@ find_class:
         }
         memset(cdc_buffer, 0, 512);
 
-        usbh_bulk_urb_fill(&cdc_bulkin_urb, cdc_acm_class->bulkin, cdc_buffer, 64, 3000, NULL, NULL);
-        ret = usbh_submit_urb(&cdc_bulkin_urb);
+        usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, 64, 3000, NULL, NULL);
+        ret = usbh_submit_urb(&cdc_acm_class->bulkin_urb);
         if (ret < 0) {
             USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
         } else {
-            USB_LOG_RAW("recv over:%d\r\n", cdc_bulkin_urb.actual_length);
-            for (size_t i = 0; i < cdc_bulkin_urb.actual_length; i++) {
+            USB_LOG_RAW("recv over:%d\r\n", cdc_acm_class->bulkin_urb.actual_length);
+            for (size_t i = 0; i < cdc_acm_class->bulkin_urb.actual_length; i++) {
                 USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
             }
         }
@@ -63,16 +60,16 @@ find_class:
         const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
 
         memcpy(cdc_buffer, data1, 8);
-        usbh_bulk_urb_fill(&cdc_bulkout_urb, cdc_acm_class->bulkout, cdc_buffer, 8, 3000, NULL, NULL);
-        ret = usbh_submit_urb(&cdc_bulkout_urb);
+        usbh_bulk_urb_fill(&cdc_acm_class->bulkout_urb, cdc_acm_class->hport, cdc_acm_class->bulkout, cdc_buffer, 8, 3000, NULL, NULL);
+        ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
         if (ret < 0) {
             USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
         } else {
-            USB_LOG_RAW("send over:%d\r\n", cdc_bulkout_urb.actual_length);
+            USB_LOG_RAW("send over:%d\r\n", cdc_acm_class->bulkout_urb.actual_length);
         }
 
-        usbh_bulk_urb_fill(&cdc_bulkin_urb, cdc_acm_class->bulkin, cdc_buffer, 64, 3000, usbh_cdc_acm_callback, cdc_acm_class);
-        ret = usbh_submit_urb(&cdc_bulkin_urb);
+        usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, 64, 3000, usbh_cdc_acm_callback, cdc_acm_class);
+        ret = usbh_submit_urb(&cdc_acm_class->bulkin_urb);
         if (ret < 0) {
             USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
         } else {
@@ -92,18 +89,16 @@ find_class:
 #if TEST_USBH_HID
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t hid_buffer[128];
 
-struct usbh_urb hid_intin_urb;
-
 void usbh_hid_callback(void *arg, int nbytes)
 {
-    //struct usbh_hid *hid_class = (struct usbh_hid *)arg;
+    struct usbh_hid *hid_class = (struct usbh_hid *)arg;
 
     if (nbytes > 0) {
         for (size_t i = 0; i < nbytes; i++) {
             USB_LOG_RAW("0x%02x ", hid_buffer[i]);
         }
         USB_LOG_RAW("nbytes:%d\r\n", nbytes);
-        usbh_submit_urb(&hid_intin_urb);
+        usbh_submit_urb(&hid_class->intin_urb);
     }
 }
 
@@ -122,8 +117,8 @@ find_class:
             usb_osal_msleep(1500);
             continue;
         }
-        usbh_int_urb_fill(&hid_intin_urb, hid_class->intin, hid_buffer, 8, 0, usbh_hid_callback, hid_class);
-        ret = usbh_submit_urb(&hid_intin_urb);
+        usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, 8, 0, usbh_hid_callback, hid_class);
+        ret = usbh_submit_urb(&hid_class->intin_urb);
         if (ret < 0) {
             usb_osal_msleep(1500);
             goto find_class;

@@ -89,7 +89,7 @@ freq_found:
     setup->wIndex = intf;
     setup->wLength = 0;
 
-    ret = usbh_control_transfer(audio_class->hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
     if (ret < 0) {
         return ret;
     }
@@ -103,7 +103,7 @@ freq_found:
     setup->wLength = 3;
 
     memcpy(g_audio_buf, &samp_freq, 3);
-    ret = usbh_control_transfer(audio_class->hport->ep0, setup, g_audio_buf);
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
     if (ret < 0) {
         return ret;
     }
@@ -112,10 +112,10 @@ freq_found:
     mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
     if (ep_desc->bEndpointAddress & 0x80) {
         audio_class->isoin_mps = mps * (mult + 1);
-        usbh_hport_activate_epx(&audio_class->isoin, audio_class->hport, ep_desc);
+        USBH_EP_INIT(audio_class->isoin, ep_desc);
     } else {
         audio_class->isoout_mps = mps * (mult + 1);
-        usbh_hport_activate_epx(&audio_class->isoout, audio_class->hport, ep_desc);
+        USBH_EP_INIT(audio_class->isoout, ep_desc);
     }
 
     USB_LOG_INFO("Open audio module :%s, altsetting: %u\r\n", name, altsetting);
@@ -147,12 +147,10 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
     ep_desc = &audio_class->hport->config.intf[intf].altsetting[altsetting].ep[0].ep_desc;
     if (ep_desc->bEndpointAddress & 0x80) {
         if (audio_class->isoin) {
-            usbh_pipe_free(audio_class->isoin);
             audio_class->isoin = NULL;
         }
     } else {
         if (audio_class->isoout) {
-            usbh_pipe_free(audio_class->isoout);
             audio_class->isoout = NULL;
         }
     }
@@ -163,7 +161,7 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
     setup->wIndex = intf;
     setup->wLength = 0;
 
-    ret = usbh_control_transfer(audio_class->hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
 
     return ret;
 }
@@ -196,7 +194,7 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
     volume_hex = -0xDB00 / 100 * volume + 0xdb00;
 
     memcpy(g_audio_buf, &volume_hex, 2);
-    ret = usbh_control_transfer(audio_class->hport->ep0, setup, NULL);
+    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
 
     return ret;
 }
@@ -226,7 +224,7 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
     setup->wLength = 1;
 
     memcpy(g_audio_buf, &mute, 1);
-    ret = usbh_control_transfer(audio_class->hport->ep0, setup, g_audio_buf);
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
 
     return ret;
 }
@@ -416,11 +414,9 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (audio_class) {
         if (audio_class->isoin) {
-            usbh_pipe_free(audio_class->isoin);
         }
 
         if (audio_class->isoout) {
-            usbh_pipe_free(audio_class->isoout);
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {

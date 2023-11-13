@@ -36,14 +36,14 @@ static int usbh_cdc_ecm_set_eth_packet_filter(struct usbh_cdc_ecm *cdc_ecm_class
     setup->wIndex = cdc_ecm_class->ctrl_intf;
     setup->wLength = 0;
 
-    return usbh_control_transfer(cdc_ecm_class->hport->ep0, setup, NULL);
+    return usbh_control_transfer(cdc_ecm_class->hport, setup, NULL);
 }
 
 int usbh_cdc_ecm_get_notification(struct usbh_cdc_ecm *cdc_ecm_class)
 {
     int ret;
 
-    usbh_int_urb_fill(&cdc_ecm_class->intin_urb, cdc_ecm_class->intin, g_cdc_ecm_inttx_buffer, 16, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    usbh_int_urb_fill(&cdc_ecm_class->intin_urb, cdc_ecm_class->hport, cdc_ecm_class->intin, g_cdc_ecm_inttx_buffer, 16, USB_OSAL_WAITING_FOREVER, NULL, NULL);
     ret = usbh_submit_urb(&cdc_ecm_class->intin_urb);
     if (ret < 0) {
         return ret;
@@ -68,6 +68,8 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t mac_str_idx = 0xff;
 
     struct usbh_cdc_ecm *cdc_ecm_class = &g_cdc_ecm_class;
+
+    memset(cdc_ecm_class, 0, sizeof(struct usbh_cdc_ecm));
 
     cdc_ecm_class->hport = hport;
     cdc_ecm_class->ctrl_intf = intf;
@@ -139,7 +141,7 @@ get_mac:
 
     /* enable int ep */
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
-    usbh_hport_activate_epx(&cdc_ecm_class->intin, hport, ep_desc);
+    USBH_EP_INIT(cdc_ecm_class->intin, ep_desc);
 
     if (hport->config.intf[intf + 1].altsetting_num > 1) {
         altsetting = hport->config.intf[intf + 1].altsetting_num - 1;
@@ -148,9 +150,9 @@ get_mac:
             ep_desc = &hport->config.intf[intf + 1].altsetting[altsetting].ep[i].ep_desc;
 
             if (ep_desc->bEndpointAddress & 0x80) {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkin, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkin, ep_desc);
             } else {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkout, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkout, ep_desc);
             }
         }
 
@@ -161,9 +163,9 @@ get_mac:
             ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
 
             if (ep_desc->bEndpointAddress & 0x80) {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkin, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkin, ep_desc);
             } else {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkout, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkout, ep_desc);
             }
         }
     }
@@ -196,15 +198,15 @@ static int usbh_cdc_ecm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (cdc_ecm_class) {
         if (cdc_ecm_class->bulkin) {
-            usbh_pipe_free(cdc_ecm_class->bulkin);
+            usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
         }
 
         if (cdc_ecm_class->bulkout) {
-            usbh_pipe_free(cdc_ecm_class->bulkout);
+            usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
         }
 
         if (cdc_ecm_class->intin) {
-            usbh_pipe_free(cdc_ecm_class->intin);
+            usbh_kill_urb(&cdc_ecm_class->intin_urb);
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {
@@ -248,7 +250,7 @@ find_class:
     }
     g_cdc_ecm_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_cdc_ecm_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
@@ -293,7 +295,7 @@ err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
 
     USB_LOG_DBG("txlen:%d\r\n", p->tot_len);
 
-    usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkout_urb, g_cdc_ecm_class.bulkout, g_cdc_ecm_tx_buffer, p->tot_len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkout_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkout, g_cdc_ecm_tx_buffer, p->tot_len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
     ret = usbh_submit_urb(&g_cdc_ecm_class.bulkout_urb);
     if (ret < 0) {
         return ERR_BUF;
