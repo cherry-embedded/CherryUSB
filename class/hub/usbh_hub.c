@@ -313,7 +313,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_hub *hub = usbh_hub_class_alloc();
     if (hub == NULL) {
-        USB_LOG_ERR("Fail to alloc cdc_acm_class\r\n");
+        USB_LOG_ERR("Fail to alloc hub_class\r\n");
         return -ENOMEM;
     }
 
