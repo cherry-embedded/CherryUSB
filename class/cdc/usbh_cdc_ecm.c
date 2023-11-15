@@ -62,7 +62,7 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
     uint8_t altsetting = 0;
-    char mac_buffer[8];
+    char mac_buffer[12];
     uint8_t *p;
     uint8_t cur_iface = 0xff;
     uint8_t mac_str_idx = 0xff;
@@ -111,9 +111,7 @@ get_mac:
         return ret;
     }
 
-    uint8_t len = strlen(mac_buffer);
-
-    for (int i = 0, j = 0; i < len; i += 2, j++) {
+    for (int i = 0, j = 0; i < 12; i += 2, j++) {
         char byte_str[3];
         byte_str[0] = mac_buffer[i];
         byte_str[1] = mac_buffer[i + 1];
@@ -123,7 +121,7 @@ get_mac:
         cdc_ecm_class->mac[j] = (unsigned char)byte;
     }
 
-    USB_LOG_INFO("CDC ECM mac address %02x: %02x: %02x: %02x: %02x: %02x\r\n",
+    USB_LOG_INFO("CDC ECM MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
                  cdc_ecm_class->mac[0],
                  cdc_ecm_class->mac[1],
                  cdc_ecm_class->mac[2],
