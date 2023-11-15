@@ -19,9 +19,9 @@ static struct usbd_endpoint cdc_ecm_ep_data[3];
 #define CDC_ECM_MAX_PACKET_SIZE 64
 #endif
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_CDC_ECM_ETH_MAX_SEGSZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_CDC_ECM_ETH_MAX_SEGSZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_notify_buf[16];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_CDC_ECM_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_CDC_ECM_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_notify_buf[16];
 
 volatile uint8_t *g_cdc_ecm_rx_data_buffer = NULL;
 volatile uint32_t g_cdc_ecm_rx_data_length = 0;

@@ -50,7 +50,7 @@ static int usbh_msc_get_maxlun(struct usbh_msc *msc_class, uint8_t *buffer)
     setup->wIndex = msc_class->intf;
     setup->wLength = 1;
 
-    return usbh_control_transfer(msc_class->hport->ep0, setup, buffer);
+    return usbh_control_transfer(msc_class->hport, setup, buffer);
 }
 
 static void usbh_msc_cbw_dump(struct CBW *cbw)
@@ -87,9 +87,8 @@ static inline int usbh_msc_bulk_in_transfer(struct usbh_msc *msc_class, uint8_t 
 {
     int ret;
     struct usbh_urb *urb = &msc_class->bulkin_urb;
-    memset(urb, 0, sizeof(struct usbh_urb));
 
-    usbh_bulk_urb_fill(urb, msc_class->bulkin, buffer, buflen, timeout, NULL, NULL);
+    usbh_bulk_urb_fill(urb, msc_class->hport, msc_class->bulkin, buffer, buflen, timeout, NULL, NULL);
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
@@ -101,9 +100,8 @@ static inline int usbh_msc_bulk_out_transfer(struct usbh_msc *msc_class, uint8_t
 {
     int ret;
     struct usbh_urb *urb = &msc_class->bulkout_urb;
-    memset(urb, 0, sizeof(struct usbh_urb));
 
-    usbh_bulk_urb_fill(urb, msc_class->bulkout, buffer, buflen, timeout, NULL, NULL);
+    usbh_bulk_urb_fill(urb, msc_class->hport, msc_class->bulkout, buffer, buflen, timeout, NULL, NULL);
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
@@ -111,7 +109,7 @@ static inline int usbh_msc_bulk_out_transfer(struct usbh_msc *msc_class, uint8_t
     return ret;
 }
 
-int usbh_bulk_cbw_csw_xfer(struct usbh_msc *msc_class, struct CBW *cbw, struct CSW *csw, uint8_t *buffer)
+static int usbh_bulk_cbw_csw_xfer(struct usbh_msc *msc_class, struct CBW *cbw, struct CSW *csw, uint8_t *buffer)
 {
     int nbytes;
 
@@ -236,55 +234,7 @@ static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, g_msc_buf);
 }
 
-int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
-{
-    struct CBW *cbw;
-
-    /* Construct the CBW */
-    cbw = (struct CBW *)g_msc_buf;
-    memset(cbw, 0, USB_SIZEOF_MSC_CBW);
-    cbw->dSignature = MSC_CBW_Signature;
-
-    cbw->dDataLength = (msc_class->blocksize * nsectors);
-    cbw->bCBLength = SCSICMD_WRITE10_SIZEOF;
-    cbw->CB[0] = SCSI_CMD_WRITE10;
-
-    SET_BE32(&cbw->CB[2], start_sector);
-    SET_BE16(&cbw->CB[7], nsectors);
-
-    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
-}
-
-int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
-{
-    struct CBW *cbw;
-
-    /* Construct the CBW */
-    cbw = (struct CBW *)g_msc_buf;
-    memset(cbw, 0, USB_SIZEOF_MSC_CBW);
-    cbw->dSignature = MSC_CBW_Signature;
-
-    cbw->dDataLength = (msc_class->blocksize * nsectors);
-    cbw->bmFlags = 0x80;
-    cbw->bCBLength = SCSICMD_READ10_SIZEOF;
-    cbw->CB[0] = SCSI_CMD_READ10;
-
-    SET_BE32(&cbw->CB[2], start_sector);
-    SET_BE16(&cbw->CB[7], nsectors);
-
-    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
-}
-
-void usbh_msc_modeswitch_enable(struct usbh_msc_modeswitch_config *config)
-{
-    if (config) {
-        g_msc_modeswitch_config = config;
-    } else {
-        g_msc_modeswitch_config = NULL;
-    }
-}
-
-void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
+static inline void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
 {
     struct CBW *cbw;
 
@@ -323,9 +273,9 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
         if (ep_desc->bEndpointAddress & 0x80) {
-            usbh_hport_activate_epx(&msc_class->bulkin, hport, ep_desc);
+            USBH_EP_INIT(msc_class->bulkin, ep_desc);
         } else {
-            usbh_hport_activate_epx(&msc_class->bulkout, hport, ep_desc);
+            USBH_EP_INIT(msc_class->bulkout, ep_desc);
         }
     }
 
@@ -390,11 +340,11 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (msc_class) {
         if (msc_class->bulkin) {
-            usbh_pipe_free(msc_class->bulkin);
+            usbh_kill_urb(&msc_class->bulkin_urb);
         }
 
         if (msc_class->bulkout) {
-            usbh_pipe_free(msc_class->bulkout);
+            usbh_kill_urb(&msc_class->bulkout_urb);
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {
@@ -406,6 +356,55 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     return ret;
+}
+
+
+int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
+{
+    struct CBW *cbw;
+
+    /* Construct the CBW */
+    cbw = (struct CBW *)g_msc_buf;
+    memset(cbw, 0, USB_SIZEOF_MSC_CBW);
+    cbw->dSignature = MSC_CBW_Signature;
+
+    cbw->dDataLength = (msc_class->blocksize * nsectors);
+    cbw->bCBLength = SCSICMD_WRITE10_SIZEOF;
+    cbw->CB[0] = SCSI_CMD_WRITE10;
+
+    SET_BE32(&cbw->CB[2], start_sector);
+    SET_BE16(&cbw->CB[7], nsectors);
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
+}
+
+int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
+{
+    struct CBW *cbw;
+
+    /* Construct the CBW */
+    cbw = (struct CBW *)g_msc_buf;
+    memset(cbw, 0, USB_SIZEOF_MSC_CBW);
+    cbw->dSignature = MSC_CBW_Signature;
+
+    cbw->dDataLength = (msc_class->blocksize * nsectors);
+    cbw->bmFlags = 0x80;
+    cbw->bCBLength = SCSICMD_READ10_SIZEOF;
+    cbw->CB[0] = SCSI_CMD_READ10;
+
+    SET_BE32(&cbw->CB[2], start_sector);
+    SET_BE16(&cbw->CB[7], nsectors);
+
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_buf, (uint8_t *)buffer);
+}
+
+void usbh_msc_modeswitch_enable(struct usbh_msc_modeswitch_config *config)
+{
+    if (config) {
+        g_msc_modeswitch_config = config;
+    } else {
+        g_msc_modeswitch_config = NULL;
+    }
 }
 
 __WEAK void usbh_msc_run(struct usbh_msc *msc_class)

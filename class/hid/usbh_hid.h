@@ -10,12 +10,14 @@
 
 struct usbh_hid {
     struct usbh_hubport *hport;
+    struct usb_endpoint_descriptor *intin;  /* INTR IN endpoint */
+    struct usb_endpoint_descriptor *intout; /* INTR OUT endpoint */
+    struct usbh_urb intin_urb;              /* INTR IN urb */
+    struct usbh_urb intout_urb;             /* INTR OUT urb */
 
     uint8_t report_desc[128];
     uint8_t intf; /* interface number */
     uint8_t minor;
-    usbh_pipe_t intin;  /* INTR IN endpoint */
-    usbh_pipe_t intout; /* INTR OUT endpoint */
 };
 
 #ifdef __cplusplus

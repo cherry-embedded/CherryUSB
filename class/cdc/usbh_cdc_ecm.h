@@ -13,20 +13,21 @@
 
 struct usbh_cdc_ecm {
     struct usbh_hubport *hport;
+    struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
+    struct usb_endpoint_descriptor *bulkout; /* Bulk OUT endpoint */
+    struct usb_endpoint_descriptor *intin;   /* Interrupt IN endpoint */
+    struct usbh_urb bulkout_urb; /* Bulk out endpoint */
+    struct usbh_urb bulkin_urb; /* Bulk IN endpoint */
+    struct usbh_urb intin_urb; /* Interrupt IN endpoint */
 
     uint8_t ctrl_intf; /* Control interface number */
     uint8_t data_intf; /* Data interface number */
     uint8_t minor;
+    
     uint8_t mac[6];
-    uint32_t max_segment_size;
-    uint8_t connect_status;
+    bool connect_status;
+    uint16_t max_segment_size;
     uint32_t speed[2];
-    usbh_pipe_t bulkin;  /* Bulk IN endpoint */
-    usbh_pipe_t bulkout; /* Bulk OUT endpoint */
-    usbh_pipe_t intin;   /* Interrupt IN endpoint */
-    struct usbh_urb bulkout_urb;
-    struct usbh_urb bulkin_urb;
-    struct usbh_urb intin_urb;
 
     ip_addr_t ipaddr;
     ip_addr_t netmask;

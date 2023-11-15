@@ -11,15 +11,15 @@
 
 struct usbh_msc {
     struct usbh_hubport *hport;
+    struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
+    struct usb_endpoint_descriptor *bulkout; /* Bulk OUT endpoint */
+    struct usbh_urb bulkin_urb;              /* Bulk IN urb */
+    struct usbh_urb bulkout_urb;             /* Bulk OUT urb */
 
     uint8_t intf; /* Data interface number */
     uint8_t sdchar;
-    usbh_pipe_t bulkin;          /* Bulk IN endpoint */
-    usbh_pipe_t bulkout;         /* Bulk OUT endpoint */
-    struct usbh_urb bulkin_urb;  /* Bulk IN urb */
-    struct usbh_urb bulkout_urb; /* Bulk OUT urb */
-    uint32_t blocknum;           /* Number of blocks on the USB mass storage device */
-    uint16_t blocksize;          /* Block size of USB mass storage device */
+    uint32_t blocknum;  /* Number of blocks on the USB mass storage device */
+    uint16_t blocksize; /* Block size of USB mass storage device */
 };
 
 struct usbh_msc_modeswitch_config {

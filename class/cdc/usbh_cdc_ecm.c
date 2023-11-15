@@ -20,9 +20,9 @@
 #define CONFIG_USBHOST_CDC_ECM_PKT_FILTER     0x000C
 #define CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE 1514U
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_inttx_buffer[16];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_inttx_buffer[16];
 
 static struct usbh_cdc_ecm g_cdc_ecm_class;
 
@@ -36,21 +36,25 @@ static int usbh_cdc_ecm_set_eth_packet_filter(struct usbh_cdc_ecm *cdc_ecm_class
     setup->wIndex = cdc_ecm_class->ctrl_intf;
     setup->wLength = 0;
 
-    return usbh_control_transfer(cdc_ecm_class->hport->ep0, setup, NULL);
+    return usbh_control_transfer(cdc_ecm_class->hport, setup, NULL);
 }
 
 int usbh_cdc_ecm_get_notification(struct usbh_cdc_ecm *cdc_ecm_class)
 {
     int ret;
 
-    usbh_int_urb_fill(&cdc_ecm_class->intin_urb, cdc_ecm_class->intin, g_cdc_ecm_inttx_buffer, 16, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    usbh_int_urb_fill(&cdc_ecm_class->intin_urb, cdc_ecm_class->hport, cdc_ecm_class->intin, g_cdc_ecm_inttx_buffer, 16, USB_OSAL_WAITING_FOREVER, NULL, NULL);
     ret = usbh_submit_urb(&cdc_ecm_class->intin_urb);
     if (ret < 0) {
         return ret;
     }
 
     if (g_cdc_ecm_inttx_buffer[1] == CDC_ECM_NOTIFY_CODE_NETWORK_CONNECTION) {
-        cdc_ecm_class->connect_status = g_cdc_ecm_inttx_buffer[2];
+        if (g_cdc_ecm_inttx_buffer[2] == CDC_ECM_NET_CONNECTED) {
+            cdc_ecm_class->connect_status = true;
+        } else {
+            cdc_ecm_class->connect_status = false;
+        }
     } else if (g_cdc_ecm_inttx_buffer[1] == CDC_ECM_NOTIFY_CODE_CONNECTION_SPEED_CHANGE) {
         memcpy(cdc_ecm_class->speed, &g_cdc_ecm_inttx_buffer[8], 8);
     }
@@ -68,6 +72,8 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t mac_str_idx = 0xff;
 
     struct usbh_cdc_ecm *cdc_ecm_class = &g_cdc_ecm_class;
+
+    memset(cdc_ecm_class, 0, sizeof(struct usbh_cdc_ecm));
 
     cdc_ecm_class->hport = hport;
     cdc_ecm_class->ctrl_intf = intf;
@@ -105,7 +111,7 @@ get_mac:
         return -1;
     }
 
-    memset(mac_buffer, 0, 8);
+    memset(mac_buffer, 0, 12);
     ret = usbh_get_string_desc(cdc_ecm_class->hport, mac_str_idx, (uint8_t *)mac_buffer);
     if (ret < 0) {
         return ret;
@@ -137,7 +143,7 @@ get_mac:
 
     /* enable int ep */
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
-    usbh_hport_activate_epx(&cdc_ecm_class->intin, hport, ep_desc);
+    USBH_EP_INIT(cdc_ecm_class->intin, ep_desc);
 
     if (hport->config.intf[intf + 1].altsetting_num > 1) {
         altsetting = hport->config.intf[intf + 1].altsetting_num - 1;
@@ -146,9 +152,9 @@ get_mac:
             ep_desc = &hport->config.intf[intf + 1].altsetting[altsetting].ep[i].ep_desc;
 
             if (ep_desc->bEndpointAddress & 0x80) {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkin, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkin, ep_desc);
             } else {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkout, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkout, ep_desc);
             }
         }
 
@@ -159,9 +165,9 @@ get_mac:
             ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
 
             if (ep_desc->bEndpointAddress & 0x80) {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkin, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkin, ep_desc);
             } else {
-                usbh_hport_activate_epx(&cdc_ecm_class->bulkout, hport, ep_desc);
+                USBH_EP_INIT(cdc_ecm_class->bulkout, ep_desc);
             }
         }
     }
@@ -194,15 +200,15 @@ static int usbh_cdc_ecm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     if (cdc_ecm_class) {
         if (cdc_ecm_class->bulkin) {
-            usbh_pipe_free(cdc_ecm_class->bulkin);
+            usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
         }
 
         if (cdc_ecm_class->bulkout) {
-            usbh_pipe_free(cdc_ecm_class->bulkout);
+            usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
         }
 
         if (cdc_ecm_class->intin) {
-            usbh_pipe_free(cdc_ecm_class->intin);
+            usbh_kill_urb(&cdc_ecm_class->intin_urb);
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {
@@ -223,30 +229,25 @@ static void usbh_cdc_ecm_rx_thread(void *argument)
     err_t err;
     struct pbuf *p;
     struct netif *netif = (struct netif *)argument;
-    uint16_t ep_mps;
 
     // clang-format off
 find_class:
     // clang-format on
+    g_cdc_ecm_class.connect_status = false;
     while (usbh_find_class_instance("/dev/cdc_ether") == NULL) {
         usb_osal_msleep(1000);
     }
 
-    while (g_cdc_ecm_class.connect_status == CDC_ECM_NET_DISCONNECTED) {
+    while (g_cdc_ecm_class.connect_status == false) {
         ret = usbh_cdc_ecm_get_notification(&g_cdc_ecm_class);
         if (ret < 0) {
             goto find_class;
         }
     }
 
-    if (g_cdc_ecm_class.hport->speed == USB_SPEED_FULL) {
-        ep_mps = 64;
-    } else {
-        ep_mps = 512;
-    }
     g_cdc_ecm_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize), USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_cdc_ecm_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
@@ -254,13 +255,14 @@ find_class:
 
         g_cdc_ecm_rx_length += g_cdc_ecm_class.bulkin_urb.actual_length;
 
-        if (g_cdc_ecm_rx_length % ep_mps) {
+        if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
             p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_length, PBUF_POOL);
             if (p != NULL) {
                 memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
                 g_cdc_ecm_rx_length = 0;
+
                 err = netif->input(p, netif);
                 if (err != ERR_OK) {
                     pbuf_free(p);
@@ -280,7 +282,7 @@ err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
     struct pbuf *q;
     uint8_t *buffer = g_cdc_ecm_tx_buffer;
 
-    if (g_cdc_ecm_class.connect_status == CDC_ECM_NET_DISCONNECTED) {
+    if (g_cdc_ecm_class.connect_status == false) {
         return ERR_BUF;
     }
 
@@ -291,7 +293,7 @@ err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
 
     USB_LOG_DBG("txlen:%d\r\n", p->tot_len);
 
-    usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkout_urb, g_cdc_ecm_class.bulkout, g_cdc_ecm_tx_buffer, p->tot_len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkout_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkout, g_cdc_ecm_tx_buffer, p->tot_len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
     ret = usbh_submit_urb(&g_cdc_ecm_class.bulkout_urb);
     if (ret < 0) {
         return ERR_BUF;

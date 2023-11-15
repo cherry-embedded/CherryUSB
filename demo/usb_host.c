@@ -12,12 +12,10 @@
 #define TEST_USBH_AUDIO     0
 #define TEST_USBH_VIDEO     0
 #define TEST_USBH_CDC_ECM   0
+#define TEST_USBH_RNDIS     0
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
-
-struct usbh_urb cdc_bulkin_urb;
-struct usbh_urb cdc_bulkout_urb;
 
 void usbh_cdc_acm_callback(void *arg, int nbytes)
 {
@@ -48,31 +46,19 @@ find_class:
         }
         memset(cdc_buffer, 0, 512);
 
-        usbh_bulk_urb_fill(&cdc_bulkin_urb, cdc_acm_class->bulkin, cdc_buffer, 64, 3000, NULL, NULL);
-        ret = usbh_submit_urb(&cdc_bulkin_urb);
-        if (ret < 0) {
-            USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
-        } else {
-            USB_LOG_RAW("recv over:%d\r\n", cdc_bulkin_urb.actual_length);
-            for (size_t i = 0; i < cdc_bulkin_urb.actual_length; i++) {
-                USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
-            }
-        }
-
-        USB_LOG_RAW("\r\n");
         const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
 
-        memcpy(cdc_buffer, data1, 8);
-        usbh_bulk_urb_fill(&cdc_bulkout_urb, cdc_acm_class->bulkout, cdc_buffer, 8, 3000, NULL, NULL);
-        ret = usbh_submit_urb(&cdc_bulkout_urb);
+        memcpy(cdc_buffer, data1, 10);
+        usbh_bulk_urb_fill(&cdc_acm_class->bulkout_urb, cdc_acm_class->hport, cdc_acm_class->bulkout, cdc_buffer, 10, 3000, NULL, NULL);
+        ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
         if (ret < 0) {
             USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
         } else {
-            USB_LOG_RAW("send over:%d\r\n", cdc_bulkout_urb.actual_length);
+            USB_LOG_RAW("send over:%d\r\n", cdc_acm_class->bulkout_urb.actual_length);
         }
 
-        usbh_bulk_urb_fill(&cdc_bulkin_urb, cdc_acm_class->bulkin, cdc_buffer, 64, 3000, usbh_cdc_acm_callback, cdc_acm_class);
-        ret = usbh_submit_urb(&cdc_bulkin_urb);
+        usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, cdc_acm_class->bulkin->wMaxPacketSize, 3000, usbh_cdc_acm_callback, cdc_acm_class);
+        ret = usbh_submit_urb(&cdc_acm_class->bulkin_urb);
         if (ret < 0) {
             USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
         } else {
@@ -92,18 +78,16 @@ find_class:
 #if TEST_USBH_HID
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t hid_buffer[128];
 
-struct usbh_urb hid_intin_urb;
-
 void usbh_hid_callback(void *arg, int nbytes)
 {
-    //struct usbh_hid *hid_class = (struct usbh_hid *)arg;
+    struct usbh_hid *hid_class = (struct usbh_hid *)arg;
 
     if (nbytes > 0) {
         for (size_t i = 0; i < nbytes; i++) {
             USB_LOG_RAW("0x%02x ", hid_buffer[i]);
         }
         USB_LOG_RAW("nbytes:%d\r\n", nbytes);
-        usbh_submit_urb(&hid_intin_urb);
+        usbh_submit_urb(&hid_class->intin_urb);
     }
 }
 
@@ -122,8 +106,8 @@ find_class:
             usb_osal_msleep(1500);
             continue;
         }
-        usbh_int_urb_fill(&hid_intin_urb, hid_class->intin, hid_buffer, 8, 0, usbh_hid_callback, hid_class);
-        ret = usbh_submit_urb(&hid_intin_urb);
+        usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
+        ret = usbh_submit_urb(&hid_class->intin_urb);
         if (ret < 0) {
             usb_osal_msleep(1500);
             goto find_class;
@@ -441,6 +425,98 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 }
 #endif
 
+#if TEST_USBH_RNDIS
+
+#include "usbh_rndis.h"
+
+#include "netif/etharp.h"
+#include "lwip/netif.h"
+#include "lwip/pbuf.h"
+#include "lwip/tcpip.h"
+#if LWIP_DHCP
+#include "lwip/dhcp.h"
+#endif
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "timers.h"
+
+struct netif g_rndis_netif;
+
+TimerHandle_t timer_handle;
+
+static void rndis_dev_keepalive_timeout(TimerHandle_t xTimer)
+{
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)pvTimerGetTimerID(xTimer);
+    usbh_rndis_keepalive(rndis_class);
+}
+
+void timer_init(struct usbh_rndis *rndis_class)
+{
+    timer_handle = xTimerCreate((const char *)NULL, (TickType_t)3000, (UBaseType_t)pdTRUE, (void *const)rndis_class, (TimerCallbackFunction_t)rndis_dev_keepalive_timeout);
+    if (NULL != timer_handle) {
+        xTimerStart(timer_handle, 0);
+    } else {
+        printf("timer creation failed!.\n");
+        for (;;) {
+            ;
+        }
+    }
+}
+
+static err_t usbh_rndis_if_init(struct netif *netif)
+{
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    netif->mtu = 1500;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->state = NULL;
+    netif->name[0] = 'E';
+    netif->name[1] = 'X';
+    netif->output = etharp_output;
+    netif->linkoutput = usbh_rndis_linkoutput;
+    return ERR_OK;
+}
+
+void usbh_rndis_run(struct usbh_rndis *rndis_class)
+{
+    struct netif *netif = &g_rndis_netif;
+
+    netif->hwaddr_len = 6;
+    memcpy(netif->hwaddr, rndis_class->mac, 6);
+
+    IP4_ADDR(&rndis_class->ipaddr, 0, 0, 0, 0);
+    IP4_ADDR(&rndis_class->netmask, 0, 0, 0, 0);
+    IP4_ADDR(&rndis_class->gateway, 0, 0, 0, 0);
+
+    netif = netif_add(netif, &rndis_class->ipaddr, &rndis_class->netmask, &rndis_class->gateway, NULL, usbh_rndis_if_init, tcpip_input);
+    netif_set_default(netif);
+    while (!netif_is_up(netif)) {
+    }
+
+    timer_init(rndis_class);
+    
+#if LWIP_DHCP
+    dhcp_start(netif);
+#endif
+}
+
+void usbh_rndis_stop(struct usbh_rndis *rndis_class)
+{
+    struct netif *netif = &g_rndis_netif;
+#if LWIP_DHCP
+    dhcp_stop(netif);
+    dhcp_cleanup(netif);
+#endif
+    netif_set_down(netif);
+    netif_remove(netif);
+	
+	xTimerStop(timer_handle, 0);
+    xTimerDelete(timer_handle, 0);
+}
+#endif
+
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 }
@@ -500,10 +576,14 @@ void usbh_class_test(void)
 #error "if you want to use iso, please contact with me"
     usb_osal_thread_create("usbh_video", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_video_thread, NULL);
 #endif
-#if TEST_USBH_CDC_ECM
+#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
-
+#endif
+#if TEST_USBH_CDC_ECM
     usbh_cdc_ecm_lwip_thread_init(&g_cdc_ecm_netif);
+#endif
+#if TEST_USBH_RNDIS
+    usbh_rndis_lwip_thread_init(&g_rndis_netif);
 #endif
 }
