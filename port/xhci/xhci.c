@@ -23,6 +23,8 @@
  * 2.0   zhugengyu  2023/3/29   support usb3.0 device attached at roothub
  */
 
+#include <string.h>
+
 #include "usbh_core.h"
 #include "usbh_hub.h"
 
@@ -30,6 +32,39 @@
 #include "xhci.h"
 
 extern struct usbh_hubport *usbh_get_roothub_port(unsigned int port);
+
+#ifdef __aarch64__
+/* find last 64bit set, binary search */
+int xhci_fls(unsigned long v)
+{
+	int n = 64;
+
+	if (!v) return -1;
+	if (!(v & 0xFFFFFFFF00000000)) { v <<= 32; n -= 32; }
+	if (!(v & 0xFFFF000000000000)) { v <<= 16; n -= 16; }
+	if (!(v & 0xFF00000000000000)) { v <<=  8; n -= 8;  }
+	if (!(v & 0xF000000000000000)) { v <<=  4; n -= 4;  }
+	if (!(v & 0xC000000000000000)) { v <<=  2; n -= 2;  }
+	if (!(v & 0x8000000000000000)) { v <<=  1; n -= 1;  }
+
+	return n - 1;
+}
+#else
+/* find first bit set, binary search */
+int xhci_fls(unsigned int v)
+{
+	int n = 32;
+
+	if (!v) return -1;
+	if (!(v & 0xFFFF0000)) { v <<= 16; n -= 16; }
+	if (!(v & 0xFF000000)) { v <<=  8; n -= 8;  }
+	if (!(v & 0xF0000000)) { v <<=  4; n -= 4;  }
+	if (!(v & 0xC0000000)) { v <<=  2; n -= 2;  }
+	if (!(v & 0x80000000)) { v <<=  1; n -= 1;  }
+
+	return n - 1;
+}
+#endif
 
 /**
  * Get USB transaction translator
@@ -143,7 +178,7 @@ static inline size_t xhci_align ( size_t len ) {
 	size_t align;
 
 	/* Align to own length (rounded up to a power of two) */
-	align = ( 1 << fls ( len - 1 ) );
+	align = ( 1 << xhci_fls ( len - 1 ) );
 
 	/* Round up to XHCI_MIN_ALIGN if needed */
 	if ( align < XHCI_MIN_ALIGN )
@@ -2030,8 +2065,8 @@ static inline int xhci_configure_endpoint ( struct xhci_host *xhci,
  * @v input		Input context
  */
 static void
-xhci_deconfigure_endpoint_input ( struct xhci_host *xhci __unused,
-				  struct xhci_slot *slot __unused,
+xhci_deconfigure_endpoint_input ( struct xhci_host *xhci,
+				  struct xhci_slot *slot,
 				  struct xhci_endpoint *endpoint,
 				  void *input ) {
 	struct xhci_control_context *control_ctx;
@@ -2162,7 +2197,7 @@ int xhci_work_endpoint_open ( struct xhci_host *xhci, struct xhci_slot *slot, st
 
 	/* Calculate interval */
 	if ( ctx_type & XHCI_EP_TYPE_PERIODIC ) {
-		ep->interval = ( fls ( ep->interval ) - 1 );
+		ep->interval = ( xhci_fls ( ep->interval ) - 1 );
 	}
 
 	ep->ctx_type = ctx_type;
@@ -2337,7 +2372,7 @@ err_enqueue:
  * @v input		Input context
  */
 static void xhci_evaluate_context_input ( struct xhci_host *xhci,
-					  					  struct xhci_slot *slot __unused,
+					  					  struct xhci_slot *slot,
 					  					  struct xhci_endpoint *endpoint,
 					  					  void *input ) {
 	struct xhci_control_context *control_ctx;

@@ -16,7 +16,9 @@ CPPDEFINES = []
 
 # USB DEVICE
 if GetDepend(['PKG_CHERRYUSB_DEVICE']):
+    path += [cwd + '/osal']
     src += Glob('core/usbd_core.c')
+    src += Glob('osal/usb_osal_rtthread.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
@@ -44,6 +46,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/hid_keyboard_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC_TEMPLATE']):
         src += Glob('demo/msc_ram_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC_STORAGE_TEMPLATE']):
+        src += Glob('demo/msc_storage_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V1_TEMPLATE']):
         src += Glob('demo/audio_v1_mic_speaker_multichan_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V2_TEMPLATE']):
@@ -81,6 +85,12 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         else:
             src += Glob('port/ch32/usb_dc_usbfs.c')
 
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
+        path += [cwd + '/port/pusb2/common']
+        path += [cwd + '/port/pusb2/fpusb2']
+        src += Glob('port/pusb2/fpusb2' + '/*.c')
+        src += Glob('port/pusb2/usb_dc_pusb2.c') 
+
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_HOST']):
     path += [cwd + '/osal']
@@ -111,6 +121,17 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/ehci/usb_hc_ehci.c')
         if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_HPM']):
             src += Glob('port/ehci/usb_glue_hpm.c')
+
+    if GetDepend(['PKG_CHERRYUSB_HOST_XHCI']):
+        src += Glob('port/xhci/usb_hc_xhci.c')
+        src += Glob('port/xhci/xhci_dbg.c')
+        src += Glob('port/xhci/xhci.c')
+
+    if GetDepend(['PKG_CHERRYUSB_HOST_PUSB2']):
+        path += [cwd + '/port/pusb2/common']
+        path += [cwd + '/port/pusb2/fpusb2']
+        src += Glob('port/pusb2/fpusb2' + '/*.c')
+        src += Glob('port/pusb2/usb_hc_pusb2.c')         
 
     if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
         src += Glob('demo/usb_host.c')

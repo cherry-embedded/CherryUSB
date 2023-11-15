@@ -299,9 +299,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
 uint8_t usbh_get_port_speed(struct usbh_hub *hub, const uint8_t port)
 {
     USB_ASSERT(hub);
-    struct usbh_bus *usb = hub->usb;
-    USB_ASSERT(usb && usb->priv);
-    struct xhci_host *xhci = usb->priv;
+    struct xhci_host *xhci = &(xhci_host);
 
     if (hub->is_roothub) {
         return xhci_root_speed(xhci, port);
