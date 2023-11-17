@@ -16,7 +16,6 @@
 #include "usb_errno.h"
 #include "usb_def.h"
 #include "usb_list.h"
-#include "usb_mem.h"
 #include "usb_log.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
