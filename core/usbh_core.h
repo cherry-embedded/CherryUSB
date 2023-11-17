@@ -99,7 +99,6 @@ struct usbh_hubport {
     uint8_t port;     /* Hub port index */
     uint8_t dev_addr; /* device address */
     uint8_t speed;    /* device speed */
-    struct usb_endpoint_descriptor ep0;
     struct usb_device_descriptor device_desc;
     struct usbh_configuration config;
     const char *iManufacturer;
@@ -111,7 +110,8 @@ struct usbh_hubport {
 #ifdef CONFIG_USBHOST_XHCI
     uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
 #endif
-    usb_osal_thread_t thread;
+    struct usb_endpoint_descriptor ep0;
+    struct usbh_urb ep0_urb;
 };
 
 struct usbh_hub {
@@ -120,12 +120,12 @@ struct usbh_hub {
     bool is_roothub;
     uint8_t index;
     uint8_t hub_addr;
-    struct usb_endpoint_descriptor *intin;
-    uint8_t *int_buffer;
-    struct usbh_urb intin_urb;
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
     struct usbh_hubport *parent;
+    struct usb_endpoint_descriptor *intin;
+    struct usbh_urb intin_urb;
+    uint8_t *int_buffer;
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,

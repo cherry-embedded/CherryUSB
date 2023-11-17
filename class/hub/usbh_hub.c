@@ -308,6 +308,7 @@ static void usbh_hubport_release(struct usbh_hubport *child)
             }
         }
         child->config.config_desc.bNumInterfaces = 0;
+        usbh_kill_urb(&child->ep0_urb);
     }
 }
 
@@ -600,7 +601,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     USB_LOG_INFO("New %s device on Hub %u, Port %u connected\r\n", speed_table[speed], hub->index, port + 1);
 
                     /* create disposable thread to enumerate device on current hport, do not block hub thread */
-                    child->thread = usb_osal_thread_create("usbh_enum", CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hubport_enumerate_thread, (void *)child);
+                    usb_osal_thread_create("usbh_enum", CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hubport_enumerate_thread, (void *)child);
                 } else {
                     child = &hub->child[port];
                     /** release child sources */
