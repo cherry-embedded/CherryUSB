@@ -107,7 +107,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/msc/usbh_msc.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_RNDIS']):
         src += Glob('class/wireless/usbh_rndis.c')
-        src += Glob('third_party/rt-thread-4.1.1/rndis_host/rndis_host.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ECM']):
+        src += Glob('class/cdc/usbh_cdc_ecm.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
