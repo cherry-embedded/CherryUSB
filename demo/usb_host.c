@@ -375,6 +375,33 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 #include "lwip/prot/dhcp.h"
 #endif
 
+#ifndef RT_USING_TIMER_SOFT
+#error must enable RT_USING_TIMER_SOFT to support timer callback in thread
+#endif
+
+#ifdef __RTTHREAD__
+
+#include "rtthread.h"
+static rt_timer_t dhcp_timer = RT_NULL;
+
+static void dhcp_timeout(void *parameter)
+{
+    struct netif *netif = (struct netif *)parameter;
+    struct dhcp *dhcp;
+
+    if (netif_is_up(netif)) {
+        dhcp = netif_dhcp_data(netif);
+
+        if (dhcp && (dhcp->state == DHCP_STATE_BOUND)) {
+            rt_kprintf("\r\n IPv4 Address     : %s\r\n", ipaddr_ntoa(&netif->ip_addr));
+            rt_kprintf(" IPv4 Subnet mask : %s\r\n", ipaddr_ntoa(&netif->netmask));
+            rt_kprintf(" IPv4 Gateway     : %s\r\n\r\n", ipaddr_ntoa(&netif->gw));
+
+            rt_timer_stop(dhcp_timer);
+        }
+    }
+}
+#else
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -399,6 +426,7 @@ static void dhcp_timeout(TimerHandle_t xTimer)
         }
     }
 }
+#endif
 #endif
 
 #if TEST_USBH_CDC_ECM
@@ -438,7 +466,11 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 
 #if LWIP_DHCP
     dhcp_start(netif);
+#ifdef __RTTHREAD__
+    rt_timer_start(dhcp_timer);
+#else
     xTimerStart(dhcp_handle, 0);
+#endif
 #endif
 }
 
@@ -459,6 +491,29 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 
 struct netif g_rndis_netif;
 
+#ifdef __RTTHREAD__
+
+static rt_timer_t keep_timer = RT_NULL;
+
+static void rndis_dev_keepalive_timeout(void *parameter)
+{
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)parameter;
+    usbh_rndis_keepalive(rndis_class);
+}
+
+void timer_init(struct usbh_rndis *rndis_class)
+{
+    keep_timer = rt_timer_create("keep",
+                                 rndis_dev_keepalive_timeout,
+                                 rndis_class,
+                                 3000,
+                                 RT_TIMER_FLAG_PERIODIC |
+                                     RT_TIMER_FLAG_SOFT_TIMER);
+
+    rt_timer_start(keep_timer);
+}
+
+#else
 TimerHandle_t timer_handle;
 
 static void rndis_dev_keepalive_timeout(TimerHandle_t xTimer)
@@ -479,6 +534,7 @@ void timer_init(struct usbh_rndis *rndis_class)
         }
     }
 }
+#endif
 
 static err_t usbh_rndis_if_init(struct netif *netif)
 {
@@ -514,7 +570,11 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
 
 #if LWIP_DHCP
     dhcp_start(netif);
+#ifdef __RTTHREAD__
+    rt_timer_start(dhcp_timer);
+#else
     xTimerStart(dhcp_handle, 0);
+#endif
 #endif
 }
 
@@ -527,9 +587,13 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 #endif
     netif_set_down(netif);
     netif_remove(netif);
-
+#ifdef __RTTHREAD__
+    rt_timer_stop(keep_timer);
+    rt_timer_delete(keep_timer);
+#else
     xTimerStop(timer_handle, 0);
     xTimerDelete(timer_handle, 0);
+#endif
 }
 #endif
 
@@ -594,8 +658,10 @@ void usbh_class_test(void)
 #endif
 #if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
     struct netif *netif;
+#ifndef __RTTHREAD__
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
+#endif
 #endif
 #if TEST_USBH_CDC_ECM
     netif = &g_cdc_ecm_netif;
@@ -606,10 +672,21 @@ void usbh_class_test(void)
     usbh_rndis_lwip_thread_init(&g_rndis_netif);
 #endif
 #if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
+#ifdef __RTTHREAD__
+    dhcp_timer = rt_timer_create("dhcp",
+                                 dhcp_timeout,
+                                 netif,
+                                 200,
+                                 RT_TIMER_FLAG_PERIODIC |
+                                     RT_TIMER_FLAG_SOFT_TIMER);
+
+#else
     dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
-        while (1) {}
+        while (1) {
+        }
     }
+#endif
 #endif
 }
