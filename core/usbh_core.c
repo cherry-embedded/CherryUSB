@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "usbh_core.h"
-#include "usbh_hub.h"
 
 struct usbh_class_info *usbh_class_info_table_begin = NULL;
 struct usbh_class_info *usbh_class_info_table_end = NULL;

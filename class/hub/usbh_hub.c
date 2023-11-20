@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "usbh_core.h"
 #include "usbh_hub.h"
 
 #define DEV_FORMAT             "/dev/hub%d"
@@ -238,7 +239,7 @@ static int usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct hu
     }
 }
 
-static int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
+int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet roothub_setup;
     struct usb_setup_packet *setup;
@@ -256,7 +257,7 @@ static int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feat
     }
 }
 
-static int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
+int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet roothub_setup;
     struct usb_setup_packet *setup;

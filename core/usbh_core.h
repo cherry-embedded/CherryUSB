@@ -19,7 +19,7 @@
 #include "usb_log.h"
 #include "usb_hc.h"
 #include "usb_osal.h"
-#include "usb_hub.h"
+#include "usbh_hub.h"
 
 #ifdef __cplusplus
 extern "C" {
