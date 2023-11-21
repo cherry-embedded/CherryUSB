@@ -127,12 +127,11 @@ rndis 与 lwip 接口的对接
     #define CONFIG_USBHOST_MAX_MSC_CLASS     2
     #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
     #define CONFIG_USBHOST_MAX_VIDEO_CLASS   1
-    #define CONFIG_USBHOST_MAX_RNDIS_CLASS   1
 
 CONFIG_USBHOST_PSC_PRIO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-主机插拔线程的优先级，默认是 4，数值越小，优先级越高
+主机插拔线程的优先级，默认是 0，数值越小，优先级越高
 
 CONFIG_USBHOST_PSC_STACKSIZE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

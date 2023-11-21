@@ -31,7 +31,7 @@
 
 * 最后退出保存即可。
 * 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
-* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容：
+* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容, 禁止包含 `"rtthread.h"` ：
 
 .. figure:: img/config_file.png
 
@@ -52,7 +52,7 @@
 * 设置 psc 线程的线程栈以及线程优先级。
 * 最后退出保存即可。
 * 退出以后不急着编译，需要在代码中实现 `usb_hc_low_level_init` 函数。
-* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容：
+* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容, 禁止包含 `"rtthread.h"` ：
 
 .. figure:: img/config_file.png
 
