@@ -961,6 +961,19 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         EHCI_HCOR->portsc[port - 1] &= ~EHCI_PORTSC_PE;
                         break;
                     case HUB_PORT_FEATURE_SUSPEND:
+                        EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_RESUME;
+                        usb_osal_msleep(20);
+                        EHCI_HCOR->portsc[port - 1] &= ~EHCI_PORTSC_RESUME;
+                        while(EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_RESUME){}
+
+                        temp = EHCI_HCOR->usbcmd;
+                        temp |= EHCI_USBCMD_ASEN;
+                        temp |= EHCI_USBCMD_PSEN;
+                        temp |= EHCI_USBCMD_RUN;
+                        EHCI_HCOR->usbcmd = temp;
+
+                        while((EHCI_HCOR->usbcmd & EHCI_USBCMD_RUN) == 0){}
+
                     case HUB_PORT_FEATURE_C_SUSPEND:
                         break;
                     case HUB_PORT_FEATURE_POWER:
@@ -990,6 +1003,16 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
 
                 switch (setup->wValue) {
                     case HUB_PORT_FEATURE_SUSPEND:
+                        temp = EHCI_HCOR->usbcmd;
+                        temp &= ~EHCI_USBCMD_ASEN;
+                        temp &= ~EHCI_USBCMD_PSEN;
+                        temp &= ~EHCI_USBCMD_RUN;
+                        EHCI_HCOR->usbcmd = temp;
+
+                        while(EHCI_HCOR->usbcmd & EHCI_USBCMD_RUN){}
+
+                        EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_SUSPEND;
+                        while((EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_SUSPEND) == 0){}
                         break;
                     case HUB_PORT_FEATURE_POWER:
 #ifdef CONFIG_USB_EHCI_PORT_POWER
