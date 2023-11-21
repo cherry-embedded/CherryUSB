@@ -445,6 +445,7 @@ find_class:
     while (g_rndis_class.link_status == false) {
         ret = usbh_rndis_get_connect_status(&g_rndis_class);
         if (ret < 0) {
+            usb_osal_msleep(100);
             goto find_class;
         }
     }

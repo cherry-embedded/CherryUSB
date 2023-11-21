@@ -241,6 +241,7 @@ find_class:
     while (g_cdc_ecm_class.connect_status == false) {
         ret = usbh_cdc_ecm_get_notification(&g_cdc_ecm_class);
         if (ret < 0) {
+            usb_osal_msleep(100);
             goto find_class;
         }
     }
