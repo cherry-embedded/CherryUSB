@@ -28,7 +28,7 @@
 #endif
 
 #define CONFIG_USB_EHCI_QH_NUM  CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USB_EHCI_QTD_NUM (CONFIG_USBHOST_PIPE_NUM * 3)
+#define CONFIG_USB_EHCI_QTD_NUM (CONFIG_USBHOST_PIPE_NUM + 3)
 #define CONFIG_USB_EHCI_ITD_NUM 20
 
 extern uint8_t usbh_get_port_speed(const uint8_t port);
