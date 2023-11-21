@@ -68,7 +68,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 USB2.0 全速和高速设备，USB3.0 超速设备
 - 支持端点中断注册功能，porting 给用户自己处理中断里的数据
 - 支持复合设备
-- 支持 Communication Device Class (CDC)
+- 支持 Communication Device Class (CDC_ACM, CDC_ECM)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
 - 支持 USB VIDEO CLASS (UVC1.0、UVC1.5)
@@ -101,13 +101,14 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 支持阻塞式传输和异步传输
 - 支持复合设备
 - 支持多级 HUB,最高可拓展到 7 级
-- 支持 Communication Device Class (CDC)
+- 支持 Communication Device Class (CDC_ACM, CDC_ECM)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
 - Support USB Video CLASS
 - Support USB Audio CLASS
 - 支持 Remote NDIS (RNDIS)
 - 支持 Vendor 类 class
+- 支持 USB modeswitch
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
@@ -142,7 +143,6 @@ x 受以下宏影响：
 #define CONFIG_USBHOST_MAX_MSC_CLASS     2
 #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
 #define CONFIG_USBHOST_MAX_VIDEO_CLASS   1
-#define CONFIG_USBHOST_MAX_RNDIS_CLASS   1
 
 ```
 

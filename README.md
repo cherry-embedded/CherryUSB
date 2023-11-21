@@ -70,7 +70,7 @@ CherryUSB Device Stack has the following functions：
 - Support USB2.0 full and high speed, USB3.0 super speed
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
 - Support Composite Device
-- Support Communication Device Class (CDC)
+- Support Communication Device Class (CDC_ACM, CDC_ECM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
 - Support USB VIDEO CLASS (UVC1.0、UVC1.5)
@@ -103,13 +103,14 @@ CherryUSB Host Stack has the following functions：
 - Support blocking transfers and asynchronous transfers
 - Support Composite Device
 - Multi-level HUB support, expandable up to 7 levels
-- Support Communication Device Class (CDC)
+- Support Communication Device Class (CDC_ACM, CDC_ECM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
 - Support USB Video CLASS
 - Support USB Audio CLASS
 - Support Remote NDIS (RNDIS)
 - Support Vendor class
+- Support USB modeswitch
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 
@@ -144,7 +145,6 @@ x is affected by the following macros：
 #define CONFIG_USBHOST_MAX_MSC_CLASS     2
 #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
 #define CONFIG_USBHOST_MAX_VIDEO_CLASS   1
-#define CONFIG_USBHOST_MAX_RNDIS_CLASS   1
 
 ```
 
