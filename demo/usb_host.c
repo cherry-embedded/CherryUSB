@@ -375,32 +375,17 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 #include "lwip/prot/dhcp.h"
 #endif
 
+#ifdef __RTTHREAD__
+
 #ifndef RT_USING_TIMER_SOFT
 #error must enable RT_USING_TIMER_SOFT to support timer callback in thread
 #endif
 
-#ifdef __RTTHREAD__
+#include <rtthread.h>
+#include <rtdevice.h>
+#include <netif/ethernetif.h>
+#include <netdev.h>
 
-#include "rtthread.h"
-static rt_timer_t dhcp_timer = RT_NULL;
-
-static void dhcp_timeout(void *parameter)
-{
-    struct netif *netif = (struct netif *)parameter;
-    struct dhcp *dhcp;
-
-    if (netif_is_up(netif)) {
-        dhcp = netif_dhcp_data(netif);
-
-        if (dhcp && (dhcp->state == DHCP_STATE_BOUND)) {
-            rt_kprintf("\r\n IPv4 Address     : %s\r\n", ipaddr_ntoa(&netif->ip_addr));
-            rt_kprintf(" IPv4 Subnet mask : %s\r\n", ipaddr_ntoa(&netif->netmask));
-            rt_kprintf(" IPv4 Gateway     : %s\r\n\r\n", ipaddr_ntoa(&netif->gw));
-
-            rt_timer_stop(dhcp_timer);
-        }
-    }
-}
 #else
 #include "FreeRTOS.h"
 #include "task.h"
@@ -434,6 +419,10 @@ static void dhcp_timeout(TimerHandle_t xTimer)
 
 struct netif g_cdc_ecm_netif;
 
+#ifdef __RTTHREAD__
+struct eth_device cdc_ecm_dev;
+#endif
+
 static err_t usbh_cdc_ecm_if_init(struct netif *netif)
 {
     LWIP_ASSERT("netif != NULL", (netif != NULL));
@@ -450,6 +439,20 @@ static err_t usbh_cdc_ecm_if_init(struct netif *netif)
 
 void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 {
+#ifdef __RTTHREAD__
+    struct netdev *netdev;
+
+    memset(&cdc_ecm_dev, 0, sizeof(struct eth_device));
+    eth_device_init(&cdc_ecm_dev, "u0");
+
+    netdev = netdev_get_by_name(cdc_ecm_dev.netif->name);
+    memcpy(cdc_ecm_dev.netif->hwaddr, cdc_ecm_class->mac, 6);
+    memcpy(netdev->hwaddr, cdc_ecm_class->mac, 6);
+    cdc_ecm_dev.netif->linkoutput = usbh_cdc_ecm_linkoutput;
+    eth_device_linkchange(&cdc_ecm_dev, RT_TRUE);
+
+    usbh_cdc_ecm_lwip_thread_init(cdc_ecm_dev.netif);
+#else
     struct netif *netif = &g_cdc_ecm_netif;
 
     netif->hwaddr_len = 6;
@@ -464,11 +467,9 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     while (!netif_is_up(netif)) {
     }
 
+    usbh_cdc_ecm_lwip_thread_init(netif);
 #if LWIP_DHCP
     dhcp_start(netif);
-#ifdef __RTTHREAD__
-    rt_timer_start(dhcp_timer);
-#else
     xTimerStart(dhcp_handle, 0);
 #endif
 #endif
@@ -476,6 +477,11 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 {
+#ifdef __RTTHREAD__
+    eth_device_deinit(&rndis_dev);
+    rt_timer_stop(keep_timer);
+    rt_timer_delete(keep_timer);
+#else
     struct netif *netif = &g_cdc_ecm_netif;
 #if LWIP_DHCP
     dhcp_stop(netif);
@@ -483,6 +489,8 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 #endif
     netif_set_down(netif);
     netif_remove(netif);
+#endif
+    usbh_cdc_ecm_lwip_thread_deinit();
 }
 #endif
 
@@ -492,6 +500,8 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 struct netif g_rndis_netif;
 
 #ifdef __RTTHREAD__
+
+struct eth_device rndis_dev;
 
 static rt_timer_t keep_timer = RT_NULL;
 
@@ -552,6 +562,21 @@ static err_t usbh_rndis_if_init(struct netif *netif)
 
 void usbh_rndis_run(struct usbh_rndis *rndis_class)
 {
+#ifdef __RTTHREAD__
+    struct netdev *netdev;
+
+    memset(&rndis_dev, 0, sizeof(struct eth_device));
+    eth_device_init(&rndis_dev, "u0");
+
+    netdev = netdev_get_by_name(rndis_dev.netif->name);
+    memcpy(rndis_dev.netif->hwaddr, rndis_class->mac, 6);
+    memcpy(netdev->hwaddr, rndis_class->mac, 6);
+    rndis_dev.netif->linkoutput = usbh_rndis_linkoutput;
+    eth_device_linkchange(&rndis_dev, RT_TRUE);
+
+    usbh_rndis_lwip_thread_init(rndis_dev.netif);
+    timer_init(rndis_class);
+#else
     struct netif *netif = &g_rndis_netif;
 
     netif->hwaddr_len = 6;
@@ -566,13 +591,11 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     while (!netif_is_up(netif)) {
     }
 
+    usbh_rndis_lwip_thread_init(netif);
     timer_init(rndis_class);
 
 #if LWIP_DHCP
     dhcp_start(netif);
-#ifdef __RTTHREAD__
-    rt_timer_start(dhcp_timer);
-#else
     xTimerStart(dhcp_handle, 0);
 #endif
 #endif
@@ -580,6 +603,11 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
 
 void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 {
+#ifdef __RTTHREAD__
+    eth_device_deinit(&rndis_dev);
+    rt_timer_stop(keep_timer);
+    rt_timer_delete(keep_timer);
+#else
     struct netif *netif = &g_rndis_netif;
 #if LWIP_DHCP
     dhcp_stop(netif);
@@ -587,13 +615,10 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 #endif
     netif_set_down(netif);
     netif_remove(netif);
-#ifdef __RTTHREAD__
-    rt_timer_stop(keep_timer);
-    rt_timer_delete(keep_timer);
-#else
     xTimerStop(timer_handle, 0);
     xTimerDelete(timer_handle, 0);
 #endif
+    usbh_rndis_lwip_thread_deinit();
 }
 #endif
 
@@ -656,31 +681,20 @@ void usbh_class_test(void)
 #error "if you want to use iso, please contact with me"
     usb_osal_thread_create("usbh_video", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_video_thread, NULL);
 #endif
+
+#ifdef __RTTHREAD__
+    /* do nothing */
+#else
 #if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
     struct netif *netif;
-#ifndef __RTTHREAD__
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
-#endif
-#endif
 #if TEST_USBH_CDC_ECM
     netif = &g_cdc_ecm_netif;
-    usbh_cdc_ecm_lwip_thread_init(&g_cdc_ecm_netif);
 #endif
 #if TEST_USBH_RNDIS
     netif = &g_rndis_netif;
-    usbh_rndis_lwip_thread_init(&g_rndis_netif);
 #endif
-#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
-#ifdef __RTTHREAD__
-    dhcp_timer = rt_timer_create("dhcp",
-                                 dhcp_timeout,
-                                 netif,
-                                 200,
-                                 RT_TIMER_FLAG_PERIODIC |
-                                     RT_TIMER_FLAG_SOFT_TIMER);
-
-#else
     dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");

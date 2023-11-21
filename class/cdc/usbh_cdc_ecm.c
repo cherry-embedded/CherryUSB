@@ -304,7 +304,12 @@ err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
 
 void usbh_cdc_ecm_lwip_thread_init(struct netif *netif)
 {
-    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, netif);
+    g_cdc_ecm_class.thread = usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, netif);
+}
+
+void usbh_cdc_ecm_lwip_thread_deinit(void)
+{
+    usb_osal_thread_delete(g_cdc_ecm_class.thread);
 }
 
 __WEAK void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)

@@ -33,6 +33,8 @@ struct usbh_rndis {
     ip_addr_t ipaddr;
     ip_addr_t netmask;
     ip_addr_t gateway;
+
+    usb_osal_thread_t thread;
 };
 
 #ifdef __cplusplus
@@ -46,6 +48,7 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class);
 
 err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p);
 void usbh_rndis_lwip_thread_init(struct netif *netif);
+void usbh_rndis_lwip_thread_deinit(void);
 
 #ifdef __cplusplus
 }

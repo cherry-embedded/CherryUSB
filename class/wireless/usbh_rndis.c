@@ -507,6 +507,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 
     hdr = (rndis_data_packet_t *)g_rndis_tx_buffer;
     memset(hdr, 0, sizeof(rndis_data_packet_t));
+    
     hdr->MessageType = REMOTE_NDIS_PACKET_MSG;
     hdr->MessageLength = sizeof(rndis_data_packet_t) + p->tot_len;
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
@@ -517,9 +518,9 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
         memcpy(buffer, q->payload, q->len);
         buffer += q->len;
     }
-    /* send */
-    if ((hdr->MessageLength & 0x1FF) == 0) {
-        /* pad a dummy. */
+
+    /* if message length is the multiple of wMaxPacketSize, we should add a short packet to tell device transfer is over. */
+    if (!(hdr->MessageLength % g_rndis_class.bulkout->wMaxPacketSize)) {
         hdr->MessageLength += 1;
     }
 
@@ -536,7 +537,12 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 
 void usbh_rndis_lwip_thread_init(struct netif *netif)
 {
-    usb_osal_thread_create("usbh_rndis_rx", 2560, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, netif);
+    g_rndis_class.thread = usb_osal_thread_create("usbh_rndis_rx", 2560, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, netif);
+}
+
+void usbh_rndis_lwip_thread_deinit(void)
+{
+    usb_osal_thread_delete(g_rndis_class.thread);
 }
 
 __WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)
