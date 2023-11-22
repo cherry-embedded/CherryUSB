@@ -40,7 +40,6 @@ find_class:
         // clang-format on
         cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0");
         if (cdc_acm_class == NULL) {
-            USB_LOG_RAW("do not find /dev/ttyACM0\r\n");
             usb_osal_msleep(1000);
             continue;
         }
@@ -102,7 +101,6 @@ find_class:
         // clang-format on
         hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0");
         if (hid_class == NULL) {
-            USB_LOG_RAW("do not find /dev/input0\r\n");
             usb_osal_msleep(1500);
             continue;
         }
@@ -203,7 +201,6 @@ find_class:
         // clang-format on
         msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
         if (msc_class == NULL) {
-            USB_LOG_RAW("do not find /dev/sda\r\n");
             usb_osal_msleep(2000);
             continue;
         }
