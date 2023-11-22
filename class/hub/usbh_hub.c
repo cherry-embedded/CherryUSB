@@ -310,6 +310,7 @@ static void usbh_hubport_release(struct usbh_hubport *child)
         }
         child->config.config_desc.bNumInterfaces = 0;
         usbh_kill_urb(&child->ep0_urb);
+        usb_osal_mutex_delete(child->mutex);
     }
 }
 
@@ -598,6 +599,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     child->connected = true;
                     child->port = port + 1;
                     child->speed = speed;
+                    child->mutex = usb_osal_mutex_create();
 
                     USB_LOG_INFO("New %s device on Hub %u, Port %u connected\r\n", speed_table[speed], hub->index, port + 1);
 

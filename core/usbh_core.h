@@ -111,6 +111,7 @@ struct usbh_hubport {
 #endif
     struct usb_endpoint_descriptor ep0;
     struct usbh_urb ep0_urb;
+    usb_osal_mutex_t mutex;
 };
 
 struct usbh_hub {
