@@ -749,9 +749,12 @@ int usbh_submit_urb(struct usbh_urb *urb)
         }
         urb->timeout = 0;
         ret = urb->errorcode;
+        /* we can free chan when waitsem is done */
+        dwc2_chan_free(chan);
     }
     return ret;
 errout_timeout:
+    urb->timeout = 0;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -781,6 +784,8 @@ int usbh_kill_urb(struct usbh_urb *urb)
         urb->timeout = 0;
         urb->errorcode = -ESHUTDOWN;
         usb_osal_sem_give(chan->waitsem);
+    } else {
+        dwc2_chan_free(chan);
     }
 
     usb_osal_leave_critical_section(flags);
@@ -796,11 +801,11 @@ static inline void dwc2_urb_waitup(struct usbh_urb *urb)
     chan->urb = NULL;
     urb->hcpriv = NULL;
 
-    dwc2_chan_free(chan);
-
     if (urb->timeout) {
         urb->timeout = 0;
         usb_osal_sem_give(chan->waitsem);
+    } else {
+        dwc2_chan_free(chan);
     }
 
     if (urb->complete) {

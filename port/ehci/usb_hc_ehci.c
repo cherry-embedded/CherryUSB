@@ -632,11 +632,12 @@ static void ehci_urb_waitup(struct usbh_urb *urb)
     urb->hcpriv = NULL;
 
     qh->remove_in_iaad = 0;
-    ehci_qh_free(qh);
 
     if (urb->timeout) {
         urb->timeout = 0;
         usb_osal_sem_give(qh->waitsem);
+    } else {
+        ehci_qh_free(qh);
     }
 
     if (urb->complete) {
@@ -732,8 +733,6 @@ static void ehci_kill_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
         qh->first_qtd = qtd->hw.next_qtd;
         qtd = EHCI_ADDR2QTD(qh->first_qtd);
     }
-
-    ehci_qh_free(qh);
 }
 
 static int usbh_reset_port(const uint8_t port)
@@ -964,7 +963,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_RESUME;
                         usb_osal_msleep(20);
                         EHCI_HCOR->portsc[port - 1] &= ~EHCI_PORTSC_RESUME;
-                        while(EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_RESUME){}
+                        while (EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_RESUME) {}
 
                         temp = EHCI_HCOR->usbcmd;
                         temp |= EHCI_USBCMD_ASEN;
@@ -972,7 +971,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         temp |= EHCI_USBCMD_RUN;
                         EHCI_HCOR->usbcmd = temp;
 
-                        while((EHCI_HCOR->usbcmd & EHCI_USBCMD_RUN) == 0){}
+                        while ((EHCI_HCOR->usbcmd & EHCI_USBCMD_RUN) == 0) {}
 
                     case HUB_PORT_FEATURE_C_SUSPEND:
                         break;
@@ -1009,10 +1008,10 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         temp &= ~EHCI_USBCMD_RUN;
                         EHCI_HCOR->usbcmd = temp;
 
-                        while(EHCI_HCOR->usbcmd & EHCI_USBCMD_RUN){}
+                        while (EHCI_HCOR->usbcmd & EHCI_USBCMD_RUN) {}
 
                         EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_SUSPEND;
-                        while((EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_SUSPEND) == 0){}
+                        while ((EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_SUSPEND) == 0) {}
                         break;
                     case HUB_PORT_FEATURE_POWER:
 #ifdef CONFIG_USB_EHCI_PORT_POWER
@@ -1142,10 +1141,12 @@ int usbh_submit_urb(struct usbh_urb *urb)
         }
         urb->timeout = 0;
         ret = urb->errorcode;
+        /* we should free qh when waitsem is done */
+        ehci_qh_free(qh);
     }
     return ret;
 errout_timeout:
-    /* Timeout will run here */
+    urb->timeout = 0;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -1199,6 +1200,8 @@ int usbh_kill_urb(struct usbh_urb *urb)
         urb->timeout = 0;
         urb->errorcode = -ESHUTDOWN;
         usb_osal_sem_give(qh->waitsem);
+    } else {
+        ehci_qh_free(qh);
     }
 
     usb_osal_leave_critical_section(flags);

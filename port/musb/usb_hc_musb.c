@@ -650,9 +650,12 @@ int usbh_submit_urb(struct usbh_urb *urb)
         }
         urb->timeout = 0;
         ret = urb->errorcode;
+        /* we can free pipe when waitsem is done */
+        musb_pipe_free(pipe);
     }
     return ret;
 errout_timeout:
+    urb->timeout = 0;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -672,12 +675,12 @@ int usbh_kill_urb(struct usbh_urb *urb)
     urb->hcpriv = NULL;
     pipe->urb = NULL;
 
-    musb_pipe_free(pipe);
-
     if (urb->timeout) {
         urb->timeout = 0;
         urb->errorcode = -ESHUTDOWN;
         usb_osal_sem_give(pipe->waitsem);
+    } else {
+        musb_pipe_free(pipe);
     }
 
     usb_osal_leave_critical_section(flags);
@@ -692,11 +695,11 @@ static void musb_urb_waitup(struct usbh_urb *urb)
     pipe->urb = NULL;
     urb->hcpriv = NULL;
 
-    musb_pipe_free(pipe);
-
     if (urb->timeout) {
         urb->timeout = 0;
         usb_osal_sem_give(pipe->waitsem);
+    } else {
+        musb_pipe_free(pipe);
     }
 
     if (urb->complete) {
