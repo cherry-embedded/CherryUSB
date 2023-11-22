@@ -488,6 +488,7 @@ find_class:
                     pmg_offset += pmsg->MessageLength;
                     g_rndis_rx_length -= pmsg->MessageLength;
                 } else {
+                    g_rndis_rx_length = 0;
                     USB_LOG_ERR("No memory to alloc pbuf for rndis rx\r\n");
                 }
             }
