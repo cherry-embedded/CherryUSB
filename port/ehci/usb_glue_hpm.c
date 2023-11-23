@@ -30,19 +30,20 @@ static void usb_host_mode_init(USB_Type *ptr)
     ptr->USBCMD &= ~USB_USBCMD_ITC_MASK;
 }
 
-void usb_hc_low_level_init()
+void usb_hc_low_level_init(void)
 {
     usb_phy_init((USB_Type *)CONFIG_HPM_USBH_BASE);
     intc_m_enable_irq(CONFIG_HPM_USBH_IRQn);
 }
 
-void usb_hc_low_level2_init()
+void usb_hc_low_level2_init(void)
 {
     usb_host_mode_init((USB_Type *)CONFIG_HPM_USBH_BASE);
 }
 
 uint8_t usbh_get_port_speed(const uint8_t port)
 {
+    (void)port;
     uint8_t speed;
 
     speed = usb_get_port_speed((USB_Type *)CONFIG_HPM_USBH_BASE);
@@ -62,8 +63,8 @@ uint8_t usbh_get_port_speed(const uint8_t port)
 
 extern void USBH_IRQHandler(void);
 
-void isr_usb(void)
+void isr_usbh(void)
 {
     USBH_IRQHandler();
 }
-SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USBH_IRQn, isr_usb)
+SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USBH_IRQn, isr_usbh)

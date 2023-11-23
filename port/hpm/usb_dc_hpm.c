@@ -93,6 +93,7 @@ int usbd_set_address(const uint8_t addr)
 
 uint8_t usbd_get_port_speed(const uint8_t port)
 {
+    (void)port;
     uint8_t speed;
 
     speed = usb_get_port_speed(g_hpm_udc.handle->regs);
@@ -161,6 +162,9 @@ int usbd_ep_clear_stall(const uint8_t ep)
 
 int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 {
+    usb_device_handle_t *handle = g_hpm_udc.handle;
+
+    *stalled = usb_device_edpt_check_stall(handle, ep);
     return 0;
 }
 
@@ -210,7 +214,7 @@ void USBD_IRQHandler(void)
 {
     uint32_t int_status;
     usb_device_handle_t *handle = g_hpm_udc.handle;
-    uint32_t transfer_len;
+    uint32_t transfer_len = 0;
 
     /* Acknowledge handled interrupt */
     int_status = usb_device_status_flags(handle);
@@ -263,19 +267,26 @@ void USBD_IRQHandler(void)
                 if (edpt_complete & (1 << ep_idx2bit(ep_idx))) {
                     /* Failed QTD also get ENDPTCOMPLETE set */
                     dcd_qtd_t *p_qtd = usb_device_qtd_get(handle, ep_idx);
-
-                    if (p_qtd->halted || p_qtd->xact_err || p_qtd->buffer_err) {
-                    } else {
-                        /* only number of bytes in the IOC qtd */
-                        uint8_t const ep_addr = (ep_idx / 2) | ((ep_idx & 0x01) ? 0x80 : 0);
-
-                        transfer_len = p_qtd->expected_bytes - p_qtd->total_bytes;
-
-                        if (ep_addr & 0x80) {
-                            usbd_event_ep_in_complete_handler(ep_addr, transfer_len);
+                    while (1) {
+                        if (p_qtd->halted || p_qtd->xact_err || p_qtd->buffer_err) {
+                            USB_LOG_ERR("usbd transfer error!\r\n");
+                            return;
                         } else {
-                            usbd_event_ep_out_complete_handler(ep_addr, transfer_len);
+                            transfer_len += p_qtd->expected_bytes - p_qtd->total_bytes;
                         }
+
+                        if (p_qtd->next == USB_SOC_DCD_QTD_NEXT_INVALID){
+                            break;
+                        } else {
+                            p_qtd = (dcd_qtd_t *)p_qtd->next;
+                        }
+                    }
+
+                    uint8_t const ep_addr = (ep_idx / 2) | ((ep_idx & 0x01) ? 0x80 : 0);
+                    if (ep_addr & 0x80) {
+                        usbd_event_ep_in_complete_handler(ep_addr, transfer_len);
+                    } else {
+                        usbd_event_ep_out_complete_handler(ep_addr, transfer_len);
                     }
                 }
             }
@@ -283,8 +294,8 @@ void USBD_IRQHandler(void)
     }
 }
 
-void isr_usb(void)
+void isr_usbd(void)
 {
     USBD_IRQHandler();
 }
-SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USBD_IRQn, isr_usb)
+SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USBD_IRQn, isr_usbd)
