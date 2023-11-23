@@ -154,7 +154,7 @@ int usb_msc_fatfs_test()
     if (res_sd == FR_OK) {
         res_sd = f_write(&fnew, read_write_buffer, sizeof(read_write_buffer), &fnum);
         if (res_sd == FR_OK) {
-            USB_LOG_RAW("write success, write len：%d\n", fnum);
+            USB_LOG_RAW("write success, write len:%d\n", fnum);
         } else {
             USB_LOG_RAW("write fail\r\n");
             goto unmount;
@@ -170,7 +170,7 @@ int usb_msc_fatfs_test()
     if (res_sd == FR_OK) {
         res_sd = f_read(&fnew, read_write_buffer, sizeof(read_write_buffer), &fnum);
         if (res_sd == FR_OK) {
-            USB_LOG_RAW("read success, read len：%d\n", fnum);
+            USB_LOG_RAW("read success, read len:%d\n", fnum);
         } else {
             USB_LOG_RAW("read fail\r\n");
             goto unmount;
