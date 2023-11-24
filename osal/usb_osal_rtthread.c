@@ -40,6 +40,7 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
     int ret = 0;
     rt_err_t result = RT_EOK;
 
+    rt_sem_control((rt_sem_t)sem, RT_IPC_CMD_RESET, (void *)0);
     if (timeout == USB_OSAL_WAITING_FOREVER) {
         result = rt_sem_take((rt_sem_t)sem, RT_WAITING_FOREVER);
     } else {

@@ -35,6 +35,7 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
+    xQueueReset((QueueHandle_t)sem);
     if (timeout == USB_OSAL_WAITING_FOREVER) {
         return (xSemaphoreTake((SemaphoreHandle_t)sem, portMAX_DELAY) == pdPASS) ? 0 : -ETIMEDOUT;
     } else {
