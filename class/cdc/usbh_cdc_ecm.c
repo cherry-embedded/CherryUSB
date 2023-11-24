@@ -230,12 +230,13 @@ static void usbh_cdc_ecm_rx_thread(void *argument)
     struct pbuf *p;
     struct netif *netif = (struct netif *)argument;
 
+    USB_LOG_INFO("Create cdc ecm rx thread\r\n");
     // clang-format off
 find_class:
     // clang-format on
     g_cdc_ecm_class.connect_status = false;
-    while (usbh_find_class_instance("/dev/cdc_ether") == NULL) {
-        usb_osal_msleep(1000);
+    if (usbh_find_class_instance("/dev/cdc_ether") == NULL) {
+        goto delete;
     }
 
     while (g_cdc_ecm_class.connect_status == false) {
@@ -275,6 +276,9 @@ find_class:
         } else {
         }
     }
+delete:
+    USB_LOG_INFO("Delete cdc ecm rx thread\r\n");
+    usb_osal_thread_delete(NULL);
 }
 
 err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
@@ -305,12 +309,7 @@ err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
 
 void usbh_cdc_ecm_lwip_thread_init(struct netif *netif)
 {
-    g_cdc_ecm_class.thread = usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, netif);
-}
-
-void usbh_cdc_ecm_lwip_thread_deinit(void)
-{
-    usb_osal_thread_delete(g_cdc_ecm_class.thread);
+    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, netif);
 }
 
 __WEAK void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)

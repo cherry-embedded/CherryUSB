@@ -32,8 +32,6 @@ struct usbh_cdc_ecm {
     ip_addr_t ipaddr;
     ip_addr_t netmask;
     ip_addr_t gateway;
-
-    usb_osal_thread_t thread;
 };
 
 #ifdef __cplusplus
@@ -45,7 +43,6 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class);
 
 err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p);
 void usbh_cdc_ecm_lwip_thread_init(struct netif *netif);
-void usbh_cdc_ecm_lwip_thread_deinit(void);
 
 #ifdef __cplusplus
 }

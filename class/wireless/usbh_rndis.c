@@ -434,12 +434,13 @@ static void usbh_rndis_rx_thread(void *argument)
     rndis_data_packet_t temp;
     struct netif *netif = (struct netif *)argument;
 
+    USB_LOG_INFO("Create rndis rx thread\r\n");
     // clang-format off
 find_class:
     // clang-format on
     g_rndis_class.link_status = false;
-    while (usbh_find_class_instance("/dev/rndis") == NULL) {
-        usb_osal_msleep(1000);
+    if (usbh_find_class_instance("/dev/rndis") == NULL) {
+        goto delete;
     }
 
     while (g_rndis_class.link_status == false) {
@@ -494,6 +495,9 @@ find_class:
             }
         }
     }
+delete:
+    USB_LOG_INFO("Delete rndis rx thread\r\n");
+    usb_osal_thread_delete(NULL);
 }
 
 err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
@@ -509,7 +513,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 
     hdr = (rndis_data_packet_t *)g_rndis_tx_buffer;
     memset(hdr, 0, sizeof(rndis_data_packet_t));
-    
+
     hdr->MessageType = REMOTE_NDIS_PACKET_MSG;
     hdr->MessageLength = sizeof(rndis_data_packet_t) + p->tot_len;
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
@@ -539,12 +543,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 
 void usbh_rndis_lwip_thread_init(struct netif *netif)
 {
-    g_rndis_class.thread = usb_osal_thread_create("usbh_rndis_rx", 2560, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, netif);
-}
-
-void usbh_rndis_lwip_thread_deinit(void)
-{
-    usb_osal_thread_delete(g_rndis_class.thread);
+    usb_osal_thread_create("usbh_rndis_rx", 2560, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, netif);
 }
 
 __WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)

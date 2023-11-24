@@ -487,7 +487,6 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
     netif_set_down(netif);
     netif_remove(netif);
 #endif
-    usbh_cdc_ecm_lwip_thread_deinit();
 }
 #endif
 
@@ -513,7 +512,7 @@ void timer_init(struct usbh_rndis *rndis_class)
     keep_timer = rt_timer_create("keep",
                                  rndis_dev_keepalive_timeout,
                                  rndis_class,
-                                 3000,
+                                 5000,
                                  RT_TIMER_FLAG_PERIODIC |
                                      RT_TIMER_FLAG_SOFT_TIMER);
 
@@ -531,7 +530,7 @@ static void rndis_dev_keepalive_timeout(TimerHandle_t xTimer)
 
 void timer_init(struct usbh_rndis *rndis_class)
 {
-    timer_handle = xTimerCreate((const char *)NULL, (TickType_t)3000, (UBaseType_t)pdTRUE, (void *const)rndis_class, (TimerCallbackFunction_t)rndis_dev_keepalive_timeout);
+    timer_handle = xTimerCreate((const char *)NULL, (TickType_t)5000, (UBaseType_t)pdTRUE, (void *const)rndis_class, (TimerCallbackFunction_t)rndis_dev_keepalive_timeout);
     if (NULL != timer_handle) {
         xTimerStart(timer_handle, 0);
     } else {
@@ -615,7 +614,6 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
     xTimerStop(timer_handle, 0);
     xTimerDelete(timer_handle, 0);
 #endif
-    usbh_rndis_lwip_thread_deinit();
 }
 #endif
 
