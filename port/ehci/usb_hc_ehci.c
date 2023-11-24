@@ -1081,12 +1081,22 @@ int usbh_submit_urb(struct usbh_urb *urb)
     struct ehci_qh_hw *qh = NULL;
     size_t flags;
     int ret = 0;
+    struct usbh_hub *hub;
+    struct usbh_hubport *hport;
 
     if (!urb || !urb->hport || !urb->ep) {
         return -EINVAL;
     }
 
-    if (!urb->hport->connected) {
+    /* find active hubport in roothub */
+    hport = urb->hport;
+    hub = urb->hport->parent;
+    while (!hub->is_roothub) {
+        hport = hub->parent;
+        hub = hub->parent->parent;
+    }
+
+    if (!urb->hport->connected || !(EHCI_HCOR->portsc[hport->port -1] & EHCI_PORTSC_CCS)) {
         return -ENODEV;
     }
 
@@ -1141,7 +1151,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
         }
         urb->timeout = 0;
         ret = urb->errorcode;
-        /* we should free qh when waitsem is done */
+        /* we can free qh when waitsem is done */
         ehci_qh_free(qh);
     }
     return ret;
