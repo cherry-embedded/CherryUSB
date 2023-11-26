@@ -23,8 +23,8 @@
 默认提供以下 demo 工程：
 
 - F103 使用 fsdev ip
-- F429 主从使用 hs port,并且均用 dma 模式
-- H7 设备使用 fs port，主机使用 hs port，并且主机带 cache 支持
+- F429 主从使用 hs port(引脚 pb14/pb15),并且均用 dma 模式
+- H7 设备使用 fs port(引脚 pa11/pa12)，主机使用 hs port(引脚 pb14/pb15)，并且需要做 nocache 处理
 
 默认删除 Drivers ，所以需要使用 stm32cubemx 生成一下 Drivers 目录下的文件，demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
 
@@ -34,7 +34,8 @@
 
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
 - dwc2 ip 区别： fs port(引脚是 PA11/PA12) 和 hs port(引脚是 PB14/PB15), 其中 hs port 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
-- F4 与 H7 cache 区别、USB BASE 区别
+- F4 无cache，H7 有 cache
+- H7 的 USB_BASE 与其他系列有区别，需要在 usb_config.h 中配置
 
 如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
 
@@ -61,9 +62,6 @@
     }
     }
 
-
-.. caution :: 如果使用 STM32F7 或者 STM32H7, 请在 CFLAG 中添加 STM32F7 或者 STM32H7 宏定义，否则无法枚举
-
 .. figure:: img/keil.png
 
 USB Device 移植要点
@@ -78,6 +76,8 @@ USB Device 移植要点
 
 .. figure:: img/stm32_3_1.png
 .. figure:: img/stm32_3.png
+
+.. caution :: 如果使用 STM32H7 FS PORT, 请修改 USB_BASE 为 0x40080000UL
 
 - 配置 usb clock 为 48M
 
