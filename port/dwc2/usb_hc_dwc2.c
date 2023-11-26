@@ -82,7 +82,6 @@ static inline int dwc2_core_init(void)
 {
     int ret;
 #if defined(CONFIG_USB_DWC2_ULPI_PHY)
-    USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_PWRDWN);
     /* Init The ULPI Interface */
     USB_OTG_GLB->GUSBCFG &= ~(USB_OTG_GUSBCFG_TSDPS | USB_OTG_GUSBCFG_ULPIFSLS | USB_OTG_GUSBCFG_PHYSEL);
 
@@ -97,9 +96,6 @@ static inline int dwc2_core_init(void)
     USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_PHYSEL;
     /* Reset after a PHY select */
     ret = dwc2_reset();
-
-    /* Activate the USB Transceiver */
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_PWRDWN;
 #endif
     return ret;
 }
@@ -465,6 +461,7 @@ int usb_hc_init(void)
     usb_hc_low_level_init();
 
     USB_LOG_INFO("========== dwc2 hcd params ==========\r\n");
+    USB_LOG_INFO("GCCFG:%08x\r\n", USB_OTG_GLB->GCCFG);
     USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
     USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
     USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
@@ -482,28 +479,17 @@ int usb_hc_init(void)
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
+    /* This is vendor register */
+    USB_OTG_GLB->GCCFG = usbh_get_dwc2_gccfg_conf();
+
     ret = dwc2_core_init();
+    
     /* Force Host Mode*/
     dwc2_set_mode(USB_OTG_MODE_HOST);
     usb_osal_msleep(50);
 
     /* Restart the Phy Clock */
     USB_OTG_PCGCCTL = 0U;
-
-#if defined(STM32F7) || defined(STM32H7)
-    /* Disable HW VBUS sensing */
-    USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_VBDEN);
-    /* Disable Battery chargin detector */
-    USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_BCDEN);
-#else
-    /*
-     * Disable HW VBUS sensing. VBUS is internally considered to be always
-     * at VBUS-Valid level (5V).
-     */
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
-    USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
-    USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
-#endif
 
     /* Set default Max speed support */
     USB_OTG_HOST->HCFG &= ~(USB_OTG_HCFG_FSLSS);

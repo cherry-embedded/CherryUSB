@@ -1705,4 +1705,7 @@ typedef struct
 #define USB_MASK_HALT_HC_INT(chnum)                         (USB_OTG_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_CHHM)
 #define USB_UNMASK_HALT_HC_INT(chnum)                       (USB_OTG_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_CHHM)
 #define CLEAR_HC_INT(chnum, __INTERRUPT__)                  (USB_OTG_HC(chnum)->HCINT = (__INTERRUPT__))
+
+uint32_t usbd_get_dwc2_gccfg_conf(void);
+uint32_t usbh_get_dwc2_gccfg_conf(void);
 #endif

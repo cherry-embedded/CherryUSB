@@ -64,11 +64,7 @@
 #endif
 
 #ifndef USB_BASE
-#ifdef STM32H7
-#define USB_BASE (0x40080000UL)
-#else
 #define USB_BASE (0x50000000UL)
-#endif
 #endif
 
 #define USB_RAM_SIZE 1280 /* define with minimum value*/
@@ -121,9 +117,7 @@
 #define CONFIG_USB_DWC2_DMA_ENABLE
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
-#if defined(STM32F7) || defined(STM32H7)
 #warning "if you enable dcache,please add .nocacheble section in your sct or ld or icf"
-#endif
 #endif
 
 /*FIFO sizes in bytes (total available memory for FIFOs is 4KB )*/
@@ -215,8 +209,6 @@ static inline int dwc2_core_init(void)
 {
     int ret;
 #if defined(CONFIG_USB_HS)
-    USB_OTG_GLB->GCCFG &= ~(USB_OTG_GCCFG_PWRDWN);
-
     /* Init The ULPI Interface */
     USB_OTG_GLB->GUSBCFG &= ~(USB_OTG_GUSBCFG_TSDPS | USB_OTG_GUSBCFG_ULPIFSLS | USB_OTG_GUSBCFG_PHYSEL);
 
@@ -231,8 +223,6 @@ static inline int dwc2_core_init(void)
 
     /* Reset after a PHY select */
     ret = dwc2_reset();
-    /* Activate the USB Transceiver */
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_PWRDWN;
 #endif
     return ret;
 }
@@ -575,6 +565,7 @@ int usb_dc_init(void)
     endpoints = ((USB_OTG_GLB->GHWCFG2 & (0x0f << 10)) >> 10) + 1;
 
     USB_LOG_INFO("========== dwc2 udc params ==========\r\n");
+    USB_LOG_INFO("GCCFG:%08x\r\n", USB_OTG_GLB->GCCFG);
     USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
     USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
     USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
@@ -590,46 +581,22 @@ int usb_dc_init(void)
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
+    /* This is vendor register */
+    USB_OTG_GLB->GCCFG = usbd_get_dwc2_gccfg_conf();
+
     ret = dwc2_core_init();
 
     /* Force Device Mode*/
     dwc2_set_mode(USB_OTG_MODE_DEVICE);
 
+    /* B-peripheral session valid override enable */
+    // USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
+    // USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOVAL;
+
     for (uint8_t i = 0U; i < 15U; i++) {
         USB_OTG_GLB->DIEPTXF[i] = 0U;
     }
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32L4)
-#ifdef CONFIG_DWC2_VBUS_SENSING_ENABLE
-    /* Enable HW VBUS sensing */
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBDEN;
-#else
-    /* Deactivate VBUS Sensing B */
-    USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
-
-    /* B-peripheral session valid override enable */
-    USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
-    USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOVAL;
-#endif
-#else
-#ifdef CONFIG_DWC2_VBUS_SENSING_ENABLE
-    /* Enable HW VBUS sensing */
-    USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_NOVBUSSENS;
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBUSBSEN;
-#else
-#ifdef CONFIG_DWC2_GD32
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_VBUSBSEN | USB_OTG_GCCFG_VBUSASEN;
-#else
-    /*
-     * Disable HW VBUS sensing. VBUS is internally considered to be always
-     * at VBUS-Valid level (5V).
-     */
-    USB_OTG_GLB->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
-    USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
-    USB_OTG_GLB->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
-#endif
-#endif
-#endif
     /* Restart the Phy Clock */
     USB_OTG_PCGCCTL = 0U;
 
