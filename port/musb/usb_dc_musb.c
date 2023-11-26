@@ -649,6 +649,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
             HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = (USB_CSRL0_TXRDY | USB_CSRL0_DATAEND);
         } else {
             HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
+            HWREGH(USB_BASE + MUSB_TXIE_OFFSET) |= (1 << ep_idx);
         }
         musb_set_active_ep(old_ep_idx);
         return 0;
