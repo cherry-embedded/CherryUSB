@@ -2,7 +2,14 @@
 #include "stdint.h"
 #include "usb_dwc2_reg.h"
 
-/* st different chips maybe have a little difference in this register, you should check this */
+/* you can find this config in function: USB_DevInit, file:stm32xxx_ll_usb.c, for example:
+ *
+ *  USBx->GCCFG |= USB_OTG_GCCFG_PWRDWN;
+ *  USBx->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+ *  USBx->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
+ *  USBx->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
+ * 
+*/
 
 uint32_t usbd_get_dwc2_gccfg_conf(void)
 {
