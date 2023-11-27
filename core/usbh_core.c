@@ -392,8 +392,8 @@ int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsett
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = intf;
-    setup->wIndex = altsetting;
+    setup->wValue = altsetting;
+    setup->wIndex = intf;
     setup->wLength = 0;
 
     return usbh_control_transfer(hport, setup, NULL);
