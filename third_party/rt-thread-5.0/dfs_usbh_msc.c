@@ -4,9 +4,18 @@
 
 #include <dfs_fs.h>
 
-#define DEV_FORMAT "sd%c"
+#define DEV_FORMAT "/sd%c"
 
-#define CONFIG_DFS_MOUNT_POINT "/"
+#ifndef CONFIG_USB_DFS_MOUNT_POINT
+#define CONFIG_USB_DFS_MOUNT_POINT "/"
+#endif
+
+#if defined(SOC_SERIES_STM32H7) || defined(SOC_SERIES_STM32F7) || \
+    defined(SOC_HPM6000) || defined(BSP_USING_BL61X)
+#ifndef RT_USING_CACHE
+#error usbh msc must enable RT_USING_CACHE in this chip
+#endif
+#endif
 
 static rt_err_t rt_udisk_init(rt_device_t dev)
 {
@@ -19,12 +28,29 @@ static rt_ssize_t rt_udisk_read(rt_device_t dev, rt_off_t pos, void *buffer,
     struct usbh_msc *msc_class = (struct usbh_msc *)dev->user_data;
     int ret;
 
+#ifdef RT_USING_CACHE
+    rt_uint32_t *align_buf;
+
+    align_buf = rt_malloc_align(size, 32);
+    if (!align_buf) {
+        rt_kprintf("msc get align buf failed\n");
+        return 0;
+    }
+    ret = usbh_msc_scsi_read10(msc_class, pos, align_buf, size);
+    if (ret < 0) {
+        rt_kprintf("usb mass_storage read failed\n");
+        return 0;
+    }
+    rt_hw_cpu_dcache_ops(RT_HW_CACHE_INVALIDATE, align_buf, RT_ALIGN(size, 32));
+    rt_memcpy(buffer, align_buf, size);
+    rt_free_align(align_buf);
+#else
     ret = usbh_msc_scsi_read10(msc_class, pos, buffer, size);
     if (ret < 0) {
         rt_kprintf("usb mass_storage read failed\n");
         return 0;
     }
-
+#endif
     return size;
 }
 
@@ -34,11 +60,29 @@ static rt_ssize_t rt_udisk_write(rt_device_t dev, rt_off_t pos, const void *buff
     struct usbh_msc *msc_class = (struct usbh_msc *)dev->user_data;
     int ret;
 
+#ifdef RT_USING_CACHE
+    rt_uint32_t *align_buf;
+
+    align_buf = rt_malloc_align(size, 32);
+    if (!align_buf) {
+        rt_kprintf("msc get align buf failed\n");
+        return 0;
+    }
+    rt_memcpy(align_buf, buffer, size);
+    rt_hw_cpu_dcache_ops(RT_HW_CACHE_FLUSH, align_buf, RT_ALIGN(size, 32));
+    ret = usbh_msc_scsi_write10(msc_class, pos, align_buf, size);
+    if (ret < 0) {
+        rt_kprintf("usb mass_storage write failed\n");
+        return 0;
+    }
+    rt_free_align(align_buf);
+#else
     ret = usbh_msc_scsi_write10(msc_class, pos, buffer, size);
     if (ret < 0) {
         rt_kprintf("usb mass_storage write failed\n");
         return 0;
     }
+#endif
 
     return size;
 }
@@ -126,7 +170,7 @@ int udisk_init(struct usbh_msc *msc_class)
 
     rt_device_register(dev, name, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_REMOVABLE | RT_DEVICE_FLAG_STANDALONE);
 
-    ret = dfs_mount(name, CONFIG_DFS_MOUNT_POINT, "elm", 0, 0);
+    ret = dfs_mount(name, CONFIG_USB_DFS_MOUNT_POINT, "elm", 0, 0);
     if (ret == 0) {
         rt_kprintf("udisk: %s mount successfully\n", name);
     } else {
@@ -139,16 +183,16 @@ free_res:
     return ret;
 }
 
-void rt_udisk_run(struct usbh_msc *msc_class)
+void usbh_msc_run(struct usbh_msc *msc_class)
 {
     udisk_init(msc_class);
 }
 
-void rt_udisk_stop(struct usbh_msc *msc_class)
+void usbh_msc_stop(struct usbh_msc *msc_class)
 {
     char name[CONFIG_USBHOST_DEV_NAMELEN];
     snprintf(name, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
 
-    dfs_unmount(CONFIG_DFS_MOUNT_POINT);
+    dfs_unmount(CONFIG_USB_DFS_MOUNT_POINT);
     rt_device_unregister(rt_device_find(name));
 }
