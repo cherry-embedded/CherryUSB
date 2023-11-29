@@ -11,8 +11,14 @@
 #define TEST_USBH_MSC_FATFS 0
 #define TEST_USBH_AUDIO     0
 #define TEST_USBH_VIDEO     0
+
+#if __has_include("lwip/pbuf.h")
+#define TEST_USBH_CDC_ECM   1
+#define TEST_USBH_RNDIS     1
+#else
 #define TEST_USBH_CDC_ECM   0
 #define TEST_USBH_RNDIS     0
+#endif
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
@@ -475,9 +481,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 {
 #ifdef __RTTHREAD__
-    eth_device_deinit(&rndis_dev);
-    rt_timer_stop(keep_timer);
-    rt_timer_delete(keep_timer);
+    eth_device_deinit(&cdc_ecm_dev);
 #else
     struct netif *netif = &g_cdc_ecm_netif;
 #if LWIP_DHCP
@@ -633,6 +637,7 @@ void usbh_hid_stop(struct usbh_hid *hid_class)
 {
 }
 
+#ifndef __RTTHREAD__
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
 }
@@ -640,6 +645,7 @@ void usbh_msc_run(struct usbh_msc *msc_class)
 void usbh_msc_stop(struct usbh_msc *msc_class)
 {
 }
+#endif
 
 void usbh_audio_run(struct usbh_audio *audio_class)
 {
