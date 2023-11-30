@@ -13,11 +13,11 @@
 #define TEST_USBH_VIDEO     0
 
 #if __has_include("lwip/pbuf.h")
-#define TEST_USBH_CDC_ECM   1
-#define TEST_USBH_RNDIS     1
+#define TEST_USBH_CDC_ECM 1
+#define TEST_USBH_RNDIS   1
 #else
-#define TEST_USBH_CDC_ECM   0
-#define TEST_USBH_RNDIS     0
+#define TEST_USBH_CDC_ECM 0
+#define TEST_USBH_RNDIS   0
 #endif
 
 #if TEST_USBH_CDC_ACM
@@ -395,7 +395,8 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 #include "semphr.h"
 #include "timers.h"
 
-TimerHandle_t dhcp_handle;
+TimerHandle_t dhcp_handle1;
+TimerHandle_t dhcp_handle2;
 
 static void dhcp_timeout(TimerHandle_t xTimer)
 {
@@ -410,7 +411,7 @@ static void dhcp_timeout(TimerHandle_t xTimer)
             USB_LOG_INFO("IPv4 Subnet mask : %s\r\n", ipaddr_ntoa(&netif->netmask));
             USB_LOG_INFO("IPv4 Gateway     : %s\r\n\r\n", ipaddr_ntoa(&netif->gw));
 
-            xTimerStop(dhcp_handle, 0);
+            xTimerStop(xTimer, 0);
         }
     }
 }
@@ -473,7 +474,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     usbh_cdc_ecm_lwip_thread_init(netif);
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle, 0);
+    xTimerStart(dhcp_handle1, 0);
 #endif
 #endif
 }
@@ -596,7 +597,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
 
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle, 0);
+    xTimerStart(dhcp_handle2, 0);
 #endif
 #endif
 }
@@ -692,16 +693,22 @@ void usbh_class_test(void)
     tcpip_init(NULL, NULL);
 #if TEST_USBH_CDC_ECM
     netif = &g_cdc_ecm_netif;
-#endif
-#if TEST_USBH_RNDIS
-    netif = &g_rndis_netif;
-#endif
-    dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
-    if (dhcp_handle == NULL) {
+    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle1 == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
     }
+#endif
+#if TEST_USBH_RNDIS
+    netif = &g_rndis_netif;
+    dhcp_handle2 = xTimerCreate((const char *)"dhcp2", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle2 == NULL) {
+        USB_LOG_ERR("timer creation failed! \r\n");
+        while (1) {
+        }
+    }
+#endif
 #endif
 #endif
 }
