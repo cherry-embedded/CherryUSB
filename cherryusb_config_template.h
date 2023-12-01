@@ -128,6 +128,20 @@
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
 #endif
 
+#ifndef CONFIG_USBHOST_RNDIS_PRIO
+#define CONFIG_USBHOST_RNDIS_PRIO 1
+#endif
+#ifndef CONFIG_USBHOST_RNDIS_STACKSIZE
+#define CONFIG_USBHOST_RNDIS_STACKSIZE 2048
+#endif
+
+#ifndef CONFIG_USBHOST_CDC_ECM_PRIO
+#define CONFIG_USBHOST_CDC_ECM_PRIO 1
+#endif
+#ifndef CONFIG_USBHOST_CDC_ECM_STACKSIZE
+#define CONFIG_USBHOST_CDC_ECM_STACKSIZE 2048
+#endif
+
 /* ================ USB Device Port Configuration ================*/
 
 //#define USBD_IRQHandler USBD_IRQHandler

@@ -492,12 +492,18 @@ find_class:
                     g_rndis_rx_length = 0;
                     USB_LOG_ERR("No memory to alloc pbuf for rndis rx\r\n");
                 }
+            } else {
+                g_rndis_rx_length = 0;
+                USB_LOG_ERR("Error rndis packet message\r\n");
             }
         }
     }
+
+    // clang-format off
 delete:
     USB_LOG_INFO("Delete rndis rx thread\r\n");
     usb_osal_thread_delete(NULL);
+    // clang-format on
 }
 
 err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
@@ -543,7 +549,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 
 void usbh_rndis_lwip_thread_init(struct netif *netif)
 {
-    usb_osal_thread_create("usbh_rndis_rx", 2560, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, netif);
+    usb_osal_thread_create("usbh_rndis_rx", CONFIG_USBHOST_RNDIS_STACKSIZE, CONFIG_USBHOST_RNDIS_PRIO, usbh_rndis_rx_thread, netif);
 }
 
 __WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)
