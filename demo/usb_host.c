@@ -424,7 +424,34 @@ static void dhcp_timeout(TimerHandle_t xTimer)
 struct netif g_cdc_ecm_netif;
 
 #ifdef __RTTHREAD__
-struct eth_device cdc_ecm_dev;
+static struct eth_device cdc_ecm_dev;
+
+static rt_err_t rt_usbh_cdc_ecm_control(rt_device_t dev, int cmd, void *args)
+{
+    struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)dev->user_data;
+
+    switch (cmd) {
+        case NIOCTL_GADDR:
+
+            /* get mac address */
+            if (args)
+                rt_memcpy(args, cdc_ecm_class->mac, 6);
+            else
+                return -RT_ERROR;
+
+            break;
+
+        default:
+            break;
+    }
+
+    return RT_EOK;
+}
+
+static rt_err_t rt_usbh_cdc_ecm_eth_tx(rt_device_t dev, struct pbuf* p)
+{
+    return usbh_cdc_ecm_linkoutput(NULL, p);
+}
 #endif
 
 static err_t usbh_cdc_ecm_if_init(struct netif *netif)
@@ -447,12 +474,13 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     struct netdev *netdev;
 
     memset(&cdc_ecm_dev, 0, sizeof(struct eth_device));
-    eth_device_init(&cdc_ecm_dev, "u0");
 
-    netdev = netdev_get_by_name(cdc_ecm_dev.netif->name);
-    memcpy(cdc_ecm_dev.netif->hwaddr, cdc_ecm_class->mac, 6);
-    memcpy(netdev->hwaddr, cdc_ecm_class->mac, 6);
-    cdc_ecm_dev.netif->linkoutput = usbh_cdc_ecm_linkoutput;
+    cdc_ecm_dev.parent.control = rt_usbh_cdc_ecm_control;
+    cdc_ecm_dev.eth_rx = NULL;
+    cdc_ecm_dev.eth_tx = rt_usbh_cdc_ecm_eth_tx;
+    cdc_ecm_dev.parent.user_data = cdc_ecm_class;
+
+    eth_device_init(&cdc_ecm_dev, "u0");
     eth_device_linkchange(&cdc_ecm_dev, RT_TRUE);
 
     usbh_cdc_ecm_lwip_thread_init(cdc_ecm_dev.netif);
@@ -502,7 +530,7 @@ struct netif g_rndis_netif;
 
 #ifdef __RTTHREAD__
 
-struct eth_device rndis_dev;
+static struct eth_device rndis_dev;
 
 static rt_timer_t keep_timer = RT_NULL;
 
@@ -512,7 +540,7 @@ static void rndis_dev_keepalive_timeout(void *parameter)
     usbh_rndis_keepalive(rndis_class);
 }
 
-void timer_init(struct usbh_rndis *rndis_class)
+static void timer_init(struct usbh_rndis *rndis_class)
 {
     keep_timer = rt_timer_create("keep",
                                  rndis_dev_keepalive_timeout,
@@ -522,6 +550,33 @@ void timer_init(struct usbh_rndis *rndis_class)
                                      RT_TIMER_FLAG_SOFT_TIMER);
 
     rt_timer_start(keep_timer);
+}
+
+static rt_err_t rt_usbh_rndis_control(rt_device_t dev, int cmd, void *args)
+{
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)dev->user_data;
+
+    switch (cmd) {
+        case NIOCTL_GADDR:
+
+            /* get mac address */
+            if (args)
+                rt_memcpy(args, rndis_class->mac, 6);
+            else
+                return -RT_ERROR;
+
+            break;
+
+        default:
+            break;
+    }
+
+    return RT_EOK;
+}
+
+static rt_err_t rt_usbh_rndis_eth_tx(rt_device_t dev, struct pbuf* p)
+{
+    return usbh_rndis_linkoutput(NULL, p);
 }
 
 #else
@@ -567,12 +622,13 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     struct netdev *netdev;
 
     memset(&rndis_dev, 0, sizeof(struct eth_device));
-    eth_device_init(&rndis_dev, "u0");
 
-    netdev = netdev_get_by_name(rndis_dev.netif->name);
-    memcpy(rndis_dev.netif->hwaddr, rndis_class->mac, 6);
-    memcpy(netdev->hwaddr, rndis_class->mac, 6);
-    rndis_dev.netif->linkoutput = usbh_rndis_linkoutput;
+    rndis_dev.parent.control = rt_usbh_rndis_control;
+    rndis_dev.eth_rx = NULL;
+    rndis_dev.eth_tx = rt_usbh_rndis_eth_tx;
+    rndis_dev.parent.user_data = rndis_class;
+
+    eth_device_init(&rndis_dev, "u1");
     eth_device_linkchange(&rndis_dev, RT_TRUE);
 
     usbh_rndis_lwip_thread_init(rndis_dev.netif);
