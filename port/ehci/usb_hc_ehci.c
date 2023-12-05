@@ -672,26 +672,28 @@ static void ehci_check_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
     struct ehci_qtd_hw *qtd;
     uint32_t token;
 
-    token = qh->hw.overlay.token;
+    qtd = EHCI_ADDR2QTD(qh->first_qtd);
 
-    /* Check if token is only in active status without errors */
-    if ((token & (QTD_TOKEN_STATUS_ERRORS | QTD_TOKEN_STATUS_ACTIVE)) == QTD_TOKEN_STATUS_ACTIVE) {
+    if (qtd == NULL) {
         return;
+    }
+
+    while (qtd) {
+        token = qtd->hw.token;
+
+        if (token & QTD_TOKEN_STATUS_ERRORS) {
+            break;
+        } else if (token & QTD_TOKEN_STATUS_ACTIVE) {
+            return;
+        }
+
+        qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
     }
 
     urb = qh->urb;
 
     if ((token & QTD_TOKEN_STATUS_ERRORS) == 0) {
-        qtd = EHCI_ADDR2QTD(qh->first_qtd);
-
-        while (qtd) {
-            if ((qtd->hw.token & QTD_TOKEN_STATUS_ACTIVE) == QTD_TOKEN_STATUS_ACTIVE) {
-                return;
-            }
-            qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
-        }
-
-        if (token & QTD_TOKEN_TOGGLE) {
+        if (qh->hw.overlay.token & QTD_TOKEN_TOGGLE) {
             urb->data_toggle = true;
         } else {
             urb->data_toggle = false;
@@ -699,7 +701,7 @@ static void ehci_check_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
         urb->errorcode = 0;
     } else {
         if (token & QTD_TOKEN_STATUS_BABBLE) {
-            urb->errorcode = -EPERM;
+            urb->errorcode = -EOVERFLOW;
             urb->data_toggle = 0;
         } else if (token & QTD_TOKEN_STATUS_HALTED) {
             urb->errorcode = -EPERM;
@@ -1096,7 +1098,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
         hub = hub->parent->parent;
     }
 
-    if (!urb->hport->connected || !(EHCI_HCOR->portsc[hport->port -1] & EHCI_PORTSC_CCS)) {
+    if (!urb->hport->connected || !(EHCI_HCOR->portsc[hport->port - 1] & EHCI_PORTSC_CCS)) {
         return -ENODEV;
     }
 
