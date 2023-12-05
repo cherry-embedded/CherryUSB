@@ -90,7 +90,7 @@ int usbh_submit_urb(struct usbh_urb *urb);
 /**
  * @brief Cancel a transfer request.
  *
- * This function will call When calls usbh_submit_urb and return -ETIMEOUT or -ESHUTDOWN.
+ * This function will call When calls usbh_submit_urb and return -USB_ERR_TIMEOUT or -USB_ERR_SHUTDOWN.
  *
  * @param urb Usb request block.
  * @return  On success will return 0, and others indicate fail.

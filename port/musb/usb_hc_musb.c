@@ -489,7 +489,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_FEATURE_HUB_C_OVERCURRENT:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_INVAL;
                 }
                 break;
             case HUB_REQUEST_SET_FEATURE:
@@ -499,7 +499,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_FEATURE_HUB_C_OVERCURRENT:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_INVAL;
                 }
                 break;
             case HUB_REQUEST_GET_DESCRIPTOR:
@@ -514,7 +514,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
         switch (setup->bRequest) {
             case HUB_REQUEST_CLEAR_FEATURE:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 switch (setup->wValue) {
@@ -536,12 +536,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_PORT_FEATURE_C_RESET:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_INVAL;
                 }
                 break;
             case HUB_REQUEST_SET_FEATURE:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 switch (setup->wValue) {
@@ -554,12 +554,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         break;
 
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_INVAL;
                 }
                 break;
             case HUB_REQUEST_GET_STATUS:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 status = 0;
@@ -597,15 +597,15 @@ int usbh_submit_urb(struct usbh_urb *urb)
     int ret = 0;
 
     if (!urb || !urb->hport || !urb->ep) {
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     if (!urb->hport->connected) {
-        return -ENODEV;
+        return -USB_ERR_NOTCONN;
     }
 
-    if (urb->errorcode == -EBUSY) {
-        return -EBUSY;
+    if (urb->errorcode == -USB_ERR_BUSY) {
+        return -USB_ERR_BUSY;
     }
 
     flags = usb_osal_enter_critical_section();
@@ -613,7 +613,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     chidx = musb_pipe_alloc();
     if (chidx == -1) {
         usb_osal_leave_critical_section(flags);
-        return -ENOMEM;
+        return -USB_ERR_NOMEM;
     }
 
     pipe = &g_musb_hcd.pipe_pool[chidx];
@@ -621,7 +621,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     pipe->urb = urb;
 
     urb->hcpriv = pipe;
-    urb->errorcode = -EBUSY;
+    urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
 
     usb_osal_leave_critical_section(flags);
@@ -666,7 +666,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     size_t flags;
 
     if (!urb || !urb->hcpriv) {
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     flags = usb_osal_enter_critical_section();
@@ -677,7 +677,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     if (urb->timeout) {
         urb->timeout = 0;
-        urb->errorcode = -ESHUTDOWN;
+        urb->errorcode = -USB_ERR_SHUTDOWN;
         usb_osal_sem_give(pipe->waitsem);
     } else {
         musb_pipe_free(pipe);
@@ -729,7 +729,7 @@ void handle_ep0(void)
     if (ep0_status & USB_CSRL0_STALLED) {
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_CSRL0_STALLED;
         usb_ep0_state = USB_EP0_STATE_SETUP;
-        urb->errorcode = -EPERM;
+        urb->errorcode = -USB_ERR_STALL;
         musb_urb_waitup(urb);
         return;
     }
@@ -737,14 +737,14 @@ void handle_ep0(void)
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_CSRL0_ERROR;
         musb_fifo_flush(0);
         usb_ep0_state = USB_EP0_STATE_SETUP;
-        urb->errorcode = -EIO;
+        urb->errorcode = -USB_ERR_IO;
         musb_urb_waitup(urb);
         return;
     }
     if (ep0_status & USB_CSRL0_STALL) {
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_CSRL0_STALL;
         usb_ep0_state = USB_EP0_STATE_SETUP;
-        urb->errorcode = -EPERM;
+        urb->errorcode = -USB_ERR_STALL;
         musb_urb_waitup(urb);
         return;
     }
@@ -901,15 +901,15 @@ void USBH_IRQHandler(void)
 
             if (ep_csrl_status & USB_TXCSRL1_ERROR) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_ERROR;
-                urb->errorcode = -EIO;
+                urb->errorcode = -USB_ERR_IO;
                 goto pipe_wait;
             } else if (ep_csrl_status & USB_TXCSRL1_NAKTO) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_NAKTO;
-                urb->errorcode = -EBUSY;
+                urb->errorcode = -USB_ERR_NAK;
                 goto pipe_wait;
             } else if (ep_csrl_status & USB_TXCSRL1_STALL) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_STALL;
-                urb->errorcode = -EPERM;
+                urb->errorcode = -USB_ERR_STALL;
                 goto pipe_wait;
             } else {
                 uint32_t size = urb->transfer_buffer_length;
@@ -947,15 +947,15 @@ void USBH_IRQHandler(void)
 
             if (ep_csrl_status & USB_RXCSRL1_ERROR) {
                 HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~USB_RXCSRL1_ERROR;
-                urb->errorcode = -EIO;
+                urb->errorcode = -USB_ERR_IO;
                 goto pipe_wait;
             } else if (ep_csrl_status & USB_RXCSRL1_NAKTO) {
                 HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~USB_RXCSRL1_NAKTO;
-                urb->errorcode = -EBUSY;
+                urb->errorcode = -USB_ERR_NAK;
                 goto pipe_wait;
             } else if (ep_csrl_status & USB_RXCSRL1_STALL) {
                 HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~USB_RXCSRL1_STALL;
-                urb->errorcode = -EPERM;
+                urb->errorcode = -USB_ERR_STALL;
                 goto pipe_wait;
             } else if (ep_csrl_status & USB_RXCSRL1_RXRDY) {
                 uint32_t size = urb->transfer_buffer_length;

@@ -186,7 +186,7 @@ int usbd_cdc_ecm_eth_tx(struct pbuf *p)
     uint8_t *buffer;
 
     if (g_cdc_ecm_tx_data_length > 0) {
-        return -EBUSY;
+        return -USB_ERR_BUSY;
     }
 
     if (p->tot_len > sizeof(g_cdc_ecm_tx_buffer)) {

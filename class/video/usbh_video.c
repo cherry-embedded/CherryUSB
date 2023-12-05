@@ -143,7 +143,7 @@ int usbh_video_open(struct usbh_video *video_class,
     uint8_t step;
 
     if (video_class->is_opened) {
-        return -EMFILE;
+        return 0;
     }
 
     for (uint8_t i = 0; i < video_class->num_of_formats; i++) {
@@ -161,11 +161,11 @@ int usbh_video_open(struct usbh_video *video_class,
     }
 
     if (found == false) {
-        return -ENODEV;
+        return -USB_ERR_NODEV;
     }
 
     if (altsetting > (video_class->num_of_intf_altsettings - 1)) {
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     /* Open video step:
@@ -348,7 +348,7 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_video *video_class = usbh_video_class_alloc();
     if (video_class == NULL) {
         USB_LOG_ERR("Fail to alloc video_class\r\n");
-        return -ENOMEM;
+        return -USB_ERR_NOMEM;
     }
 
     video_class->hport = hport;

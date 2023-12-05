@@ -110,7 +110,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_hid *hid_class = usbh_hid_class_alloc();
     if (hid_class == NULL) {
         USB_LOG_ERR("Fail to alloc hid_class\r\n");
-        return -ENOMEM;
+        return -USB_ERR_NOMEM;
     }
 
     hid_class->hport = hport;

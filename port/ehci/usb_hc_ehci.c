@@ -701,13 +701,13 @@ static void ehci_check_qh(struct ehci_qh_hw *qhead, struct ehci_qh_hw *qh)
         urb->errorcode = 0;
     } else {
         if (token & QTD_TOKEN_STATUS_BABBLE) {
-            urb->errorcode = -EOVERFLOW;
+            urb->errorcode = -USB_ERR_BABBLE;
             urb->data_toggle = 0;
         } else if (token & QTD_TOKEN_STATUS_HALTED) {
-            urb->errorcode = -EPERM;
+            urb->errorcode = -USB_ERR_STALL;
             urb->data_toggle = 0;
         } else if (token & (QTD_TOKEN_STATUS_DBERR | QTD_TOKEN_STATUS_XACTERR)) {
-            urb->errorcode = -EIO;
+            urb->errorcode = -USB_ERR_IO;
         }
     }
 
@@ -760,7 +760,7 @@ static int usbh_reset_port(const uint8_t port)
         usb_osal_msleep(1);
         timeout++;
         if (timeout > 100) {
-            return -ETIMEDOUT;
+            return -USB_ERR_TIMEOUT;
         }
     }
 
@@ -787,11 +787,11 @@ int usb_hc_init(void)
 
     if (sizeof(struct ehci_qh_hw) % 32) {
         USB_LOG_ERR("struct ehci_qh_hw is not align 32\r\n");
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
     if (sizeof(struct ehci_qtd_hw) % 32) {
         USB_LOG_ERR("struct ehci_qtd_hw is not align 32\r\n");
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
@@ -846,7 +846,7 @@ int usb_hc_init(void)
         usb_osal_msleep(1);
         timeout++;
         if (timeout > 100) {
-            return -ETIMEDOUT;
+            return -USB_ERR_TIMEOUT;
         }
     }
 
@@ -890,7 +890,7 @@ int usb_hc_init(void)
         usb_osal_msleep(1);
         timeout++;
         if (timeout > 100) {
-            return -ETIMEDOUT;
+            return -USB_ERR_TIMEOUT;
         }
     }
 #ifdef CONFIG_USB_EHCI_PORT_POWER
@@ -929,7 +929,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_FEATURE_HUB_C_OVERCURRENT:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_SET_FEATURE:
@@ -939,7 +939,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_FEATURE_HUB_C_OVERCURRENT:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_GET_DESCRIPTOR:
@@ -954,7 +954,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
         switch (setup->bRequest) {
             case HUB_REQUEST_CLEAR_FEATURE:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 switch (setup->wValue) {
@@ -994,12 +994,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_PORT_FEATURE_C_RESET:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_SET_FEATURE:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 switch (setup->wValue) {
@@ -1025,12 +1025,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         break;
 
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_GET_STATUS:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
                 temp = EHCI_HCOR->portsc[port - 1];
 
@@ -1087,7 +1087,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     struct usbh_hubport *hport;
 
     if (!urb || !urb->hport || !urb->ep) {
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     /* find active hubport in roothub */
@@ -1099,17 +1099,17 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
 
     if (!urb->hport->connected || !(EHCI_HCOR->portsc[hport->port - 1] & EHCI_PORTSC_CCS)) {
-        return -ENODEV;
+        return -USB_ERR_NOTCONN;
     }
 
-    if ((urb->errorcode == -EBUSY) && (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
-        return -EBUSY;
+    if ((urb->errorcode == -USB_ERR_BUSY) && (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
+        return -USB_ERR_BUSY;
     }
 
     flags = usb_osal_enter_critical_section();
 
     urb->hcpriv = NULL;
-    urb->errorcode = -EBUSY;
+    urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
 
     usb_osal_leave_critical_section(flags);
@@ -1118,21 +1118,21 @@ int usbh_submit_urb(struct usbh_urb *urb)
         case USB_ENDPOINT_TYPE_CONTROL:
             qh = ehci_control_urb_init(urb, urb->setup, urb->transfer_buffer, urb->transfer_buffer_length);
             if (qh == NULL) {
-                return -ENOMEM;
+                return -USB_ERR_NOMEM;
             }
             urb->hcpriv = qh;
             break;
         case USB_ENDPOINT_TYPE_BULK:
             qh = ehci_bulk_urb_init(urb, urb->transfer_buffer, urb->transfer_buffer_length);
             if (qh == NULL) {
-                return -ENOMEM;
+                return -USB_ERR_NOMEM;
             }
             urb->hcpriv = qh;
             break;
         case USB_ENDPOINT_TYPE_INTERRUPT:
             qh = ehci_intr_urb_init(urb, urb->transfer_buffer, urb->transfer_buffer_length);
             if (qh == NULL) {
-                return -ENOMEM;
+                return -USB_ERR_NOMEM;
             }
             urb->hcpriv = qh;
             break;
@@ -1169,7 +1169,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     size_t flags;
 
     if (!urb || !urb->hcpriv) {
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     flags = usb_osal_enter_critical_section();
@@ -1210,7 +1210,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     if (urb->timeout) {
         urb->timeout = 0;
-        urb->errorcode = -ESHUTDOWN;
+        urb->errorcode = -USB_ERR_SHUTDOWN;
         usb_osal_sem_give(qh->waitsem);
     } else {
         ehci_qh_free(qh);

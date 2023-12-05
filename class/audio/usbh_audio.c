@@ -62,7 +62,7 @@ int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t s
     uint8_t altsetting = 1;
 
     if (audio_class->is_opened) {
-        return -EMFILE;
+        return 0;
     }
 
     for (uint8_t i = 0; i < audio_class->module_num; i++) {
@@ -79,7 +79,7 @@ int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t s
         }
     }
 
-    return -ENODEV;
+    return -USB_ERR_NODEV;
 
 freq_found:
 
@@ -138,7 +138,7 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
     }
 
     if (intf == 0xff) {
-        return -ENODEV;
+        return -USB_ERR_NODEV;
     }
 
     USB_LOG_INFO("Close audio module :%s\r\n", name);
@@ -182,7 +182,7 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
     }
 
     if (intf == 0xff) {
-        return -ENODEV;
+        return -USB_ERR_NODEV;
     }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -214,7 +214,7 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
     }
 
     if (intf == 0xff) {
-        return -ENODEV;
+        return -USB_ERR_NODEV;
     }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -275,7 +275,7 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_audio *audio_class = usbh_audio_class_alloc();
     if (audio_class == NULL) {
         USB_LOG_ERR("Fail to alloc audio_class\r\n");
-        return -ENOMEM;
+        return -USB_ERR_NOMEM;
     }
 
     audio_class->hport = hport;
@@ -384,7 +384,7 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     if ((input_offset != output_offset) && (input_offset != feature_unit_offset) && (input_offset != format_offset)) {
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     }
 
     audio_class->module_num = input_offset;

@@ -58,7 +58,7 @@ static int usbh_allocate_devaddr(struct usbh_devaddr_map *devgen)
         }
 
         if (startaddr == devaddr) {
-            return -ENOMEM;
+            return -USB_ERR_NOMEM;
         }
     }
 }
@@ -126,10 +126,10 @@ static int parse_device_descriptor(struct usbh_hubport *hport, struct usb_device
 {
     if (desc->bLength != USB_SIZEOF_DEVICE_DESC) {
         USB_LOG_ERR("invalid device bLength 0x%02x\r\n", desc->bLength);
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     } else if (desc->bDescriptorType != USB_DESCRIPTOR_TYPE_DEVICE) {
         USB_LOG_ERR("unexpected device descriptor 0x%02x\r\n", desc->bDescriptorType);
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     } else {
         if (length <= 8) {
             return 0;
@@ -182,10 +182,10 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
 
     if (desc->bLength != USB_SIZEOF_CONFIG_DESC) {
         USB_LOG_ERR("invalid config bLength 0x%02x\r\n", desc->bLength);
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     } else if (desc->bDescriptorType != USB_DESCRIPTOR_TYPE_CONFIGURATION) {
         USB_LOG_ERR("unexpected config descriptor 0x%02x\r\n", desc->bDescriptorType);
-        return -EINVAL;
+        return -USB_ERR_INVAL;
     } else {
         if (length <= USB_SIZEOF_CONFIG_DESC) {
             return 0;
@@ -227,15 +227,15 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                     cur_ep = 0;
                     if (cur_iface > (CONFIG_USBHOST_MAX_INTERFACES - 1)) {
                         USB_LOG_ERR("Interface num overflow\r\n");
-                        return -ENOMEM;
+                        return -USB_ERR_NOMEM;
                     }
                     if (cur_alt_setting > (CONFIG_USBHOST_MAX_INTF_ALTSETTINGS - 1)) {
                         USB_LOG_ERR("Interface altsetting num overflow\r\n");
-                        return -ENOMEM;
+                        return -USB_ERR_NOMEM;
                     }
                     if (cur_ep_num > CONFIG_USBHOST_MAX_ENDPOINTS) {
                         USB_LOG_ERR("Endpoint num overflow\r\n");
-                        return -ENOMEM;
+                        return -USB_ERR_NOMEM;
                     }
 #if 0
                     USB_LOG_DBG("Interface Descriptor:\r\n");
@@ -548,7 +548,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     USB_LOG_INFO("The device has %d interfaces\r\n", ((struct usb_configuration_descriptor *)ep0_request_buffer)->bNumInterfaces);
     hport->raw_config_desc = usb_malloc(wTotalLength);
     if (hport->raw_config_desc == NULL) {
-        ret = -ENOMEM;
+        ret = -USB_ERR_NOMEM;
         USB_LOG_ERR("No memory to alloc for raw_config_desc\r\n");
         goto errout;
     }

@@ -96,7 +96,7 @@ static int usbh_cdc_acm_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_cdc_acm *cdc_acm_class = usbh_cdc_acm_class_alloc();
     if (cdc_acm_class == NULL) {
         USB_LOG_ERR("Fail to alloc cdc_acm_class\r\n");
-        return -ENOMEM;
+        return -USB_ERR_NOMEM;
     }
 
     cdc_acm_class->hport = hport;

@@ -512,7 +512,7 @@ int usbd_rndis_eth_tx(struct pbuf *p)
     }
 
     if (g_rndis_tx_data_length > 0) {
-        return -EBUSY;
+        return -USB_ERR_BUSY;
     }
 
     if (p->tot_len > sizeof(g_rndis_tx_buffer)) {
