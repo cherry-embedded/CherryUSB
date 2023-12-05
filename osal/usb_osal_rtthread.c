@@ -61,6 +61,11 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
     return (int)rt_sem_release((rt_sem_t)sem);
 }
 
+void usb_osal_sem_reset(usb_osal_sem_t sem)
+{
+    rt_sem_control((rt_sem_t)sem, RT_IPC_CMD_RESET, (void *)0);
+}
+
 usb_osal_mutex_t usb_osal_mutex_create(void)
 {
     return (usb_osal_mutex_t)rt_mutex_create("usbh_mutex", RT_IPC_FLAG_FIFO);

@@ -59,6 +59,11 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
     return (ret == pdPASS) ? 0 : -ETIMEDOUT;
 }
 
+void usb_osal_sem_reset(usb_osal_sem_t sem)
+{
+    xQueueReset((QueueHandle_t)sem);
+}
+
 usb_osal_mutex_t usb_osal_mutex_create(void)
 {
     return (usb_osal_mutex_t)xSemaphoreCreateMutex();
