@@ -16,12 +16,6 @@
 #endif
 
 struct dwc2_pipe {
-    uint8_t dev_addr;
-    uint8_t ep_addr;
-    uint8_t ep_type;
-    uint8_t ep_interval;
-    uint8_t speed;
-    uint16_t ep_mps;
     bool inuse;
     uint32_t xfrd;
     volatile bool waiter;
@@ -34,7 +28,7 @@ struct dwc2_hcd {
     struct dwc2_pipe pipe_pool[CONFIG_USBHOST_PIPE_NUM];
 } g_dwc2_hcd;
 
-static int dwc2_pipe_alloc(void)
+static int dwc2_chan_alloc(void)
 {
     int chidx;
 
@@ -48,7 +42,7 @@ static int dwc2_pipe_alloc(void)
     return -1;
 }
 
-static void dwc2_pipe_free(struct dwc2_pipe *pipe)
+static void dwc2_chan_free(struct dwc2_pipe *pipe)
 {
     pipe->inuse = false;
 }
@@ -104,7 +98,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_FEATURE_HUB_C_OVERCURRENT:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_SET_FEATURE:
@@ -114,7 +108,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_FEATURE_HUB_C_OVERCURRENT:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_GET_DESCRIPTOR:
@@ -129,7 +123,7 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
         switch (setup->bRequest) {
             case HUB_REQUEST_CLEAR_FEATURE:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 switch (setup->wValue) {
@@ -150,12 +144,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                     case HUB_PORT_FEATURE_C_RESET:
                         break;
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_SET_FEATURE:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 switch (setup->wValue) {
@@ -168,12 +162,12 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
                         break;
 
                     default:
-                        return -EPIPE;
+                        return -USB_ERR_NOTSUPP;
                 }
                 break;
             case HUB_REQUEST_GET_STATUS:
                 if (!port || port > nports) {
-                    return -EPIPE;
+                    return -USB_ERR_INVAL;
                 }
 
                 memcpy(buf, &status, 4);
@@ -185,96 +179,44 @@ int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
     return 0;
 }
 
-int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult)
-{
-    struct dwc2_pipe *chan;
-
-    chan = (struct dwc2_pipe *)pipe;
-
-    chan->dev_addr = dev_addr;
-    chan->ep_mps = ep_mps;
-
-    return 0;
-}
-
-int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg)
-{
-    struct dwc2_pipe *chan;
-    int chidx;
-    usb_osal_sem_t waitsem;
-
-    chidx = dwc2_pipe_alloc();
-    if (chidx == -1) {
-        return -ENOMEM;
-    }
-
-    chan = &g_dwc2_hcd.pipe_pool[chidx];
-
-    /* store variables */
-    waitsem = chan->waitsem;
-
-    memset(chan, 0, sizeof(struct dwc2_pipe));
-
-    chan->ep_addr = ep_cfg->ep_addr;
-    chan->ep_type = ep_cfg->ep_type;
-    chan->ep_mps = ep_cfg->ep_mps;
-    chan->ep_interval = ep_cfg->ep_interval;
-    chan->speed = ep_cfg->hport->speed;
-    chan->dev_addr = ep_cfg->hport->dev_addr;
-    chan->hport = ep_cfg->hport;
-
-    /* restore variables */
-    chan->inuse = true;
-    chan->waitsem = waitsem;
-
-    *pipe = (usbh_pipe_t)chan;
-
-    return 0;
-}
-
-int usbh_pipe_free(usbh_pipe_t pipe)
-{
-    return 0;
-}
-
 int usbh_submit_urb(struct usbh_urb *urb)
 {
-    struct dwc2_pipe *chan;
+    struct dwc2_chan *chan;
     size_t flags;
     int ret = 0;
+    int chidx;
 
-    if (!urb) {
-        return -EINVAL;
+    if (!urb || !urb->hport || !urb->ep) {
+        return -USB_ERR_INVAL;
     }
 
-    chan = urb->pipe;
-
-    if (!chan) {
-        return -EINVAL;
+    if (!urb->hport->connected) {
+        return -USB_ERR_NOTCONN;
     }
 
-    if (!chan->hport->connected) {
-        return -ENODEV;
-    }
-
-    if (chan->urb) {
-        return -EBUSY;
+    if (urb->errorcode == -USB_ERR_BUSY) {
+        return -USB_ERR_BUSY;
     }
 
     flags = usb_osal_enter_critical_section();
 
-    chan->waiter = false;
-    chan->xfrd = 0;
+    chidx = dwc2_chan_alloc();
+    if (chidx == -1) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_NOMEM;
+    }
+
+    chan = &g_dwc2_hcd.chan_pool[chidx];
+    chan->chidx = chidx;
     chan->urb = urb;
-    urb->errorcode = -EBUSY;
+
+    urb->hcpriv = chan;
+    urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
 
-    if (urb->timeout > 0) {
-        chan->waiter = true;
-    }
     usb_osal_leave_critical_section(flags);
 
-    switch (chan->ep_type) {
+    switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:
             break;
         case USB_ENDPOINT_TYPE_BULK:
@@ -286,46 +228,67 @@ int usbh_submit_urb(struct usbh_urb *urb)
         default:
             break;
     }
+
     if (urb->timeout > 0) {
         /* wait until timeout or sem give */
         ret = usb_osal_sem_take(chan->waitsem, urb->timeout);
         if (ret < 0) {
             goto errout_timeout;
         }
-
+        urb->timeout = 0;
         ret = urb->errorcode;
+        /* we can free chan when waitsem is done */
+        dwc2_chan_free(chan);
     }
     return ret;
 errout_timeout:
-    chan->waiter = false;
+    urb->timeout = 0;
     usbh_kill_urb(urb);
     return ret;
 }
 
 int usbh_kill_urb(struct usbh_urb *urb)
 {
-    struct dwc2_pipe *pipe;
+    struct dwc2_chan *chan;
     size_t flags;
 
-    pipe = urb->pipe;
-
-    if (!urb || !pipe) {
-        return -EINVAL;
+    if (!urb || !urb->hcpriv) {
+        return -USB_ERR_INVAL;
     }
+
+    flags = usb_osal_enter_critical_section();
+
+    chan = (struct dwc2_chan *)urb->hcpriv;
+
+    chan->urb = NULL;
+    urb->hcpriv = NULL;
+
+    if (urb->timeout) {
+        urb->timeout = 0;
+        urb->errorcode = -USB_ERR_SHUTDOWN;
+        usb_osal_sem_give(chan->waitsem);
+    } else {
+        dwc2_chan_free(chan);
+    }
+
+    usb_osal_leave_critical_section(flags);
 
     return 0;
 }
 
-static inline void dwc2_pipe_waitup(struct dwc2_pipe *pipe)
+static inline void dwc2_urb_waitup(struct usbh_urb *urb)
 {
-    struct usbh_urb *urb;
+    struct dwc2_chan *chan;
 
-    urb = pipe->urb;
-    pipe->urb = NULL;
+    chan = (struct dwc2_chan *)urb->hcpriv;
+    chan->urb = NULL;
+    urb->hcpriv = NULL;
 
-    if (pipe->waiter) {
-        pipe->waiter = false;
-        usb_osal_sem_give(pipe->waitsem);
+    if (urb->timeout) {
+        urb->timeout = 0;
+        usb_osal_sem_give(chan->waitsem);
+    } else {
+        dwc2_chan_free(chan);
     }
 
     if (urb->complete) {

@@ -3,6 +3,7 @@
 
 #define DEV_FORMAT "/dev/xxx"
 
+#define CONFIG_USBHOST_MAX_CUSTOM_CLASS 1
 static struct usbh_xxx g_xxx_class[CONFIG_USBHOST_MAX_CUSTOM_CLASS];
 static uint32_t g_devinuse = 0;
 
@@ -33,14 +34,13 @@ static void usbh_xxx_class_free(struct usbh_xxx *xxx_class)
 
 static int usbh_xxx_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usbh_endpoint_cfg ep_cfg = { 0 };
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
 
     struct usbh_xxx *xxx_class = usbh_xxx_class_alloc();
     if (xxx_class == NULL) {
         USB_LOG_ERR("Fail to alloc xxx_class\r\n");
-        return -ENOMEM;
+        return -USB_ERR_NOMEM;
     }
 
     return ret;
@@ -54,12 +54,12 @@ static int usbh_xxx_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_xxx *xxx_class = (struct usbh_xxx *)hport->config.intf[intf].priv;
 
     if (xxx_class) {
-        if (xxx_class->bulkin) {
-            usbh_pipe_free(xxx_class->bulkin);
+        if (xxx_class->xxxin) {
+            usbh_kill_urb(&xxx_class->xxxin_urb);
         }
 
-        if (xxx_class->bulkout) {
-            usbh_pipe_free(xxx_class->bulkout);
+        if (xxx_class->xxxout) {
+            usbh_kill_urb(&xxx_class->xxxout_urb);
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {

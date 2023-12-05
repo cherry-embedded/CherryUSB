@@ -28,12 +28,12 @@ static void xxx_notify_handler(uint8_t event, void *arg)
     }
 }
 
-void usbd_xxx_add_interface(usbd_class_t *devclass, usbd_interface_t *intf)
+struct usbd_interface *usbd_xxx_init_intf(struct usbd_interface *intf)
 {
     intf->class_interface_handler = xxx_class_interface_request_handler;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = xxx_notify_handler;
 
-    usbd_class_add_interface(devclass, intf);
+    return intf;
 }
