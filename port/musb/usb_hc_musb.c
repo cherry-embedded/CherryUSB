@@ -261,7 +261,7 @@ static void musb_read_packet(uint8_t ep_idx, uint8_t *buffer, uint16_t len)
 void musb_control_urb_init(uint8_t chidx, struct usbh_urb *urb, struct usb_setup_packet *setup, uint8_t *buffer, uint32_t buflen)
 {
     uint8_t old_ep_index;
-    uint8_t speed;
+    uint8_t speed = USB_TXTYPE1_SPEED_FULL;
 
     old_ep_index = musb_get_active_ep();
     musb_set_active_ep(chidx);
@@ -287,7 +287,7 @@ void musb_control_urb_init(uint8_t chidx, struct usbh_urb *urb, struct usb_setup
 void musb_bulk_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, uint32_t buflen)
 {
     uint8_t old_ep_index;
-    uint8_t speed;
+    uint8_t speed = USB_TXTYPE1_SPEED_FULL;
 
     old_ep_index = musb_get_active_ep();
     musb_set_active_ep(chidx);
@@ -334,7 +334,7 @@ void musb_bulk_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, ui
 void musb_intr_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, uint32_t buflen)
 {
     uint8_t old_ep_index;
-    uint8_t speed;
+    uint8_t speed = USB_TXTYPE1_SPEED_FULL;
 
     old_ep_index = musb_get_active_ep();
     musb_set_active_ep(chidx);

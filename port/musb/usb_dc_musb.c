@@ -270,7 +270,7 @@ int usbd_set_address(const uint8_t addr)
 
 uint8_t usbd_get_port_speed(const uint8_t port)
 {
-    uint8_t speed;
+    uint8_t speed = USB_SPEED_UNKNOWN;
 
     if (HWREGB(USB_BASE + MUSB_POWER_OFFSET) & USB_POWER_HSMODE)
         speed = USB_SPEED_HIGH;
