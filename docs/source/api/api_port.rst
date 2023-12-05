@@ -153,46 +153,6 @@ usbh_roothub_control
 - **buf** 接收缓冲区
 - **return** 返回 0 表示正确，其他表示错误
 
-usbh_ep_pipe_reconfigure
-""""""""""""""""""""""""""""""""""""
-
-``usbh_ep_pipe_reconfigure`` 重新设置端点 0 的 pipe 属性。 **此函数不对用户开放**。
-
-.. code-block:: C
-
-    int usbh_ep_pipe_reconfigure(usbh_pipe_t pipe, uint8_t dev_addr, uint8_t ep_mps, uint8_t mult);
-
-- **pipe** pipe 句柄
-- **dev_addr** 端点所在设备地址
-- **ep_mps** 端点最大包长
-- **mult** 端点一次传输个数
-- **return** 返回 0 表示正确，其他表示错误
-
-usbh_pipe_alloc
-""""""""""""""""""""""""""""""""""""
-
-``usbh_pipe_alloc`` 为端点分配 pipe。 **此函数不对用户开放**。
-
-.. code-block:: C
-
-    int usbh_pipe_alloc(usbh_pipe_t *pipe, const struct usbh_endpoint_cfg *ep_cfg);
-
-- **pipe** pipe 句柄
-- **ep_cfg** 端点初始化需要的一些信息
-- **return** 返回 0 表示正确，其他表示错误
-
-usbh_pipe_free
-""""""""""""""""""""""""""""""""""""
-
-``usbh_pipe_free`` 释放端点的一些属性。 **此函数不对用户开放**。
-
-.. code-block:: C
-
-    int usbh_pipe_free(usbh_pipe_t pipe);
-
-- **pipe** 端点信息
-- **return** 返回 0 表示正确，其他表示错误
-
 usbh_submit_urb
 """"""""""""""""""""""""""""""""""""
 
@@ -209,22 +169,33 @@ usbh_submit_urb
 
 .. code-block:: C
 
-    struct usbh_urb {
-        usbh_pipe_t pipe;
-        struct usb_setup_packet *setup;
-        uint8_t *transfer_buffer;
-        uint32_t transfer_buffer_length;
-        int transfer_flags;
-        uint32_t actual_length;
-        uint32_t timeout;
-        int errorcode;
-        uint32_t num_of_iso_packets;
-        usbh_complete_callback_t complete;
-        void *arg;
-        struct usbh_iso_frame_packet iso_packet[];
-    };
+  struct usbh_urb {
+      void *hcpriv;
+      struct usbh_hubport *hport;
+      struct usb_endpoint_descriptor *ep;
+      uint8_t data_toggle;
+      struct usb_setup_packet *setup;
+      uint8_t *transfer_buffer;
+      uint32_t transfer_buffer_length;
+      int transfer_flags;
+      uint32_t actual_length;
+      uint32_t timeout;
+      int errorcode;
+      uint32_t num_of_iso_packets;
+      uint32_t start_frame;
+      usbh_complete_callback_t complete;
+      void *arg;
+  #if defined(__ICCARM__) || defined(__ICCRISCV__) || defined(__ICCRX__)
+      struct usbh_iso_frame_packet *iso_packet;
+  #else
+      struct usbh_iso_frame_packet iso_packet[0];
+  #endif
+  };
 
-- **pipe** 端点对应的 pipe 句柄
+- **hcpriv** 主机控制器驱动私有成员
+- **hport** 当前 urb 使用的 hport
+- **ep** 当前 urb 使用的 ep
+- **data_toggle** 当前 data toggle
 - **setup** setup 请求缓冲区，端点0使用
 - **transfer_buffer** 传输的数据缓冲区
 - **transfer_buffer_length** 传输长度
@@ -239,30 +210,22 @@ usbh_submit_urb
 
 `errorcode` 可以返回以下值：
 
-.. list-table::
-    :widths: 30 30
-    :header-rows: 1
+.. code-block:: C
 
-    * - ERROR CODE
-      - desc
-    * - ENOMEM
-      - 内存不足
-    * - ENODEV
-      - 设备未连接
-    * - EBUSY
-      - 当前数据发送或者接收还未完成
-    * - ETIMEDOUT
-      - 数据发送或者接收超时
-    * - EPERM
-      - 主机收到 STALL 包或者 BABBLE
-    * - EIO
-      - 数据传输错误
-    * - EAGAIN
-      - 主机一直收到 NAK 包
-    * - EPIPE
-      - 数据溢出
-    * - ESHUTDOWN
-      - 设备断开，传输中止
+  #define USB_ERR_NOMEM    1
+  #define USB_ERR_INVAL    2
+  #define USB_ERR_NODEV    3
+  #define USB_ERR_NOTCONN  4
+  #define USB_ERR_NOTSUPP  5
+  #define USB_ERR_BUSY     6
+  #define USB_ERR_RANGE    7
+  #define USB_ERR_STALL    8
+  #define USB_ERR_BABBLE   9
+  #define USB_ERR_NAK      10
+  #define USB_ERR_DT       11
+  #define USB_ERR_IO       12
+  #define USB_ERR_SHUTDOWN 13
+  #define USB_ERR_TIMEOUT  14
 
 其中 `iso_packet` 结构体信息如下：
 

@@ -76,7 +76,6 @@ hubport 结构体
         uint8_t port;     /* Hub port index */
         uint8_t dev_addr; /* device address */
         uint8_t speed;    /* device speed */
-        usbh_pipe_t ep0;  /* control ep pipe info */
         struct usb_device_descriptor device_desc;
         struct usbh_configuration config;
         const char *iManufacturer;
@@ -88,7 +87,9 @@ hubport 结构体
     #ifdef CONFIG_USBHOST_XHCI
         uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
     #endif
-        usb_osal_thread_t thread;
+        struct usb_endpoint_descriptor ep0;
+        struct usbh_urb ep0_urb;
+        usb_osal_mutex_t mutex;
     };
 
 hub 结构体
@@ -102,12 +103,12 @@ hub 结构体
         bool is_roothub;
         uint8_t index;
         uint8_t hub_addr;
-        usbh_pipe_t intin;
-        uint8_t *int_buffer;
-        struct usbh_urb intin_urb;
         struct usb_hub_descriptor hub_desc;
         struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
         struct usbh_hubport *parent;
+        struct usb_endpoint_descriptor *intin;
+        struct usbh_urb intin_urb;
+        uint8_t *int_buffer;
     };
 
 usbh_initialize
@@ -150,7 +151,4 @@ MSC
 -----------------
 
 RNDIS
------------------
-
-PRINTER
 -----------------
