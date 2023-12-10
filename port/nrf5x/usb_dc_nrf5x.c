@@ -200,20 +200,20 @@ uint8_t usbd_get_port_speed(const uint8_t port)
  * @param[in]        ep_cfg : Endpoint configuration structure pointer
  * @retval           >=0 success otherwise failure
  */
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
   /*!< ep id */
-  uint8_t epid = USB_EP_GET_IDX(ep_cfg->ep_addr);
+  uint8_t epid = USB_EP_GET_IDX(ep->bEndpointAddress);
   /*!< ep max packet length */
-  uint8_t mps = ep_cfg->ep_mps;
-  if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr))
+  uint8_t mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+  if (USB_EP_DIR_IS_IN(ep->bEndpointAddress))
   {
     /*!< In */
     usb_dc_cfg.ep_in[epid].mps = mps;
-    usb_dc_cfg.ep_in[epid].eptype = ep_cfg->ep_type;
+    usb_dc_cfg.ep_in[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
     usb_dc_cfg.ep_in[epid].ep_enable = true;
     /*!< Open ep */
-    if (ep_cfg->ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS)
+    if (USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)
     {
       /*!< Enable endpoint interrupt */
       NRF_USBD->INTENSET = (1 << (USBD_INTEN_ENDEPIN0_Pos + epid));
@@ -238,14 +238,14 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
       NRF_USBD->EPINEN |= USBD_EPINEN_ISOIN_Msk;
     }
   }
-  else if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr))
+  else if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress))
   {
     /*!< Out */
     usb_dc_cfg.ep_out[epid].mps = mps;
-    usb_dc_cfg.ep_out[epid].eptype = ep_cfg->ep_type;
+    usb_dc_cfg.ep_out[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
     usb_dc_cfg.ep_out[epid].ep_enable = true;
     /*!< Open ep */
-    if (ep_cfg->ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS)
+    if (USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)
     {
       NRF_USBD->INTENSET = (1 << (USBD_INTEN_ENDEPOUT0_Pos + epid));
       NRF_USBD->EPOUTEN |= (1 << (epid));
@@ -274,8 +274,8 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
   }
 
   /*!< Clear stall and reset DataToggle */
-  NRF_USBD->EPSTALL = (USBD_EPSTALL_STALL_UnStall << USBD_EPSTALL_STALL_Pos) | (ep_cfg->ep_addr);
-  NRF_USBD->DTOGGLE = (USBD_DTOGGLE_VALUE_Data0 << USBD_DTOGGLE_VALUE_Pos) | (ep_cfg->ep_addr);
+  NRF_USBD->EPSTALL = (USBD_EPSTALL_STALL_UnStall << USBD_EPSTALL_STALL_Pos) | (ep->bEndpointAddress);
+  NRF_USBD->DTOGGLE = (USBD_DTOGGLE_VALUE_Data0 << USBD_DTOGGLE_VALUE_Pos) | (ep->bEndpointAddress);
 
   __ISB();
   __DSB();

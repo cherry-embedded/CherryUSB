@@ -236,45 +236,45 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
-static struct usb_endpoint_descriptor *usbd_get_ep0_desc(const struct usbd_endpoint_cfg *ep_cfg)
+static struct usb_endpoint_descriptor *usbd_get_ep0_desc(const struct usb_endpoint_descriptor *ep)
 {
     static struct usb_endpoint_descriptor ep0_desc;
 
     /* Config EP0 mps from speed */
-    ep0_desc.bEndpointAddress = ep_cfg->ep_addr;
+    ep0_desc.bEndpointAddress = ep->bEndpointAddress;
     ep0_desc.bDescriptorType = USB_DESCRIPTOR_TYPE_ENDPOINT;
-    ep0_desc.bmAttributes = ep_cfg->ep_type;
-    ep0_desc.wMaxPacketSize = ep_cfg->ep_mps;
+    ep0_desc.bmAttributes = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    ep0_desc.wMaxPacketSize = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
     ep0_desc.bInterval = 0;
     ep0_desc.bLength = 7;
 
     return &ep0_desc;    
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
     struct pusb2_dc_ep_state *ep_state;
     uint32_t error;
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
+    if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
         ep_state = &g_pusb2_udc.out_ep[ep_idx];
     } else {
         ep_state = &g_pusb2_udc.in_ep[ep_idx];
     }
 
-    ep_state->ep_mps = ep_cfg->ep_mps;
-    ep_state->ep_type = ep_cfg->ep_type;
-    ep_state->desc = usbd_get_ep0_desc(ep_cfg);
+    ep_state->ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+    ep_state->ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    ep_state->desc = usbd_get_ep0_desc(ep);
 
     USB_ASSERT(ep_state->priv_ep != NULL);
-    USB_LOG_DBG("try to enable ep@0x%x 0x%x:0x%x\n", ep_cfg->ep_addr,
+    USB_LOG_DBG("try to enable ep@0x%x 0x%x:0x%x\n", ep->bEndpointAddress,
                 ep_state->priv_ep, ep_state->desc );
     error = FPUsb2DcEpEnable(&g_pusb2_udc.pusb2.device_ctrl,
                             ep_state->priv_ep,
                             (const FUsbEndpointDescriptor *)ep_state->desc);
     if (FPUSB2_SUCCESS != error){
-        USB_LOG_ERR("enable ep-%d failed, error = 0x%x\n", ep_cfg->ep_addr, error);
+        USB_LOG_ERR("enable ep-%d failed, error = 0x%x\n", ep->bEndpointAddress, error);
         return -1;
     }        
 

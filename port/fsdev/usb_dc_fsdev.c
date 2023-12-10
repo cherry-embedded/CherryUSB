@@ -121,19 +121,19 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return USB_SPEED_FULL;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
     if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
-        USB_LOG_ERR("Ep addr %d overflow\r\n", ep_cfg->ep_addr);
+        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
         return -1;
     }
 
     uint16_t wEpRegVal;
 
     /* initialize Endpoint */
-    switch (ep_cfg->ep_type) {
+    switch (USB_GET_ENDPOINT_TYPE(ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:
             wEpRegVal = USB_EP_CONTROL;
             break;
@@ -157,42 +157,42 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     PCD_SET_EPTYPE(USB, ep_idx, wEpRegVal);
 
     PCD_SET_EP_ADDRESS(USB, ep_idx, ep_idx);
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_fsdev_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_fsdev_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+    if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
+        g_fsdev_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_fsdev_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_fsdev_udc.out_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.out_ep[ep_idx].ep_mps > g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len) {
             if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
-                USB_LOG_ERR("Ep pma %d overflow\r\n", ep_cfg->ep_addr);
+                USB_LOG_ERR("Ep pma %02x overflow\r\n", ep->bEndpointAddress);
                 return -1;
             }
-            g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
+            g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
             g_fsdev_udc.out_ep[ep_idx].ep_pma_addr = g_fsdev_udc.pma_offset;
             /*Set the endpoint Receive buffer address */
             PCD_SET_EP_RX_ADDRESS(USB, ep_idx, g_fsdev_udc.pma_offset);
-            g_fsdev_udc.pma_offset += ep_cfg->ep_mps;
+            g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         }
         /*Set the endpoint Receive buffer counter*/
-        PCD_SET_EP_RX_CNT(USB, ep_idx, ep_cfg->ep_mps);
+        PCD_SET_EP_RX_CNT(USB, ep_idx, USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
         PCD_CLEAR_RX_DTOG(USB, ep_idx);
     } else {
-        g_fsdev_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_fsdev_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_fsdev_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_fsdev_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_fsdev_udc.in_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.in_ep[ep_idx].ep_mps > g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len) {
             if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
-                USB_LOG_ERR("Ep pma %d overflow\r\n", ep_cfg->ep_addr);
+                USB_LOG_ERR("Ep pma %02x overflow\r\n", ep->bEndpointAddress);
                 return -1;
             }
-            g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len = ep_cfg->ep_mps;
+            g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
             g_fsdev_udc.in_ep[ep_idx].ep_pma_addr = g_fsdev_udc.pma_offset;
             /*Set the endpoint Transmit buffer address */
             PCD_SET_EP_TX_ADDRESS(USB, ep_idx, g_fsdev_udc.pma_offset);
-            g_fsdev_udc.pma_offset += ep_cfg->ep_mps;
+            g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         }
 
         PCD_CLEAR_TX_DTOG(USB, ep_idx);
-        if (ep_cfg->ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+        if (USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             /* Configure NAK status for the Endpoint */
             PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
         } else {

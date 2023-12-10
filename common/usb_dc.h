@@ -13,18 +13,6 @@ extern "C" {
 #endif
 
 /**
- * @brief USB Endpoint Configuration.
- *
- * Structure containing the USB endpoint configuration.
- */
-struct usbd_endpoint_cfg {
-    uint8_t ep_addr; /* Endpoint addr with direction */
-    uint8_t ep_type; /* Endpoint type */
-    uint16_t ep_mps; /* Endpoint max packet size */
-    uint8_t ep_mult; /* Endpoint additional transcations in micro frame */
-};
-
-/**
  * @brief init device controller registers.
  * @return On success will return 0, and others indicate fail.
  */
@@ -61,7 +49,7 @@ uint8_t usbd_get_port_speed(const uint8_t port);
  *
  * @return On success will return 0, and others indicate fail.
  */
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep);
 
 /**
  * @brief Disable the selected endpoint

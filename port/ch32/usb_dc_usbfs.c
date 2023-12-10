@@ -101,18 +101,18 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return USB_SPEED_FULL;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_ch32_usbfs_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+    if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
+        g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_ch32_usbfs_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_ch32_usbfs_udc.out_ep[ep_idx].ep_enable = true;
         USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK | USBFS_UEP_AUTO_TOG);
     } else {
-        g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_ch32_usbfs_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_ch32_usbfs_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_ch32_usbfs_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_ch32_usbfs_udc.in_ep[ep_idx].ep_enable = true;
         USB_SET_TX_CTRL(ep_idx, USBFS_UEP_T_RES_NAK | USBFS_UEP_AUTO_TOG);
     }

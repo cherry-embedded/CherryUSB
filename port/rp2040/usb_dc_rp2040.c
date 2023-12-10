@@ -205,9 +205,9 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return USB_SPEED_FULL;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
     if (ep_idx == 0) {
         /**
@@ -222,10 +222,10 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         g_rp2040_udc.in_ep[ep_idx].dpram_data_buf = (uint8_t *)&usb_dpram->ep0_buf_a[0];
     }
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_rp2040_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_rp2040_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        g_rp2040_udc.out_ep[ep_idx].ep_addr = ep_cfg->ep_addr;
+    if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
+        g_rp2040_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_rp2040_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+        g_rp2040_udc.out_ep[ep_idx].ep_addr = ep->bEndpointAddress;
         g_rp2040_udc.out_ep[ep_idx].ep_enable = true;
         /*!< Get control reg */
         g_rp2040_udc.out_ep[ep_idx].buffer_control = &usb_dpram->ep_buf_ctrl[ep_idx].out;
@@ -241,9 +241,9 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         }
 
     } else {
-        g_rp2040_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_rp2040_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
-        g_rp2040_udc.in_ep[ep_idx].ep_addr = ep_cfg->ep_addr;
+        g_rp2040_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_rp2040_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+        g_rp2040_udc.in_ep[ep_idx].ep_addr = ep->bEndpointAddress;
         g_rp2040_udc.in_ep[ep_idx].ep_enable = true;
         /*!< Get control reg */
         g_rp2040_udc.in_ep[ep_idx].buffer_control = &usb_dpram->ep_buf_ctrl[ep_idx].in;

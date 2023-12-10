@@ -174,15 +174,15 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return USB_SPEED_FULL;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
-    if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr)) {
+    if (USB_EP_DIR_IS_IN(ep->bEndpointAddress)) {
         uint8_t epnum = USBD_EPNUM_FROM_IN_EPIDX(ep_idx);
 
-        g_nuvoton_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_nuvoton_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_nuvoton_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_nuvoton_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_nuvoton_udc.in_ep[ep_idx].ep_enable = true;
         if (ep_idx == 0) {
             /* EP0 ==> control IN endpoint, address 0 */
@@ -194,8 +194,8 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     } else {
         uint8_t epnum = USBD_EPNUM_FROM_OUT_EPIDX(ep_idx);
 
-        g_nuvoton_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_nuvoton_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_nuvoton_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_nuvoton_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_nuvoton_udc.out_ep[ep_idx].ep_enable = true;
         if (ep_idx == 0) {
             /* EP1 ==> control OUT endpoint, address 0 */

@@ -89,22 +89,18 @@ static bool is_device_configured(void)
  * This function sets endpoint configuration according to one specified in USB
  * endpoint descriptor and then enables it for data transfers.
  *
- * @param [in]  ep_desc Endpoint descriptor byte array
+ * @param [in]  ep Endpoint descriptor byte array
  *
  * @return true if successfully configured and enabled
  */
-static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
+static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep)
 {
-    struct usbd_endpoint_cfg ep_cfg;
-
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-
     USB_LOG_INFO("Open ep:0x%02x type:%u mps:%u\r\n",
-                 ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
+                 ep->bEndpointAddress,
+                 USB_GET_ENDPOINT_TYPE(ep->bmAttributes),
+                 USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
 
-    return usbd_ep_open(&ep_cfg) == 0 ? true : false;
+    return usbd_ep_open(ep) == 0 ? true : false;
 }
 /**
  * @brief Disable endpoint for transferring data
@@ -112,22 +108,17 @@ static bool usbd_set_endpoint(const struct usb_endpoint_descriptor *ep_desc)
  * This function cancels transfers that are associated with endpoint and
  * disabled endpoint itself.
  *
- * @param [in]  ep_desc Endpoint descriptor byte array
+ * @param [in]  ep Endpoint descriptor byte array
  *
  * @return true if successfully deconfigured and disabled
  */
-static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep_desc)
+static bool usbd_reset_endpoint(const struct usb_endpoint_descriptor *ep)
 {
-    struct usbd_endpoint_cfg ep_cfg;
-
-    ep_cfg.ep_addr = ep_desc->bEndpointAddress;
-    ep_cfg.ep_mps = ep_desc->wMaxPacketSize & USB_MAXPACKETSIZE_MASK;
-    ep_cfg.ep_type = ep_desc->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-
     USB_LOG_INFO("Close ep:0x%02x type:%u\r\n",
-                 ep_cfg.ep_addr, ep_cfg.ep_type);
+                 ep->bEndpointAddress,
+                 USB_GET_ENDPOINT_TYPE(ep->bmAttributes));
 
-    return usbd_ep_close(ep_cfg.ep_addr) == 0 ? true : false;
+    return usbd_ep_close(ep->bEndpointAddress) == 0 ? true : false;
 }
 
 /**
@@ -990,15 +981,18 @@ void usbd_event_reset_handler(void)
 #ifdef CONFIG_USBDEV_TEST_MODE
     g_usbd_core.test_mode = false;
 #endif
-    struct usbd_endpoint_cfg ep0_cfg;
+    struct usb_endpoint_descriptor ep0;
 
-    ep0_cfg.ep_mps = USB_CTRL_EP_MPS;
-    ep0_cfg.ep_type = USB_ENDPOINT_TYPE_CONTROL;
-    ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
-    usbd_ep_open(&ep0_cfg);
+    ep0.bLength = 7;
+    ep0.bDescriptorType = USB_DESCRIPTOR_TYPE_ENDPOINT;
+    ep0.wMaxPacketSize = USB_CTRL_EP_MPS;
+    ep0.bmAttributes = USB_ENDPOINT_TYPE_CONTROL;
+    ep0.bEndpointAddress = USB_CONTROL_IN_EP0;
+    ep0.bInterval = 0;
+    usbd_ep_open(&ep0);
 
-    ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
-    usbd_ep_open(&ep0_cfg);
+    ep0.bEndpointAddress = USB_CONTROL_OUT_EP0;
+    usbd_ep_open(&ep0);
 
     usbd_class_event_notify_handler(USBD_EVENT_RESET, NULL);
     usbd_event_handler(USBD_EVENT_RESET);

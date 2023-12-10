@@ -288,11 +288,11 @@ uint8_t usbd_force_full_speed(const uint8_t port)
     return (HWREGB(USB_BASE + MUSB_POWER_OFFSET) & USB_POWER_HSENAB);
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
     uint16_t used = 0;
     uint16_t fifo_size = 0;
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
     uint8_t old_ep_idx;
     uint32_t ui32Flags = 0;
     uint16_t ui32Register = 0;
@@ -308,19 +308,19 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
     }
 
     if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
-        USB_LOG_ERR("Ep addr %d overflow\r\n", ep_cfg->ep_addr);
+        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
         return -1;
     }
 
     old_ep_idx = musb_get_active_ep();
     musb_set_active_ep(ep_idx);
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_musb_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_musb_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+    if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
+        g_musb_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_musb_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_musb_udc.out_ep[ep_idx].ep_enable = true;
 
-        HWREGH(USB_BASE + MUSB_IND_RXMAP_OFFSET) = ep_cfg->ep_mps;
+        HWREGH(USB_BASE + MUSB_IND_RXMAP_OFFSET) = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
 
         //
         // Allow auto clearing of RxPktRdy when packet of size max packet
@@ -348,7 +348,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         //
         // Enable isochronous mode if requested.
         //
-        if (ep_cfg->ep_type == 0x01) {
+        if (USB_GET_ENDPOINT_TYPE(ep->bmAttributes) == 0x01) {
             ui32Register |= USB_RXCSRH1_ISO;
         }
 
@@ -360,18 +360,18 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         else
             HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) = USB_RXCSRL1_CLRDT;
 
-        fifo_size = musb_get_fifo_size(ep_cfg->ep_mps, &used);
+        fifo_size = musb_get_fifo_size(USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize), &used);
 
         HWREGB(USB_BASE + MUSB_RXFIFOSZ_OFFSET) = fifo_size & 0x0f;
         HWREGH(USB_BASE + MUSB_RXFIFOADD_OFFSET) = (g_musb_udc.fifo_size_offset >> 3);
 
         g_musb_udc.fifo_size_offset += used;
     } else {
-        g_musb_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_musb_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_musb_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_musb_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_musb_udc.in_ep[ep_idx].ep_enable = true;
 
-        HWREGH(USB_BASE + MUSB_IND_TXMAP_OFFSET) = ep_cfg->ep_mps;
+        HWREGH(USB_BASE + MUSB_IND_TXMAP_OFFSET) = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
 
         //
         // Allow auto setting of TxPktRdy when max packet size has been loaded
@@ -393,7 +393,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         //
         // Enable isochronous mode if requested.
         //
-        if (ep_cfg->ep_type == 0x01) {
+        if (USB_GET_ENDPOINT_TYPE(ep->bmAttributes) == 0x01) {
             ui32Register |= USB_TXCSRH1_ISO;
         }
 
@@ -405,7 +405,7 @@ int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
         else
             HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_CLRDT;
 
-        fifo_size = musb_get_fifo_size(ep_cfg->ep_mps, &used);
+        fifo_size = musb_get_fifo_size(USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize), &used);
 
         HWREGB(USB_BASE + MUSB_TXFIFOSZ_OFFSET) = fifo_size & 0x0f;
         HWREGH(USB_BASE + MUSB_TXFIFOADD_OFFSET) = (g_musb_udc.fifo_size_offset >> 3);

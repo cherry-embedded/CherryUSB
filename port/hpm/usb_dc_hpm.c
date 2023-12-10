@@ -111,26 +111,26 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return 0;
 }
 
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
     usb_endpoint_config_t tmp_ep_cfg;
     usb_device_handle_t *handle = g_hpm_udc.handle;
 
-    uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
-    if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
-        g_hpm_udc.out_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_hpm_udc.out_ep[ep_idx].ep_type = ep_cfg->ep_type;
+    if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
+        g_hpm_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_hpm_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_hpm_udc.out_ep[ep_idx].ep_enable = true;
     } else {
-        g_hpm_udc.in_ep[ep_idx].ep_mps = ep_cfg->ep_mps;
-        g_hpm_udc.in_ep[ep_idx].ep_type = ep_cfg->ep_type;
+        g_hpm_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_hpm_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_hpm_udc.in_ep[ep_idx].ep_enable = true;
     }
 
-    tmp_ep_cfg.xfer = ep_cfg->ep_type;
-    tmp_ep_cfg.ep_addr = ep_cfg->ep_addr;
-    tmp_ep_cfg.max_packet_size = ep_cfg->ep_mps;
+    tmp_ep_cfg.xfer = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    tmp_ep_cfg.ep_addr = ep->bEndpointAddress;
+    tmp_ep_cfg.max_packet_size = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
 
     usb_device_edpt_open(handle, &tmp_ep_cfg);
     return 0;

@@ -147,31 +147,31 @@ uint8_t usbd_get_port_speed(const uint8_t port)
  * @param[in]        ep_cfg : Endpoint configuration structure pointer
  * @retval           >=0 success otherwise failure
  */
-int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg)
+int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
     /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep_cfg->ep_addr);
+    uint8_t epid = USB_EP_GET_IDX(ep->bEndpointAddress);
     if (epid > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
         /**
          * If you use ch58x, you can change the EP_NUMS set to 8
          */
-        USB_LOG_ERR("Ep addr %d overflow\r\n", ep_cfg->ep_addr);
+        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
         return -1;
     }
 
     /*!< ep max packet length */
-    uint8_t mps = ep_cfg->ep_mps;
+    uint8_t mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
     /*!< update ep max packet length */
-    if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr)) {
+    if (USB_EP_DIR_IS_IN(ep->bEndpointAddress)) {
         /*!< in */
         usb_dc_cfg.ep_in[epid].ep_enable = true;
         usb_dc_cfg.ep_in[epid].mps = mps;
-        usb_dc_cfg.ep_in[epid].eptype = ep_cfg->ep_type;
-    } else if (USB_EP_DIR_IS_OUT(ep_cfg->ep_addr)) {
+        usb_dc_cfg.ep_in[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    } else if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
         /*!< out */
         usb_dc_cfg.ep_out[epid].ep_enable = true;
         usb_dc_cfg.ep_out[epid].mps = mps;
-        usb_dc_cfg.ep_out[epid].eptype = ep_cfg->ep_type;
+        usb_dc_cfg.ep_out[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
     }
     return 0;
 }
