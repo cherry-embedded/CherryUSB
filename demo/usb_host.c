@@ -40,43 +40,36 @@ static void usbh_cdc_acm_thread(void *argument)
     int ret;
     struct usbh_cdc_acm *cdc_acm_class;
 
-    while (1) {
-        // clang-format off
+    // clang-format off
 find_class:
-        // clang-format on
-        cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0");
-        if (cdc_acm_class == NULL) {
-            usb_osal_msleep(1000);
-            continue;
-        }
-        memset(cdc_buffer, 0, 512);
-
-        const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
-
-        memcpy(cdc_buffer, data1, 10);
-        usbh_bulk_urb_fill(&cdc_acm_class->bulkout_urb, cdc_acm_class->hport, cdc_acm_class->bulkout, cdc_buffer, 10, 3000, NULL, NULL);
-        ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
-        if (ret < 0) {
-            USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
-        } else {
-            USB_LOG_RAW("send over:%d\r\n", cdc_acm_class->bulkout_urb.actual_length);
-        }
-
-        usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, cdc_acm_class->bulkin->wMaxPacketSize, 3000, usbh_cdc_acm_callback, cdc_acm_class);
-        ret = usbh_submit_urb(&cdc_acm_class->bulkin_urb);
-        if (ret < 0) {
-            USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
-        } else {
-        }
-
-        while (1) {
-            cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0");
-            if (cdc_acm_class == NULL) {
-                goto find_class;
-            }
-            usb_osal_msleep(1000);
-        }
+    // clang-format on
+    while ((cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0")) == NULL) {
+        goto delete;
     }
+
+    memset(cdc_buffer, 0, 512);
+
+    const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
+
+    memcpy(cdc_buffer, data1, 10);
+    usbh_bulk_urb_fill(&cdc_acm_class->bulkout_urb, cdc_acm_class->hport, cdc_acm_class->bulkout, cdc_buffer, 10, 3000, NULL, NULL);
+    ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
+    if (ret < 0) {
+        USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
+    } else {
+        USB_LOG_RAW("send over:%d\r\n", cdc_acm_class->bulkout_urb.actual_length);
+    }
+
+    usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, cdc_acm_class->bulkin->wMaxPacketSize, 3000, usbh_cdc_acm_callback, cdc_acm_class);
+    ret = usbh_submit_urb(&cdc_acm_class->bulkin_urb);
+    if (ret < 0) {
+        USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
+    } else {
+    }
+    // clang-format off
+delete: 
+    usb_osal_thread_delete(NULL);
+    // clang-format on
 }
 #endif
 
@@ -101,30 +94,22 @@ static void usbh_hid_thread(void *argument)
     int ret;
     struct usbh_hid *hid_class;
 
-    while (1) {
-        // clang-format off
+    // clang-format off
 find_class:
-        // clang-format on
-        hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0");
-        if (hid_class == NULL) {
-            usb_osal_msleep(1500);
-            continue;
-        }
-        usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
-        ret = usbh_submit_urb(&hid_class->intin_urb);
-        if (ret < 0) {
-            usb_osal_msleep(1500);
-            goto find_class;
-        }
-
-        while (1) {
-            hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0");
-            if (hid_class == NULL) {
-                goto find_class;
-            }
-            usb_osal_msleep(1500);
-        }
+    // clang-format on
+    while ((hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0")) == NULL) {
+        goto delete;
     }
+
+    usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
+    ret = usbh_submit_urb(&hid_class->intin_urb);
+    if (ret < 0) {
+        goto find_class;
+    }
+    // clang-format off
+delete: 
+    usb_osal_thread_delete(NULL);
+    // clang-format on
 }
 #endif
 
@@ -201,44 +186,36 @@ static void usbh_msc_thread(void *argument)
     int ret;
     struct usbh_msc *msc_class;
 
-    while (1) {
-        // clang-format off
+    // clang-format off
 find_class:
-        // clang-format on
-        msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
-        if (msc_class == NULL) {
-            usb_osal_msleep(2000);
-            continue;
-        }
+    // clang-format on
+    while ((msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda")) == NULL) {
+        goto delete;
+    }
 
 #if 1
-        /* get the partition table */
-        ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
-        if (ret < 0) {
-            USB_LOG_RAW("scsi_read10 error,ret:%d\r\n", ret);
-            usb_osal_msleep(2000);
-            goto find_class;
+    /* get the partition table */
+    ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
+    if (ret < 0) {
+        USB_LOG_RAW("scsi_read10 error,ret:%d\r\n", ret);
+        goto find_class;
+    }
+    for (uint32_t i = 0; i < 512; i++) {
+        if (i % 16 == 0) {
+            USB_LOG_RAW("\r\n");
         }
-        for (uint32_t i = 0; i < 512; i++) {
-            if (i % 16 == 0) {
-                USB_LOG_RAW("\r\n");
-            }
-            USB_LOG_RAW("%02x ", partition_table[i]);
-        }
-        USB_LOG_RAW("\r\n");
+        USB_LOG_RAW("%02x ", partition_table[i]);
+    }
+    USB_LOG_RAW("\r\n");
 #endif
 
 #if TEST_USBH_MSC_FATFS
-        usb_msc_fatfs_test();
+    usb_msc_fatfs_test();
 #endif
-        while (1) {
-            msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
-            if (msc_class == NULL) {
-                goto find_class;
-            }
-            usb_osal_msleep(2000);
-        }
-    }
+    // clang-format off
+delete: 
+    usb_osal_thread_delete(NULL);
+    // clang-format on
 }
 #endif
 
@@ -448,7 +425,7 @@ static rt_err_t rt_usbh_cdc_ecm_control(rt_device_t dev, int cmd, void *args)
     return RT_EOK;
 }
 
-static rt_err_t rt_usbh_cdc_ecm_eth_tx(rt_device_t dev, struct pbuf* p)
+static rt_err_t rt_usbh_cdc_ecm_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     return usbh_cdc_ecm_linkoutput(NULL, p);
 }
@@ -574,7 +551,7 @@ static rt_err_t rt_usbh_rndis_control(rt_device_t dev, int cmd, void *args)
     return RT_EOK;
 }
 
-static rt_err_t rt_usbh_rndis_eth_tx(rt_device_t dev, struct pbuf* p)
+static rt_err_t rt_usbh_rndis_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     return usbh_rndis_linkoutput(NULL, p);
 }
@@ -680,6 +657,9 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
+#if TEST_USBH_CDC_ACM
+    usb_osal_thread_create("usbh_cdc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_acm_thread, NULL);
+#endif
 }
 
 void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
@@ -688,6 +668,9 @@ void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
 
 void usbh_hid_run(struct usbh_hid *hid_class)
 {
+#if TEST_USBH_HID
+    usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, NULL);
+#endif
 }
 
 void usbh_hid_stop(struct usbh_hid *hid_class)
@@ -697,6 +680,9 @@ void usbh_hid_stop(struct usbh_hid *hid_class)
 #ifndef __RTTHREAD__
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
+#if TEST_USBH_MSC
+    usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, NULL);
+#endif
 }
 
 void usbh_msc_stop(struct usbh_msc *msc_class)
@@ -722,15 +708,6 @@ void usbh_video_stop(struct usbh_video *video_class)
 
 void usbh_class_test(void)
 {
-#if TEST_USBH_CDC_ACM
-    usb_osal_thread_create("usbh_cdc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_acm_thread, NULL);
-#endif
-#if TEST_USBH_HID
-    usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, NULL);
-#endif
-#if TEST_USBH_MSC
-    usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, NULL);
-#endif
 #if TEST_USBH_AUDIO
 #error "if you want to use iso, please contact with me"
     usb_osal_thread_create("usbh_audio", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_audio_thread, NULL);
