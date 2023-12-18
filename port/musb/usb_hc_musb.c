@@ -302,7 +302,7 @@ void musb_bulk_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, ui
 
     if (urb->ep->bEndpointAddress & 0x80) {
         HWREGB(USB_RXADDR_BASE(chidx)) = urb->hport->dev_addr;
-        HWREGB(USB_BASE + MUSB_IND_RXTYPE_OFFSET) = chidx | speed | USB_TXTYPE1_PROTO_BULK;
+        HWREGB(USB_BASE + MUSB_IND_RXTYPE_OFFSET) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_BULK;
         HWREGB(USB_BASE + MUSB_IND_RXINTERVAL_OFFSET) = 0;
         HWREGB(USB_RXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_RXHUBPORT_BASE(chidx)) = 0;
@@ -312,7 +312,7 @@ void musb_bulk_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, ui
         HWREGH(USB_BASE + MUSB_RXIE_OFFSET) |= (1 << chidx);
     } else {
         HWREGB(USB_TXADDR_BASE(chidx)) = urb->hport->dev_addr;
-        HWREGB(USB_BASE + MUSB_IND_TXTYPE_OFFSET) = chidx | speed | USB_TXTYPE1_PROTO_BULK;
+        HWREGB(USB_BASE + MUSB_IND_TXTYPE_OFFSET) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_BULK;
         HWREGB(USB_BASE + MUSB_IND_TXINTERVAL_OFFSET) = 0;
         HWREGB(USB_TXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_TXHUBPORT_BASE(chidx)) = 0;
@@ -349,15 +349,17 @@ void musb_intr_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, ui
 
     if (urb->ep->bEndpointAddress & 0x80) {
         HWREGB(USB_RXADDR_BASE(chidx)) = urb->hport->dev_addr;
-        HWREGB(USB_BASE + MUSB_IND_RXTYPE_OFFSET) = chidx | speed | USB_TXTYPE1_PROTO_INT;
+        HWREGB(USB_BASE + MUSB_IND_RXTYPE_OFFSET) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_INT;
         HWREGB(USB_BASE + MUSB_IND_RXINTERVAL_OFFSET) = urb->ep->bInterval;
         HWREGB(USB_RXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_RXHUBPORT_BASE(chidx)) = 0;
         HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) &= ~USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) = USB_RXCSRL1_REQPKT;
+
+        HWREGH(USB_BASE + MUSB_RXIE_OFFSET) |= (1 << chidx);
     } else {
         HWREGB(USB_TXADDR_BASE(chidx)) = urb->hport->dev_addr;
-        HWREGB(USB_BASE + MUSB_IND_TXTYPE_OFFSET) = chidx | speed | USB_TXTYPE1_PROTO_INT;
+        HWREGB(USB_BASE + MUSB_IND_TXTYPE_OFFSET) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_INT;
         HWREGB(USB_BASE + MUSB_IND_TXINTERVAL_OFFSET) = urb->ep->bInterval;
         HWREGB(USB_TXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_TXHUBPORT_BASE(chidx)) = 0;
@@ -370,6 +372,8 @@ void musb_intr_urb_init(uint8_t chidx, struct usbh_urb *urb, uint8_t *buffer, ui
         HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) &= ~USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) |= USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
+
+        HWREGH(USB_BASE + MUSB_TXIE_OFFSET) |= (1 << chidx);
     }
     musb_set_active_ep(old_ep_index);
 }
@@ -610,10 +614,14 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     flags = usb_osal_enter_critical_section();
 
-    chidx = musb_pipe_alloc();
-    if (chidx == -1) {
-        usb_osal_leave_critical_section(flags);
-        return -USB_ERR_NOMEM;
+    if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
+        chidx = 0;
+    } else {
+        chidx = musb_pipe_alloc();
+        if (chidx == -1) {
+            usb_osal_leave_critical_section(flags);
+            return -USB_ERR_NOMEM;
+        }
     }
 
     pipe = &g_musb_hcd.pipe_pool[chidx];
@@ -984,11 +992,6 @@ void USBH_IRQHandler(void)
     musb_set_active_ep(old_ep_idx);
     return;
 pipe_wait:
-    if (urb->ep->bEndpointAddress & 0x80) {
-        HWREGH(USB_BASE + MUSB_RXIE_OFFSET) |= (1 << pipe->chidx);
-    } else {
-        HWREGH(USB_BASE + MUSB_TXIE_OFFSET) |= (1 << pipe->chidx);
-    }
     musb_set_active_ep(old_ep_idx);
     musb_urb_waitup(urb);
 }
