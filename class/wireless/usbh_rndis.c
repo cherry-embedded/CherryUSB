@@ -422,7 +422,7 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-static void usbh_rndis_rx_thread(void *argument)
+void usbh_rndis_rx_thread(void *argument)
 {
     uint32_t g_rndis_rx_length;
     uint32_t pmg_offset;
@@ -545,11 +545,6 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
     }
 
     return ERR_OK;
-}
-
-void usbh_rndis_lwip_thread_init(struct netif *netif)
-{
-    usb_osal_thread_create("usbh_rndis_rx", CONFIG_USBHOST_RNDIS_STACKSIZE, CONFIG_USBHOST_RNDIS_PRIO, usbh_rndis_rx_thread, netif);
 }
 
 __WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)

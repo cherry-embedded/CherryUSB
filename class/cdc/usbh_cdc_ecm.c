@@ -222,7 +222,7 @@ static int usbh_cdc_ecm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-static void usbh_cdc_ecm_rx_thread(void *argument)
+void usbh_cdc_ecm_rx_thread(void *argument)
 {
     uint32_t g_cdc_ecm_rx_length;
     int ret;
@@ -276,9 +276,11 @@ find_class:
         } else {
         }
     }
+    // clang-format off
 delete:
     USB_LOG_INFO("Delete cdc ecm rx thread\r\n");
     usb_osal_thread_delete(NULL);
+    // clang-format on
 }
 
 err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
@@ -305,11 +307,6 @@ err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
     }
 
     return ERR_OK;
-}
-
-void usbh_cdc_ecm_lwip_thread_init(struct netif *netif)
-{
-    usb_osal_thread_create("usbh_cdc_ecm_rx", CONFIG_USBHOST_RNDIS_STACKSIZE, CONFIG_USBHOST_CDC_ECM_PRIO, usbh_cdc_ecm_rx_thread, netif);
 }
 
 __WEAK void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)

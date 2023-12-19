@@ -45,7 +45,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class);
 void usbh_rndis_stop(struct usbh_rndis *rndis_class);
 
 err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p);
-void usbh_rndis_lwip_thread_init(struct netif *netif);
+void usbh_rndis_rx_thread(void *argument);
 
 #ifdef __cplusplus
 }

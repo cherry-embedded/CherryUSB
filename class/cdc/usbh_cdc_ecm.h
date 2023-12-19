@@ -42,7 +42,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class);
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class);
 
 err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p);
-void usbh_cdc_ecm_lwip_thread_init(struct netif *netif);
+void usbh_cdc_ecm_rx_thread(void *argument);
 
 #ifdef __cplusplus
 }
