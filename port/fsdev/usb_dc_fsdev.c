@@ -1,27 +1,31 @@
 #include "usbd_core.h"
+
+#ifndef CONFIG_USBDEV_FSDEV_PMA_ACCESS
+#error "please define USBD_BASE in usb_config.h"
+#endif
+
+#define PMA_ACCESS CONFIG_USBDEV_FSDEV_PMA_ACCESS
 #include "usb_fsdev_reg.h"
 
 #ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_LP_CAN1_RX0_IRQHandler //use actual usb irq name instead
+#error "please define USBD_IRQHandler in usb_config.h"
 #endif
 
-#ifndef USB_BASE
-#define USB_BASE (0x40005C00UL) /*!< USB_IP Peripheral Registers base address */
+#ifndef USBD_BASE
+#error "please define USBD_BASE in usb_config.h"
 #endif
 
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 8
+#ifndef CONFIG_USB_FSDEV_RAM_SIZE
+#define CONFIG_USB_FSDEV_RAM_SIZE 512
 #endif
 
-#ifndef USB_RAM_SIZE
-#define USB_RAM_SIZE 512
+#ifndef CONFIG_USBDEV_EP_NUM
+#define CONFIG_USBDEV_EP_NUM 8
 #endif
 
-#warning please check your PMA_ACCESS is 1 or 2
+#define USB ((USB_TypeDef *)USBD_BASE)
 
-#define USB ((USB_TypeDef *)USB_BASE)
-
-#define USB_BTABLE_SIZE (8 * USB_NUM_BIDIR_ENDPOINTS)
+#define USB_BTABLE_SIZE (8 * CONFIG_USBDEV_EP_NUM)
 
 static void fsdev_write_pma(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
 static void fsdev_read_pma(USB_TypeDef *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes);
@@ -42,10 +46,10 @@ struct fsdev_ep_state {
 /* Driver state */
 struct fsdev_udc {
     struct usb_setup_packet setup;
-    volatile uint8_t dev_addr;                             /*!< USB Address */
-    volatile uint32_t pma_offset;                          /*!< pma offset */
-    struct fsdev_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
-    struct fsdev_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
+    volatile uint8_t dev_addr;                          /*!< USB Address */
+    volatile uint32_t pma_offset;                       /*!< pma offset */
+    struct fsdev_ep_state in_ep[CONFIG_USBDEV_EP_NUM];  /*!< IN endpoint parameters*/
+    struct fsdev_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
 } g_fsdev_udc;
 
 __WEAK void usb_dc_low_level_init(void)
@@ -125,7 +129,7 @@ int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
-    if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+    if (ep_idx > (CONFIG_USBDEV_EP_NUM - 1)) {
         USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
         return -1;
     }
@@ -162,7 +166,7 @@ int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
         g_fsdev_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_fsdev_udc.out_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.out_ep[ep_idx].ep_mps > g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len) {
-            if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
+            if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps > CONFIG_USB_FSDEV_RAM_SIZE) {
                 USB_LOG_ERR("Ep pma %02x overflow\r\n", ep->bEndpointAddress);
                 return -1;
             }
@@ -180,7 +184,7 @@ int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
         g_fsdev_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_fsdev_udc.in_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.in_ep[ep_idx].ep_mps > g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len) {
-            if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps > USB_RAM_SIZE) {
+            if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps > CONFIG_USB_FSDEV_RAM_SIZE) {
                 USB_LOG_ERR("Ep pma %02x overflow\r\n", ep->bEndpointAddress);
                 return -1;
             }

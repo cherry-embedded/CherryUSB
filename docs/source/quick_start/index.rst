@@ -35,7 +35,6 @@
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
 - dwc2 ip 区别： fs port(引脚是 PA11/PA12) 和 hs port(引脚是 PB14/PB15), 其中 hs port 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
 - F4 无cache，H7 有 cache
-- H7 的 USB_BASE 与其他系列有区别，需要在 usb_config.h 中配置
 
 如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
 
@@ -76,8 +75,6 @@ USB Device 移植要点
 
 .. figure:: img/stm32_3_1.png
 .. figure:: img/stm32_3.png
-
-.. caution :: 如果使用 STM32H7 FS PORT, 请修改 USB_BASE 为 0x40080000UL
 
 - 配置 usb clock 为 48M
 

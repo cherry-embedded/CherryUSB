@@ -14,19 +14,21 @@
 #define HWREGB(x) \
     (*((volatile uint8_t *)(x)))
 
+#ifndef USBH_IRQHandler
+#error "please define USBH_IRQHandler in usb_config.h"
+#endif
+
+#ifndef USBH_BASE
+#error "please define USBH_BASE in usb_config.h"
+#endif
+
+#define USB_BASE USBH_BASE
+
 #if CONFIG_USBHOST_PIPE_NUM != 4
 #error musb host ip only supports 4 pipe num
 #endif
+
 #ifdef CONFIG_USB_MUSB_SUNXI
-
-#ifndef USB_BASE
-#define USB_BASE (0x01c13000)
-#endif
-
-#ifndef USBH_IRQHandler
-#define USBH_IRQHandler USBH_IRQHandler //use actual usb irq name instead
-#endif
-
 #define MUSB_FADDR_OFFSET 0x98
 #define MUSB_POWER_OFFSET 0x40
 #define MUSB_TXIS_OFFSET  0x44
@@ -76,16 +78,8 @@
 #define USB_RXHUBPORT_BASE(ep_idx) (USB_BASE + MUSB_RXHUBPORTx_OFFSET)
 
 #elif defined(CONFIG_USB_MUSB_CUSTOM)
-
+#include "musb_custom.h"
 #else
-#ifndef USBH_IRQHandler
-#define USBH_IRQHandler USB_INT_Handler
-#endif
-
-#ifndef USB_BASE
-#define USB_BASE (0x40086400UL)
-#endif
-
 #define MUSB_FADDR_OFFSET 0x00
 #define MUSB_POWER_OFFSET 0x01
 #define MUSB_TXIS_OFFSET  0x02
@@ -632,8 +626,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
 
-    usb_osal_leave_critical_section(flags);
-
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:
             usb_ep0_state = USB_EP0_STATE_SETUP;
@@ -650,6 +642,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
         default:
             break;
     }
+    usb_osal_leave_critical_section(flags);
+
     if (urb->timeout > 0) {
         /* wait until timeout or sem give */
         ret = usb_osal_sem_take(pipe->waitsem, urb->timeout);

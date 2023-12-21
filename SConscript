@@ -64,10 +64,6 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')
         if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_STM32']):
             src += Glob('port/dwc2/usb_glue_st.c')
-        if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_PORT_FS']):
-            CPPDEFINES += ['CONFIG_USB_DWC2_PORT=FS_PORT']
-        elif GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_PORT_HS']):
-            CPPDEFINES += ['CONFIG_USB_DWC2_PORT=HS_PORT']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB']):
         src += Glob('port/musb/usb_dc_musb.c')

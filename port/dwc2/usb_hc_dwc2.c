@@ -8,27 +8,23 @@
 #include "usb_dwc2_reg.h"
 
 #ifndef USBH_IRQHandler
-#define USBH_IRQHandler OTG_HS_IRQHandler
+#error "please define USBH_IRQHandler in usb_config.h"
 #endif
 
-#ifndef USB_BASE
-#define USB_BASE (0x40040000UL)
+#ifndef USBH_BASE
+#error "please define USBH_BASE in usb_config.h"
 #endif
 
 #ifndef CONFIG_USBHOST_PIPE_NUM
 #define CONFIG_USBHOST_PIPE_NUM 12
 #endif
 
-#if defined(STM32F7) || defined(STM32H7)
-#warning please check your buf addr is not in tcm and use nocache ram.
-#endif
-
-#define USB_OTG_GLB     ((USB_OTG_GlobalTypeDef *)(USB_BASE))
-#define USB_OTG_PCGCCTL *(__IO uint32_t *)((uint32_t)USB_BASE + USB_OTG_PCGCCTL_BASE)
-#define USB_OTG_HPRT    *(__IO uint32_t *)((uint32_t)USB_BASE + USB_OTG_HOST_PORT_BASE)
-#define USB_OTG_HOST    ((USB_OTG_HostTypeDef *)(USB_BASE + USB_OTG_HOST_BASE))
-#define USB_OTG_HC(i)   ((USB_OTG_HostChannelTypeDef *)(USB_BASE + USB_OTG_HOST_CHANNEL_BASE + ((i)*USB_OTG_HOST_CHANNEL_SIZE)))
-#define USB_OTG_FIFO(i) *(__IO uint32_t *)(USB_BASE + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
+#define USB_OTG_GLB     ((USB_OTG_GlobalTypeDef *)(USBH_BASE))
+#define USB_OTG_PCGCCTL *(__IO uint32_t *)((uint32_t)USBH_BASE + USB_OTG_PCGCCTL_BASE)
+#define USB_OTG_HPRT    *(__IO uint32_t *)((uint32_t)USBH_BASE + USB_OTG_HOST_PORT_BASE)
+#define USB_OTG_HOST    ((USB_OTG_HostTypeDef *)(USBH_BASE + USB_OTG_HOST_BASE))
+#define USB_OTG_HC(i)   ((USB_OTG_HostChannelTypeDef *)(USBH_BASE + USB_OTG_HOST_CHANNEL_BASE + ((i)*USB_OTG_HOST_CHANNEL_SIZE)))
+#define USB_OTG_FIFO(i) *(__IO uint32_t *)(USBH_BASE + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
 
 struct dwc2_chan {
     uint8_t ep0_state;
@@ -483,7 +479,7 @@ int usb_hc_init(void)
     USB_OTG_GLB->GCCFG = usbh_get_dwc2_gccfg_conf();
 
     ret = dwc2_core_init();
-    
+
     /* Force Host Mode*/
     dwc2_set_mode(USB_OTG_MODE_HOST);
     usb_osal_msleep(50);
