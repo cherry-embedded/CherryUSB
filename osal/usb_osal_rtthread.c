@@ -91,6 +91,11 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
     return (usb_osal_mq_t)rt_mq_create("usbh_mq", sizeof(uintptr_t), max_msgs, RT_IPC_FLAG_FIFO);
 }
 
+void usb_osal_mq_delete(usb_osal_mq_t mq)
+{
+    rt_mq_delete((rt_mq_t)mq);
+}
+
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 {
     return rt_mq_send((rt_mq_t)mq, &addr, sizeof(uintptr_t));

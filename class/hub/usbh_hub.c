@@ -647,6 +647,8 @@ static void usbh_hub_thread(void *argument)
 
 static void usbh_roothub_register(void)
 {
+    usb_slist_init(&hub_class_head);
+
     memset(&roothub, 0, sizeof(struct usbh_hub));
 
     roothub.connected = true;
@@ -680,6 +682,36 @@ int usbh_hub_initialize(void)
     }
     return 0;
 }
+
+int usbh_hub_deinitialize(void)
+{
+    usb_slist_t *i;
+    struct usbh_hubport *hport;
+    size_t flags;
+    
+    flags = usb_osal_enter_critical_section();
+
+    usb_slist_for_each(i, &hub_class_head)
+    {
+        struct usbh_hub *hub = usb_slist_entry(i, struct usbh_hub, list);
+
+        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
+            hport = &hub->child[port];
+
+            usbh_hubport_release(hport);
+        }
+    }
+
+    usb_hc_deinit();
+
+    usb_osal_leave_critical_section(flags);
+
+    usb_osal_mq_delete(hub_mq);
+    usb_osal_thread_delete(hub_thread);
+
+    return 0;
+}
+
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 const struct usbh_class_driver hub_class_driver = {
     .driver_name = "hub",

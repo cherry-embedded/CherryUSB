@@ -525,6 +525,57 @@ int usb_hc_init(void)
     return 0;
 }
 
+int usb_hc_deinit(void)
+{
+    volatile uint32_t count = 0U;
+    uint32_t value;
+
+    USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
+
+    dwc2_flush_txfifo(0x10U);
+    dwc2_flush_rxfifo();
+
+    /* Flush out any leftover queued requests. */
+    for (uint32_t i = 0U; i <= 15U; i++) {
+        value = USB_OTG_HC(i)->HCCHAR;
+        value |= USB_OTG_HCCHAR_CHDIS;
+        value &= ~USB_OTG_HCCHAR_CHENA;
+        value &= ~USB_OTG_HCCHAR_EPDIR;
+        USB_OTG_HC(i)->HCCHAR = value;
+    }
+
+    /* Halt all channels to put them into a known state. */
+    for (uint32_t i = 0U; i <= 15U; i++) {
+        value = USB_OTG_HC(i)->HCCHAR;
+        value |= USB_OTG_HCCHAR_CHDIS;
+        value |= USB_OTG_HCCHAR_CHENA;
+        value &= ~USB_OTG_HCCHAR_EPDIR;
+        USB_OTG_HC(i)->HCCHAR = value;
+
+        do {
+            if (++count > 1000U) {
+                return -USB_ERR_TIMEOUT;
+            }
+        } while ((USB_OTG_HC(i)->HCCHAR & USB_OTG_HCCHAR_CHENA) == USB_OTG_HCCHAR_CHENA);
+    }
+
+    /* Disable all interrupts. */
+    USB_OTG_GLB->GINTMSK = 0U;
+
+    /* Clear any pending Host interrupts */
+    USB_OTG_HOST->HAINT = 0xFFFFFFFFU;
+    USB_OTG_GLB->GINTSTS = 0xFFFFFFFFU;
+
+    dwc2_drivebus(0);
+    usb_osal_msleep(200);
+
+    for (uint8_t chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
+        usb_osal_sem_delete(g_dwc2_hcd.chan_pool[chidx].waitsem);
+    }
+
+    return 0;
+}
+
 uint16_t usbh_get_frame_number(void)
 {
     return (USB_OTG_HOST->HFNUM & USB_OTG_HFNUM_FRNUM);

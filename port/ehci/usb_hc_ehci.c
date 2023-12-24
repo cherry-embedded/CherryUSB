@@ -906,6 +906,51 @@ int usb_hc_init(void)
     return 0;
 }
 
+int usb_hc_deinit(void)
+{
+    struct ehci_qh_hw *qh;
+
+    volatile uint32_t timeout = 0;
+    uint32_t regval;
+
+    EHCI_HCOR->usbintr = 0;
+
+    regval = EHCI_HCOR->usbcmd;
+    regval &= ~EHCI_USBCMD_ASEN;
+    regval &= ~EHCI_USBCMD_PSEN;
+    regval &= ~EHCI_USBCMD_RUN;
+    EHCI_HCOR->usbcmd = regval;
+
+    while ((EHCI_HCOR->usbsts & (EHCI_USBSTS_PSS | EHCI_USBSTS_ASS))) {
+        usb_osal_msleep(1);
+        timeout++;
+        if (timeout > 100) {
+            return -USB_ERR_TIMEOUT;
+        }
+    }
+
+#ifdef CONFIG_USB_EHCI_PORT_POWER
+    for (uint8_t port = 0; port < CONFIG_USBHOST_MAX_RHPORTS; port++) {
+        regval = EHCI_HCOR->portsc[port];
+        regval &= ~EHCI_PORTSC_PP;
+        EHCI_HCOR->portsc[port] = regval;
+    }
+#endif
+
+#ifdef CONFIG_USB_EHCI_CONFIGFLAG
+    EHCI_HCOR->configflag = 0;
+#endif
+
+    EHCI_HCOR->usbsts = EHCI_HCOR->usbsts;
+
+    for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
+        qh = &ehci_qh_pool[index];
+        usb_osal_sem_delete(qh->waitsem);
+    }
+
+    return 0;
+}
+
 uint16_t usbh_get_frame_number(void)
 {
     return (((EHCI_HCOR->frindex & EHCI_FRINDEX_MASK) >> 3) & 0x3ff);
@@ -1199,6 +1244,9 @@ int usbh_kill_urb(struct usbh_urb *urb)
     } else {
 #ifdef CONFIG_USB_EHCI_ISO
         ehci_remove_itd_urb(urb);
+        EHCI_HCOR->usbcmd |= (EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN);
+        usb_osal_leave_critical_section(flags);
+        return 0;
 #endif
     }
 

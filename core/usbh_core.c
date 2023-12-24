@@ -666,6 +666,11 @@ int usbh_initialize(void)
     return 0;
 }
 
+int usbh_deinitialize(void)
+{
+    return usbh_hub_deinitialize();
+}
+
 int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *setup, uint8_t *buffer)
 {
     struct usbh_urb *urb;

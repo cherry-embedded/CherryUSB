@@ -470,6 +470,22 @@ int usb_hc_init(void)
     return 0;
 }
 
+int usb_hc_deinit(void)
+{
+    HWREGB(USB_BASE + MUSB_IE_OFFSET) = 0;
+    HWREGH(USB_BASE + MUSB_TXIE_OFFSET) = 0;
+    HWREGH(USB_BASE + MUSB_RXIE_OFFSET) = 0;
+
+    HWREGB(USB_BASE + MUSB_POWER_OFFSET) &= ~USB_POWER_HSENAB;
+    HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) &= ~USB_DEVCTL_SESSION;
+
+    for (uint8_t i = 0; i < CONFIG_USBHOST_PIPE_NUM; i++) {
+        usb_osal_sem_delete(g_musb_hcd.pipe_pool[i].waitsem);
+    }
+
+    return 0;
+}
+
 int usbh_roothub_control(struct usb_setup_packet *setup, uint8_t *buf)
 {
     uint8_t nports;

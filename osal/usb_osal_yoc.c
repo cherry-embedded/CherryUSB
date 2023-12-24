@@ -89,6 +89,11 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
     return (usb_osal_mq_t)queue;
 }
 
+void usb_osal_mq_delete(usb_osal_mq_t mq)
+{
+    aos_queue_free((aos_queue_t)mq);
+}
+
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 {
     return aos_queue_send((aos_queue_t *)&mq, &addr, sizeof(uintptr_t));

@@ -89,6 +89,11 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
     return (usb_osal_mq_t)xQueueCreate(max_msgs, sizeof(uintptr_t));
 }
 
+void usb_osal_mq_delete(usb_osal_mq_t mq)
+{
+    vQueueDelete((QueueHandle_t)mq);
+}
+
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;

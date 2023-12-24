@@ -62,6 +62,13 @@ struct usbh_urb {
 int usb_hc_init(void);
 
 /**
+ * @brief usb host controller hardware deinit.
+ *
+ * @return On success will return 0, and others indicate fail.
+ */
+int usb_hc_deinit(void);
+
+/**
  * @brief Get frame number.
  *
  * @return frame number.

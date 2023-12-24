@@ -23,7 +23,10 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature);
 int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature);
 
 void usbh_roothub_thread_wakeup(uint8_t port);
+
 int usbh_hub_initialize(void);
+int usbh_hub_deinitialize(void);
+
 #ifdef __cplusplus
 }
 #endif

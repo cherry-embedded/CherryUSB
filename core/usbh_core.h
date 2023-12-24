@@ -226,6 +226,7 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
 
 int usbh_initialize(void);
+int usbh_deinitialize(void);
 void *usbh_find_class_instance(const char *devname);
 
 int lsusb(int argc, char **argv);

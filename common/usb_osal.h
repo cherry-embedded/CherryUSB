@@ -35,6 +35,7 @@ int usb_osal_mutex_take(usb_osal_mutex_t mutex);
 int usb_osal_mutex_give(usb_osal_mutex_t mutex);
 
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs);
+void usb_osal_mq_delete(usb_osal_mq_t mq);
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr);
 int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout);
 
