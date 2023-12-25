@@ -23,8 +23,8 @@
 默认提供以下 demo 工程：
 
 - F103 使用 fsdev ip
-- F429 主从使用 hs port(引脚 pb14/pb15),并且均用 dma 模式
-- H7 设备使用 fs port(引脚 pa11/pa12)，主机使用 hs port(引脚 pb14/pb15)，并且需要做 nocache 处理
+- F429 主从使用 USB_OTG_HS, 引脚 pb14/pb15, 并且都使用 dma 模式
+- H7 设备使用 USB_OTG_FS, 引脚 pa11/pa12，主机使用 USB_OTG_HS ,引脚 pb14/pb15，并且需要做 nocache 处理
 
 默认删除 Drivers ，所以需要使用 stm32cubemx 生成一下 Drivers 目录下的文件，demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
 
@@ -33,7 +33,7 @@
 涵盖 F1/F4/H7，其余芯片基本类似，不再赘述，具体区别有：
 
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
-- dwc2 ip 区别： fs port(引脚是 PA11/PA12) 和 hs port(引脚是 PB14/PB15), 其中 hs port 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
+- dwc2 ip 区别： USB_OTG_FS (引脚是 PA11/PA12) 和 USB_OTG_HS (引脚是 PB14/PB15), 其中 USB_OTG_HS 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
 - F4 无cache，H7 有 cache
 
 如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
@@ -97,7 +97,14 @@ USB Device 移植要点
 
 .. figure:: img/stm32_8.png
 
-- 如果使用 dwc2 ip，编译选项中需要添加 `CONFIG_USB_DWC2_PORT=xxx`，使用 PA11/PA12 则 **xxx=FS_PORT**，使用 PB14/PB15 则 **xxx=HS_PORT**
+- 如果使用 dwc2 ip，需要增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
+
+.. code-block:: C
+    // 以下细节如有出入，请对照 stm32xxx.h 文件修改
+    #define USBD_IRQHandler OTG_HS_IRQHandler // pa11/pa12 引脚使用 OTG_FS_IRQHandler
+    #define USBD_BASE (0x40040000UL)        // pa11/pa12 引脚一般使用 50000000UL，STM32F7/H7 使用 0x40080000UL
+    #define CONFIG_USBDEV_EP_NUM 6          // pa11/pa12 引脚使用 4
+    #define CONFIG_USB_DWC2_RAM_SIZE 4096 // pa11/pa12 引脚使用 1280
 
 .. figure:: img/stm32_9.png
 
@@ -119,7 +126,7 @@ USB Device 移植要点
 USB Host 移植要点
 ^^^^^^^^^^^^^^^^^^^^^^
 
-前面 7 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port (引脚是 PB14/PB15)，所以 fs port (引脚是 PA11/PA12)不做支持（没有 dma 你玩什么主机）。
+前面 6 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port (引脚是 PB14/PB15)，所以 fs port (引脚是 PA11/PA12)不做支持（没有 dma 你玩什么主机）。
 
 - 添加 CherryUSB 必须要的源码（ **usbh_core.c** 、 **usbh_hub.c** 、 **usb_hc_dwc2.c** 、以及 **osal** 目录下的适配层文件）,以及想要使用的 class 驱动，并且可以将对应的 **usb host.c** 添加方便测试。
 
@@ -135,6 +142,16 @@ USB Host 移植要点
 .. figure:: img/stm32_18.png
 .. figure:: img/stm32_13.png
 .. figure:: img/stm32_19.png
+
+- 复制一份 **cherryusb_config_template.h**，放到 `Core/Inc` 目录下，并命名为 `usb_config.h`
+
+- 增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
+
+.. code-block:: C
+    // 以下细节如有出入，请对照 stm32xxx.h 文件修改
+    #define USBH_BASE (0x40040000UL)
+    #define USBH_IRQHandler OTG_HS_IRQHandler
+    #define CONFIG_USBHOST_PIPE_NUM 12
 
 - 调用 **usbh_initialize** 以及 os 需要的启动线程的函数即可使用
 
