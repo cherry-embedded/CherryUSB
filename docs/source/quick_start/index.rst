@@ -61,8 +61,6 @@
     }
     }
 
-.. figure:: img/keil.png
-
 USB Device 移植要点
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -100,13 +98,12 @@ USB Device 移植要点
 - 如果使用 dwc2 ip，需要增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
 
 .. code-block:: C
+
     // 以下细节如有出入，请对照 stm32xxx.h 文件修改
     #define USBD_IRQHandler OTG_HS_IRQHandler // pa11/pa12 引脚使用 OTG_FS_IRQHandler
     #define USBD_BASE (0x40040000UL)        // pa11/pa12 引脚一般使用 50000000UL，STM32F7/H7 使用 0x40080000UL
     #define CONFIG_USBDEV_EP_NUM 6          // pa11/pa12 引脚使用 4
     #define CONFIG_USB_DWC2_RAM_SIZE 4096 // pa11/pa12 引脚使用 1280
-
-.. figure:: img/stm32_9.png
 
 - 编译器推荐使用 **AC6**。勾选 **Microlib**，并实现 **printf** ，方便后续查看 log。
 
@@ -148,6 +145,7 @@ USB Host 移植要点
 - 增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
 
 .. code-block:: C
+
     // 以下细节如有出入，请对照 stm32xxx.h 文件修改
     #define USBH_BASE (0x40040000UL)
     #define USBH_IRQHandler OTG_HS_IRQHandler
