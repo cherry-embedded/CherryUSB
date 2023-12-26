@@ -397,6 +397,7 @@ static uint8_t usbh_get_port_speed(const uint8_t port)
     return speed;
 }
 
+#if 0
 static int musb_pipe_alloc(void)
 {
     int chidx;
@@ -410,10 +411,13 @@ static int musb_pipe_alloc(void)
 
     return -1;
 }
+#endif
 
 static void musb_pipe_free(struct musb_pipe *pipe)
 {
+#if 0
     pipe->inuse = false;
+#endif
 }
 
 __WEAK void usb_hc_low_level_init(void)
@@ -627,10 +631,10 @@ int usbh_submit_urb(struct usbh_urb *urb)
     if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
         chidx = 0;
     } else {
-        chidx = musb_pipe_alloc();
-        if (chidx == -1) {
-            usb_osal_leave_critical_section(flags);
-            return -USB_ERR_NOMEM;
+        chidx = (urb->ep->bEndpointAddress & 0x0f);
+
+        if (chidx > (CONFIG_USBHOST_PIPE_NUM - 1)) {
+            return -USB_ERR_RANGE;
         }
     }
 
@@ -641,6 +645,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->hcpriv = pipe;
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
+
+    usb_osal_sem_reset(pipe->waitsem);
 
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:
@@ -920,15 +926,15 @@ void USBH_IRQHandler(void)
             if (ep_csrl_status & USB_TXCSRL1_ERROR) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_ERROR;
                 urb->errorcode = -USB_ERR_IO;
-                goto pipe_wait;
+                musb_urb_waitup(urb);
             } else if (ep_csrl_status & USB_TXCSRL1_NAKTO) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_NAKTO;
                 urb->errorcode = -USB_ERR_NAK;
-                goto pipe_wait;
+                musb_urb_waitup(urb);
             } else if (ep_csrl_status & USB_TXCSRL1_STALL) {
                 HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) &= ~USB_TXCSRL1_STALL;
                 urb->errorcode = -USB_ERR_STALL;
-                goto pipe_wait;
+                musb_urb_waitup(urb);
             } else {
                 uint32_t size = urb->transfer_buffer_length;
 
@@ -941,8 +947,9 @@ void USBH_IRQHandler(void)
                 urb->actual_length += size;
 
                 if (urb->transfer_buffer_length == 0) {
+                    //HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << ep_idx);
                     urb->errorcode = 0;
-                    goto pipe_wait;
+                    musb_urb_waitup(urb);
                 } else {
                     musb_write_packet(ep_idx, urb->transfer_buffer, size);
                     HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
@@ -966,15 +973,15 @@ void USBH_IRQHandler(void)
             if (ep_csrl_status & USB_RXCSRL1_ERROR) {
                 HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~USB_RXCSRL1_ERROR;
                 urb->errorcode = -USB_ERR_IO;
-                goto pipe_wait;
+                musb_urb_waitup(urb);
             } else if (ep_csrl_status & USB_RXCSRL1_NAKTO) {
                 HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~USB_RXCSRL1_NAKTO;
                 urb->errorcode = -USB_ERR_NAK;
-                goto pipe_wait;
+                musb_urb_waitup(urb);
             } else if (ep_csrl_status & USB_RXCSRL1_STALL) {
                 HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) &= ~USB_RXCSRL1_STALL;
                 urb->errorcode = -USB_ERR_STALL;
-                goto pipe_wait;
+                musb_urb_waitup(urb);
             } else if (ep_csrl_status & USB_RXCSRL1_RXRDY) {
                 uint32_t size = urb->transfer_buffer_length;
                 if (size > USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)) {
@@ -991,8 +998,9 @@ void USBH_IRQHandler(void)
                 urb->actual_length += size;
 
                 if ((size < USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)) || (urb->transfer_buffer_length == 0)) {
+                    //HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << ep_idx);
                     urb->errorcode = 0;
-                    goto pipe_wait;
+                    musb_urb_waitup(urb);
                 } else {
                     HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) = USB_RXCSRL1_REQPKT;
                 }
@@ -1000,8 +1008,4 @@ void USBH_IRQHandler(void)
         }
     }
     musb_set_active_ep(old_ep_idx);
-    return;
-pipe_wait:
-    musb_set_active_ep(old_ep_idx);
-    musb_urb_waitup(urb);
 }
