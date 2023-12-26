@@ -564,6 +564,18 @@ int usb_dc_init(void)
     USB_LOG_INFO("dwc2 has %d endpoints, default config: %d endpoints\r\n", endpoints, CONFIG_USBDEV_EP_NUM);
     USB_LOG_INFO("=================================\r\n");
 
+    if (endpoints < CONFIG_USBDEV_EP_NUM) {
+        USB_LOG_ERR("dwc2 has less endpoints than config, please check\r\n");
+        while (1) {
+        }
+    }
+
+    if ((hsphy_type == 0) && (CONFIG_USB_DWC2_RAM_SIZE != 1280)) {
+        USB_LOG_ERR("dwc2 hsphy type is 0, but ram size is not 1280, please check\r\n");
+        while (1) {
+        }
+    }
+       
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
