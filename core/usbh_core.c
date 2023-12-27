@@ -299,25 +299,25 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
 
     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
         for (uint8_t j = 0; j < hport->config.intf[i].altsetting_num; j++) {
-            USB_LOG_RAW("Interface Descriptor:\r\n");
-            USB_LOG_RAW("bLength: 0x%02x            \r\n", hport->config.intf[i].altsetting[j].intf_desc.bLength);
-            USB_LOG_RAW("bDescriptorType: 0x%02x    \r\n", hport->config.intf[i].altsetting[j].intf_desc.bDescriptorType);
-            USB_LOG_RAW("bInterfaceNumber: 0x%02x   \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceNumber);
-            USB_LOG_RAW("bAlternateSetting: 0x%02x  \r\n", hport->config.intf[i].altsetting[j].intf_desc.bAlternateSetting);
-            USB_LOG_RAW("bNumEndpoints: 0x%02x      \r\n", hport->config.intf[i].altsetting[j].intf_desc.bNumEndpoints);
-            USB_LOG_RAW("bInterfaceClass: 0x%02x    \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceClass);
-            USB_LOG_RAW("bInterfaceSubClass: 0x%02x \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceSubClass);
-            USB_LOG_RAW("bInterfaceProtocol: 0x%02x \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceProtocol);
-            USB_LOG_RAW("iInterface: 0x%02x         \r\n", hport->config.intf[i].altsetting[j].intf_desc.iInterface);
+            USB_LOG_RAW("\tInterface Descriptor:\r\n");
+            USB_LOG_RAW("\tbLength: 0x%02x            \r\n", hport->config.intf[i].altsetting[j].intf_desc.bLength);
+            USB_LOG_RAW("\tbDescriptorType: 0x%02x    \r\n", hport->config.intf[i].altsetting[j].intf_desc.bDescriptorType);
+            USB_LOG_RAW("\tbInterfaceNumber: 0x%02x   \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceNumber);
+            USB_LOG_RAW("\tbAlternateSetting: 0x%02x  \r\n", hport->config.intf[i].altsetting[j].intf_desc.bAlternateSetting);
+            USB_LOG_RAW("\tbNumEndpoints: 0x%02x      \r\n", hport->config.intf[i].altsetting[j].intf_desc.bNumEndpoints);
+            USB_LOG_RAW("\tbInterfaceClass: 0x%02x    \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceClass);
+            USB_LOG_RAW("\tbInterfaceSubClass: 0x%02x \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceSubClass);
+            USB_LOG_RAW("\tbInterfaceProtocol: 0x%02x \r\n", hport->config.intf[i].altsetting[j].intf_desc.bInterfaceProtocol);
+            USB_LOG_RAW("\tiInterface: 0x%02x         \r\n", hport->config.intf[i].altsetting[j].intf_desc.iInterface);
 
             for (uint8_t k = 0; k < hport->config.intf[i].altsetting[j].intf_desc.bNumEndpoints; k++) {
-                USB_LOG_RAW("Endpoint Descriptor:\r\n");
-                USB_LOG_RAW("bLength: 0x%02x          \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bLength);
-                USB_LOG_RAW("bDescriptorType: 0x%02x  \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bDescriptorType);
-                USB_LOG_RAW("bEndpointAddress: 0x%02x \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bEndpointAddress);
-                USB_LOG_RAW("bmAttributes: 0x%02x     \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bmAttributes);
-                USB_LOG_RAW("wMaxPacketSize: 0x%04x   \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.wMaxPacketSize);
-                USB_LOG_RAW("bInterval: 0x%02x        \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bInterval);
+                USB_LOG_RAW("\t\tEndpoint Descriptor:\r\n");
+                USB_LOG_RAW("\t\tbLength: 0x%02x          \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bLength);
+                USB_LOG_RAW("\t\tbDescriptorType: 0x%02x  \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bDescriptorType);
+                USB_LOG_RAW("\t\tbEndpointAddress: 0x%02x \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bEndpointAddress);
+                USB_LOG_RAW("\t\tbmAttributes: 0x%02x     \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bmAttributes);
+                USB_LOG_RAW("\t\twMaxPacketSize: 0x%04x   \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.wMaxPacketSize);
+                USB_LOG_RAW("\t\tbInterval: 0x%02x        \r\n", hport->config.intf[i].altsetting[j].ep[k].ep_desc.bInterval);
             }
         }
     }
