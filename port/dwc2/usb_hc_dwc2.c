@@ -1021,11 +1021,11 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
         CLEAR_HC_INT(ch_num, USB_OTG_HCINT_CHH);
 
         if (urb->errorcode == 0) {
-            uint32_t count = USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ;                                            /* how many size has sent */
+            uint32_t count = USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ;                                            /* last packet size */
             uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
-            urb->actual_length += count;
-
+            urb->actual_length += (has_used_packets - 1) * USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) + count;            //the same with urb->actual_length += chan->xferlen;
+            
             if (has_used_packets % 2) /* toggle in odd numbers */
             {
                 if (urb->data_toggle == HC_PID_DATA0) {
