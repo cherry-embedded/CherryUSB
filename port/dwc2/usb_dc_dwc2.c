@@ -575,7 +575,7 @@ int usb_dc_init(void)
         while (1) {
         }
     }
-       
+
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
@@ -599,19 +599,16 @@ int usb_dc_init(void)
     /* Restart the Phy Clock */
     USB_OTG_PCGCCTL = 0U;
 
-    /* Device mode configuration */
-    USB_OTG_DEV->DCFG |= DCFG_FRAME_INTERVAL_80;
-
-#if CONFIG_USB_DWC2_PORT == HS_PORT
+    /* Device speed configuration */
+    USB_OTG_DEV->DCFG &= ~USB_OTG_DCFG_DSPD;
 #if defined(CONFIG_USB_HS)
-    /* Set Core speed to High speed mode */
     USB_OTG_DEV->DCFG |= USB_OTG_SPEED_HIGH;
 #else
-
-    USB_OTG_DEV->DCFG |= USB_OTG_SPEED_HIGH_IN_FULL;
-#endif
-#else
-    USB_OTG_DEV->DCFG |= USB_OTG_SPEED_FULL;
+    if (hsphy_type == 0) {
+        USB_OTG_DEV->DCFG |= USB_OTG_SPEED_FULL;
+    } else {
+        USB_OTG_DEV->DCFG |= USB_OTG_SPEED_HIGH_IN_FULL;
+    }
 #endif
 
     ret = dwc2_flush_txfifo(0x10U);

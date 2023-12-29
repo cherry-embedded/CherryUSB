@@ -16,7 +16,15 @@ uint32_t usbd_get_dwc2_gccfg_conf(void)
 #ifdef CONFIG_USB_HS
     return 0;
 #else
+#if __has_include("stm32h7xx.h") || __has_include("stm32f7xx.h") || __has_include("stm32l4xx.h")
+#define USB_OTG_GLB ((USB_OTG_GlobalTypeDef *)(USBD_BASE))
+    /* B-peripheral session valid override enable */
+    USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
+    USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOVAL;
+    return (1 << 16);
+#else
     return ((1 << 16) | (1 << 21));
+#endif
 #endif
 }
 
@@ -25,6 +33,14 @@ uint32_t usbh_get_dwc2_gccfg_conf(void)
 #ifdef CONFIG_USB_DWC2_ULPI_PHY
     return 0;
 #else
+#if __has_include("stm32h7xx.h") || __has_include("stm32f7xx.h") || __has_include("stm32l4xx.h")
+#define USB_OTG_GLB ((USB_OTG_GlobalTypeDef *)(USBD_BASE))
+    /* B-peripheral session valid override enable */
+    USB_OTG_GLB->GOTGCTL &= ~USB_OTG_GOTGCTL_BVALOEN;
+    USB_OTG_GLB->GOTGCTL &= ~USB_OTG_GOTGCTL_BVALOVAL;
+    return (1 << 16);
+#else
     return ((1 << 16) | (1 << 21));
+#endif
 #endif
 }
