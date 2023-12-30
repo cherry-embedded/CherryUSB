@@ -916,7 +916,7 @@ static void dwc2_inchan_irq_handler(uint8_t ch_num)
 
         if (urb->errorcode == 0) {
             uint32_t count = chan->xferlen - (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ);                          /* how many size has received */
-            uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) >> 19); /* how many packets have used */
+            uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
             urb->actual_length += count;
 
@@ -1022,7 +1022,7 @@ static void dwc2_outchan_irq_handler(uint8_t ch_num)
 
         if (urb->errorcode == 0) {
             uint32_t count = USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ;                                            /* last packet size */
-            uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) >> 19); /* how many packets have used */
+            uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
             urb->actual_length += (has_used_packets - 1) * USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) + count;            //the same with urb->actual_length += chan->xferlen;
             
