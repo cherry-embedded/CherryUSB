@@ -18,6 +18,14 @@
 
 - Nuvoton all series
 
+### Artinchip
+
+- d13x, d21x
+
+### Intel
+
+Intel 6 Series Chipset and Intel C200 Series Chipset
+
 ## Before Use
 
 Your should implement `usb_hc_low_level_init`.
