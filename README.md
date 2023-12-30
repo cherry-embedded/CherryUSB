@@ -133,8 +133,8 @@ Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affe
 ```
 #define CONFIG_USBHOST_MAX_EXTHUBS          1
 #define CONFIG_USBHOST_MAX_EHPORTS          4
-#define CONFIG_USBHOST_MAX_INTERFACES       6
-#define CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 1
+#define CONFIG_USBHOST_MAX_INTERFACES       8
+#define CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 8
 #define CONFIG_USBHOST_MAX_ENDPOINTS        4
 ```
 
