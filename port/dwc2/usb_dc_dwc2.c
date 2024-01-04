@@ -678,7 +678,6 @@ int usb_dc_init(void)
 
 int usb_dc_deinit(void)
 {
-    usb_dc_low_level_deinit();
     /* Clear Pending interrupt */
     for (uint8_t i = 0U; i < 15U; i++) {
         USB_OTG_INEP(i)->DIEPINT = 0xFB7FU;
@@ -696,6 +695,7 @@ int usb_dc_deinit(void)
 
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
+    usb_dc_low_level_deinit();
     return 0;
 }
 
