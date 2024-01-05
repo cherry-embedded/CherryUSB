@@ -43,7 +43,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
     uint16_t scsi_blk_size;
     uint32_t scsi_blk_nbr;
 
-    USB_MEM_ALIGNX uint8_t block_buffer[CONFIG_USBDEV_MSC_BLOCK_SIZE];
+    USB_MEM_ALIGNX uint8_t block_buffer[CONFIG_USBDEV_MSC_MAX_BUFSIZE];
 
 #if defined(CONFIG_USBDEV_MSC_THREAD)
     usb_osal_mq_t usbd_msc_mq;
@@ -554,7 +554,7 @@ static bool SCSI_write10(uint8_t **data, uint32_t *len)
         return false;
     }
     g_usbd_msc.stage = MSC_DATA_OUT;
-    data_len = MIN(data_len, CONFIG_USBDEV_MSC_BLOCK_SIZE);
+    data_len = MIN(data_len, CONFIG_USBDEV_MSC_MAX_BUFSIZE);
     usbd_ep_start_read(mass_ep_data[MSD_OUT_EP_IDX].ep_addr, g_usbd_msc.block_buffer, data_len);
     return true;
 }
@@ -583,7 +583,7 @@ static bool SCSI_write12(uint8_t **data, uint32_t *len)
         return false;
     }
     g_usbd_msc.stage = MSC_DATA_OUT;
-    data_len = MIN(data_len, CONFIG_USBDEV_MSC_BLOCK_SIZE);
+    data_len = MIN(data_len, CONFIG_USBDEV_MSC_MAX_BUFSIZE);
     usbd_ep_start_read(mass_ep_data[MSD_OUT_EP_IDX].ep_addr, g_usbd_msc.block_buffer, data_len);
     return true;
 }
@@ -640,7 +640,7 @@ static bool SCSI_processRead(void)
 
     USB_LOG_DBG("read lba:%d\r\n", g_usbd_msc.start_sector);
 
-    transfer_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size, CONFIG_USBDEV_MSC_BLOCK_SIZE);
+    transfer_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size, CONFIG_USBDEV_MSC_MAX_BUFSIZE);
 
     if (usbd_msc_sector_read(g_usbd_msc.start_sector, g_usbd_msc.block_buffer, transfer_len) != 0) {
         SCSI_SetSenseData(SCSI_KCQHE_UREINRESERVEDAREA);
@@ -677,7 +677,7 @@ static bool SCSI_processWrite(uint32_t nbytes)
     if (g_usbd_msc.nsectors == 0) {
         usbd_msc_send_csw(CSW_STATUS_CMD_PASSED);
     } else {
-        data_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size, CONFIG_USBDEV_MSC_BLOCK_SIZE);
+        data_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size, CONFIG_USBDEV_MSC_MAX_BUFSIZE);
         usbd_ep_start_read(mass_ep_data[MSD_OUT_EP_IDX].ep_addr, g_usbd_msc.block_buffer, data_len);
     }
 
@@ -883,7 +883,7 @@ struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uin
 
     usbd_msc_get_cap(0, &g_usbd_msc.scsi_blk_nbr, &g_usbd_msc.scsi_blk_size);
 
-    if (g_usbd_msc.scsi_blk_size > CONFIG_USBDEV_MSC_BLOCK_SIZE) {
+    if (g_usbd_msc.scsi_blk_size > CONFIG_USBDEV_MSC_MAX_BUFSIZE) {
         USB_LOG_ERR("msc block buffer overflow\r\n");
         return NULL;
     }

@@ -35,7 +35,7 @@ USB 模拟 U 盘
     }
 
 - 实现三个接口即可使用 msc，读写操作如果没有 os 则是在中断中
-- `CONFIG_USBDEV_MSC_BLOCK_SIZE` 可以为 512 的整数倍，更改此项，可以增加 msc 的读写速度，当然，也会消耗更多的 ram
+- `CONFIG_USBDEV_MSC_MAX_BUFSIZE` 可以为 512 的整数倍，更改此项，可以增加 msc 的读写速度，当然，也会消耗更多的 ram
 
 
 .. note:: MSC 一般配合 rtos 使用，因为读写操作是阻塞的，放中断是不合适的， `CONFIG_USBDEV_MSC_THREAD` 则是使能 os 管理

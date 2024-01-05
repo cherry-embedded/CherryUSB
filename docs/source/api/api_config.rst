@@ -51,12 +51,11 @@ CONFIG_USBDEV_TEST_MODE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 使能或者关闭 usb test mode
 
-CONFIG_USBDEV_MSC_BLOCK_SIZE
+CONFIG_USBDEV_MSC_MAX_BUFSIZE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-msc 临时缓存的大小，缓存越大，msc 的速度越高，默认等于 1个内存介质的扇区大小（例如 sd卡 512，flash 4K），更改时需要是内存介质扇区的倍数。
-
-虽然名字叫 block size，但是跟内存介质的 block size不是一个意思。
+msc 缓存的最大长度，缓存越大，USB 的速度越高，因为介质一般多个 block 读写速度比单个 block 高很多，比如 sd 卡。
+默认 512 ，如果是 flash 需要改成 4K, 缓存的大小需要是 介质的一个 block size 的整数倍。
 
 CONFIG_USBDEV_MSC_MANUFACTURER_STRING
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
