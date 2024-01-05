@@ -6,14 +6,14 @@
 #include "usbh_core.h"
 #include "usbh_hub.h"
 
-#define DEV_FORMAT             "/dev/hub%d"
+#define DEV_FORMAT "/dev/hub%d"
 
 #define HUB_DEBOUNCE_TIMEOUT   1500
 #define HUB_DEBOUNCE_STEP      25
 #define HUB_DEBOUNCE_STABLE    100
 #define DELAY_TIME_AFTER_RESET 200
 
-#define EXTHUB_FIRST_INDEX     2
+#define EXTHUB_FIRST_INDEX 2
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_buf[32];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hub_intbuf[CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USB_ALIGN_SIZE];
@@ -321,6 +321,9 @@ static void hub_int_complete_callback(void *arg, int nbytes)
 
     if (nbytes > 0) {
         usbh_hub_thread_wakeup(hub);
+    } else if (nbytes == -USB_ERR_NAK) {
+        usbh_submit_urb(&hub->intin_urb);
+    } else {
     }
 }
 
@@ -688,7 +691,7 @@ int usbh_hub_deinitialize(void)
     usb_slist_t *i;
     struct usbh_hubport *hport;
     size_t flags;
-    
+
     flags = usb_osal_enter_critical_section();
 
     usb_slist_for_each(i, &hub_class_head)

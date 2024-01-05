@@ -87,6 +87,9 @@ void usbh_hid_callback(void *arg, int nbytes)
         }
         USB_LOG_RAW("nbytes:%d\r\n", nbytes);
         usbh_submit_urb(&hid_class->intin_urb);
+    } else if (nbytes == -USB_ERR_NAK) { /* for dwc2 */
+        usbh_submit_urb(&hid_class->intin_urb);
+    } else {
     }
 }
 
