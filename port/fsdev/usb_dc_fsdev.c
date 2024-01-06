@@ -1,7 +1,7 @@
 #include "usbd_core.h"
 
 #ifndef CONFIG_USBDEV_FSDEV_PMA_ACCESS
-#error "please define USBD_BASE in usb_config.h"
+#error "please define CONFIG_USBDEV_FSDEV_PMA_ACCESS in usb_config.h"
 #endif
 
 #define PMA_ACCESS CONFIG_USBDEV_FSDEV_PMA_ACCESS
