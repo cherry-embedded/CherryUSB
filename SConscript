@@ -103,6 +103,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/wireless/usbh_rndis.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ECM']):
         src += Glob('class/cdc/usbh_cdc_ecm.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_BLUETOOTH']):
+        src += Glob('class/wireless/usbh_bluetooth.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
@@ -135,6 +137,9 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     
     if GetDepend('RT_USING_DFS'):
         src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
+
+    if GetDepend('PKG_USING_NIMBLE'):
+        src += Glob('third_party/nimble-latest/ble_hci_usbh.c')
 
 src += Glob('third_party/rt-thread-5.0/msh_cmd.c')
 
