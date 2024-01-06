@@ -109,6 +109,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 支持 Remote NDIS (RNDIS)
 - 支持 Vendor 类 class
 - 支持 USB modeswitch
+- 支持相同 USB IP 的多主机
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 

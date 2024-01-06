@@ -32,7 +32,7 @@
 #define USB_SOF_TIMER_MASK_AFTER_RESET_HS (0x44C)
 #define USB_SOF_TIMER_MASK_AFTER_RESET_FS (0x2710)
 
-extern void USBH_IRQHandler();
+extern void USBH_IRQHandler(struct usbh_bus *bus);
 
 static void bflb_usb_phy_init(void)
 {
@@ -83,7 +83,7 @@ static void bflb_usb_phy_init(void)
     bflb_mtimer_delay_ms(2);
 }
 
-void usb_hc_low_level_init(void)
+void usb_hc_low_level_init(struct usbh_bus *bus)
 {
     uint32_t regval;
 
@@ -117,7 +117,7 @@ void usb_hc_low_level_init(void)
     putreg32(regval, BLFB_USB_BASE + USB_GLB_INT_OFFSET);
 }
 
-uint8_t usbh_get_port_speed(const uint8_t port)
+uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 {
     uint8_t speed = 3;
 

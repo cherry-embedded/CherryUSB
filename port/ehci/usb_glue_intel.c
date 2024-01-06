@@ -11,7 +11,7 @@ static int ehci_slot;
 static int ehci_function;
 static int ehci_vector;
 
-extern void USBH_IRQHandler(void *para);
+extern void USBH_IRQHandler(struct usbh_bus *bus);
 
 void ehci_pci_scan(int bus, int slot, int fun, int vector)
 {
@@ -21,7 +21,7 @@ void ehci_pci_scan(int bus, int slot, int fun, int vector)
     ehci_vector = vector;
     pci_read_config_dword(bus, slot, fun, PCI_BASE_ADDRESS_0, &echi_base);
 }
-void usb_hc_low_level_init(void)
+void usb_hc_low_level_init(struct usbh_bus *bus)
 {
     //set software own ehci
     uint32_t legacy_val;
@@ -38,7 +38,7 @@ void usb_hc_low_level_init(void)
         "USBirq",
         RTEMS_INTERRUPT_SHARED,
         USBH_IRQHandler,
-        (void *)0);
+        (void *)bus);
 
     if (sc != RTEMS_SUCCESSFUL) {
         printf("USB install isr falied,%s\n", rtems_status_text(sc));
@@ -46,7 +46,7 @@ void usb_hc_low_level_init(void)
     }
 }
 
-uint8_t usbh_get_port_speed(const uint8_t port)
+uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 {
     printf("USB_SPEED_HIGH present\n");
     return USB_SPEED_HIGH;

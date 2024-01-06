@@ -111,6 +111,7 @@ CherryUSB Host Stack has the following functions：
 - Support Remote NDIS (RNDIS)
 - Support Vendor class
 - Support USB modeswitch
+- Support multi host with the same USB IP
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 

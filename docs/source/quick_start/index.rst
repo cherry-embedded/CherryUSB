@@ -4,7 +4,6 @@
 在学习 USB 或者是学习 CherryUSB 代码之前，我们需要先基于现有的 demo 进行快速验证，为什么？是为了提升对 USB 的兴趣，能有信心进行下一步的动作，如果 demo 都跑不起来，或者自己摸索写代码，或者先看 USB 基本概念，结果看到最后，
 发现一点都看不懂，概念好多，根本记不住，从而丧失对 USB 的兴趣。因此，先跑 demo 非常重要。下面我将给大家罗列目前支持的 demo 仓库。
 
-
 基于 bouffalolab 系列芯片
 ---------------------------
 
@@ -105,6 +104,15 @@ USB Device 移植要点
     #define CONFIG_USBDEV_EP_NUM 6          // pa11/pa12 引脚使用 4
     #define CONFIG_USB_DWC2_RAM_SIZE 4096 // pa11/pa12 引脚使用 1280
 
+- 如果使用 fsdev ip，在 `usb_config.h` 中实现以下宏：
+
+.. code-block:: C
+
+    #define USBD_IRQHandler USB_LP_CAN1_RX0_IRQHandler
+    #define USBD_BASE (0x40005C00UL)
+    #define CONFIG_USBDEV_EP_NUM 8
+    #define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2
+
 - 编译器推荐使用 **AC6**。勾选 **Microlib**，并实现 **printf** ，方便后续查看 log。
 
 .. figure:: img/stm32_10.png
@@ -134,12 +142,6 @@ USB Host 移植要点
 .. figure:: img/stm32_10.png
 .. figure:: img/stm32_11.png
 
-- 拷贝 **xxx_msp.c** 中的 **HAL_HCD_MspInit** 函数中的内容到 **usb_hc_low_level_init** 函数中，屏蔽 st 生成的 usb 中断函数和 usb 初始化
-
-.. figure:: img/stm32_18.png
-.. figure:: img/stm32_13.png
-.. figure:: img/stm32_19.png
-
 - 复制一份 **cherryusb_config_template.h**，放到 `Core/Inc` 目录下，并命名为 `usb_config.h`
 
 - 增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
@@ -147,12 +149,16 @@ USB Host 移植要点
 .. code-block:: C
 
     // 以下细节如有出入，请对照 stm32xxx.h 文件修改
-    #define USBH_BASE (0x40040000UL)
-    #define USBH_IRQHandler OTG_HS_IRQHandler
     #define CONFIG_USBHOST_PIPE_NUM 12
 
-- 调用 **usbh_initialize** 以及 os 需要的启动线程的函数即可使用
+- 拷贝 **xxx_msp.c** 中的 `HAL_HCD_MspInit` 函数中的内容到 `usb_hc_low_level_init` 函数中，屏蔽 st 生成的 usb 初始化
+- 在中断函数中调用 `USBH_IRQHandler`，并传入 bus 句柄
+- 调用 `usbh_alloc_bus` 创建 bus， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
+- 调用 `usbh_initialize` 即可
+- 启动线程
 
+.. figure:: img/stm32_18.png
+.. figure:: img/stm32_19.png
 .. figure:: img/stm32_20.png
 
 - 如果使用 **msc**，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 **fatfs_usbh.c** 文件。

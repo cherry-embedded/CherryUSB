@@ -20,14 +20,14 @@ USB Device 移植要点
 USB Host 移植要点
 -----------------------
 
+.. note:: 请注意，当前是最新版本，支持多 port 功能，`USBH_BASE` 和 `USBH_IRQHandler` 的宏不能再使用，并且必须调用 `usbh_alloc_bus`，具体按照以下步骤执行。
+
 - 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbh_core.c` 、 `usb_hc_xxx.c` 以及 **osal** 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 `usb_hc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
-- 在 `usb_config.h` 中添加 `USBH_IRQHandler=xxxx` 、 `CONFIG_USBHOST_PIPE_NUM=x` 以及 `USBH_BASE=0xxxxx` 三个常规 porting 需要的宏
-
-.. note:: 上述三个宏仅对 musb、dwc2 有效，因为这 2 个是通用 IP
-
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
-- 调用 `usbh_initialize` 初始化 usb 硬件
+- 调用 `usbh_alloc_bus` 创建 bus，填入 USB IP 的基地址， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
+- 在中断函数中调用 `USBH_IRQHandler`，并传入 bus 句柄, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
+- 调用 `usbh_initialize` 
 - 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
 
 .. code-block:: C

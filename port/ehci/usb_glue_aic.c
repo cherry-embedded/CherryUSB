@@ -10,9 +10,16 @@
 #include "usbh_core.h"
 #include "usb_ehci_priv.h"
 
-extern void USBH_IRQHandler(void);
+extern void USBH_IRQHandler(struct usbh_bus *bus);
 
-void usb_hc_low_level_init(void)
+const uint8_t aic_irq_table[] = {
+    USB_HOST0_EHCI_IRQn,
+#ifdef HPM_USB1_BASE
+    USB_HOST1_EHCI_IRQn
+#endif
+};
+
+void usb_hc_low_level_init(struct usbh_bus *bus)
 {
     uint32_t val;
 
@@ -22,13 +29,13 @@ void usb_hc_low_level_init(void)
 #endif
 
     /* set phy type: UTMI/ULPI */
-    val = readl((volatile void *)(unsigned long)(CONFIG_USB_EHCI_HCCR_BASE+0x800));
+    val = readl((volatile void *)(unsigned long)(bus->hcd.reg_base+0x800));
 #ifdef FPGA_BOARD_ARTINCHIP
     /* fpga phy type = ULPI */
-    writel((val  & ~0x1U), (volatile void *)(unsigned long)(CONFIG_USB_EHCI_HCCR_BASE+0x800));
+    writel((val  & ~0x1U), (volatile void *)(unsigned long)(bus->hcd.reg_base+0x800));
 #else
     /* board phy type = UTMI */
-    writel((val | 0x1), (volatile void *)(unsigned long)(CONFIG_USB_EHCI_HCCR_BASE+0x800));
+    writel((val | 0x1), (volatile void *)(unsigned long)(bus->hcd.reg_base+0x800));
 #endif
 
 #if 0
@@ -37,9 +44,9 @@ void usb_hc_low_level_init(void)
         Must increase the OUT threshold to avoid underrun. (FIFO size - 4)
     */
 #ifdef FPGA_BOARD_ARTINCHIP
-    writel((32 | (127 << 16)), (volatile void *)(unsigned long)(CONFIG_USB_EHCI_HCCR_BASE+0x94));
+    writel((32 | (127 << 16)), (volatile void *)(unsigned long)(bus->hcd.reg_base+0x94));
 #else
-    writel((32 | (32 << 16)), (volatile void *)(unsigned long)(CONFIG_USB_EHCI_HCCR_BASE+0x94));
+    writel((32 | (32 << 16)), (volatile void *)(unsigned long)(bus->hcd.reg_base+0x94));
 #endif
 #endif
 
@@ -55,12 +62,12 @@ void usb_hc_low_level_init(void)
     aicos_udelay(300);
 
     /* register interrupt callback */
-    aicos_request_irq(CONFIG_USB_EHCI_IRQ_NUM, (irq_handler_t)USBH_IRQHandler,
-                      0, "usb_host_ehci", NULL);
-    aicos_irq_enable(CONFIG_USB_EHCI_IRQ_NUM);
+    aicos_request_irq(aic_irq_table[bus->hcd.hcd_id], (irq_handler_t)USBH_IRQHandler,
+                      0, "usb_host_ehci", bus);
+    aicos_irq_enable(aic_irq_table[bus->hcd.hcd_id]);
 }
 
-uint8_t usbh_get_port_speed(const uint8_t port)
+uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 {
     /* Defined by individual manufacturers */
     uint32_t regval;

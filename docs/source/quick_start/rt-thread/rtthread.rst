@@ -35,7 +35,7 @@
 
 .. figure:: img/config_file.png
 
-* 使用 `scons --target=mdk` 或者 `scons` 进行编译
+* 使用 `scons --target=mdk5` 或者 `scons` 进行编译
 
 主机配置
 --------------------------
@@ -48,15 +48,36 @@
 
 .. figure:: img/env8.png
 
-* 默认使能除了 hub 之外的所有 class 驱动。
-* 设置 psc 线程的线程栈以及线程优先级。
+* 根据需要勾选 class 驱动
 * 最后退出保存即可。
-* 退出以后不急着编译，需要在代码中实现 `usb_hc_low_level_init` 函数。
 * 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容, 禁止包含 `"rtthread.h"` ：
 
 .. figure:: img/config_file.png
 
-* 使用 `scons --target=mdk` 或者 `scons` 进行编译
+* 在代码中实现 `usb_hc_low_level_init` 函数，USB 中断中调用 `USBH_IRQHandler`, 
+* 应用中调用 `usbh_alloc_bus` 和 `usbh_initialize`, 
+* 以上内容我们推荐放在 **board.c** 中，如下代码：
+
+.. code-block:: C
+
+        struct usbh_bus *usb_otg_hs_bus;
+
+        void OTG_HS_IRQHandler(void)
+        {
+        extern void USBH_IRQHandler(struct usbh_bus *bus);
+        USBH_IRQHandler(usb_otg_hs_bus);
+        }
+
+        int usbh_init(void)
+        {
+        usb_otg_hs_bus = usbh_alloc_bus(0, USB_OTG_HS_PERIPH_BASE);
+        usbh_initialize(usb_otg_hs_bus);
+        return 0;
+        }
+
+        INIT_APP_EXPORT(usbh_init);
+
+* 使用 `scons --target=mdk5` 或者 `scons` 进行编译，需要使用 AC6 编译器
 * 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
 
 .. code-block:: C
@@ -71,17 +92,17 @@
 借助 STM32CubeMX 生成 USB 初始化
 ----------------------------------
 
-使用 STM32CubeMX 主要是用来生成 usb 时钟、引脚、中断的配置。我们需要点击如图所示文件，并配置好 USB 的时钟、中断，点击 `Generate Code`。生成的时钟配置在 `main.c` 中的 `SystemClock_Config` 文件，将其拷贝到 `board.c` 中。
+使用 STM32CubeMX 主要是用来生成 usb 时钟、引脚、中断的配置。我们需要点击如图所示文件，并配置好 USB 的时钟、中断，点击 `Generate Code`。
 
 .. figure:: img/stm32cubemx0.png
 .. figure:: img/stm32cubemx1.png
 .. figure:: img/stm32cubemx2.png
 .. figure:: img/stm32cubemx_clk.png
 
-然后将 `stm32xxxx_hal_msp.c` 中的 `HAL_PCD_MspInit` 或者是 `HAL_HCD_MspInit` 中的内容复制到 `usb_dc_low_level_init` 和 `usb_hc_low_level_init` 函数中，举例如下：
-
-.. figure:: img/stm32_init.png
-
-其次将 `main.c` 中的 `SystemClock_Config` 替换掉 `board.c` 中的配置
+- 将 `main.c` 中的 `SystemClock_Config` 替换掉 `board.c` 中的配置
 
 .. figure:: img/stm32_init2.png
+
+- 将 `stm32xxxx_hal_msp.c` 中的 `HAL_PCD_MspInit` 或者是 `HAL_HCD_MspInit` 中的内容复制到 `usb_dc_low_level_init` 和 `usb_hc_low_level_init` 函数中，举例如下：
+
+.. figure:: img/stm32_init.png

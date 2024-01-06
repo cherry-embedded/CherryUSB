@@ -70,15 +70,8 @@ MSH_CMD_EXPORT(audio_v2_test, start audio_v2_test);
 #endif
 
 #if defined(PKG_CHERRYUSB_HOST)
-void usbh_class_test(void);
-MSH_CMD_EXPORT(usbh_class_test, start usbh_class_test);
-
 int lsusb(int argc, char **argv);
 MSH_CMD_EXPORT(lsusb, start lsusb);
-
-int usbh_initialize(void);
-//INIT_APP_EXPORT(usbh_initialize);
-MSH_CMD_EXPORT(usbh_initialize, start usbh_initialize);
 #endif
 
 #endif

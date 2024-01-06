@@ -216,17 +216,17 @@ EHCI 是 intel 制定的标准主机控制器接口，任何厂家都必须实�
 
 .. code-block:: C
 
-  //Host Controller Capability Register BASE
-  #define CONFIG_USB_EHCI_HCCR_BASE (0xxx)
-  //Host Controller Operational Register BASE
-  #define CONFIG_USB_EHCI_HCOR_BASE (0xxx)
+  //Host Controller Operational Register BASE 距离基地址的偏移
+  #define CONFIG_USB_EHCI_HCOR_OFFSET (0x14)
   //是否打印 ehci 配置信息
   #define CONFIG_USB_EHCI_INFO_ENABLE
   //是否关闭保留寄存器的占位，默认保留 9 个双字的占位
-  #define CONFIG_USB_ECHI_HCOR_RESERVED_DISABLE
+  #define CONFIG_USB_EHCI_HCOR_RESERVED_DISABLE
   //是否使能 configflag 寄存器中的 bit0
   #define CONFIG_USB_EHCI_CONFIGFLAG
   //是否使能 port power bit
   #define CONFIG_USB_EHCI_PORT_POWER
+  //是否查看 ehci 配置信息
+  #define CONFIG_USB_EHCI_PRINT_HW_PARAM
 
 同时由于 EHCI 只是主机控制器并且只支持高速，一般配合一个 otg 控制器和一个低速全速兼容控制单元，而速度的获取一般是在 otg 寄存器中，所以需要用户实现 `usbh_get_port_speed` 函数。

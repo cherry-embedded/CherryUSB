@@ -31,8 +31,8 @@ extern "C" {
 #define USB_CLASS_MATCH_INTF_SUBCLASS 0x0008
 #define USB_CLASS_MATCH_INTF_PROTOCOL 0x0010
 
-#define CLASS_CONNECT(hport, i)       ((hport)->config.intf[i].class_driver->connect(hport, i))
-#define CLASS_DISCONNECT(hport, i)    ((hport)->config.intf[i].class_driver->disconnect(hport, i))
+#define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
+#define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
 
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
 #define CLASS_INFO_DEFINE __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
@@ -106,6 +106,7 @@ struct usbh_hubport {
     uint8_t *raw_config_desc;
     struct usb_setup_packet *setup;
     struct usbh_hub *parent;
+    struct usbh_bus *bus;
 #ifdef CONFIG_USBHOST_XHCI
     uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
 #endif
@@ -123,9 +124,39 @@ struct usbh_hub {
     struct usb_hub_descriptor hub_desc;
     struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
     struct usbh_hubport *parent;
+    struct usbh_bus *bus;
     struct usb_endpoint_descriptor *intin;
     struct usbh_urb intin_urb;
     uint8_t *int_buffer;
+};
+
+struct usbh_devaddr_map {
+    /**
+     * alloctab[0]:addr from 0~31
+     * alloctab[1]:addr from 32~63
+     * alloctab[2]:addr from 64~95
+     * alloctab[3]:addr from 96~127
+     *
+     */
+    uint8_t next;         /* Next device address */
+    uint32_t alloctab[4]; /* Bit allocation table */
+};
+
+struct usbh_hcd {
+    uint32_t reg_base;
+    uint8_t hcd_id;
+    uint8_t roothub_intbuf[1];
+    struct usbh_hub roothub;
+};
+
+struct usbh_bus {
+    usb_slist_t list;
+    uint8_t busid;
+    struct usbh_hcd hcd;
+    struct usbh_devaddr_map devgen;
+    usb_osal_thread_t hub_thread;
+    usb_osal_mq_t hub_mq;
+    usb_slist_t hub_list;
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,
@@ -225,8 +256,9 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
  */
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
 
-int usbh_initialize(void);
-int usbh_deinitialize(void);
+struct usbh_bus *usbh_alloc_bus(uint8_t busid, uint32_t reg_base);
+int usbh_initialize(struct usbh_bus *bus);
+int usbh_deinitialize(struct usbh_bus *bus);
 void *usbh_find_class_instance(const char *devname);
 
 int lsusb(int argc, char **argv);

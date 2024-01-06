@@ -7,9 +7,26 @@
 #error "hpm ehci must set CONFIG_USB_EHCI_HPMICRO=1"
 #endif
 
-#if !defined(CONFIG_HPM_USBH_BASE) || !defined(CONFIG_HPM_USBH_IRQn)
-#error "hpm ehci must config CONFIG_HPM_USBH_BASE and CONFIG_HPM_USBH_IRQn"
+#if !defined(CONFIG_USB_EHCI_HCOR_OFFSET) || CONFIG_USB_EHCI_HCOR_OFFSET != 0x140
+#error "hpm ehci must config CONFIG_USB_EHCI_HCOR_OFFSET to 0x140"
 #endif
+
+#if defined(CONFIG_USB_EHCI_PRINT_HW_PARAM) || !defined(CONFIG_USB_EHCI_PORT_POWER)
+#error "hpm ehci must enable CONFIG_USB_EHCI_PORT_POWER and disable CONFIG_USB_EHCI_PRINT_HW_PARAM"
+#endif
+
+struct usbh_bus *hpm_usb_bus0;
+
+#ifdef HPM_USB1_BASE
+struct usbh_bus *hpm_usb_bus1;
+#endif
+
+const uint8_t hpm_irq_table[] = {
+    IRQn_USB0,
+#ifdef HPM_USB1_BASE
+    IRQn_USB1
+#endif
+};
 
 static void usb_host_mode_init(USB_Type *ptr)
 {
@@ -30,23 +47,23 @@ static void usb_host_mode_init(USB_Type *ptr)
     ptr->USBCMD &= ~USB_USBCMD_ITC_MASK;
 }
 
-void usb_hc_low_level_init(void)
+void usb_hc_low_level_init(struct usbh_bus *bus)
 {
-    usb_phy_init((USB_Type *)CONFIG_HPM_USBH_BASE);
-    intc_m_enable_irq(CONFIG_HPM_USBH_IRQn);
+    usb_phy_init((USB_Type *)(bus->hcd.reg_base));
+    intc_m_enable_irq(hpm_irq_table[bus->hcd.hcd_id]);
 }
 
-void usb_hc_low_level2_init(void)
+void usb_hc_low_level2_init(struct usbh_bus *bus)
 {
-    usb_host_mode_init((USB_Type *)CONFIG_HPM_USBH_BASE);
+    usb_host_mode_init((USB_Type *)(bus->hcd.reg_base));
 }
 
-uint8_t usbh_get_port_speed(const uint8_t port)
+uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 {
     (void)port;
     uint8_t speed;
 
-    speed = usb_get_port_speed((USB_Type *)CONFIG_HPM_USBH_BASE);
+    speed = usb_get_port_speed((USB_Type *)(bus->hcd.reg_base));
 
     if (speed == 0x00) {
         return USB_SPEED_FULL;
@@ -61,10 +78,18 @@ uint8_t usbh_get_port_speed(const uint8_t port)
     return 0;
 }
 
-extern void USBH_IRQHandler(void);
+extern void USBH_IRQHandler(struct usbh_bus *bus);
 
-void isr_usbh(void)
+void isr_usbh0(void)
 {
-    USBH_IRQHandler();
+    USBH_IRQHandler(hpm_usb_bus0);
 }
-SDK_DECLARE_EXT_ISR_M(CONFIG_HPM_USBH_IRQn, isr_usbh)
+SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usbh0)
+
+#ifdef HPM_USB1_BASE
+void isr_usbh1(void)
+{
+    USBH_IRQHandler(hpm_usb_bus1);
+}
+SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbh1)
+#endif
