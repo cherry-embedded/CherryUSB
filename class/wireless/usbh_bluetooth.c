@@ -126,13 +126,10 @@ static int usbh_bluetooth_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-int usbh_bluetooth_hci_cmd(struct usbh_bluetooth *bluetooth_class, uint8_t *buffer, uint32_t buflen)
+int usbh_bluetooth_hci_cmd(uint8_t *buffer, uint32_t buflen)
 {
+    struct usbh_bluetooth *bluetooth_class = &g_bluetooth_class;
     struct usb_setup_packet *setup = bluetooth_class->hport->setup;
-
-    uint16_t opcode = (((uint16_t)buffer[1] << 8) | (uint16_t)buffer[0]);
-
-    USB_LOG_DBG("opcode:%04x, param len:%d\r\n", opcode, buffer[2]);
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = 0x00;
@@ -144,10 +141,11 @@ int usbh_bluetooth_hci_cmd(struct usbh_bluetooth *bluetooth_class, uint8_t *buff
     return usbh_control_transfer(bluetooth_class->hport, setup, g_bluetooth_cmd_buf);
 }
 
-int usbh_bluetooth_hci_acl_out(struct usbh_bluetooth *bluetooth_class, uint8_t *buffer, uint32_t buflen)
+int usbh_bluetooth_hci_acl_out(uint8_t *buffer, uint32_t buflen)
 {
-    int ret;
+    struct usbh_bluetooth *bluetooth_class = &g_bluetooth_class;
     struct usbh_urb *urb = &bluetooth_class->bulkout_urb;
+    int ret;
 
     usbh_bulk_urb_fill(urb, bluetooth_class->hport, bluetooth_class->bulkout, buffer, buflen, USB_OSAL_WAITING_FOREVER, NULL, NULL);
     ret = usbh_submit_urb(urb);
@@ -163,12 +161,14 @@ void usbh_bluetooth_hci_event_rx_thread(void *argument)
     uint32_t ep_mps;
     uint32_t interval;
     uint8_t retry = 0;
+    uint16_t actual_len = 0;
 
     ep_mps = USB_GET_MAXPACKETSIZE(g_bluetooth_class.intin->wMaxPacketSize);
     interval = g_bluetooth_class.intin->bInterval;
 
+    USB_LOG_INFO("Create hc event rx thread\r\n");
     while (1) {
-        usbh_int_urb_fill(&g_bluetooth_class.intin_urb, g_bluetooth_class.hport, g_bluetooth_class.intin, g_bluetooth_event_buf, ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_int_urb_fill(&g_bluetooth_class.intin_urb, g_bluetooth_class.hport, g_bluetooth_class.intin, &g_bluetooth_event_buf[actual_len], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_bluetooth_class.intin_urb);
         if (ret < 0) {
             if (ret == -USB_ERR_SHUTDOWN) {
@@ -186,13 +186,20 @@ void usbh_bluetooth_hci_event_rx_thread(void *argument)
                 continue;
             }
         }
-        usbh_bluetooth_hci_rx_callback(USB_BLUETOOTH_HCI_EVT, g_bluetooth_event_buf, g_bluetooth_class.intin_urb.actual_length);
+        actual_len += g_bluetooth_class.intin_urb.actual_length;
+        if (g_bluetooth_class.intin_urb.actual_length != ep_mps) {
+            usbh_bluetooth_hci_rx_callback(USB_BLUETOOTH_HCI_EVT, g_bluetooth_event_buf, actual_len);
+            actual_len = 0;
+        } else {
+            /* read continue util read short packet */
+        }
         usb_osal_msleep(interval);
     }
     // clang-format off
-delete : USB_LOG_INFO("Delete hc event rx thread\r\n");
+delete : 
+    USB_LOG_INFO("Delete hc event rx thread\r\n");
     usb_osal_thread_delete(NULL);
-    // clang-format om
+    // clang-format on
 }
 
 void usbh_bluetooth_hci_acl_rx_thread(void *argument)
@@ -200,11 +207,13 @@ void usbh_bluetooth_hci_acl_rx_thread(void *argument)
     int ret;
     uint32_t ep_mps;
     uint8_t retry = 0;
+    uint16_t actual_len = 0;
 
     ep_mps = USB_GET_MAXPACKETSIZE(g_bluetooth_class.bulkin->wMaxPacketSize);
 
+    USB_LOG_INFO("Create hc acl rx thread\r\n");
     while (1) {
-        usbh_bulk_urb_fill(&g_bluetooth_class.bulkin_urb, g_bluetooth_class.hport, g_bluetooth_class.bulkin, g_bluetooth_acl_buf, ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_bluetooth_class.bulkin_urb, g_bluetooth_class.hport, g_bluetooth_class.bulkin, &g_bluetooth_acl_buf[actual_len], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_bluetooth_class.bulkin_urb);
         if (ret < 0) {
             if (ret == -USB_ERR_SHUTDOWN) {
@@ -218,12 +227,19 @@ void usbh_bluetooth_hci_acl_rx_thread(void *argument)
                 continue;
             }
         }
-        usbh_bluetooth_hci_rx_callback(USB_BLUETOOTH_HCI_ACL, g_bluetooth_acl_buf, g_bluetooth_class.bulkin_urb.actual_length);
+        actual_len += g_bluetooth_class.bulkin_urb.actual_length;
+        if (g_bluetooth_class.bulkin_urb.actual_length != ep_mps) {
+            actual_len = 0;
+            usbh_bluetooth_hci_rx_callback(USB_BLUETOOTH_HCI_ACL_IN, g_bluetooth_acl_buf, actual_len);
+        } else {
+            /* read continue util read short packet */
+        }
     }
     // clang-format off
-delete : USB_LOG_INFO("Delete hc acl rx thread\r\n");
+delete : 
+    USB_LOG_INFO("Delete hc acl rx thread\r\n");
     usb_osal_thread_delete(NULL);
-    // clang-format om
+    // clang-format on
 }
 
 __WEAK void usbh_bluetooth_hci_rx_callback(uint8_t hci_type, uint8_t *data, uint32_t len)

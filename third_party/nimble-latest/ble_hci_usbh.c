@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "usbh_core.h"
+#include "usbh_bluetooth.h"
+
 #include <sysinit/sysinit.h>
 #include <syscfg/syscfg.h>
 #include "os/os_mbuf.h"
@@ -11,12 +14,7 @@
 #include "nimble/transport.h"
 #include "nimble/transport/hci_h4.h"
 
-#include <usbh_core.h>
-#include <usbh_bluetooth.h>
-
 struct hci_h4_sm g_hci_h4sm;
-
-struct usbh_bluetooth *active_bluetooth_class;
 
 static void hci_dump(uint8_t hci_type, uint8_t *data, uint32_t len)
 {
@@ -59,20 +57,31 @@ void usbh_bluetooth_hci_rx_callback(uint8_t hci_type, uint8_t *data, uint32_t le
 {
     uint8_t pkt_type = 0;
 
-    if (hci_type == USB_BLUETOOTH_HCI_EVT) {
-        pkt_type = HCI_H4_EVT;
-    } else {
-        pkt_type = HCI_H4_ACL;
+    switch (hci_type) {
+        case USB_BLUETOOTH_HCI_EVT:
+            pkt_type = HCI_H4_EVT;
+            break;
+
+        case USB_BLUETOOTH_HCI_ACL_IN:
+            pkt_type = HCI_H4_ACL;
+            break;
+
+        // case USB_BLUETOOTH_HCI_ISO_IN:
+        //     break;
+
+        default:
+            USB_LOG_ERR("Unknown HCI type %u\r\n", hci_type);
+            return;
     }
 
     hci_dump(pkt_type, data, len);
+
     hci_h4_sm_rx(&g_hci_h4sm, &pkt_type, 1);
     hci_h4_sm_rx(&g_hci_h4sm, data, len);
 }
 
 void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
 {
-    active_bluetooth_class = bluetooth_class;
     ble_usb_transport_init();
 
     usb_osal_thread_create("ble_event", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_event_rx_thread, NULL);
@@ -91,7 +100,7 @@ int ble_transport_to_ll_cmd_impl(void *buf)
 
     hci_dump(HCI_H4_CMD, buf, pkt_len);
 
-    ret = usbh_bluetooth_hci_cmd(active_bluetooth_class, buf, pkt_len);
+    ret = usbh_bluetooth_hci_cmd(buf, pkt_len);
     if (ret < 0) {
         ret = BLE_ERR_MEM_CAPACITY;
     } else {
@@ -110,7 +119,7 @@ int ble_transport_to_ll_acl_impl(struct os_mbuf *om)
     while (x != NULL) {
         hci_dump(HCI_H4_ACL, x->om_data, x->om_len);
 
-        ret = usbh_bluetooth_hci_acl_out(active_bluetooth_class, x->om_data, x->om_len);
+        ret = usbh_bluetooth_hci_acl_out(x->om_data, x->om_len);
         if (ret < 0) {
             ret = BLE_ERR_MEM_CAPACITY;
             break;

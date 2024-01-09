@@ -6,10 +6,12 @@
 #ifndef USBH_BLUETOOTH_H
 #define USBH_BLUETOOTH_H
 
-#define USB_BLUETOOTH_HCI_CMD 1
-#define USB_BLUETOOTH_HCI_EVT 2
-#define USB_BLUETOOTH_HCI_ACL 4
-#define USB_BLUETOOTH_HCI_ISO 5
+#define USB_BLUETOOTH_HCI_CMD     0
+#define USB_BLUETOOTH_HCI_EVT     1
+#define USB_BLUETOOTH_HCI_ACL_OUT 2
+#define USB_BLUETOOTH_HCI_ACL_IN  3
+#define USB_BLUETOOTH_HCI_ISO_OUT 4
+#define USB_BLUETOOTH_HCI_ISO_IN  5
 
 struct usbh_bluetooth {
     struct usbh_hubport *hport;
@@ -35,9 +37,9 @@ void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class);
 void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class);
 
 /* OpCode(OCF+OGF:2bytes) + ParamLength + Paramas */
-int usbh_bluetooth_hci_cmd(struct usbh_bluetooth *bluetooth_class, uint8_t *buffer, uint32_t buflen);
+int usbh_bluetooth_hci_cmd(uint8_t *buffer, uint32_t buflen);
 /* Handle (12bits) + Packet_Boundary_Flag(2bits) + BC_flag(2bits) + data_len(2bytes) + data */
-int usbh_bluetooth_hci_acl_out(struct usbh_bluetooth *bluetooth_class, uint8_t *buffer, uint32_t buflen);
+int usbh_bluetooth_hci_acl_out(uint8_t *buffer, uint32_t buflen);
 void usbh_bluetooth_hci_event_rx_thread(void *argument);
 void usbh_bluetooth_hci_acl_rx_thread(void *argument);
 
