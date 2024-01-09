@@ -257,7 +257,7 @@ find_class:
 
         g_cdc_ecm_rx_length += g_cdc_ecm_class.bulkin_urb.actual_length;
 
-        if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
+        if (g_cdc_ecm_class.bulkin_urb.actual_length != USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
             p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_length, PBUF_POOL);
@@ -274,6 +274,7 @@ find_class:
                 USB_LOG_ERR("No memory to alloc pbuf for cdc ecm rx\r\n");
             }
         } else {
+            /* read continue util read short packet */
         }
     }
     // clang-format off
