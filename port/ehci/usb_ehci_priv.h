@@ -5,7 +5,7 @@
 #include "usbh_hub.h"
 #include "usb_hc_ehci.h"
 
-#define EHCI_HCCR ((struct ehci_hccr *)(bus->hcd.reg_base))
+#define EHCI_HCCR ((struct ehci_hccr *)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCCR_OFFSET))
 #define EHCI_HCOR ((struct ehci_hcor *)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCOR_OFFSET))
 
 #define EHCI_PTR2ADDR(x) ((uint32_t)(x) & ~0x1F)
