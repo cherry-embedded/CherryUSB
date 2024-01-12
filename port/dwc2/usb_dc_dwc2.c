@@ -99,7 +99,7 @@
 
 #elif CONFIG_USB_DWC2_RAM_SIZE == 4096
 
-#define CONFIG_USB_DWC2_DMA_ENABLE
+//#define CONFIG_USB_DWC2_DMA_ENABLE
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
 #warning "if you enable dcache,please add .nocacheble section in your sct or ld or icf"
