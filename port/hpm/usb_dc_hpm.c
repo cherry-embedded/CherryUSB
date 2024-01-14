@@ -81,6 +81,10 @@ int usb_dc_init(void)
 
 int usb_dc_deinit(void)
 {
+    intc_m_disable_irq(CONFIG_HPM_USBD_IRQn);
+
+    usb_device_deinit(g_hpm_udc.handle);
+
     return 0;
 }
 
