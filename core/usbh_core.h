@@ -38,7 +38,7 @@ extern "C" {
 #define CLASS_INFO_DEFINE __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
 #elif defined(__GNUC__)
 #define CLASS_INFO_DEFINE __attribute__((section(".usbh_class_info"))) __USED __ALIGNED(1)
-#elif defined(__ICCARM__) || defined(__ICCRX__)
+#elif defined(__ICCARM__) || defined(__ICCRX__) || defined(__ICCRISCV__)
 #pragma section = "usbh_class_info"
 #define CLASS_INFO_DEFINE __attribute__((section("usbh_class_info"))) __USED __ALIGNED(1)
 #endif
