@@ -157,6 +157,30 @@ void cdc_ecm_int_in(uint8_t ep, uint32_t nbytes)
     }
 }
 
+uint8_t *usbd_cdc_ecm_get_tx_buffer(void)
+{
+    return g_cdc_ecm_tx_buffer;
+}
+
+int usbd_cdc_ecm_start_write(uint32_t length)
+{
+    if (g_cdc_ecm_tx_data_length > 0) {
+        return -USB_ERR_BUSY;
+    }
+
+    g_cdc_ecm_tx_data_length = length;
+
+    USB_LOG_DBG("txlen:%d\r\n", g_cdc_ecm_tx_data_length);
+    return usbd_ep_start_write(cdc_ecm_ep_data[CDC_ECM_IN_EP_IDX].ep_addr, g_cdc_ecm_tx_buffer, g_cdc_ecm_tx_data_length);
+}
+
+void usbd_cdc_ecm_start_read_next(void)
+{
+    g_cdc_ecm_rx_data_length = 0;
+    g_cdc_ecm_rx_data_buffer = NULL;
+    usbd_ep_start_read(cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr, g_cdc_ecm_rx_buffer, CDC_ECM_MAX_PACKET_SIZE);
+}
+
 #ifdef CONFIG_USBDEV_CDC_ECM_USING_LWIP
 struct pbuf *usbd_cdc_ecm_eth_rx(void)
 {
@@ -167,16 +191,14 @@ struct pbuf *usbd_cdc_ecm_eth_rx(void)
     }
     p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_data_length, PBUF_POOL);
     if (p == NULL) {
+        usbd_cdc_ecm_start_read_next();
         return NULL;
     }
     memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_data_length);
     p->len = g_cdc_ecm_rx_data_length;
 
     USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_data_length);
-    g_cdc_ecm_rx_data_length = 0;
-    g_cdc_ecm_rx_data_buffer = NULL;
-    usbd_ep_start_read(cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr, g_cdc_ecm_rx_buffer, CDC_ECM_MAX_PACKET_SIZE);
-
+    usbd_cdc_ecm_start_read_next();
     return p;
 }
 
@@ -201,8 +223,7 @@ int usbd_cdc_ecm_eth_tx(struct pbuf *p)
 
     g_cdc_ecm_tx_data_length = p->tot_len;
 
-    USB_LOG_DBG("txlen:%d\r\n", g_cdc_ecm_tx_data_length);
-    return usbd_ep_start_write(cdc_ecm_ep_data[CDC_ECM_IN_EP_IDX].ep_addr, g_cdc_ecm_tx_buffer, g_cdc_ecm_tx_data_length);
+    return usbd_cdc_ecm_start_write(g_cdc_ecm_tx_data_length);
 }
 #endif
 

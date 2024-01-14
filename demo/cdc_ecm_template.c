@@ -221,7 +221,7 @@ void cdc_ecm_lwip_init(void)
     // while (dnserv_init(&ipaddr, PORT_DNS, dns_query_proc)) {}
 }
 
-void usbd_cdc_ecm_data_recv_done(void)
+void usbd_cdc_ecm_data_recv_done(uint8_t *buf, uint32_t len)
 {
 }
 
