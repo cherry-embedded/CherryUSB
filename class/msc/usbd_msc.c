@@ -85,6 +85,28 @@ static int msc_storage_class_interface_request_handler(struct usb_setup_packet *
 void msc_storage_notify_handler(uint8_t event, void *arg)
 {
     switch (event) {
+        case USBD_EVENT_INIT:
+#ifdef CONFIG_USBDEV_MSC_THREAD
+            g_usbd_msc.usbd_msc_mq = usb_osal_mq_create(1);
+            if (g_usbd_msc.usbd_msc_mq == NULL) {
+                USB_LOG_ERR("No memory to alloc for g_usbd_msc.usbd_msc_mq\r\n");
+            }
+            g_usbd_msc.usbd_msc_thread = usb_osal_thread_create("usbd_msc", CONFIG_USBDEV_MSC_STACKSIZE, CONFIG_USBDEV_MSC_PRIO, usbdev_msc_thread, NULL);
+            if (g_usbd_msc.usbd_msc_thread == NULL) {
+                USB_LOG_ERR("No memory to alloc for g_usbd_msc.usbd_msc_thread\r\n");
+            }
+#endif
+            break;
+        case USBD_EVENT_DEINIT:
+#ifdef CONFIG_USBDEV_MSC_THREAD
+            if (g_usbd_msc.usbd_msc_mq) {
+                usb_osal_mq_delete(g_usbd_msc.usbd_msc_mq);
+            }
+            if (g_usbd_msc.usbd_msc_thread) {
+                usb_osal_thread_delete(g_usbd_msc.usbd_msc_thread);
+            }
+#endif
+            break;
         case USBD_EVENT_RESET:
             usbd_msc_reset();
             break;
@@ -888,16 +910,6 @@ struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uin
         return NULL;
     }
 
-#ifdef CONFIG_USBDEV_MSC_THREAD
-    g_usbd_msc.usbd_msc_mq = usb_osal_mq_create(1);
-    if (g_usbd_msc.usbd_msc_mq == NULL) {
-        return NULL;
-    }
-    g_usbd_msc.usbd_msc_thread = usb_osal_thread_create("usbd_msc", CONFIG_USBDEV_MSC_STACKSIZE, CONFIG_USBDEV_MSC_PRIO, usbdev_msc_thread, NULL);
-    if (g_usbd_msc.usbd_msc_thread == NULL) {
-        return NULL;
-    }
-#endif
     return intf;
 }
 

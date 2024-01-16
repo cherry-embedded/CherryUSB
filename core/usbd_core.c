@@ -1202,19 +1202,28 @@ bool usb_device_is_configured(void)
 
 int usbd_initialize(void)
 {
-    return usb_dc_init();
+    int ret;
+
+    ret = usb_dc_init();
+    usbd_class_event_notify_handler(USBD_EVENT_INIT, NULL);
+    return ret;
 }
 
 int usbd_deinitialize(void)
 {
     g_usbd_core.intf_offset = 0;
     usb_dc_deinit();
+    usbd_class_event_notify_handler(USBD_EVENT_DEINIT, NULL);
     return 0;
 }
 
 __WEAK void usbd_event_handler(uint8_t event)
 {
     switch (event) {
+        case USBD_EVENT_INIT:
+            break;
+        case USBD_EVENT_DEINIT:
+            break;
         case USBD_EVENT_RESET:
             break;
         case USBD_EVENT_CONNECTED:

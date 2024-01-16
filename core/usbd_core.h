@@ -38,6 +38,8 @@ enum usbd_event_type {
     USBD_EVENT_SET_INTERFACE,     /** USB interface selected */
     USBD_EVENT_SET_REMOTE_WAKEUP, /** USB set remote wakeup */
     USBD_EVENT_CLR_REMOTE_WAKEUP, /** USB clear remote wakeup */
+    USBD_EVENT_INIT,              /** USB init done when call usbd_initialize */
+    USBD_EVENT_DEINIT,            /** USB deinit done when call usbd_deinitialize */
     USBD_EVENT_UNKNOWN
 };
 
