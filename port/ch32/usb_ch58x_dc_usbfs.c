@@ -1,4 +1,3 @@
-#include "usb_dc.h"
 #include "usbd_core.h"
 #include "usb_ch58x_usbfs_reg.h"
 
