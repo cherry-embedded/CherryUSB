@@ -1473,9 +1473,6 @@ typedef struct
     *_wRegVal = ((wAddr) >> 1) << 1; \
   } while(0) /* PCD_SET_EP_RX_ADDRESS */
 
-#define PCD_EP_TX_ADDRESS(USBx, bEpNum) ((uint16_t *)((uint32_t)((((USBx)->BTABLE+(bEpNum)*8)+     ((uint32_t)(USBx) + 0x400U)))))
-#define PCD_EP_RX_ADDRESS(USBx, bEpNum) ((uint16_t *)((uint32_t)((((USBx)->BTABLE+(bEpNum)*8+4)+ ((uint32_t)(USBx) + 0x400U)))))
-
 /**
   * @brief  Gets address of the tx/rx buffer.
   * @param  USBx USB peripheral instance register address.
