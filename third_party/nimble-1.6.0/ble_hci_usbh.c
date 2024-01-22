@@ -7,20 +7,22 @@
 #include "usbh_core.h"
 #include "usbh_bluetooth.h"
 
-#include <sysinit/sysinit.h>
-#include <syscfg/syscfg.h>
-#include "os/os_mbuf.h"
 #include <nimble/ble.h>
 #include "nimble/transport.h"
 #include "nimble/transport/hci_h4.h"
 
 struct hci_h4_sm g_hci_h4sm;
 
+void ble_transport_ll_init(void)
+{
+    /* nothing here */
+}
+
 static void hci_dump(uint8_t hci_type, uint8_t *data, uint32_t len)
 {
     uint32_t i = 0;
 
-    USB_LOG_DBG("hci type:%u\r\n", hci_type);
+    USB_LOG_DBG("\r\nhci type:%u", hci_type);
 
     for (i = 0; i < len; i++) {
         if (i % 16 == 0) {
@@ -80,18 +82,6 @@ void usbh_bluetooth_hci_rx_callback(uint8_t hci_type, uint8_t *data, uint32_t le
     hci_h4_sm_rx(&g_hci_h4sm, data, len);
 }
 
-void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
-{
-    ble_usb_transport_init();
-
-    usb_osal_thread_create("ble_event", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_event_rx_thread, NULL);
-    usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
-}
-
-void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class)
-{
-}
-
 int ble_transport_to_ll_cmd_impl(void *buf)
 {
     int ret = 0;
@@ -132,4 +122,30 @@ int ble_transport_to_ll_acl_impl(struct os_mbuf *om)
     os_mbuf_free_chain(om);
 
     return ret;
+}
+
+
+__WEAK void usbh_bluetooth_run_callback(void)
+{
+    /* bt_enable() */
+}
+
+__WEAK void usbh_bluetooth_stop_callback(void)
+{
+    /* bt_disable() */
+}
+
+void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
+{
+    ble_usb_transport_init();
+
+    usb_osal_thread_create("ble_event", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_event_rx_thread, NULL);
+    usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
+
+    usbh_bluetooth_run_callback();
+}
+
+void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class)
+{
+    usbh_bluetooth_stop_callback();
 }
