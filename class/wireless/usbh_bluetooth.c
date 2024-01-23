@@ -229,8 +229,8 @@ void usbh_bluetooth_hci_acl_rx_thread(void *argument)
         }
         actual_len += g_bluetooth_class.bulkin_urb.actual_length;
         if (g_bluetooth_class.bulkin_urb.actual_length != ep_mps) {
-            actual_len = 0;
             usbh_bluetooth_hci_rx_callback(USB_BLUETOOTH_HCI_ACL_IN, g_bluetooth_acl_buf, actual_len);
+            actual_len = 0;
         } else {
             /* read continue util read short packet */
         }
