@@ -1,31 +1,51 @@
-/*
- * Copyright (c) 2024, sakumisu
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include "usbh_core.h"
 #include "usbh_bluetooth.h"
 
-#include "byteorder.h"
-#include "hci_host.h"
-#include "hci_driver.h"
+#include <sys/byteorder.h>
+#include <drivers/bluetooth/hci_driver.h>
 
-static void hci_dump(uint8_t hci_type, uint8_t *data, uint32_t len)
+#ifndef CONFIG_BT_RECV_IS_RX_THREAD
+#error usb bluetooth must enable CONFIG_BT_RECV_IS_RX_THREAD
+#endif
+
+/* compatible with low version that less than v2.7.5 */
+
+/* @brief The HCI event shall be given to bt_recv_prio */
+#define __BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+/* @brief  The HCI event shall be given to bt_recv. */
+#define __BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
+ *
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * When CONFIG_BT_RECV_IS_RX_THREAD is enabled the flags
+ * __BT_HCI_EVT_FLAG_RECV and __BT_HCI_EVT_FLAG_RECV_PRIO indicates if the event
+ * should be given to bt_recv or bt_recv_prio.
+ *
+ * @param evt HCI event code.
+ *
+ * @return HCI event flags for the specified event.
+ */
+static inline uint8_t __bt_hci_evt_get_flags(uint8_t evt)
 {
-    uint32_t i = 0;
-
-    USB_LOG_DBG("hci type:%u\r\n", hci_type);
-
-    for (i = 0; i < len; i++) {
-        if (i % 16 == 0) {
-            USB_LOG_DBG("\r\n");
-        }
-
-        USB_LOG_DBG("%02x ", data[i]);
+    switch (evt) {
+        case BT_HCI_EVT_DISCONN_COMPLETE:
+            return __BT_HCI_EVT_FLAG_RECV | __BT_HCI_EVT_FLAG_RECV_PRIO;
+            /* fallthrough */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+        case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+#if defined(CONFIG_BT_CONN)
+        case BT_HCI_EVT_DATA_BUF_OVERFLOW:
+#endif /* defined(CONFIG_BT_CONN) */
+#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
+        case BT_HCI_EVT_CMD_COMPLETE:
+        case BT_HCI_EVT_CMD_STATUS:
+            return __BT_HCI_EVT_FLAG_RECV_PRIO;
+        default:
+            return __BT_HCI_EVT_FLAG_RECV;
     }
-
-    USB_LOG_DBG("\r\n");
 }
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
@@ -184,23 +204,25 @@ static struct net_buf *usbh_bt_iso_recv(uint8_t *data, size_t remaining)
     return buf;
 }
 
-static int usbh_hci_host_rcv_pkt(uint8_t pkt_indicator, uint8_t *data, uint16_t len)
+static int usbh_hci_host_rcv_pkt(uint8_t *data, uint32_t len)
 {
     struct net_buf *buf = NULL;
     size_t remaining = len;
-    bool prio = true;
+    uint8_t pkt_indicator;
+
+    pkt_indicator = *data++;
+    remaining -= sizeof(pkt_indicator);
 
     switch (pkt_indicator) {
         case USB_BLUETOOTH_HCI_EVT:
             buf = usbh_bt_evt_recv(data, remaining);
             break;
 
-        case USB_BLUETOOTH_HCI_ACL_IN:
+        case USB_BLUETOOTH_HCI_ACL:
             buf = usbh_bt_acl_recv(data, remaining);
-            prio = false;
             break;
 
-        case USB_BLUETOOTH_HCI_ISO_IN:
+        case USB_BLUETOOTH_HCI_SCO:
             buf = usbh_bt_iso_recv(data, remaining);
             break;
 
@@ -209,10 +231,19 @@ static int usbh_hci_host_rcv_pkt(uint8_t pkt_indicator, uint8_t *data, uint16_t 
             return -1;
     }
 
-    hci_dump(pkt_indicator, buf->data, buf->len);
-
     if (buf) {
-        bt_recv(buf);
+        if (pkt_indicator == USB_BLUETOOTH_HCI_EVT) {
+            struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+            uint8_t evt_flags = __bt_hci_evt_get_flags(hdr->evt);
+
+            if (evt_flags & __BT_HCI_EVT_FLAG_RECV_PRIO) {
+                bt_recv_prio(buf);
+            } else {
+                bt_recv(buf);
+            }
+        } else {
+            bt_recv(buf);
+        }
     }
 
     return 0;
@@ -226,22 +257,28 @@ static int bt_usbh_open(void)
 static int bt_usbh_send(struct net_buf *buf)
 {
     int err = 0;
-    uint8_t pkt_indicator = bt_buf_get_type(buf);
+    uint8_t pkt_indicator;
 
-    hci_dump(pkt_indicator, buf->data, buf->len);
-
-    switch (pkt_indicator) {
+    switch (bt_buf_get_type(buf)) {
         case BT_BUF_ACL_OUT:
-            usbh_bluetooth_hci_acl_out(buf->data, buf->len);
+            pkt_indicator = USB_BLUETOOTH_HCI_ACL;
             break;
         case BT_BUF_CMD:
-            usbh_bluetooth_hci_cmd(buf->data, buf->len);
+            pkt_indicator = USB_BLUETOOTH_HCI_CMD;
             break;
         case BT_BUF_ISO_OUT:
+            pkt_indicator = USB_BLUETOOTH_HCI_ISO;
             break;
         default:
-            USB_LOG_ERR("Unknown type %u\r\n", pkt_indicator);
+            USB_LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
             goto done;
+    }
+
+    err = usbh_bluetooth_hci_write(pkt_indicator, buf->data, buf->len);
+    if (err < 0) {
+        err = 255;
+    } else {
+        err = 0;
     }
 done:
     net_buf_unref(buf);
@@ -250,7 +287,7 @@ done:
 }
 
 static const struct bt_hci_driver usbh_drv = {
-    .name = "usbhost btble",
+    .name = "hci_usb",
     .open = bt_usbh_open,
     .send = bt_usbh_send,
     .bus = BT_HCI_DRIVER_BUS_USB,
@@ -273,9 +310,12 @@ void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
 {
     bt_hci_driver_register(&usbh_drv);
 
-    usb_osal_thread_create("ble_event", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_event_rx_thread, NULL);
+#ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
+    usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_rx_thread, NULL);
+#else
+    usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
     usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
-
+#endif
     usbh_bluetooth_run_callback();
 }
 
@@ -284,7 +324,7 @@ void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class)
     usbh_bluetooth_stop_callback();
 }
 
-void usbh_bluetooth_hci_rx_callback(uint8_t hci_type, uint8_t *data, uint32_t len)
+void usbh_bluetooth_hci_read_callback(uint8_t *data, uint32_t len)
 {
-    usbh_hci_host_rcv_pkt(hci_type, data, len);
+    usbh_hci_host_rcv_pkt(data, len);
 }

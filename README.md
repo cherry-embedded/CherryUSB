@@ -109,6 +109,7 @@ CherryUSB Host Stack has the following functions：
 - Support USB Video CLASS
 - Support USB Audio CLASS
 - Support Remote NDIS (RNDIS)
+- Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
 - Support Vendor class
 - Support USB modeswitch
 - Support multi host with the same USB IP
@@ -128,6 +129,7 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
 |usbh_audio.c   |  ~3100          | 128           | 4  + sizeof(struct usbh_audio) * x            | 0            |
 |usbh_rndis.c   |  ~3900          | 4096 + 2 * 2048         | sizeof(struct usbh_rndis) * 1       | 0            |
 |usbh_cdc_ecm.c |  ~2500          | 2 * 1514              | sizeof(struct usbh_cdc_ecm) * 1       | 0            |
+|usbh_bluetooth.c |  ~2300        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1       | 0            |
 
 Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affected by the following macros：
 

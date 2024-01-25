@@ -6,27 +6,29 @@
 #ifndef USBH_BLUETOOTH_H
 #define USBH_BLUETOOTH_H
 
-#define USB_BLUETOOTH_HCI_CMD     0
-#define USB_BLUETOOTH_HCI_EVT     1
-#define USB_BLUETOOTH_HCI_ACL_OUT 2
-#define USB_BLUETOOTH_HCI_ACL_IN  3
-#define USB_BLUETOOTH_HCI_ISO_OUT 4
-#define USB_BLUETOOTH_HCI_ISO_IN  5
+#define USB_BLUETOOTH_HCI_NONE 0x00
+#define USB_BLUETOOTH_HCI_CMD  0x01
+#define USB_BLUETOOTH_HCI_ACL  0x02
+#define USB_BLUETOOTH_HCI_SCO  0x03
+#define USB_BLUETOOTH_HCI_EVT  0x04
+#define USB_BLUETOOTH_HCI_ISO  0x05
 
 struct usbh_bluetooth {
     struct usbh_hubport *hport;
+    uint8_t intf;
     struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
     struct usb_endpoint_descriptor *bulkout; /* Bulk OUT endpoint */
-    struct usb_endpoint_descriptor *intin;   /* INTR endpoint */
-    struct usb_endpoint_descriptor *isoin;   /* Bulk IN endpoint */
-    struct usb_endpoint_descriptor *isoout;  /* Bulk OUT endpoint */
     struct usbh_urb bulkin_urb;              /* Bulk IN urb */
     struct usbh_urb bulkout_urb;             /* Bulk OUT urb */
-    struct usbh_urb intin_urb;               /* INTR IN urb */
-    struct usbh_urb *isoin_urb;              /* Bulk IN urb */
-    struct usbh_urb *isoout_urb;             /* Bulk OUT urb */
-    uint8_t intf;
+#ifndef CONFIG_USBHOST_BLUETOOTH_HCI_H4
+    struct usb_endpoint_descriptor *intin;  /* INTR endpoint */
+    struct usb_endpoint_descriptor *isoin;  /* Bulk IN endpoint */
+    struct usb_endpoint_descriptor *isoout; /* Bulk OUT endpoint */
+    struct usbh_urb intin_urb;              /* INTR IN urb */
+    struct usbh_urb *isoin_urb;             /* Bulk IN urb */
+    struct usbh_urb *isoout_urb;            /* Bulk OUT urb */
     uint8_t num_of_intf_altsettings;
+#endif
 };
 
 #ifdef __cplusplus
@@ -36,17 +38,14 @@ extern "C" {
 void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class);
 void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class);
 
-/* OpCode(OCF+OGF:2bytes) + ParamLength + Paramas */
-int usbh_bluetooth_hci_cmd(uint8_t *buffer, uint32_t buflen);
-/* Handle (12bits) + Packet_Boundary_Flag(2bits) + BC_flag(2bits) + data_len(2bytes) + data */
-int usbh_bluetooth_hci_acl_out(uint8_t *buffer, uint32_t buflen);
-void usbh_bluetooth_hci_event_rx_thread(void *argument);
+int usbh_bluetooth_hci_write(uint8_t hci_type, uint8_t *buffer, uint32_t buflen);
+void usbh_bluetooth_hci_read_callback(uint8_t *data, uint32_t len);
+#ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
+void usbh_bluetooth_hci_rx_thread(void *argument);
+#else
+void usbh_bluetooth_hci_evt_rx_thread(void *argument);
 void usbh_bluetooth_hci_acl_rx_thread(void *argument);
-
-/*  USB_BLUETOOTH_HCI_EVT : EventCode(1byte) + ParamLength + Parama0 + Parama1 + Parama2;
-    USB_BLUETOOTH_HCI_ACL : Handle (12bits) + Packet_Boundary_Flag(2bits) + BC_flag(2bits) + data_len(2bytes) + data
-*/
-void usbh_bluetooth_hci_rx_callback(uint8_t hci_type, uint8_t *data, uint32_t len);
+#endif
 
 #ifdef __cplusplus
 }

@@ -107,6 +107,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - Support USB Video CLASS
 - Support USB Audio CLASS
 - 支持 Remote NDIS (RNDIS)
+- 支持 USB Bluetooth (支持 nimble and zephyr bluetooth 协议栈，支持 **CLASS: 0xE0** 或者厂家自定义类，类似于 cdc acm 功能)
 - 支持 Vendor 类 class
 - 支持 USB modeswitch
 - 支持相同 USB IP 的多主机
@@ -126,6 +127,7 @@ CherryUSB Host 协议栈资源占用说明（GCC 10.2 with -O2）：
 |usbh_audio.c   |  ~3100          | 128           | 4  + sizeof(struct usbh_audio) * x            | 0            |
 |usbh_rndis.c   |  ~3900          | 4096 + 2 * 2048         | sizeof(struct usbh_rndis) * 1       | 0            |
 |usbh_cdc_ecm.c |  ~2500          | 2 * 1514              | sizeof(struct usbh_cdc_ecm) * 1       | 0            |
+|usbh_bluetooth.c |  ~2300        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1       | 0            |
 
 其中，`sizeof(struct usbh_hub)` 和 `sizeof(struct usbh_hubport)` 受以下宏影响：
 

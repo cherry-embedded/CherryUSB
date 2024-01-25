@@ -130,6 +130,16 @@
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
 #endif
 
+#define CONFIG_USBHOST_BLUETOOTH_HCI_H4
+// #define CONFIG_USBHOST_BLUETOOTH_HCI_LOG
+
+#ifndef CONFIG_USBHOST_BLUETOOTH_TX_SIZE
+#define CONFIG_USBHOST_BLUETOOTH_TX_SIZE 2048
+#endif
+#ifndef CONFIG_USBHOST_BLUETOOTH_RX_SIZE
+#define CONFIG_USBHOST_BLUETOOTH_RX_SIZE 2048
+#endif
+
 /* ================ USB Device Port Configuration ================*/
 
 #define USBD_IRQHandler      USBD_IRQHandler
