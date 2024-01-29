@@ -392,4 +392,14 @@ CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_h4_nrf_class_info = {
     .pid = 0x000c,
     .class_driver = &bluetooth_class_driver
 };
+#else
+CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_class_info = {
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+    .class = USB_DEVICE_CLASS_WIRELESS,
+    .subclass = 0x01,
+    .protocol = 0x01,
+    .vid = 0x00,
+    .pid = 0x00,
+    .class_driver = &bluetooth_class_driver
+};
 #endif

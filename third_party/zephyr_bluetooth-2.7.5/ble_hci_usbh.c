@@ -1,12 +1,7 @@
 #include "usbh_core.h"
 #include "usbh_bluetooth.h"
 
-#include <sys/byteorder.h>
-#include <drivers/bluetooth/hci_driver.h>
-
-#ifndef CONFIG_BT_RECV_IS_RX_THREAD
-#error usb bluetooth must enable CONFIG_BT_RECV_IS_RX_THREAD
-#endif
+#include <zephyr.h>
 
 /* compatible with low version that less than v2.7.5 */
 
