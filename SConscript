@@ -138,9 +138,6 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend('RT_USING_DFS'):
         src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
 
-    if GetDepend('PKG_USING_NIMBLE'):
-        src += Glob('third_party/nimble-latest/ble_hci_usbh.c')
-
 src += Glob('third_party/rt-thread-5.0/msh_cmd.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
