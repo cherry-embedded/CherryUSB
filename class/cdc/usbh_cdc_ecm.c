@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_cdc_ecm.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_cdc_ecm"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/cdc_ether"
 
 /* general descriptor field offsets */

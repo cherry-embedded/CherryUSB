@@ -7,6 +7,10 @@
 #include "usbh_rndis.h"
 #include "rndis_protocol.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_rndis"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/rndis"
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[4096];

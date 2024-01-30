@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_bluetooth.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_bluetooth"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/bluetooth"
 
 static struct usbh_bluetooth g_bluetooth_class;

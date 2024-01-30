@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_video.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_video"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/video%d"
 
 /* general descriptor field offsets */

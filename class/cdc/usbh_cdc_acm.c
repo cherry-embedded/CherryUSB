@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_cdc_acm.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_cdc_acm"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/ttyACM%d"
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct cdc_line_coding g_cdc_line_coding;

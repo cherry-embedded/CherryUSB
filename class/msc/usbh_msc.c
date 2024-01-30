@@ -7,6 +7,10 @@
 #include "usbh_msc.h"
 #include "usb_scsi.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_msc"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/sd%c"
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[32];

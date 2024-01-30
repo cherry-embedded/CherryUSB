@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_audio.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_audio"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/audio%d"
 
 /* general descriptor field offsets */

@@ -5,6 +5,10 @@
  */
 #include "usbh_core.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_core"
+#include "usb_log.h"
+
 struct usbh_class_info *usbh_class_info_table_begin = NULL;
 struct usbh_class_info *usbh_class_info_table_end = NULL;
 

@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_hid.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_hid"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/input%d"
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[128];

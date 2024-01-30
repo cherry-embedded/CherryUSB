@@ -6,6 +6,10 @@
 #include "usbh_core.h"
 #include "usbh_hub.h"
 
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbh_hub"
+#include "usb_log.h"
+
 #define DEV_FORMAT "/dev/hub%d"
 
 #define HUB_DEBOUNCE_TIMEOUT   1500
