@@ -6,6 +6,8 @@
 #ifndef USBH_FTDI_H
 #define USBH_FTDI_H
 
+#include "usb_cdc.h"
+
 /* Requests */
 #define SIO_RESET_REQUEST             0x00 /* Reset the port */
 #define SIO_SET_MODEM_CTRL_REQUEST    0x01 /* Set the modem control register */
@@ -54,31 +56,9 @@ extern "C" {
 #endif
 
 int usbh_ftdi_reset(struct usbh_ftdi *ftdi_class);
-/**
- * @brief set modem
- *
- * @param [in] value SIO_SET_DTR_HIGH or SIO_SET_DTR_LOW or SIO_SET_RTS_HIGH or SIO_SET_RTS_LOW
- */
-int usbh_ftdi_set_modem(struct usbh_ftdi *ftdi_class, uint16_t value);
-/**
- * @brief set baudrate
- *
- * @param [in] baudrate less than 3M
- */
-int usbh_ftdi_set_baudrate(struct usbh_ftdi *ftdi_class, uint32_t baudrate);
-/**
- * @brief set data
- *
- * @param [in] databits BITS_7=7, BITS_8=8
- * @param [in] parity NONE=0, ODD=1, EVEN=2, MARK=3, SPACE=4
- * @param [in] stopbits STOP_BIT_1=0, STOP_BIT_15=1, STOP_BIT_2=2
- * @param [in] isbreak BREAK_OFF=0, BREAK_ON=1
- */
-int usbh_ftdi_set_data(struct usbh_ftdi *ftdi_class, uint8_t databits,
-                       uint8_t parity,
-                       uint8_t stopbits,
-                       uint8_t isbreak);
 int usbh_ftdi_set_flow_ctrl(struct usbh_ftdi *ftdi_class, uint16_t value);
+int usbh_ftdi_set_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding);
+int usbh_ftdi_set_line_state(struct usbh_ftdi *ftdi_class, bool dtr, bool rts);
 
 /**
  * @brief start a bulk in transfer

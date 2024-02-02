@@ -82,7 +82,7 @@ int usbh_ftdi_reset(struct usbh_ftdi *ftdi_class)
     return usbh_control_transfer(ftdi_class->hport, setup, NULL);
 }
 
-int usbh_ftdi_set_modem(struct usbh_ftdi *ftdi_class, uint16_t value)
+static int usbh_ftdi_set_modem(struct usbh_ftdi *ftdi_class, uint16_t value)
 {
     struct usb_setup_packet *setup = ftdi_class->hport->setup;
 
@@ -95,7 +95,7 @@ int usbh_ftdi_set_modem(struct usbh_ftdi *ftdi_class, uint16_t value)
     return usbh_control_transfer(ftdi_class->hport, setup, NULL);
 }
 
-int usbh_ftdi_set_baudrate(struct usbh_ftdi *ftdi_class, uint32_t baudrate)
+static int usbh_ftdi_set_baudrate(struct usbh_ftdi *ftdi_class, uint32_t baudrate)
 {
     struct usb_setup_packet *setup = ftdi_class->hport->setup;
     uint32_t itdf_divisor;
@@ -115,7 +115,7 @@ int usbh_ftdi_set_baudrate(struct usbh_ftdi *ftdi_class, uint32_t baudrate)
     return usbh_control_transfer(ftdi_class->hport, setup, NULL);
 }
 
-int usbh_ftdi_set_data(struct usbh_ftdi *ftdi_class, uint8_t databits, uint8_t parity, uint8_t stopbits, uint8_t isbreak)
+static int usbh_ftdi_set_data_format(struct usbh_ftdi *ftdi_class, uint8_t databits, uint8_t parity, uint8_t stopbits)
 {
     /**
      * D0-D7 databits  BITS_7=7, BITS_8=8
@@ -124,6 +124,7 @@ int usbh_ftdi_set_data(struct usbh_ftdi *ftdi_class, uint8_t databits, uint8_t p
      * D14  		BREAK_OFF=0, BREAK_ON=1
      **/
 
+    uint8_t isbreak = 0;
     uint16_t value = (databits & 0x0F) | ((parity & 0x03) << 8) | ((stopbits & 0x03) << 11) | ((isbreak & 0x01) << 14);
 
     struct usb_setup_packet *setup = ftdi_class->hport->setup;
@@ -135,6 +136,31 @@ int usbh_ftdi_set_data(struct usbh_ftdi *ftdi_class, uint8_t databits, uint8_t p
     setup->wLength = 0;
 
     return usbh_control_transfer(ftdi_class->hport, setup, NULL);
+}
+
+int usbh_ftdi_set_line_state(struct usbh_ftdi *ftdi_class, bool dtr, bool rts)
+{
+    int ret;
+
+    if (dtr) {
+        usbh_ftdi_set_modem(ftdi_class, SIO_SET_DTR_HIGH);
+    } else {
+        usbh_ftdi_set_modem(ftdi_class, SIO_SET_DTR_LOW);
+    }
+
+    if (rts) {
+        ret = usbh_ftdi_set_modem(ftdi_class, SIO_SET_RTS_HIGH);
+    } else {
+        ret = usbh_ftdi_set_modem(ftdi_class, SIO_SET_RTS_LOW);
+    }
+
+    return ret;
+}
+
+int usbh_ftdi_set_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding)
+{
+    usbh_ftdi_set_baudrate(ftdi_class, line_coding->dwDTERate);
+    return usbh_ftdi_set_data_format(ftdi_class, line_coding->bDataBits, line_coding->bParityType, line_coding->bCharFormat);
 }
 
 int usbh_ftdi_set_latency_timer(struct usbh_ftdi *ftdi_class, uint16_t value)
@@ -201,8 +227,7 @@ static int usbh_ftdi_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_ftdi_reset(ftdi_class);
     usbh_ftdi_set_flow_ctrl(ftdi_class, SIO_DISABLE_FLOW_CTRL);
     usbh_ftdi_set_latency_timer(ftdi_class, 0x10);
-    usbh_ftdi_set_modem(ftdi_class, SIO_SET_RTS_LOW);
-    usbh_ftdi_set_modem(ftdi_class, SIO_SET_DTR_HIGH);
+    usbh_ftdi_set_line_state(ftdi_class, true, false);
     usbh_ftdi_read_modem_status(ftdi_class);
     printf("modem status:%02x:%02x\r\n", ftdi_class->modem_status[0], ftdi_class->modem_status[1]);
 
