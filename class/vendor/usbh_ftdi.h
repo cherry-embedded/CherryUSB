@@ -46,6 +46,8 @@ struct usbh_ftdi {
     struct usbh_urb bulkout_urb;
     struct usbh_urb bulkin_urb;
 
+    struct cdc_line_coding line_coding;
+
     uint8_t intf;
     uint8_t minor;
     uint8_t modem_status[2];
@@ -55,24 +57,11 @@ struct usbh_ftdi {
 extern "C" {
 #endif
 
-int usbh_ftdi_reset(struct usbh_ftdi *ftdi_class);
-int usbh_ftdi_set_flow_ctrl(struct usbh_ftdi *ftdi_class, uint16_t value);
 int usbh_ftdi_set_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding);
+int usbh_ftdi_get_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding);
 int usbh_ftdi_set_line_state(struct usbh_ftdi *ftdi_class, bool dtr, bool rts);
 
-/**
- * @brief start a bulk in transfer
- *
- * @param [in] buffer buffer[0] and buffer[1] is modem status
- * @param [in] buflen should be 64 or 512
- */
 int usbh_ftdi_bulk_in_transfer(struct usbh_ftdi *ftdi_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
-/**
- * @brief start a bulk out transfer
- *
- * @param [in] buffer
- * @param [in] buflen
- */
 int usbh_ftdi_bulk_out_transfer(struct usbh_ftdi *ftdi_class, uint8_t *buffer, uint32_t buflen, uint32_t timeout);
 
 void usbh_ftdi_run(struct usbh_ftdi *ftdi_class);

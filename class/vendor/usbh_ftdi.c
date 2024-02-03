@@ -8,7 +8,7 @@
 
 #define DEV_FORMAT "/dev/ttyUSB%d"
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_ftdi_buf[32];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_ftdi_buf[64];
 
 #define CONFIG_USBHOST_MAX_FTDI_CLASS 4
 
@@ -115,7 +115,7 @@ static int usbh_ftdi_set_baudrate(struct usbh_ftdi *ftdi_class, uint32_t baudrat
     return usbh_control_transfer(ftdi_class->hport, setup, NULL);
 }
 
-static int usbh_ftdi_set_data_format(struct usbh_ftdi *ftdi_class, uint8_t databits, uint8_t parity, uint8_t stopbits)
+static int usbh_ftdi_set_data_format(struct usbh_ftdi *ftdi_class, uint8_t databits, uint8_t parity, uint8_t stopbits, uint8_t isbreak)
 {
     /**
      * D0-D7 databits  BITS_7=7, BITS_8=8
@@ -124,8 +124,7 @@ static int usbh_ftdi_set_data_format(struct usbh_ftdi *ftdi_class, uint8_t datab
      * D14  		BREAK_OFF=0, BREAK_ON=1
      **/
 
-    uint8_t isbreak = 0;
-    uint16_t value = (databits & 0x0F) | ((parity & 0x03) << 8) | ((stopbits & 0x03) << 11) | ((isbreak & 0x01) << 14);
+    uint16_t value = ((isbreak & 0x01) << 14) | ((stopbits & 0x03) << 11) | ((parity & 0x0f) << 8) | (databits & 0x0f);
 
     struct usb_setup_packet *setup = ftdi_class->hport->setup;
 
@@ -136,6 +135,64 @@ static int usbh_ftdi_set_data_format(struct usbh_ftdi *ftdi_class, uint8_t datab
     setup->wLength = 0;
 
     return usbh_control_transfer(ftdi_class->hport, setup, NULL);
+}
+
+static int usbh_ftdi_set_latency_timer(struct usbh_ftdi *ftdi_class, uint16_t value)
+{
+    struct usb_setup_packet *setup = ftdi_class->hport->setup;
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = SIO_SET_LATENCY_TIMER_REQUEST;
+    setup->wValue = value;
+    setup->wIndex = ftdi_class->intf;
+    setup->wLength = 0;
+
+    return usbh_control_transfer(ftdi_class->hport, setup, NULL);
+}
+
+static int usbh_ftdi_set_flow_ctrl(struct usbh_ftdi *ftdi_class, uint16_t value)
+{
+    struct usb_setup_packet *setup = ftdi_class->hport->setup;
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = SIO_SET_FLOW_CTRL_REQUEST;
+    setup->wValue = value;
+    setup->wIndex = ftdi_class->intf;
+    setup->wLength = 0;
+
+    return usbh_control_transfer(ftdi_class->hport, setup, NULL);
+}
+
+static int usbh_ftdi_read_modem_status(struct usbh_ftdi *ftdi_class)
+{
+    struct usb_setup_packet *setup = ftdi_class->hport->setup;
+    int ret;
+
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = SIO_POLL_MODEM_STATUS_REQUEST;
+    setup->wValue = 0x0000;
+    setup->wIndex = ftdi_class->intf;
+    setup->wLength = 2;
+
+    ret = usbh_control_transfer(ftdi_class->hport, setup, g_ftdi_buf);
+    if (ret < 0) {
+        return ret;
+    }
+    memcpy(ftdi_class->modem_status, g_ftdi_buf, 2);
+    return ret;
+}
+
+int usbh_ftdi_set_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding)
+{
+    memcpy((uint8_t *)&ftdi_class->line_coding, line_coding, sizeof(struct cdc_line_coding));
+    usbh_ftdi_set_baudrate(ftdi_class, line_coding->dwDTERate);
+    return usbh_ftdi_set_data_format(ftdi_class, line_coding->bDataBits, line_coding->bParityType, line_coding->bCharFormat, 0);
+}
+
+int usbh_ftdi_get_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding)
+{
+    memcpy(line_coding, (uint8_t *)&ftdi_class->line_coding, sizeof(struct cdc_line_coding));
+    return 0;
 }
 
 int usbh_ftdi_set_line_state(struct usbh_ftdi *ftdi_class, bool dtr, bool rts)
@@ -157,61 +214,10 @@ int usbh_ftdi_set_line_state(struct usbh_ftdi *ftdi_class, bool dtr, bool rts)
     return ret;
 }
 
-int usbh_ftdi_set_line_coding(struct usbh_ftdi *ftdi_class, struct cdc_line_coding *line_coding)
-{
-    usbh_ftdi_set_baudrate(ftdi_class, line_coding->dwDTERate);
-    return usbh_ftdi_set_data_format(ftdi_class, line_coding->bDataBits, line_coding->bParityType, line_coding->bCharFormat);
-}
-
-int usbh_ftdi_set_latency_timer(struct usbh_ftdi *ftdi_class, uint16_t value)
-{
-    struct usb_setup_packet *setup = ftdi_class->hport->setup;
-
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = SIO_SET_LATENCY_TIMER_REQUEST;
-    setup->wValue = value;
-    setup->wIndex = ftdi_class->intf;
-    setup->wLength = 0;
-
-    return usbh_control_transfer(ftdi_class->hport, setup, NULL);
-}
-
-int usbh_ftdi_set_flow_ctrl(struct usbh_ftdi *ftdi_class, uint16_t value)
-{
-    struct usb_setup_packet *setup = ftdi_class->hport->setup;
-
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = SIO_SET_FLOW_CTRL_REQUEST;
-    setup->wValue = value;
-    setup->wIndex = ftdi_class->intf;
-    setup->wLength = 0;
-
-    return usbh_control_transfer(ftdi_class->hport, setup, NULL);
-}
-
-int usbh_ftdi_read_modem_status(struct usbh_ftdi *ftdi_class)
-{
-    struct usb_setup_packet *setup = ftdi_class->hport->setup;
-    int ret;
-
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = SIO_POLL_MODEM_STATUS_REQUEST;
-    setup->wValue = 0x0000;
-    setup->wIndex = ftdi_class->intf;
-    setup->wLength = 2;
-
-    ret = usbh_control_transfer(ftdi_class->hport, setup, g_ftdi_buf);
-    if (ret < 0) {
-        return ret;
-    }
-    memcpy(ftdi_class->modem_status, g_ftdi_buf, 2);
-    return ret;
-}
-
 static int usbh_ftdi_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
-    int ret;
+    int ret = 0;
 
     struct usbh_ftdi *ftdi_class = usbh_ftdi_class_alloc();
     if (ftdi_class == NULL) {
@@ -227,9 +233,8 @@ static int usbh_ftdi_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_ftdi_reset(ftdi_class);
     usbh_ftdi_set_flow_ctrl(ftdi_class, SIO_DISABLE_FLOW_CTRL);
     usbh_ftdi_set_latency_timer(ftdi_class, 0x10);
-    usbh_ftdi_set_line_state(ftdi_class, true, false);
     usbh_ftdi_read_modem_status(ftdi_class);
-    printf("modem status:%02x:%02x\r\n", ftdi_class->modem_status[0], ftdi_class->modem_status[1]);
+    USB_LOG_INFO("modem status:%02x:%02x\r\n", ftdi_class->modem_status[0], ftdi_class->modem_status[1]);
 
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
@@ -245,6 +250,33 @@ static int usbh_ftdi_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Register FTDI Class:%s\r\n", hport->config.intf[intf].devname);
 
+#if 0
+    USB_LOG_INFO("Test ftdi rx and tx and rx for 5 times, baudrate is 115200\r\n");
+
+    struct cdc_line_coding linecoding;
+    uint8_t count = 5;
+
+    linecoding.dwDTERate = 115200;
+    linecoding.bDataBits = 8;
+    linecoding.bParityType = 0;
+    linecoding.bCharFormat = 0;
+    usbh_ftdi_set_line_coding(ftdi_class, &linecoding);
+    usbh_ftdi_set_line_state(ftdi_class, true, false);
+
+    memset(g_ftdi_buf, 'a', sizeof(g_ftdi_buf));
+    ret = usbh_ftdi_bulk_out_transfer(ftdi_class, g_ftdi_buf, sizeof(g_ftdi_buf), 0xfffffff);
+    USB_LOG_RAW("out ret:%d\r\n", ret);
+    while (count--) {
+        ret = usbh_ftdi_bulk_in_transfer(ftdi_class, g_ftdi_buf, sizeof(g_ftdi_buf), 0xfffffff);
+        USB_LOG_RAW("in ret:%d\r\n", ret);
+        if (ret > 0) {
+            for (uint32_t i = 0; i < ret; i++) {
+                USB_LOG_RAW("%02x ", g_ftdi_buf[i]);
+            }
+        }
+        USB_LOG_RAW("\r\n");
+    }
+#endif
     usbh_ftdi_run(ftdi_class);
     return ret;
 }

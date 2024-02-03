@@ -12,16 +12,18 @@ struct usbh_cdc_acm {
     struct usbh_hubport *hport;
     struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
     struct usb_endpoint_descriptor *bulkout; /* Bulk OUT endpoint */
-    struct usb_endpoint_descriptor *intin; /* INTR IN endpoint (optional) */
+#ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
+    struct usb_endpoint_descriptor *intin;   /* INTR IN endpoint (optional) */
+#endif
     struct usbh_urb bulkout_urb;
     struct usbh_urb bulkin_urb;
+#ifdef CONFIG_USBHOST_CDC_ACM_NOTIFY
     struct usbh_urb intin_urb;
+#endif
 
     struct cdc_line_coding linecoding;
-    uint8_t ctrl_intf; /* Control interface number */
-    uint8_t data_intf; /* Data interface number */
-    bool dtr;
-    bool rts;
+
+    uint8_t intf;
     uint8_t minor;
 };
 
