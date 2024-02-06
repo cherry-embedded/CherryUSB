@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, sakumisu
+ * Copyright (c) 2024, zhihong chen
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,8 +41,8 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
     uint8_t max_lun;
     uint32_t start_sector;
     uint32_t nsectors;
-    uint16_t scsi_blk_size;
-    uint32_t scsi_blk_nbr;
+    uint32_t scsi_blk_size[CONFIG_USBDEV_MSC_MAX_LUN];
+    uint32_t scsi_blk_nbr[CONFIG_USBDEV_MSC_MAX_LUN];
 
     USB_MEM_ALIGNX uint8_t block_buffer[CONFIG_USBDEV_MSC_MAX_BUFSIZE];
 
@@ -51,6 +52,15 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
     uint32_t nbytes;
 #endif
 } g_usbd_msc;
+
+#ifdef CONFIG_USBDEV_MSC_THREAD
+static void usbdev_msc_thread(void *argument);
+#endif
+
+static void usdb_msc_set_max_lun(void)
+{
+    g_usbd_msc.max_lun = CONFIG_USBDEV_MSC_MAX_LUN - 1u;
+}
 
 static void usbd_msc_reset(void)
 {
@@ -448,15 +458,15 @@ static bool SCSI_readFormatCapacity(uint8_t **data, uint32_t *len)
         0x00,
         0x00,
         0x08, /* Capacity List Length */
-        (uint8_t)((g_usbd_msc.scsi_blk_nbr >> 24) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_nbr >> 16) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_nbr >> 8) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_nbr >> 0) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] >> 24) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] >> 16) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] >> 8) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] >> 0) & 0xff),
 
         0x02, /* Descriptor Code: Formatted Media */
         0x00,
-        (uint8_t)((g_usbd_msc.scsi_blk_size >> 8) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_size >> 0) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN] >> 8) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN] >> 0) & 0xff),
     };
 
     memcpy(*data, (uint8_t *)format_capacity, SCSIRESP_READFORMATCAPACITIES_SIZEOF);
@@ -472,15 +482,15 @@ static bool SCSI_readCapacity10(uint8_t **data, uint32_t *len)
     }
 
     uint8_t capacity10[SCSIRESP_READCAPACITY10_SIZEOF] = {
-        (uint8_t)(((g_usbd_msc.scsi_blk_nbr - 1) >> 24) & 0xff),
-        (uint8_t)(((g_usbd_msc.scsi_blk_nbr - 1) >> 16) & 0xff),
-        (uint8_t)(((g_usbd_msc.scsi_blk_nbr - 1) >> 8) & 0xff),
-        (uint8_t)(((g_usbd_msc.scsi_blk_nbr - 1) >> 0) & 0xff),
+        (uint8_t)(((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] - 1) >> 24) & 0xff),
+        (uint8_t)(((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] - 1) >> 16) & 0xff),
+        (uint8_t)(((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] - 1) >> 8) & 0xff),
+        (uint8_t)(((g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN] - 1) >> 0) & 0xff),
 
-        (uint8_t)((g_usbd_msc.scsi_blk_size >> 24) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_size >> 16) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_size >> 8) & 0xff),
-        (uint8_t)((g_usbd_msc.scsi_blk_size >> 0) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN] >> 24) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN] >> 16) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN] >> 8) & 0xff),
+        (uint8_t)((g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN] >> 0) & 0xff),
     };
 
     memcpy(*data, (uint8_t *)capacity10, SCSIRESP_READCAPACITY10_SIZEOF);
@@ -501,13 +511,13 @@ static bool SCSI_read10(uint8_t **data, uint32_t *len)
     g_usbd_msc.nsectors = GET_BE16(&g_usbd_msc.cbw.CB[7]); /* Number of Blocks to transfer */
     USB_LOG_DBG("nsectors: 0x%02x\r\n", g_usbd_msc.nsectors);
 
-    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr) {
+    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN]) {
         SCSI_SetSenseData(SCSI_KCQIR_LBAOUTOFRANGE);
         USB_LOG_ERR("LBA out of range\r\n");
         return false;
     }
 
-    if (g_usbd_msc.cbw.dDataLength != (g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size)) {
+    if (g_usbd_msc.cbw.dDataLength != (g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN])) {
         USB_LOG_ERR("scsi_blk_len does not match with dDataLength\r\n");
         return false;
     }
@@ -533,13 +543,13 @@ static bool SCSI_read12(uint8_t **data, uint32_t *len)
     g_usbd_msc.nsectors = GET_BE32(&g_usbd_msc.cbw.CB[6]); /* Number of Blocks to transfer */
     USB_LOG_DBG("nsectors: 0x%02x\r\n", g_usbd_msc.nsectors);
 
-    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr) {
+    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN]) {
         SCSI_SetSenseData(SCSI_KCQIR_LBAOUTOFRANGE);
         USB_LOG_ERR("LBA out of range\r\n");
         return false;
     }
 
-    if (g_usbd_msc.cbw.dDataLength != (g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size)) {
+    if (g_usbd_msc.cbw.dDataLength != (g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN])) {
         USB_LOG_ERR("scsi_blk_len does not match with dDataLength\r\n");
         return false;
     }
@@ -566,8 +576,8 @@ static bool SCSI_write10(uint8_t **data, uint32_t *len)
     g_usbd_msc.nsectors = GET_BE16(&g_usbd_msc.cbw.CB[7]); /* Number of Blocks to transfer */
     USB_LOG_DBG("nsectors: 0x%02x\r\n", g_usbd_msc.nsectors);
 
-    data_len = g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size;
-    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr) {
+    data_len = g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN];
+    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN]) {
         USB_LOG_ERR("LBA out of range\r\n");
         return false;
     }
@@ -595,8 +605,8 @@ static bool SCSI_write12(uint8_t **data, uint32_t *len)
     g_usbd_msc.nsectors = GET_BE32(&g_usbd_msc.cbw.CB[6]); /* Number of Blocks to transfer */
     USB_LOG_DBG("nsectors: 0x%02x\r\n", g_usbd_msc.nsectors);
 
-    data_len = g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size;
-    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr) {
+    data_len = g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN];
+    if ((g_usbd_msc.start_sector + g_usbd_msc.nsectors) > g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN]) {
         USB_LOG_ERR("LBA out of range\r\n");
         return false;
     }
@@ -634,15 +644,15 @@ static bool SCSI_verify10(uint8_t **data, uint32_t *len)
     lba = GET_BE32(&g_usbd_msc.cbw.CB[2]);
     USB_LOG_DBG("lba: 0x%x\r\n", lba);
 
-    g_usbd_msc.scsi_blk_addr = lba * g_usbd_msc.scsi_blk_size;
+    g_usbd_msc.scsi_blk_addr = lba * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN];
 
     /* Number of Blocks to transfer */
     blk_num = GET_BE16(&g_usbd_msc.cbw.CB[7]);
 
     USB_LOG_DBG("num (block) : 0x%x\r\n", blk_num);
-    g_usbd_msc.scsi_blk_len = blk_num * g_usbd_msc.scsi_blk_size;
+    g_usbd_msc.scsi_blk_len = blk_num * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN];
 
-    if ((lba + blk_num) > g_usbd_msc.scsi_blk_nbr) {
+    if ((lba + blk_num) > g_usbd_msc.scsi_blk_nbr[g_usbd_msc.cbw.bLUN]) {
         USB_LOG_ERR("LBA out of range\r\n");
         return false;
     }
@@ -662,17 +672,17 @@ static bool SCSI_processRead(void)
 
     USB_LOG_DBG("read lba:%d\r\n", g_usbd_msc.start_sector);
 
-    transfer_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size, CONFIG_USBDEV_MSC_MAX_BUFSIZE);
+    transfer_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN], CONFIG_USBDEV_MSC_MAX_BUFSIZE);
 
-    if (usbd_msc_sector_read(g_usbd_msc.start_sector, g_usbd_msc.block_buffer, transfer_len) != 0) {
+    if (usbd_msc_sector_read(g_usbd_msc.cbw.bLUN, g_usbd_msc.start_sector, g_usbd_msc.block_buffer, transfer_len) != 0) {
         SCSI_SetSenseData(SCSI_KCQHE_UREINRESERVEDAREA);
         return false;
     }
 
     usbd_ep_start_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, g_usbd_msc.block_buffer, transfer_len);
 
-    g_usbd_msc.start_sector += (transfer_len / g_usbd_msc.scsi_blk_size);
-    g_usbd_msc.nsectors -= (transfer_len / g_usbd_msc.scsi_blk_size);
+    g_usbd_msc.start_sector += (transfer_len / g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN]);
+    g_usbd_msc.nsectors -= (transfer_len / g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN]);
     g_usbd_msc.csw.dDataResidue -= transfer_len;
 
     if (g_usbd_msc.nsectors == 0) {
@@ -687,19 +697,19 @@ static bool SCSI_processWrite(uint32_t nbytes)
     uint32_t data_len = 0;
     USB_LOG_DBG("write lba:%d\r\n", g_usbd_msc.start_sector);
 
-    if (usbd_msc_sector_write(g_usbd_msc.start_sector, g_usbd_msc.block_buffer, nbytes) != 0) {
+    if (usbd_msc_sector_write(g_usbd_msc.cbw.bLUN, g_usbd_msc.start_sector, g_usbd_msc.block_buffer, nbytes) != 0) {
         SCSI_SetSenseData(SCSI_KCQHE_WRITEFAULT);
         return false;
     }
 
-    g_usbd_msc.start_sector += (nbytes / g_usbd_msc.scsi_blk_size);
-    g_usbd_msc.nsectors -= (nbytes / g_usbd_msc.scsi_blk_size);
+    g_usbd_msc.start_sector += (nbytes / g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN]);
+    g_usbd_msc.nsectors -= (nbytes / g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN]);
     g_usbd_msc.csw.dDataResidue -= nbytes;
 
     if (g_usbd_msc.nsectors == 0) {
         usbd_msc_send_csw(CSW_STATUS_CMD_PASSED);
     } else {
-        data_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size, CONFIG_USBDEV_MSC_MAX_BUFSIZE);
+        data_len = MIN(g_usbd_msc.nsectors * g_usbd_msc.scsi_blk_size[g_usbd_msc.cbw.bLUN], CONFIG_USBDEV_MSC_MAX_BUFSIZE);
         usbd_ep_start_read(mass_ep_data[MSD_OUT_EP_IDX].ep_addr, g_usbd_msc.block_buffer, data_len);
     }
 
@@ -721,7 +731,7 @@ static bool SCSI_CBWDecode(uint32_t nbytes)
     g_usbd_msc.csw.dTag = g_usbd_msc.cbw.dTag;
     g_usbd_msc.csw.dDataResidue = g_usbd_msc.cbw.dDataLength;
 
-    if ((g_usbd_msc.cbw.bLUN > 1) || (g_usbd_msc.cbw.dSignature != MSC_CBW_Signature) || (g_usbd_msc.cbw.bCBLength < 1) || (g_usbd_msc.cbw.bCBLength > 16)) {
+    if ((g_usbd_msc.cbw.dSignature != MSC_CBW_Signature) || (g_usbd_msc.cbw.bCBLength < 1) || (g_usbd_msc.cbw.bCBLength > 16)) {
         SCSI_SetSenseData(SCSI_KCQIR_INVALIDCOMMAND);
         return false;
     } else {
@@ -903,11 +913,14 @@ struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uin
 
     memset((uint8_t *)&g_usbd_msc, 0, sizeof(struct usbd_msc_priv));
 
-    usbd_msc_get_cap(0, &g_usbd_msc.scsi_blk_nbr, &g_usbd_msc.scsi_blk_size);
+    usdb_msc_set_max_lun();
+    for (uint8_t i = 0u; i <= g_usbd_msc.max_lun; i++) {
+        usbd_msc_get_cap(i, &g_usbd_msc.scsi_blk_nbr[i], &g_usbd_msc.scsi_blk_size[i]);
 
-    if (g_usbd_msc.scsi_blk_size > CONFIG_USBDEV_MSC_MAX_BUFSIZE) {
-        USB_LOG_ERR("msc block buffer overflow\r\n");
-        return NULL;
+        if (g_usbd_msc.scsi_blk_size[i] > CONFIG_USBDEV_MSC_MAX_BUFSIZE) {
+            USB_LOG_ERR("msc block buffer overflow\r\n");
+            return NULL;
+        }
     }
 
     return intf;
