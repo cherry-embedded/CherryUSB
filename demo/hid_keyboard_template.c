@@ -1,6 +1,8 @@
 #include "usbd_core.h"
 #include "usbd_hid.h"
 
+#define CONFIG_USBDEV_DEMO_BUS 0
+
 #define USBD_VID           0xffff
 #define USBD_PID           0xffff
 #define USBD_MAX_POWER     100
@@ -172,7 +174,7 @@ static const uint8_t hid_keyboard_report_desc[HID_KEYBOARD_REPORT_DESC_SIZE] = {
     0xc0        // END_COLLECTION
 };
 
-void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -203,7 +205,7 @@ void usbd_event_handler(uint8_t event)
 /*!< hid state ! Data can be sent only when state is idle  */
 static volatile uint8_t hid_state = HID_STATE_IDLE;
 
-void usbd_hid_int_callback(uint8_t ep, uint32_t nbytes)
+void usbd_hid_int_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     hid_state = HID_STATE_IDLE;
 }
@@ -217,11 +219,11 @@ struct usbd_interface intf0;
 
 void hid_keyboard_init(void)
 {
-    usbd_desc_register(hid_descriptor);
-    usbd_add_interface(usbd_hid_init_intf(&intf0, hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE));
-    usbd_add_endpoint(&hid_in_ep);
+    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, hid_descriptor);
+    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_hid_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf0, hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE));
+    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &hid_in_ep);
 
-    usbd_initialize();
+    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
 }
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[64];
@@ -231,7 +233,7 @@ void hid_keyboard_test(void)
     const uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_A, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     memcpy(write_buffer, sendbuffer, 8);
-    int ret = usbd_ep_start_write(HID_INT_EP, write_buffer, 8);
+    int ret = usbd_ep_start_write(CONFIG_USBDEV_DEMO_BUS, HID_INT_EP, write_buffer, 8);
     if (ret < 0) {
         return;
     }

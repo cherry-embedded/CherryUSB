@@ -146,6 +146,8 @@
 
 /* ================ USB Device Port Configuration ================*/
 
+#define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
+
 #define USBD_IRQHandler      USBD_IRQHandler
 #define USBD_BASE            (0)
 #define CONFIG_USBDEV_EP_NUM 4

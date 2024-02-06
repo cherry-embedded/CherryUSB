@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-struct usbd_interface *usbd_xxx_init_intf(struct usbd_interface *intf);
+struct usbd_interface *usbd_xxx_init_intf(uint8_t busid, struct usbd_interface *intf);
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,8 @@
 #include "usbd_core.h"
 #include "usbd_hid.h"
 
+#define CONFIG_USBDEV_DEMO_BUS 0
+
 /*!< hidraw in endpoint */
 #define HIDRAW_IN_EP       0x81
 #define HIDRAW_IN_EP_SIZE  64
@@ -169,7 +171,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t send_buffer[HIDRAW_IN_EP_SIZE];
 /*!< hid state ! Data can be sent only when state is idle  */
 static volatile uint8_t custom_state;
 
-void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -184,7 +186,7 @@ void usbd_event_handler(uint8_t event)
             break;
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
-            usbd_ep_start_read(HIDRAW_OUT_EP, read_buffer, HIDRAW_OUT_EP_SIZE);
+            usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, HIDRAW_OUT_EP, read_buffer, HIDRAW_OUT_EP_SIZE);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -196,18 +198,18 @@ void usbd_event_handler(uint8_t event)
     }
 }
 
-static void usbd_hid_custom_in_callback(uint8_t ep, uint32_t nbytes)
+static void usbd_hid_custom_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
     custom_state = HID_STATE_IDLE;
 }
 
-static void usbd_hid_custom_out_callback(uint8_t ep, uint32_t nbytes)
+static void usbd_hid_custom_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual out len:%d\r\n", nbytes);
-    usbd_ep_start_read(HIDRAW_OUT_EP, read_buffer, 64);
+    usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, HIDRAW_OUT_EP, read_buffer, 64);
     read_buffer[0] = 0x02; /* IN: report id */
-    usbd_ep_start_write(HIDRAW_IN_EP, read_buffer, nbytes);
+    usbd_ep_start_write(CONFIG_USBDEV_DEMO_BUS, HIDRAW_IN_EP, read_buffer, nbytes);
 }
 
 static struct usbd_endpoint custom_in_ep = {
@@ -231,10 +233,10 @@ struct usbd_interface intf0;
 
 void hid_custom_init(void)
 {
-    usbd_desc_register(hid_descriptor);
-    usbd_add_interface(usbd_hid_init_intf(&intf0, hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
-    usbd_add_endpoint(&custom_in_ep);
-    usbd_add_endpoint(&custom_out_ep);
+    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, hid_descriptor);
+    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_hid_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf0, hid_custom_report_desc, HID_CUSTOM_REPORT_DESC_SIZE));
+    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &custom_in_ep);
+    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &custom_out_ep);
 
-    usbd_initialize();
+    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
 }

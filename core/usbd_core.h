@@ -43,9 +43,9 @@ enum usbd_event_type {
     USBD_EVENT_UNKNOWN
 };
 
-typedef int (*usbd_request_handler)(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len);
-typedef void (*usbd_endpoint_callback)(uint8_t ep, uint32_t nbytes);
-typedef void (*usbd_notify_handler)(uint8_t event, void *arg);
+typedef int (*usbd_request_handler)(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len);
+typedef void (*usbd_endpoint_callback)(uint8_t busid, uint8_t ep, uint32_t nbytes);
+typedef void (*usbd_notify_handler)(uint8_t busid, uint8_t event, void *arg);
 
 struct usbd_endpoint {
     uint8_t ep_addr;
@@ -75,22 +75,20 @@ struct usb_descriptor {
 };
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
-void usbd_desc_register(const struct usb_descriptor *desc);
+void usbd_desc_register(uint8_t busid, const struct usb_descriptor *desc);
 #else
-void usbd_desc_register(const uint8_t *desc);
-void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);
-void usbd_msosv2_desc_register(struct usb_msosv2_descriptor *desc);
-void usbd_bos_desc_register(struct usb_bos_descriptor *desc);
+void usbd_desc_register(uint8_t busid, const uint8_t *desc);
+void usbd_msosv1_desc_register(uint8_t busid, struct usb_msosv1_descriptor *desc);
+void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc);
+void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
 #endif
 
-void usbd_add_interface(struct usbd_interface *intf);
-void usbd_add_endpoint(struct usbd_endpoint *ep);
+void usbd_add_interface(uint8_t busid, struct usbd_interface *intf);
+void usbd_add_endpoint(uint8_t busid, struct usbd_endpoint *ep);
 
-bool usb_device_is_configured(void);
-int usbd_initialize(void);
-int usbd_deinitialize(void);
-
-void usbd_event_handler(uint8_t event);
+bool usb_device_is_configured(uint8_t busid);
+int usbd_initialize(uint8_t busid, void (*event_handler)(uint8_t event));
+int usbd_deinitialize(uint8_t busid);
 
 #ifdef __cplusplus
 }

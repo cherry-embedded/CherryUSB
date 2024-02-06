@@ -428,7 +428,7 @@ void dfu_request_abort(void)
     }
 }
 
-static int dfu_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int dfu_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("DFU Class request: "
                 "bRequest 0x%02x\r\n",
@@ -464,7 +464,7 @@ static int dfu_class_interface_request_handler(struct usb_setup_packet *setup, u
     return 0;
 }
 
-static void dfu_notify_handler(uint8_t event, void *arg)
+static void dfu_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:

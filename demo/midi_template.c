@@ -1,6 +1,8 @@
 #include "usbd_core.h"
 #include "usb_midi.h"
 
+#define CONFIG_USBDEV_DEMO_BUS 0
+
 #define MIDI_OUT_EP 0x02
 #define MIDI_IN_EP  0x81
 
@@ -146,7 +148,7 @@ const uint8_t midi_descriptor[] = {
     0x00
 };
 
-void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -171,11 +173,11 @@ void usbd_event_handler(uint8_t event)
     }
 }
 
-void usbd_midi_bulk_out(uint8_t ep, uint32_t nbytes)
+void usbd_midi_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
 }
 
-void usbd_midi_bulk_in(uint8_t ep, uint32_t nbytes)
+void usbd_midi_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
 }
 
@@ -194,11 +196,11 @@ struct usbd_endpoint midi_in_ep = {
 
 void midi_init(void)
 {
-    usbd_desc_register(midi_descriptor);
-    usbd_add_interface(&intf0);
-    usbd_add_interface(&intf1);
-    usbd_add_endpoint(&midi_out_ep);
-    usbd_add_endpoint(&midi_in_ep);
+    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, midi_descriptor);
+    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, &intf0);
+    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, &intf1);
+    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &midi_out_ep);
+    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &midi_in_ep);
 
-    usbd_initialize();
+    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
 }

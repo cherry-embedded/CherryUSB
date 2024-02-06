@@ -515,7 +515,7 @@ __WEAK void usb_dc_low_level_deinit(void)
 {
 }
 
-int usb_dc_init(void)
+int usb_dc_init(uint8_t busid)
 {
     int ret;
     uint8_t fsphy_type;
@@ -676,7 +676,7 @@ int usb_dc_init(void)
     return ret;
 }
 
-int usb_dc_deinit(void)
+int usb_dc_deinit(uint8_t busid)
 {
     /* Clear Pending interrupt */
     for (uint8_t i = 0U; i < 15U; i++) {
@@ -699,14 +699,14 @@ int usb_dc_deinit(void)
     return 0;
 }
 
-int usbd_set_address(const uint8_t addr)
+int usbd_set_address(uint8_t busid, const uint8_t addr)
 {
     USB_OTG_DEV->DCFG &= ~(USB_OTG_DCFG_DAD);
     USB_OTG_DEV->DCFG |= ((uint32_t)addr << 4) & USB_OTG_DCFG_DAD;
     return 0;
 }
 
-uint8_t usbd_get_port_speed(const uint8_t port)
+uint8_t usbd_get_port_speed(uint8_t busid, const uint8_t port)
 {
     uint8_t speed;
     uint32_t DevEnumSpeed = USB_OTG_DEV->DSTS & USB_OTG_DSTS_ENUMSPD;
@@ -723,7 +723,7 @@ uint8_t usbd_get_port_speed(const uint8_t port)
     return speed;
 }
 
-int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
+int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
@@ -761,7 +761,7 @@ int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
     return 0;
 }
 
-int usbd_ep_close(const uint8_t ep)
+int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     volatile uint32_t count = 0U;
@@ -810,7 +810,7 @@ int usbd_ep_close(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_set_stall(const uint8_t ep)
+int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -833,7 +833,7 @@ int usbd_ep_set_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_clear_stall(const uint8_t ep)
+int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -853,7 +853,7 @@ int usbd_ep_clear_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
+int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
 {
     if (USB_EP_DIR_IS_OUT(ep)) {
     } else {
@@ -861,7 +861,7 @@ int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
     return 0;
 }
 
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t pktcnt = 0;
@@ -934,7 +934,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     return 0;
 }
 
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t pktcnt = 0;
@@ -1048,17 +1048,17 @@ void USBD_IRQHandler(void)
                             } else {
                                 g_dwc2_udc.out_ep[ep_idx].actual_xfer_len = g_dwc2_udc.out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
                                 g_dwc2_udc.out_ep[ep_idx].xfer_len = 0;
-                                usbd_event_ep_out_complete_handler(0x00, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
+                                usbd_event_ep_out_complete_handler(0, 0x00, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                             }
                         } else {
                             g_dwc2_udc.out_ep[ep_idx].actual_xfer_len = g_dwc2_udc.out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
                             g_dwc2_udc.out_ep[ep_idx].xfer_len = 0;
-                            usbd_event_ep_out_complete_handler(ep_idx, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
+                            usbd_event_ep_out_complete_handler(0, ep_idx, g_dwc2_udc.out_ep[ep_idx].actual_xfer_len);
                         }
                     }
 
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
-                        usbd_event_ep0_setup_complete_handler((uint8_t *)&g_dwc2_udc.setup);
+                        usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&g_dwc2_udc.setup);
                     }
                 }
                 ep_intr >>= 1U;
@@ -1078,7 +1078,7 @@ void USBD_IRQHandler(void)
                         if (ep_idx == 0) {
                             g_dwc2_udc.in_ep[ep_idx].actual_xfer_len = g_dwc2_udc.in_ep[ep_idx].xfer_len - ((USB_OTG_INEP(ep_idx)->DIEPTSIZ) & USB_OTG_DIEPTSIZ_XFRSIZ);
                             g_dwc2_udc.in_ep[ep_idx].xfer_len = 0;
-                            usbd_event_ep_in_complete_handler(0x80, g_dwc2_udc.in_ep[ep_idx].actual_xfer_len);
+                            usbd_event_ep_in_complete_handler(0, 0x80, g_dwc2_udc.in_ep[ep_idx].actual_xfer_len);
 
                             if (g_dwc2_udc.setup.wLength && ((g_dwc2_udc.setup.bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
                                 /* In status, start reading setup */
@@ -1090,7 +1090,7 @@ void USBD_IRQHandler(void)
                         } else {
                             g_dwc2_udc.in_ep[ep_idx].actual_xfer_len = g_dwc2_udc.in_ep[ep_idx].xfer_len - ((USB_OTG_INEP(ep_idx)->DIEPTSIZ) & USB_OTG_DIEPTSIZ_XFRSIZ);
                             g_dwc2_udc.in_ep[ep_idx].xfer_len = 0;
-                            usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_dwc2_udc.in_ep[ep_idx].actual_xfer_len);
+                            usbd_event_ep_in_complete_handler(0, ep_idx | 0x80, g_dwc2_udc.in_ep[ep_idx].actual_xfer_len);
                         }
                     }
                     if ((epint & USB_OTG_DIEPINT_TXFE) == USB_OTG_DIEPINT_TXFE) {
@@ -1138,7 +1138,7 @@ void USBD_IRQHandler(void)
             USB_OTG_DEV->DIEPMSK = USB_OTG_DIEPMSK_XFRCM;
 
             memset(&g_dwc2_udc, 0, sizeof(struct dwc2_udc));
-            usbd_event_reset_handler();
+            usbd_event_reset_handler(0);
             /* Start reading setup */
             dwc2_ep0_start_read_setup((uint8_t *)&g_dwc2_udc.setup);
         }

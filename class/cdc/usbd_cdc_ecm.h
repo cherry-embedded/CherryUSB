@@ -24,7 +24,7 @@ void usbd_cdc_ecm_set_connect_speed(uint32_t speed[2]);
 /* Api for eth only without any net stack */
 uint8_t *usbd_cdc_ecm_get_tx_buffer(void);
 void usbd_cdc_ecm_send_done(void);
-int usbd_cdc_ecm_start_write(uint32_t length);
+int usbd_cdc_ecm_start_write(uint8_t *buf, uint32_t len);
 void usbd_cdc_ecm_data_recv_done(uint8_t *buf, uint32_t len);
 void usbd_cdc_ecm_start_read_next(void);
 

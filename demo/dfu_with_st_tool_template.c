@@ -137,7 +137,7 @@ const uint8_t dfu_flash_descriptor[] = {
     0x00
 };
 
-void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -166,7 +166,7 @@ struct usbd_interface intf0;
 
 void dfu_flash_init(void)
 {
-    usbd_desc_register(dfu_flash_descriptor);
-    usbd_add_interface(usbd_dfu_init_intf(&intf0));
-    usbd_initialize();
+    usbd_desc_register(0, dfu_flash_descriptor);
+    usbd_add_interface(0, usbd_dfu_init_intf(&intf0));
+    usbd_initialize(0, usbd_event_handler);
 }

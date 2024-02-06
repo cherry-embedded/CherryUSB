@@ -17,9 +17,9 @@ struct usbd_audio_priv {
     struct audio_entity_info *table;
     uint8_t num;
     uint16_t uac_version;
-} g_usbd_audio;
+} g_usbd_audio[CONFIG_USBDEV_MAX_BUS];
 
-static int audio_class_endpoint_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int audio_class_endpoint_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint8_t control_selector;
     uint32_t sampling_freq = 0;
@@ -34,13 +34,13 @@ static int audio_class_endpoint_request_handler(struct usb_setup_packet *setup, 
                 case AUDIO_REQUEST_SET_CUR:
                     memcpy((uint8_t *)&sampling_freq, *data, *len);
                     USB_LOG_DBG("Set ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
-                    usbd_audio_set_sampling_freq(ep, sampling_freq);
+                    usbd_audio_set_sampling_freq(busid, ep, sampling_freq);
                     break;
                 case AUDIO_REQUEST_GET_CUR:
                 case AUDIO_REQUEST_GET_MIN:
                 case AUDIO_REQUEST_GET_MAX:
                 case AUDIO_REQUEST_GET_RES:
-                    sampling_freq = usbd_audio_get_sampling_freq(ep);
+                    sampling_freq = usbd_audio_get_sampling_freq(busid, ep);
                     memcpy(*data, &sampling_freq, 3);
                     USB_LOG_DBG("Get ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
                     *len = 3;
@@ -55,7 +55,7 @@ static int audio_class_endpoint_request_handler(struct usb_setup_packet *setup, 
     return 0;
 }
 
-static int audio_class_interface_request_handler(struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     USB_LOG_DBG("Audio Class request: "
                 "bRequest 0x%02x\r\n",
@@ -79,10 +79,10 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
 
     ARG_UNUSED(mute_string);
 
-    for (uint8_t i = 0; i < g_usbd_audio.num; i++) {
-        if (g_usbd_audio.table[i].bEntityId == entity_id) {
-            subtype = g_usbd_audio.table[i].bDescriptorSubtype;
-            ep = g_usbd_audio.table[i].ep;
+    for (uint8_t i = 0; i < g_usbd_audio[busid].num; i++) {
+        if (g_usbd_audio[busid].table[i].bEntityId == entity_id) {
+            subtype = g_usbd_audio[busid].table[i].bDescriptorSubtype;
+            ep = g_usbd_audio[busid].table[i].ep;
             break;
         }
     }
@@ -98,14 +98,14 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
         case AUDIO_CONTROL_FEATURE_UNIT:
             switch (control_selector) {
                 case AUDIO_FU_CONTROL_MUTE:
-                    if (g_usbd_audio.uac_version < 0x0200) {
+                    if (g_usbd_audio[busid].uac_version < 0x0200) {
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_SET_CUR:
                                 mute = (*data)[0];
-                                usbd_audio_set_mute(ep, ch, mute);
+                                usbd_audio_set_mute(busid, ep, ch, mute);
                                 break;
                             case AUDIO_REQUEST_GET_CUR:
-                                (*data)[0] = usbd_audio_get_mute(ep, ch);
+                                (*data)[0] = usbd_audio_get_mute(busid, ep, ch);
                                 *len = 1;
                                 break;
                             default:
@@ -116,11 +116,11 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_CUR:
                                 if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                                    (*data)[0] = usbd_audio_get_mute(ep, ch);
+                                    (*data)[0] = usbd_audio_get_mute(busid, ep, ch);
                                     *len = 1;
                                 } else {
                                     mute = (*data)[0];
-                                    usbd_audio_set_mute(ep, ch, mute);
+                                    usbd_audio_set_mute(busid, ep, ch, mute);
                                 }
                                 break;
                             default:
@@ -130,7 +130,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                     }
                     break;
                 case AUDIO_FU_CONTROL_VOLUME:
-                    if (g_usbd_audio.uac_version < 0x0200) {
+                    if (g_usbd_audio[busid].uac_version < 0x0200) {
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_SET_CUR:
                                 memcpy(&volume, *data, *len);
@@ -141,10 +141,10 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                                 }
                                 volume_db += 128; /* 0 ~ 255 */
                                 USB_LOG_DBG("Set ep:0x%02x ch:%d volume:0x%04x\r\n", ep, ch, volume);
-                                usbd_audio_set_volume(ep, ch, volume_db);
+                                usbd_audio_set_volume(busid, ep, ch, volume_db);
                                 break;
                             case AUDIO_REQUEST_GET_CUR:
-                                volume_db = usbd_audio_get_volume(ep, ch);
+                                volume_db = usbd_audio_get_volume(busid, ep, ch);
                                 volume_db -= 128;
                                 if (volume_db >= 0) {
                                     volume = volume_db * 256;
@@ -177,7 +177,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_CUR:
                                 if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                                    volume_db = usbd_audio_get_volume(ep, ch);
+                                    volume_db = usbd_audio_get_volume(busid, ep, ch);
                                     volume = volume_db;
                                     memcpy(*data, &volume, 2);
                                     *len = 2;
@@ -185,7 +185,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                                     memcpy(&volume, *data, *len);
                                     volume_db = volume;
                                     USB_LOG_DBG("Set ep:0x%02x ch:%d volume:0x%02x\r\n", ep, ch, volume);
-                                    usbd_audio_set_volume(ep, ch, volume_db);
+                                    usbd_audio_set_volume(busid, ep, ch, volume_db);
                                 }
                                 break;
                             case AUDIO_REQUEST_RANGE:
@@ -216,14 +216,14 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                     switch (setup->bRequest) {
                         case AUDIO_REQUEST_CUR:
                             if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                                sampling_freq = usbd_audio_get_sampling_freq(ep);
+                                sampling_freq = usbd_audio_get_sampling_freq(busid, ep);
                                 memcpy(*data, &sampling_freq, 4);
                                 USB_LOG_DBG("Get ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
                                 *len = 4;
                             } else {
                                 memcpy(&sampling_freq, *data, setup->wLength);
                                 USB_LOG_DBG("Set ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
-                                usbd_audio_set_sampling_freq(ep, sampling_freq);
+                                usbd_audio_set_sampling_freq(busid, ep, sampling_freq);
                             }
                             break;
                         case AUDIO_REQUEST_RANGE:
@@ -231,7 +231,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
                                 uint8_t *sampling_freq_table = NULL;
                                 uint16_t num;
 
-                                usbd_audio_get_sampling_freq_table(ep, &sampling_freq_table);
+                                usbd_audio_get_sampling_freq_table(busid, ep, &sampling_freq_table);
                                 num = (uint16_t)((uint16_t)(sampling_freq_table[1] << 8) | ((uint16_t)sampling_freq_table[0]));
                                 memcpy(*data, sampling_freq_table, (12 * num + 2));
                                 *len = (12 * num + 2);
@@ -264,7 +264,7 @@ static int audio_class_interface_request_handler(struct usb_setup_packet *setup,
     return 0;
 }
 
-static void audio_notify_handler(uint8_t event, void *arg)
+static void audio_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -274,9 +274,9 @@ static void audio_notify_handler(uint8_t event, void *arg)
         case USBD_EVENT_SET_INTERFACE: {
             struct usb_interface_descriptor *intf = (struct usb_interface_descriptor *)arg;
             if (intf->bAlternateSetting) {
-                usbd_audio_open(intf->bInterfaceNumber);
+                usbd_audio_open(busid, intf->bInterfaceNumber);
             } else {
-                usbd_audio_close(intf->bInterfaceNumber);
+                usbd_audio_close(busid, intf->bInterfaceNumber);
             }
         }
 
@@ -287,7 +287,8 @@ static void audio_notify_handler(uint8_t event, void *arg)
     }
 }
 
-struct usbd_interface *usbd_audio_init_intf(struct usbd_interface *intf,
+struct usbd_interface *usbd_audio_init_intf(uint8_t busid, 
+                                            struct usbd_interface *intf,
                                             uint16_t uac_version,
                                             struct audio_entity_info *table,
                                             uint8_t num)
@@ -304,40 +305,40 @@ struct usbd_interface *usbd_audio_init_intf(struct usbd_interface *intf,
         intf->notify_handler = audio_notify_handler;
     }
 
-    g_usbd_audio.uac_version = uac_version;
-    g_usbd_audio.table = table;
-    g_usbd_audio.num = num;
+    g_usbd_audio[busid].uac_version = uac_version;
+    g_usbd_audio[busid].table = table;
+    g_usbd_audio[busid].num = num;
 
     return intf;
 }
 
-__WEAK void usbd_audio_set_volume(uint8_t ep, uint8_t ch, int volume)
+__WEAK void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int volume)
 {
 }
 
-__WEAK int usbd_audio_get_volume(uint8_t ep, uint8_t ch)
-{
-    return 0;
-}
-
-__WEAK void usbd_audio_set_mute(uint8_t ep, uint8_t ch, bool mute)
-{
-}
-
-__WEAK bool usbd_audio_get_mute(uint8_t ep, uint8_t ch)
+__WEAK int usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
 {
     return 0;
 }
 
-__WEAK void usbd_audio_set_sampling_freq(uint8_t ep, uint32_t sampling_freq)
+__WEAK void usbd_audio_set_mute(uint8_t busid, uint8_t ep, uint8_t ch, bool mute)
 {
 }
 
-__WEAK uint32_t usbd_audio_get_sampling_freq(uint8_t ep)
+__WEAK bool usbd_audio_get_mute(uint8_t busid, uint8_t ep, uint8_t ch)
 {
     return 0;
 }
 
-__WEAK void usbd_audio_get_sampling_freq_table(uint8_t ep, uint8_t **sampling_freq_table)
+__WEAK void usbd_audio_set_sampling_freq(uint8_t busid, uint8_t ep, uint32_t sampling_freq)
+{
+}
+
+__WEAK uint32_t usbd_audio_get_sampling_freq(uint8_t busid, uint8_t ep)
+{
+    return 0;
+}
+
+__WEAK void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sampling_freq_table)
 {
 }

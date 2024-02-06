@@ -54,7 +54,7 @@ __WEAK void usb_dc_low_level_deinit(void)
 {
 }
 
-int usb_dc_init(void)
+int usb_dc_init(uint8_t busid)
 {
     usb_dc_low_level_init();
 
@@ -82,12 +82,12 @@ int usb_dc_init(void)
     return 0;
 }
 
-int usb_dc_deinit(void)
+int usb_dc_deinit(uint8_t busid)
 {
     return 0;
 }
 
-int usbd_set_address(const uint8_t addr)
+int usbd_set_address(uint8_t busid, const uint8_t addr)
 {
     if (addr == 0) {
         USBFS_DEVICE->DEV_ADDR = (USBFS_DEVICE->DEV_ADDR & USBFS_UDA_GP_BIT) | 0;
@@ -96,12 +96,12 @@ int usbd_set_address(const uint8_t addr)
     return 0;
 }
 
-uint8_t usbd_get_port_speed(const uint8_t port)
+uint8_t usbd_get_port_speed(uint8_t busid, const uint8_t port)
 {
     return USB_SPEED_FULL;
 }
 
-int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
+int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
@@ -118,11 +118,11 @@ int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
     }
     return 0;
 }
-int usbd_ep_close(const uint8_t ep)
+int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
     return 0;
 }
-int usbd_ep_set_stall(const uint8_t ep)
+int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -147,7 +147,7 @@ int usbd_ep_set_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_clear_stall(const uint8_t ep)
+int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -163,12 +163,12 @@ int usbd_ep_clear_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
+int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
 {
     return 0;
 }
 
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -215,7 +215,7 @@ int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len
     return 0;
 }
 
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -265,7 +265,7 @@ void USBD_IRQHandler(void)
         switch (token) {
             case USBFS_UIS_TOKEN_SETUP:
                 USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK);
-                usbd_event_ep0_setup_complete_handler((uint8_t *)&g_ch32_usbfs_udc.setup);
+                usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&g_ch32_usbfs_udc.setup);
                 break;
 
             case USBFS_UIS_TOKEN_IN:
@@ -280,7 +280,7 @@ void USBD_IRQHandler(void)
                         ep0_tx_data_toggle = true;
                     }
 
-                    usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len);
+                    usbd_event_ep_in_complete_handler(0, ep_idx | 0x80, g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len);
 
                     if (g_ch32_usbfs_udc.dev_addr > 0) {
                         USBFS_DEVICE->DEV_ADDR = (USBFS_DEVICE->DEV_ADDR & USBFS_UDA_GP_BIT) | g_ch32_usbfs_udc.dev_addr;
@@ -315,7 +315,7 @@ void USBD_IRQHandler(void)
                     } else {
                         g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len += g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len;
                         g_ch32_usbfs_udc.in_ep[ep_idx].xfer_len = 0;
-                        usbd_event_ep_in_complete_handler(ep_idx | 0x80, g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len);
+                        usbd_event_ep_in_complete_handler(0, ep_idx | 0x80, g_ch32_usbfs_udc.in_ep[ep_idx].actual_xfer_len);
                     }
                 }
                 break;
@@ -328,7 +328,7 @@ void USBD_IRQHandler(void)
                     g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len += read_count;
                     g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len -= read_count;
 
-                    usbd_event_ep_out_complete_handler(0x00, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
+                    usbd_event_ep_out_complete_handler(0, 0x00, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
 
                     if (read_count == 0) {
                         /* Out status, start reading setup */
@@ -351,7 +351,7 @@ void USBD_IRQHandler(void)
                         g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len -= read_count;
 
                         if ((read_count < g_ch32_usbfs_udc.out_ep[ep_idx].ep_mps) || (g_ch32_usbfs_udc.out_ep[ep_idx].xfer_len == 0)) {
-                            usbd_event_ep_out_complete_handler(ep_idx, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
+                            usbd_event_ep_out_complete_handler(0, ep_idx, g_ch32_usbfs_udc.out_ep[ep_idx].actual_xfer_len);
                         } else {
                             USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK);
                         }
@@ -383,7 +383,7 @@ void USBD_IRQHandler(void)
         ep0_rx_data_toggle = true;
 
         memset(&g_ch32_usbfs_udc, 0, sizeof(struct ch32_usbfs_udc));
-        usbd_event_reset_handler();
+        usbd_event_reset_handler(0);
         USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
         USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
 

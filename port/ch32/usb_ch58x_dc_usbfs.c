@@ -121,248 +121,12 @@ __WEAK void usb_dc_low_level_deinit(void)
 }
 
 /**
- * @brief            Set address
- * @pre              None
- * @param[in]        address ：8-bit valid address
- * @retval           >=0 success otherwise failure
- */
-int usbd_set_address(const uint8_t address)
-{
-    if (address == 0) {
-        CH58x_USBFS_DEV->USB_DEV_AD = (CH58x_USBFS_DEV->USB_DEV_AD & 0x80) | address;
-    }
-    usb_dc_cfg.address = address;
-    return 0;
-}
-
-uint8_t usbd_get_port_speed(const uint8_t port)
-{
-    return USB_SPEED_FULL;
-}
-
-/**
- * @brief            Open endpoint
- * @pre              None
- * @param[in]        ep_cfg : Endpoint configuration structure pointer
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
-{
-    /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep->bEndpointAddress);
-    if (epid > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
-        /**
-         * If you use ch58x, you can change the EP_NUMS set to 8
-         */
-        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
-        return -1;
-    }
-
-    /*!< ep max packet length */
-    uint8_t mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-    /*!< update ep max packet length */
-    if (USB_EP_DIR_IS_IN(ep->bEndpointAddress)) {
-        /*!< in */
-        usb_dc_cfg.ep_in[epid].ep_enable = true;
-        usb_dc_cfg.ep_in[epid].mps = mps;
-        usb_dc_cfg.ep_in[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
-    } else if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
-        /*!< out */
-        usb_dc_cfg.ep_out[epid].ep_enable = true;
-        usb_dc_cfg.ep_out[epid].mps = mps;
-        usb_dc_cfg.ep_out[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
-    }
-    return 0;
-}
-
-/**
- * @brief            Close endpoint
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_close(const uint8_t ep)
-{
-    /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep);
-    if (USB_EP_DIR_IS_IN(ep)) {
-        /*!< in */
-        usb_dc_cfg.ep_in[epid].ep_enable = false;
-    } else if (USB_EP_DIR_IS_OUT(ep)) {
-        /*!< out */
-        usb_dc_cfg.ep_out[epid].ep_enable = false;
-    }
-    return 0;
-}
-
-/**
- * @brief Setup in ep transfer setting and start transfer.
- *
- * This function is asynchronous.
- * This function is similar to uart with tx dma.
- *
- * This function is called to write data to the specified endpoint. The
- * supplied usbd_endpoint_callback function will be called when data is transmitted
- * out.
- *
- * @param[in]  ep        Endpoint address corresponding to the one
- *                       listed in the device configuration table
- * @param[in]  data      Pointer to data to write
- * @param[in]  data_len  Length of the data requested to write. This may
- *                       be zero for a zero length status packet.
- * @return 0 on success, negative errno code on fail.
- */
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
-{
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-    if (!data && data_len) {
-        return -1;
-    }
-    if (!usb_dc_cfg.ep_in[ep_idx].ep_enable) {
-        return -2;
-    }
-    if ((uint32_t)data & 0x03) {
-        return -3;
-    }
-
-    usb_dc_cfg.ep_in[ep_idx].xfer_buf = (uint8_t *)data;
-    usb_dc_cfg.ep_in[ep_idx].xfer_len = data_len;
-    usb_dc_cfg.ep_in[ep_idx].actual_xfer_len = 0;
-
-    if (data_len == 0) {
-        /*!< write 0 len data */
-        EPn_SET_TX_LEN(ep_idx, 0);
-        /*!< enable tx */
-        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-            EPn_SET_TX_VALID(ep_idx);
-        } else {
-            EPn_SET_TX_ISO_VALID(ep_idx);
-        }
-        /*!< return */
-        return 0;
-    } else {
-        /*!< Not zlp */
-        data_len = MIN(data_len, usb_dc_cfg.ep_in[ep_idx].mps);
-        /*!< write buff */
-        memcpy(usb_dc_cfg.ep_in[ep_idx].ep_ram_addr, data, data_len);
-        /*!< write real_wt_nums len data */
-        EPn_SET_TX_LEN(ep_idx, data_len);
-        /*!< enable tx */
-        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-            EPn_SET_TX_VALID(ep_idx);
-        } else {
-            EPn_SET_TX_ISO_VALID(ep_idx);
-        }
-    }
-    return 0;
-}
-
-/**
- * @brief Setup out ep transfer setting and start transfer.
- *
- * This function is asynchronous.
- * This function is similar to uart with rx dma.
- *
- * This function is called to read data to the specified endpoint. The
- * supplied usbd_endpoint_callback function will be called when data is received
- * in.
- *
- * @param[in]  ep        Endpoint address corresponding to the one
- *                       listed in the device configuration table
- * @param[in]  data      Pointer to data to read
- * @param[in]  data_len  Max length of the data requested to read.
- *
- * @return 0 on success, negative errno code on fail.
- */
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
-{
-    uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-    if (!data && data_len) {
-        return -1;
-    }
-    if (!usb_dc_cfg.ep_out[ep_idx].ep_enable) {
-        return -2;
-    }
-    if ((uint32_t)data & 0x03) {
-        return -3;
-    }
-
-    usb_dc_cfg.ep_out[ep_idx].xfer_buf = (uint8_t *)data;
-    usb_dc_cfg.ep_out[ep_idx].xfer_len = data_len;
-    usb_dc_cfg.ep_out[ep_idx].actual_xfer_len = 0;
-
-    if (data_len == 0) {
-    } else {
-        data_len = MIN(data_len, usb_dc_cfg.ep_out[ep_idx].mps);
-    }
-
-    if (usb_dc_cfg.ep_out[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-        EPn_SET_RX_VALID(ep_idx);
-    } else {
-        EPn_SET_RX_ISO_VALID(ep_idx);
-    }
-    return 0;
-}
-
-/**
- * @brief            Endpoint setting stall
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_set_stall(const uint8_t ep)
-{
-    /*!< ep id */
-    uint8_t epid = USB_EP_GET_IDX(ep);
-    if (USB_EP_DIR_IS_OUT(ep)) {
-        EPn_SET_RX_STALL(epid);
-    } else {
-        EPn_SET_TX_STALL(epid);
-    }
-    return 0;
-}
-
-/**
- * @brief            Endpoint clear stall
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_clear_stall(const uint8_t ep)
-{
-    uint8_t epid = USB_EP_GET_IDX(ep);
-    if (USB_EP_DIR_IS_OUT(ep)) {
-        EPn_CLR_RX_STALL(epid);
-    } else {
-        EPn_CLR_TX_STALL(epid);
-    }
-    return 0;
-}
-
-/**
- * @brief            Check endpoint status
- * @pre              None
- * @param[in]        ep ： Endpoint address
- * @param[out]       stalled ： Outgoing endpoint status
- * @retval           >=0 success otherwise failure
- */
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
-{
-    if (USB_EP_DIR_IS_OUT(ep)) {
-    } else {
-    }
-    return 0;
-}
-
-/**
  * @brief            USB initialization
  * @pre              None
  * @param[in]        None
  * @retval           >=0 success otherwise failure
  */
-int usb_dc_init(void)
+int usb_dc_init(uint8_t busid)
 {
     usb_dc_cfg.ep_in[0].ep_ram_addr = ep0_data_buff;
     usb_dc_cfg.ep_out[0].ep_ram_addr = ep0_data_buff;
@@ -434,6 +198,248 @@ int usb_dc_init(void)
     return 0;
 }
 
+int usb_dc_deinit(uint8_t busid)
+{
+    return 0;
+}
+
+/**
+ * @brief            Set address
+ * @pre              None
+ * @param[in]        address ：8-bit valid address
+ * @retval           >=0 success otherwise failure
+ */
+int usbd_set_address(uint8_t busid, const uint8_t address)
+{
+    if (address == 0) {
+        CH58x_USBFS_DEV->USB_DEV_AD = (CH58x_USBFS_DEV->USB_DEV_AD & 0x80) | address;
+    }
+    usb_dc_cfg.address = address;
+    return 0;
+}
+
+uint8_t usbd_get_port_speed(uint8_t busid, const uint8_t port)
+{
+    return USB_SPEED_FULL;
+}
+
+/**
+ * @brief            Open endpoint
+ * @pre              None
+ * @param[in]        ep_cfg : Endpoint configuration structure pointer
+ * @retval           >=0 success otherwise failure
+ */
+int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
+{
+    /*!< ep id */
+    uint8_t epid = USB_EP_GET_IDX(ep->bEndpointAddress);
+    if (epid > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+        /**
+         * If you use ch58x, you can change the EP_NUMS set to 8
+         */
+        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
+        return -1;
+    }
+
+    /*!< ep max packet length */
+    uint8_t mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+    /*!< update ep max packet length */
+    if (USB_EP_DIR_IS_IN(ep->bEndpointAddress)) {
+        /*!< in */
+        usb_dc_cfg.ep_in[epid].ep_enable = true;
+        usb_dc_cfg.ep_in[epid].mps = mps;
+        usb_dc_cfg.ep_in[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    } else if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
+        /*!< out */
+        usb_dc_cfg.ep_out[epid].ep_enable = true;
+        usb_dc_cfg.ep_out[epid].mps = mps;
+        usb_dc_cfg.ep_out[epid].eptype = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    }
+    return 0;
+}
+
+/**
+ * @brief            Close endpoint
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @retval           >=0 success otherwise failure
+ */
+int usbd_ep_close(uint8_t busid, const uint8_t ep)
+{
+    /*!< ep id */
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    if (USB_EP_DIR_IS_IN(ep)) {
+        /*!< in */
+        usb_dc_cfg.ep_in[epid].ep_enable = false;
+    } else if (USB_EP_DIR_IS_OUT(ep)) {
+        /*!< out */
+        usb_dc_cfg.ep_out[epid].ep_enable = false;
+    }
+    return 0;
+}
+
+
+/**
+ * @brief            Endpoint setting stall
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @retval           >=0 success otherwise failure
+ */
+int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
+{
+    /*!< ep id */
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        EPn_SET_RX_STALL(epid);
+    } else {
+        EPn_SET_TX_STALL(epid);
+    }
+    return 0;
+}
+
+/**
+ * @brief            Endpoint clear stall
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @retval           >=0 success otherwise failure
+ */
+int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
+{
+    uint8_t epid = USB_EP_GET_IDX(ep);
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        EPn_CLR_RX_STALL(epid);
+    } else {
+        EPn_CLR_TX_STALL(epid);
+    }
+    return 0;
+}
+
+/**
+ * @brief            Check endpoint status
+ * @pre              None
+ * @param[in]        ep ： Endpoint address
+ * @param[out]       stalled ： Outgoing endpoint status
+ * @retval           >=0 success otherwise failure
+ */
+int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
+{
+    if (USB_EP_DIR_IS_OUT(ep)) {
+    } else {
+    }
+    return 0;
+}
+
+/**
+ * @brief Setup in ep transfer setting and start transfer.
+ *
+ * This function is asynchronous.
+ * This function is similar to uart with tx dma.
+ *
+ * This function is called to write data to the specified endpoint. The
+ * supplied usbd_endpoint_callback function will be called when data is transmitted
+ * out.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to write
+ * @param[in]  data_len  Length of the data requested to write. This may
+ *                       be zero for a zero length status packet.
+ * @return 0 on success, negative errno code on fail.
+ */
+int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+
+    if (!data && data_len) {
+        return -1;
+    }
+    if (!usb_dc_cfg.ep_in[ep_idx].ep_enable) {
+        return -2;
+    }
+    if ((uint32_t)data & 0x03) {
+        return -3;
+    }
+
+    usb_dc_cfg.ep_in[ep_idx].xfer_buf = (uint8_t *)data;
+    usb_dc_cfg.ep_in[ep_idx].xfer_len = data_len;
+    usb_dc_cfg.ep_in[ep_idx].actual_xfer_len = 0;
+
+    if (data_len == 0) {
+        /*!< write 0 len data */
+        EPn_SET_TX_LEN(ep_idx, 0);
+        /*!< enable tx */
+        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            EPn_SET_TX_VALID(ep_idx);
+        } else {
+            EPn_SET_TX_ISO_VALID(ep_idx);
+        }
+        /*!< return */
+        return 0;
+    } else {
+        /*!< Not zlp */
+        data_len = MIN(data_len, usb_dc_cfg.ep_in[ep_idx].mps);
+        /*!< write buff */
+        memcpy(usb_dc_cfg.ep_in[ep_idx].ep_ram_addr, data, data_len);
+        /*!< write real_wt_nums len data */
+        EPn_SET_TX_LEN(ep_idx, data_len);
+        /*!< enable tx */
+        if (usb_dc_cfg.ep_in[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            EPn_SET_TX_VALID(ep_idx);
+        } else {
+            EPn_SET_TX_ISO_VALID(ep_idx);
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief Setup out ep transfer setting and start transfer.
+ *
+ * This function is asynchronous.
+ * This function is similar to uart with rx dma.
+ *
+ * This function is called to read data to the specified endpoint. The
+ * supplied usbd_endpoint_callback function will be called when data is received
+ * in.
+ *
+ * @param[in]  ep        Endpoint address corresponding to the one
+ *                       listed in the device configuration table
+ * @param[in]  data      Pointer to data to read
+ * @param[in]  data_len  Max length of the data requested to read.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len)
+{
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+
+    if (!data && data_len) {
+        return -1;
+    }
+    if (!usb_dc_cfg.ep_out[ep_idx].ep_enable) {
+        return -2;
+    }
+    if ((uint32_t)data & 0x03) {
+        return -3;
+    }
+
+    usb_dc_cfg.ep_out[ep_idx].xfer_buf = (uint8_t *)data;
+    usb_dc_cfg.ep_out[ep_idx].xfer_len = data_len;
+    usb_dc_cfg.ep_out[ep_idx].actual_xfer_len = 0;
+
+    if (data_len == 0) {
+    } else {
+        data_len = MIN(data_len, usb_dc_cfg.ep_out[ep_idx].mps);
+    }
+
+    if (usb_dc_cfg.ep_out[ep_idx].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+        EPn_SET_RX_VALID(ep_idx);
+    } else {
+        EPn_SET_RX_ISO_VALID(ep_idx);
+    }
+    return 0;
+}
+
 /**
  * @brief            USB interrupt processing function
  * @pre              None
@@ -471,11 +477,11 @@ USBD_IRQHandler(void)
                                 if (usb_dc_cfg.ep_in[0].xfer_len > usb_dc_cfg.ep_in[0].mps) {
                                     usb_dc_cfg.ep_in[0].xfer_len -= usb_dc_cfg.ep_in[0].mps;
                                     usb_dc_cfg.ep_in[0].actual_xfer_len += usb_dc_cfg.ep_in[0].mps;
-                                    usbd_event_ep_in_complete_handler(0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
+                                    usbd_event_ep_in_complete_handler(0, 0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
                                 } else {
                                     usb_dc_cfg.ep_in[0].actual_xfer_len += usb_dc_cfg.ep_in[0].xfer_len;
                                     usb_dc_cfg.ep_in[0].xfer_len = 0;
-                                    usbd_event_ep_in_complete_handler(0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
+                                    usbd_event_ep_in_complete_handler(0, 0 | 0x80, usb_dc_cfg.ep_in[0].actual_xfer_len);
                                 }
                                 break;
                             case 0:
@@ -526,7 +532,7 @@ USBD_IRQHandler(void)
                         } else {
                             usb_dc_cfg.ep_in[epid].actual_xfer_len += usb_dc_cfg.ep_in[epid].xfer_len;
                             usb_dc_cfg.ep_in[epid].xfer_len = 0;
-                            usbd_event_ep_in_complete_handler(epid | 0x80, usb_dc_cfg.ep_in[epid].actual_xfer_len);
+                            usbd_event_ep_in_complete_handler(0, epid | 0x80, usb_dc_cfg.ep_in[epid].actual_xfer_len);
                         }
                     }
                     break;
@@ -539,7 +545,7 @@ USBD_IRQHandler(void)
 
                         usb_dc_cfg.ep_out[0].actual_xfer_len += read_count;
                         usb_dc_cfg.ep_out[0].xfer_len -= read_count;
-                        usbd_event_ep_out_complete_handler(0x00, usb_dc_cfg.ep_out[0].actual_xfer_len);
+                        usbd_event_ep_out_complete_handler(0, 0x00, usb_dc_cfg.ep_out[0].actual_xfer_len);
                         if (read_count == 0) {
                             /*!< Out status, start reading setup */
                             EPn_SET_RX_VALID(0);
@@ -556,7 +562,7 @@ USBD_IRQHandler(void)
                             usb_dc_cfg.ep_out[epid].xfer_len -= read_count;
 
                             if ((read_count < usb_dc_cfg.ep_out[epid].mps) || (usb_dc_cfg.ep_out[epid].xfer_len == 0)) {
-                                usbd_event_ep_out_complete_handler(((epid)&0x7f), usb_dc_cfg.ep_out[epid].actual_xfer_len);
+                                usbd_event_ep_out_complete_handler(0, ((epid)&0x7f), usb_dc_cfg.ep_out[epid].actual_xfer_len);
                             } else {
                                 if (usb_dc_cfg.ep_out[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                                     EPn_SET_RX_VALID(epid);
@@ -596,13 +602,13 @@ USBD_IRQHandler(void)
                 EPn_SET_TX_VALID(0);
             }
             EPn_SET_RX_NAK(0);
-            usbd_event_ep0_setup_complete_handler((uint8_t *)&(usb_dc_cfg.setup));
+            usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&(usb_dc_cfg.setup));
             CH58x_USBFS_DEV->USB_INT_FG = RB_UIF_TRANSFER;
         }
     } else if (intflag & RB_UIF_BUS_RST) {
         /*!< Reset */
         CH58x_USBFS_DEV->USB_DEV_AD = 0;
-        usbd_event_reset_handler();
+        usbd_event_reset_handler(0);
         /*!< Set ep0 rx vaild to start receive setup packet */
         EPn_SET_RX_VALID(0);
         CH58x_USBFS_DEV->USB_INT_FG = RB_UIF_BUS_RST;

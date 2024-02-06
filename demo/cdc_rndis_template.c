@@ -263,7 +263,7 @@ void rndis_input_poll(void)
 }
 #endif /* RT_USING_LWIP */
 
-void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -301,8 +301,8 @@ void cdc_rndis_init(void)
 #else
     rndis_lwip_init();
 #endif
-    usbd_desc_register(cdc_descriptor);
-    usbd_add_interface(usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
-    usbd_add_interface(usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
-    usbd_initialize();
+    usbd_desc_register(0, cdc_descriptor);
+    usbd_add_interface(0, usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_add_interface(0, usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_initialize(0, usbd_event_handler);
 }

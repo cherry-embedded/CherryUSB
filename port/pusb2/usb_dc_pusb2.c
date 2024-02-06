@@ -81,7 +81,7 @@ static void pusb2_dc_connect_handler(FPUsb2DcController *instance)
 
     USB_LOG_DBG("%s \n", __func__);
 
-    usbd_event_reset_handler();
+    usbd_event_reset_handler(0);
 
     /* update speed and max packet size when connect */
     g_pusb2_udc.speed = dc_dev->speed;
@@ -116,7 +116,7 @@ static uint32_t pusb2_dc_receive_steup_handler(FPUsb2DcController *instance, FUs
                 setup->wLength,
                 setup->wValue);
 
-    usbd_event_ep0_setup_complete_handler((u8 *)setup);
+    usbd_event_ep0_setup_complete_handler(0, (u8 *)setup);
 
     return 0;
 }
@@ -205,7 +205,7 @@ static void pusb2_dc_prepare_ctrl_config(FPUsb2Config *config)
     return;
 }
 
-int usb_dc_init(void)
+int usb_dc_init(uint8_t busid)
 {
     memset(&g_pusb2_udc, 0, sizeof(struct pusb2_udc));
 
@@ -222,7 +222,7 @@ int usb_dc_init(void)
     return 0;
 }
 
-int usb_dc_deinit(void)
+int usb_dc_deinit(uint8_t busid)
 {
     usb_dc_low_level_deinit();
 
@@ -230,7 +230,7 @@ int usb_dc_deinit(void)
     return 0;
 }
 
-int usbd_set_address(const uint8_t addr)
+int usbd_set_address(uint8_t busid, const uint8_t addr)
 {
     g_pusb2_udc.dev_addr = addr;
     return 0;
@@ -251,7 +251,7 @@ static struct usb_endpoint_descriptor *usbd_get_ep0_desc(const struct usb_endpoi
     return &ep0_desc;    
 }
 
-int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
+int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
     struct pusb2_dc_ep_state *ep_state;
@@ -283,7 +283,7 @@ int usbd_ep_open(const struct usb_endpoint_descriptor *ep)
     return 0;
 }
 
-int usbd_ep_close(const uint8_t ep)
+int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     struct pusb2_dc_ep_state *ep_state;
@@ -304,7 +304,7 @@ int usbd_ep_close(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_set_stall(const uint8_t ep)
+int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     struct pusb2_dc_ep_state *ep_state;
@@ -325,7 +325,7 @@ int usbd_ep_set_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_clear_stall(const uint8_t ep)
+int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     struct pusb2_dc_ep_state *ep_state;
@@ -346,7 +346,7 @@ int usbd_ep_clear_stall(const uint8_t ep)
     return 0;
 }
 
-int usbd_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
+int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     struct pusb2_dc_ep_state *ep_state;
@@ -406,9 +406,9 @@ void pusb2_dc_callback_complete(FPUsb2DcEp *priv_ep, FPUsb2DcReq *priv_request)
     request = priv_request->context;
 
     if (USB_EP_DIR_IS_OUT(priv_ep->address)) {
-        usbd_event_ep_out_complete_handler(priv_ep->address, priv_request->actual);
+        usbd_event_ep_out_complete_handler(0, priv_ep->address, priv_request->actual);
     } else {
-        usbd_event_ep_in_complete_handler(priv_ep->address, priv_request->actual);
+        usbd_event_ep_in_complete_handler(0, priv_ep->address, priv_request->actual);
     }
 
     request->status = priv_request->status;
@@ -458,12 +458,12 @@ int pusb2_dc_ep_read_write(const uint8_t ep, uintptr data, uint32_t data_len)
     return 0;
 }
 
-int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len)
+int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
     return pusb2_dc_ep_read_write(ep, (uintptr)data, data_len);
 }
 
-int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len)
+int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len)
 {
     return pusb2_dc_ep_read_write(ep, (uintptr)data, data_len);
 }
