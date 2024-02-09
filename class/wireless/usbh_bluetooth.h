@@ -35,9 +35,6 @@ struct usbh_bluetooth {
 extern "C" {
 #endif
 
-void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class);
-void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class);
-
 int usbh_bluetooth_hci_write(uint8_t hci_type, uint8_t *buffer, uint32_t buflen);
 void usbh_bluetooth_hci_read_callback(uint8_t *data, uint32_t len);
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
@@ -46,6 +43,9 @@ void usbh_bluetooth_hci_rx_thread(void *argument);
 void usbh_bluetooth_hci_evt_rx_thread(void *argument);
 void usbh_bluetooth_hci_acl_rx_thread(void *argument);
 #endif
+
+void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class);
+void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class);
 
 #ifdef __cplusplus
 }
