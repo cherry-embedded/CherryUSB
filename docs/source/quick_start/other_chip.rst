@@ -12,6 +12,8 @@ USB Device 移植要点
 
 .. note:: 上述三个宏仅对 fsdev、musb、dwc2 有效，因为这 3 个是通用 IP
 
+.. note:: 为了适配后续多 port，建议中断名称不要使用宏来替换，自行在真实的中断中调用 `USBD_IRQHandler`
+
 - 实现 `usb_dc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template
 - 调用 `usbd_initialize` 初始化 usb 硬件

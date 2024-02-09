@@ -35,6 +35,8 @@
 
 .. figure:: img/config_file.png
 
+- 在 `usb_config.h` 中添加 `USBD_IRQHandler=xxxx` 、 `CONFIG_USBDEV_EP_NUM=x` 以及 `USBD_BASE=0xxxxx` 三个常规 porting 需要的宏
+
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译
 
 主机配置
