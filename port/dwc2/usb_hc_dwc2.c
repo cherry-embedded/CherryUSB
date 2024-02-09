@@ -146,6 +146,26 @@ static inline void dwc2_drivebus(struct usbh_bus *bus, uint8_t state)
     }
 }
 
+static uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
+{
+    __IO uint32_t hprt0 = 0U;
+    uint8_t speed;
+
+    hprt0 = USB_OTG_HPRT;
+
+    speed = (hprt0 & USB_OTG_HPRT_PSPD) >> 17;
+
+    if (speed == HPRT0_PRTSPD_HIGH_SPEED) {
+        return USB_SPEED_HIGH;
+    } else if (speed == HPRT0_PRTSPD_FULL_SPEED) {
+        return USB_SPEED_FULL;
+    } else if (speed == HPRT0_PRTSPD_LOW_SPEED) {
+        return USB_SPEED_LOW;
+    } else {
+        return USB_SPEED_UNKNOWN;
+    }
+}
+
 static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
 {
     uint32_t regval;
@@ -197,7 +217,7 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
     }
 
     /* LS device plugged to HUB */
-    if (speed == USB_SPEED_LOW) {
+    if ((speed == USB_SPEED_LOW) && (usbh_get_port_speed(bus, 0) != USB_SPEED_LOW)) {
         regval |= USB_OTG_HCCHAR_LSDEV;
     }
 
@@ -300,26 +320,6 @@ static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
     return 0;
 }
 
-static uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
-{
-    __IO uint32_t hprt0 = 0U;
-    uint8_t speed;
-
-    hprt0 = USB_OTG_HPRT;
-
-    speed = (hprt0 & USB_OTG_HPRT_PSPD) >> 17;
-
-    if (speed == HPRT0_PRTSPD_HIGH_SPEED) {
-        return USB_SPEED_HIGH;
-    } else if (speed == HPRT0_PRTSPD_FULL_SPEED) {
-        return USB_SPEED_FULL;
-    } else if (speed == HPRT0_PRTSPD_LOW_SPEED) {
-        return USB_SPEED_LOW;
-    } else {
-        return USB_SPEED_UNKNOWN;
-    }
-}
-
 /**
   * @brief  dwc2_get_glb_intstatus: return the global USB interrupt status
   * @retval status
@@ -351,7 +351,7 @@ static int dwc2_chan_alloc(struct usbh_bus *bus)
 static void dwc2_chan_free(struct dwc2_chan *chan)
 {
     size_t flags;
-    
+
     flags = usb_osal_enter_critical_section();
     chan->inuse = false;
     usb_osal_leave_critical_section(flags);
