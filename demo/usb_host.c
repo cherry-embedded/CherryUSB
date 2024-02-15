@@ -13,8 +13,9 @@
 #define TEST_USBH_VIDEO     0
 
 #if __has_include("lwip/pbuf.h")
-#define TEST_USBH_CDC_ECM 1
-#define TEST_USBH_RNDIS   1
+#define TEST_USBH_CDC_ECM 0
+#define TEST_USBH_RNDIS   0
+#define TEST_USBH_ASIX    0
 #else
 #define TEST_USBH_CDC_ECM 0
 #define TEST_USBH_RNDIS   0
@@ -349,7 +350,7 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 }
 #endif
 
-#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
+#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS || TEST_USBH_ASIX
 #include "netif/etharp.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
@@ -673,6 +674,118 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 }
 #endif
 
+#if TEST_USBH_ASIX
+#include "usbh_asix.h"
+
+struct netif g_asix_netif;
+
+#ifdef __RTTHREAD__
+static struct eth_device asix_dev;
+
+static rt_err_t rt_usbh_asix_control(rt_device_t dev, int cmd, void *args)
+{
+    struct usbh_asix *asix_class = (struct usbh_asix *)dev->user_data;
+
+    switch (cmd) {
+        case NIOCTL_GADDR:
+
+            /* get mac address */
+            if (args)
+                rt_memcpy(args, asix_class->mac, 6);
+            else
+                return -RT_ERROR;
+
+            break;
+
+        default:
+            break;
+    }
+
+    return RT_EOK;
+}
+
+static rt_err_t rt_usbh_asix_eth_tx(rt_device_t dev, struct pbuf *p)
+{
+    return usbh_asix_linkoutput(NULL, p);
+}
+#endif
+
+static err_t usbh_asix_if_init(struct netif *netif)
+{
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    netif->mtu = 1500;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->state = NULL;
+    netif->name[0] = 'E';
+    netif->name[1] = 'X';
+    netif->output = etharp_output;
+    netif->linkoutput = usbh_asix_linkoutput;
+    return ERR_OK;
+}
+
+void usbh_asix_run(struct usbh_asix *asix_class)
+{
+#ifdef __RTTHREAD__
+    struct netdev *netdev;
+
+    memset(&asix_dev, 0, sizeof(struct eth_device));
+
+    asix_dev.parent.control = rt_usbh_asix_control;
+    asix_dev.eth_rx = NULL;
+    asix_dev.eth_tx = rt_usbh_asix_eth_tx;
+    asix_dev.parent.user_data = asix_class;
+
+    eth_device_init(&asix_dev, "u2");
+    eth_device_linkchange(&asix_dev, RT_TRUE);
+
+    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_asix_rx_thread, asix_dev.netif);
+#else
+    struct netif *netif = &g_asix_netif;
+
+    netif->hwaddr_len = 6;
+    memcpy(netif->hwaddr, asix_class->mac, 6);
+
+    IP4_ADDR(&asix_class->ipaddr, 0, 0, 0, 0);
+    IP4_ADDR(&asix_class->netmask, 0, 0, 0, 0);
+    IP4_ADDR(&asix_class->gateway, 0, 0, 0, 0);
+
+    netif = netif_add(netif, &asix_class->ipaddr, &asix_class->netmask, &asix_class->gateway, NULL, usbh_asix_if_init, tcpip_input);
+    netif_set_default(netif);
+    while (!netif_is_up(netif)) {
+    }
+
+    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle1 == NULL) {
+        USB_LOG_ERR("timer creation failed! \r\n");
+        while (1) {
+        }
+    }
+
+    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_asix_rx_thread, netif);
+#if LWIP_DHCP
+    dhcp_start(netif);
+    xTimerStart(dhcp_handle1, 0);
+#endif
+#endif
+}
+
+void usbh_asix_stop(struct usbh_asix *asix_class)
+{
+#ifdef __RTTHREAD__
+    eth_device_deinit(&asix_dev);
+#else
+    struct netif *netif = &g_asix_netif;
+#if LWIP_DHCP
+    dhcp_stop(netif);
+    dhcp_cleanup(netif);
+#endif
+    netif_set_down(netif);
+    netif_remove(netif);
+#endif
+}
+#endif
+
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 #if TEST_USBH_CDC_ACM
@@ -737,7 +850,7 @@ void usbh_class_test(void)
 #ifdef __RTTHREAD__
     /* do nothing */
 #else
-#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS
+#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS || TEST_USBH_ASIX
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
 #endif
