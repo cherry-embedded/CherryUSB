@@ -263,7 +263,7 @@ void rndis_input_poll(void)
 }
 #endif /* RT_USING_LWIP */
 
-static void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -294,15 +294,15 @@ static void usbd_event_handler(uint8_t event)
 struct usbd_interface intf0;
 struct usbd_interface intf1;
 
-void cdc_rndis_init(void)
+void cdc_rndis_init(uint8_t busid, uint32_t reg_base)
 {
 #ifdef RT_USING_LWIP
     rt_usbd_rndis_init();
 #else
     rndis_lwip_init();
 #endif
-    usbd_desc_register(0, cdc_descriptor);
-    usbd_add_interface(0, usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
-    usbd_add_interface(0, usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
-    usbd_initialize(0, usbd_event_handler);
+    usbd_desc_register(busid, cdc_descriptor);
+    usbd_add_interface(busid, usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_add_interface(busid, usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_initialize(busid, reg_base, usbd_event_handler);
 }

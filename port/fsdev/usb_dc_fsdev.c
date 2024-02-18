@@ -7,14 +7,6 @@
 #define PMA_ACCESS CONFIG_USBDEV_FSDEV_PMA_ACCESS
 #include "usb_fsdev_reg.h"
 
-#ifndef USBD_IRQHandler
-#error "please define USBD_IRQHandler in usb_config.h"
-#endif
-
-#ifndef USBD_BASE
-#error "please define USBD_BASE in usb_config.h"
-#endif
-
 #ifndef CONFIG_USB_FSDEV_RAM_SIZE
 #define CONFIG_USB_FSDEV_RAM_SIZE 512
 #endif
@@ -23,7 +15,7 @@
 #define CONFIG_USBDEV_EP_NUM 8
 #endif
 
-#define USB ((USB_TypeDef *)USBD_BASE)
+#define USB ((USB_TypeDef *)g_usbdev_bus[0].reg_base)
 
 #define USB_BTABLE_SIZE (8 * CONFIG_USBDEV_EP_NUM)
 
@@ -309,7 +301,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     uint16_t wIstr, wEPVal;
     uint8_t ep_idx;

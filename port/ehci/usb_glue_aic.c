@@ -10,7 +10,7 @@
 #include "usbh_core.h"
 #include "usb_ehci_priv.h"
 
-extern void USBH_IRQHandler(struct usbh_bus *bus);
+extern void USBH_IRQHandler(uint8_t busid);
 
 const uint8_t aic_irq_table[] = {
     USB_HOST0_EHCI_IRQn,
@@ -63,7 +63,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
 
     /* register interrupt callback */
     aicos_request_irq(aic_irq_table[bus->hcd.hcd_id], (irq_handler_t)USBH_IRQHandler,
-                      0, "usb_host_ehci", bus);
+                      0, "usb_host_ehci", bus->hcd.hcd_id);
     aicos_irq_enable(aic_irq_table[bus->hcd.hcd_id]);
 }
 

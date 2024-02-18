@@ -51,14 +51,6 @@
 #endif
 // clang-format on
 
-#ifndef USBD_IRQHandler
-#error "please define USBD_IRQHandler in usb_config.h"
-#endif
-
-#ifndef USBD_BASE
-#error "please define USBD_BASE in usb_config.h"
-#endif
-
 #ifndef CONFIG_USB_DWC2_RAM_SIZE
 #error "please define CONFIG_USB_DWC2_RAM_SIZE in usb_config.h, only support 1280 or 4096"
 #endif
@@ -141,6 +133,8 @@
 #else
 #error "Unsupported CONFIG_USB_DWC2_RAM_SIZE value"
 #endif
+
+#define USBD_BASE (g_usbdev_bus[0].reg_base)
 
 #define USB_OTG_GLB      ((USB_OTG_GlobalTypeDef *)(USBD_BASE))
 #define USB_OTG_DEV      ((USB_OTG_DeviceTypeDef *)(USBD_BASE + USB_OTG_DEVICE_BASE))
@@ -581,7 +575,7 @@ int usb_dc_init(uint8_t busid)
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
     /* This is vendor register */
-    USB_OTG_GLB->GCCFG = usbd_get_dwc2_gccfg_conf();
+    USB_OTG_GLB->GCCFG = usbd_get_dwc2_gccfg_conf(USBD_BASE);
 
     ret = dwc2_core_init();
 
@@ -997,7 +991,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     uint32_t gint_status, temp, ep_idx, ep_intr, epint, read_count, daintmask;
     gint_status = dwc2_get_glb_intstatus();

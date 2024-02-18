@@ -850,7 +850,7 @@ void handle_ep0(struct usbh_bus *bus)
     }
 }
 
-void USBH_IRQHandler(struct usbh_bus *bus)
+void USBH_IRQHandler(uint8_t busid)
 {
     uint32_t is;
     uint32_t txis;
@@ -861,7 +861,10 @@ void USBH_IRQHandler(struct usbh_bus *bus)
     struct usbh_urb *urb;
     uint8_t ep_idx;
     uint8_t old_ep_idx;
+    struct usbh_bus *bus;
 
+    bus = &g_usbhost_bus[busid];
+    
     is = HWREGB(USB_BASE + MUSB_IS_OFFSET);
     txis = HWREGH(USB_BASE + MUSB_TXIS_OFFSET);
     rxis = HWREGH(USB_BASE + MUSB_RXIS_OFFSET);

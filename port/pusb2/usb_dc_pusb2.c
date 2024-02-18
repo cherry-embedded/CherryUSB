@@ -468,7 +468,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return pusb2_dc_ep_read_write(ep, (uintptr)data, data_len);
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     FPUsb2InterruptHandler(&g_pusb2_udc.pusb2);
 }

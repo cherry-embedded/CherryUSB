@@ -8,15 +8,11 @@ USB Device 移植要点
 
 - 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbd_core.c` 和 `usb_dc_xxx.c` 为必须添加项。而 `usb_dc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
-- 在 `usb_config.h` 中添加 `USBD_IRQHandler=xxxx` 、 `CONFIG_USBDEV_EP_NUM=x` 以及 `USBD_BASE=0xxxxx` 三个常规 porting 需要的宏
-
-.. note:: 上述三个宏仅对 fsdev、musb、dwc2 有效，因为这 3 个是通用 IP
-
-.. note:: 为了适配后续多 port，建议中断名称不要使用宏来替换，自行在真实的中断中调用 `USBD_IRQHandler`
 
 - 实现 `usb_dc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template
-- 调用 `usbd_initialize` 初始化 usb 硬件
+- 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
+- 在中断函数中调用 `USBD_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBD_IRQHandler` ，请更改 USB 协议栈中的名称
 - 编译使用。各个 class 如何使用，参考 demo 下的 template
 
 USB Host 移植要点
@@ -27,9 +23,8 @@ USB Host 移植要点
 - 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbh_core.c` 、 `usb_hc_xxx.c` 以及 **osal** 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 `usb_hc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
-- 调用 `usbh_alloc_bus` 创建 bus，填入 USB IP 的基地址， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
-- 在中断函数中调用 `USBH_IRQHandler`，并传入 bus 句柄, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
-- 调用 `usbh_initialize` 
+- 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
+- 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
 - 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
 
 .. code-block:: C

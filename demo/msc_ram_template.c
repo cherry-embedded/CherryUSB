@@ -1,8 +1,6 @@
 #include "usbd_core.h"
 #include "usbd_msc.h"
 
-#define CONFIG_USBDEV_DEMO_BUS 0
-
 #define MSC_IN_EP  0x81
 #define MSC_OUT_EP 0x02
 
@@ -97,7 +95,7 @@ const uint8_t msc_ram_descriptor[] = {
     0x00
 };
 
-static void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -153,10 +151,10 @@ int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *
 
 struct usbd_interface intf0;
 
-void msc_ram_init(void)
+void msc_ram_init(uint8_t busid, uint32_t reg_base)
 {
-    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, msc_ram_descriptor);
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_msc_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf0, MSC_OUT_EP, MSC_IN_EP));
+    usbd_desc_register(busid, msc_ram_descriptor);
+    usbd_add_interface(busid, usbd_msc_init_intf(busid, &intf0, MSC_OUT_EP, MSC_IN_EP));
 
-    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
+    usbd_initialize(busid, reg_base, usbd_event_handler);
 }

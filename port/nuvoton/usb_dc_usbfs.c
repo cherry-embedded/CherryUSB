@@ -2,10 +2,6 @@
 #include "NuMicro.h"
 #include "usbd_core.h"
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USBD_IRQHandler
-#endif
-
 #ifndef USBD_EPNUM
 #define USBD_EPNUM 8
 #endif
@@ -292,7 +288,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     uint32_t int_flag = USBD_GET_INT_FLAG();
     uint32_t bus_state = USBD_GET_BUS_STATE();

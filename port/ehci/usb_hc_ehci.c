@@ -1309,10 +1309,13 @@ static void ehci_scan_periodic_list(struct usbh_bus *bus)
     }
 }
 
-void USBH_IRQHandler(struct usbh_bus *bus)
+void USBH_IRQHandler(uint8_t busid)
 {
     uint32_t usbsts;
+    struct usbh_bus *bus;
 
+    bus = &g_usbhost_bus[busid];
+    
     usbsts = EHCI_HCOR->usbsts & EHCI_HCOR->usbintr;
     EHCI_HCOR->usbsts = usbsts;
 

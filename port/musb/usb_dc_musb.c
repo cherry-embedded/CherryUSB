@@ -13,15 +13,7 @@
 #define HWREGB(x) \
     (*((volatile uint8_t *)(x)))
 
-#ifndef USBD_IRQHandler
-#error "please define USBD_IRQHandler in usb_config.h"
-#endif
-
-#ifndef USBD_BASE
-#error "please define USBD_BASE in usb_config.h"
-#endif
-
-#define USB_BASE USBD_BASE
+#define USB_BASE (g_usbdev_bus[0].reg_base)
 
 #if defined(CONFIG_USB_MUSB_SUNXI)
 #define MUSB_FADDR_OFFSET 0x98
@@ -775,7 +767,7 @@ static void handle_ep0(void)
     }
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     uint32_t is;
     uint32_t txis;
@@ -796,7 +788,7 @@ void USBD_IRQHandler(void)
     if (is & USB_IS_RESET) {
         memset(&g_musb_udc, 0, sizeof(struct musb_udc));
         g_musb_udc.fifo_size_offset = USB_CTRL_EP_MPS;
-        usbd_event_reset_handler();
+        usbd_event_reset_handler(0);
         HWREGH(USB_BASE + MUSB_TXIE_OFFSET) = USB_TXIE_EP0;
         HWREGH(USB_BASE + MUSB_RXIE_OFFSET) = 0;
 

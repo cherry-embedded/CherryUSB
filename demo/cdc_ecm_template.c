@@ -230,7 +230,7 @@ void cdc_ecm_input_poll(void)
     cdc_ecm_if_input(&cdc_ecm_netif);
 }
 
-static void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -263,12 +263,12 @@ struct usbd_interface intf1;
  * sudo ifconfig enxaabbccddeeff up
  * sudo dhcpclient enxaabbccddeeff
 */
-void cdc_ecm_init(void)
+void cdc_ecm_init(uint8_t busid, uint32_t reg_base)
 {
     cdc_ecm_lwip_init();
     
-    usbd_desc_register(0, cdc_ecm_descriptor);
-    usbd_add_interface(0, usbd_cdc_ecm_init_intf(0, &intf0, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP));
-    usbd_add_interface(0, usbd_cdc_ecm_init_intf(0, &intf1, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP));
-    usbd_initialize(0, usbd_event_handler);
+    usbd_desc_register(busid, cdc_ecm_descriptor);
+    usbd_add_interface(busid, usbd_cdc_ecm_init_intf(&intf0, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP));
+    usbd_add_interface(busid, usbd_cdc_ecm_init_intf(&intf1, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP));
+    usbd_initialize(busid, reg_base, usbd_event_handler);
 }

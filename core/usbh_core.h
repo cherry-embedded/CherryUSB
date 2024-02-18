@@ -216,6 +216,11 @@ static inline void usbh_int_urb_fill(struct usbh_urb *urb,
     urb->arg = arg;
 }
 
+extern struct usbh_bus g_usbhost_bus[];
+#ifdef USBH_IRQHandler
+#error USBH_IRQHandler is obsolete, please call USBH_IRQHandler(xxx) in your irq
+#endif
+
 /**
  * @brief Submit an control transfer to an endpoint.
  * This is a blocking method; this method will not return until the transfer has completed.
@@ -256,9 +261,8 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
  */
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
 
-struct usbh_bus *usbh_alloc_bus(uint8_t busid, uint32_t reg_base);
-int usbh_initialize(struct usbh_bus *bus);
-int usbh_deinitialize(struct usbh_bus *bus);
+int usbh_initialize(uint8_t busid, uint32_t reg_base);
+int usbh_deinitialize(uint8_t busid);
 void *usbh_find_class_instance(const char *devname);
 
 int lsusb(int argc, char **argv);

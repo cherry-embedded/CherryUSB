@@ -62,8 +62,10 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     struct usbd_tx_rx_msg tx_msg[USB_EP_IN_NUM];
     struct usbd_tx_rx_msg rx_msg[USB_EP_OUT_NUM];
 
-    void (*event_handler)(uint8_t event);
+    void (*event_handler)(uint8_t busid, uint8_t event);
 } g_usbd_core[CONFIG_USBDEV_MAX_BUS];
+
+struct usbd_bus g_usbdev_bus[CONFIG_USBDEV_MAX_BUS];
 
 static void usbd_class_event_notify_handler(uint8_t busid, uint8_t event, void *arg);
 
@@ -493,9 +495,9 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
         case USB_REQUEST_SET_FEATURE:
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
                 if (setup->bRequest == USB_REQUEST_SET_FEATURE) {
-                    g_usbd_core[busid].event_handler(USBD_EVENT_SET_REMOTE_WAKEUP);
+                    g_usbd_core[busid].event_handler(busid, USBD_EVENT_SET_REMOTE_WAKEUP);
                 } else {
-                    g_usbd_core[busid].event_handler(USBD_EVENT_CLR_REMOTE_WAKEUP);
+                    g_usbd_core[busid].event_handler(busid, USBD_EVENT_CLR_REMOTE_WAKEUP);
                 }
             } else if (value == USB_FEATURE_TEST_MODE) {
 #ifdef CONFIG_USBDEV_TEST_MODE
@@ -532,7 +534,7 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
             } else {
                 g_usbd_core[busid].configuration = value;
                 usbd_class_event_notify_handler(busid, USBD_EVENT_CONFIGURED, NULL);
-                g_usbd_core[busid].event_handler(USBD_EVENT_CONFIGURED);
+                g_usbd_core[busid].event_handler(busid, USBD_EVENT_CONFIGURED);
             }
             *len = 0;
             break;
@@ -952,22 +954,22 @@ static void usbd_class_event_notify_handler(uint8_t busid, uint8_t event, void *
 
 void usbd_event_connect_handler(uint8_t busid)
 {
-    g_usbd_core[busid].event_handler(USBD_EVENT_CONNECTED);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_CONNECTED);
 }
 
 void usbd_event_disconnect_handler(uint8_t busid)
 {
-    g_usbd_core[busid].event_handler(USBD_EVENT_DISCONNECTED);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_DISCONNECTED);
 }
 
 void usbd_event_resume_handler(uint8_t busid)
 {
-    g_usbd_core[busid].event_handler(USBD_EVENT_RESUME);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_RESUME);
 }
 
 void usbd_event_suspend_handler(uint8_t busid)
 {
-    g_usbd_core[busid].event_handler(USBD_EVENT_SUSPEND);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_SUSPEND);
 }
 
 void usbd_event_reset_handler(uint8_t busid)
@@ -992,7 +994,7 @@ void usbd_event_reset_handler(uint8_t busid)
     usbd_ep_open(busid, &ep0);
 
     usbd_class_event_notify_handler(busid, USBD_EVENT_RESET, NULL);
-    g_usbd_core[busid].event_handler(USBD_EVENT_RESET);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_RESET);
 }
 
 void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
@@ -1199,14 +1201,24 @@ bool usb_device_is_configured(uint8_t busid)
     return g_usbd_core[busid].configuration;
 }
 
-int usbd_initialize(uint8_t busid, void (*event_handler)(uint8_t event))
+int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event))
 {
     int ret;
+    struct usbd_bus *bus;
+
+    if (busid > CONFIG_USBDEV_MAX_BUS) {
+        USB_LOG_ERR("bus overflow\r\n");
+        while (1) {
+        }
+    }
+
+    bus = &g_usbdev_bus[busid];
+    bus->reg_base = reg_base;
 
     g_usbd_core[busid].event_handler = event_handler;
     ret = usb_dc_init(busid);
     usbd_class_event_notify_handler(busid, USBD_EVENT_INIT, NULL);
-    g_usbd_core[busid].event_handler(USBD_EVENT_INIT);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_INIT);
     return ret;
 }
 
@@ -1215,6 +1227,6 @@ int usbd_deinitialize(uint8_t busid)
     g_usbd_core[busid].intf_offset = 0;
     usb_dc_deinit(busid);
     usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
-    g_usbd_core[busid].event_handler(USBD_EVENT_DEINIT);
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_DEINIT);
     return 0;
 }

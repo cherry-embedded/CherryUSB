@@ -10,7 +10,7 @@
  * 
 */
 
-uint32_t usbd_get_dwc2_gccfg_conf(void)
+uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
 #ifdef CONFIG_USB_HS
     return ((1 << 16) | (1 << 21));
@@ -28,7 +28,7 @@ uint32_t usbd_get_dwc2_gccfg_conf(void)
 #endif
 }
 
-uint32_t usbh_get_dwc2_gccfg_conf(void)
+uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
 #ifdef CONFIG_USB_DWC2_ULPI_PHY
     return ((1 << 16) | (1 << 21));

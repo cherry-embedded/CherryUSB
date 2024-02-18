@@ -1,8 +1,6 @@
 #include "usbd_core.h"
 #include "usbd_cdc.h"
 
-#define CONFIG_USBDEV_DEMO_BUS 0
-
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
 #define CDC_OUT_EP 0x01
@@ -127,7 +125,7 @@ volatile bool ep_tx_busy_flag = false;
 #define CDC_MAX_MPS 64
 #endif
 
-static void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -142,10 +140,10 @@ static void usbd_event_handler(uint8_t event)
             break;
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
-            usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP, read_buffer, 2048);
-            usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP2, read_buffer, 2048);
-            usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP3, read_buffer, 2048);
-            usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP4, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP2, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP3, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP4, read_buffer, 2048);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -161,7 +159,7 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual out len:%d\r\n", nbytes);
     /* setup next out ep read transfer */
-    usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP, read_buffer, 2048);
+    usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
 }
 
 void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
@@ -225,29 +223,29 @@ struct usbd_interface intf5;
 struct usbd_interface intf6;
 struct usbd_interface intf7;
 
-void cdc_acm_multi_init(void)
+void cdc_acm_multi_init(uint8_t busid, uint32_t reg_base)
 {
-    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, cdc_descriptor);
+    usbd_desc_register(busid, cdc_descriptor);
 
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf0));
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf1));
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_out_ep1);
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_in_ep1);
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf0));
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf1));
+    usbd_add_endpoint(busid, &cdc_out_ep1);
+    usbd_add_endpoint(busid, &cdc_in_ep1);
 
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf2));
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf3));
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_out_ep2);
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_in_ep2);
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf2));
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf3));
+    usbd_add_endpoint(busid, &cdc_out_ep2);
+    usbd_add_endpoint(busid, &cdc_in_ep2);
 
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf4));
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf5));
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_out_ep3);
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_in_ep3);
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf4));
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf5));
+    usbd_add_endpoint(busid, &cdc_out_ep3);
+    usbd_add_endpoint(busid, &cdc_in_ep3);
 
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf6));
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf7));
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_out_ep4);
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_in_ep4);
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf6));
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf7));
+    usbd_add_endpoint(busid, &cdc_out_ep4);
+    usbd_add_endpoint(busid, &cdc_in_ep4);
 
-    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
+    usbd_initialize(busid, reg_base, usbd_event_handler);
 }

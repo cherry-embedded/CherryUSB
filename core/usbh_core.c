@@ -17,6 +17,8 @@ usb_slist_t g_bus_head = USB_SLIST_OBJECT_INIT(g_bus_head);
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t ep0_request_buffer[CONFIG_USBHOST_MAX_BUS][CONFIG_USBHOST_REQUEST_BUFFER_LEN];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct usb_setup_packet g_setup_buffer[CONFIG_USBHOST_MAX_BUS][CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USBHOST_MAX_EHPORTS];
 
+struct usbh_bus g_usbhost_bus[CONFIG_USBHOST_MAX_BUS];
+
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
 #define DESC_bDescriptorType 1 /** Descriptor type offset */
@@ -633,23 +635,9 @@ errout:
     return ret;
 }
 
-struct usbh_bus *usbh_alloc_bus(uint8_t busid, uint32_t reg_base)
+static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uint32_t reg_base)
 {
-    struct usbh_bus *bus;
     struct usbh_hub *hub;
-
-    if (busid > CONFIG_USBHOST_MAX_BUS) {
-        USB_LOG_ERR("bus overflow\r\n");
-        while (1) {
-        }
-    }
-
-    bus = usb_malloc(sizeof(struct usbh_bus));
-    if (bus == NULL) {
-        USB_LOG_ERR("No memory to alloc bus\r\n");
-        while (1) {
-        }
-    }
 
     memset(bus, 0, sizeof(struct usbh_bus));
     bus->busid = busid;
@@ -674,12 +662,22 @@ struct usbh_bus *usbh_alloc_bus(uint8_t busid, uint32_t reg_base)
     usb_slist_init(&bus->hub_list);
     usb_slist_add_tail(&bus->hub_list, &hub->list);
     usb_slist_add_tail(&g_bus_head, &bus->list);
-
-    return bus;
 }
 
-int usbh_initialize(struct usbh_bus *bus)
+int usbh_initialize(uint8_t busid, uint32_t reg_base)
 {
+    struct usbh_bus *bus;
+
+    if (busid > CONFIG_USBHOST_MAX_BUS) {
+        USB_LOG_ERR("bus overflow\r\n");
+        while (1) {
+        }
+    }
+
+    bus = &g_usbhost_bus[busid];
+
+    usbh_bus_init(bus, busid, reg_base);
+
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
     extern const int usbh_class_info$$Limit;
@@ -698,14 +696,17 @@ int usbh_initialize(struct usbh_bus *bus)
     return 0;
 }
 
-int usbh_deinitialize(struct usbh_bus *bus)
+int usbh_deinitialize(uint8_t busid)
 {
+    struct usbh_bus *bus;
+
+    bus = &g_usbhost_bus[busid];
+
     usbh_hub_deinitialize(bus);
 
     usb_slist_init(&bus->hub_list);
     usb_slist_remove(&g_bus_head, &bus->list);
 
-    usb_free(bus);
     return 0;
 }
 

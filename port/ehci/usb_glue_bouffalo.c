@@ -32,7 +32,7 @@
 #define USB_SOF_TIMER_MASK_AFTER_RESET_HS (0x44C)
 #define USB_SOF_TIMER_MASK_AFTER_RESET_FS (0x2710)
 
-extern void USBH_IRQHandler(struct usbh_bus *bus);
+extern void USBH_IRQHandler(uint8_t busid);
 
 static void bflb_usb_phy_init(void)
 {
@@ -89,7 +89,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
 
     bflb_usb_phy_init();
 
-    bflb_irq_attach(37, USBH_IRQHandler, NULL);
+    bflb_irq_attach(37, USBH_IRQHandler, 0);
     bflb_irq_enable(37);
 
     /* enable device-A for host */

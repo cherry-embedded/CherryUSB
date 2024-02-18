@@ -472,7 +472,7 @@ int usb_hc_init(struct usbh_bus *bus)
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
     /* This is vendor register */
-    USB_OTG_GLB->GCCFG = usbh_get_dwc2_gccfg_conf();
+    USB_OTG_GLB->GCCFG = usbh_get_dwc2_gccfg_conf(bus->hcd.reg_base);
 
     ret = dwc2_core_init(bus);
 
@@ -1115,9 +1115,12 @@ static void dwc2_port_irq_handler(struct usbh_bus *bus)
     USB_OTG_HPRT = hprt0_dup;
 }
 
-void USBH_IRQHandler(struct usbh_bus *bus)
+void USBH_IRQHandler(uint8_t busid)
 {
     uint32_t gint_status, chan_int;
+    struct usbh_bus *bus;
+
+    bus = &g_usbhost_bus[busid];
     gint_status = dwc2_get_glb_intstatus(bus);
     if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_HOST) {
         /* Avoid spurious interrupt */

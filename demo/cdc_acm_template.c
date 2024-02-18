@@ -1,8 +1,6 @@
 #include "usbd_core.h"
 #include "usbd_cdc.h"
 
-#define CONFIG_USBDEV_DEMO_BUS 0
-
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
 #define CDC_OUT_EP 0x02
@@ -112,7 +110,7 @@ volatile bool ep_tx_busy_flag = false;
 #define CDC_MAX_MPS 64
 #endif
 
-static void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -127,7 +125,7 @@ static void usbd_event_handler(uint8_t event)
             break;
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
-            usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -147,7 +145,7 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
     // }
     // printf("\r\n");
     /* setup next out ep read transfer */
-    usbd_ep_start_read(CONFIG_USBDEV_DEMO_BUS, CDC_OUT_EP, read_buffer, 2048);
+    usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
 }
 
 void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
@@ -156,7 +154,7 @@ void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
     if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
         /* send zlp */
-        usbd_ep_start_write(CONFIG_USBDEV_DEMO_BUS, CDC_IN_EP, NULL, 0);
+        usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
     } else {
         ep_tx_busy_flag = false;
     }
@@ -176,19 +174,19 @@ struct usbd_endpoint cdc_in_ep = {
 static struct usbd_interface intf0;
 static struct usbd_interface intf1;
 
-void cdc_acm_init(void)
+void cdc_acm_init(uint8_t busid, uint32_t reg_base)
 {
     const uint8_t data[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
 
     memcpy(&write_buffer[0], data, 10);
     memset(&write_buffer[10], 'a', 2038);
 
-    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, cdc_descriptor);
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf0));
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_cdc_acm_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf1));
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_out_ep);
-    usbd_add_endpoint(CONFIG_USBDEV_DEMO_BUS, &cdc_in_ep);
-    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
+    usbd_desc_register(busid, cdc_descriptor);
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf0));
+    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf1));
+    usbd_add_endpoint(busid, &cdc_out_ep);
+    usbd_add_endpoint(busid, &cdc_in_ep);
+    usbd_initialize(busid, reg_base, usbd_event_handler);
 }
 
 volatile uint8_t dtr_enable = 0;
@@ -202,11 +200,11 @@ void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr)
     }
 }
 
-void cdc_acm_data_send_with_dtr_test(void)
+void cdc_acm_data_send_with_dtr_test(uint8_t busid)
 {
     if (dtr_enable) {
         ep_tx_busy_flag = true;
-        usbd_ep_start_write(CONFIG_USBDEV_DEMO_BUS, CDC_IN_EP, write_buffer, 2048);
+        usbd_ep_start_write(busid, CDC_IN_EP, write_buffer, 2048);
         while (ep_tx_busy_flag) {
         }
     }

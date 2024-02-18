@@ -11,14 +11,8 @@
 #error "hpm ehci must config CONFIG_USB_EHCI_HCOR_OFFSET to 0x140"
 #endif
 
-#if defined(CONFIG_USB_EHCI_PRINT_HW_PARAM) || !defined(CONFIG_USB_EHCI_PORT_POWER)
-#error "hpm ehci must enable CONFIG_USB_EHCI_PORT_POWER and disable CONFIG_USB_EHCI_PRINT_HW_PARAM"
-#endif
-
-struct usbh_bus *hpm_usb_bus0;
-
-#ifdef HPM_USB1_BASE
-struct usbh_bus *hpm_usb_bus1;
+#if !defined(CONFIG_USB_EHCI_PORT_POWER)
+#error "hpm ehci must enable CONFIG_USB_EHCI_PORT_POWER"
 #endif
 
 const uint8_t hpm_irq_table[] = {
@@ -78,18 +72,18 @@ uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
     return 0;
 }
 
-extern void USBH_IRQHandler(struct usbh_bus *bus);
+extern void USBH_IRQHandler(uint8_t busid);
 
 void isr_usbh0(void)
 {
-    USBH_IRQHandler(hpm_usb_bus0);
+    USBH_IRQHandler(0);
 }
 SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usbh0)
 
 #ifdef HPM_USB1_BASE
 void isr_usbh1(void)
 {
-    USBH_IRQHandler(hpm_usb_bus1);
+    USBH_IRQHandler(1);
 }
 SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbh1)
 #endif

@@ -99,8 +99,6 @@ USB Device 移植要点
 .. code-block:: C
 
     // 以下细节如有出入，请对照 stm32xxx.h 文件修改
-    #define USBD_IRQHandler OTG_HS_IRQHandler // pa11/pa12 引脚使用 OTG_FS_IRQHandler
-    #define USBD_BASE (0x40040000UL)        // pa11/pa12 引脚一般使用 50000000UL，STM32F7/H7 使用 0x40080000UL
     #define CONFIG_USBDEV_EP_NUM 6          // pa11/pa12 引脚使用 4
     #define CONFIG_USB_DWC2_RAM_SIZE 4096 // pa11/pa12 引脚使用 1280
 
@@ -108,8 +106,6 @@ USB Device 移植要点
 
 .. code-block:: C
 
-    #define USBD_IRQHandler USB_LP_CAN1_RX0_IRQHandler
-    #define USBD_BASE (0x40005C00UL)
     #define CONFIG_USBDEV_EP_NUM 8
     #define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2
 
@@ -118,13 +114,16 @@ USB Device 移植要点
 .. figure:: img/stm32_10.png
 .. figure:: img/stm32_11.png
 
-- 拷贝 **xxx_msp.c** 中的 **HAL_PCD_MspInit** 函数中的内容到 **usb_dc_low_level_init** 函数中，屏蔽 st 生成的 usb 中断函数和 usb 初始化
+- 拷贝 **xxx_msp.c** 中的 **HAL_PCD_MspInit** 函数中的内容到 **usb_dc_low_level_init** 函数中，屏蔽 st 生成的 usb 初始化
 
 .. figure:: img/stm32_12.png
-.. figure:: img/stm32_13.png
 .. figure:: img/stm32_14.png
 
-- 调用 template 的内容初始化，就可以使用了
+- 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
+
+.. figure:: img/stm32_13.png
+
+- 调用 template 的内容初始化，并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
 
 .. figure:: img/stm32_15.png
 
@@ -152,9 +151,8 @@ USB Host 移植要点
     #define CONFIG_USBHOST_PIPE_NUM 12
 
 - 拷贝 **xxx_msp.c** 中的 `HAL_HCD_MspInit` 函数中的内容到 `usb_hc_low_level_init` 函数中，屏蔽 st 生成的 usb 初始化
-- 在中断函数中调用 `USBH_IRQHandler`，并传入 bus 句柄
-- 调用 `usbh_alloc_bus` 创建 bus， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
-- 调用 `usbh_initialize` 即可
+- 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
+- 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 启动线程
 
 .. figure:: img/stm32_18.png

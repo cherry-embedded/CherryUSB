@@ -11,7 +11,7 @@ static int ehci_slot;
 static int ehci_function;
 static int ehci_vector;
 
-extern void USBH_IRQHandler(struct usbh_bus *bus);
+extern void USBH_IRQHandler(uint8_t busid);
 
 void ehci_pci_scan(int bus, int slot, int fun, int vector)
 {
@@ -38,7 +38,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
         "USBirq",
         RTEMS_INTERRUPT_SHARED,
         USBH_IRQHandler,
-        (void *)bus);
+        (void *)0);
 
     if (sc != RTEMS_SUCCESSFUL) {
         printf("USB install isr falied,%s\n", rtems_status_text(sc));

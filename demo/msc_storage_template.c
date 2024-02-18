@@ -1,8 +1,6 @@
 #include "usbd_core.h"
 #include "usbd_msc.h"
 
-#define CONFIG_USBDEV_DEMO_BUS 0
-
 #ifdef __RT_THREAD_H__
 
 #define MSC_IN_EP  0x81
@@ -108,7 +106,7 @@ struct usbd_interface intf0;
 #define BLOCK_COUNT         0x1024U * 0x1024U
 static rt_device_t blk_dev = RT_NULL;
 
-static void usbd_event_handler(uint8_t event)
+static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
@@ -151,7 +149,7 @@ int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *
     return 0;
 }
 
-void msc_storage_init(void)
+void msc_storage_init(uint8_t busid, uint32_t reg_base)
 {
     rt_err_t res;
 
@@ -161,9 +159,9 @@ void msc_storage_init(void)
     res = rt_device_open(blk_dev, RT_DEVICE_OFLAG_RDWR);
     RT_ASSERT(res == RT_EOK);
 
-    usbd_desc_register(CONFIG_USBDEV_DEMO_BUS, msc_storage_descriptor);
-    usbd_add_interface(CONFIG_USBDEV_DEMO_BUS, usbd_msc_init_intf(CONFIG_USBDEV_DEMO_BUS, &intf0, MSC_OUT_EP, MSC_IN_EP));
+    usbd_desc_register(busid, msc_storage_descriptor);
+    usbd_add_interface(busid, usbd_msc_init_intf(busid, &intf0, MSC_OUT_EP, MSC_IN_EP));
 
-    usbd_initialize(CONFIG_USBDEV_DEMO_BUS, usbd_event_handler);
+    usbd_initialize(busid, reg_base, usbd_event_handler);
 }
 #endif
