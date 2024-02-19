@@ -150,7 +150,7 @@ static int usbh_asix_mdio_read(struct usbh_asix *asix_class, int phy_id, int loc
         }
     }
 
-    ret = usbh_asix_write_cmd(asix_class, AX_CMD_READ_MII_REG, phy_id, loc, &res, 2);
+    ret = usbh_asix_read_cmd(asix_class, AX_CMD_READ_MII_REG, phy_id, loc, &res, 2);
     if (ret < 0) {
         return ret;
     }
@@ -567,6 +567,26 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
+    if (asix_class->chipcode == AX_AX88772B_CHIPCODE) {
+        usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0);
+        usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 0);
+
+        usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x8200);
+        usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 0);
+
+        usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x3900);
+        usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 0);
+        
+        usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x3100);
+        usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 4);
+
+        usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 4, 0x01e1);
+        usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 1);
+
+        usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x3300);
+        usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 0);
+    }
+
     usbh_asix_set_multicast(asix_class);
 
     USB_LOG_INFO("Init %s done\r\n", asix_class->name);
@@ -619,7 +639,7 @@ int usbh_asix_get_notification(struct usbh_asix *asix_class)
     }
 
     if (g_asix_inttx_buffer[1] == 0x00) {
-        if (g_asix_inttx_buffer[2] == 0x19) {
+        if (g_asix_inttx_buffer[2] & 0x01) {
             asix_class->connect_status = true;
             usbh_ax88772_mac_link_up(asix_class, SPEED_100, 1, 1, 1);
         } else {
@@ -668,14 +688,19 @@ find_class:
         g_asix_rx_length += g_asix_class.bulkin_urb.actual_length;
 
         if (g_asix_rx_length % USB_GET_MAXPACKETSIZE(g_asix_class.bulkin->wMaxPacketSize)) {
-            //len = g_asix_rx_buffer[0] | ((uint16_t)(g_asix_rx_buffer[1]) << 8);
-            //len_crc = g_asix_rx_buffer[2] | ((uint16_t)(g_asix_rx_buffer[3]) << 8);
+            len = ((uint16_t)g_asix_rx_buffer[0] | ((uint16_t)(g_asix_rx_buffer[1]) << 8)) & 0x7ff;
+            len_crc = g_asix_rx_buffer[2] | ((uint16_t)(g_asix_rx_buffer[3]) << 8);
+
+            if (len != (~len_crc & 0x7ff)) {
+                USB_LOG_ERR("asix rx header error\r\n");
+                continue;
+            }
 
             USB_LOG_DBG("rxlen:%d\r\n", g_asix_rx_length);
 
-            p = pbuf_alloc(PBUF_RAW, g_asix_rx_length - 4, PBUF_POOL);
+            p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
             if (p != NULL) {
-                memcpy(p->payload, (uint8_t *)&g_asix_rx_buffer[4], g_asix_rx_length - 4);
+                memcpy(p->payload, (uint8_t *)&g_asix_rx_buffer[4], len);
                 g_asix_rx_length = 0;
 
                 err = netif->input(p, netif);
@@ -717,7 +742,7 @@ err_t usbh_asix_linkoutput(struct netif *netif, struct pbuf *p)
     g_asix_tx_buffer[2] = ~g_asix_tx_buffer[0];
     g_asix_tx_buffer[3] = ~g_asix_tx_buffer[1];
 
-    if (p->tot_len % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
+    if ((p->tot_len + 4) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
         USB_LOG_DBG("txlen:%d\r\n", p->tot_len + 8);
         g_asix_tx_buffer[p->tot_len + 4 + 0] = 0x00;
         g_asix_tx_buffer[p->tot_len + 4 + 1] = 0x00;
