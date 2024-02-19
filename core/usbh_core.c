@@ -668,7 +668,7 @@ int usbh_initialize(uint8_t busid, uint32_t reg_base)
 {
     struct usbh_bus *bus;
 
-    if (busid > CONFIG_USBHOST_MAX_BUS) {
+    if (busid >= CONFIG_USBHOST_MAX_BUS) {
         USB_LOG_ERR("bus overflow\r\n");
         while (1) {
         }

@@ -18,9 +18,6 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-#define USB_EP_OUT_NUM 16
-#define USB_EP_IN_NUM  16
-
 struct usbd_tx_rx_msg {
     uint8_t ep;
     uint32_t nbytes;
@@ -59,8 +56,8 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     struct usbd_interface *intf[8];
     uint8_t intf_offset;
 
-    struct usbd_tx_rx_msg tx_msg[USB_EP_IN_NUM];
-    struct usbd_tx_rx_msg rx_msg[USB_EP_OUT_NUM];
+    struct usbd_tx_rx_msg tx_msg[CONFIG_USBDEV_EP_NUM];
+    struct usbd_tx_rx_msg rx_msg[CONFIG_USBDEV_EP_NUM];
 
     void (*event_handler)(uint8_t busid, uint8_t event);
 } g_usbd_core[CONFIG_USBDEV_MAX_BUS];
@@ -1206,7 +1203,7 @@ int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint
     int ret;
     struct usbd_bus *bus;
 
-    if (busid > CONFIG_USBDEV_MAX_BUS) {
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
         USB_LOG_ERR("bus overflow\r\n");
         while (1) {
         }
