@@ -35,8 +35,11 @@ struct hpm_udc {
     struct hpm_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_hpm_udc[CONFIG_USBDEV_MAX_BUS];
 
-static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data[USB_SOC_MAX_COUNT];
-static ATTR_PLACE_AT_NONCACHEABLE usb_device_handle_t usb_device_handle[USB_SOC_MAX_COUNT];
+static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data0;
+#ifdef HPM_USB1_BASE
+static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data1;
+#endif
+static ATTR_PLACE_AT_NONCACHEABLE usb_device_handle_t usb_device_handle[CONFIG_USBDEV_MAX_BUS];
 
 /*---------------------------------------------------------------------*
  * Macro Typedef Declaration
@@ -66,10 +69,12 @@ static inline uint8_t ep_idx2bit(uint8_t ep_idx)
 
 __WEAK void usb_dc_low_level_init(uint8_t busid)
 {
+    (void)busid;
 }
 
 __WEAK void usb_dc_low_level_deinit(uint8_t busid)
 {
+    (void)busid;
 }
 
 int usb_dc_init(uint8_t busid)
@@ -79,7 +84,15 @@ int usb_dc_init(uint8_t busid)
     memset(&g_hpm_udc[busid], 0, sizeof(struct hpm_udc));
     g_hpm_udc[busid].handle = &usb_device_handle[busid];
     g_hpm_udc[busid].handle->regs = _dcd_controller[busid].regs;
-    g_hpm_udc[busid].handle->dcd_data = &_dcd_data[busid];
+    if (busid == 0) {
+        g_hpm_udc[busid].handle->dcd_data = &_dcd_data0;
+    } else if (busid == 1) {
+#ifdef HPM_USB1_BASE
+        g_hpm_udc[busid].handle->dcd_data = &_dcd_data1;
+#endif
+    } else {
+        ;
+    }
 
     uint32_t int_mask;
     int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK |
