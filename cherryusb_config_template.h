@@ -33,6 +33,8 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
+#define CONFIG_USBDEV_MAX_BUS 1    // for now, bus num must be 1 except hpm ip
+
 /* Ep0 max transfer buffer, specially for receiving data from ep0 out */
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
 
@@ -146,9 +148,9 @@
 
 /* ================ USB Device Port Configuration ================*/
 
-#define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
-
-#define CONFIG_USBDEV_EP_NUM 4
+#ifndef CONFIG_USBDEV_EP_NUM
+#define CONFIG_USBDEV_EP_NUM 8
+#endif
 
 /* ================ USB Host Port Configuration ==================*/
 
