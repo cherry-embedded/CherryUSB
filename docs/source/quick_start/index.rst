@@ -119,7 +119,7 @@ USB Device 移植要点
 .. figure:: img/stm32_12.png
 .. figure:: img/stm32_14.png
 
-- 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
+- 在中断函数中调用 `USBD_IRQHandler`，并传入 `busid`
 
 .. figure:: img/stm32_13.png
 

@@ -56,24 +56,21 @@
 
 .. figure:: img/config_file.png
 
-* 在代码中实现 `usb_hc_low_level_init` 函数，USB 中断中调用 `USBH_IRQHandler`, 
-* 应用中调用 `usbh_alloc_bus` 和 `usbh_initialize`, 
+* 在代码中实现 `usb_hc_low_level_init` 函数，USB 中断中调用 `USBH_IRQHandler`
+* 调用 `usbh_initialize`
 * 以上内容我们推荐放在 **board.c** 中，如下代码：
 
 .. code-block:: C
 
-        struct usbh_bus *usb_otg_hs_bus;
-
         void OTG_HS_IRQHandler(void)
         {
-        extern void USBH_IRQHandler(struct usbh_bus *bus);
-        USBH_IRQHandler(usb_otg_hs_bus);
+        extern void USBH_IRQHandler(uint8_t busid);
+        USBH_IRQHandler(0);
         }
 
         int usbh_init(void)
         {
-        usb_otg_hs_bus = usbh_alloc_bus(0, USB_OTG_HS_PERIPH_BASE);
-        usbh_initialize(usb_otg_hs_bus);
+        usbh_initialize(0, USB_OTG_HS_PERIPH_BASE);
         return 0;
         }
 
