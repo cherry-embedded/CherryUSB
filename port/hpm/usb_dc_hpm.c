@@ -1,9 +1,8 @@
 #include "usbd_core.h"
 #include "hpm_usb_device.h"
-#include "board.h"
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS USB_SOC_DCD_MAX_ENDPOINT_COUNT
+#define USB_NUM_BIDIR_ENDPOINTS CONFIG_USBDEV_EP_NUM
 #endif
 
 /* USBSTS, USBINTR */
@@ -241,7 +240,7 @@ void USBD_IRQHandler(uint8_t busid)
 {
     uint32_t int_status;
     usb_device_handle_t *handle = g_hpm_udc[busid].handle;
-    uint32_t transfer_len = 0;
+    uint32_t transfer_len;
 
     /* Acknowledge handled interrupt */
     int_status = usb_device_status_flags(handle);
@@ -292,6 +291,8 @@ void USBD_IRQHandler(uint8_t busid)
         if (edpt_complete) {
             for (uint8_t ep_idx = 0; ep_idx < USB_SOS_DCD_MAX_QHD_COUNT; ep_idx++) {
                 if (edpt_complete & (1 << ep_idx2bit(ep_idx))) {
+                    transfer_len = 0;
+
                     /* Failed QTD also get ENDPTCOMPLETE set */
                     dcd_qtd_t *p_qtd = usb_device_qtd_get(handle, ep_idx);
                     while (1) {
