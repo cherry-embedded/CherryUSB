@@ -15,12 +15,8 @@
 #error "hpm ehci must enable CONFIG_USB_EHCI_PORT_POWER"
 #endif
 
-const uint8_t hpm_irq_table[] = {
-    IRQn_USB0,
-#ifdef HPM_USB1_BASE
-    IRQn_USB1
-#endif
-};
+static uint32_t _hcd_irqnum[CONFIG_USBHOST_MAX_BUS];
+static uint8_t _hcd_busid[CONFIG_USBHOST_MAX_BUS];
 
 static void usb_host_mode_init(USB_Type *ptr)
 {
@@ -43,8 +39,20 @@ static void usb_host_mode_init(USB_Type *ptr)
 
 void usb_hc_low_level_init(struct usbh_bus *bus)
 {
+    if (bus->hcd.reg_base == HPM_USB0_BASE) {
+        _hcd_irqnum[bus->hcd.hcd_id] = IRQn_USB0;
+        _hcd_busid[0] = bus->hcd.hcd_id;
+    } else {
+#ifdef HPM_USB1_BASE
+        if (bus->hcd.reg_base == HPM_USB1_BASE) {
+            _hcd_irqnum[bus->hcd.hcd_id] = IRQn_USB1;
+            _hcd_busid[1] = bus->hcd.hcd_id;
+        }
+#endif
+    }
+
     usb_phy_init((USB_Type *)(bus->hcd.reg_base));
-    intc_m_enable_irq(hpm_irq_table[bus->hcd.hcd_id]);
+    intc_m_enable_irq(_hcd_irqnum[bus->hcd.hcd_id]);
 }
 
 void usb_hc_low_level2_init(struct usbh_bus *bus)
@@ -76,14 +84,14 @@ extern void USBH_IRQHandler(uint8_t busid);
 
 void isr_usbh0(void)
 {
-    USBH_IRQHandler(0);
+    USBH_IRQHandler(_hcd_busid[0]);
 }
 SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usbh0)
 
 #ifdef HPM_USB1_BASE
 void isr_usbh1(void)
 {
-    USBH_IRQHandler(1);
+    USBH_IRQHandler(_hcd_busid[1]);
 }
 SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbh1)
 #endif
