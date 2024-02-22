@@ -679,8 +679,6 @@ static bool SCSI_processRead(uint8_t busid)
         return false;
     }
 
-    usbd_ep_start_write(busid, mass_ep_data[busid][MSD_IN_EP_IDX].ep_addr, g_usbd_msc[busid].block_buffer, transfer_len);
-
     g_usbd_msc[busid].start_sector += (transfer_len / g_usbd_msc[busid].scsi_blk_size[g_usbd_msc[busid].cbw.bLUN]);
     g_usbd_msc[busid].nsectors -= (transfer_len / g_usbd_msc[busid].scsi_blk_size[g_usbd_msc[busid].cbw.bLUN]);
     g_usbd_msc[busid].csw.dDataResidue -= transfer_len;
@@ -688,6 +686,8 @@ static bool SCSI_processRead(uint8_t busid)
     if (g_usbd_msc[busid].nsectors == 0) {
         g_usbd_msc[busid].stage = MSC_SEND_CSW;
     }
+
+    usbd_ep_start_write(busid, mass_ep_data[busid][MSD_IN_EP_IDX].ep_addr, g_usbd_msc[busid].block_buffer, transfer_len);
 
     return true;
 }
