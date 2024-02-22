@@ -376,19 +376,9 @@ static const struct usbh_class_driver bluetooth_class_driver = {
     .disconnect = usbh_bluetooth_disconnect
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_class_info = {
-    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
-    .class = USB_DEVICE_CLASS_WIRELESS,
-    .subclass = 0x01,
-    .protocol = 0x01,
-    .vid = 0x00,
-    .pid = 0x00,
-    .class_driver = &bluetooth_class_driver
-};
-
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
 CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_h4_nrf_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
     .subclass = 0x00,
     .protocol = 0x00,
