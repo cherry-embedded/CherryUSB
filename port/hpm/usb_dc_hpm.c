@@ -261,6 +261,7 @@ void USBD_IRQHandler(uint8_t busid)
 
     if (int_status & intr_suspend) {
         if (usb_device_get_suspend_status(handle)) {
+            usbd_event_suspend_handler(busid);
             /* Note: Host may delay more than 3 ms before and/or after bus reset
        * before doing enumeration. */
             if (usb_device_get_address(handle)) {
@@ -270,9 +271,9 @@ void USBD_IRQHandler(uint8_t busid)
 
     if (int_status & intr_port_change) {
         if (!usb_device_get_port_ccs(handle)) {
+            usbd_event_disconnect_handler(busid);
         } else {
-            if (usb_device_get_port_reset_status(handle) == 0) {
-            }
+            usbd_event_connect_handler(busid);
         }
     }
 
