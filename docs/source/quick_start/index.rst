@@ -157,7 +157,6 @@ USB Host 移植要点
 
 .. figure:: img/stm32_18.png
 .. figure:: img/stm32_19.png
-.. figure:: img/stm32_20.png
 
 - 如果使用 **msc**，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 **fatfs_usbh.c** 文件。
 
