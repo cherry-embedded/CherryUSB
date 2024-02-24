@@ -11,15 +11,9 @@
 #define TEST_USBH_MSC_FATFS 0
 #define TEST_USBH_AUDIO     0
 #define TEST_USBH_VIDEO     0
-
-#if __has_include("lwip/pbuf.h")
-#define TEST_USBH_CDC_ECM 0
-#define TEST_USBH_RNDIS   0
-#define TEST_USBH_ASIX    0
-#else
-#define TEST_USBH_CDC_ECM 0
-#define TEST_USBH_RNDIS   0
-#endif
+#define TEST_USBH_CDC_ECM   0
+#define TEST_USBH_RNDIS     0
+#define TEST_USBH_ASIX      0
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
