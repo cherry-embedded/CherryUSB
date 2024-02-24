@@ -60,7 +60,7 @@ struct ehci_hcd {
 };
 
 extern struct ehci_hcd g_ehci_hcd[CONFIG_USBHOST_MAX_BUS];
-extern uint32_t g_framelist[CONFIG_USBHOST_MAX_BUS][CONFIG_USB_EHCI_FRAME_LIST_SIZE];
+extern uint32_t g_framelist[CONFIG_USBHOST_MAX_BUS][USB_ALIGN_UP(CONFIG_USB_EHCI_FRAME_LIST_SIZE, 1024)];
 
 int ehci_iso_urb_init(struct usbh_bus *bus, struct usbh_urb *urb);
 void ehci_remove_itd_urb(struct usbh_bus *bus, struct usbh_urb *urb);
