@@ -165,7 +165,7 @@ struct usbh_asix {
 extern "C" {
 #endif
 
-int usbh_asix_get_notification(struct usbh_asix *asix_class);
+int usbh_asix_get_connect_status(struct usbh_asix *asix_class);
 
 void usbh_asix_run(struct usbh_asix *asix_class);
 void usbh_asix_stop(struct usbh_asix *asix_class);

@@ -38,6 +38,8 @@ struct usbh_cdc_ecm {
 extern "C" {
 #endif
 
+int usbh_cdc_ecm_get_connect_status(struct usbh_cdc_ecm *cdc_ecm_class);
+
 void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class);
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class);
 

@@ -189,7 +189,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     return ret;
 }
 
-static int usbh_rndis_get_connect_status(struct usbh_rndis *rndis_class)
+int usbh_rndis_get_connect_status(struct usbh_rndis *rndis_class)
 {
     int ret;
     uint8_t data[32];
@@ -200,9 +200,9 @@ static int usbh_rndis_get_connect_status(struct usbh_rndis *rndis_class)
         return ret;
     }
     if (NDIS_MEDIA_STATE_CONNECTED == data[0]) {
-        rndis_class->link_status = true;
+        rndis_class->connect_status = true;
     } else {
-        rndis_class->link_status = false;
+        rndis_class->connect_status = false;
     }
     return 0;
 }
@@ -330,9 +330,9 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                     goto query_errorout;
                 }
                 if (NDIS_MEDIA_STATE_CONNECTED == data[0]) {
-                    rndis_class->link_status = true;
+                    rndis_class->connect_status = true;
                 } else {
-                    rndis_class->link_status = false;
+                    rndis_class->connect_status = false;
                 }
                 break;
             case OID_802_3_MAXIMUM_LIST_SIZE:
@@ -442,12 +442,12 @@ void usbh_rndis_rx_thread(void *argument)
     // clang-format off
 find_class:
     // clang-format on
-    g_rndis_class.link_status = false;
+    g_rndis_class.connect_status = false;
     if (usbh_find_class_instance("/dev/rndis") == NULL) {
         goto delete;
     }
 
-    while (g_rndis_class.link_status == false) {
+    while (g_rndis_class.connect_status == false) {
         ret = usbh_rndis_get_connect_status(&g_rndis_class);
         if (ret < 0) {
             usb_osal_msleep(100);
@@ -517,7 +517,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
     uint8_t *buffer;
     rndis_data_packet_t *hdr;
 
-    if (g_rndis_class.link_status == false) {
+    if (g_rndis_class.connect_status == false) {
         return ERR_BUF;
     }
 

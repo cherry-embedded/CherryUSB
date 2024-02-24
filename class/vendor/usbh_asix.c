@@ -21,21 +21,21 @@ static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_tx_buffer[CONFIG_US
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_inttx_buffer[16];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_buf[32];
 
-#define ETH_ALEN                6
+#define ETH_ALEN 6
 
-#define PHY_MODE_MARVELL        0x0000
-#define MII_MARVELL_LED_CTRL    0x0018
-#define MII_MARVELL_STATUS      0x001b
-#define MII_MARVELL_CTRL        0x0014
+#define PHY_MODE_MARVELL     0x0000
+#define MII_MARVELL_LED_CTRL 0x0018
+#define MII_MARVELL_STATUS   0x001b
+#define MII_MARVELL_CTRL     0x0014
 
-#define MARVELL_LED_MANUAL      0x0019
+#define MARVELL_LED_MANUAL 0x0019
 
-#define MARVELL_STATUS_HWCFG    0x0004
+#define MARVELL_STATUS_HWCFG 0x0004
 
-#define MARVELL_CTRL_TXDELAY    0x0002
-#define MARVELL_CTRL_RXDELAY    0x0080
+#define MARVELL_CTRL_TXDELAY 0x0002
+#define MARVELL_CTRL_RXDELAY 0x0080
 
-#define PHY_MODE_RTL8211CL      0x000C
+#define PHY_MODE_RTL8211CL 0x000C
 
 #define AX88772A_PHY14H         0x14
 #define AX88772A_PHY14H_DEFAULT 0x442C
@@ -46,8 +46,8 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_buf[32];
 #define AX88772A_PHY16H         0x16
 #define AX88772A_PHY16H_DEFAULT 0x4044
 
-#define SPEED_100               0
-#define SPEED_10                1
+#define SPEED_100 0
+#define SPEED_10  1
 
 static int usbh_asix_read_cmd(struct usbh_asix *asix_class,
                               uint8_t cmd,
@@ -576,7 +576,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
 
         usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x3900);
         usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 0);
-        
+
         usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x3100);
         usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 4);
 
@@ -586,8 +586,6 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
         usbh_asix_mdio_write(asix_class, asix_class->phy_addr, 0, 0x3300);
         usbh_asix_mdio_read(asix_class, asix_class->phy_addr, 0);
     }
-
-    usbh_asix_set_multicast(asix_class);
 
     USB_LOG_INFO("Init %s done\r\n", asix_class->name);
 
@@ -628,7 +626,7 @@ static int usbh_asix_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-int usbh_asix_get_notification(struct usbh_asix *asix_class)
+int usbh_asix_get_connect_status(struct usbh_asix *asix_class)
 {
     int ret;
 
@@ -642,6 +640,7 @@ int usbh_asix_get_notification(struct usbh_asix *asix_class)
         if (g_asix_inttx_buffer[2] & 0x01) {
             asix_class->connect_status = true;
             usbh_ax88772_mac_link_up(asix_class, SPEED_100, 1, 1, 1);
+            usbh_asix_set_multicast(asix_class);
         } else {
             asix_class->connect_status = false;
             usbh_ax88772_mac_link_down(asix_class);
@@ -670,7 +669,7 @@ find_class:
     }
 
     while (g_asix_class.connect_status == false) {
-        ret = usbh_asix_get_notification(&g_asix_class);
+        ret = usbh_asix_get_connect_status(&g_asix_class);
         if (ret < 0) {
             usb_osal_msleep(100);
             goto find_class;

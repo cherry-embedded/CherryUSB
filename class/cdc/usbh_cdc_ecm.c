@@ -43,7 +43,7 @@ static int usbh_cdc_ecm_set_eth_packet_filter(struct usbh_cdc_ecm *cdc_ecm_class
     return usbh_control_transfer(cdc_ecm_class->hport, setup, NULL);
 }
 
-int usbh_cdc_ecm_get_notification(struct usbh_cdc_ecm *cdc_ecm_class)
+int usbh_cdc_ecm_get_connect_status(struct usbh_cdc_ecm *cdc_ecm_class)
 {
     int ret;
 
@@ -244,7 +244,7 @@ find_class:
     }
 
     while (g_cdc_ecm_class.connect_status == false) {
-        ret = usbh_cdc_ecm_get_notification(&g_cdc_ecm_class);
+        ret = usbh_cdc_ecm_get_connect_status(&g_cdc_ecm_class);
         if (ret < 0) {
             usb_osal_msleep(100);
             goto find_class;
