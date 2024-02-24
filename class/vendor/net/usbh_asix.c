@@ -741,7 +741,7 @@ err_t usbh_asix_linkoutput(struct netif *netif, struct pbuf *p)
     g_asix_tx_buffer[2] = ~g_asix_tx_buffer[0];
     g_asix_tx_buffer[3] = ~g_asix_tx_buffer[1];
 
-    if ((p->tot_len + 4) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
+    if (!(p->tot_len + 4) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
         USB_LOG_DBG("txlen:%d\r\n", p->tot_len + 8);
         g_asix_tx_buffer[p->tot_len + 4 + 0] = 0x00;
         g_asix_tx_buffer[p->tot_len + 4 + 1] = 0x00;
