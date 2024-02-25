@@ -14,6 +14,7 @@
 
 #if defined(PKG_USING_CHERRYUSB)
 
+#if 0
 #if defined(PKG_CHERRYUSB_DEVICE_CDC_TEMPLATE)
 void cdc_acm_init(void);
 MSH_CMD_EXPORT(cdc_acm_init, start cdc_acm_init);
@@ -67,6 +68,7 @@ void audio_v2_test(void);
 
 MSH_CMD_EXPORT(audio_v2_init, start audio_v2_init);
 MSH_CMD_EXPORT(audio_v2_test, start audio_v2_test);
+#endif
 #endif
 
 #if defined(PKG_CHERRYUSB_HOST)
