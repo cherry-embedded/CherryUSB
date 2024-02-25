@@ -6,8 +6,8 @@
 #ifndef CHERRYUSB_CONFIG_H
 #define CHERRYUSB_CONFIG_H
 
-#define CHERRYUSB_VERSION     0x010000
-#define CHERRYUSB_VERSION_STR "v1.0.0"
+#define CHERRYUSB_VERSION     0x010100
+#define CHERRYUSB_VERSION_STR "v1.1.0"
 
 /* ================ USB common Configuration ================ */
 
