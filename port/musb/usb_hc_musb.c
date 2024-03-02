@@ -459,7 +459,7 @@ int usb_hc_init(struct usbh_bus *bus)
     HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) |= USB_DEVCTL_SESSION;
 
 #ifdef CONFIG_USB_MUSB_SUNXI
-    musb_set_active_ep(0);
+    musb_set_active_ep(bus, 0);
     HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_CSRL0_TXRDY;
 #endif
     return 0;
@@ -689,6 +689,8 @@ int usbh_kill_urb(struct usbh_urb *urb)
     }
 
     bus = urb->hport->bus;
+
+    ARG_UNUSED(bus);
 
     flags = usb_osal_enter_critical_section();
 
