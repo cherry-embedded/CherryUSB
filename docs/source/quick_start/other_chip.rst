@@ -8,7 +8,6 @@ USB Device 移植要点
 
 - 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbd_core.c` 和 `usb_dc_xxx.c` 为必须添加项。而 `usb_dc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
-
 - 实现 `usb_dc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template
 - 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`

@@ -21,7 +21,7 @@
 
 .. figure:: img/env4.png
 
-* 选择好 USB device ip 以后，还需要选择是哪款芯片，第三个配置则是用来选择芯片，选择以后会帮忙配置相对应的 ip 的一些信息，比如 `USB_BASE` 、 `USBD_Handler` 以及特殊的一些配置等等，如果没找到自己的芯片，可以手动在 `usb_dc_xxx.c` 中修改。
+* 选择好 USB device ip 以后，还需要选择是哪款芯片，第三个配置则是用来选择芯片，选择以后会配置相应的 ip 的一些信息和 glue 文件
 
 .. figure:: img/env5.png
 
@@ -30,14 +30,31 @@
 .. figure:: img/env6.png
 
 * 最后退出保存即可。
-* 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
-* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容, 禁止包含 `"rtthread.h"` ：
+* 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径,并实现以下内容：
 
 .. figure:: img/config_file.png
 
-- 在 `usb_config.h` 中添加 `USBD_IRQHandler=xxxx` 、 `CONFIG_USBDEV_EP_NUM=x` 以及 `USBD_BASE=0xxxxx` 三个常规 porting 需要的宏
+* 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
+* 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
+* 以上内容我们推荐放在 **board.c** 中，如下代码：
 
-* 使用 `scons --target=mdk5` 或者 `scons` 进行编译
+.. code-block:: C
+
+        void OTG_HS_IRQHandler(void)
+        {
+        extern void USBD_IRQHandler(uint8_t busid);
+        USBD_IRQHandler(0);
+        }
+
+        int usbd_init(void)
+        {
+        xxx_template_init(0, USB_OTG_HS_PERIPH_BASE);
+        return 0;
+        }
+
+        INIT_APP_EXPORT(usbd_init);
+
+* 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
 
 主机配置
 --------------------------
@@ -52,12 +69,12 @@
 
 * 根据需要勾选 class 驱动
 * 最后退出保存即可。
-* 复制一份 `usb_config.h` 到自己的目录中，并实现以下内容, 禁止包含 `"rtthread.h"` ：
+* 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径,并实现以下内容：
 
 .. figure:: img/config_file.png
 
-* 在代码中实现 `usb_hc_low_level_init` 函数，USB 中断中调用 `USBH_IRQHandler`
-* 调用 `usbh_initialize`
+* 在代码中实现 `usb_hc_low_level_init` 函数
+* 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 * 以上内容我们推荐放在 **board.c** 中，如下代码：
 
 .. code-block:: C
@@ -76,7 +93,7 @@
 
         INIT_APP_EXPORT(usbh_init);
 
-* 使用 `scons --target=mdk5` 或者 `scons` 进行编译，需要使用 AC6 编译器
+* 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
 * 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
 
 .. code-block:: C
