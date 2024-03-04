@@ -165,6 +165,13 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
     usb_device_handle_t *handle = g_hpm_udc[busid].handle;
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        g_hpm_udc[busid].out_ep[ep_idx].ep_enable = false;
+    } else {
+        g_hpm_udc[busid].in_ep[ep_idx].ep_enable = false;
+    }
 
     usb_device_edpt_close(handle, ep);
     return 0;
@@ -252,6 +259,10 @@ void USBD_IRQHandler(uint8_t busid)
         return;
     }
 
+    if (int_status & intr_error) {
+        USB_LOG_ERR("usbd intr error!\r\n");
+    }
+
     if (int_status & intr_reset) {
         memset(g_hpm_udc[busid].in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
         memset(g_hpm_udc[busid].out_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
@@ -262,8 +273,7 @@ void USBD_IRQHandler(uint8_t busid)
     if (int_status & intr_suspend) {
         if (usb_device_get_suspend_status(handle)) {
             usbd_event_suspend_handler(busid);
-            /* Note: Host may delay more than 3 ms before and/or after bus reset
-       * before doing enumeration. */
+            /* Note: Host may delay more than 3 ms before and/or after bus reset before doing enumeration. */
             if (usb_device_get_address(handle)) {
             }
         }
