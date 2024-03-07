@@ -227,6 +227,7 @@ static int usbh_hci_host_rcv_pkt(uint8_t *data, uint32_t len)
     }
 
     if (buf) {
+#ifdef CONFIG_BT_RECV_IS_RX_THREAD
         if (pkt_indicator == USB_BLUETOOTH_HCI_EVT) {
             struct bt_hci_evt_hdr *hdr = (void *)buf->data;
             uint8_t evt_flags = __bt_hci_evt_get_flags(hdr->evt);
@@ -239,6 +240,9 @@ static int usbh_hci_host_rcv_pkt(uint8_t *data, uint32_t len)
         } else {
             bt_recv(buf);
         }
+#else
+        bt_recv(buf);
+#endif
     }
 
     return 0;
