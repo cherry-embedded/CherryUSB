@@ -117,6 +117,7 @@
 #define CDC_FUNC_DESC_COMMAND_SET_DETAIL              0x17
 #define CDC_FUNC_DESC_TELEPHONE_CONTROL_MODEL         0x18
 #define CDC_FUNC_DESC_OBEX_SERVICE_IDENTIFIER         0x19
+#define CDC_FUNC_DESC_NCM                             0x1A
 
 /* CDC class-specific request codes */
 /* (usbcdc11.pdf, 6.2, Table 46) */
@@ -156,6 +157,17 @@
 #define CDC_REQUEST_GET_ATM_DEVICE_STATISTICS      0x51
 #define CDC_REQUEST_SET_ATM_DEFAULT_VC             0x52
 #define CDC_REQUEST_GET_ATM_VC_STATISTICS          0x53
+#define CDC_REQUEST_GET_NTB_PARAMETERS             0x80
+#define CDC_REQUEST_GET_NET_ADDRESS                0x81
+#define CDC_REQUEST_SET_NET_ADDRESS                0x82
+#define CDC_REQUEST_GET_NTB_FORMAT                 0x83
+#define CDC_REQUEST_SET_NTB_FORMAT                 0x84
+#define CDC_REQUEST_GET_NTB_INPUT_SIZE             0x85
+#define CDC_REQUEST_SET_NTB_INPUT_SIZE             0x86
+#define CDC_REQUEST_GET_MAX_DATAGRAM_SIZE          0x87
+#define CDC_REQUEST_SET_MAX_DATAGRAM_SIZE          0x88
+#define CDC_REQUEST_GET_CRC_MODE                   0x89
+#define CDC_REQUEST_SET_CRC_MODE                   0x90
 
 /* Communication feature selector codes */
 /* (usbcdc11.pdf, 6.2.2..6.2.4, Table 47) */
@@ -263,6 +275,10 @@
 #define CDC_ECM_NOTIFY_CODE_RESPONSE_AVAILABLE              0x01
 #define CDC_ECM_NOTIFY_CODE_CONNECTION_SPEED_CHANGE         0x2A
 
+#define CDC_NCM_NTH16_SIGNATURE             0x484D434E
+#define CDC_NCM_NDP16_SIGNATURE_NCM0        0x304D434E
+#define CDC_NCM_NDP16_SIGNATURE_NCM1        0x314D434E
+
 /*------------------------------------------------------------------------------
  *      Structures  based on usbcdc11.pdf (www.usb.org)
  *----------------------------------------------------------------------------*/
@@ -339,7 +355,7 @@ struct cdc_acm_notification {
 } __PACKED;
 
 /** Ethernet Networking Functional Descriptor */
-struct cdc_ecm_descriptor {
+struct cdc_eth_descriptor {
     uint8_t bFunctionLength;
     uint8_t bDescriptorType;
     uint8_t bDescriptorSubtype;
@@ -350,7 +366,7 @@ struct cdc_ecm_descriptor {
     uint8_t bNumberPowerFilters;
 } __PACKED;
 
-struct cdc_ecm_notification {
+struct cdc_eth_notification {
     uint8_t bmRequestType;
     uint8_t bNotificationType;
     uint16_t wValue;
@@ -358,6 +374,41 @@ struct cdc_ecm_notification {
     uint16_t wLength;
     uint8_t data[8];
 } __PACKED;
+
+struct cdc_ncm_ntb_parameters {
+    uint16_t wLength;
+    uint16_t bmNtbFormatsSupported;
+    uint32_t dwNtbInMaxSize;
+    uint16_t wNdbInDivisor;
+    uint16_t wNdbInPayloadRemainder;
+    uint16_t wNdbInAlignment;
+    uint16_t wReserved;
+    uint32_t dwNtbOutMaxSize;
+    uint16_t wNdbOutDivisor;
+    uint16_t wNdbOutPayloadRemainder;
+    uint16_t wNdbOutAlignment;
+    uint16_t wNtbOutMaxDatagrams;
+};
+
+struct cdc_ncm_nth16 {
+    uint32_t dwSignature;
+    uint16_t wHeaderLength;
+    uint16_t wSequence;
+    uint16_t wBlockLength;
+    uint16_t wNdpIndex;
+};
+
+struct cdc_ncm_ndp16_datagram {
+    uint16_t wDatagramIndex;
+    uint16_t wDatagramLength;
+};
+
+struct cdc_ncm_ndp16 {
+    uint32_t dwSignature;
+    uint16_t wLength;
+    uint16_t wNextNdpIndex;
+    struct cdc_ncm_ndp16_datagram datagram[];
+};
 
 /*Length of template descriptor: 66 bytes*/
 #define CDC_ACM_DESCRIPTOR_LEN (8 + 9 + 5 + 5 + 4 + 5 + 7 + 9 + 7 + 7)
@@ -499,7 +550,7 @@ struct cdc_ecm_notification {
 
 #define DBVAL_BE(x) ((x >> 24) & 0xFF), ((x >> 16) & 0xFF), ((x >> 8) & 0xFF), (x & 0xFF)
 
-/*Length of template descriptor: 66 bytes*/
+/*Length of template descriptor: 71 bytes*/
 #define CDC_ECM_DESCRIPTOR_LEN   (8 + 9 + 5 + 5 + 13 + 7 + 9 + 7 + 7)
 // clang-format off
 #define CDC_ECM_DESCRIPTOR_INIT(bFirstInterface, int_ep, out_ep, in_ep, wMaxPacketSize, \
@@ -540,6 +591,81 @@ eth_statistics, wMaxSegmentSize, wNumberMCFilters, bNumberPowerFilters, str_idx)
     WBVAL(wMaxPacketSize),/* wMaxSegmentSize: Ethernet Maximum Segment size, typically 1514 bytes */\
     WBVAL(wNumberMCFilters),            /* wNumberMCFilters: the number of multicast filters */\
     bNumberPowerFilters,          /* bNumberPowerFilters: the number of wakeup power filters */\
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    int_ep,                                                /* bEndpointAddress */              \
+    0x03,                                                  /* bmAttributes */                  \
+    0x10, 0x00,                                            /* wMaxPacketSize */                \
+    0x10,                                                  /* bInterval */                     \
+    0x09,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
+    (uint8_t)(bFirstInterface + 1),                        /* bInterfaceNumber */              \
+    0x00,                                                  /* bAlternateSetting */             \
+    0x02,                                                  /* bNumEndpoints */                 \
+    CDC_DATA_INTERFACE_CLASS,                              /* bInterfaceClass */               \
+    0x00,                                                  /* bInterfaceSubClass */            \
+    0x00,                                                  /* bInterfaceProtocol */            \
+    0x00,                                                  /* iInterface */                    \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    out_ep,                                                /* bEndpointAddress */              \
+    0x02,                                                  /* bmAttributes */                  \
+    WBVAL(wMaxPacketSize),                                 /* wMaxPacketSize */                \
+    0x00,                                                  /* bInterval */                     \
+    0x07,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
+    in_ep,                                                 /* bEndpointAddress */              \
+    0x02,                                                  /* bmAttributes */                  \
+    WBVAL(wMaxPacketSize),                                 /* wMaxPacketSize */                \
+    0x00                                                   /* bInterval */
+// clang-format on
+
+/*Length of template descriptor: 77 bytes*/
+#define CDC_NCM_DESCRIPTOR_LEN   (8 + 9 + 5 + 5 + 13 + 6 + 7 + 9 + 7 + 7)
+// clang-format off
+#define CDC_NCM_DESCRIPTOR_INIT(bFirstInterface, int_ep, out_ep, in_ep, wMaxPacketSize, \
+eth_statistics, wMaxSegmentSize, wNumberMCFilters, bNumberPowerFilters, str_idx) \
+    /* Interface Associate */                                                                  \
+    0x08,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION,             /* bDescriptorType */               \
+    bFirstInterface,                                       /* bFirstInterface */               \
+    0x02,                                                  /* bInterfaceCount */               \
+    USB_DEVICE_CLASS_CDC,                                  /* bFunctionClass */                \
+    CDC_NETWORK_CONTROL_MODEL,                             /* bFunctionSubClass */             \
+    CDC_COMMON_PROTOCOL_NONE,                              /* bFunctionProtocol */             \
+    0x00,                                                  /* iFunction */                     \
+    0x09,                                                  /* bLength */                       \
+    USB_DESCRIPTOR_TYPE_INTERFACE,                         /* bDescriptorType */               \
+    bFirstInterface,                                       /* bInterfaceNumber */              \
+    0x00,                                                  /* bAlternateSetting */             \
+    0x01,                                                  /* bNumEndpoints */                 \
+    USB_DEVICE_CLASS_CDC,                                  /* bInterfaceClass */               \
+    CDC_NETWORK_CONTROL_MODEL,                             /* bInterfaceSubClass */            \
+    CDC_COMMON_PROTOCOL_NONE,                              /* bInterfaceProtocol */            \
+    str_idx,                                               /* iInterface */                    \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_HEADER,                                  /* bDescriptorSubtype */            \
+    WBVAL(CDC_V1_10),                                      /* bcdCDC */                        \
+    0x05,                                                  /* bLength */                       \
+    CDC_CS_INTERFACE,                                      /* bDescriptorType */               \
+    CDC_FUNC_DESC_UNION,                                   /* bDescriptorSubtype */            \
+    bFirstInterface,                                       /* bMasterInterface */              \
+    (uint8_t)(bFirstInterface + 1),                        /* bSlaveInterface0 */              \
+    /* CDC ETH Functional Descriptor */ \
+    0x0D,                                                   /* bFunctionLength */\
+    CDC_CS_INTERFACE,                                       /* bDescriptorType: CS_INTERFACE */\
+    CDC_FUNC_DESC_ETHERNET_NETWORKING, /* Ethernet Networking functional descriptor subtype  */\
+    str_idx,                                                    /* Device's MAC string index */\
+    DBVAL_BE(eth_statistics),                                /* Ethernet statistics (bitmap) */\
+    WBVAL(wMaxPacketSize),/* wMaxSegmentSize: Ethernet Maximum Segment size, typically 1514 bytes */\
+    WBVAL(wNumberMCFilters),            /* wNumberMCFilters: the number of multicast filters */\
+    bNumberPowerFilters,          /* bNumberPowerFilters: the number of wakeup power filters */\
+    0x06,                                                                                      \
+    CDC_CS_INTERFACE,                                                                          \
+    CDC_FUNC_DESC_NCM,                                                                         \
+    0x00, 0x01,                                                                                \
+    0x23,                                                                                      \
     0x07,                                                  /* bLength */                       \
     USB_DESCRIPTOR_TYPE_ENDPOINT,                          /* bDescriptorType */               \
     int_ep,                                                /* bEndpointAddress */              \

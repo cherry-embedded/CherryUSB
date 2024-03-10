@@ -35,7 +35,7 @@ static uint32_t g_connect_speed_table[2] = { CDC_ECM_CONNECT_SPEED_UPSTREAM,
 
 void usbd_cdc_ecm_send_notify(uint8_t notifycode, uint8_t value, uint32_t *speed)
 {
-    struct cdc_ecm_notification *notify = (struct cdc_ecm_notification *)g_cdc_ecm_notify_buf;
+    struct cdc_eth_notification *notify = (struct cdc_eth_notification *)g_cdc_ecm_notify_buf;
     uint8_t bytes2send = 0;
 
     notify->bmRequestType = CDC_ECM_BMREQUEST_TYPE_ECM;

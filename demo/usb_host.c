@@ -12,6 +12,7 @@
 #define TEST_USBH_AUDIO     0
 #define TEST_USBH_VIDEO     0
 #define TEST_USBH_CDC_ECM   0
+#define TEST_USBH_CDC_NCM   0
 #define TEST_USBH_RNDIS     0
 #define TEST_USBH_ASIX      0
 
@@ -344,7 +345,7 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 }
 #endif
 
-#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS || TEST_USBH_ASIX
+#if TEST_USBH_CDC_ECM || || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX
 #include "netif/etharp.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
@@ -496,6 +497,118 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
     eth_device_deinit(&cdc_ecm_dev);
 #else
     struct netif *netif = &g_cdc_ecm_netif;
+#if LWIP_DHCP
+    dhcp_stop(netif);
+    dhcp_cleanup(netif);
+#endif
+    netif_set_down(netif);
+    netif_remove(netif);
+#endif
+}
+#endif
+
+#if TEST_USBH_CDC_NCM
+#include "usbh_cdc_ncm.h"
+
+struct netif g_cdc_ncm_netif;
+
+#ifdef __RTTHREAD__
+static struct eth_device cdc_ncm_dev;
+
+static rt_err_t rt_usbh_cdc_ncm_control(rt_device_t dev, int cmd, void *args)
+{
+    struct usbh_cdc_ncm *cdc_ncm_class = (struct usbh_cdc_ncm *)dev->user_data;
+
+    switch (cmd) {
+        case NIOCTL_GADDR:
+
+            /* get mac address */
+            if (args)
+                rt_memcpy(args, cdc_ncm_class->mac, 6);
+            else
+                return -RT_ERROR;
+
+            break;
+
+        default:
+            break;
+    }
+
+    return RT_EOK;
+}
+
+static rt_err_t rt_usbh_cdc_ncm_eth_tx(rt_device_t dev, struct pbuf *p)
+{
+    return usbh_cdc_ncm_linkoutput(NULL, p);
+}
+#endif
+
+static err_t usbh_cdc_ncm_if_init(struct netif *netif)
+{
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    netif->mtu = 1500;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->state = NULL;
+    netif->name[0] = 'E';
+    netif->name[1] = 'X';
+    netif->output = etharp_output;
+    netif->linkoutput = usbh_cdc_ncm_linkoutput;
+    return ERR_OK;
+}
+
+void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
+{
+#ifdef __RTTHREAD__
+    struct netdev *netdev;
+
+    memset(&cdc_ncm_dev, 0, sizeof(struct eth_device));
+
+    cdc_ncm_dev.parent.control = rt_usbh_cdc_ncm_control;
+    cdc_ncm_dev.eth_rx = NULL;
+    cdc_ncm_dev.eth_tx = rt_usbh_cdc_ncm_eth_tx;
+    cdc_ncm_dev.parent.user_data = cdc_ncm_class;
+
+    eth_device_init(&cdc_ncm_dev, "u0");
+    eth_device_linkchange(&cdc_ncm_dev, RT_TRUE);
+
+    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ncm_rx_thread, cdc_ncm_dev.netif);
+#else
+    struct netif *netif = &g_cdc_ncm_netif;
+
+    netif->hwaddr_len = 6;
+    memcpy(netif->hwaddr, cdc_ncm_class->mac, 6);
+
+    IP4_ADDR(&cdc_ncm_class->ipaddr, 0, 0, 0, 0);
+    IP4_ADDR(&cdc_ncm_class->netmask, 0, 0, 0, 0);
+    IP4_ADDR(&cdc_ncm_class->gateway, 0, 0, 0, 0);
+
+    netif = netif_add(netif, &cdc_ncm_class->ipaddr, &cdc_ncm_class->netmask, &cdc_ncm_class->gateway, NULL, usbh_cdc_ncm_if_init, tcpip_input);
+    netif_set_default(netif);
+    while (!netif_is_up(netif)) {
+    }
+
+    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle1 == NULL) {
+        USB_LOG_ERR("timer creation failed! \r\n");
+        while (1) {
+        }
+    }
+
+    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ncm_rx_thread, netif);
+#if LWIP_DHCP
+    dhcp_start(netif);
+    xTimerStart(dhcp_handle1, 0);
+#endif
+#endif
+}
+
+void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
+{
+#ifdef __RTTHREAD__
+    eth_device_deinit(&cdc_ncm_dev);
+#else
+    struct netif *netif = &g_cdc_ncm_netif;
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
@@ -844,7 +957,7 @@ void usbh_class_test(void)
 #ifdef __RTTHREAD__
     /* do nothing */
 #else
-#if TEST_USBH_CDC_ECM || TEST_USBH_RNDIS || TEST_USBH_ASIX
+#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
 #endif

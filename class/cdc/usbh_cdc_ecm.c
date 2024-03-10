@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, sakumisu
+ * Copyright (c) 2024, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,7 +95,7 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
                 break;
             case CDC_CS_INTERFACE:
                 if ((cur_iface == cdc_ecm_class->ctrl_intf) && p[DESC_bDescriptorSubType] == CDC_FUNC_DESC_ETHERNET_NETWORKING) {
-                    struct cdc_ecm_descriptor *desc = (struct cdc_ecm_descriptor *)p;
+                    struct cdc_eth_descriptor *desc = (struct cdc_eth_descriptor *)p;
                     mac_str_idx = desc->iMACAddress;
                     cdc_ecm_class->max_segment_size = desc->wMaxSegmentSize;
                     goto get_mac;
