@@ -61,6 +61,11 @@ __WEAK void usb_dc_low_level_deinit(uint8_t busid)
     (void)busid;
 }
 
+void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
+{
+    usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
+}
+
 int usb_dc_init(uint8_t busid)
 {
     usb_dc_low_level_init(busid);
@@ -141,8 +146,13 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     usb_endpoint_config_t tmp_ep_cfg;
     usb_device_handle_t *handle = g_hpm_udc[busid].handle;
-
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
+
+    tmp_ep_cfg.xfer = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+    tmp_ep_cfg.ep_addr = ep->bEndpointAddress;
+    tmp_ep_cfg.max_packet_size = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+
+    usb_device_edpt_open(handle, &tmp_ep_cfg);
 
     if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
         g_hpm_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
@@ -154,11 +164,6 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_hpm_udc[busid].in_ep[ep_idx].ep_enable = true;
     }
 
-    tmp_ep_cfg.xfer = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
-    tmp_ep_cfg.ep_addr = ep->bEndpointAddress;
-    tmp_ep_cfg.max_packet_size = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-
-    usb_device_edpt_open(handle, &tmp_ep_cfg);
     return 0;
 }
 
@@ -174,6 +179,7 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
     }
 
     usb_device_edpt_close(handle, ep);
+
     return 0;
 }
 
@@ -248,6 +254,7 @@ void USBD_IRQHandler(uint8_t busid)
     uint32_t int_status;
     usb_device_handle_t *handle = g_hpm_udc[busid].handle;
     uint32_t transfer_len;
+    bool ep_cb_req;
 
     /* Acknowledge handled interrupt */
     int_status = usb_device_status_flags(handle);
@@ -303,13 +310,18 @@ void USBD_IRQHandler(uint8_t busid)
             for (uint8_t ep_idx = 0; ep_idx < USB_SOS_DCD_MAX_QHD_COUNT; ep_idx++) {
                 if (edpt_complete & (1 << ep_idx2bit(ep_idx))) {
                     transfer_len = 0;
+                    ep_cb_req = true;
 
                     /* Failed QTD also get ENDPTCOMPLETE set */
                     dcd_qtd_t *p_qtd = usb_device_qtd_get(handle, ep_idx);
                     while (1) {
                         if (p_qtd->halted || p_qtd->xact_err || p_qtd->buffer_err) {
                             USB_LOG_ERR("usbd transfer error!\r\n");
-                            return;
+                            ep_cb_req = false;
+                            break;
+                        } else if (p_qtd->active) {
+                            ep_cb_req = false;
+                            break;
                         } else {
                             transfer_len += p_qtd->expected_bytes - p_qtd->total_bytes;
                         }
@@ -321,11 +333,13 @@ void USBD_IRQHandler(uint8_t busid)
                         }
                     }
 
-                    uint8_t const ep_addr = (ep_idx / 2) | ((ep_idx & 0x01) ? 0x80 : 0);
-                    if (ep_addr & 0x80) {
-                        usbd_event_ep_in_complete_handler(busid, ep_addr, transfer_len);
-                    } else {
-                        usbd_event_ep_out_complete_handler(busid, ep_addr, transfer_len);
+                    if (ep_cb_req) {
+                        uint8_t const ep_addr = (ep_idx / 2) | ((ep_idx & 0x01) ? 0x80 : 0);
+                        if (ep_addr & 0x80) {
+                            usbd_event_ep_in_complete_handler(busid, ep_addr, transfer_len);
+                        } else {
+                            usbd_event_ep_out_complete_handler(busid, ep_addr, transfer_len);
+                        }
                     }
                 }
             }
