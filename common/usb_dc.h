@@ -178,6 +178,15 @@ void usbd_event_ep_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbyte
  */
 void usbd_event_ep_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbytes);
 
+#ifdef CONFIG_USBDEV_TEST_MODE
+/**
+ * @brief Usb execute test mode
+ * @param[in]  busid     device busid
+ * @param[in]  test_mode usb test mode
+ */
+void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

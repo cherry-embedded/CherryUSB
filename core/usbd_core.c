@@ -51,7 +51,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     uint8_t configuration;
     uint8_t speed;
 #ifdef CONFIG_USBDEV_TEST_MODE
-    bool test_mode;
+    bool test_req;
 #endif
     struct usbd_interface *intf[8];
     uint8_t intf_offset;
@@ -498,8 +498,7 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
                 }
             } else if (value == USB_FEATURE_TEST_MODE) {
 #ifdef CONFIG_USBDEV_TEST_MODE
-                g_usbd_core[busid].test_mode = true;
-                usbd_execute_test_mode(busid, setup);
+                g_usbd_core[busid].test_req = true;
 #endif
             }
             *len = 0;
@@ -973,10 +972,6 @@ void usbd_event_reset_handler(uint8_t busid)
 {
     usbd_set_address(busid, 0);
     g_usbd_core[busid].configuration = 0;
-
-#ifdef CONFIG_USBDEV_TEST_MODE
-    g_usbd_core[busid].test_mode = false;
-#endif
     struct usb_endpoint_descriptor ep0;
 
     ep0.bLength = 7;
@@ -1027,13 +1022,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
         usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
         return;
     }
-#ifdef CONFIG_USBDEV_TEST_MODE
-    /* send status in test mode, so do not execute downward, just return */
-    if (g_usbd_core[busid].test_mode) {
-        g_usbd_core[busid].test_mode = false;
-        return;
-    }
-#endif
+
     /* Send smallest of requested and offered length */
     g_usbd_core[busid].ep0_data_buf_residue = MIN(g_usbd_core[busid].ep0_data_buf_len, setup->wLength);
     if (g_usbd_core[busid].ep0_data_buf_residue > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
@@ -1082,6 +1071,13 @@ void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbyt
                 /* if all data has sent completely, start reading out status */
                 usbd_ep_start_read(busid, USB_CONTROL_OUT_EP0, NULL, 0);
             }
+
+#ifdef CONFIG_USBDEV_TEST_MODE
+            if (g_usbd_core[busid].test_req) {
+                usbd_execute_test_mode(busid, HI_BYTE(setup->wIndex));
+                g_usbd_core[busid].test_req = false;
+            }
+#endif
         }
     }
 }
