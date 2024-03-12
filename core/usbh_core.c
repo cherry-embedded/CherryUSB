@@ -393,6 +393,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     struct usb_endpoint_descriptor *ep;
     int dev_addr;
     uint16_t ep_mps;
+    uint8_t config_value;
     int ret;
 
     hport->setup = &g_setup_buffer[hport->bus->busid][hport->parent->index - 1][hport->port - 1];
@@ -538,6 +539,8 @@ int usbh_enumerate(struct usbh_hubport *hport)
         USB_LOG_ERR("No memory to alloc for raw_config_desc\r\n");
         goto errout;
     }
+
+    config_value = ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->bConfigurationValue;
     memcpy(hport->raw_config_desc, ep0_request_buffer, wTotalLength);
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     uint8_t string_buffer[128];
@@ -575,7 +578,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     /* Select device configuration 1 */
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_SET_CONFIGURATION;
-    setup->wValue = 1;
+    setup->wValue = config_value;
     setup->wIndex = 0;
     setup->wLength = 0;
 
