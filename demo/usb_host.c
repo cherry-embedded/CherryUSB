@@ -345,7 +345,7 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 }
 #endif
 
-#if TEST_USBH_CDC_ECM || || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX
+#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX
 #include "netif/etharp.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
