@@ -85,31 +85,22 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
     struct usbh_class_info *index = NULL;
 
     for (index = usbh_class_info_table_begin; index < usbh_class_info_table_end; index++) {
-        if ((index->match_flags & (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) ==
-            (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) {
-            if (index->vid == vid && index->pid == pid &&
-                index->class == class && index->subclass == subclass && index->protocol == protocol) {
-                return index->class_driver;
-            }
-        } else if ((index->match_flags & (USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) ==
-                   (USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL)) {
-            if (index->class == class && index->subclass == subclass && index->protocol == protocol) {
-                return index->class_driver;
-            }
-        } else if ((index->match_flags & (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS)) ==
-                   (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS)) {
-            if (index->vid == vid && index->pid == pid && index->class == class) {
-                return index->class_driver;
-            }
-        } else if ((index->match_flags & (USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS)) == (USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS)) {
-            if (index->class == class && index->subclass == subclass) {
-                return index->class_driver;
-            }
-        } else if ((index->match_flags & (USB_CLASS_MATCH_INTF_CLASS)) == USB_CLASS_MATCH_INTF_CLASS) {
-            if (index->class == class) {
-                return index->class_driver;
-            }
+        if ((index->match_flags & USB_CLASS_MATCH_VENDOR) && !(index->vid == vid)) {
+            continue;
         }
+        if ((index->match_flags & USB_CLASS_MATCH_PRODUCT) && !(index->pid == pid)) {
+            continue;
+        }
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_CLASS) && !(index->class == class)) {
+            continue;
+        }
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_SUBCLASS) && !(index->subclass == subclass)) {
+            continue;
+        }
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL) && !(index->protocol == protocol)) {
+            continue;
+        }
+        return index->class_driver;
     }
     return NULL;
 }
