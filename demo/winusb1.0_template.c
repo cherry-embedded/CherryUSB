@@ -281,7 +281,7 @@ const uint8_t winusb_descriptor[] = {
     'E', 0x00,                  /* wcChar18 */
     'M', 0x00,                  /* wcChar19 */
     'O', 0x00,                  /* wcChar20 */
-        ' ', 0x00,                  /* wcChar16 */
+    ' ', 0x00,                  /* wcChar16 */
     '1', 0x00,                  /* wcChar21 */
     ///////////////////////////////////////
     /// string5 descriptor
@@ -309,7 +309,7 @@ const uint8_t winusb_descriptor[] = {
     'E', 0x00,                  /* wcChar18 */
     'M', 0x00,                  /* wcChar19 */
     'O', 0x00,                  /* wcChar20 */
-        ' ', 0x00,                  /* wcChar16 */
+    ' ', 0x00,                  /* wcChar16 */
     '2', 0x00,                  /* wcChar21 */
 #ifdef CONFIG_USB_HS
     ///////////////////////////////////////
