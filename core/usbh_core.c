@@ -510,10 +510,10 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
-    parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer, USB_SIZEOF_CONFIG_DESC);
+    parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid], USB_SIZEOF_CONFIG_DESC);
 
     /* Read the full size of the configuration data */
-    uint16_t wTotalLength = ((struct usb_configuration_descriptor *)ep0_request_buffer)->wTotalLength;
+    uint16_t wTotalLength = ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->wTotalLength;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
@@ -541,7 +541,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
 
     config_value = ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->bConfigurationValue;
-    memcpy(hport->raw_config_desc, ep0_request_buffer, wTotalLength);
+    memcpy(hport->raw_config_desc, ep0_request_buffer[hport->bus->busid], wTotalLength);
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     uint8_t string_buffer[128];
 
@@ -595,7 +595,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wIndex = 0x0004;
     setup->wLength = 16;
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer);
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < 0 && (ret != -EPERM)) {
         USB_LOG_ERR("Failed to get msosv1 compat id,errorcode:%d\r\n", ret);
         goto errout;
