@@ -357,10 +357,6 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 
 #ifdef __RTTHREAD__
 
-#ifndef RT_USING_TIMER_SOFT
-#error must enable RT_USING_TIMER_SOFT to support timer callback in thread
-#endif
-
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <netif/ethernetif.h>
