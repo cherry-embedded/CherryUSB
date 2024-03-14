@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define USB_OSAL_WAITING_FOREVER (0xFFFFFFFFU)
 
@@ -16,6 +17,12 @@ typedef void *usb_osal_sem_t;
 typedef void *usb_osal_mutex_t;
 typedef void *usb_osal_mq_t;
 typedef void (*usb_thread_entry_t)(void *argument);
+typedef void (*usb_timer_handler_t)(void *argument);
+struct usb_osal_timer {
+    usb_timer_handler_t handler;
+    void *argument;
+    void *timer;
+};
 
 /*
  * Task with smaller priority value indicates higher task priority
@@ -38,6 +45,11 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs);
 void usb_osal_mq_delete(usb_osal_mq_t mq);
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr);
 int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout);
+
+struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period);
+void usb_osal_timer_delete(struct usb_osal_timer *timer);
+void usb_osal_timer_start(struct usb_osal_timer *timer);
+void usb_osal_timer_stop(struct usb_osal_timer *timer);
 
 size_t usb_osal_enter_critical_section(void);
 void usb_osal_leave_critical_section(size_t flag);

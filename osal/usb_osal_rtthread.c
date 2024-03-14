@@ -122,6 +122,37 @@ int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
     return (int)ret;
 }
 
+struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
+{
+    struct usb_osal_timer *timer;
+
+    timer = rt_malloc(sizeof(struct usb_osal_timer));
+    memset(timer, 0, sizeof(struct usb_osal_timer));
+
+    timer->timer = (void *)rt_timer_create("usb_tim", handler, argument, timeout_ms, is_period ? (RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER) : (RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER));
+    if (timer->timer == NULL) {
+        return NULL;
+    }
+    return timer;
+}
+
+void usb_osal_timer_delete(struct usb_osal_timer *timer)
+{
+    rt_timer_stop(timer->timer);
+    rt_timer_delete(timer->timer);
+    rt_free(timer);
+}
+
+void usb_osal_timer_start(struct usb_osal_timer *timer)
+{
+    rt_timer_start(timer->timer);
+}
+
+void usb_osal_timer_stop(struct usb_osal_timer *timer)
+{
+    rt_timer_stop(timer->timer);
+}
+
 size_t usb_osal_enter_critical_section(void)
 {
     return rt_hw_interrupt_disable();

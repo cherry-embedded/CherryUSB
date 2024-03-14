@@ -304,9 +304,19 @@ static void hub_int_complete_callback(void *arg, int nbytes)
     if (nbytes > 0) {
         usbh_hub_thread_wakeup(hub);
     } else if (nbytes == -USB_ERR_NAK) {
-        usbh_submit_urb(&hub->intin_urb);
+        /* Restart timer to submit urb again */
+        USB_LOG_DBG("Restart timer\r\n");
+        usb_osal_timer_start(hub->int_timer);
     } else {
     }
+}
+
+static void hub_int_timeout(void *arg)
+{
+    struct usbh_hub *hub = (struct usbh_hub *)arg;
+
+    usbh_int_urb_fill(&hub->intin_urb, hub->parent, hub->intin, hub->int_buffer, 1, 0, hub_int_complete_callback, hub);
+    usbh_submit_urb(&hub->intin_urb);
 }
 
 static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -384,8 +394,9 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
     hub->int_buffer = g_hub_intbuf[hub->bus->busid][hub->index - 1];
-    usbh_int_urb_fill(&hub->intin_urb, hub->parent, hub->intin, hub->int_buffer, 1, 0, hub_int_complete_callback, hub);
-    usbh_submit_urb(&hub->intin_urb);
+
+    hub->int_timer = usb_osal_timer_create("hubint_tim", USBH_GET_URB_INTERVAL(hub->intin->bInterval, hport->speed), hub_int_timeout, hub, 0);
+    usb_osal_timer_start(hub->int_timer);
     return 0;
 }
 
@@ -400,6 +411,8 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
         if (hub->intin) {
             usbh_kill_urb(&hub->intin_urb);
         }
+
+        usb_osal_timer_delete(hub->int_timer);
 
         for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
             child = &hub->child[port];
@@ -616,7 +629,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
     /* Start next hub int transfer */
     if (!hub->is_roothub && hub->connected) {
-        usbh_submit_urb(&hub->intin_urb);
+        usb_osal_timer_start(hub->int_timer);
     }
 }
 

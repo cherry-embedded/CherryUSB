@@ -116,6 +116,51 @@ int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
     }
 }
 
+static void __usb_timeout(TimerHandle_t *handle)
+{
+    struct usb_osal_timer *timer = (struct usb_osal_timer *)pvTimerGetTimerID((TimerHandle_t)handle);
+
+    timer->handler(timer->argument);
+}
+
+struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
+{
+    struct usb_osal_timer *timer;
+
+    timer = pvPortMalloc(sizeof(struct usb_osal_timer));
+
+    if (timer == NULL) {
+        return NULL;
+    }
+    memset(timer, 0, sizeof(struct usb_osal_timer));
+
+    timer->handler = handler;
+    timer->argument = argument;
+
+    timer->timer = (void *)xTimerCreate("usb_tim", pdMS_TO_TICKS(timeout_ms), is_period, timer, (TimerCallbackFunction_t)__usb_timeout);
+    if (timer->timer == NULL) {
+        return NULL;
+    }
+    return timer;
+}
+
+void usb_osal_timer_delete(struct usb_osal_timer *timer)
+{
+    xTimerStop(timer->timer, 0);
+    xTimerDelete(timer->timer, 0);
+    vPortFree(timer);
+}
+
+void usb_osal_timer_start(struct usb_osal_timer *timer)
+{
+    xTimerStart(timer->timer, 0);
+}
+
+void usb_osal_timer_stop(struct usb_osal_timer *timer)
+{
+    xTimerStop(timer->timer, 0);
+}
+
 size_t usb_osal_enter_critical_section(void)
 {
     taskDISABLE_INTERRUPTS();
