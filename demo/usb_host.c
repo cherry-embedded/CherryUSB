@@ -6,6 +6,7 @@
 #include "usbh_audio.h"
 
 #define TEST_USBH_CDC_ACM   1
+#define TEST_USBH_CDC_SPEED 0
 #define TEST_USBH_HID       1
 #define TEST_USBH_MSC       1
 #define TEST_USBH_MSC_FATFS 0
@@ -18,6 +19,13 @@
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
+
+#if TEST_USBH_CDC_SPEED
+#define TEST_LEN   (16 * 1024)
+#define TEST_COUNT (10240)
+
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_speed_buffer[TEST_LEN];
+#endif
 
 void usbh_cdc_acm_callback(void *arg, int nbytes)
 {
@@ -42,7 +50,25 @@ find_class:
     while ((cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0")) == NULL) {
         goto delete;
     }
+#if TEST_USBH_CDC_SPEED
+    const uint32_t test_len[] = { 512, 1 * 1024, 2 * 1024, 4 * 1024, 8 * 1024, 16 * 1024 };
 
+    memset(cdc_speed_buffer, 0xAA, TEST_LEN);
+
+    for (uint8_t j = 0; j < 6; j++) {
+        uint32_t start_time = (uint32_t)bflb_mtimer_get_time_ms();
+        for (uint32_t i = 0; i < TEST_COUNT; i++) {
+            usbh_bulk_urb_fill(&cdc_acm_class->bulkout_urb, cdc_acm_class->hport, cdc_acm_class->bulkout, cdc_speed_buffer, test_len[j], 0XFFFFFFF, NULL, NULL);
+            ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
+            if (ret < 0) {
+                USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
+                while (1) {}
+            } else {
+            }
+        }
+        USB_LOG_RAW("per packet len:%d, out speed:%d MB/S\r\n", test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((uint32_t)bflb_mtimer_get_time_ms() - start_time));
+    }
+#endif
     memset(cdc_buffer, 0, 512);
 
     const uint8_t data1[10] = { 0x02, 0x00, 0x00, 0x00, 0x02, 0x02, 0x08, 0x14 };
