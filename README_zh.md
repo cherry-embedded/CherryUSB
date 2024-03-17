@@ -78,6 +78,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 Remote NDIS (RNDIS)
 - 支持 WINUSB1.0、WINUSB2.0(带 BOS )
 - 支持 Vendor 类 class
+- 支持相同 USB IP 的多从机
 
 CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
@@ -151,11 +152,12 @@ x 受以下宏影响：
 
 ## 文档教程
 
-CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和例程，参考 [CherryUSB 文档教程](https://cherryusb.readthedocs.io/)
+CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和例程，参考 [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/)
 
 ## 视频教程
 
-USB 基本知识点与 CherryUSB Device 协议栈是如何编写的，参考 [CherryUSB Device 协议栈教程](https://www.bilibili.com/video/BV1Ef4y1t73d).
+- USB 基本知识点与 CherryUSB Device 协议栈是如何编写的（使用v0.4.1 版本），参考 https://www.bilibili.com/video/BV1Ef4y1t73d.
+- CherryUSB 腾讯会议（使用v1.1.0 版本），参考 https://www.bilibili.com/video/BV16x421y7mM.
 
 ## 图形化界面配置工具
 

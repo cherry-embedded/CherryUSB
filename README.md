@@ -80,6 +80,7 @@ CherryUSB Device Stack has the following functions：
 - Support Remote NDIS (RNDIS)
 - Support WINUSB1.0、WINUSB2.0(with BOS)
 - Support Vendor class
+- Support multi device with the same USB IP
 
 CherryUSB Device Stack resource usage (GCC 10.2 with -O2):
 
