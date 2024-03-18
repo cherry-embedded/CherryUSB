@@ -683,8 +683,8 @@ int usbh_initialize(uint8_t busid, uint32_t reg_base)
     usbh_class_info_table_begin = (struct usbh_class_info *)&__usbh_class_info_start__;
     usbh_class_info_table_end = (struct usbh_class_info *)&__usbh_class_info_end__;
 #elif defined(__ICCARM__) || defined(__ICCRX__) || defined(__ICCRISCV__)
-    usbh_class_info_table_begin = (struct usbh_class_info *)__section_begin("usbh_class_info");
-    usbh_class_info_table_end = (struct usbh_class_info *)__section_end("usbh_class_info");
+    usbh_class_info_table_begin = (struct usbh_class_info *)__section_begin(".usbh_class_info");
+    usbh_class_info_table_end = (struct usbh_class_info *)__section_end(".usbh_class_info");
 #endif
     usbh_hub_initialize(bus);
     return 0;
