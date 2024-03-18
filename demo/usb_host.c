@@ -16,6 +16,7 @@
 #define TEST_USBH_CDC_NCM   0
 #define TEST_USBH_RNDIS     0
 #define TEST_USBH_ASIX      0
+#define TEST_USBH_RTL8152   0
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
@@ -371,7 +372,7 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 }
 #endif
 
-#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX
+#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX || TEST_USBH_RTL8152
 #include "netif/etharp.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
@@ -915,6 +916,118 @@ void usbh_asix_stop(struct usbh_asix *asix_class)
 }
 #endif
 
+#if TEST_USBH_RTL8152
+#include "usbh_rtl8152.h"
+
+struct netif g_rtl8152_netif;
+
+#ifdef __RTTHREAD__
+static struct eth_device rtl8152_dev;
+
+static rt_err_t rt_usbh_rtl8152_control(rt_device_t dev, int cmd, void *args)
+{
+    struct usbh_rtl8152 *rtl8152_class = (struct usbh_rtl8152 *)dev->user_data;
+
+    switch (cmd) {
+        case NIOCTL_GADDR:
+
+            /* get mac address */
+            if (args)
+                rt_memcpy(args, rtl8152_class->mac, 6);
+            else
+                return -RT_ERROR;
+
+            break;
+
+        default:
+            break;
+    }
+
+    return RT_EOK;
+}
+
+static rt_err_t rt_usbh_rtl8152_eth_tx(rt_device_t dev, struct pbuf *p)
+{
+    return usbh_rtl8152_linkoutput(NULL, p);
+}
+#endif
+
+static err_t usbh_rtl8152_if_init(struct netif *netif)
+{
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    netif->mtu = 1500;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->state = NULL;
+    netif->name[0] = 'E';
+    netif->name[1] = 'X';
+    netif->output = etharp_output;
+    netif->linkoutput = usbh_rtl8152_linkoutput;
+    return ERR_OK;
+}
+
+void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
+{
+#ifdef __RTTHREAD__
+    struct netdev *netdev;
+
+    memset(&rtl8152_dev, 0, sizeof(struct eth_device));
+
+    rtl8152_dev.parent.control = rt_usbh_rtl8152_control;
+    rtl8152_dev.eth_rx = NULL;
+    rtl8152_dev.eth_tx = rt_usbh_rtl8152_eth_tx;
+    rtl8152_dev.parent.user_data = rtl8152_class;
+
+    eth_device_init(&rtl8152_dev, "u0");
+    eth_device_linkchange(&rtl8152_dev, RT_TRUE);
+
+    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rtl8152_rx_thread, rtl8152_dev.netif);
+#else
+    struct netif *netif = &g_rtl8152_netif;
+
+    netif->hwaddr_len = 6;
+    memcpy(netif->hwaddr, rtl8152_class->mac, 6);
+
+    IP4_ADDR(&rtl8152_class->ipaddr, 0, 0, 0, 0);
+    IP4_ADDR(&rtl8152_class->netmask, 0, 0, 0, 0);
+    IP4_ADDR(&rtl8152_class->gateway, 0, 0, 0, 0);
+
+    netif = netif_add(netif, &rtl8152_class->ipaddr, &rtl8152_class->netmask, &rtl8152_class->gateway, NULL, usbh_rtl8152_if_init, tcpip_input);
+    netif_set_default(netif);
+    while (!netif_is_up(netif)) {
+    }
+
+    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle1 == NULL) {
+        USB_LOG_ERR("timer creation failed! \r\n");
+        while (1) {
+        }
+    }
+
+    usb_osal_thread_create("usbh_rtl8152_rx", 2048, 20, usbh_rtl8152_rx_thread, netif);
+#if LWIP_DHCP
+    dhcp_start(netif);
+    xTimerStart(dhcp_handle1, 0);
+#endif
+#endif
+}
+
+void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
+{
+#ifdef __RTTHREAD__
+    eth_device_deinit(&rtl8152_dev);
+#else
+    struct netif *netif = &g_rtl8152_netif;
+#if LWIP_DHCP
+    dhcp_stop(netif);
+    dhcp_cleanup(netif);
+#endif
+    netif_set_down(netif);
+    netif_remove(netif);
+#endif
+}
+#endif
+
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 #if TEST_USBH_CDC_ACM
@@ -979,7 +1092,7 @@ void usbh_class_test(void)
 #ifdef __RTTHREAD__
     /* do nothing */
 #else
-#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX
+#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX || TEST_USBH_RTL8152
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
 #endif
