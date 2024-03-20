@@ -175,6 +175,7 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
 
     /* Enable channel interrupts required for this transfer. */
     regval = USB_OTG_HCINTMSK_XFRCM |
+             USB_OTG_HCINTMSK_CHHM |
              USB_OTG_HCINTMSK_STALLM |
              USB_OTG_HCINTMSK_TXERRM |
              USB_OTG_HCINTMSK_DTERRM |
@@ -184,17 +185,8 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
         regval |= USB_OTG_HCINTMSK_BBERRM;
     }
 
-    switch (ep_type) {
-        case USB_ENDPOINT_TYPE_CONTROL:
-            //regval |= USB_OTG_HCINTMSK_NAKM;
-        case USB_ENDPOINT_TYPE_BULK:
-            //regval |= USB_OTG_HCINTMSK_NAKM;
-            break;
-        case USB_ENDPOINT_TYPE_INTERRUPT:
-            regval |= USB_OTG_HCINTMSK_NAKM;
-            break;
-        case USB_ENDPOINT_TYPE_ISOCHRONOUS:
-            break;
+    if (ep_type == USB_ENDPOINT_TYPE_INTERRUPT) {
+        regval |= USB_OTG_HCINTMSK_NAKM;
     }
 
     USB_OTG_HC((uint32_t)ch_num)->HCINTMSK = regval;
@@ -202,11 +194,7 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
     /* Enable the top level host channel interrupt. */
     USB_OTG_HOST->HAINTMSK |= 1UL << (ch_num & 0xFU);
 
-    /* Make sure host channel interrupts are enabled. */
-    USB_OTG_GLB->GINTMSK |= USB_OTG_GINTMSK_HCIM;
-
     /* Program the HCCHAR register */
-
     regval = (((uint32_t)ep_mps << USB_OTG_HCCHAR_MPSIZ_Pos) & USB_OTG_HCCHAR_MPSIZ) |
              ((((uint32_t)ep_addr & 0x7FU) << USB_OTG_HCCHAR_EPNUM_Pos) & USB_OTG_HCCHAR_EPNUM) |
              (((uint32_t)ep_type << USB_OTG_HCCHAR_EPTYP_Pos) & USB_OTG_HCCHAR_EPTYP) |
@@ -255,49 +243,26 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
 
 static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
 {
-    volatile uint32_t count = 0U;
     volatile uint32_t HcEpType = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_EPTYP) >> 18;
     volatile uint32_t ChannelEna = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) >> 31;
+    volatile uint32_t count = 0U;
 
     if (((USB_OTG_GLB->GAHBCFG & USB_OTG_GAHBCFG_DMAEN) == USB_OTG_GAHBCFG_DMAEN) &&
         (ChannelEna == 0U)) {
         return;
     }
 
-    /* Check for space in the request queue to issue the halt. */
-    if ((HcEpType == HCCHAR_CTRL) || (HcEpType == HCCHAR_BULK)) {
-        USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHDIS;
+    USB_MASK_HALT_HC_INT(ch_num);
 
-        if ((USB_OTG_GLB->GAHBCFG & USB_OTG_GAHBCFG_DMAEN) == 0U) {
-            if ((USB_OTG_GLB->HNPTXSTS & (0xFFU << 16)) == 0U) {
-                USB_OTG_HC(ch_num)->HCCHAR &= ~USB_OTG_HCCHAR_CHENA;
-                USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHENA;
-                USB_OTG_HC(ch_num)->HCCHAR &= ~USB_OTG_HCCHAR_EPDIR;
-                do {
-                    if (++count > 1000U) {
-                        break;
-                    }
-                } while ((USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) == USB_OTG_HCCHAR_CHENA);
-            } else {
-                USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHENA;
-            }
-        }
-    } else {
-        USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHDIS;
+    USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHDIS;
 
-        if ((USB_OTG_HOST->HPTXSTS & (0xFFU << 16)) == 0U) {
-            USB_OTG_HC(ch_num)->HCCHAR &= ~USB_OTG_HCCHAR_CHENA;
-            USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHENA;
-            USB_OTG_HC(ch_num)->HCCHAR &= ~USB_OTG_HCCHAR_EPDIR;
-            do {
-                if (++count > 1000U) {
-                    break;
-                }
-            } while ((USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) == USB_OTG_HCCHAR_CHENA);
-        } else {
-            USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHENA;
+    do {
+        if (++count > 200000U) {
+            break;
         }
-    }
+    } while (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA);
+
+    USB_OTG_HC(ch_num)->HCINT = USB_OTG_HC(ch_num)->HCINT;
 }
 
 static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
@@ -336,11 +301,14 @@ static inline uint32_t dwc2_get_glb_intstatus(struct usbh_bus *bus)
 
 static int dwc2_chan_alloc(struct usbh_bus *bus)
 {
+    size_t flags;
     int chidx;
 
     for (chidx = 0; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
         if (!g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx].inuse) {
+            flags = usb_osal_enter_critical_section();
             g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx].inuse = true;
+            usb_osal_leave_critical_section(flags);
             return chidx;
         }
     }
@@ -453,7 +421,6 @@ int usb_hc_init(struct usbh_bus *bus)
     usb_hc_low_level_init(bus);
 
     USB_LOG_INFO("========== dwc2 hcd params ==========\r\n");
-    USB_LOG_INFO("GCCFG:%08x\r\n", USB_OTG_GLB->GCCFG);
     USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
     USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
     USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
@@ -463,8 +430,8 @@ int usb_hc_init(struct usbh_bus *bus)
 
     USB_LOG_INFO("dwc2 has %d channels\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1);
 
-    if ((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) == 0U) {
-        USB_LOG_ERR("This dwc2 version does not support dma, so stop working\r\n");
+    if (((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) != 2) {
+        USB_LOG_ERR("This dwc2 version does not support dma mode, so stop working\r\n");
         while (1) {
         }
     }
@@ -486,17 +453,11 @@ int usb_hc_init(struct usbh_bus *bus)
     /* Set default Max speed support */
     USB_OTG_HOST->HCFG &= ~(USB_OTG_HCFG_FSLSS);
 
-    ret = dwc2_flush_txfifo(bus, 0x10U);
-    ret = dwc2_flush_rxfifo(bus);
-
     /* Clear all pending HC Interrupts */
     for (uint8_t i = 0U; i < CONFIG_USBHOST_PIPE_NUM; i++) {
         USB_OTG_HC(i)->HCINT = 0xFFFFFFFFU;
         USB_OTG_HC(i)->HCINTMSK = 0U;
     }
-
-    dwc2_drivebus(bus, 1);
-    usb_osal_msleep(200);
 
     /* Disable all interrupts. */
     USB_OTG_GLB->GINTMSK = 0U;
@@ -509,12 +470,18 @@ int usb_hc_init(struct usbh_bus *bus)
     USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ = (uint32_t)(((0x100U << 16) & USB_OTG_NPTXFD) | 0x200U);
     USB_OTG_GLB->HPTXFSIZ = (uint32_t)(((0xE0U << 16) & USB_OTG_HPTXFSIZ_PTXFD) | 0x300U);
 
-    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_HBSTLEN_2;
+    ret = dwc2_flush_txfifo(bus, 0x10U);
+    ret = dwc2_flush_rxfifo(bus);
+
+    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_HBSTLEN_4;
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_DMAEN;
 
     /* Enable interrupts matching to the Host mode ONLY */
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_PRTIM | USB_OTG_GINTMSK_HCIM |
                              USB_OTG_GINTSTS_DISCINT);
+
+    dwc2_drivebus(bus, 1);
+    usb_osal_msleep(200);
 
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
@@ -808,7 +775,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     chan = (struct dwc2_chan *)urb->hcpriv;
 
     dwc2_halt(bus, chan->chidx);
-    CLEAR_HC_INT(chan->chidx, USB_OTG_HCINT_CHH);
 
     chan->urb = NULL;
     urb->hcpriv = NULL;
@@ -856,66 +822,16 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
     struct dwc2_chan *chan;
     struct usbh_urb *urb;
 
-    chan_intstatus = (USB_OTG_HC(ch_num)->HCINT) & (USB_OTG_HC((uint32_t)ch_num)->HCINTMSK);
+    chan_intstatus = USB_OTG_HC(ch_num)->HCINT;
 
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[ch_num];
     urb = chan->urb;
     //printf("s1:%08x\r\n", chan_intstatus);
 
-    if ((chan_intstatus & USB_OTG_HCINT_XFRC) == USB_OTG_HCINT_XFRC) {
-        urb->errorcode = 0;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_XFRC);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_AHBERR) == USB_OTG_HCINT_AHBERR) {
-        urb->errorcode = -USB_ERR_IO;
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_AHBERR);
-    } else if ((chan_intstatus & USB_OTG_HCINT_STALL) == USB_OTG_HCINT_STALL) {
-        urb->errorcode = -USB_ERR_STALL;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_STALL);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_NAK) == USB_OTG_HCINT_NAK) {
-        urb->errorcode = -USB_ERR_NAK;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_ACK) == USB_OTG_HCINT_ACK) {
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_ACK);
-    } else if ((chan_intstatus & USB_OTG_HCINT_NYET) == USB_OTG_HCINT_NYET) {
-        urb->errorcode = -USB_ERR_NAK;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NYET);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_TXERR) == USB_OTG_HCINT_TXERR) {
-        urb->errorcode = -USB_ERR_IO;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_TXERR);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_BBERR) == USB_OTG_HCINT_BBERR) {
-        urb->errorcode = -USB_ERR_BABBLE;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_BBERR);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_FRMOR) == USB_OTG_HCINT_FRMOR) {
-        urb->errorcode = -USB_ERR_IO;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_FRMOR);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_DTERR) == USB_OTG_HCINT_DTERR) {
-        urb->errorcode = -USB_ERR_DT;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_DTERR);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_CHH) == USB_OTG_HCINT_CHH) {
-        USB_MASK_HALT_HC_INT(ch_num);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_CHH);
+    if (chan_intstatus & USB_OTG_HCINT_CHH) {
+        if (chan_intstatus & USB_OTG_HCINT_XFRC) {
+            urb->errorcode = 0;
 
-        if (urb->errorcode == 0) {
             uint32_t count = chan->xferlen - (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ);                        /* how many size has received */
             uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
@@ -942,9 +858,32 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             } else {
                 dwc2_urb_waitup(urb);
             }
-        } else {
+        } else if (chan_intstatus & USB_OTG_HCINT_AHBERR) {
+            urb->errorcode = -USB_ERR_IO;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_STALL) {
+            urb->errorcode = -USB_ERR_STALL;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_NAK) {
+            urb->errorcode = -USB_ERR_NAK;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_NYET) {
+            urb->errorcode = -USB_ERR_NAK;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_TXERR) {
+            urb->errorcode = -USB_ERR_IO;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_BBERR) {
+            urb->errorcode = -USB_ERR_BABBLE;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_DTERR) {
+            urb->errorcode = -USB_ERR_DT;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_FRMOR) {
+            urb->errorcode = -USB_ERR_IO;
             dwc2_urb_waitup(urb);
         }
+        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
     }
 }
 
@@ -955,63 +894,16 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
     struct usbh_urb *urb;
     uint16_t buflen;
 
-    chan_intstatus = (USB_OTG_HC(ch_num)->HCINT) & (USB_OTG_HC((uint32_t)ch_num)->HCINTMSK);
+    chan_intstatus = USB_OTG_HC(ch_num)->HCINT;
 
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[ch_num];
     urb = chan->urb;
     //printf("s2:%08x\r\n", chan_intstatus);
 
-    if ((chan_intstatus & USB_OTG_HCINT_XFRC) == USB_OTG_HCINT_XFRC) {
-        urb->errorcode = 0;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_XFRC);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_AHBERR) == USB_OTG_HCINT_AHBERR) {
-        urb->errorcode = -USB_ERR_IO;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_AHBERR);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_STALL) == USB_OTG_HCINT_STALL) {
-        urb->errorcode = -USB_ERR_STALL;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_STALL);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_NAK) == USB_OTG_HCINT_NAK) {
-        urb->errorcode = -USB_ERR_NAK;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_NYET) == USB_OTG_HCINT_NYET) {
-        urb->errorcode = -USB_ERR_NAK;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NYET);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_TXERR) == USB_OTG_HCINT_TXERR) {
-        urb->errorcode = -USB_ERR_IO;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_TXERR);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_BBERR) == USB_OTG_HCINT_BBERR) {
-        urb->errorcode = -USB_ERR_BABBLE;
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_BBERR);
-    } else if ((chan_intstatus & USB_OTG_HCINT_FRMOR) == USB_OTG_HCINT_FRMOR) {
-        urb->errorcode = -USB_ERR_IO;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_FRMOR);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_DTERR) == USB_OTG_HCINT_DTERR) {
-        urb->errorcode = -USB_ERR_DT;
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_DTERR);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
-        USB_UNMASK_HALT_HC_INT(ch_num);
-        dwc2_halt(bus, ch_num);
-    } else if ((chan_intstatus & USB_OTG_HCINT_CHH) == USB_OTG_HCINT_CHH) {
-        USB_MASK_HALT_HC_INT(ch_num);
-        CLEAR_HC_INT(ch_num, USB_OTG_HCINT_CHH);
+    if (chan_intstatus & USB_OTG_HCINT_CHH) {
+        if (chan_intstatus & USB_OTG_HCINT_XFRC) {
+            urb->errorcode = 0;
 
-        if (urb->errorcode == 0) {
             uint32_t count = USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ;                                          /* last packet size */
             uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
@@ -1049,9 +941,32 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             } else {
                 dwc2_urb_waitup(urb);
             }
-        } else {
+        } else if (chan_intstatus & USB_OTG_HCINT_AHBERR) {
+            urb->errorcode = -USB_ERR_IO;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_STALL) {
+            urb->errorcode = -USB_ERR_STALL;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_NAK) {
+            urb->errorcode = -USB_ERR_NAK;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_NYET) {
+            urb->errorcode = -USB_ERR_NAK;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_TXERR) {
+            urb->errorcode = -USB_ERR_IO;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_BBERR) {
+            urb->errorcode = -USB_ERR_BABBLE;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_DTERR) {
+            urb->errorcode = -USB_ERR_DT;
+            dwc2_urb_waitup(urb);
+        } else if (chan_intstatus & USB_OTG_HCINT_FRMOR) {
+            urb->errorcode = -USB_ERR_IO;
             dwc2_urb_waitup(urb);
         }
+        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
     }
 }
 
