@@ -104,6 +104,9 @@ typedef struct
   __IO uint32_t HPTXSTS;          /*!< Host Periodic Tx FIFO/ Queue Status  410h */
   __IO uint32_t HAINT;            /*!< Host All Channels Interrupt Register 414h */
   __IO uint32_t HAINTMSK;         /*!< Host All Channels Interrupt Mask     418h */
+  __IO uint32_t HFLBADDR;         /*!< Host frame list base address register 41Ch */
+  uint32_t Reserved420[8];        /*!< Reserved                              420h */
+  __IO uint32_t HPRT;             /*!< Host port control and status register 440h */
 } USB_OTG_HostTypeDef;
 
 /**
@@ -117,6 +120,8 @@ typedef struct
   __IO uint32_t HCINTMSK;         /*!< Host Channel Interrupt Mask Register     50Ch */
   __IO uint32_t HCTSIZ;           /*!< Host Channel Transfer Size Register      510h */
   __IO uint32_t HCDMA;            /*!< Host Channel DMA Address Register        514h */
+  uint32_t Reserved0;             /*!< Reserved                                 518h */
+  __IO uint32_t HCDMAB;           /*!< Host Channel DMA Address Buffer Register 51Ch */
   uint32_t Reserved[2];           /*!< Reserved                                      */
 } USB_OTG_HostChannelTypeDef;
 
