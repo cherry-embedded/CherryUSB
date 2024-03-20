@@ -546,7 +546,6 @@ int usb_dc_init(uint8_t busid)
     endpoints = ((USB_OTG_GLB->GHWCFG2 & (0x0f << 10)) >> 10) + 1;
 
     USB_LOG_INFO("========== dwc2 udc params ==========\r\n");
-    USB_LOG_INFO("GCCFG:%08x\r\n", USB_OTG_GLB->GCCFG);
     USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
     USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
     USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
@@ -605,9 +604,6 @@ int usb_dc_init(uint8_t busid)
     }
 #endif
 
-    ret = dwc2_flush_txfifo(0x10U);
-    ret = dwc2_flush_rxfifo();
-
     /* Clear all pending Device Interrupts */
     USB_OTG_DEV->DIEPMSK = 0U;
     USB_OTG_DEV->DOEPMSK = 0U;
@@ -624,15 +620,14 @@ int usb_dc_init(uint8_t busid)
                            USB_OTG_GINTMSK_IISOIXFRM | USB_OTG_GINTMSK_PXFRM_IISOOXFRM;
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
-    if ((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) == 0U) {
-        USB_LOG_ERR("This dwc2 version does not support dma, so stop working\r\n");
+    if (((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) != 2) {
+        USB_LOG_ERR("This dwc2 version does not support dma mode, so stop working\r\n");
         while (1) {
         }
     }
 
     USB_OTG_DEV->DCFG &= ~USB_OTG_DCFG_DESCDMA;
-    USB_OTG_GLB->GAHBCFG |= (USB_OTG_GAHBCFG_DMAEN | USB_OTG_GAHBCFG_HBSTLEN_2);
-
+    USB_OTG_GLB->GAHBCFG |= (USB_OTG_GAHBCFG_DMAEN | USB_OTG_GAHBCFG_HBSTLEN_4);
 #else
     USB_OTG_GLB->GINTMSK |= USB_OTG_GINTMSK_RXFLVLM;
 #endif
@@ -664,6 +659,9 @@ int usb_dc_init(uint8_t busid)
 #if CONFIG_USBDEV_EP_NUM > 8
     dwc2_set_txfifo(8, CONFIG_USB_DWC2_TX8_FIFO_SIZE / 4);
 #endif
+    ret = dwc2_flush_txfifo(0x10U);
+    ret = dwc2_flush_rxfifo();
+
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
     USB_OTG_DEV->DCTL &= ~USB_OTG_DCTL_SDIS;
 
@@ -672,6 +670,9 @@ int usb_dc_init(uint8_t busid)
 
 int usb_dc_deinit(uint8_t busid)
 {
+    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
+    USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
+
     /* Clear Pending interrupt */
     for (uint8_t i = 0U; i < 15U; i++) {
         USB_OTG_INEP(i)->DIEPINT = 0xFB7FU;
@@ -686,8 +687,6 @@ int usb_dc_deinit(uint8_t busid)
     /* Flush the FIFO */
     dwc2_flush_txfifo(0x10U);
     dwc2_flush_rxfifo();
-
-    USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
     usb_dc_low_level_deinit();
     return 0;
