@@ -11,6 +11,24 @@
 #define CONFIG_USBHOST_PIPE_NUM 12
 #endif
 
+/* largest non-periodic USB packet used / 4 */
+#ifndef CONFIG_USB_DWC2_NPTX_FIFO_SIZE
+#define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
+#endif
+
+/* largest periodic USB packet used / 4 */
+#ifndef CONFIG_USB_DWC2_PTX_FIFO_SIZE
+#define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
+#endif
+
+/*  
+(largest USB packet used / 4) + 1 for status information + 1 transfer complete + 
+1 location each for Bulk/Control endpoint for handling NAK/NYET scenario 
+*/
+#ifndef CONFIG_USB_DWC2_RX_FIFO_SIZE
+#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
+#endif
+
 #define USB_OTG_GLB     ((USB_OTG_GlobalTypeDef *)(bus->hcd.reg_base))
 #define USB_OTG_PCGCCTL *(__IO uint32_t *)((uint32_t)bus->hcd.reg_base + USB_OTG_PCGCCTL_BASE)
 #define USB_OTG_HPRT    *(__IO uint32_t *)((uint32_t)bus->hcd.reg_base + USB_OTG_HOST_PORT_BASE)
@@ -241,7 +259,6 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
 
 static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
 {
-    volatile uint32_t HcEpType = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_EPTYP) >> 18;
     volatile uint32_t ChannelEna = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) >> 31;
     volatile uint32_t count = 0U;
     __IO uint32_t value;
@@ -434,10 +451,16 @@ int usb_hc_init(struct usbh_bus *bus)
     USB_LOG_INFO("GHWCFG3:%08x\r\n", USB_OTG_GLB->GHWCFG3);
     USB_LOG_INFO("GHWCFG4:%08x\r\n", USB_OTG_GLB->GHWCFG4);
 
-    USB_LOG_INFO("dwc2 has %d channels\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1);
+    USB_LOG_INFO("dwc2 has %d channels and dfifo depth(32-bit words) is %d\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1, (USB_OTG_GLB->GHWCFG3 >> 16));
 
     if (((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) != 2) {
         USB_LOG_ERR("This dwc2 version does not support dma mode, so stop working\r\n");
+        while (1) {
+        }
+    }
+
+    if ((CONFIG_USB_DWC2_RX_FIFO_SIZE + CONFIG_USB_DWC2_NPTX_FIFO_SIZE + CONFIG_USB_DWC2_PTX_FIFO_SIZE) > (USB_OTG_GLB->GHWCFG3 >> 16)) {
+        USB_LOG_ERR("Your fifo config is overflow, please check\r\n");
         while (1) {
         }
     }
@@ -472,9 +495,9 @@ int usb_hc_init(struct usbh_bus *bus)
     USB_OTG_GLB->GINTSTS = 0xFFFFFFFFU;
 
     /* set Rx FIFO size */
-    USB_OTG_GLB->GRXFSIZ = 0x200U;
-    USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ = (uint32_t)(((0x100U << 16) & USB_OTG_NPTXFD) | 0x200U);
-    USB_OTG_GLB->HPTXFSIZ = (uint32_t)(((0xE0U << 16) & USB_OTG_HPTXFSIZ_PTXFD) | 0x300U);
+    USB_OTG_GLB->GRXFSIZ = CONFIG_USB_DWC2_RX_FIFO_SIZE;
+    USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ = (uint32_t)(((CONFIG_USB_DWC2_NPTX_FIFO_SIZE << 16) & USB_OTG_NPTXFD) | CONFIG_USB_DWC2_RX_FIFO_SIZE);
+    USB_OTG_GLB->HPTXFSIZ = (uint32_t)(((CONFIG_USB_DWC2_PTX_FIFO_SIZE << 16) & USB_OTG_HPTXFSIZ_PTXFD) | (CONFIG_USB_DWC2_RX_FIFO_SIZE + CONFIG_USB_DWC2_NPTX_FIFO_SIZE));
 
     ret = dwc2_flush_txfifo(bus, 0x10U);
     ret = dwc2_flush_rxfifo(bus);
@@ -491,7 +514,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
-    return 0;
+    return ret;
 }
 
 int usb_hc_deinit(struct usbh_bus *bus)
@@ -899,7 +922,6 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
     uint32_t chan_intstatus;
     struct dwc2_chan *chan;
     struct usbh_urb *urb;
-    uint16_t buflen;
 
     chan_intstatus = USB_OTG_HC(ch_num)->HCINT;
 
