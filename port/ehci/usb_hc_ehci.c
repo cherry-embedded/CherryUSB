@@ -775,6 +775,10 @@ __WEAK void usb_hc_low_level2_init(struct usbh_bus *bus)
 {
 }
 
+__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
+{
+}
+
 int usb_hc_init(struct usbh_bus *bus)
 {
     uint32_t interval;
@@ -948,6 +952,7 @@ int usb_hc_deinit(struct usbh_bus *bus)
         usb_osal_sem_delete(qh->waitsem);
     }
 
+    usb_hc_low_level_deinit(bus);
     return 0;
 }
 

@@ -410,6 +410,10 @@ __WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
 {
 }
 
+__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
+{
+}
+
 int usb_hc_init(struct usbh_bus *bus)
 {
     int ret;
@@ -538,6 +542,7 @@ int usb_hc_deinit(struct usbh_bus *bus)
         usb_osal_sem_delete(g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx].waitsem);
     }
 
+    usb_hc_low_level_deinit(bus);
     return 0;
 }
 
