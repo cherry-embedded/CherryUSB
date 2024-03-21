@@ -146,7 +146,7 @@ static inline void dwc2_drivebus(struct usbh_bus *bus, uint8_t state)
     }
 }
 
-static uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
+static inline uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 {
     __IO uint32_t hprt0 = 0U;
     uint8_t speed;
@@ -166,33 +166,9 @@ static uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
     }
 }
 
-static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
+static inline void dwc2_chan_char_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
 {
     uint32_t regval;
-
-    /* Clear old interrupt conditions for this host channel. */
-    USB_OTG_HC((uint32_t)ch_num)->HCINT = 0xFFFFFFFFU;
-
-    /* Enable channel interrupts required for this transfer. */
-    regval = USB_OTG_HCINTMSK_XFRCM |
-             USB_OTG_HCINTMSK_CHHM |
-             USB_OTG_HCINTMSK_STALLM |
-             USB_OTG_HCINTMSK_TXERRM |
-             USB_OTG_HCINTMSK_DTERRM |
-             USB_OTG_HCINTMSK_AHBERR;
-
-    if ((ep_addr & 0x80U) == 0x80U) {
-        regval |= USB_OTG_HCINTMSK_BBERRM;
-    }
-
-    if (ep_type == USB_ENDPOINT_TYPE_INTERRUPT) {
-        regval |= USB_OTG_HCINTMSK_NAKM;
-    }
-
-    USB_OTG_HC((uint32_t)ch_num)->HCINTMSK = regval;
-
-    /* Enable the top level host channel interrupt. */
-    USB_OTG_HOST->HAINTMSK |= 1UL << (ch_num & 0xFU);
 
     /* Program the HCCHAR register */
     regval = (((uint32_t)ep_mps << USB_OTG_HCCHAR_MPSIZ_Pos) & USB_OTG_HCCHAR_MPSIZ) |
@@ -214,6 +190,28 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
     }
 
     USB_OTG_HC((uint32_t)ch_num)->HCCHAR = regval;
+}
+
+static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
+{
+    uint32_t regval;
+
+    /* Clear old interrupt conditions for this host channel. */
+    USB_OTG_HC((uint32_t)ch_num)->HCINT = 0xFFFFFFFFU;
+
+    /* Enable channel interrupts required for this transfer. */
+    regval = USB_OTG_HCINTMSK_CHHM;
+
+    if (ep_type == USB_ENDPOINT_TYPE_INTERRUPT) {
+        regval |= USB_OTG_HCINTMSK_NAKM;
+    }
+
+    USB_OTG_HC((uint32_t)ch_num)->HCINTMSK = regval;
+
+    /* Enable the top level host channel interrupt. */
+    USB_OTG_HOST->HAINTMSK |= 1UL << (ch_num & 0xFU);
+
+    dwc2_chan_char_init(bus, ch_num, devaddr, ep_addr, ep_type, ep_mps, speed);
 }
 
 /* For IN channel HCTSIZ.XferSize is expected to be an integer multiple of ep_mps size.*/
@@ -246,16 +244,20 @@ static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
     volatile uint32_t HcEpType = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_EPTYP) >> 18;
     volatile uint32_t ChannelEna = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) >> 31;
     volatile uint32_t count = 0U;
+    __IO uint32_t value;
 
     if (((USB_OTG_GLB->GAHBCFG & USB_OTG_GAHBCFG_DMAEN) == USB_OTG_GAHBCFG_DMAEN) &&
         (ChannelEna == 0U)) {
         return;
     }
 
-    USB_MASK_HALT_HC_INT(ch_num);
+    USB_OTG_HC(ch_num)->HCINTMSK = 0;
 
-    USB_OTG_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_CHDIS;
-
+    value = USB_OTG_HC(ch_num)->HCCHAR;
+    value |= USB_OTG_HCCHAR_CHDIS;
+    value &= ~USB_OTG_HCCHAR_CHENA;
+    value &= ~USB_OTG_HCCHAR_EPDIR;
+    USB_OTG_HC(ch_num)->HCCHAR = value;
     do {
         if (++count > 200000U) {
             break;
