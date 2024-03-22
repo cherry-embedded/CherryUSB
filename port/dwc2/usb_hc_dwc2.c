@@ -409,7 +409,7 @@ static void dwc2_bulk_intr_urb_init(struct usbh_bus *bus, uint8_t chidx, struct 
 
     chan->num_packets = dwc2_calculate_packet_num(buflen, urb->ep->bEndpointAddress, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
     dwc2_chan_init(bus, chidx, urb->hport->dev_addr, urb->ep->bEndpointAddress, USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes), USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
-    dwc2_chan_transfer(bus, chidx, urb->ep->bEndpointAddress, (uint32_t *)buffer, chan->xferlen, chan->num_packets, urb->data_toggle);
+    dwc2_chan_transfer(bus, chidx, urb->ep->bEndpointAddress, (uint32_t *)buffer, chan->xferlen, chan->num_packets, urb->data_toggle == 0 ? HC_PID_DATA0 : HC_PID_DATA1);
 }
 
 static void dwc2_iso_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *urb, struct usbh_iso_frame_packet *iso_packet)
@@ -479,6 +479,9 @@ int usb_hc_init(struct usbh_bus *bus)
     /* Restart the Phy Clock */
     USB_OTG_PCGCCTL = 0U;
 
+    dwc2_drivebus(bus, 1);
+    usb_osal_msleep(200);
+
     /* Set default Max speed support */
     USB_OTG_HOST->HCFG &= ~(USB_OTG_HCFG_FSLSS);
 
@@ -508,9 +511,6 @@ int usb_hc_init(struct usbh_bus *bus)
     /* Enable interrupts matching to the Host mode ONLY */
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_PRTIM | USB_OTG_GINTMSK_HCIM |
                              USB_OTG_GINTSTS_DISCINT);
-
-    dwc2_drivebus(bus, 1);
-    usb_osal_msleep(200);
 
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
@@ -867,13 +867,12 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
 
             urb->actual_length += count;
 
-            if ((has_used_packets % 2) == 1) /* toggle in odd numbers */
-            {
-                if (urb->data_toggle == HC_PID_DATA0) {
-                    urb->data_toggle = HC_PID_DATA1;
-                } else {
-                    urb->data_toggle = HC_PID_DATA0;
-                }
+            uint8_t data_toggle = ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_DPID) >> USB_OTG_HCTSIZ_DPID_Pos);
+
+            if (data_toggle == HC_PID_DATA0) {
+                urb->data_toggle = 0;
+            } else {
+                urb->data_toggle = 1;
             }
 
             if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
@@ -937,14 +936,13 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
             urb->actual_length += (has_used_packets - 1) * USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) + count; //the same with urb->actual_length += chan->xferlen;
+            
+            uint8_t data_toggle = ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_DPID) >> USB_OTG_HCTSIZ_DPID_Pos);
 
-            if (has_used_packets % 2) /* toggle in odd numbers */
-            {
-                if (urb->data_toggle == HC_PID_DATA0) {
-                    urb->data_toggle = HC_PID_DATA1;
-                } else {
-                    urb->data_toggle = HC_PID_DATA0;
-                }
+            if (data_toggle == HC_PID_DATA0) {
+                urb->data_toggle = 0;
+            } else {
+                urb->data_toggle = 1;
             }
 
             if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
