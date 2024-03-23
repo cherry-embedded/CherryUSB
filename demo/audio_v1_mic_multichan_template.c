@@ -176,12 +176,14 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
 void usbd_audio_open(uint8_t busid, uint8_t intf)
 {
     tx_flag = 1;
+    ep_tx_busy_flag = false;
     USB_LOG_RAW("OPEN\r\n");
 }
 
 void usbd_audio_close(uint8_t busid, uint8_t intf)
 {
     USB_LOG_RAW("CLOSE\r\n");
+    ep_tx_busy_flag = false;
     tx_flag = 0;
 }
 

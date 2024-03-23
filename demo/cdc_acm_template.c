@@ -124,6 +124,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
+            ep_tx_busy_flag = false;
             /* setup first out ep read transfer */
             usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
             break;

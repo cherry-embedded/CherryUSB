@@ -141,6 +141,9 @@ const uint8_t video_descriptor[] = {
     0x00
 };
 
+volatile bool tx_flag = 0;
+volatile bool iso_tx_busy = false;
+
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
@@ -155,6 +158,8 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
+            tx_flag = 0;
+            iso_tx_busy = false;
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -165,9 +170,6 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
             break;
     }
 }
-
-volatile bool tx_flag = 0;
-volatile bool iso_tx_busy = false;
 
 void usbd_video_open(uint8_t busid, uint8_t intf)
 {

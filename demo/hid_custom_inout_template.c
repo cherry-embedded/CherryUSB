@@ -167,7 +167,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t send_buffer[HIDRAW_IN_EP_SIZE];
 #define HID_STATE_BUSY 1
 
 /*!< hid state ! Data can be sent only when state is idle  */
-static volatile uint8_t custom_state;
+static volatile uint8_t custom_state = HID_STATE_IDLE;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -183,6 +183,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
+            custom_state = HID_STATE_IDLE;
             /* setup first out ep read transfer */
             usbd_ep_start_read(busid, HIDRAW_OUT_EP, read_buffer, HIDRAW_OUT_EP_SIZE);
             break;
