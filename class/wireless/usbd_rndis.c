@@ -450,7 +450,7 @@ void rndis_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
     hdr = (rndis_data_packet_t *)g_rndis_rx_buffer;
     g_rndis_rx_data_buffer = g_rndis_rx_buffer;
-    if ((hdr->MessageType != NDIS_PACKET_TYPE_DIRECTED) || (nbytes != hdr->MessageLength)) {
+    if ((hdr->MessageType != REMOTE_NDIS_PACKET_MSG) || (nbytes < hdr->MessageLength)) {
         usbd_ep_start_read(0, rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr, g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
         return;
     }
@@ -508,7 +508,7 @@ int usbd_rndis_eth_tx(struct pbuf *p)
     rndis_data_packet_t *hdr;
 
     if (g_usbd_rndis.link_status == NDIS_MEDIA_STATE_DISCONNECTED) {
-        return 0;
+        return -USB_ERR_NOTCONN;
     }
 
     if (g_rndis_tx_data_length > 0) {
