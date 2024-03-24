@@ -99,8 +99,15 @@ USB Device 移植要点
 .. code-block:: C
 
     // 以下细节如有出入，请对照 stm32xxx.h 文件修改
-    #define CONFIG_USBDEV_EP_NUM 6          // pa11/pa12 引脚使用 4
-    #define CONFIG_USB_DWC2_RAM_SIZE 4096 // pa11/pa12 引脚使用 1280
+    // 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置
+    #define CONFIG_USBDEV_EP_NUM 6
+    #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1012 - 16 * 6)
+    #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
 
 - 如果使用 fsdev ip，在 `usb_config.h` 中实现以下宏：
 
@@ -148,7 +155,11 @@ USB Host 移植要点
 .. code-block:: C
 
     // 以下细节如有出入，请对照 stm32xxx.h 文件修改
+    // 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置
     #define CONFIG_USBHOST_PIPE_NUM 12
+    #define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
+    #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
+    #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
 
 - 拷贝 **xxx_msp.c** 中的 `HAL_HCD_MspInit` 函数中的内容到 `usb_hc_low_level_init` 函数中，屏蔽 st 生成的 usb 初始化
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
