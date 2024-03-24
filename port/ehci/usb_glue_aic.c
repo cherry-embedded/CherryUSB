@@ -12,6 +12,13 @@
 
 extern void USBH_IRQHandler(uint8_t busid);
 
+static void aic_ehci_isr(void *arg)
+{
+    uint8_t busid = (uint8_t)arg;
+    extern void USBH_IRQHandler(uint8_t busid);
+    USBH_IRQHandler(busid);
+}
+
 const uint8_t aic_irq_table[] = {
     USB_HOST0_EHCI_IRQn,
 #ifdef HPM_USB1_BASE
@@ -62,8 +69,8 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
     aicos_udelay(300);
 
     /* register interrupt callback */
-    aicos_request_irq(aic_irq_table[bus->hcd.hcd_id], (irq_handler_t)USBH_IRQHandler,
-                      0, "usb_host_ehci", bus->hcd.hcd_id);
+    aicos_request_irq(aic_irq_table[bus->hcd.hcd_id], (irq_handler_t)aic_ehci_isr,
+                      0, "usb_host_ehci", (void *)bus->hcd.hcd_id);
     aicos_irq_enable(aic_irq_table[bus->hcd.hcd_id]);
 }
 
