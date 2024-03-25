@@ -19,7 +19,7 @@ USB_NOCACHE_RAM_SECTION struct ehci_qtd_hw ehci_qtd_pool[CONFIG_USBHOST_MAX_BUS]
 /* The head of the asynchronous queue */
 USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_async_qh_head[CONFIG_USBHOST_MAX_BUS];
 /* The head of the periodic queue */
-USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_periodic_qh_head[CONFIG_USBHOST_MAX_BUS][EHCI_PERIOIDIC_QH_NUM];
+USB_NOCACHE_RAM_SECTION struct ehci_qh_hw g_periodic_qh_head[CONFIG_USBHOST_MAX_BUS];
 
 /* The frame list */
 USB_NOCACHE_RAM_SECTION uint32_t g_framelist[CONFIG_USBHOST_MAX_BUS][USB_ALIGN_UP(CONFIG_USB_EHCI_FRAME_LIST_SIZE, 1024)] __attribute__((aligned(4096)));
@@ -142,19 +142,6 @@ static int ehci_caculate_smask(int binterval)
         interval >>= 1;
     }
     return (0x1 << (order % 8));
-}
-
-static struct ehci_qh_hw *ehci_get_periodic_qhead(struct usbh_bus *bus, uint8_t interval)
-{
-    interval /= 8;
-
-    for (uint8_t i = 0; i < EHCI_PERIOIDIC_QH_NUM - 1; i++) {
-        interval >>= 1;
-        if (interval == 0) {
-            return &g_periodic_qh_head[bus->hcd.hcd_id][i];
-        }
-    }
-    return &g_periodic_qh_head[bus->hcd.hcd_id][EHCI_PERIOIDIC_QH_NUM - 1];
 }
 
 static void ehci_qh_fill(struct ehci_qh_hw *qh,
@@ -611,11 +598,7 @@ static struct ehci_qh_hw *ehci_intr_urb_init(struct usbh_bus *bus, struct usbh_u
     qh->urb = urb;
     urb->hcpriv = qh;
     /* add qh into periodic list */
-    if (urb->hport->speed == USB_SPEED_HIGH) {
-        ehci_qh_add_head(ehci_get_periodic_qhead(bus, urb->ep->bInterval), qh);
-    } else {
-        ehci_qh_add_head(ehci_get_periodic_qhead(bus, urb->ep->bInterval * 8), qh);
-    }
+    ehci_qh_add_head(&g_periodic_qh_head[bus->hcd.hcd_id], qh);
 
     EHCI_HCOR->usbcmd |= EHCI_USBCMD_PSEN;
 
@@ -781,7 +764,6 @@ __WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
 
 int usb_hc_init(struct usbh_bus *bus)
 {
-    uint32_t interval;
     struct ehci_qh_hw *qh;
 
     volatile uint32_t timeout = 0;
@@ -813,34 +795,16 @@ int usb_hc_init(struct usbh_bus *bus)
 
     memset(g_framelist[bus->hcd.hcd_id], 0, sizeof(uint32_t) * CONFIG_USB_EHCI_FRAME_LIST_SIZE);
 
-    for (int i = EHCI_PERIOIDIC_QH_NUM - 1; i >= 0; i--) {
-        memset(&g_periodic_qh_head[bus->hcd.hcd_id][i], 0, sizeof(struct ehci_qh_hw));
-        g_periodic_qh_head[bus->hcd.hcd_id][i].hw.hlp = QH_HLP_END;
-        g_periodic_qh_head[bus->hcd.hcd_id][i].hw.epchar = QH_EPCAPS_SSMASK(1);
-        g_periodic_qh_head[bus->hcd.hcd_id][i].hw.overlay.next_qtd = QTD_LIST_END;
-        g_periodic_qh_head[bus->hcd.hcd_id][i].hw.overlay.alt_next_qtd = QTD_LIST_END;
-        g_periodic_qh_head[bus->hcd.hcd_id][i].hw.overlay.token = QTD_TOKEN_STATUS_HALTED;
-        g_periodic_qh_head[bus->hcd.hcd_id][i].first_qtd = QTD_LIST_END;
+    memset(&g_periodic_qh_head[bus->hcd.hcd_id], 0, sizeof(struct ehci_qh_hw));
+    g_periodic_qh_head[bus->hcd.hcd_id].hw.hlp = QH_HLP_END;
+    g_periodic_qh_head[bus->hcd.hcd_id].hw.epchar = QH_EPCAPS_SSMASK(1);
+    g_periodic_qh_head[bus->hcd.hcd_id].hw.overlay.next_qtd = QTD_LIST_END;
+    g_periodic_qh_head[bus->hcd.hcd_id].hw.overlay.alt_next_qtd = QTD_LIST_END;
+    g_periodic_qh_head[bus->hcd.hcd_id].hw.overlay.token = QTD_TOKEN_STATUS_HALTED;
+    g_periodic_qh_head[bus->hcd.hcd_id].first_qtd = QTD_LIST_END;
 
-        interval = 1 << i;
-        for (uint32_t j = interval - 1; j < CONFIG_USB_EHCI_FRAME_LIST_SIZE; j += interval) {
-            if (g_framelist[bus->hcd.hcd_id][j] == 0) {
-                g_framelist[bus->hcd.hcd_id][j] = QH_HLP_QH(&g_periodic_qh_head[bus->hcd.hcd_id][i]);
-            } else {
-                qh = EHCI_ADDR2QH(g_framelist[bus->hcd.hcd_id][j]);
-                while (1) {
-                    if (qh == &g_periodic_qh_head[bus->hcd.hcd_id][i]) {
-                        break;
-                    }
-                    if (qh->hw.hlp == QH_HLP_END) {
-                        qh->hw.hlp = QH_HLP_QH(&g_periodic_qh_head[bus->hcd.hcd_id][i]);
-                        break;
-                    }
-
-                    qh = EHCI_ADDR2QH(qh->hw.hlp);
-                }
-            }
-        }
+    for (uint32_t i = 0; i < CONFIG_USB_EHCI_FRAME_LIST_SIZE; i++) {
+        g_framelist[bus->hcd.hcd_id][i] = QH_HLP_QH(&g_periodic_qh_head[bus->hcd.hcd_id]);
     }
 
     usb_hc_low_level_init(bus);
@@ -1245,14 +1209,10 @@ int usbh_kill_urb(struct usbh_urb *urb)
             qh = EHCI_ADDR2QH(qh->hw.hlp);
         }
     } else if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_INTERRUPT) {
-        qh = EHCI_ADDR2QH(g_periodic_qh_head[bus->hcd.hcd_id][EHCI_PERIOIDIC_QH_NUM - 1].hw.hlp);
+        qh = EHCI_ADDR2QH(g_periodic_qh_head[bus->hcd.hcd_id].hw.hlp);
         while (qh) {
             if (qh->urb == urb) {
-                if (urb->hport->speed == USB_SPEED_HIGH) {
-                    ehci_kill_qh(bus, ehci_get_periodic_qhead(bus, urb->ep->bInterval), qh);
-                } else {
-                    ehci_kill_qh(bus, ehci_get_periodic_qhead(bus, urb->ep->bInterval * 8), qh);
-                }
+                ehci_kill_qh(bus, &g_periodic_qh_head[bus->hcd.hcd_id], qh);
             }
             qh = EHCI_ADDR2QH(qh->hw.hlp);
         }
@@ -1301,14 +1261,10 @@ static void ehci_scan_periodic_list(struct usbh_bus *bus)
 {
     struct ehci_qh_hw *qh;
 
-    qh = EHCI_ADDR2QH(g_periodic_qh_head[bus->hcd.hcd_id][EHCI_PERIOIDIC_QH_NUM - 1].hw.hlp);
+    qh = EHCI_ADDR2QH(g_periodic_qh_head[bus->hcd.hcd_id].hw.hlp);
     while (qh) {
         if (qh->urb) {
-            if (qh->urb->hport->speed == USB_SPEED_HIGH) {
-                ehci_check_qh(bus, ehci_get_periodic_qhead(bus, qh->urb->ep->bInterval), qh);
-            } else {
-                ehci_check_qh(bus, ehci_get_periodic_qhead(bus, qh->urb->ep->bInterval * 8), qh);
-            }
+            ehci_check_qh(bus, &g_periodic_qh_head[bus->hcd.hcd_id], qh);
         }
         qh = EHCI_ADDR2QH(qh->hw.hlp);
     }
