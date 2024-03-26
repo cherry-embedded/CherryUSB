@@ -13,34 +13,25 @@
 #define EHCI_ADDR2QTD(x) ((struct ehci_qtd_hw *)((uint32_t)(x) & ~0x1F))
 #define EHCI_ADDR2ITD(x) ((struct ehci_itd_hw *)((uint32_t)(x) & ~0x1F))
 
-#if CONFIG_USB_EHCI_FRAME_LIST_SIZE == 1024
-#define EHCI_PERIOIDIC_QH_NUM 11
-#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 512
-#define EHCI_PERIOIDIC_QH_NUM 10
-#elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 256
-#define EHCI_PERIOIDIC_QH_NUM 9
-#else
-#error Unsupported frame size list size
-#endif
-
 #define CONFIG_USB_EHCI_QH_NUM  CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USB_EHCI_QTD_NUM (CONFIG_USBHOST_PIPE_NUM + 3)
+#define CONFIG_USB_EHCI_QTD_NUM 3
 #define CONFIG_USB_EHCI_ITD_NUM 20
 
 extern uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port);
 
-struct ehci_qh_hw {
-    struct ehci_qh hw;
-    uint32_t first_qtd;
-    struct usbh_urb *urb;
-    uint8_t remove_in_iaad;
-    usb_osal_sem_t waitsem;
-} __attribute__((aligned(32)));
-
 struct ehci_qtd_hw {
     struct ehci_qtd hw;
     struct usbh_urb *urb;
-    uint32_t total_len;
+    uint32_t length;
+} __attribute__((aligned(32)));
+
+struct ehci_qh_hw {
+    struct ehci_qh hw;
+    struct ehci_qtd_hw qtd_pool[CONFIG_USB_EHCI_QTD_NUM];
+    uint32_t first_qtd;
+    struct usbh_urb *urb;
+    usb_osal_sem_t waitsem;
+    uint8_t remove_in_iaad;
 } __attribute__((aligned(32)));
 
 struct ehci_itd_hw {
@@ -55,7 +46,6 @@ struct ehci_itd_hw {
 
 struct ehci_hcd {
     bool ehci_qh_used[CONFIG_USB_EHCI_QH_NUM];
-    bool ehci_qtd_used[CONFIG_USB_EHCI_QTD_NUM];
     bool ehci_itd_used[CONFIG_USB_EHCI_ITD_NUM];
 };
 
