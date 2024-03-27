@@ -12,7 +12,7 @@
 
 extern void USBH_IRQHandler(uint8_t busid);
 
-static void aic_ehci_isr(void *arg)
+static void aic_ehci_isr(int vector, void *arg)
 {
     struct usbh_bus *bus = (struct usbh_bus *)arg;
     extern void USBH_IRQHandler(uint8_t busid);
@@ -139,3 +139,35 @@ void usb_ehci_dcache_clean_invalidate(uintptr_t addr, uint32_t len)
 {
     aicos_dcache_clean_invalid_range((size_t *)addr, len);
 }
+
+int usbh_init(void)
+{
+#if defined(AIC_USING_USB0_HOST) || defined(AIC_USING_USB1_HOST)
+    int bus_id = 0;
+#endif
+
+#ifdef AIC_USING_USB0_HOST
+    usbh_initialize(bus_id, USB_HOST0_BASE);
+    bus_id++;
+#endif
+
+#ifdef AIC_USING_USB1_HOST
+    usbh_initialize(bus_id, USB_HOST1_BASE);
+    bus_id++;
+#endif
+
+    return 0;
+}
+
+#if defined(KERNEL_RTTHREAD)
+#include <rtthread.h>
+#include <rtdevice.h>
+
+INIT_ENV_EXPORT(usbh_init);
+
+#if defined (RT_USING_FINSH)
+#include <finsh.h>
+
+MSH_CMD_EXPORT_ALIAS(lsusb, lsusb, list usb device);
+#endif
+#endif
