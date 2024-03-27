@@ -5,13 +5,13 @@
 #include "usbh_hub.h"
 #include "usb_hc_ehci.h"
 
-#define EHCI_HCCR ((struct ehci_hccr *)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCCR_OFFSET))
-#define EHCI_HCOR ((struct ehci_hcor *)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCOR_OFFSET))
+#define EHCI_HCCR ((struct ehci_hccr *)(uintptr_t)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCCR_OFFSET))
+#define EHCI_HCOR ((struct ehci_hcor *)(uintptr_t)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCOR_OFFSET))
 
-#define EHCI_PTR2ADDR(x) ((uint32_t)(x) & ~0x1F)
-#define EHCI_ADDR2QH(x)  ((struct ehci_qh_hw *)((uint32_t)(x) & ~0x1F))
-#define EHCI_ADDR2QTD(x) ((struct ehci_qtd_hw *)((uint32_t)(x) & ~0x1F))
-#define EHCI_ADDR2ITD(x) ((struct ehci_itd_hw *)((uint32_t)(x) & ~0x1F))
+#define EHCI_PTR2ADDR(x) ((uint32_t)(uintptr_t)(x) & ~0x1F)
+#define EHCI_ADDR2QH(x)  ((struct ehci_qh_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
+#define EHCI_ADDR2QTD(x) ((struct ehci_qtd_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
+#define EHCI_ADDR2ITD(x) ((struct ehci_itd_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
 
 #define CONFIG_USB_EHCI_QH_NUM  CONFIG_USBHOST_PIPE_NUM
 #define CONFIG_USB_EHCI_QTD_NUM 3
