@@ -10,6 +10,9 @@ path += [cwd + '/class/audio']
 path += [cwd + '/class/video']
 path += [cwd + '/class/wireless']
 path += [cwd + '/class/dfu']
+path += [cwd + '/class/midi']
+path += [cwd + '/class/vendor/net']
+path += [cwd + '/class/vendor/serial']
 src = []
 
 CPPDEFINES = []
@@ -23,7 +26,45 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_BL']):
+        CPPDEFINES += ['CONFIG_CHERRYUSB']
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32']):
+        if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
+            src += Glob('port/ch32/usb_dc_usbhs.c')
+        else:
+            src += Glob('port/ch32/usb_dc_usbfs.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV']):
+        src += Glob('port/fsdev/usb_dc_fsdev.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_ST']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_st.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_ESP']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_esp.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_AT']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_at.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_AIC']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_aic.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_CUSTOM']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_STANDARD']):
+        src += Glob('port/musb/usb_dc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_SUNXI']):
+        src += Glob('port/musb/usb_dc_musb.c')
+        CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
+        src += Glob('port/musb/usb_dc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_HPM']):
+        src += Glob('port/hpm/usb_dc_hpm.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
+        path += [cwd + '/port/pusb2/common']
+        path += [cwd + '/port/pusb2/fpusb2']
+        src += Glob('port/pusb2/fpusb2' + '/*.c')
+        src += Glob('port/pusb2/usb_dc_pusb2.c') 
+
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HID']):
         src += Glob('class/hid/usbd_hid.c')
@@ -33,112 +74,131 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/audio/usbd_audio.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_VIDEO']):
         src += Glob('class/video/usbd_video.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_RNDIS']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_RNDIS']):
         src += Glob('class/wireless/usbd_rndis.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ECM']):
+        src += Glob('class/cdc/usbd_cdc_ecm.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_NCM']):
+        src += Glob('class/cdc/usbd_cdc_ncm.c')
     if GetDepend(['PKG_CHERRYUSB_USING_DFU']):
         src += Glob('class/dfu/usbd_dfu.c')
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_TEMPLATE']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM']):
         src += Glob('demo/cdc_acm_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_HID_MOUSE_TEMPLATE']):
-        src += Glob('demo/hid_mouse_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_HID_KEYBOARD_TEMPLATE']):
-        src += Glob('demo/hid_keyboard_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC_TEMPLATE']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC']):
         src += Glob('demo/msc_ram_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC_STORAGE_TEMPLATE']):
-        src += Glob('demo/msc_storage_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V1_TEMPLATE']):
-        src += Glob('demo/audio_v1_mic_speaker_multichan_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO_V2_TEMPLATE']):
-        src += Glob('demo/audio_v2_mic_speaker_multichan_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_VIDEO_TEMPLATE']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_MOUSE']):
+        src += Glob('demo/hid_mouse_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_KEYBOARD']):
+        src += Glob('demo/hid_keyboard_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_CUSTOM']):
+        src += Glob('demo/hid_custom_inout_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_VIDEO']):
         src += Glob('demo/video_static_mjpeg_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_RNDIS_TEMPLATE']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_AUDIO_V1_MIC_SPEAKER']):
+        src += Glob('demo/audio_v1_mic_speaker_multichan_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_AUDIO_V2_MIC_SPEAKER']):
+        src += Glob('demo/audio_v2_mic_speaker_multichan_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_RNDIS']):
         src += Glob('demo/cdc_rndis_template.c')
-
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV']):
-        src += Glob('port/fsdev/usb_dc_fsdev.c')
-
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2']):
-        src += Glob('port/dwc2/usb_dc_dwc2.c')
-        if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_STM32']):
-            src += Glob('port/dwc2/usb_glue_st.c')
-
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB']):
-        src += Glob('port/musb/usb_dc_musb.c')
-        if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_SUNXI']):
-            CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
-
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_HPM']):
-        src += Glob('port/hpm/usb_dc_hpm.c')
-
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32_CH32V307']):
-        if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
-            src += Glob('port/ch32/usb_dc_usbhs.c')
-        else:
-            src += Glob('port/ch32/usb_dc_usbfs.c')
-
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
-        path += [cwd + '/port/pusb2/common']
-        path += [cwd + '/port/pusb2/fpusb2']
-        src += Glob('port/pusb2/fpusb2' + '/*.c')
-        src += Glob('port/pusb2/usb_dc_pusb2.c') 
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ECM']):
+        src += Glob('demo/cdc_ecm_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_NCM']):
+        src += Glob('demo/cdc_ncm_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC']):
+        src += Glob('demo/cdc_acm_msc_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC_HID']):
+        src += Glob('demo/cdc_acm_hid_msc_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV1']):
+        src += Glob('demo/winusb1.0_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_CDC']):
+        src += Glob('demo/winusb2.0_cdc_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_HID']):
+        src += Glob('demo/winusb2.0_hid_template.c')
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_HOST']):
-    path += [cwd + '/osal']
     path += [cwd + '/class/hub']
     src += Glob('core/usbh_core.c')
     src += Glob('class/hub/usbh_hub.c')
     src += Glob('osal/usb_osal_rtthread.c')
 
-    if GetDepend(['PKG_CHERRYUSB_HOST_CDC']):
-        src += Glob('class/cdc/usbh_cdc_acm.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_HID']):
-        src += Glob('class/hid/usbh_hid.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
-        src += Glob('class/msc/usbh_msc.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_RNDIS']):
-        src += Glob('class/wireless/usbh_rndis.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ECM']):
-        src += Glob('class/cdc/usbh_cdc_ecm.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_BLUETOOTH']):
-        src += Glob('class/wireless/usbh_bluetooth.c')
-
-    if GetDepend(['PKG_CHERRYUSB_HOST_DWC2']):
-        src += Glob('port/dwc2/usb_hc_dwc2.c')
-        if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_STM32']):
-            src += Glob('port/dwc2/usb_glue_st.c')
-
-    if GetDepend(['PKG_CHERRYUSB_HOST_MUSB']):
-        src += Glob('port/musb/usb_hc_musb.c')
-        if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SUNXI']):
-            CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
-
-    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI']):
+    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_BL']):
         src += Glob('port/ehci/usb_hc_ehci.c')
-        if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_HPM']):
-            src += Glob('port/ehci/usb_glue_hpm.c')
-
+        src += Glob('port/ehci/usb_glue_bouffalo.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_HPM']):
+        src += Glob('port/ehci/usb_hc_ehci.c')
+        src += Glob('port/ehci/usb_glue_hpm.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_AIC']):
+        src += Glob('port/ehci/usb_hc_ehci.c')
+        src += Glob('port/ehci/usb_glue_aic.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_NUVOTON_NUC980']):
+        src += Glob('port/ehci/usb_hc_ehci.c')
+        src += Glob('port/ehci/usb_glue_nuc980.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_NUVOTON_MA35D0']):
+        src += Glob('port/ehci/usb_hc_ehci.c')
+        src += Glob('port/ehci/usb_glue_ma35d0.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_CUSTOM']):
+        src += Glob('port/ehci/usb_hc_ehci.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_ST']):
+        src += Glob('port/dwc2/usb_hc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_st.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_ESP']):
+        src += Glob('port/dwc2/usb_hc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_esp.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_CUSTOM']):
+        src += Glob('port/dwc2/usb_hc_dwc2.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_STANDARD']):
+        src += Glob('port/musb/usb_hc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SUNXI']):
+        src += Glob('port/musb/usb_hc_musb.c')
+        CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
+    if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_CUSTOM']):
+        src += Glob('port/musb/usb_hc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_XHCI']):
         src += Glob('port/xhci/usb_hc_xhci.c')
         src += Glob('port/xhci/xhci_dbg.c')
         src += Glob('port/xhci/xhci.c')
-
     if GetDepend(['PKG_CHERRYUSB_HOST_PUSB2']):
         path += [cwd + '/port/pusb2/common']
         path += [cwd + '/port/pusb2/fpusb2']
         src += Glob('port/pusb2/fpusb2' + '/*.c')
         src += Glob('port/pusb2/usb_hc_pusb2.c')         
 
+    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM']):
+        src += Glob('class/cdc/usbh_cdc_acm.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_HID']):
+        src += Glob('class/hid/usbh_hid.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
+        src += Glob('class/msc/usbh_msc.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_RNDIS']):
+        src += Glob('class/wireless/usbh_rndis.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ECM']):
+        src += Glob('class/cdc/usbh_cdc_ecm.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_NCM']):
+        src += Glob('class/cdc/usbh_cdc_ncm.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_VIDEO']):
+        src += Glob('class/video/usbh_video.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_AUDIO']):
+        src += Glob('class/audio/usbh_audio.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_BLUETOOTH']):
+        src += Glob('class/wireless/usbh_bluetooth.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_ASIX']):
+        src += Glob('class/vendor/net/usbh_asix.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_RTL8152']):
+        src += Glob('class/vendor/net/usbh_rtl8152.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_FTDI']):
+        src += Glob('class/vendor/serial/usbh_ftdi.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CH34X']):
+        src += Glob('class/vendor/serial/usbh_ch34x.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CP210X']):
+        src += Glob('class/vendor/serial/usbh_cp210x.c')
+
     if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
         src += Glob('demo/usb_host.c')
     
     if GetDepend('RT_USING_DFS'):
         src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
-
-src += Glob('third_party/rt-thread-5.0/msh_cmd.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 
