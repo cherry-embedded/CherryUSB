@@ -63,7 +63,7 @@ __WEAK void usb_dc_low_level_deinit(uint8_t busid)
 
 void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
 {
-    usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
+    //usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
 }
 
 int usb_dc_init(uint8_t busid)
