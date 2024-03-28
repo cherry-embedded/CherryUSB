@@ -1177,11 +1177,11 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     qh = (struct ehci_qh_hw *)urb->hcpriv;
     urb->hcpriv = NULL;
+    urb->errorcode = -USB_ERR_SHUTDOWN;
     qh->urb = NULL;
 
     if (urb->timeout) {
         urb->timeout = 0;
-        urb->errorcode = -USB_ERR_SHUTDOWN;
         usb_osal_sem_give(qh->waitsem);
     } else {
         ehci_qh_free(bus, qh);

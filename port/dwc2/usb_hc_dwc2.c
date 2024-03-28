@@ -808,10 +808,10 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     chan->urb = NULL;
     urb->hcpriv = NULL;
+    urb->errorcode = -USB_ERR_SHUTDOWN;
 
     if (urb->timeout) {
         urb->timeout = 0;
-        urb->errorcode = -USB_ERR_SHUTDOWN;
         usb_osal_sem_give(chan->waitsem);
     } else {
         dwc2_chan_free(chan);
@@ -936,7 +936,7 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
             urb->actual_length += (has_used_packets - 1) * USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) + count; //the same with urb->actual_length += chan->xferlen;
-            
+
             uint8_t data_toggle = ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_DPID) >> USB_OTG_HCTSIZ_DPID_Pos);
 
             if (data_toggle == HC_PID_DATA0) {

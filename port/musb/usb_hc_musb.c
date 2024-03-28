@@ -701,11 +701,11 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     pipe = (struct musb_pipe *)urb->hcpriv;
     urb->hcpriv = NULL;
+    urb->errorcode = -USB_ERR_SHUTDOWN;
     pipe->urb = NULL;
 
     if (urb->timeout) {
         urb->timeout = 0;
-        urb->errorcode = -USB_ERR_SHUTDOWN;
         usb_osal_sem_give(pipe->waitsem);
     } else {
         musb_pipe_free(pipe);
