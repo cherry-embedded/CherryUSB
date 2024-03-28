@@ -103,12 +103,12 @@ CherryUSB Host Stack has the following functions：
 - Automatic loading of supported Class drivers
 - Support blocking transfers and asynchronous transfers
 - Support Composite Device
-- Multi-level HUB support, expandable up to 7 levels(Testing hub with 10 ports works well)
+- Multi-level HUB support, expandable up to 7 levels(Testing hub with 10 ports works well,only support dwc2 and ehci now)
 - Support Communication Device Class (CDC_ACM, CDC_ECM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
-- Support USB Video CLASS
-- Support USB Audio CLASS
+- Support USB Video CLASS (commercial charge)
+- Support USB Audio CLASS (commercial charge)
 - Support Remote NDIS (RNDIS)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
 - Support Vendor class
