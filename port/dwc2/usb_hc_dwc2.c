@@ -444,14 +444,14 @@ int usb_hc_init(struct usbh_bus *bus)
     usb_hc_low_level_init(bus);
 
     USB_LOG_INFO("========== dwc2 hcd params ==========\r\n");
-    USB_LOG_INFO("CID:%08x\r\n", USB_OTG_GLB->CID);
-    USB_LOG_INFO("GSNPSID:%08x\r\n", USB_OTG_GLB->GSNPSID);
-    USB_LOG_INFO("GHWCFG1:%08x\r\n", USB_OTG_GLB->GHWCFG1);
-    USB_LOG_INFO("GHWCFG2:%08x\r\n", USB_OTG_GLB->GHWCFG2);
-    USB_LOG_INFO("GHWCFG3:%08x\r\n", USB_OTG_GLB->GHWCFG3);
+    USB_LOG_INFO("CID:%08lx\r\n", USB_OTG_GLB->CID);
+    USB_LOG_INFO("GSNPSID:%08lx\r\n", USB_OTG_GLB->GSNPSID);
+    USB_LOG_INFO("GHWCFG1:%08lx\r\n", USB_OTG_GLB->GHWCFG1);
+    USB_LOG_INFO("GHWCFG2:%08lx\r\n", USB_OTG_GLB->GHWCFG2);
+    USB_LOG_INFO("GHWCFG3:%08lx\r\n", USB_OTG_GLB->GHWCFG3);
     USB_LOG_INFO("GHWCFG4:%08x\r\n", USB_OTG_GLB->GHWCFG4);
 
-    USB_LOG_INFO("dwc2 has %d channels and dfifo depth(32-bit words) is %d\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1, (USB_OTG_GLB->GHWCFG3 >> 16));
+    USB_LOG_INFO("dwc2 has %ld channels and dfifo depth(32-bit words) is %ld\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1, (USB_OTG_GLB->GHWCFG3 >> 16));
 
     if (((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) != 2) {
         USB_LOG_ERR("This dwc2 version does not support dma mode, so stop working\r\n");
