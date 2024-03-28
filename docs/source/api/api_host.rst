@@ -111,19 +111,6 @@ hub 结构体
         uint8_t *int_buffer;
     };
 
-usbh_alloc_bus
-""""""""""""""""""""""""""""""""""""
-
-``usbh_alloc_bus`` 用于创建一个 bus，并且根据 reg_base 分配一个 hcd
-
-.. code-block:: C
-
-    struct usbh_bus *usbh_alloc_bus(uint8_t busid, uint32_t reg_base);
-
-- **busid**  bus id，从 0开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
-- **reg_base**  hcd 寄存器基地址
-- 返回 bus 句柄
-
 usbh_initialize
 """"""""""""""""""""""""""""""""""""
 
@@ -131,9 +118,11 @@ usbh_initialize
 
 .. code-block:: C
 
-    int usbh_initialize(struct usbh_bus *bus);
+    int usbh_initialize(uint8_t busid, uint32_t reg_base);
 
-- **bus**  bus 句柄
+- **busid**  bus id，从 0开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
+- **reg_base**  hcd 寄存器基地址
+- **return**  0 表示正常其他表示错误
 
 usbh_find_class_instance
 """"""""""""""""""""""""""""""""""""
