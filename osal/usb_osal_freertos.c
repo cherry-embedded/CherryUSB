@@ -153,7 +153,17 @@ void usb_osal_timer_delete(struct usb_osal_timer *timer)
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
-    xTimerStart(timer->timer, 0);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    if (xPortIsInsideInterrupt()) {
+        ret = xTimerStartFromISR(timer->timer, &xHigherPriorityTaskWoken);
+        if (ret == pdPASS) {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+    } else {
+        xTimerStart(timer->timer, 0);
+    }
 }
 
 void usb_osal_timer_stop(struct usb_osal_timer *timer)
