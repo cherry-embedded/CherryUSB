@@ -515,6 +515,12 @@ int usbh_enumerate(struct usbh_hubport *hport)
     /* Read the full size of the configuration data */
     uint16_t wTotalLength = ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->wTotalLength;
 
+    if (wTotalLength > CONFIG_USBHOST_REQUEST_BUFFER_LEN) {
+        ret = -USB_ERR_NOMEM;
+        USB_LOG_ERR("wTotalLength %d is overflow, default is %d\r\n", wTotalLength, CONFIG_USBHOST_REQUEST_BUFFER_LEN);
+        goto errout;
+    }
+
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
     setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | 0);
