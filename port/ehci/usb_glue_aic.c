@@ -19,6 +19,13 @@ static void aic_ehci_isr(int vector, void *arg)
     USBH_IRQHandler(bus->hcd.hcd_id);
 }
 
+static void aic_ohci_isr(int vector, void *arg)
+{
+    struct usbh_bus *bus = (struct usbh_bus *)arg;
+    extern void OHCI_IRQHandler(uint8_t busid);
+    OHCI_IRQHandler(bus->hcd.hcd_id);
+}
+
 typedef struct aic_ehci_config {
     uint32_t base_addr;
     uint32_t clk_id;
@@ -107,6 +114,8 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
     /* register interrupt callback */
     aicos_request_irq(config[i].irq_num, (irq_handler_t)aic_ehci_isr,
                       0, "usb_host_ehci", bus);
+    aicos_request_irq(config[i].irq_num + 1, (irq_handler_t)aic_ohci_isr,
+                      0, "usb_host_ohci", bus);
     aicos_irq_enable(config[i].irq_num);
 }
 
@@ -155,7 +164,6 @@ int usbh_init(void)
     usbh_initialize(bus_id, USB_HOST1_BASE);
     bus_id++;
 #endif
-
     return 0;
 }
 

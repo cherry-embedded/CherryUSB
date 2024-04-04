@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "usb_ehci_priv.h"
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+#include "usb_ohci_priv.h"
+#endif
 
 #define EHCI_TUNE_CERR    3 /* 0-3 qtd retries; 0 == don't stop */
 #define EHCI_TUNE_RL_HS   4 /* nak throttle; see 4.9 */
@@ -770,11 +773,24 @@ int usb_hc_init(struct usbh_bus *bus)
 
     EHCI_HCOR->usbintr = 0;
     EHCI_HCOR->usbsts = EHCI_HCOR->usbsts;
-#ifdef CONFIG_USB_EHCI_PRINT_HW_PARAM
-    USB_LOG_INFO("EHCI HCIVERSION:%04x\r\n", (int)EHCI_HCCR->hciversion);
-    USB_LOG_INFO("EHCI HCSPARAMS:%06x\r\n", (int)EHCI_HCCR->hcsparams);
-    USB_LOG_INFO("EHCI HCCPARAMS:%04x\r\n", (int)EHCI_HCCR->hccparams);
-#endif
+
+    USB_LOG_INFO("EHCI HCIVERSION:0x%04x\r\n", (unsigned int)EHCI_HCCR->hciversion);
+    USB_LOG_INFO("EHCI HCSPARAMS:0x%06x\r\n", (unsigned int)EHCI_HCCR->hcsparams);
+    USB_LOG_INFO("EHCI HCCPARAMS:0x%04x\r\n", (unsigned int)EHCI_HCCR->hccparams);
+
+    g_ehci_hcd[bus->hcd.hcd_id].ppc = (EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_PPC) ? true : false;
+    g_ehci_hcd[bus->hcd.hcd_id].n_ports = (EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_NPORTS_MASK) >> EHCI_HCSPARAMS_NPORTS_SHIFT;
+    g_ehci_hcd[bus->hcd.hcd_id].n_cc = (EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_NCC_MASK) >> EHCI_HCSPARAMS_NCC_SHIFT;
+    g_ehci_hcd[bus->hcd.hcd_id].n_pcc = (EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_NPCC_MASK) >> EHCI_HCSPARAMS_NPCC_SHIFT;
+    g_ehci_hcd[bus->hcd.hcd_id].has_tt = g_ehci_hcd[bus->hcd.hcd_id].n_cc ? false : true;
+    g_ehci_hcd[bus->hcd.hcd_id].hccr_offset = EHCI_HCCR->caplength;
+
+    USB_LOG_INFO("EHCI ppc:%u, n_ports:%u, n_cc:%u, n_pcc:%u\r\n",
+                 g_ehci_hcd[bus->hcd.hcd_id].ppc,
+                 g_ehci_hcd[bus->hcd.hcd_id].n_ports,
+                 g_ehci_hcd[bus->hcd.hcd_id].n_cc,
+                 g_ehci_hcd[bus->hcd.hcd_id].n_pcc);
+
     /* Set the Current Asynchronous List Address. */
     EHCI_HCOR->asynclistaddr = EHCI_PTR2ADDR(&g_async_qh_head[bus->hcd.hcd_id]);
     /* Set the Periodic Frame List Base Address. */
@@ -809,13 +825,32 @@ int usb_hc_init(struct usbh_bus *bus)
             return -USB_ERR_TIMEOUT;
         }
     }
-#ifdef CONFIG_USB_EHCI_PORT_POWER
-    for (uint8_t port = 0; port < CONFIG_USBHOST_MAX_RHPORTS; port++) {
-        regval = EHCI_HCOR->portsc[port];
-        regval |= EHCI_PORTSC_PP;
-        EHCI_HCOR->portsc[port] = regval;
+
+    if (g_ehci_hcd[bus->hcd.hcd_id].ppc) {
+        for (uint8_t port = 0; port < g_ehci_hcd[bus->hcd.hcd_id].n_ports; port++) {
+            regval = EHCI_HCOR->portsc[port];
+            regval |= EHCI_PORTSC_PP;
+            EHCI_HCOR->portsc[port] = regval;
+        }
     }
+
+    if (g_ehci_hcd[bus->hcd.hcd_id].has_tt) {
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+        USB_LOG_INFO("EHCI uses tt for ls/fs device, so cannot enable this macro\r\n");
+        return -USB_ERR_INVAL;
 #endif
+    }
+
+    if (g_ehci_hcd[bus->hcd.hcd_id].has_tt) {
+        USB_LOG_INFO("EHCI uses tt for ls/fs device\r\n");
+    } else {
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+        USB_LOG_INFO("EHCI uses companion controller for ls/fs device\r\n");
+        ohci_init(bus);
+#else
+        USB_LOG_WRN("Do not enable companion controller, you should use a hub to support ls/fs device\r\n");
+#endif
+    }
 
     /* Enable EHCI interrupts. */
     EHCI_HCOR->usbintr = EHCI_USBIE_INT | EHCI_USBIE_ERR | EHCI_USBIE_PCD | EHCI_USBIE_FATAL | EHCI_USBIE_IAA;
@@ -845,13 +880,13 @@ int usb_hc_deinit(struct usbh_bus *bus)
         }
     }
 
-#ifdef CONFIG_USB_EHCI_PORT_POWER
-    for (uint8_t port = 0; port < CONFIG_USBHOST_MAX_RHPORTS; port++) {
-        regval = EHCI_HCOR->portsc[port];
-        regval &= ~EHCI_PORTSC_PP;
-        EHCI_HCOR->portsc[port] = regval;
+    if (g_ehci_hcd[bus->hcd.hcd_id].ppc) {
+        for (uint8_t port = 0; port < g_ehci_hcd[bus->hcd.hcd_id].n_ports; port++) {
+            regval = EHCI_HCOR->portsc[port];
+            regval &= ~EHCI_PORTSC_PP;
+            EHCI_HCOR->portsc[port] = regval;
+        }
     }
-#endif
 
 #ifdef CONFIG_USB_EHCI_CONFIGFLAG
     EHCI_HCOR->configflag = 0;
@@ -864,12 +899,22 @@ int usb_hc_deinit(struct usbh_bus *bus)
         usb_osal_sem_delete(qh->waitsem);
     }
 
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+    ohci_deinit(bus);
+#endif
+
     usb_hc_low_level_deinit(bus);
     return 0;
 }
 
 uint16_t usbh_get_frame_number(struct usbh_bus *bus)
 {
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+    if (EHCI_HCOR->portsc[0] & EHCI_PORTSC_OWNER) {
+        return ohci_get_frame_number(bus);
+    }
+#endif
+
     return (((EHCI_HCOR->frindex & EHCI_FRINDEX_MASK) >> 3) & 0x3ff);
 }
 
@@ -879,9 +924,25 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
     uint8_t port;
     uint32_t temp, status;
 
-    nports = CONFIG_USBHOST_MAX_RHPORTS;
+    nports = g_ehci_hcd[bus->hcd.hcd_id].n_ports;
 
     port = setup->wIndex;
+
+    temp = EHCI_HCOR->portsc[port - 1];
+
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+    if (temp & EHCI_PORTSC_OWNER) {
+        return ohci_roothub_control(bus, setup, buf);
+    }
+
+    if ((temp & EHCI_PORTSC_LSTATUS_MASK) == EHCI_PORTSC_LSTATUS_KSTATE) {
+        EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_OWNER;
+
+        while (!(EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_OWNER)) {
+        }
+        return ohci_roothub_control(bus, setup, buf);
+    }
+#endif
     if (setup->bmRequestType & USB_REQUEST_RECIPIENT_DEVICE) {
         switch (setup->bRequest) {
             case HUB_REQUEST_CLEAR_FEATURE:
@@ -942,9 +1003,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                     case HUB_PORT_FEATURE_C_SUSPEND:
                         break;
                     case HUB_PORT_FEATURE_POWER:
-#ifdef CONFIG_USB_EHCI_PORT_POWER
                         EHCI_HCOR->portsc[port - 1] &= ~EHCI_PORTSC_PP;
-#endif
                         break;
                     case HUB_PORT_FEATURE_C_CONNECTION:
                         EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_CSC;
@@ -982,12 +1041,19 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                         }
                         break;
                     case HUB_PORT_FEATURE_POWER:
-#ifdef CONFIG_USB_EHCI_PORT_POWER
                         EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_PP;
-#endif
                         break;
                     case HUB_PORT_FEATURE_RESET:
                         usbh_reset_port(bus, port);
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+                        if (!(EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_PE)) {
+                            EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_OWNER;
+
+                            while (!(EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_OWNER)) {
+                            }
+                            return ohci_roothub_control(bus, setup, buf);
+                        }
+#endif
                         break;
 
                     default:
@@ -1067,6 +1133,12 @@ int usbh_submit_urb(struct usbh_urb *urb)
         hub = hub->parent->parent;
     }
 
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+    if (EHCI_HCOR->portsc[hport->port - 1] & EHCI_PORTSC_OWNER) {
+        return ohci_submit_urb(urb);
+    }
+#endif
+
     if (!urb->hport->connected || !(EHCI_HCOR->portsc[hport->port - 1] & EHCI_PORTSC_CCS)) {
         return -USB_ERR_NOTCONN;
     }
@@ -1138,11 +1210,17 @@ int usbh_kill_urb(struct usbh_urb *urb)
     struct usbh_bus *bus;
     size_t flags;
 
-    if (!urb || !urb->hcpriv || !urb->hport->bus) {
+    if (!urb || !urb->hport || !urb->hcpriv || !urb->hport->bus) {
         return -USB_ERR_INVAL;
     }
 
     bus = urb->hport->bus;
+
+#ifdef CONFIG_USB_EHCI_WITH_OHCI
+    if (EHCI_HCOR->portsc[urb->hport->port - 1] & EHCI_PORTSC_OWNER) {
+        return ohci_kill_urb(urb);
+    }
+#endif
 
     flags = usb_osal_enter_critical_section();
 
@@ -1245,7 +1323,7 @@ void USBH_IRQHandler(uint8_t busid)
     }
 
     if (usbsts & EHCI_USBSTS_PCD) {
-        for (int port = 0; port < CONFIG_USBHOST_MAX_RHPORTS; port++) {
+        for (int port = 0; port < g_ehci_hcd[bus->hcd.hcd_id].n_ports; port++) {
             uint32_t portsc = EHCI_HCOR->portsc[port];
 
             if (portsc & EHCI_PORTSC_CSC) {

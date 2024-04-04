@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _USB_EHCI_PRIV_H
 #define _USB_EHCI_PRIV_H
 
@@ -47,6 +52,12 @@ struct ehci_itd_hw {
 struct ehci_hcd {
     bool ehci_qh_used[CONFIG_USB_EHCI_QH_NUM];
     bool ehci_itd_used[CONFIG_USB_EHCI_ITD_NUM];
+    bool ppc; /* Port Power Control */
+    bool has_tt;   /* if use tt instead of Companion Controller */
+    uint8_t n_cc;  /* Number of Companion Controller */
+    uint8_t n_pcc; /* Number of ports supported per companion host controller */
+    uint8_t n_ports;
+    uint8_t hccr_offset;
 };
 
 extern struct ehci_hcd g_ehci_hcd[CONFIG_USBHOST_MAX_BUS];

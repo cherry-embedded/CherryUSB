@@ -130,8 +130,11 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/ehci/usb_hc_ehci.c')
         src += Glob('port/ehci/usb_glue_hpm.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_AIC']):
+        path += [cwd + '/port/ehci']
+        path += [cwd + '/port/ohci']
         src += Glob('port/ehci/usb_hc_ehci.c')
         src += Glob('port/ehci/usb_glue_aic.c')
+        src += Glob('port/ohci/usb_hc_ohci.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_NUVOTON_NUC980']):
         src += Glob('port/ehci/usb_hc_ehci.c')
         src += Glob('port/ehci/usb_glue_nuc980.c')
@@ -198,7 +201,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('demo/usb_host.c')
     
     if GetDepend('RT_USING_DFS'):
-        src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
+       src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 
