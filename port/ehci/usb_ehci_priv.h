@@ -11,7 +11,7 @@
 #include "usb_hc_ehci.h"
 
 #define EHCI_HCCR ((struct ehci_hccr *)(uintptr_t)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCCR_OFFSET))
-#define EHCI_HCOR ((struct ehci_hcor *)(uintptr_t)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCOR_OFFSET))
+#define EHCI_HCOR ((struct ehci_hcor *)(uintptr_t)(bus->hcd.reg_base + CONFIG_USB_EHCI_HCCR_OFFSET + g_ehci_hcd[bus->hcd.hcd_id].hcor_offset))
 
 #define EHCI_PTR2ADDR(x) ((uint32_t)(uintptr_t)(x) & ~0x1F)
 #define EHCI_ADDR2QH(x)  ((struct ehci_qh_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
@@ -57,7 +57,7 @@ struct ehci_hcd {
     uint8_t n_cc;  /* Number of Companion Controller */
     uint8_t n_pcc; /* Number of ports supported per companion host controller */
     uint8_t n_ports;
-    uint8_t hccr_offset;
+    uint8_t hcor_offset;
 };
 
 extern struct ehci_hcd g_ehci_hcd[CONFIG_USBHOST_MAX_BUS];
