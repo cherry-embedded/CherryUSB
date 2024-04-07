@@ -236,27 +236,27 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
 void usbh_audio_list_module(struct usbh_audio *audio_class)
 {
     USB_LOG_INFO("============= Audio module information ===================\r\n");
-    USB_LOG_INFO("bcdADC :%04x\r\n", audio_class->bcdADC);
-    USB_LOG_INFO("Num of modules :%u\r\n", audio_class->module_num);
-    USB_LOG_INFO("Num of altsettings:%u\r\n", audio_class->num_of_intf_altsettings);
+    USB_LOG_RAW("bcdADC :%04x\r\n", audio_class->bcdADC);
+    USB_LOG_RAW("Num of modules :%u\r\n", audio_class->module_num);
+    USB_LOG_RAW("Num of altsettings:%u\r\n", audio_class->num_of_intf_altsettings);
 
     for (uint8_t i = 0; i < audio_class->module_num; i++) {
-        USB_LOG_INFO("  module name :%s\r\n", audio_class->module[i].name);
-        USB_LOG_INFO("  module feature unit id :%d\r\n", audio_class->module[i].feature_unit_id);
+        USB_LOG_RAW("  module name :%s\r\n", audio_class->module[i].name);
+        USB_LOG_RAW("  module feature unit id :%d\r\n", audio_class->module[i].feature_unit_id);
 
         for (uint8_t j = 0; j < audio_class->num_of_intf_altsettings; j++) {
             if (j == 0) {
-                USB_LOG_INFO("      Ingore altsetting 0\r\n");
+                USB_LOG_RAW("      Ingore altsetting 0\r\n");
                 continue;
             }
-            USB_LOG_INFO("      Altsetting %u\r\n", j);
-            USB_LOG_INFO("          module channels :%u\r\n", audio_class->module[i].altsetting[j].channels);
-            //USB_LOG_INFO("        module format_type :%u\r\n",audio_class->module[i].altsetting[j].format_type);
-            USB_LOG_INFO("          module bitresolution :%u\r\n", audio_class->module[i].altsetting[j].bitresolution);
-            USB_LOG_INFO("          module sampfreq num :%u\r\n", audio_class->module[i].altsetting[j].sampfreq_num);
+            USB_LOG_RAW("      Altsetting %u\r\n", j);
+            USB_LOG_RAW("          module channels :%u\r\n", audio_class->module[i].altsetting[j].channels);
+            //USB_LOG_RAW("        module format_type :%u\r\n",audio_class->module[i].altsetting[j].format_type);
+            USB_LOG_RAW("          module bitresolution :%u\r\n", audio_class->module[i].altsetting[j].bitresolution);
+            USB_LOG_RAW("          module sampfreq num :%u\r\n", audio_class->module[i].altsetting[j].sampfreq_num);
 
             for (uint8_t k = 0; k < audio_class->module[i].altsetting[j].sampfreq_num; k++) {
-                USB_LOG_INFO("              module sampfreq :%d hz\r\n", audio_class->module[i].altsetting[j].sampfreq[k]);
+                USB_LOG_RAW("              module sampfreq :%d hz\r\n", audio_class->module[i].altsetting[j].sampfreq[k]);
             }
         }
     }
