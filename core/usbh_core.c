@@ -394,6 +394,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     int dev_addr;
     uint16_t ep_mps;
     uint8_t config_value;
+    uint8_t config_index;
     int ret;
 
     hport->setup = &g_setup_buffer[hport->bus->busid][hport->parent->index - 1][hport->port - 1];
@@ -497,10 +498,15 @@ int usbh_enumerate(struct usbh_hubport *hport)
                  ((struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid])->idProduct,
                  ((struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid])->bcdDevice);
 
+    USB_LOG_INFO("The device has %d bNumConfigurations\r\n", ((struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid])->bNumConfigurations);
+
+    config_index = 0;
+    USB_LOG_INFO("The device selects config %d\r\n", config_index);
+
     /* Read the first 9 bytes of the config descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | 0);
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | config_index);
     setup->wIndex = 0;
     setup->wLength = USB_SIZEOF_CONFIG_DESC;
 
@@ -523,7 +529,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | 0);
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | config_index);
     setup->wIndex = 0;
     setup->wLength = wTotalLength;
 
