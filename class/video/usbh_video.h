@@ -22,12 +22,19 @@ struct usbh_video_format {
     uint8_t num_of_frames;
 };
 
+struct usbh_videoframe {
+    uint8_t *frame_buf;
+    uint32_t frame_bufsize;
+    uint32_t frame_format;
+    uint32_t frame_size;
+};
+
 struct usbh_videostreaming {
+    struct usbh_videoframe *frame;
+    uint32_t frame_format;
     uint32_t bufoffset;
-    uint32_t buflen;
     uint16_t width;
-    uint16_t heigth;
-    void (*video_one_frame_callback)(struct usbh_videostreaming *stream);
+    uint16_t height;
 };
 
 struct usbh_video {
