@@ -22,15 +22,36 @@ USB Host 移植要点
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
-- 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
+- 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码（需要放在 flash 位置）：
 
 .. code-block:: C
-
-        /* section information for usbh class */
+        // 在 ld 文件中添加如下代码
         . = ALIGN(4);
         __usbh_class_info_start__ = .;
         KEEP(*(.usbh_class_info))
         __usbh_class_info_end__ = .;
+
+        // 举例如下
+
+        /* The program code and other data into "FLASH" Rom type memory */
+        .text :
+        {
+        . = ALIGN(4);
+        *(.text)           /* .text sections (code) */
+        *(.text*)          /* .text* sections (code) */
+        *(.glue_7)         /* glue arm to thumb code */
+        *(.glue_7t)        /* glue thumb to arm code */
+        *(.eh_frame)
+
+        KEEP (*(.init))
+        KEEP (*(.fini))
+        . = ALIGN(4);
+        __usbh_class_info_start__ = .;
+        KEEP(*(.usbh_class_info))
+        __usbh_class_info_end__ = .;
+        . = ALIGN(4);
+        _etext = .;        /* define a global symbols at end of code */
+        } >FLASH
 
 - 如果使用的是 Segger Embedded Studio ，需要在链接脚本(icf)中添加如下代码：
 
@@ -56,13 +77,19 @@ GCC:
 
 .. code-block:: C
 
-        // 放在 no cache ram 的 region 中
-        .no_cache_ram_region : AT (__no_cache_ram_addr)
+        MEMORY
         {
-                . = ALIGN(4);
-                *(.noncacheable)
-                . = ALIGN(4);
-        } > no_cache_ram
+        RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 256K - 64K
+        RAM_nocache    (xrw)    : ORIGIN = 0x20030000,   LENGTH = 64K
+        FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 512K
+        }
+
+        ._nocache_ram :
+        {
+        . = ALIGN(4);
+        *(.noncacheable)
+        } >RAM_nocache
+
 
 SCT:
 
