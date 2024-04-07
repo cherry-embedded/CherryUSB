@@ -18,9 +18,15 @@
 #define EHCI_ADDR2QTD(x) ((struct ehci_qtd_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
 #define EHCI_ADDR2ITD(x) ((struct ehci_itd_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
 
+#ifndef CONFIG_USB_EHCI_QH_NUM
 #define CONFIG_USB_EHCI_QH_NUM  CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USB_EHCI_QTD_NUM 3
-#define CONFIG_USB_EHCI_ITD_NUM 20
+#endif
+#ifndef CONFIG_USB_EHCI_QTD_NUM
+#define CONFIG_USB_EHCI_QTD_NUM  3
+#endif
+#ifndef CONFIG_USB_EHCI_ITD_NUM
+#define CONFIG_USB_EHCI_ITD_NUM  20
+#endif
 
 extern uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port);
 

@@ -33,7 +33,7 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
-#define CONFIG_USBDEV_MAX_BUS 1    // for now, bus num must be 1 except hpm ip
+#define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
 
 /* Ep0 max transfer buffer, specially for receiving data from ep0 out */
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
@@ -97,7 +97,6 @@
 
 /* ================ USB HOST Stack Configuration ================== */
 
-#define CONFIG_USBHOST_MAX_BUS              1
 #define CONFIG_USBHOST_MAX_RHPORTS          1
 #define CONFIG_USBHOST_MAX_EXTHUBS          1
 #define CONFIG_USBHOST_MAX_EHPORTS          4
@@ -154,6 +153,7 @@
 
 /* ================ USB Host Port Configuration ==================*/
 
+#define CONFIG_USBHOST_MAX_BUS 1
 // #define CONFIG_USBHOST_PIPE_NUM 10
 
 /* ================ EHCI Configuration ================ */
@@ -161,7 +161,12 @@
 #define CONFIG_USB_EHCI_HCCR_OFFSET     (0x0)
 #define CONFIG_USB_OHCI_HCOR_OFFSET     (0x400)
 #define CONFIG_USB_EHCI_FRAME_LIST_SIZE 1024
+#define CONFIG_USB_EHCI_QH_NUM          CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USB_EHCI_QTD_NUM         3
+#define CONFIG_USB_EHCI_ITD_NUM         20
 // #define CONFIG_USB_EHCI_HCOR_RESERVED_DISABLE
 // #define CONFIG_USB_EHCI_CONFIGFLAG
+// #define CONFIG_USB_EHCI_ISO
+// #define CONFIG_USB_EHCI_WITH_OHCI
 
 #endif
