@@ -173,13 +173,25 @@ void usb_osal_timer_stop(struct usb_osal_timer *timer)
 
 size_t usb_osal_enter_critical_section(void)
 {
-    taskDISABLE_INTERRUPTS();
-    return 1;
+    size_t ret;
+
+    if (xPortIsInsideInterrupt()) {
+        ret = taskENTER_CRITICAL_FROM_ISR();
+    } else {
+        taskENTER_CRITICAL();
+        ret = 1;
+    }
+
+    return ret;
 }
 
 void usb_osal_leave_critical_section(size_t flag)
 {
-    taskENABLE_INTERRUPTS();
+    if (xPortIsInsideInterrupt()) {
+        taskEXIT_CRITICAL_FROM_ISR(flag);
+    } else {
+        taskEXIT_CRITICAL();
+    }
 }
 
 void usb_osal_msleep(uint32_t delay)
