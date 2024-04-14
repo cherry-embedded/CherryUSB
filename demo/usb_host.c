@@ -5,18 +5,42 @@
 #include "usbh_video.h"
 #include "usbh_audio.h"
 
+#ifndef TEST_USBH_CDC_ACM
 #define TEST_USBH_CDC_ACM   1
+#endif
+#ifndef TEST_USBH_CDC_SPEED
 #define TEST_USBH_CDC_SPEED 0
+#endif
+#ifndef TEST_USBH_HID
 #define TEST_USBH_HID       1
+#endif
+#ifndef TEST_USBH_MSC
 #define TEST_USBH_MSC       1
+#endif
+#ifndef TEST_USBH_MSC_FATFS
 #define TEST_USBH_MSC_FATFS 0
+#endif
+#ifndef TEST_USBH_AUDIO
 #define TEST_USBH_AUDIO     0
+#endif
+#ifndef TEST_USBH_VIDEO
 #define TEST_USBH_VIDEO     0
+#endif
+#ifndef TEST_USBH_CDC_ECM
 #define TEST_USBH_CDC_ECM   0
+#endif
+#ifndef TEST_USBH_CDC_NCM
 #define TEST_USBH_CDC_NCM   0
+#endif
+#ifndef TEST_USBH_RNDIS
 #define TEST_USBH_RNDIS     0
+#endif
+#ifndef TEST_USBH_ASIX
 #define TEST_USBH_ASIX      0
+#endif
+#ifndef TEST_USBH_RTL8152
 #define TEST_USBH_RTL8152   0
+#endif
 
 #if TEST_USBH_CDC_ACM
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_buffer[512];
@@ -1063,29 +1087,13 @@ void usbh_msc_stop(struct usbh_msc *msc_class)
 }
 #endif
 
-void usbh_audio_run(struct usbh_audio *audio_class)
-{
 #if TEST_USBH_AUDIO
 #error "if you want to use iso, please contact with me"
-    usb_osal_thread_create("usbh_audio", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_audio_thread, NULL);
 #endif
-}
 
-void usbh_audio_stop(struct usbh_audio *audio_class)
-{
-}
-
-void usbh_video_run(struct usbh_video *video_class)
-{
 #if TEST_USBH_VIDEO
 #error "if you want to use iso, please contact with me"
-    usb_osal_thread_create("usbh_video", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_video_thread, NULL);
 #endif
-}
-
-void usbh_video_stop(struct usbh_video *video_class)
-{
-}
 
 void usbh_class_test(void)
 {
