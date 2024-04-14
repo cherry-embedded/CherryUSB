@@ -33,10 +33,10 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
-#define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
-
 /* Ep0 max transfer buffer, specially for receiving data from ep0 out */
+#ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
+#endif
 
 /* Setup packet log for debug */
 // #define CONFIG_USBDEV_SETUP_LOG_PRINT
@@ -122,10 +122,14 @@
 //#define CONFIG_USBHOST_GET_STRING_DESC
 
 // #define CONFIG_USBHOST_MSOS_ENABLE
+#ifndef CONFIG_USBHOST_MSOS_VENDOR_CODE
 #define CONFIG_USBHOST_MSOS_VENDOR_CODE 0x00
+#endif
 
 /* Ep0 max transfer buffer */
+#ifndef CONFIG_USBHOST_REQUEST_BUFFER_LEN
 #define CONFIG_USBHOST_REQUEST_BUFFER_LEN 512
+#endif
 
 #ifndef CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT
 #define CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT 500
@@ -147,19 +151,44 @@
 
 /* ================ USB Device Port Configuration ================*/
 
+#ifndef CONFIG_USBDEV_MAX_BUS
+#define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
+#endif
+
 #ifndef CONFIG_USBDEV_EP_NUM
 #define CONFIG_USBDEV_EP_NUM 8
 #endif
 
+/* ---------------- FSDEV Configuration ---------------- */
+//#define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2 // maybe 1 or 2, many chips may have a difference
+
+/* ---------------- DWC2 Configuration ---------------- */
+// #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (320)
+// #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
+// #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (512 / 4)
+// #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
+// #define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
+// #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (0 / 4)
+// #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (0 / 4)
+// #define CONFIG_USB_DWC2_TX6_FIFO_SIZE (0 / 4)
+// #define CONFIG_USB_DWC2_TX7_FIFO_SIZE (0 / 4)
+// #define CONFIG_USB_DWC2_TX8_FIFO_SIZE (0 / 4)
+
+/* ---------------- MUSB Configuration ---------------- */
+// #define CONFIG_USB_MUSB_SUNXI
+
 /* ================ USB Host Port Configuration ==================*/
-
+#ifndef CONFIG_USBHOST_MAX_BUS
 #define CONFIG_USBHOST_MAX_BUS 1
-// #define CONFIG_USBHOST_PIPE_NUM 10
+#endif
 
-/* ================ EHCI Configuration ================ */
+#ifndef CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USBHOST_PIPE_NUM 10
+#endif
+
+/* ---------------- EHCI Configuration ---------------- */
 
 #define CONFIG_USB_EHCI_HCCR_OFFSET     (0x0)
-#define CONFIG_USB_OHCI_HCOR_OFFSET     (0x400)
 #define CONFIG_USB_EHCI_FRAME_LIST_SIZE 1024
 #define CONFIG_USB_EHCI_QH_NUM          CONFIG_USBHOST_PIPE_NUM
 #define CONFIG_USB_EHCI_QTD_NUM         3
@@ -168,5 +197,25 @@
 // #define CONFIG_USB_EHCI_CONFIGFLAG
 // #define CONFIG_USB_EHCI_ISO
 // #define CONFIG_USB_EHCI_WITH_OHCI
+
+/* ---------------- OHCI Configuration ---------------- */
+#define CONFIG_USB_OHCI_HCOR_OFFSET     (0x0)
+
+/* ---------------- XHCI Configuration ---------------- */
+#define CONFIG_USB_XHCI_HCCR_OFFSET     (0x0)
+
+/* ---------------- DWC2 Configuration ---------------- */
+/* largest non-periodic USB packet used / 4 */
+// #define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
+/* largest periodic USB packet used / 4 */
+// #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
+/*  
+(largest USB packet used / 4) + 1 for status information + 1 transfer complete + 
+1 location each for Bulk/Control endpoint for handling NAK/NYET scenario 
+*/
+// #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
+
+/* ---------------- MUSB Configuration ---------------- */
+// #define CONFIG_USB_MUSB_SUNXI
 
 #endif
