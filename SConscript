@@ -26,13 +26,6 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_BL']):
-        src += Glob('port/bouffalolab/usb_dc_bl.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32']):
-        if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
-            src += Glob('port/ch32/usb_dc_usbhs.c')
-        else:
-            src += Glob('port/ch32/usb_dc_usbfs.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV']):
         src += Glob('port/fsdev/usb_dc_fsdev.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_ST']):
@@ -44,6 +37,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_AT']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')
         src += Glob('port/dwc2/usb_glue_at.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_GD']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_gd.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_CUSTOM']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_STANDARD']):
@@ -53,13 +49,15 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_dc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_BL']):
+        src += Glob('port/bouffalolab/usb_dc_bl.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HPM']):
         src += Glob('port/hpm/usb_dc_hpm.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
-        path += [cwd + '/port/pusb2/common']
-        path += [cwd + '/port/pusb2/fpusb2']
-        src += Glob('port/pusb2/fpusb2' + '/*.c')
-        src += Glob('port/pusb2/usb_dc_pusb2.c') 
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32']):
+        if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
+            src += Glob('port/ch32/usb_dc_usbhs.c')
+        else:
+            src += Glob('port/ch32/usb_dc_usbfs.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc.c')
@@ -190,6 +188,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     
     if GetDepend('RT_USING_DFS'):
        src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
+
+src += Glob('third_party/rt-thread-5.0/usb_msh.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 
