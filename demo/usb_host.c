@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "usbh_core.h"
 #include "usbh_cdc_acm.h"
 #include "usbh_hid.h"

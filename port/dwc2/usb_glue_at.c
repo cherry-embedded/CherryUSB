@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "usb_config.h"
 #include "stdint.h"
 #include "usb_dwc2_reg.h"

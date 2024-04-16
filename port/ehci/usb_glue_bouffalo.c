@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "bflb_core.h"
 #include "usbh_core.h"
 #include "hardware/usb_v2_reg.h"

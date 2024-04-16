@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022 HPMicro
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
 #include "usbd_core.h"
 #include "hpm_usb_device.h"
 

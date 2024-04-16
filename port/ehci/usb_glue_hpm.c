@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022 HPMicro
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
 #include "usbh_core.h"
 #include "hpm_common.h"
 #include "hpm_soc.h"
