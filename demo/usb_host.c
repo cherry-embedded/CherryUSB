@@ -424,8 +424,7 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 #include "semphr.h"
 #include "timers.h"
 
-TimerHandle_t dhcp_handle1;
-TimerHandle_t dhcp_handle2;
+TimerHandle_t dhcp_handle;
 
 static void dhcp_timeout(TimerHandle_t xTimer)
 {
@@ -528,8 +527,8 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     while (!netif_is_up(netif)) {
     }
 
-    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
-    if (dhcp_handle1 == NULL) {
+    dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
@@ -538,7 +537,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, netif);
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle1, 0);
+    xTimerStart(dhcp_handle, 0);
 #endif
 #endif
 }
@@ -552,6 +551,8 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
+    xTimerStop(dhcp_handle, 0);
+    xTimerDelete(dhcp_handle, 0);
 #endif
     netif_set_down(netif);
     netif_remove(netif);
@@ -640,8 +641,8 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
     while (!netif_is_up(netif)) {
     }
 
-    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
-    if (dhcp_handle1 == NULL) {
+    dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
@@ -650,7 +651,7 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
     usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ncm_rx_thread, netif);
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle1, 0);
+    xTimerStart(dhcp_handle, 0);
 #endif
 #endif
 }
@@ -664,6 +665,8 @@ void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
+    xTimerStop(dhcp_handle, 0);
+    xTimerDelete(dhcp_handle, 0);
 #endif
     netif_set_down(netif);
     netif_remove(netif);
@@ -796,8 +799,8 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     while (!netif_is_up(netif)) {
     }
 
-    dhcp_handle2 = xTimerCreate((const char *)"dhcp2", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
-    if (dhcp_handle2 == NULL) {
+    dhcp_handle = xTimerCreate((const char *)"dhcp2", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
@@ -808,7 +811,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
 
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle2, 0);
+    xTimerStart(dhcp_handle, 0);
 #endif
 #endif
 }
@@ -824,6 +827,8 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
+    xTimerStop(dhcp_handle, 0);
+    xTimerDelete(dhcp_handle, 0);
 #endif
     netif_set_down(netif);
     netif_remove(netif);
@@ -914,8 +919,8 @@ void usbh_asix_run(struct usbh_asix *asix_class)
     while (!netif_is_up(netif)) {
     }
 
-    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
-    if (dhcp_handle1 == NULL) {
+    dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
@@ -924,7 +929,7 @@ void usbh_asix_run(struct usbh_asix *asix_class)
     usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_asix_rx_thread, netif);
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle1, 0);
+    xTimerStart(dhcp_handle, 0);
 #endif
 #endif
 }
@@ -938,6 +943,8 @@ void usbh_asix_stop(struct usbh_asix *asix_class)
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
+    xTimerStop(dhcp_handle, 0);
+    xTimerDelete(dhcp_handle, 0);
 #endif
     netif_set_down(netif);
     netif_remove(netif);
@@ -1026,8 +1033,8 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     while (!netif_is_up(netif)) {
     }
 
-    dhcp_handle1 = xTimerCreate((const char *)"dhcp1", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
-    if (dhcp_handle1 == NULL) {
+    dhcp_handle = xTimerCreate((const char *)"dhcp", (TickType_t)200, (UBaseType_t)pdTRUE, (void *const)netif, (TimerCallbackFunction_t)dhcp_timeout);
+    if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
@@ -1036,7 +1043,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     usb_osal_thread_create("usbh_rtl8152_rx", 2048, 20, usbh_rtl8152_rx_thread, netif);
 #if LWIP_DHCP
     dhcp_start(netif);
-    xTimerStart(dhcp_handle1, 0);
+    xTimerStart(dhcp_handle, 0);
 #endif
 #endif
 }
@@ -1050,6 +1057,8 @@ void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
+    xTimerStop(dhcp_handle, 0);
+    xTimerDelete(dhcp_handle, 0);
 #endif
     netif_set_down(netif);
     netif_remove(netif);
