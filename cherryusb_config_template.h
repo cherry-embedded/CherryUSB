@@ -33,9 +33,9 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
-/* Ep0 max transfer buffer, specially for receiving data from ep0 out */
+/* Ep0 in and out transfer buffer */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
-#define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
+#define CONFIG_USBDEV_REQUEST_BUFFER_LEN 512
 #endif
 
 /* Setup packet log for debug */
