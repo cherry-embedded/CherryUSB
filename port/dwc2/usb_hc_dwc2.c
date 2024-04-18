@@ -831,7 +831,6 @@ static inline void dwc2_urb_waitup(struct usbh_urb *urb)
     urb->hcpriv = NULL;
 
     if (urb->timeout) {
-        urb->timeout = 0;
         usb_osal_sem_give(chan->waitsem);
     } else {
         dwc2_chan_free(chan);

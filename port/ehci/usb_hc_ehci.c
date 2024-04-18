@@ -564,7 +564,6 @@ static void ehci_urb_waitup(struct usbh_bus *bus, struct usbh_urb *urb)
     qh->remove_in_iaad = 0;
 
     if (urb->timeout) {
-        urb->timeout = 0;
         usb_osal_sem_give(qh->waitsem);
     } else {
         ehci_qh_free(bus, qh);
