@@ -139,6 +139,16 @@
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
 #endif
 
+/* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,
+ * you can change with 2K,4K,8K,16K,default is 2K to get one TCP_MSS
+ */
+#ifndef CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE
+#define CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE (2048)
+#endif
+#ifndef CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE
+#define CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE (2048)
+#endif
+
 #define CONFIG_USBHOST_BLUETOOTH_HCI_H4
 // #define CONFIG_USBHOST_BLUETOOTH_HCI_LOG
 
