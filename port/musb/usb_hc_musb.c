@@ -705,7 +705,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     pipe->urb = NULL;
 
     if (urb->timeout) {
-        urb->timeout = 0;
         usb_osal_sem_give(pipe->waitsem);
     } else {
         musb_pipe_free(pipe);

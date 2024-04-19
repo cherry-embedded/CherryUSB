@@ -1258,7 +1258,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     qh->urb = NULL;
 
     if (urb->timeout) {
-        urb->timeout = 0;
         usb_osal_sem_give(qh->waitsem);
     } else {
         ehci_qh_free(bus, qh);
