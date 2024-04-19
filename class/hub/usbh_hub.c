@@ -91,7 +91,7 @@ static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hub_buf, USB_SIZEOF_HUB_DESC);
+    memcpy(buffer, g_hub_buf[hub->bus->busid], USB_SIZEOF_HUB_DESC);
     return ret;
 }
 #if 0
@@ -108,11 +108,11 @@ static int _usbh_hub_get_status(struct usbh_hub *hub, uint8_t *buffer)
     setup->wIndex = 0;
     setup->wLength = 2;
 
-    ret = usbh_control_transfer(hub->parent, setup, g_hub_buf);
+    ret = usbh_control_transfer(hub->parent, setup, g_hub_buf[hub->bus->busid]);
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hub_buf, 2);
+    memcpy(buffer, g_hub_buf[hub->bus->busid], 2);
     return ret;
 }
 #endif
