@@ -51,13 +51,15 @@ sdk_library_add_sources(osal/usb_osal_freertos.c)
 sdk_library_add_sources(class/cdc/usbh_cdc_acm.c)
 sdk_library_add_sources(class/msc/usbh_msc.c)
 sdk_library_add_sources(class/hid/usbh_hid.c)
+sdk_library_add_sources(class/xbox/usbh_xbox.c)
 sdk_library_add_sources(class/hub/usbh_hub.c)
 sdk_library_add_sources(class/video/usbh_video.c)
 sdk_library_add_sources(class/audio/usbh_audio.c)
 
 sdk_add_link_libraries(
 -ucdc_acm_class_driver 
--uhid_class_driver 
+-uhid_class_driver
+-uxbox_class_driver 
 -umsc_class_driver 
 -uvideo_ctrl_class_driver 
 -uaudio_ctrl_class_driver)

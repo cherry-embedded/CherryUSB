@@ -715,8 +715,7 @@ CLASS_INFO_DEFINE const struct usbh_class_info hub_class_info = {
     .class = USB_DEVICE_CLASS_HUB,
     .subclass = 0,
     .protocol = 0,
-    .vid = 0x00,
-    .pid = 0x00,
+    .devices = NULL,
     .class_driver = &hub_class_driver
 };
 #endif

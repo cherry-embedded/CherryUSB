@@ -333,7 +333,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info cdc_ecm_class_info = {
     .class = USB_DEVICE_CLASS_CDC,
     .subclass = CDC_ETHERNET_NETWORKING_CONTROL_MODEL,
     .protocol = CDC_COMMON_PROTOCOL_NONE,
-    .vid = 0x00,
-    .pid = 0x00,
+    .devices = NULL,
     .class_driver = &cdc_ecm_class_driver
 };
