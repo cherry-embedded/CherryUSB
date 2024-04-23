@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _USB_CH32_USBHS_REG_H
 #define _USB_CH32_USBHS_REG_H
 

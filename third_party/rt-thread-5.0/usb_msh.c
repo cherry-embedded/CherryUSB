@@ -1,10 +1,16 @@
-#include <rtthread.h>
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "rtthread.h"
+
+#ifdef PKG_CHERRYUSB_HOST
 
 #if IDLE_THREAD_STACK_SIZE < 2048
 #error "IDLE_THREAD_STACK_SIZE must be greater than 2048"
 #endif
 
-#ifdef PKG_CHERRYUSB_HOST
 #include "usbh_core.h"
 
 int usbh_init(int argc, char **argv)

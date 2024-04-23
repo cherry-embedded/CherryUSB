@@ -209,19 +209,19 @@
 // #define CONFIG_USB_EHCI_WITH_OHCI
 
 /* ---------------- OHCI Configuration ---------------- */
-#define CONFIG_USB_OHCI_HCOR_OFFSET     (0x0)
+#define CONFIG_USB_OHCI_HCOR_OFFSET (0x0)
 
 /* ---------------- XHCI Configuration ---------------- */
-#define CONFIG_USB_XHCI_HCCR_OFFSET     (0x0)
+#define CONFIG_USB_XHCI_HCCR_OFFSET (0x0)
 
 /* ---------------- DWC2 Configuration ---------------- */
 /* largest non-periodic USB packet used / 4 */
 // #define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
 /* largest periodic USB packet used / 4 */
 // #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
-/*  
- * (largest USB packet used / 4) + 1 for status information + 1 transfer complete + 
- * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario 
+/*
+ * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
+ * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
  */
 // #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
 
