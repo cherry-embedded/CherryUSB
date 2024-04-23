@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2024, Till Harbaum
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef USBH_XBOX_H
 #define USBH_XBOX_H
@@ -18,9 +20,6 @@ struct usbh_xbox {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-  //int usbh_xbox_set_idle(struct usbh_xbox *xbox_class, uint8_t report_id, uint8_t duration);
-  //int usbh_xbox_get_idle(struct usbh_xbox *xbox_class, uint8_t *buffer);
 
 void usbh_xbox_run(struct usbh_xbox *xbox_class);
 void usbh_xbox_stop(struct usbh_xbox *xbox_class);

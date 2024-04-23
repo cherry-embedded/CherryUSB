@@ -97,11 +97,13 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
         }
         // check if device list is to be checked
         if(index->match_flags & USB_CLASS_MATCH_DEVICE_LIST && index->devices) {
-	    // scan over entire list
-	    int i;
-	    for(i=0;index->devices[i][0] && index->devices[i][0] != vid && index->devices[i][1] != pid;i++);
-	    // device is not in list if end of list has been reached
-	    if(!index->devices[i][0]) continue;
+            // scan over entire list
+            int i;
+            for(i=0;index->devices[i][0] && index->devices[i][0] != vid && index->devices[i][1] != pid;i++);
+            // device is not in list if end of list has been reached
+            if(!index->devices[i][0]) {
+                continue;
+            }
         }
         return index->class_driver;
     }
