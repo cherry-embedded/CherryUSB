@@ -26,6 +26,8 @@ extern "C" {
 
 int usbh_hid_set_idle(struct usbh_hid *hid_class, uint8_t report_id, uint8_t duration);
 int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer);
+int usbh_hid_set_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t report_id, uint8_t *buffer, uint32_t buflen);
+int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t report_id, uint8_t *buffer, uint32_t buflen);
 
 void usbh_hid_run(struct usbh_hid *hid_class);
 void usbh_hid_stop(struct usbh_hid *hid_class);
