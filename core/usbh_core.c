@@ -83,34 +83,27 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
                                                               uint16_t vid, uint16_t pid)
 {
     struct usbh_class_info *index = NULL;
-    
+
     // search though all registered classes to check if the device in question belongs to them
     for (index = usbh_class_info_table_begin; index < usbh_class_info_table_end; index++) {
-      bool match = true;  // initially assume this is a match
-
-      // check for matching interface class
-      if(index->match_flags & USB_CLASS_MATCH_INTF_CLASS && index->class != class)
-	match = false;
-
-      // check for matching interface subclass
-      if(index->match_flags & USB_CLASS_MATCH_INTF_SUBCLASS  && index->subclass != subclass)
-	match = false;
-
-      // check for matching interface protocol
-      if(index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL && index->protocol != protocol)
-	match = false;
-
-      // check if device list is to be checked
-      if(index->match_flags & USB_CLASS_MATCH_DEVICE_LIST && index->devices) {
-	// scan over entire list
-	int i;
-	for(i=0;index->devices[i][0] && index->devices[i][0] != vid && index->devices[i][1] != pid;i++);
-	// device is not in list if end of list has been reached
-	if(!index->devices[i][0]) match = false;
-      }
-
-      if(match)
-	return index->class_driver;
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_CLASS) && !(index->class == class)) {
+            continue;
+        }
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_SUBCLASS) && !(index->subclass == subclass)) {
+            continue;
+        }
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL) && !(index->protocol == protocol)) {
+            continue;
+        }
+        // check if device list is to be checked
+        if(index->match_flags & USB_CLASS_MATCH_DEVICE_LIST && index->devices) {
+	    // scan over entire list
+	    int i;
+	    for(i=0;index->devices[i][0] && index->devices[i][0] != vid && index->devices[i][1] != pid;i++);
+	    // device is not in list if end of list has been reached
+	    if(!index->devices[i][0]) continue;
+        }
+        return index->class_driver;
     }
     return NULL;
 }
