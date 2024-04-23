@@ -520,6 +520,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
     struct pbuf *q;
     uint8_t *buffer;
     rndis_data_packet_t *hdr;
+    uint32_t len;
 
     if (g_rndis_class.connect_status == false) {
         return ERR_BUF;
@@ -539,14 +540,15 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
         buffer += q->len;
     }
 
+    len = hdr->MessageLength;
     /* if message length is the multiple of wMaxPacketSize, we should add a short packet to tell device transfer is over. */
     if (!(hdr->MessageLength % g_rndis_class.bulkout->wMaxPacketSize)) {
-        hdr->MessageLength += 1;
+        len += 1;
     }
 
-    USB_LOG_DBG("txlen:%d\r\n", hdr->MessageLength);
+    USB_LOG_DBG("txlen:%d\r\n", len);
 
-    usbh_bulk_urb_fill(&g_rndis_class.bulkout_urb, g_rndis_class.hport, g_rndis_class.bulkout, g_rndis_tx_buffer, hdr->MessageLength, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    usbh_bulk_urb_fill(&g_rndis_class.bulkout_urb, g_rndis_class.hport, g_rndis_class.bulkout, g_rndis_tx_buffer, len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
     ret = usbh_submit_urb(&g_rndis_class.bulkout_urb);
     if (ret < 0) {
         return ERR_BUF;
