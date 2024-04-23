@@ -811,7 +811,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
     if (urb->timeout) {
-        urb->timeout = 0;
         usb_osal_sem_give(chan->waitsem);
     } else {
         dwc2_chan_free(chan);

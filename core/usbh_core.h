@@ -25,11 +25,10 @@
 extern "C" {
 #endif
 
-#define USB_CLASS_MATCH_VENDOR        0x0001
-#define USB_CLASS_MATCH_PRODUCT       0x0002
-#define USB_CLASS_MATCH_INTF_CLASS    0x0004
-#define USB_CLASS_MATCH_INTF_SUBCLASS 0x0008
-#define USB_CLASS_MATCH_INTF_PROTOCOL 0x0010
+#define USB_CLASS_MATCH_INTF_CLASS    0x0001
+#define USB_CLASS_MATCH_INTF_SUBCLASS 0x0002
+#define USB_CLASS_MATCH_INTF_PROTOCOL 0x0004
+#define USB_CLASS_MATCH_DEVICE_LIST   0x0008
 
 #define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
@@ -61,8 +60,7 @@ struct usbh_class_info {
     uint8_t class;       /* Base device class code */
     uint8_t subclass;    /* Sub-class, depends on base class. Eg. */
     uint8_t protocol;    /* Protocol, depends on base class. Eg. */
-    uint16_t vid;        /* Vendor ID (for vendor/product specific devices) */
-    uint16_t pid;        /* Product ID (for vendor/product specific devices) */
+    const uint16_t (*devices)[2];/* List of Vendor/Product ID pairs */
     const struct usbh_class_driver *class_driver;
 };
 

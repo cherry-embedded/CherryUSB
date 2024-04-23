@@ -392,8 +392,7 @@ CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_class_info = {
     .class = USB_DEVICE_CLASS_WIRELESS,
     .subclass = 0x01,
     .protocol = 0x01,
-    .vid = 0x00,
-    .pid = 0x00,
+    .devices = NULL,
     .class_driver = &bluetooth_class_driver
 };
 #endif

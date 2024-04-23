@@ -1,7 +1,12 @@
-#include <rtconfig.h>
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "usbh_core.h"
 #include "usbh_msc.h"
 
+#include "rtthread.h"
 #include <dfs_fs.h>
 
 #define DEV_FORMAT "/sd%c"

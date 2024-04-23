@@ -508,8 +508,7 @@ CLASS_INFO_DEFINE const struct usbh_class_info video_ctrl_class_info = {
     .class = USB_DEVICE_CLASS_VIDEO,
     .subclass = VIDEO_SC_VIDEOCONTROL,
     .protocol = VIDEO_PC_PROTOCOL_UNDEFINED,
-    .vid = 0x00,
-    .pid = 0x00,
+    .devices = NULL,
     .class_driver = &video_ctrl_class_driver
 };
 
@@ -518,7 +517,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info video_streaming_class_info = {
     .class = USB_DEVICE_CLASS_VIDEO,
     .subclass = VIDEO_SC_VIDEOSTREAMING,
     .protocol = VIDEO_PC_PROTOCOL_UNDEFINED,
-    .vid = 0x00,
-    .pid = 0x00,
+    .devices = NULL,
     .class_driver = &video_streaming_class_driver
 };

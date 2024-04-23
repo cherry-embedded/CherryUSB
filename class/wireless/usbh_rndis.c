@@ -19,8 +19,12 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[4096];
 #define CONFIG_USBHOST_RNDIS_ETH_MSG_SIZE       (CONFIG_USBHOST_RNDIS_ETH_MAX_FRAME_SIZE + 44)
 
 /* eth rx size must be a multiple of 512 or 64 */
-#define CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE    (2048)
-#define CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE    (2048)
+#ifndef CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE
+#define CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE (2048)
+#endif
+#ifndef CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE
+#define CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE (2048)
+#endif
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE];
@@ -570,7 +574,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info rndis_class_info = {
     .class = USB_DEVICE_CLASS_WIRELESS,
     .subclass = 0x01,
     .protocol = 0x03,
-    .vid = 0x00,
-    .pid = 0x00,
+    .devices = NULL,
     .class_driver = &rndis_class_driver
 };

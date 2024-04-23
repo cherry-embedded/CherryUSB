@@ -15,6 +15,7 @@
 # set(CONFIG_CHERRYUSB_HOST_CDC_ECM 1)
 # set(CONFIG_CHERRYUSB_HOST_CDC_NCM 1)
 # set(CONFIG_CHERRYUSB_HOST_HID 1)
+# set(CONFIG_CHERRYUSB_HOST_XBOX 1)
 # set(CONFIG_CHERRYUSB_HOST_MSC 1)
 # set(CONFIG_CHERRYUSB_HOST_VIDEO 1)
 # set(CONFIG_CHERRYUSB_HOST_AUDIO 1)
@@ -38,6 +39,7 @@ ${CMAKE_CURRENT_LIST_DIR}/class/wireless
 ${CMAKE_CURRENT_LIST_DIR}/class/midi
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/serial
+${CMAKE_CURRENT_LIST_DIR}/class/vendor/xbox
 )
 
 if(CONFIG_CHERRYUSB_DEVICE)
@@ -183,6 +185,9 @@ if(CONFIG_CHERRYUSB_HOST)
     endif()
     if(CONFIG_CHERRYUSB_HOST_RTL8152)
     list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net/usbh_rtl8152.c)
+    endif()
+    if(CONFIG_CHERRYUSB_HOST_XBOX)
+    list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/xbox/usbh_xbox.c)
     endif()
 
     if(DEFINED CONFIG_CHERRYUSB_HOST_HCD)

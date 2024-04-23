@@ -1,5 +1,10 @@
-#ifndef __USB_SYNOPSYS_REG_H__
-#define __USB_SYNOPSYS_REG_H__
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef __USB_DWC2_REG_H__
+#define __USB_DWC2_REG_H__
 
 #define     __IO    volatile             /*!< Defines 'read / write' permissions */
 /**

@@ -84,13 +84,8 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
 {
     struct usbh_class_info *index = NULL;
 
+    // search though all registered classes to check if the device in question belongs to them
     for (index = usbh_class_info_table_begin; index < usbh_class_info_table_end; index++) {
-        if ((index->match_flags & USB_CLASS_MATCH_VENDOR) && !(index->vid == vid)) {
-            continue;
-        }
-        if ((index->match_flags & USB_CLASS_MATCH_PRODUCT) && !(index->pid == pid)) {
-            continue;
-        }
         if ((index->match_flags & USB_CLASS_MATCH_INTF_CLASS) && !(index->class == class)) {
             continue;
         }
@@ -99,6 +94,16 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
         }
         if ((index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL) && !(index->protocol == protocol)) {
             continue;
+        }
+        // check if device list is to be checked
+        if(index->match_flags & USB_CLASS_MATCH_DEVICE_LIST && index->devices) {
+            // scan over entire list
+            int i;
+            for(i=0;index->devices[i][0] && index->devices[i][0] != vid && index->devices[i][1] != pid;i++);
+            // device is not in list if end of list has been reached
+            if(!index->devices[i][0]) {
+                continue;
+            }
         }
         return index->class_driver;
     }

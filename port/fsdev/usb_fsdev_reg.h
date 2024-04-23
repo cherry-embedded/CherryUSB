@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef __USB_FSDEV_REG_H__
 #define __USB_FSDEV_REG_H__
 

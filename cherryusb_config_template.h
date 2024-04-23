@@ -33,9 +33,9 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
-/* Ep0 max transfer buffer, specially for receiving data from ep0 out */
+/* Ep0 in and out transfer buffer */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
-#define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
+#define CONFIG_USBDEV_REQUEST_BUFFER_LEN 512
 #endif
 
 /* Setup packet log for debug */
@@ -106,6 +106,7 @@
 
 #define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4
 #define CONFIG_USBHOST_MAX_HID_CLASS     4
+#define CONFIG_USBHOST_MAX_XBOX_CLASS    4
 #define CONFIG_USBHOST_MAX_MSC_CLASS     2
 #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
 #define CONFIG_USBHOST_MAX_VIDEO_CLASS   1
@@ -137,6 +138,16 @@
 
 #ifndef CONFIG_USBHOST_MSC_TIMEOUT
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
+#endif
+
+/* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,
+ * you can change with 2K,4K,8K,16K,default is 2K to get one TCP_MSS
+ */
+#ifndef CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE
+#define CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE (2048)
+#endif
+#ifndef CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE
+#define CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE (2048)
 #endif
 
 #define CONFIG_USBHOST_BLUETOOTH_HCI_H4
@@ -199,19 +210,19 @@
 // #define CONFIG_USB_EHCI_WITH_OHCI
 
 /* ---------------- OHCI Configuration ---------------- */
-#define CONFIG_USB_OHCI_HCOR_OFFSET     (0x0)
+#define CONFIG_USB_OHCI_HCOR_OFFSET (0x0)
 
 /* ---------------- XHCI Configuration ---------------- */
-#define CONFIG_USB_XHCI_HCCR_OFFSET     (0x0)
+#define CONFIG_USB_XHCI_HCCR_OFFSET (0x0)
 
 /* ---------------- DWC2 Configuration ---------------- */
 /* largest non-periodic USB packet used / 4 */
 // #define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
 /* largest periodic USB packet used / 4 */
 // #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
-/*  
- * (largest USB packet used / 4) + 1 for status information + 1 transfer complete + 
- * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario 
+/*
+ * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
+ * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
  */
 // #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
 
