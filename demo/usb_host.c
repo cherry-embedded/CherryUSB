@@ -86,7 +86,7 @@ find_class:
     memset(cdc_speed_buffer, 0xAA, TEST_LEN);
 
     for (uint8_t j = 0; j < 6; j++) {
-        uint32_t start_time = (uint32_t)bflb_mtimer_get_time_ms();
+        uint32_t start_time = (uint32_t)xTaskGetTickCount();
         for (uint32_t i = 0; i < TEST_COUNT; i++) {
             usbh_bulk_urb_fill(&cdc_acm_class->bulkout_urb, cdc_acm_class->hport, cdc_acm_class->bulkout, cdc_speed_buffer, test_len[j], 0XFFFFFFF, NULL, NULL);
             ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
@@ -96,7 +96,8 @@ find_class:
             } else {
             }
         }
-        USB_LOG_RAW("per packet len:%d, out speed:%d MB/S\r\n", test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((uint32_t)bflb_mtimer_get_time_ms() - start_time));
+        uint32_t time_ms = xTaskGetTickCount() - start_time;
+        USB_LOG_RAW("per packet len:%d, out speed:%f MB/S\r\n", test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((float)time_ms));
     }
 #endif
     memset(cdc_buffer, 0, 512);
