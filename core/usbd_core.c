@@ -896,7 +896,6 @@ static bool usbd_setup_request_handler(uint8_t busid, struct usb_setup_packet *s
     switch (setup->bmRequestType & USB_REQUEST_TYPE_MASK) {
         case USB_REQUEST_STANDARD:
 #ifndef CONFIG_USB_HS
-            //g_usbd_core[busid].speed = USB_SPEED_FULL; /* next time will support getting device speed */
             if ((setup->bRequest == 0x06) && (setup->wValue == 0x0600) && (g_usbd_core[busid].speed <= USB_SPEED_FULL)) {
                 USB_LOG_WRN("Ignore DQD in fs\r\n"); /* Device Qualifier Descriptor */
                 return false;
@@ -972,6 +971,14 @@ void usbd_event_reset_handler(uint8_t busid)
 {
     usbd_set_address(busid, 0);
     g_usbd_core[busid].configuration = 0;
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
+    g_usbd_core[busid].speed = usbd_get_port_speed(busid, 0);
+#else
+#ifndef CONFIG_USB_HS
+    g_usbd_core[busid].speed = USB_SPEED_FULL;
+#endif
+#endif
+
     struct usb_endpoint_descriptor ep0;
 
     ep0.bLength = 7;
