@@ -33,6 +33,8 @@ struct usbh_rndis {
     ip_addr_t ipaddr;
     ip_addr_t netmask;
     ip_addr_t gateway;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

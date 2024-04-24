@@ -51,6 +51,8 @@ struct usbh_ftdi {
     uint8_t intf;
     uint8_t minor;
     uint8_t modem_status[2];
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

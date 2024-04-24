@@ -20,6 +20,8 @@ struct usbh_msc {
     uint8_t sdchar;
     uint32_t blocknum;  /* Number of blocks on the USB mass storage device */
     uint16_t blocksize; /* Block size of USB mass storage device */
+
+    void *user_data;
 };
 
 struct usbh_msc_modeswitch_config {

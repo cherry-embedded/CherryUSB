@@ -55,6 +55,8 @@ struct usbh_video {
     uint8_t num_of_intf_altsettings;
     uint8_t num_of_formats;
     struct usbh_video_format format[3];
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

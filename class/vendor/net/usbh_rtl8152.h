@@ -50,6 +50,8 @@ struct usbh_rtl8152 {
         void (*autosuspend_en)(struct usbh_rtl8152 *tp, bool enable);
         void (*change_mtu)(struct usbh_rtl8152 *tp);
     } rtl_ops;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

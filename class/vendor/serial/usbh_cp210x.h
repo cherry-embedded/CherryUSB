@@ -17,7 +17,7 @@
 #define CP210X_SET_BREAK       0x05
 #define CP210X_IMM_CHAR        0x06
 #define CP210X_SET_MHS         0x07 // Set DTR, RTS
-#define CP210X_GET_MDMSTS      0x08 
+#define CP210X_GET_MDMSTS      0x08
 #define CP210X_SET_XON         0x09
 #define CP210X_SET_XOFF        0x0A
 #define CP210X_SET_EVENTMASK   0x0B
@@ -33,9 +33,9 @@
 #define CP210X_EMBED_EVENTS    0x15
 #define CP210X_GET_EVENTSTATE  0x16
 #define CP210X_SET_CHARS       0x19
-#define CP210X_GET_BAUDRATE    0x1D 
+#define CP210X_GET_BAUDRATE    0x1D
 #define CP210X_SET_BAUDRATE    0x1E // Set baudrate
-#define CP210X_VENDOR_SPECIFIC 0xFF 
+#define CP210X_VENDOR_SPECIFIC 0xFF
 
 struct usbh_cp210x {
     struct usbh_hubport *hport;
@@ -45,9 +45,11 @@ struct usbh_cp210x {
     struct usbh_urb bulkin_urb;
 
     struct cdc_line_coding line_coding;
-    
+
     uint8_t intf;
     uint8_t minor;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

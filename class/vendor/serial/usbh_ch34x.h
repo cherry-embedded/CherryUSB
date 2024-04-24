@@ -51,6 +51,8 @@ struct usbh_ch34x {
 
     uint8_t intf;
     uint8_t minor;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

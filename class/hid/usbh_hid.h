@@ -15,9 +15,11 @@ struct usbh_hid {
     struct usbh_urb intin_urb;              /* INTR IN urb */
     struct usbh_urb intout_urb;             /* INTR OUT urb */
 
-    uint8_t report_desc[128];
+    uint8_t report_desc[256];
     uint8_t intf; /* interface number */
     uint8_t minor;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

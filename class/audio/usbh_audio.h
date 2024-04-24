@@ -53,6 +53,8 @@ struct usbh_audio {
     uint8_t num_of_intf_altsettings;
     struct usbh_audio_module module[2];
     uint8_t module_num;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

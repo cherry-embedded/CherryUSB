@@ -12,6 +12,8 @@ struct usbh_xxx {
 
     uint8_t intf; /* interface number */
     uint8_t minor;
+
+    void *user_data;
 };
 
 void usbh_xxx_run(struct usbh_xxx *xxx_class);

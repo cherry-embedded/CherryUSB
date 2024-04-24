@@ -25,6 +25,8 @@ struct usbh_cdc_acm {
 
     uint8_t intf;
     uint8_t minor;
+
+    void *user_data;
 };
 
 #ifdef __cplusplus

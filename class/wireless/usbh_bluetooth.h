@@ -29,6 +29,8 @@ struct usbh_bluetooth {
     struct usbh_urb *isoout_urb;            /* Bulk OUT urb */
     uint8_t num_of_intf_altsettings;
 #endif
+
+    void *user_data;
 };
 
 #ifdef __cplusplus
