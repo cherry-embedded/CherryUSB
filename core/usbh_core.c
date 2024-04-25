@@ -501,7 +501,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     USB_LOG_INFO("The device has %d bNumConfigurations\r\n", ((struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid])->bNumConfigurations);
 
     config_index = 0;
-    USB_LOG_INFO("The device selects config %d\r\n", config_index);
+    USB_LOG_DBG("The device selects config %d\r\n", config_index);
 
     /* Read the first 9 bytes of the config descriptor */
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
