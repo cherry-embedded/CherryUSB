@@ -467,43 +467,46 @@ find_class:
             goto find_class;
         }
 
-        g_rndis_rx_length = g_rndis_class.bulkin_urb.actual_length;
-        pmg_offset = 0;
-        while (g_rndis_rx_length > 0) {
-            USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_length);
+        g_rndis_rx_length += g_rndis_class.bulkin_urb.actual_length;
+        if (g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize)) {
+            pmg_offset = 0;
+            while (g_rndis_rx_length > 0) {
+                USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_length);
 
-            pmsg = (rndis_data_packet_t *)(g_rndis_rx_buffer + pmg_offset);
+                pmsg = (rndis_data_packet_t *)(g_rndis_rx_buffer + pmg_offset);
 
-            /* Not word-aligned case */
-            if (pmg_offset & 0x3) {
-                memcpy(&temp, pmsg, sizeof(rndis_data_packet_t));
-                pmsg = &temp;
-            }
+                /* Not word-aligned case */
+                if (pmg_offset & 0x3) {
+                    memcpy(&temp, pmsg, sizeof(rndis_data_packet_t));
+                    pmsg = &temp;
+                }
 
-            if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) {
-                p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, PBUF_POOL);
-                if (p != NULL) {
-                    payload_offset = 0;
-                    for (q = p; q != NULL; q = q->next) {
-                        void *src = (void *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset + payload_offset);
-                        memcpy(q->payload, src, q->len);
-                        payload_offset += q->len;
+                if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) {
+                    p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, PBUF_POOL);
+                    if (p != NULL) {
+                        payload_offset = 0;
+                        for (q = p; q != NULL; q = q->next) {
+                            void *src = (void *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset + payload_offset);
+                            memcpy(q->payload, src, q->len);
+                            payload_offset += q->len;
+                        }
+
+                        err = netif->input(p, netif);
+                        if (err != ERR_OK) {
+                            pbuf_free(p);
+                        }
+                        pmg_offset += pmsg->MessageLength;
+                        g_rndis_rx_length -= pmsg->MessageLength;
+                    } else {
+                        g_rndis_rx_length = 0;
+                        USB_LOG_ERR("No memory to alloc pbuf for rndis rx\r\n");
                     }
-
-                    err = netif->input(p, netif);
-                    if (err != ERR_OK) {
-                        pbuf_free(p);
-                    }
-                    pmg_offset += pmsg->MessageLength;
-                    g_rndis_rx_length -= pmsg->MessageLength;
                 } else {
                     g_rndis_rx_length = 0;
-                    USB_LOG_ERR("No memory to alloc pbuf for rndis rx\r\n");
+                    USB_LOG_ERR("Error rndis packet message\r\n");
                 }
-            } else {
-                g_rndis_rx_length = 0;
-                USB_LOG_ERR("Error rndis packet message\r\n");
             }
+        } else {
         }
     }
 
