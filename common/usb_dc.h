@@ -36,11 +36,11 @@ int usbd_set_address(uint8_t busid, const uint8_t addr);
 /**
  * @brief Get USB device speed
  *
- * @param[in] port port index
+ * @param[in] busid bus index
  *
  * @return port speed, USB_SPEED_LOW or USB_SPEED_FULL or USB_SPEED_HIGH
  */
-uint8_t usbd_get_port_speed(uint8_t busid, const uint8_t port);
+uint8_t usbd_get_port_speed(uint8_t busid);
 
 /**
  * @brief configure and enable endpoint.

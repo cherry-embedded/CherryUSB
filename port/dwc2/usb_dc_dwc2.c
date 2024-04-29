@@ -671,7 +671,7 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
     return 0;
 }
 
-uint8_t usbd_get_port_speed(uint8_t busid, const uint8_t port)
+uint8_t usbd_get_port_speed(uint8_t busid)
 {
     uint8_t speed;
     uint32_t DevEnumSpeed = USB_OTG_DEV->DSTS & USB_OTG_DSTS_ENUMSPD;
@@ -720,7 +720,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
             USB_LOG_ERR("Ep addr %02x fifo overflow\r\n", ep->bEndpointAddress);
             return -2;
         }
-        
+
         g_dwc2_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_dwc2_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
 

@@ -128,7 +128,7 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
     return 0;
 }
 
-uint8_t usbd_get_port_speed(uint8_t busid, const uint8_t port)
+uint8_t usbd_get_port_speed(uint8_t busid)
 {
     (void)port;
     uint8_t speed;
