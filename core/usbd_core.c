@@ -20,6 +20,7 @@
 
 struct usbd_tx_rx_msg {
     uint8_t ep;
+    uint8_t ep_mult;
     uint16_t ep_mps;
     uint32_t nbytes;
     usbd_endpoint_callback cb;
@@ -103,9 +104,11 @@ static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descripto
                  USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
 
     if (ep->bEndpointAddress & 0x80) {
-        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize) * (USB_GET_MULT(ep->wMaxPacketSize));
+        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
     } else {
-        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize) * (USB_GET_MULT(ep->wMaxPacketSize));
+        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
     }
 
     return usbd_ep_open(busid, ep) == 0 ? true : false;
@@ -1210,6 +1213,15 @@ uint16_t usbd_get_ep_mps(uint8_t busid, uint8_t ep)
         return g_usbd_core[busid].tx_msg[ep & 0x7f].ep_mps;
     } else {
         return g_usbd_core[busid].rx_msg[ep & 0x7f].ep_mps;
+    }
+}
+
+uint8_t usbd_get_ep_mult(uint8_t busid, uint8_t ep)
+{
+    if (ep & 0x80) {
+        return g_usbd_core[busid].tx_msg[ep & 0x7f].ep_mult;
+    } else {
+        return g_usbd_core[busid].rx_msg[ep & 0x7f].ep_mult;
     }
 }
 
