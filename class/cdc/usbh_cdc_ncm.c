@@ -23,8 +23,16 @@
 
 #define CONFIG_USBHOST_CDC_NCM_ETH_MAX_SEGSZE 1514U
 
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_rx_buffer[2048];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_tx_buffer[2048];
+/* eth rx size must be a multiple of 512 or 64 */
+#ifndef CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE
+#define CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE (2048)
+#endif
+#ifndef CONFIG_USBHOST_CDC_NCM_ETH_MAX_TX_SIZE
+#define CONFIG_USBHOST_CDC_NCM_ETH_MAX_TX_SIZE (2048)
+#endif
+
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_rx_buffer[CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_tx_buffer[CONFIG_USBHOST_CDC_NCM_ETH_MAX_TX_SIZE];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_inttx_buffer[16];
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_buf[32];
@@ -344,7 +352,7 @@ err_t usbh_cdc_ncm_linkoutput(struct netif *netif, struct pbuf *p)
     }
 
     struct cdc_ncm_nth16 *nth16 = (struct cdc_ncm_nth16 *)&g_cdc_ncm_tx_buffer[0];
-    
+
     nth16->dwSignature = CDC_NCM_NTH16_SIGNATURE;
     nth16->wHeaderLength = 12;
     nth16->wSequence = g_cdc_ncm_class.bulkout_sequence++;
