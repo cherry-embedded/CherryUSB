@@ -49,7 +49,9 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
 
     /** Currently selected configuration */
     uint8_t configuration;
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
     uint8_t speed;
+#endif
 #ifdef CONFIG_USBDEV_TEST_MODE
     bool test_req;
 #endif
@@ -183,6 +185,9 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             }
             break;
         case USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER:
+#ifndef CONFIG_USB_HS
+            return false;
+#else
             desc = g_usbd_core[busid].descriptors->device_quality_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
                 found = false;
@@ -190,6 +195,7 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             }
             desc_len = desc[0];
             break;
+#endif
         case USB_DESCRIPTOR_TYPE_OTHER_SPEED:
             desc = g_usbd_core[busid].descriptors->other_speed_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
@@ -896,13 +902,12 @@ static bool usbd_setup_request_handler(uint8_t busid, struct usb_setup_packet *s
 {
     switch (setup->bmRequestType & USB_REQUEST_TYPE_MASK) {
         case USB_REQUEST_STANDARD:
-#ifndef CONFIG_USB_HS
-            if ((setup->bRequest == 0x06) && (setup->wValue == 0x0600) && (g_usbd_core[busid].speed <= USB_SPEED_FULL)) {
-                //USB_LOG_DBG("Ignore DQD in fs\r\n"); /* Device Qualifier Descriptor */
-                return false;
-            }
-#endif
             if (usbd_standard_request_handler(busid, setup, data, len) < 0) {
+                /* Ignore error log for getting Device Qualifier Descriptor request */
+                if ((setup->bRequest == 0x06) && (setup->wValue == 0x0600)) {
+                    //USB_LOG_DBG("Ignore DQD in fs\r\n");
+                    return false;
+                }
                 USB_LOG_ERR("standard request error\r\n");
                 usbd_print_setup(setup);
                 return false;
@@ -974,15 +979,7 @@ void usbd_event_reset_handler(uint8_t busid)
     g_usbd_core[busid].configuration = 0;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     g_usbd_core[busid].speed = USB_SPEED_UNKNOWN;
-#else
-#ifndef CONFIG_USB_HS
-    /* just check for get device quality desc request */
-    g_usbd_core[busid].speed = USB_SPEED_FULL;
-#else
-    /* nothing to use */
 #endif
-#endif
-
     struct usb_endpoint_descriptor ep0;
 
     ep0.bLength = 7;
