@@ -97,6 +97,7 @@ void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
 void usbd_add_interface(uint8_t busid, struct usbd_interface *intf);
 void usbd_add_endpoint(uint8_t busid, struct usbd_endpoint *ep);
 
+uint16_t usbd_get_ep_mps(uint8_t busid, uint8_t ep);
 bool usb_device_is_configured(uint8_t busid);
 int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event));
 int usbd_deinitialize(uint8_t busid);
