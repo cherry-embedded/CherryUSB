@@ -158,7 +158,7 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
 
     switch (type) {
         case USB_DESCRIPTOR_TYPE_DEVICE:
-            g_usbd_core[busid].speed = usbd_get_port_speed(busid, 0); /* before we get device descriptor, we have known steady port speed */
+            g_usbd_core[busid].speed = usbd_get_port_speed(busid); /* before we get device descriptor, we have known steady port speed */
             desc = g_usbd_core[busid].descriptors->device_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
                 found = false;

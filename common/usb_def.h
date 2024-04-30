@@ -34,6 +34,10 @@
 /**< maximum packet size (MPS) for EP 0 */
 #define USB_CTRL_EP_MPS 64
 
+/**< maximum packet size (MPS) for bulk EP */
+#define USB_BULK_EP_MPS_HS 512
+#define USB_BULK_EP_MPS_FS 64
+
 /* USB PID Types */
 #define USB_PID_OUT   (0x01) /* Tokens */
 #define USB_PID_IN    (0x09)
@@ -653,6 +657,27 @@ struct usb_desc_header {
 #define USB_CONFIG_DESCRIPTOR_INIT(wTotalLength, bNumInterfaces, bConfigurationValue, bmAttributes, bMaxPower) \
     0x09,                              /* bLength */                                                       \
     USB_DESCRIPTOR_TYPE_CONFIGURATION, /* bDescriptorType */                                               \
+    WBVAL(wTotalLength),               /* wTotalLength */                                                  \
+    bNumInterfaces,                    /* bNumInterfaces */                                                \
+    bConfigurationValue,               /* bConfigurationValue */                                           \
+    0x00,                              /* iConfiguration */                                                \
+    bmAttributes,                      /* bmAttributes */                                                  \
+    USB_CONFIG_POWER_MA(bMaxPower)     /* bMaxPower */
+
+#define USB_DEVICE_QUALIFIER_DESCRIPTOR_INIT(bcdUSB, bDeviceClass, bDeviceSubClass, bDeviceProtocol, bNumConfigurations) \
+    0x0A,                                 /* bLength */                                                    \
+    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER, /* bDescriptorType */                                            \
+    WBVAL(bcdUSB),              /* bcdUSB */                                                               \
+    bDeviceClass,               /* bDeviceClass */                                                         \
+    bDeviceSubClass,            /* bDeviceSubClass */                                                      \
+    bDeviceProtocol,            /* bDeviceProtocol */                                                      \
+    0x40,                       /* bMaxPacketSize */                                                       \
+    bNumConfigurations,         /* bNumConfigurations */                                                   \
+    0x00                        /* bReserved */ 
+
+#define USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(wTotalLength, bNumInterfaces, bConfigurationValue, bmAttributes, bMaxPower) \
+    0x09,                              /* bLength */                                                       \
+    USB_DESCRIPTOR_TYPE_OTHER_SPEED,   /* bDescriptorType */                                               \
     WBVAL(wTotalLength),               /* wTotalLength */                                                  \
     bNumInterfaces,                    /* bNumInterfaces */                                                \
     bConfigurationValue,               /* bConfigurationValue */                                           \
