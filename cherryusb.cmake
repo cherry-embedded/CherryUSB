@@ -1,8 +1,8 @@
-# 
+#
 # Copyright (c) 2024, sakumisu
-#  
+#
 # SPDX-License-Identifier: Apache-2.0
-#  
+#
 
 # set(CONFIG_CHERRYUSB_DEVICE 1)
 # set(CONFIG_CHERRYUSB_DEVICE_CDC 1)
@@ -26,14 +26,14 @@
 # set(CONFIG_CHERRYUSB_HOST_HCD "ehci_xxx")
 
 list(APPEND cherryusb_incs
-${CMAKE_CURRENT_LIST_DIR}/common 
-${CMAKE_CURRENT_LIST_DIR}/core 
-${CMAKE_CURRENT_LIST_DIR}/class/hub 
-${CMAKE_CURRENT_LIST_DIR}/class/cdc 
-${CMAKE_CURRENT_LIST_DIR}/class/hid 
-${CMAKE_CURRENT_LIST_DIR}/class/msc 
+${CMAKE_CURRENT_LIST_DIR}/common
+${CMAKE_CURRENT_LIST_DIR}/core
+${CMAKE_CURRENT_LIST_DIR}/class/hub
+${CMAKE_CURRENT_LIST_DIR}/class/cdc
+${CMAKE_CURRENT_LIST_DIR}/class/hid
+${CMAKE_CURRENT_LIST_DIR}/class/msc
 ${CMAKE_CURRENT_LIST_DIR}/class/audio
-${CMAKE_CURRENT_LIST_DIR}/class/video 
+${CMAKE_CURRENT_LIST_DIR}/class/video
 ${CMAKE_CURRENT_LIST_DIR}/class/wireless
 ${CMAKE_CURRENT_LIST_DIR}/class/midi
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
@@ -147,7 +147,7 @@ if(CONFIG_CHERRYUSB_HOST)
     set(BLUETOOTH_PATH ${CMAKE_CURRENT_LIST_DIR}/third_party/zephyr_bluetooth-2.7.5)
 
     list(APPEND cherryusb_srcs
-    ${BLUETOOTH_PATH}/ble_hci_usbh.c 
+    ${BLUETOOTH_PATH}/ble_hci_usbh.c
     ${BLUETOOTH_PATH}/zephyr_bluetooth/examples/beacon/src/main.c
     ${BLUETOOTH_PATH}/zephyr_bluetooth/examples/central/src/main.c
     ${BLUETOOTH_PATH}/zephyr_bluetooth/examples/central_hr/src/main.c
@@ -190,14 +190,17 @@ if(CONFIG_CHERRYUSB_HOST)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
         #list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci_iso.c)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_glue_bouffalo.c)
+        list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/port/ehci)
         elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "ehci_hpm")
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
         #list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci_iso.c)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_glue_hpm.c)
+        list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/port/ehci)
         elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "ehci_aic")
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
         #list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci_iso.c)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_glue_aic.c)
+        list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/port/ehci)
         elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "ehci_nuvoton")
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
         #list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci_iso.c)
