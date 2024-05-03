@@ -2248,6 +2248,11 @@ __WEAK void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 {
 }
 
+static const uint16_t rtl_id_table[][2] = {
+    { 0x0BDA, 0x8152 },
+    { 0, 0 },
+};
+
 static const struct usbh_class_driver rtl8152_class_driver = {
     .driver_name = "rtl8152",
     .connect = usbh_rtl8152_connect,
@@ -2255,11 +2260,10 @@ static const struct usbh_class_driver rtl8152_class_driver = {
 };
 
 CLASS_INFO_DEFINE const struct usbh_class_info rtl8152_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
+    .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
     .subclass = 0x00,
     .protocol = 0x00,
-    .vid = 0x0BDA,
-    .pid = 0x8152,
+    .id_table = rtl_id_table,
     .class_driver = &rtl8152_class_driver
 };

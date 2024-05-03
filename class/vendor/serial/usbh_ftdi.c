@@ -120,7 +120,7 @@ static int usbh_ftdi_set_data_format(struct usbh_ftdi *ftdi_class, uint8_t datab
     /**
      * D0-D7 databits  BITS_7=7, BITS_8=8
      * D8-D10 parity  NONE=0, ODD=1, EVEN=2, MARK=3, SPACE=4
-     * D11-D12 		STOP_BIT_1=0, STOP_BIT_15=1, STOP_BIT_2=2 
+     * D11-D12 		STOP_BIT_1=0, STOP_BIT_15=1, STOP_BIT_2=2
      * D14  		BREAK_OFF=0, BREAK_ON=1
      **/
 
@@ -341,28 +341,23 @@ __WEAK void usbh_ftdi_stop(struct usbh_ftdi *ftdi_class)
 {
 }
 
+static const uint16_t ftdi_id_table[][2] = {
+    { 0x0403, 0x6001 },
+    { 0x0403, 0x6010 },
+    { 0, 0 },
+};
+
 const struct usbh_class_driver ftdi_class_driver = {
     .driver_name = "ftdi",
     .connect = usbh_ftdi_connect,
     .disconnect = usbh_ftdi_disconnect
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info ftdi1_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
+CLASS_INFO_DEFINE const struct usbh_class_info ftdi_class_info = {
+    .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
-    .subclass = 0xff,
-    .protocol = 0xff,
-    .vid = 0x0403,
-    .pid = 0x6001,
-    .class_driver = &ftdi_class_driver
-};
-
-CLASS_INFO_DEFINE const struct usbh_class_info ftdi2_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
-    .class = 0xff,
-    .subclass = 0xff,
-    .protocol = 0xff,
-    .vid = 0x0403,
-    .pid = 0x6010,
+    .subclass = 0x00,
+    .protocol = 0x00,
+    .id_table = ftdi_id_table,
     .class_driver = &ftdi_class_driver
 };

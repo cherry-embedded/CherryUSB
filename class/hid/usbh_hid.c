@@ -226,7 +226,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info hid_custom_class_info = {
     .class = USB_DEVICE_CLASS_HID,
     .subclass = 0x00,
     .protocol = 0x00,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &hid_class_driver
 };

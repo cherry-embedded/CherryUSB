@@ -410,7 +410,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info cdc_ncm_class_info = {
     .class = USB_DEVICE_CLASS_CDC,
     .subclass = CDC_NETWORK_CONTROL_MODEL,
     .protocol = CDC_COMMON_PROTOCOL_NONE,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &cdc_ncm_class_driver
 };

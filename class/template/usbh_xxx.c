@@ -92,7 +92,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info xxx_class_info = {
     .class = 0,
     .subclass = 0,
     .protocol = 0,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &xxx_class_driver
 };

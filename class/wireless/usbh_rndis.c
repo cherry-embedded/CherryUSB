@@ -579,7 +579,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info rndis_class_info = {
     .class = USB_DEVICE_CLASS_WIRELESS,
     .subclass = 0x01,
     .protocol = 0x03,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &rndis_class_driver
 };

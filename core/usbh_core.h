@@ -30,6 +30,7 @@ extern "C" {
 #define USB_CLASS_MATCH_INTF_CLASS    0x0004
 #define USB_CLASS_MATCH_INTF_SUBCLASS 0x0008
 #define USB_CLASS_MATCH_INTF_PROTOCOL 0x0010
+#define USB_CLASS_MATCH_VID_PID       (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT)
 
 #define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
@@ -43,7 +44,7 @@ extern "C" {
 #define CLASS_INFO_DEFINE __attribute__((section(".usbh_class_info"))) __USED __ALIGNED(1)
 #endif
 
-#define USBH_GET_URB_INTERVAL(interval, speed) (speed < USB_SPEED_HIGH ? interval: (1 << (interval - 1)))
+#define USBH_GET_URB_INTERVAL(interval, speed) (speed < USB_SPEED_HIGH ? interval : (1 << (interval - 1)))
 
 #define USBH_EP_INIT(ep, ep_desc)                                            \
     do {                                                                     \
@@ -57,12 +58,11 @@ extern "C" {
     } while (0)
 
 struct usbh_class_info {
-    uint8_t match_flags; /* Used for product specific matches; range is inclusive */
-    uint8_t class;       /* Base device class code */
-    uint8_t subclass;    /* Sub-class, depends on base class. Eg. */
-    uint8_t protocol;    /* Protocol, depends on base class. Eg. */
-    uint16_t vid;        /* Vendor ID (for vendor/product specific devices) */
-    uint16_t pid;        /* Product ID (for vendor/product specific devices) */
+    uint8_t match_flags;           /* Used for product specific matches; range is inclusive */
+    uint8_t class;                 /* Base device class code */
+    uint8_t subclass;              /* Sub-class, depends on base class. Eg. */
+    uint8_t protocol;              /* Protocol, depends on base class. Eg. */
+    const uint16_t (*id_table)[2]; /* List of Vendor/Product ID pairs */
     const struct usbh_class_driver *class_driver;
 };
 
@@ -239,11 +239,11 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
 
 /**
  * @brief Retrieves a USB string descriptor from a specific hub port.
- * 
+ *
  * This function is responsible for retrieving the USB string descriptor
  * with the specified index from the USB device connected to the given hub port.
  * The retrieved descriptor is stored in the output buffer provided.
- * 
+ *
  * @param hport Pointer to the USB hub port structure.
  * @param index Index of the string descriptor to retrieve.
  * @param output Pointer to the buffer where the retrieved descriptor will be stored.
@@ -253,11 +253,11 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
 
 /**
  * @brief Sets the alternate setting for a USB interface on a specific hub port.
- * 
+ *
  * This function is responsible for setting the alternate setting of the
  * specified USB interface on the USB device connected to the given hub port.
  * The interface and alternate setting are identified by the respective parameters.
- * 
+ *
  * @param hport Pointer to the USB hub port structure.
  * @param intf Interface number to set the alternate setting for.
  * @param altsetting Alternate setting value to set for the interface.

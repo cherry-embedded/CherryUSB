@@ -274,6 +274,11 @@ __WEAK void usbh_cp210x_stop(struct usbh_cp210x *cp210x_class)
 {
 }
 
+static const uint16_t cp210x_id_table[][2] = {
+    { 0x10C4, 0xEA60 },
+    { 0, 0 },
+};
+
 const struct usbh_class_driver cp210x_class_driver = {
     .driver_name = "cp210x",
     .connect = usbh_cp210x_connect,
@@ -281,11 +286,10 @@ const struct usbh_class_driver cp210x_class_driver = {
 };
 
 CLASS_INFO_DEFINE const struct usbh_class_info cp210x_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
+    .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
-    .subclass = 0xff,
-    .protocol = 0xff,
-    .vid = 0x10C4,
-    .pid = 0xEA60,
+    .subclass = 0x00,
+    .protocol = 0x00,
+    .id_table = cp210x_id_table,
     .class_driver = &cp210x_class_driver
 };

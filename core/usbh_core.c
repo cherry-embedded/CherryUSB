@@ -85,12 +85,6 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
     struct usbh_class_info *index = NULL;
 
     for (index = usbh_class_info_table_begin; index < usbh_class_info_table_end; index++) {
-        if ((index->match_flags & USB_CLASS_MATCH_VENDOR) && !(index->vid == vid)) {
-            continue;
-        }
-        if ((index->match_flags & USB_CLASS_MATCH_PRODUCT) && !(index->pid == pid)) {
-            continue;
-        }
         if ((index->match_flags & USB_CLASS_MATCH_INTF_CLASS) && !(index->class == class)) {
             continue;
         }
@@ -99,6 +93,16 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
         }
         if ((index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL) && !(index->protocol == protocol)) {
             continue;
+        }
+        if (index->match_flags & USB_CLASS_MATCH_VID_PID && index->id_table) {
+            /* scan id table */
+            uint32_t i;
+            for (i = 0; index->id_table[i][0] && index->id_table[i][0] != vid && index->id_table[i][1] != pid; i++) {
+            }
+            /* do not match, continue next */
+            if (!index->id_table[i][0]) {
+                continue;
+            }
         }
         return index->class_driver;
     }

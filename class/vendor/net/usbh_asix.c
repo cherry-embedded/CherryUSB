@@ -770,28 +770,23 @@ __WEAK void usbh_asix_stop(struct usbh_asix *asix_class)
 {
 }
 
+static const uint16_t asix_id_table[][2] = {
+    { 0x0B95, 0x772B },
+    { 0x0B95, 0x7720 },
+    { 0, 0 },
+};
+
 static const struct usbh_class_driver asix_class_driver = {
     .driver_name = "asix",
     .connect = usbh_asix_connect,
     .disconnect = usbh_asix_disconnect
 };
 
-CLASS_INFO_DEFINE const struct usbh_class_info ax88772b_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
+CLASS_INFO_DEFINE const struct usbh_class_info asix_class_info = {
+    .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
     .subclass = 0x00,
     .protocol = 0x00,
-    .vid = 0x0B95,
-    .pid = 0x772B,
-    .class_driver = &asix_class_driver
-};
-
-CLASS_INFO_DEFINE const struct usbh_class_info ax88772_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
-    .class = 0xff,
-    .subclass = 0x00,
-    .protocol = 0x00,
-    .vid = 0x0B95,
-    .pid = 0x7720,
+    .id_table = asix_id_table,
     .class_driver = &asix_class_driver
 };

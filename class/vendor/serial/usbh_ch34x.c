@@ -335,6 +335,11 @@ __WEAK void usbh_ch34x_stop(struct usbh_ch34x *ch34x_class)
 {
 }
 
+static const uint16_t ch34x_id_table[][2] = {
+    { 0x1A86, 0x7523 },
+    { 0, 0 },
+};
+
 const struct usbh_class_driver ch34x_class_driver = {
     .driver_name = "ch34x",
     .connect = usbh_ch34x_connect,
@@ -342,11 +347,10 @@ const struct usbh_class_driver ch34x_class_driver = {
 };
 
 CLASS_INFO_DEFINE const struct usbh_class_info ch34x_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
+    .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
-    .subclass = 0xff,
-    .protocol = 0xff,
-    .vid = 0x1A86,
-    .pid = 0x7523,
+    .subclass = 0x00,
+    .protocol = 0x00,
+    .id_table = ch34x_id_table,
     .class_driver = &ch34x_class_driver
 };

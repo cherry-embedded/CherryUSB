@@ -180,7 +180,7 @@ int usbh_video_open(struct usbh_video *video_class,
      * Get MIN request (probe)
      * Get CUR request (probe)
      * Set CUR request (commit)
-     *    
+     *
     */
     step = 0;
     ret = usbh_videostreaming_get_cur_probe(video_class);
@@ -508,8 +508,7 @@ CLASS_INFO_DEFINE const struct usbh_class_info video_ctrl_class_info = {
     .class = USB_DEVICE_CLASS_VIDEO,
     .subclass = VIDEO_SC_VIDEOCONTROL,
     .protocol = VIDEO_PC_PROTOCOL_UNDEFINED,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &video_ctrl_class_driver
 };
 
@@ -518,7 +517,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info video_streaming_class_info = {
     .class = USB_DEVICE_CLASS_VIDEO,
     .subclass = VIDEO_SC_VIDEOSTREAMING,
     .protocol = VIDEO_PC_PROTOCOL_UNDEFINED,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &video_streaming_class_driver
 };

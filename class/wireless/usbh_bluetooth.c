@@ -224,7 +224,7 @@ void usbh_bluetooth_hci_rx_thread(void *argument)
         }
     }
     // clang-format off
-delete : 
+delete :
     USB_LOG_INFO("Delete hc acl rx thread\r\n");
     usb_osal_thread_delete(NULL);
     // clang-format on
@@ -309,7 +309,7 @@ void usbh_bluetooth_hci_evt_rx_thread(void *argument)
         usb_osal_msleep(interval);
     }
     // clang-format off
-delete : 
+delete :
     USB_LOG_INFO("Delete hc event rx thread\r\n");
     usb_osal_thread_delete(NULL);
     // clang-format on
@@ -351,7 +351,7 @@ void usbh_bluetooth_hci_acl_rx_thread(void *argument)
         }
     }
     // clang-format off
-delete : 
+delete :
     USB_LOG_INFO("Delete hc acl rx thread\r\n");
     usb_osal_thread_delete(NULL);
     // clang-format on
@@ -377,13 +377,17 @@ static const struct usbh_class_driver bluetooth_class_driver = {
 };
 
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
+static const uint16_t bluetooth_id_table[][2] = {
+    { 0x2fe3, 0x000c },
+    { 0, 0 },
+};
+
 CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_h4_nrf_class_info = {
-    .match_flags = USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT | USB_CLASS_MATCH_INTF_CLASS,
+    .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
     .class = 0xff,
     .subclass = 0x00,
     .protocol = 0x00,
-    .vid = 0x2fe3,
-    .pid = 0x000c,
+    .id_table = bluetooth_id_table,
     .class_driver = &bluetooth_class_driver
 };
 #else
@@ -392,8 +396,7 @@ CLASS_INFO_DEFINE const struct usbh_class_info bluetooth_class_info = {
     .class = USB_DEVICE_CLASS_WIRELESS,
     .subclass = 0x01,
     .protocol = 0x01,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &bluetooth_class_driver
 };
 #endif

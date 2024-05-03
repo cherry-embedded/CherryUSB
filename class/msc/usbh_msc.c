@@ -431,7 +431,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info msc_class_info = {
     .class = USB_DEVICE_CLASS_MASS_STORAGE,
     .subclass = MSC_SUBCLASS_SCSI,
     .protocol = MSC_PROTOCOL_BULK_ONLY,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &msc_class_driver
 };

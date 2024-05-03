@@ -469,8 +469,7 @@ CLASS_INFO_DEFINE const struct usbh_class_info audio_ctrl_intf_class_info = {
     .class = USB_DEVICE_CLASS_AUDIO,
     .subclass = AUDIO_SUBCLASS_AUDIOCONTROL,
     .protocol = 0x00,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &audio_ctrl_class_driver
 };
 
@@ -479,7 +478,6 @@ CLASS_INFO_DEFINE const struct usbh_class_info audio_streaming_intf_class_info =
     .class = USB_DEVICE_CLASS_AUDIO,
     .subclass = AUDIO_SUBCLASS_AUDIOSTREAMING,
     .protocol = 0x00,
-    .vid = 0x00,
-    .pid = 0x00,
+    .id_table = NULL,
     .class_driver = &audio_streaming_class_driver
 };
