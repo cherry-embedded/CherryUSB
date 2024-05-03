@@ -258,6 +258,11 @@ void usbh_cdc_ncm_rx_thread(void *argument)
     int ret;
     err_t err;
     struct pbuf *p;
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+    pbuf_type type = PBUF_ROM;
+#else
+    pbuf_type type = PBUF_POOL;
+#endif
     struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create cdc ncm rx thread\r\n");
@@ -314,10 +319,13 @@ find_class:
                 if (ndp16_datagram->wDatagramIndex && ndp16_datagram->wDatagramLength) {
                     USB_LOG_DBG("ndp16_datagram index:%02x, length:%02x\r\n", ndp16_datagram->wDatagramIndex, ndp16_datagram->wDatagramLength);
 
-                    p = pbuf_alloc(PBUF_RAW, ndp16_datagram->wDatagramLength, PBUF_POOL);
+                    p = pbuf_alloc(PBUF_RAW, ndp16_datagram->wDatagramLength, type);
                     if (p != NULL) {
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+                        p->payload = (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex];
+#else
                         memcpy(p->payload, (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex], ndp16_datagram->wDatagramLength);
-
+#endif
                         err = netif->input(p, netif);
                         if (err != ERR_OK) {
                             pbuf_free(p);

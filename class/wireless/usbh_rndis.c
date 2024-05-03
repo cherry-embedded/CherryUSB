@@ -434,12 +434,16 @@ void usbh_rndis_rx_thread(void *argument)
 {
     uint32_t g_rndis_rx_length;
     uint32_t pmg_offset;
-    uint32_t payload_offset;
     int ret;
     err_t err;
-    struct pbuf *p, *q;
+    struct pbuf *p;
     rndis_data_packet_t *pmsg;
     rndis_data_packet_t temp;
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+    pbuf_type type = PBUF_ROM;
+#else
+    pbuf_type type = PBUF_POOL;
+#endif
     struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create rndis rx thread\r\n");
@@ -482,15 +486,14 @@ find_class:
                 }
 
                 if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) {
-                    p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, PBUF_POOL);
+                    p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, type);
                     if (p != NULL) {
-                        payload_offset = 0;
-                        for (q = p; q != NULL; q = q->next) {
-                            void *src = (void *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset + payload_offset);
-                            memcpy(q->payload, src, q->len);
-                            payload_offset += q->len;
-                        }
-
+                        void *src = (void *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+                        p->payload = src;
+#else
+                        memcpy(q->payload, src, pmsg->DataLength);
+#endif
                         err = netif->input(p, netif);
                         if (err != ERR_OK) {
                             pbuf_free(p);

@@ -657,6 +657,11 @@ void usbh_asix_rx_thread(void *argument)
     uint16_t len;
     uint16_t len_crc;
     struct pbuf *p;
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+    pbuf_type type = PBUF_ROM;
+#else
+    pbuf_type type = PBUF_POOL;
+#endif
     struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create asix rx thread\r\n");
@@ -697,9 +702,13 @@ find_class:
 
             USB_LOG_DBG("rxlen:%d\r\n", g_asix_rx_length);
 
-            p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+            p = pbuf_alloc(PBUF_RAW, len, type);
             if (p != NULL) {
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+                p->payload = (uint8_t *)&g_asix_rx_buffer[4];
+#else
                 memcpy(p->payload, (uint8_t *)&g_asix_rx_buffer[4], len);
+#endif
                 g_asix_rx_length = 0;
 
                 err = netif->input(p, netif);

@@ -232,6 +232,11 @@ void usbh_cdc_ecm_rx_thread(void *argument)
     int ret;
     err_t err;
     struct pbuf *p;
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+    pbuf_type type = PBUF_ROM;
+#else
+    pbuf_type type = PBUF_POOL;
+#endif
     struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create cdc ecm rx thread\r\n");
@@ -264,9 +269,13 @@ find_class:
         if (g_cdc_ecm_class.bulkin_urb.actual_length != USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
-            p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_length, PBUF_POOL);
+            p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_length, type);
             if (p != NULL) {
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+                p->payload = g_cdc_ecm_rx_buffer;
+#else
                 memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
+#endif
                 g_cdc_ecm_rx_length = 0;
 
                 err = netif->input(p, netif);

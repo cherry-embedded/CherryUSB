@@ -2129,6 +2129,11 @@ void usbh_rtl8152_rx_thread(void *argument)
     uint16_t len;
     uint16_t data_offset;
     struct pbuf *p;
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+    pbuf_type type = PBUF_ROM;
+#else
+    pbuf_type type = PBUF_POOL;
+#endif
     struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create rtl8152 rx thread\r\n");
@@ -2179,10 +2184,13 @@ find_class:
 
                 USB_LOG_DBG("data_offset:%d, eth len:%d\r\n", data_offset, len);
 
-                p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+                p = pbuf_alloc(PBUF_RAW, len, type);
                 if (p != NULL) {
+#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+                    p->payload = (uint8_t *)&g_rtl8152_rx_buffer[data_offset + sizeof(struct rx_desc)];
+#else
                     memcpy(p->payload, (uint8_t *)&g_rtl8152_rx_buffer[data_offset + sizeof(struct rx_desc)], len);
-
+#endif
                     err = netif->input(p, netif);
                     if (err != ERR_OK) {
                         pbuf_free(p);
