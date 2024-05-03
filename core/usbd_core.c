@@ -1011,6 +1011,7 @@ void usbd_event_reset_handler(uint8_t busid)
 void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
 {
     struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
+    uint8_t *buf;
 
     memcpy(setup, psetup, 8);
 #ifdef CONFIG_USBDEV_SETUP_LOG_PRINT
@@ -1037,7 +1038,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
     }
 
     /* Ask installed handler to process request */
-    if (!usbd_setup_request_handler(busid, setup, &g_usbd_core[busid].ep0_data_buf, &g_usbd_core[busid].ep0_data_buf_len)) {
+    if (!usbd_setup_request_handler(busid, setup, &buf, &g_usbd_core[busid].ep0_data_buf_len)) {
         usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
         return;
     }
@@ -1053,8 +1054,12 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
     /* use *data = xxx; g_usbd_core[busid].ep0_data_buf records real data address, we should copy data into ep0 buffer.
      * Why we should copy once? because some chips are not access to flash with dma if real data address is in flash address(such as ch32).
      */
-    if (g_usbd_core[busid].ep0_data_buf != g_usbd_core[busid].req_data) {
-        memcpy(g_usbd_core[busid].req_data, g_usbd_core[busid].ep0_data_buf, g_usbd_core[busid].ep0_data_buf_residue);
+    if (buf != g_usbd_core[busid].ep0_data_buf) {
+#ifdef CONFIG_USBDEV_EP0_INDATA_NO_COPY
+        g_usbd_core[busid].ep0_data_buf = buf;
+#else
+        memcpy(g_usbd_core[busid].ep0_data_buf, buf, g_usbd_core[busid].ep0_data_buf_residue);
+#endif
     } else {
         /* use memcpy(*data, xxx, len); has copied into ep0 buffer, we do nothing */
     }

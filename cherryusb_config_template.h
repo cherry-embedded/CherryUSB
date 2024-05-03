@@ -41,6 +41,11 @@
 /* Setup packet log for debug */
 // #define CONFIG_USBDEV_SETUP_LOG_PRINT
 
+/* Send ep0 in data from user buffer instead of copying into ep0 reqdata
+ * Please note that user buffer must be aligned with CONFIG_USB_ALIGN_SIZE
+*/
+// #define CONFIG_USBDEV_EP0_INDATA_NO_COPY
+
 /* Check if the input descriptor is correct */
 // #define CONFIG_USBDEV_DESC_CHECK
 
