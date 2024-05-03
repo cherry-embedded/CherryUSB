@@ -711,6 +711,10 @@ find_class:
                 USB_LOG_ERR("No memory to alloc pbuf for asix rx\r\n");
             }
         } else {
+            if (g_asix_rx_length > CONFIG_USBHOST_ASIX_ETH_MAX_SEGSZE) {
+                USB_LOG_ERR("Rx packet is overflow\r\n");
+                g_asix_rx_length = 0;
+            }
         }
     }
     // clang-format off

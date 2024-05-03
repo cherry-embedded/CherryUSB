@@ -459,8 +459,8 @@ find_class:
         }
     }
 
+    g_rndis_rx_length = 0;
     while (1) {
-        g_rndis_rx_length = 0;
         usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, g_rndis_rx_buffer, CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_rndis_class.bulkin_urb);
         if (ret < 0) {
@@ -507,6 +507,10 @@ find_class:
                 }
             }
         } else {
+            if (g_rndis_rx_length > CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
+                USB_LOG_ERR("Rx packet is overflow\r\n");
+                g_rndis_rx_length = 0;
+            }
         }
     }
 

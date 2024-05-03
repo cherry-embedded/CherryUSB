@@ -10,16 +10,16 @@
 #define USB_DBG_TAG "usbh_cdc_ncm"
 #include "usb_log.h"
 
-#define DEV_FORMAT                            "/dev/cdc_ncm"
+#define DEV_FORMAT "/dev/cdc_ncm"
 
 /* general descriptor field offsets */
-#define DESC_bLength                          0 /** Length offset */
-#define DESC_bDescriptorType                  1 /** Descriptor type offset */
-#define DESC_bDescriptorSubType               2 /** Descriptor subtype offset */
+#define DESC_bLength            0 /** Length offset */
+#define DESC_bDescriptorType    1 /** Descriptor type offset */
+#define DESC_bDescriptorSubType 2 /** Descriptor subtype offset */
 
 /* interface descriptor field offsets */
-#define INTF_DESC_bInterfaceNumber            2 /** Interface number offset */
-#define INTF_DESC_bAlternateSetting           3 /** Alternate setting offset */
+#define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
+#define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
 #define CONFIG_USBHOST_CDC_NCM_ETH_MAX_SEGSZE 1514U
 
@@ -279,7 +279,7 @@ find_class:
 
     g_cdc_ncm_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ncm_class.bulkin_urb, g_cdc_ncm_class.hport, g_cdc_ncm_class.bulkin, &g_cdc_ncm_rx_buffer[g_cdc_ncm_rx_length], USB_GET_MAXPACKETSIZE(g_cdc_ncm_class.bulkin->wMaxPacketSize), USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_cdc_ncm_class.bulkin_urb, g_cdc_ncm_class.hport, g_cdc_ncm_class.bulkin, &g_cdc_ncm_rx_buffer[g_cdc_ncm_rx_length], CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_cdc_ncm_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
@@ -287,7 +287,7 @@ find_class:
 
         g_cdc_ncm_rx_length += g_cdc_ncm_class.bulkin_urb.actual_length;
 
-        if (g_cdc_ncm_class.bulkin_urb.actual_length != USB_GET_MAXPACKETSIZE(g_cdc_ncm_class.bulkin->wMaxPacketSize)) {
+        if (g_cdc_ncm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ncm_class.bulkin->wMaxPacketSize)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ncm_rx_length);
 
             struct cdc_ncm_nth16 *nth16 = (struct cdc_ncm_nth16 *)&g_cdc_ncm_rx_buffer[0];
@@ -331,6 +331,10 @@ find_class:
             g_cdc_ncm_rx_length = 0;
 
         } else {
+            if (g_cdc_ncm_rx_length > CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE) {
+                USB_LOG_ERR("Rx packet is overflow\r\n");
+                g_cdc_ncm_rx_length = 0;
+            }
         }
     }
     // clang-format off

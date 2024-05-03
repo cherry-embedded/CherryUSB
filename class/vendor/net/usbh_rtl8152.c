@@ -2199,6 +2199,10 @@ find_class:
                 }
             }
         } else {
+            if (g_rtl8152_rx_length > CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SEGSZE) {
+                USB_LOG_ERR("Rx packet is overflow\r\n");
+                g_rtl8152_rx_length = 0;
+            }
         }
     }
     // clang-format off

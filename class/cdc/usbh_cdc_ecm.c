@@ -279,6 +279,10 @@ find_class:
             }
         } else {
             /* read continue util read short packet */
+            if (g_cdc_ecm_rx_length > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE) {
+                USB_LOG_ERR("Rx packet is overflow\r\n");
+                g_cdc_ecm_rx_length = 0;
+            }
         }
     }
     // clang-format off
