@@ -79,6 +79,18 @@ static int __usbh_free_devaddr(struct usbh_devaddr_map *devgen, uint8_t devaddr)
     return 0;
 }
 
+static int usbh_free_devaddr(struct usbh_hubport *hport)
+{
+#ifndef CONFIG_USBHOST_XHCI
+    if (hport->dev_addr > 0) {
+        __usbh_free_devaddr(&hport->bus->devgen, hport->dev_addr);
+    }
+#endif
+
+    hport->dev_addr = 0;
+    return 0;
+}
+
 static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subclass, uint8_t protocol,
                                                               uint16_t vid, uint16_t pid)
 {
@@ -327,66 +339,6 @@ static int usbh_get_default_mps(int speed)
         default:
             return 64;
     }
-}
-
-static int usbh_free_devaddr(struct usbh_hubport *hport)
-{
-#ifndef CONFIG_USBHOST_XHCI
-    if (hport->dev_addr > 0) {
-        __usbh_free_devaddr(&hport->bus->devgen, hport->dev_addr);
-    }
-#endif
-
-    hport->dev_addr = 0;
-    return 0;
-}
-
-int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output)
-{
-    struct usb_setup_packet *setup = hport->setup;
-    int ret;
-    uint8_t *src;
-    uint8_t *dst;
-    uint16_t len;
-    uint16_t i = 2;
-    uint16_t j = 0;
-
-    /* Get Manufacturer string */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | index);
-    setup->wIndex = 0x0409;
-    setup->wLength = 255;
-
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
-    if (ret < 0) {
-        return ret;
-    }
-
-    src = ep0_request_buffer[hport->bus->busid];
-    dst = output;
-    len = src[0];
-
-    while (i < len) {
-        dst[j] = src[i];
-        i += 2;
-        j++;
-    }
-
-    return 0;
-}
-
-int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting)
-{
-    struct usb_setup_packet *setup = hport->setup;
-
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = altsetting;
-    setup->wIndex = intf;
-    setup->wLength = 0;
-
-    return usbh_control_transfer(hport, setup, NULL);
 }
 
 int usbh_enumerate(struct usbh_hubport *hport)
@@ -756,6 +708,54 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
 
     usb_osal_mutex_give(hport->mutex);
     return ret;
+}
+
+int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output)
+{
+    struct usb_setup_packet *setup = hport->setup;
+    int ret;
+    uint8_t *src;
+    uint8_t *dst;
+    uint16_t len;
+    uint16_t i = 2;
+    uint16_t j = 0;
+
+    /* Get Manufacturer string */
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | index);
+    setup->wIndex = 0x0409;
+    setup->wLength = 255;
+
+    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    if (ret < 0) {
+        return ret;
+    }
+
+    src = ep0_request_buffer[hport->bus->busid];
+    dst = output;
+    len = src[0];
+
+    while (i < len) {
+        dst[j] = src[i];
+        i += 2;
+        j++;
+    }
+
+    return 0;
+}
+
+int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting)
+{
+    struct usb_setup_packet *setup = hport->setup;
+
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = USB_REQUEST_SET_INTERFACE;
+    setup->wValue = altsetting;
+    setup->wIndex = intf;
+    setup->wLength = 0;
+
+    return usbh_control_transfer(hport, setup, NULL);
 }
 
 void *usbh_find_class_instance(const char *devname)
