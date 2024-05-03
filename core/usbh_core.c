@@ -325,7 +325,7 @@ static int usbh_get_default_mps(int speed)
     }
 }
 
-int usbh_free_devaddr(struct usbh_hubport *hport)
+static int usbh_free_devaddr(struct usbh_hubport *hport)
 {
 #ifndef CONFIG_USBHOST_XHCI
     if (hport->dev_addr > 0) {
@@ -639,6 +639,24 @@ errout:
         hport->raw_config_desc = NULL;
     }
     return ret;
+}
+
+void usbh_hubport_release(struct usbh_hubport *hport)
+{
+    if (hport->connected) {
+        hport->connected = false;
+        usbh_free_devaddr(hport);
+        for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
+            if (hport->config.intf[i].class_driver && hport->config.intf[i].class_driver->disconnect) {
+                CLASS_DISCONNECT(hport, i);
+            }
+        }
+        hport->config.config_desc.bNumInterfaces = 0;
+        usbh_kill_urb(&hport->ep0_urb);
+        if (hport->mutex) {
+            usb_osal_mutex_delete(hport->mutex);
+        }
+    }
 }
 
 static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uint32_t reg_base)
