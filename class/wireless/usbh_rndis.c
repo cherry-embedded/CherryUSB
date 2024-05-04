@@ -492,7 +492,7 @@ find_class:
 #ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
                         p->payload = src;
 #else
-                        memcpy(q->payload, src, pmsg->DataLength);
+                        memcpy(p->payload, src, pmsg->DataLength);
 #endif
                         err = netif->input(p, netif);
                         if (err != ERR_OK) {
