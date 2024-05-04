@@ -37,8 +37,8 @@
 #ifndef TEST_USBH_CDC_NCM
 #define TEST_USBH_CDC_NCM   0
 #endif
-#ifndef TEST_USBH_RNDIS
-#define TEST_USBH_RNDIS     0
+#ifndef TEST_USBH_CDC_RNDIS
+#define TEST_USBH_CDC_RNDIS  0
 #endif
 #ifndef TEST_USBH_ASIX
 #define TEST_USBH_ASIX      0
@@ -121,7 +121,7 @@ find_class:
     } else {
     }
     // clang-format off
-delete: 
+delete:
     usb_osal_thread_delete(NULL);
     // clang-format on
 }
@@ -164,7 +164,7 @@ find_class:
         goto find_class;
     }
     // clang-format off
-delete: 
+delete:
     usb_osal_thread_delete(NULL);
     // clang-format on
 }
@@ -270,7 +270,7 @@ find_class:
     usb_msc_fatfs_test();
 #endif
     // clang-format off
-delete: 
+delete:
     usb_osal_thread_delete(NULL);
     // clang-format on
 }
@@ -402,7 +402,7 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 }
 #endif
 
-#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX || TEST_USBH_RTL8152
+#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_CDC_RNDIS || TEST_USBH_ASIX || TEST_USBH_RTL8152
 #include "netif/etharp.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
@@ -417,7 +417,6 @@ void usbh_videostreaming_parse_yuyv2(struct usbh_urb *urb, struct usbh_videostre
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <netif/ethernetif.h>
-#include <netdev.h>
 
 #else
 #include "FreeRTOS.h"
@@ -500,8 +499,6 @@ static err_t usbh_cdc_ecm_if_init(struct netif *netif)
 void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 {
 #ifdef __RTTHREAD__
-    struct netdev *netdev;
-
     memset(&cdc_ecm_dev, 0, sizeof(struct eth_device));
 
     cdc_ecm_dev.parent.control = rt_usbh_cdc_ecm_control;
@@ -614,8 +611,6 @@ static err_t usbh_cdc_ncm_if_init(struct netif *netif)
 void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
 {
 #ifdef __RTTHREAD__
-    struct netdev *netdev;
-
     memset(&cdc_ncm_dev, 0, sizeof(struct eth_device));
 
     cdc_ncm_dev.parent.control = rt_usbh_cdc_ncm_control;
@@ -675,7 +670,7 @@ void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
 }
 #endif
 
-#if TEST_USBH_RNDIS
+#if TEST_USBH_CDC_RNDIS
 #include "usbh_rndis.h"
 
 struct netif g_rndis_netif;
@@ -771,8 +766,6 @@ static err_t usbh_rndis_if_init(struct netif *netif)
 void usbh_rndis_run(struct usbh_rndis *rndis_class)
 {
 #ifdef __RTTHREAD__
-    struct netdev *netdev;
-
     memset(&rndis_dev, 0, sizeof(struct eth_device));
 
     rndis_dev.parent.control = rt_usbh_rndis_control;
@@ -892,8 +885,6 @@ static err_t usbh_asix_if_init(struct netif *netif)
 void usbh_asix_run(struct usbh_asix *asix_class)
 {
 #ifdef __RTTHREAD__
-    struct netdev *netdev;
-
     memset(&asix_dev, 0, sizeof(struct eth_device));
 
     asix_dev.parent.control = rt_usbh_asix_control;
@@ -1006,8 +997,6 @@ static err_t usbh_rtl8152_if_init(struct netif *netif)
 void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 {
 #ifdef __RTTHREAD__
-    struct netdev *netdev;
-
     memset(&rtl8152_dev, 0, sizeof(struct eth_device));
 
     rtl8152_dev.parent.control = rt_usbh_rtl8152_control;
@@ -1115,7 +1104,7 @@ void usbh_class_test(void)
 #ifdef __RTTHREAD__
     /* do nothing */
 #else
-#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_RNDIS || TEST_USBH_ASIX || TEST_USBH_RTL8152
+#if TEST_USBH_CDC_ECM || TEST_USBH_CDC_NCM || TEST_USBH_CDC_RNDIS || TEST_USBH_ASIX || TEST_USBH_RTL8152
     /* Initialize the LwIP stack */
     tcpip_init(NULL, NULL);
 #endif
