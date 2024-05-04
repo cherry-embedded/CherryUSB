@@ -8,10 +8,6 @@
 #include <rtthread.h>
 #include <rthw.h>
 
-#ifndef RT_USING_TIMER_SOFT
-#error must enable RT_USING_TIMER_SOFT to support timer callback in thread
-#endif
-
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
     rt_thread_t htask;
