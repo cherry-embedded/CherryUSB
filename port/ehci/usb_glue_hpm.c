@@ -13,12 +13,12 @@
 #error "hpm ehci must set CONFIG_USB_EHCI_HPMICRO=1"
 #endif
 
-#if !defined(CONFIG_USB_EHCI_HCOR_OFFSET) || CONFIG_USB_EHCI_HCOR_OFFSET != 0x140
-#error "hpm ehci must config CONFIG_USB_EHCI_HCOR_OFFSET to 0x140"
+#if !defined(CONFIG_USB_EHCI_HCCR_OFFSET) || CONFIG_USB_EHCI_HCCR_OFFSET != 0x100
+#error "hpm ehci must config CONFIG_USB_EHCI_HCCR_OFFSET to 0x100"
 #endif
 
-#if !defined(CONFIG_USB_EHCI_PORT_POWER)
-#error "hpm ehci must enable CONFIG_USB_EHCI_PORT_POWER"
+#if !defined(CONFIG_USB_EHCI_CONFIGFLAG)
+#error "hpm ehci must set CONFIG_USB_EHCI_CONFIGFLAG"
 #endif
 
 static uint32_t _hcd_irqnum[CONFIG_USBHOST_MAX_BUS];
