@@ -201,3 +201,9 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 ## Contact
 
 CherryUSB discord: https://discord.com/invite/wFfvrSAey8.
+
+## Company Support
+
+Thanks to the following companies for their support (in no particular order).
+
+<img src="docs/assets/bouffalolab.jpg"  width="100" height="100"/> <img src="docs/assets/hpmicro.jpg"  width="100" height="100" /> <img src="docs/assets/eastsoft.jpg"  width="100" height="100" /> <img src="docs/assets/rtthread.jpg"  width="100" height="100" /> <img src="docs/assets/sophgo.jpg"  width="100" height="100" /> <img src="docs/assets/phytium.jpg"  width="100" height="100" /> <img src="docs/assets/thead.jpg"  width="100" height="100" /> <img src="docs/assets/nuvoton.jpg"  width="100" height="100" /> <img src="docs/assets/artinchip.jpg"  width="100" height="100" />

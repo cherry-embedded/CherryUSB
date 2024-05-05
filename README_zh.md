@@ -201,3 +201,9 @@ CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和�
 
 CherryUSB QQ 群:642693751
 CherryUSB 微信群：与我联系后邀请加入
+
+## 支持企业
+
+感谢以下企业支持（顺序不分先后）。
+
+<img src="docs/assets/bouffalolab.jpg"  width="100" height="100"/> <img src="docs/assets/hpmicro.jpg"  width="100" height="100" /> <img src="docs/assets/eastsoft.jpg"  width="100" height="100" /> <img src="docs/assets/rtthread.jpg"  width="100" height="100" /> <img src="docs/assets/sophgo.jpg"  width="100" height="100" /> <img src="docs/assets/phytium.jpg"  width="100" height="100" /> <img src="docs/assets/thead.jpg"  width="100" height="100" /> <img src="docs/assets/nuvoton.jpg"  width="100" height="100" /> <img src="docs/assets/artinchip.jpg"  width="100" height="100" />
