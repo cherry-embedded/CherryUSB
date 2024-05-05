@@ -11,40 +11,40 @@
 #include "usbh_audio.h"
 
 #ifndef TEST_USBH_CDC_ACM
-#define TEST_USBH_CDC_ACM   1
+#define TEST_USBH_CDC_ACM 1
 #endif
 #ifndef TEST_USBH_CDC_SPEED
 #define TEST_USBH_CDC_SPEED 0
 #endif
 #ifndef TEST_USBH_HID
-#define TEST_USBH_HID       1
+#define TEST_USBH_HID 1
 #endif
 #ifndef TEST_USBH_MSC
-#define TEST_USBH_MSC       1
+#define TEST_USBH_MSC 1
 #endif
 #ifndef TEST_USBH_MSC_FATFS
 #define TEST_USBH_MSC_FATFS 0
 #endif
 #ifndef TEST_USBH_AUDIO
-#define TEST_USBH_AUDIO     0
+#define TEST_USBH_AUDIO 0
 #endif
 #ifndef TEST_USBH_VIDEO
-#define TEST_USBH_VIDEO     0
+#define TEST_USBH_VIDEO 0
 #endif
 #ifndef TEST_USBH_CDC_ECM
-#define TEST_USBH_CDC_ECM   0
+#define TEST_USBH_CDC_ECM 0
 #endif
 #ifndef TEST_USBH_CDC_NCM
-#define TEST_USBH_CDC_NCM   0
+#define TEST_USBH_CDC_NCM 0
 #endif
 #ifndef TEST_USBH_CDC_RNDIS
-#define TEST_USBH_CDC_RNDIS  0
+#define TEST_USBH_CDC_RNDIS 0
 #endif
 #ifndef TEST_USBH_ASIX
-#define TEST_USBH_ASIX      0
+#define TEST_USBH_ASIX 0
 #endif
 #ifndef TEST_USBH_RTL8152
-#define TEST_USBH_RTL8152   0
+#define TEST_USBH_RTL8152 0
 #endif
 
 #if TEST_USBH_CDC_ACM
@@ -72,14 +72,9 @@ void usbh_cdc_acm_callback(void *arg, int nbytes)
 static void usbh_cdc_acm_thread(void *argument)
 {
     int ret;
-    struct usbh_cdc_acm *cdc_acm_class;
+    struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)argument;
 
-    // clang-format off
-find_class:
-    // clang-format on
-    while ((cdc_acm_class = (struct usbh_cdc_acm *)usbh_find_class_instance("/dev/ttyACM0")) == NULL) {
-        goto delete;
-    }
+    /* test with only one buffer, if you have more cdc acm class, modify by yourself */
 #if TEST_USBH_CDC_SPEED
     const uint32_t test_len[] = { 512, 1 * 1024, 2 * 1024, 4 * 1024, 8 * 1024, 16 * 1024 };
 
@@ -92,7 +87,8 @@ find_class:
             ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
             if (ret < 0) {
                 USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
-                while (1) {}
+                while (1) {
+                }
             } else {
             }
         }
@@ -109,15 +105,16 @@ find_class:
     ret = usbh_submit_urb(&cdc_acm_class->bulkout_urb);
     if (ret < 0) {
         USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
-        goto find_class;
+        goto delete;
     } else {
         USB_LOG_RAW("send over:%d\r\n", cdc_acm_class->bulkout_urb.actual_length);
     }
 
-    usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, cdc_acm_class->bulkin->wMaxPacketSize, 3000, usbh_cdc_acm_callback, cdc_acm_class);
+    usbh_bulk_urb_fill(&cdc_acm_class->bulkin_urb, cdc_acm_class->hport, cdc_acm_class->bulkin, cdc_buffer, cdc_acm_class->bulkin->wMaxPacketSize, 0xffffffff, usbh_cdc_acm_callback, cdc_acm_class);
     ret = usbh_submit_urb(&cdc_acm_class->bulkin_urb);
     if (ret < 0) {
         USB_LOG_RAW("bulk in error,ret:%d\r\n", ret);
+        goto delete;
     } else {
     }
     // clang-format off
@@ -140,7 +137,7 @@ void usbh_hid_callback(void *arg, int nbytes)
         }
         USB_LOG_RAW("nbytes:%d\r\n", nbytes);
         usbh_submit_urb(&hid_class->intin_urb);
-    } else if (nbytes == -USB_ERR_NAK) { /* for dwc2 */
+    } else if (nbytes == -USB_ERR_NAK) { /* only dwc2 should do this */
         usbh_submit_urb(&hid_class->intin_urb);
     } else {
     }
@@ -149,19 +146,16 @@ void usbh_hid_callback(void *arg, int nbytes)
 static void usbh_hid_thread(void *argument)
 {
     int ret;
-    struct usbh_hid *hid_class;
+    struct usbh_hid *hid_class = (struct usbh_hid *)argument;
+    ;
 
-    // clang-format off
-find_class:
-    // clang-format on
-    while ((hid_class = (struct usbh_hid *)usbh_find_class_instance("/dev/input0")) == NULL) {
-        goto delete;
-    }
+    /* test with only one buffer, if you have more hid class, modify by yourself */
 
+    /* Suggest you to use timer for int transfer and use ep interval */
     usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
     ret = usbh_submit_urb(&hid_class->intin_urb);
     if (ret < 0) {
-        goto find_class;
+        goto delete;
     }
     // clang-format off
 delete:
@@ -241,21 +235,15 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t partition_table[512];
 static void usbh_msc_thread(void *argument)
 {
     int ret;
-    struct usbh_msc *msc_class;
+    struct usbh_msc *msc_class = (struct usbh_msc *)argument;
 
-    // clang-format off
-find_class:
-    // clang-format on
-    while ((msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda")) == NULL) {
-        goto delete;
-    }
-
+    /* test with only one buffer, if you have more msc class, modify by yourself */
 #if 1
     /* get the partition table */
     ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
     if (ret < 0) {
         USB_LOG_RAW("scsi_read10 error,ret:%d\r\n", ret);
-        goto find_class;
+        goto delete;
     }
     for (uint32_t i = 0; i < 512; i++) {
         if (i % 16 == 0) {
@@ -1059,7 +1047,7 @@ void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
 #if TEST_USBH_CDC_ACM
-    usb_osal_thread_create("usbh_cdc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_acm_thread, NULL);
+    usb_osal_thread_create("usbh_cdc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_acm_thread, cdc_acm_class);
 #endif
 }
 
@@ -1070,7 +1058,7 @@ void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
 void usbh_hid_run(struct usbh_hid *hid_class)
 {
 #if TEST_USBH_HID
-    usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, NULL);
+    usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, hid_class);
 #endif
 }
 
@@ -1082,7 +1070,7 @@ void usbh_hid_stop(struct usbh_hid *hid_class)
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
 #if TEST_USBH_MSC
-    usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, NULL);
+    usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, msc_class);
 #endif
 }
 
