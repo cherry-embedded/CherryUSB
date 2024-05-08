@@ -23,22 +23,14 @@
 #endif
 
 #ifndef LWIP_NO_RX_THREAD
-#error must enable LWIP_NO_RX_THREAD, we do not use rtthread eth thread
+#error must enable LWIP_NO_TX_THREAD, we do not use rtthread eth rx thread
 #endif
 
-#ifndef LWIP_NO_TX_THREAD
-#error must enable LWIP_NO_TX_THREAD, we do not use rtthread eth thread
+#if LWIP_TCPIP_CORE_LOCKING_INPUT !=1
+#warning suggest you to set LWIP_TCPIP_CORE_LOCKING_INPUT to 1, usb handles eth input with own thread
 #endif
 
-#ifndef LWIP_NO_TX_THREAD
-#error must enable LWIP_NO_TX_THREAD, we do not use rtthread eth thread
-#endif
-
-#ifndef LWIP_TCPIP_CORE_LOCKING_INPUT
-#error must set LWIP_TCPIP_CORE_LOCKING_INPUT to 1, usb handle eth input with own thread
-#endif
-
-#ifndef LWIP_TCPIP_CORE_LOCKING
+#if LWIP_TCPIP_CORE_LOCKING !=1
 #error must set LWIP_TCPIP_CORE_LOCKING to 1
 #endif
 
