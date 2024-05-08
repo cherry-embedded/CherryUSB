@@ -1208,6 +1208,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     struct ehci_qh_hw *qh;
     struct usbh_bus *bus;
     size_t flags;
+    bool remove_in_iaad = false;
 
     if (!urb || !urb->hport || !urb->hcpriv || !urb->hport->bus) {
         return -USB_ERR_INVAL;
@@ -1229,6 +1230,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
         qh = EHCI_ADDR2QH(g_async_qh_head[bus->hcd.hcd_id].hw.hlp);
         while ((qh != &g_async_qh_head[bus->hcd.hcd_id]) && qh) {
             if (qh->urb == urb) {
+                remove_in_iaad = true;
                 ehci_kill_qh(bus, &g_async_qh_head[bus->hcd.hcd_id], qh);
             }
             qh = EHCI_ADDR2QH(qh->hw.hlp);
@@ -1261,6 +1263,19 @@ int usbh_kill_urb(struct usbh_urb *urb)
         usb_osal_sem_give(qh->waitsem);
     } else {
         ehci_qh_free(bus, qh);
+    }
+
+    if (remove_in_iaad) {
+        volatile uint32_t timeout = 0;
+        EHCI_HCOR->usbcmd |= EHCI_USBCMD_IAAD;
+        while (!(EHCI_HCOR->usbsts & EHCI_USBSTS_IAA)) {
+            usb_osal_msleep(1);
+            timeout++;
+            if (timeout > 100) {
+                usb_osal_leave_critical_section(flags);
+                return -USB_ERR_TIMEOUT;
+            }
+        }
     }
 
     usb_osal_leave_critical_section(flags);
