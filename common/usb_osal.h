@@ -21,6 +21,8 @@ typedef void (*usb_timer_handler_t)(void *argument);
 struct usb_osal_timer {
     usb_timer_handler_t handler;
     void *argument;
+    bool is_period;
+    uint32_t ticks;
     void *timer;
 };
 
