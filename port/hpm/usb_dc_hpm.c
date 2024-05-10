@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 HPMicro
+ * Copyright (c) 2022-2024 HPMicro
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -57,25 +57,13 @@ static inline uint8_t ep_idx2bit(uint8_t ep_idx)
     return ep_idx / 2 + ((ep_idx % 2) ? 16 : 0);
 }
 
-__WEAK void usb_dc_low_level_init(uint8_t busid)
-{
-    (void)busid;
-}
-
-__WEAK void usb_dc_low_level_deinit(uint8_t busid)
-{
-    (void)busid;
-}
-
 void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
 {
-    //usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
+    usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
 }
 
 int usb_dc_init(uint8_t busid)
 {
-    usb_dc_low_level_init(busid);
-
     memset(&g_hpm_udc[busid], 0, sizeof(struct hpm_udc));
     g_hpm_udc[busid].handle = &usb_device_handle[busid];
     g_hpm_udc[busid].handle->regs = (USB_Type *)g_usbdev_bus[busid].reg_base;
@@ -130,7 +118,6 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
 
 uint8_t usbd_get_port_speed(uint8_t busid)
 {
-    (void)port;
     uint8_t speed;
 
     speed = usb_get_port_speed(g_hpm_udc[busid].handle->regs);
@@ -156,7 +143,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 
     tmp_ep_cfg.xfer = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
     tmp_ep_cfg.ep_addr = ep->bEndpointAddress;
-    tmp_ep_cfg.max_packet_size = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+    tmp_ep_cfg.max_packet_size = ep->wMaxPacketSize;
 
     usb_device_edpt_open(handle, &tmp_ep_cfg);
 
@@ -266,11 +253,6 @@ void USBD_IRQHandler(uint8_t busid)
     int_status = usb_device_status_flags(handle);
     int_status &= usb_device_interrupts(handle);
     usb_device_clear_status_flags(handle, int_status);
-
-    /* disabled interrupt sources */
-    if (int_status == 0) {
-        return;
-    }
 
     if (int_status & intr_error) {
         USB_LOG_ERR("usbd intr error!\r\n");
