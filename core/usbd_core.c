@@ -1029,6 +1029,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
     g_usbd_core[busid].ep0_data_buf_residue = setup->wLength;
     g_usbd_core[busid].ep0_data_buf_len = setup->wLength;
     g_usbd_core[busid].zlp_flag = false;
+    buf = g_usbd_core[busid].ep0_data_buf;
 
     /* handle class request when all the data is received */
     if (setup->wLength && ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
