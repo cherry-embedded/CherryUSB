@@ -53,6 +53,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('port/bouffalolab/usb_dc_bl.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HPM']):
         src += Glob('port/hpm/usb_dc_hpm.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_AIC']):
+        src += Glob('port/aic/usb_dc_aic.c')
+        src += Glob('port/aic/usb_dc_aic_ll.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32']):
         if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
             src += Glob('port/ch32/usb_dc_usbhs.c')
