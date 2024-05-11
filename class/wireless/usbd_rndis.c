@@ -45,8 +45,13 @@ struct usbd_rndis_priv {
 #define CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE 156
 #endif
 
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + 44];
+#if CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE < 1580
+#undef CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE
+#define CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE 1580
+#endif
+
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE];
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t rndis_encapsulated_resp_buffer[CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t NOTIFY_RESPONSE_AVAILABLE[8];
@@ -169,8 +174,8 @@ static int rndis_init_cmd_handler(uint8_t *data, uint32_t len)
     resp->Status = RNDIS_STATUS_SUCCESS;
     resp->DeviceFlags = RNDIS_DF_CONNECTIONLESS;
     resp->Medium = RNDIS_MEDIUM_802_3;
-    resp->MaxPacketsPerTransfer = 1;
-    resp->MaxTransferSize = CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + sizeof(rndis_data_packet_t);
+    resp->MaxPacketsPerTransfer = CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE / 1580;
+    resp->MaxTransferSize = CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE;
     resp->PacketAlignmentFactor = 0;
     resp->AfListOffset = 0;
     resp->AfListSize = 0;
@@ -225,7 +230,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
         case OID_GEN_MAXIMUM_FRAME_SIZE:
         case OID_GEN_TRANSMIT_BLOCK_SIZE:
         case OID_GEN_RECEIVE_BLOCK_SIZE:
-            RNDIS_INQUIRY_PUT_LE32(CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE);
+            RNDIS_INQUIRY_PUT_LE32(0x05DC);
             infomation_len = 4;
             break;
         case OID_GEN_VENDOR_ID:
