@@ -16,7 +16,6 @@
 #include <pthread.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <clock/clock.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -269,13 +268,24 @@ int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 {
     struct mq_adpt *mq_adpt = (struct mq_adpt *)mq;
     struct timespec __timeout;
+    int ret;
 
     if (timeout == 0xffffffff)
-        return file_mq_receive(&mq_adpt->mq, addr, mq_adpt->msgsize, 0);
+        return file_mq_receive(&mq_adpt->mq, (char *)addr, mq_adpt->msgsize, 0);
     else {
-        msec2spec(&__timeout, timeout);
+        ret = clock_gettime(CLOCK_REALTIME, &__timeout);
+
+        if (ret < 0) {
+            //printf("ERROR: Failed to get time\n");
+            return -USB_ERR_INVAL;
+        }
+
+        if (timeout) {
+            msec2spec(&__timeout, timeout);
+        }
+
         return file_mq_timedreceive(&mq_adpt->mq,
-                                    addr,
+                                    (char *)addr,
                                     mq_adpt->msgsize,
                                     0,
                                     &__timeout);
