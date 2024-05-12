@@ -1018,7 +1018,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
         }
     }
 
-    usb_osal_thread_create("usbh_rtl8152_rx", 2048, 20, usbh_rtl8152_rx_thread, netif);
+    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rtl8152_rx_thread, netif);
 #if LWIP_DHCP
     dhcp_start(netif);
     xTimerStart(dhcp_handle, 0);

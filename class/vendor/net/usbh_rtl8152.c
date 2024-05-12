@@ -12,11 +12,15 @@
 
 #define DEV_FORMAT "/dev/rtl8152"
 
-#define CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SEGSZE (16 * 1024)
-#define CONFIG_USBHOST_RTL8152_ETH_MAX_SEGSZE    (2048)
+#ifndef CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE
+#define CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE (16*1024)
+#endif
+#ifndef CONFIG_USBHOST_RTL8152_ETH_MAX_TX_SIZE
+#define CONFIG_USBHOST_RTL8152_ETH_MAX_TX_SIZE (2048)
+#endif
 
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rtl8152_rx_buffer[CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SEGSZE];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rtl8152_tx_buffer[CONFIG_USBHOST_RTL8152_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rtl8152_rx_buffer[CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rtl8152_tx_buffer[CONFIG_USBHOST_RTL8152_ETH_MAX_TX_SIZE];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rtl8152_inttx_buffer[2];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rtl8152_buf[32];
 
@@ -2034,8 +2038,8 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
     rtl8152_class->rtl_ops.init(rtl8152_class);
     rtl8152_class->rtl_ops.up(rtl8152_class);
 
-    if (rtl8152_class->rx_buf_sz > CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SEGSZE) {
-        USB_LOG_ERR("rx_buf_sz is overflow, default is %d\r\n", CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SEGSZE);
+    if (rtl8152_class->rx_buf_sz > CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE) {
+        USB_LOG_ERR("rx_buf_sz is overflow, default is %d\r\n", CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE);
         return -USB_ERR_NOMEM;
     }
 
@@ -2165,7 +2169,7 @@ find_class:
 
     g_rtl8152_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_rtl8152_class.bulkin_urb, g_rtl8152_class.hport, g_rtl8152_class.bulkin, &g_rtl8152_rx_buffer[g_rtl8152_rx_length], USB_GET_MAXPACKETSIZE(g_rtl8152_class.bulkin->wMaxPacketSize), USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_rtl8152_class.bulkin_urb, g_rtl8152_class.hport, g_rtl8152_class.bulkin, &g_rtl8152_rx_buffer[g_rtl8152_rx_length], (CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE > (16 * 1024)) ? (16 * 1024) : CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_rtl8152_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
@@ -2173,7 +2177,7 @@ find_class:
 
         g_rtl8152_rx_length += g_rtl8152_class.bulkin_urb.actual_length;
 
-        if (g_rtl8152_class.bulkin_urb.actual_length != USB_GET_MAXPACKETSIZE(g_rtl8152_class.bulkin->wMaxPacketSize)) {
+        if (g_rtl8152_rx_length % USB_GET_MAXPACKETSIZE(g_rtl8152_class.bulkin->wMaxPacketSize)) {
             data_offset = 0;
 
             USB_LOG_DBG("rxlen:%d\r\n", g_rtl8152_rx_length);
@@ -2207,7 +2211,7 @@ find_class:
                 }
             }
         } else {
-            if (g_rtl8152_rx_length > CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SEGSZE) {
+            if (g_rtl8152_rx_length > CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE) {
                 USB_LOG_ERR("Rx packet is overflow\r\n");
                 g_rtl8152_rx_length = 0;
             }
