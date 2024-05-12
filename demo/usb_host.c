@@ -606,7 +606,7 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
     cdc_ncm_dev.eth_tx = rt_usbh_cdc_ncm_eth_tx;
     cdc_ncm_dev.parent.user_data = cdc_ncm_class;
 
-    eth_device_init(&cdc_ncm_dev, "u0");
+    eth_device_init(&cdc_ncm_dev, "u1");
     eth_device_linkchange(&cdc_ncm_dev, RT_TRUE);
 
     usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ncm_rx_thread, cdc_ncm_dev.netif);
@@ -761,7 +761,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     rndis_dev.eth_tx = rt_usbh_rndis_eth_tx;
     rndis_dev.parent.user_data = rndis_class;
 
-    eth_device_init(&rndis_dev, "u1");
+    eth_device_init(&rndis_dev, "u2");
     eth_device_linkchange(&rndis_dev, RT_TRUE);
 
     usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, rndis_dev.netif);
@@ -880,7 +880,7 @@ void usbh_asix_run(struct usbh_asix *asix_class)
     asix_dev.eth_tx = rt_usbh_asix_eth_tx;
     asix_dev.parent.user_data = asix_class;
 
-    eth_device_init(&asix_dev, "u2");
+    eth_device_init(&asix_dev, "u3");
     eth_device_linkchange(&asix_dev, RT_TRUE);
 
     usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_asix_rx_thread, asix_dev.netif);
@@ -992,7 +992,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     rtl8152_dev.eth_tx = rt_usbh_rtl8152_eth_tx;
     rtl8152_dev.parent.user_data = rtl8152_class;
 
-    eth_device_init(&rtl8152_dev, "u0");
+    eth_device_init(&rtl8152_dev, "u4");
     eth_device_linkchange(&rtl8152_dev, RT_TRUE);
 
     usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rtl8152_rx_thread, rtl8152_dev.netif);
