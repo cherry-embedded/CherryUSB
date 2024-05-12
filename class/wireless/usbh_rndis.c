@@ -474,6 +474,9 @@ find_class:
         g_rndis_rx_length += g_rndis_class.bulkin_urb.actual_length;
         if (g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize)) {
             pmg_offset = 0;
+
+            uint32_t total_len = g_rndis_rx_length;
+
             while (g_rndis_rx_length > 0) {
                 USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_length);
 
@@ -500,11 +503,17 @@ find_class:
                         }
                         pmg_offset += pmsg->MessageLength;
                         g_rndis_rx_length -= pmsg->MessageLength;
+
+                        /* drop the last dummy byte, it is a short packet to tell us we have received a multiple of wMaxPacketSize */
+                        if (g_rndis_rx_length < 4) {
+                            g_rndis_rx_length = 0;
+                        }
                     } else {
                         g_rndis_rx_length = 0;
                         USB_LOG_ERR("No memory to alloc pbuf for rndis rx\r\n");
                     }
                 } else {
+                    USB_LOG_ERR("offset:%d,remain:%d,total:%d\r\n", pmg_offset, g_rndis_rx_length, total_len);
                     g_rndis_rx_length = 0;
                     USB_LOG_ERR("Error rndis packet message\r\n");
                 }
