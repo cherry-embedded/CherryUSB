@@ -21,11 +21,11 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-#define CONFIG_USBHOST_CDC_ECM_PKT_FILTER     0x000C
-#define CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE 1514U
+#define CONFIG_USBHOST_CDC_ECM_PKT_FILTER   0x000C
+#define CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE 1514U
 
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_inttx_buffer[16];
 
 static struct usbh_cdc_ecm g_cdc_ecm_class;
@@ -139,8 +139,8 @@ get_mac:
                  cdc_ecm_class->mac[4],
                  cdc_ecm_class->mac[5]);
 
-    if (cdc_ecm_class->max_segment_size > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE) {
-        USB_LOG_ERR("CDC ECM Max Segment Size is overflow, default is %u, but now %u\r\n", CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE, cdc_ecm_class->max_segment_size);
+    if (cdc_ecm_class->max_segment_size > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
+        USB_LOG_ERR("CDC ECM Max Segment Size is overflow, default is %u, but now %u\r\n", CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, cdc_ecm_class->max_segment_size);
     } else {
         USB_LOG_INFO("CDC ECM Max Segment Size:%u\r\n", cdc_ecm_class->max_segment_size);
     }
@@ -258,7 +258,7 @@ find_class:
 
     g_cdc_ecm_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize), USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_cdc_ecm_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
@@ -266,7 +266,7 @@ find_class:
 
         g_cdc_ecm_rx_length += g_cdc_ecm_class.bulkin_urb.actual_length;
 
-        if (g_cdc_ecm_class.bulkin_urb.actual_length != USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
+        if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
             p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_length, type);
@@ -288,7 +288,7 @@ find_class:
             }
         } else {
             /* read continue util read short packet */
-            if (g_cdc_ecm_rx_length > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SEGSZE) {
+            if (g_cdc_ecm_rx_length > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
                 USB_LOG_ERR("Rx packet is overflow\r\n");
                 g_cdc_ecm_rx_length = 0;
             }

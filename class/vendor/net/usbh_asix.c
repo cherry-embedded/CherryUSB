@@ -14,10 +14,10 @@
 #define DEV_FORMAT "/dev/asix"
 
 static struct usbh_asix g_asix_class;
-#define CONFIG_USBHOST_ASIX_ETH_MAX_SEGSZE (1514U + 8)
+#define CONFIG_USBHOST_ASIX_ETH_MAX_SIZE (1514U + 8)
 
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_rx_buffer[CONFIG_USBHOST_ASIX_ETH_MAX_SEGSZE];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_tx_buffer[CONFIG_USBHOST_ASIX_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_rx_buffer[CONFIG_USBHOST_ASIX_ETH_MAX_SIZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_tx_buffer[CONFIG_USBHOST_ASIX_ETH_MAX_SIZE];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_inttx_buffer[16];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_buf[32];
 
@@ -683,7 +683,7 @@ find_class:
 
     g_asix_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_asix_class.bulkin_urb, g_asix_class.hport, g_asix_class.bulkin, &g_asix_rx_buffer[g_asix_rx_length], USB_GET_MAXPACKETSIZE(g_asix_class.bulkin->wMaxPacketSize), USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_asix_class.bulkin_urb, g_asix_class.hport, g_asix_class.bulkin, &g_asix_rx_buffer[g_asix_rx_length], CONFIG_USBHOST_ASIX_ETH_MAX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_asix_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
@@ -720,7 +720,7 @@ find_class:
                 USB_LOG_ERR("No memory to alloc pbuf for asix rx\r\n");
             }
         } else {
-            if (g_asix_rx_length > CONFIG_USBHOST_ASIX_ETH_MAX_SEGSZE) {
+            if (g_asix_rx_length > CONFIG_USBHOST_ASIX_ETH_MAX_SIZE) {
                 USB_LOG_ERR("Rx packet is overflow\r\n");
                 g_asix_rx_length = 0;
             }
