@@ -358,7 +358,7 @@ static int usbh_ax88772a_hw_reset(struct usbh_asix *asix_class)
     if (ret < 0)
         goto out;
 
-    ret = usbh_asix_write_cmd(asix_class, AX_CMD_SW_PHY_SELECT, asix_class->embd_phy | AX_PHYSEL_SSEN, 0, 0, NULL);
+    ret = usbh_asix_write_cmd(asix_class, AX_CMD_SW_PHY_SELECT, asix_class->embd_phy | AX_PHYSEL_SSEN, 0, NULL, 0);
     if (ret < 0) {
         USB_LOG_ERR("Select PHY #1 failed: %d\r\n", ret);
         goto out;
@@ -422,7 +422,7 @@ static int usbh_ax88772a_hw_reset(struct usbh_asix *asix_class)
 
     ret = usbh_asix_write_cmd(asix_class, AX_CMD_WRITE_IPG0,
                               AX88772_IPG0_DEFAULT | AX88772_IPG1_DEFAULT,
-                              AX88772_IPG2_DEFAULT, 0, NULL);
+                              AX88772_IPG2_DEFAULT, NULL, 0);
     if (ret < 0) {
         USB_LOG_ERR("Write IPG,IPG1,IPG2 failed: %d\r\n", ret);
         goto out;
