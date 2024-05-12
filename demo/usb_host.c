@@ -765,7 +765,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     eth_device_linkchange(&rndis_dev, RT_TRUE);
 
     usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, rndis_dev.netif);
-    timer_init(rndis_class);
+    //timer_init(rndis_class);
 #else
     struct netif *netif = &g_rndis_netif;
 
@@ -789,7 +789,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     }
 
     usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, netif);
-    timer_init(rndis_class);
+    //timer_init(rndis_class);
 
 #if LWIP_DHCP
     dhcp_start(netif);
@@ -802,8 +802,8 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 {
 #ifdef __RTTHREAD__
     eth_device_deinit(&rndis_dev);
-    rt_timer_stop(keep_timer);
-    rt_timer_delete(keep_timer);
+    // rt_timer_stop(keep_timer);
+    // rt_timer_delete(keep_timer);
 #else
     struct netif *netif = &g_rndis_netif;
 #if LWIP_DHCP
@@ -814,8 +814,8 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 #endif
     netif_set_down(netif);
     netif_remove(netif);
-    xTimerStop(timer_handle, 0);
-    xTimerDelete(timer_handle, 0);
+    // xTimerStop(timer_handle, 0);
+    // xTimerDelete(timer_handle, 0);
 #endif
 }
 #endif
