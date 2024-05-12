@@ -23,7 +23,7 @@
 #endif
 
 #ifndef LWIP_NO_RX_THREAD
-#error must enable LWIP_NO_TX_THREAD, we do not use rtthread eth rx thread
+#error must enable LWIP_NO_RX_THREAD, we do not use rtthread eth rx thread
 #endif
 
 #if LWIP_TCPIP_CORE_LOCKING_INPUT !=1
