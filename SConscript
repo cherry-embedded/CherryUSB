@@ -46,7 +46,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('port/musb/usb_dc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_SUNXI']):
         src += Glob('port/musb/usb_dc_musb.c')
-        CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
+        src += Glob('port/musb/usb_glue_sunxi.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_dc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_BL']):
@@ -153,7 +153,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/musb/usb_hc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SUNXI']):
         src += Glob('port/musb/usb_hc_musb.c')
-        CPPDEFINES += ['CONFIG_USB_MUSB_SUNXI']
+        src += Glob('port/musb/usb_glue_sunxi.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_hc_musb.c')
 
