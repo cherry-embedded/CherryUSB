@@ -657,7 +657,7 @@ void usbh_asix_rx_thread(void *argument)
     uint16_t len;
     uint16_t len_crc;
     struct pbuf *p;
-#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+#if LWIP_TCPIP_CORE_LOCKING_INPUT
     pbuf_type type = PBUF_ROM;
 #else
     pbuf_type type = PBUF_POOL;
@@ -704,7 +704,7 @@ find_class:
 
             p = pbuf_alloc(PBUF_RAW, len, type);
             if (p != NULL) {
-#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+#if LWIP_TCPIP_CORE_LOCKING_INPUT
                 p->payload = (uint8_t *)&g_asix_rx_buffer[4];
 #else
                 memcpy(p->payload, (uint8_t *)&g_asix_rx_buffer[4], len);

@@ -439,7 +439,7 @@ void usbh_rndis_rx_thread(void *argument)
     struct pbuf *p;
     rndis_data_packet_t *pmsg;
     rndis_data_packet_t temp;
-#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+#if LWIP_TCPIP_CORE_LOCKING_INPUT
     pbuf_type type = PBUF_ROM;
 #else
     pbuf_type type = PBUF_POOL;
@@ -492,7 +492,7 @@ find_class:
                     p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, type);
                     if (p != NULL) {
                         void *src = (void *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
-#ifdef LWIP_TCPIP_CORE_LOCKING_INPUT
+#if LWIP_TCPIP_CORE_LOCKING_INPUT
                         p->payload = src;
 #else
                         memcpy(p->payload, src, pmsg->DataLength);
