@@ -152,7 +152,7 @@ void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
 
-    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+    if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
         /* send zlp */
         usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
     } else {

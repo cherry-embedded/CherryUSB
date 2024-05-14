@@ -87,7 +87,7 @@ __ALIGN_BEGIN const uint8_t WINUSB_IF0_WCIDProperties [142] __ALIGN_END = {
   0x00, 0x01,                                       /* bcdVersion */
   0x05, 0x00,                                       /* wIndex */
   0x01, 0x00,                                       /* wCount */
-  
+
   ///////////////////////////////////////
   /// registry propter descriptor
   ///////////////////////////////////////
@@ -122,7 +122,7 @@ __ALIGN_BEGIN const uint8_t WINUSB_IF1_WCIDProperties [142] __ALIGN_END = {
   0x00, 0x01,                                       /* bcdVersion */
   0x05, 0x00,                                       /* wIndex */
   0x01, 0x00,                                       /* wCount */
-  
+
   ///////////////////////////////////////
   /// registry propter descriptor
   ///////////////////////////////////////
@@ -424,7 +424,7 @@ void usbd_winusb_in2(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual in len:%d\r\n", nbytes);
 
-    if ((nbytes % WINUSB_EP_MPS) == 0 && nbytes) {
+    if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
         /* send zlp */
         usbd_ep_start_write(busid, WINUSB_IN_EP2, NULL, 0);
     } else {

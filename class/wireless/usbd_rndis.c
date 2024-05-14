@@ -17,18 +17,6 @@ static struct usbd_endpoint rndis_ep_data[3];
 #define RNDIS_INQUIRY_PUT(src, len)   (memcpy(infomation_buffer, src, len))
 #define RNDIS_INQUIRY_PUT_LE32(value) (*(uint32_t *)infomation_buffer = (value))
 
-#ifdef CONFIG_USB_HS
-#define RNDIS_MAX_PACKET_SIZE 512
-#else
-#define RNDIS_MAX_PACKET_SIZE 64
-#endif
-
-#ifndef CONFIG_USB_HS
-#define RNDIS_LINK_SPEED 12000000 /* Link baudrate (12Mbit/s for USB-FS) */
-#else
-#define RNDIS_LINK_SPEED 480000000 /* Link baudrate (480Mbit/s for USB-HS) */
-#endif
-
 /* Device data structure */
 struct usbd_rndis_priv {
     uint32_t drv_version;
@@ -255,7 +243,12 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             infomation_len = 4;
             break;
         case OID_GEN_LINK_SPEED:
-            RNDIS_INQUIRY_PUT_LE32(RNDIS_LINK_SPEED / 100);
+            if (usbd_get_ep_mps(0, rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr) > 64) {
+                RNDIS_INQUIRY_PUT_LE32(480000000 / 100);
+            } else {
+                RNDIS_INQUIRY_PUT_LE32(12000000 / 100);
+            }
+
             infomation_len = 4;
             break;
         case OID_GEN_CURRENT_PACKET_FILTER:
@@ -469,7 +462,7 @@ void rndis_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 void rndis_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    if ((nbytes % RNDIS_MAX_PACKET_SIZE) == 0 && nbytes) {
+    if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
         /* send zlp */
         usbd_ep_start_write(0, ep, NULL, 0);
     } else {
