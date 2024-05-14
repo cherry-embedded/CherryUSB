@@ -124,12 +124,6 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[4][2048];
 
 volatile bool ep_tx_busy_flag = false;
 
-#ifdef CONFIG_USB_HS
-#define CDC_MAX_MPS 512
-#else
-#define CDC_MAX_MPS 64
-#endif
-
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
