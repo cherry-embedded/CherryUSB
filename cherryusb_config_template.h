@@ -203,7 +203,7 @@
 //#define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2 // maybe 1 or 2, many chips may have a difference
 
 /* ---------------- DWC2 Configuration ---------------- */
-// #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (320)
+// #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1024 / 4)
 // #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
 // #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (512 / 4)
 // #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
