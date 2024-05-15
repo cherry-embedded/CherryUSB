@@ -11,7 +11,7 @@
 
 - BL702 是一个 USB2.0 全速芯片，共 8 个端点（包含端点0）。仅支持从机。
 - BL616/BL808 是一个 USB2.0 并且内置高速 PHY 芯片，共 5个端点（包含端点0）。支持主从机。
-- USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，根据官方环境搭建完成后，即可编译使用。 
+- USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，根据官方环境搭建完成后，即可编译使用。
 
 
 基于 ST 系列芯片
@@ -22,8 +22,8 @@
 默认提供以下 demo 工程：
 
 - F103 使用 fsdev ip
-- F429 主从使用 USB_OTG_HS, 引脚 pb14/pb15, 并且都使用 dma 模式
-- H7 设备使用 USB_OTG_FS, 引脚 pa11/pa12，主机使用 USB_OTG_HS ,引脚 pb14/pb15，并且需要做 nocache 处理
+- F429 主从使用 USB1, 引脚 pb14/pb15, 并且都使用 dma 模式
+- H7 设备使用 USB0, 引脚 pa11/pa12，主机使用 USB_OTG_HS ,引脚 pb14/pb15，并且需要做 nocache 处理
 
 默认删除 Drivers ，所以需要使用 stm32cubemx 生成一下 Drivers 目录下的文件，demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
 
@@ -32,7 +32,7 @@
 涵盖 F1/F4/H7，其余芯片基本类似，不再赘述，具体区别有：
 
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
-- dwc2 ip 区别： USB_OTG_FS (引脚是 PA11/PA12) 和 USB_OTG_HS (引脚是 PB14/PB15), 其中 USB_OTG_HS 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
+- dwc2 ip 区别： USB0 (引脚是 PA11/PA12) 和 USB1 (引脚是 PB14/PB15), 其中 USB1 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
 - F4 无cache，H7 有 cache
 
 如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
@@ -179,4 +179,4 @@ USB Host 移植要点
 仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
 
 - HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机
-- USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。 
+- USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。

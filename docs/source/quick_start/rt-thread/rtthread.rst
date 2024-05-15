@@ -9,31 +9,28 @@
 --------------------------
 
 * 选择 Enable usb device mode 并敲回车进入。
+* 首先第一个配置是配置 USB 的速度，分为 **FS、HS**，表示使用全速还是高速功能。高速功能要求内置高速 PHY 或者外接 PHY
+* 其次第二个配置则是选择 USB device ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。
+* 选择你想使用的 class
+* 选择是否使用 demo 模板
 
 .. figure:: img/env1.png
-.. figure:: img/env2.png
-
-* 首先第一个配置是配置 USB 的速度，分为 **FS、HS**，表示使用全速还是高速功能。
-
-.. figure:: img/env3.png
-
-* 其次第二个配置则是选择 USB device ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。
-
-.. figure:: img/env4.png
-
-* 选择好 USB device ip 以后，还需要选择是哪款芯片，第三个配置则是用来选择芯片，选择以后会配置相应的 ip 的一些信息和 glue 文件
-
-.. figure:: img/env5.png
-
-* 接下来是 class 的选择，用哪个 class 勾选哪个就可以了，使能 class 以后，双击进入可以选择一个 demo 的模板参与编译，当然也可以不选，自己写。
-
-.. figure:: img/env6.png
 
 * 最后退出保存即可。
-* 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径,并实现以下内容：
+* 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径,并修改以下内容：
 
-.. figure:: img/config_file.png
+.. code-block:: C
 
+        #include "rtthread.h"
+
+        #define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
+
+        #define usb_malloc(size) rt_malloc(size)
+        #define usb_free(ptr)    rt_free(ptr)
+
+        #define memcpy rt_memcpy
+
+* USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
 * 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
 * 以上内容我们推荐放在 **board.c** 中，如下代码：
@@ -60,19 +57,27 @@
 --------------------------
 
 * 选择 Enable usb host mode 并敲回车进入。
-
-.. figure:: img/env7.png
-
-* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。选择好 USB host ip 以后，还需要选择是哪款芯片，第二个箭头则是用来选择芯片，选择以后会帮忙配置相对应的 ip 的一些信息，比如 `USB_BASE` 、 `USBH_Handler` 以及特殊的一些配置等等，如果没找到自己的芯片，可以手动在 `usb_hc_xxx.c` 中修改。
-
-.. figure:: img/env8.png
-
+* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。
 * 根据需要勾选 class 驱动
+* 选择是否开启模板 demo，请注意， msc 禁止使能，因为默认对接到 dfs。
+
+.. figure:: img/env2.png
+
 * 最后退出保存即可。
 * 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径,并实现以下内容：
 
-.. figure:: img/config_file.png
+.. code-block:: C
 
+        #include "rtthread.h"
+
+        #define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
+
+        #define usb_malloc(size) rt_malloc(size)
+        #define usb_free(ptr)    rt_free(ptr)
+
+        #define memcpy rt_memcpy
+
+* USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 在代码中实现 `usb_hc_low_level_init` 函数
 * 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 * 以上内容我们推荐放在 **board.c** 中，如下代码：

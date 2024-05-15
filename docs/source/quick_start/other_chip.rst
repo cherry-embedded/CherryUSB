@@ -22,16 +22,19 @@ USB Host 移植要点
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
-- 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码（需要放在 flash 位置）：
+- 如果使用的是 GCC ，需要在链接脚本中添加如下代码（需要放在 flash 位置）：
 
 .. code-block:: C
+
         // 在 ld 文件中添加如下代码
         . = ALIGN(4);
         __usbh_class_info_start__ = .;
         KEEP(*(.usbh_class_info))
         __usbh_class_info_end__ = .;
 
-        // 举例如下
+GCC 举例如下：
+
+.. code-block:: C
 
         /* The program code and other data into "FLASH" Rom type memory */
         .text :
@@ -51,9 +54,9 @@ USB Host 移植要点
         __usbh_class_info_end__ = .;
         . = ALIGN(4);
         _etext = .;        /* define a global symbols at end of code */
-        } >FLASH
+        } > FLASH
 
-- 如果使用的是 Segger Embedded Studio ，需要在链接脚本(icf)中添加如下代码：
+- Segger Embedded Studio 举例如下：
 
 .. code-block:: C
 
