@@ -542,7 +542,7 @@ struct usb_msosv2_subset_function_descriptor {
 } __PACKED;
 
 struct usb_msosv2_descriptor {
-    uint8_t *compat_id;
+    const uint8_t *compat_id;
     uint16_t compat_id_len;
     uint8_t vendor_code;
 };
@@ -616,12 +616,12 @@ struct usb_webusb_url_descriptor {
 
 struct usb_webusb_url_ex_descriptor {
     uint8_t vendor_code;
-    uint8_t *string;
+    const uint8_t *string;
     uint32_t string_len;
 } __PACKED;
 
 struct usb_bos_descriptor {
-    uint8_t *string;
+    const uint8_t *string;
     uint32_t string_len;
 };
 
@@ -673,7 +673,7 @@ struct usb_desc_header {
     bDeviceProtocol,            /* bDeviceProtocol */                                                      \
     0x40,                       /* bMaxPacketSize */                                                       \
     bNumConfigurations,         /* bNumConfigurations */                                                   \
-    0x00                        /* bReserved */ 
+    0x00                        /* bReserved */
 
 #define USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(wTotalLength, bNumInterfaces, bConfigurationValue, bmAttributes, bMaxPower) \
     0x09,                              /* bLength */                                                       \
