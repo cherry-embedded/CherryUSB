@@ -1276,6 +1276,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
                 return -USB_ERR_TIMEOUT;
             }
         }
+        EHCI_HCOR->usbsts = EHCI_USBSTS_IAA;
     }
 
     usb_osal_leave_critical_section(flags);
