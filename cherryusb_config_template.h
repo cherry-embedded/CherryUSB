@@ -33,6 +33,10 @@
 
 /* ================= USB Device Stack Configuration ================ */
 
+#ifndef CONFIG_USBDEV_STRING_LANGID
+#define CONFIG_USBDEV_STRING_LANGID 0x0409
+#endif
+
 /* Ep0 in and out transfer buffer */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 512
