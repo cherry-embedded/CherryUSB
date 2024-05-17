@@ -294,7 +294,7 @@ static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
         Tx_Size = USB_OTG_GLB->DIEPTXF[fifo - 1U];
     }
 
-    USB_LOG_INFO("fifo-%02d size:%04d %08x\n", fifo, size, Tx_Size);
+    USB_LOG_INFO("fifo%d size:%04x, offset:%04x\r\n", fifo, size, Tx_Offset);
 }
 
 static uint8_t dwc2_get_devspeed(void)
