@@ -18,10 +18,6 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-#ifndef CONFIG_USBDEV_STRING_LANGID
-#define CONFIG_USBDEV_STRING_LANGID 0x0409
-#endif
-
 struct usbd_tx_rx_msg {
     uint8_t ep;
     uint8_t ep_mult;
