@@ -63,8 +63,9 @@ static const uint8_t device_quality_descriptor[] = {
 };
 
 static const char *string_descriptors[] = {
+    (const char[]){ 0x09, 0x04 }, /* Langid */
     "CherryUSB",                  /* Manufacturer */
-    "CherryUSB CDC DEMO",         /* Product */
+    "CherryUSB CDC MSC DEMO",     /* Product */
     "2022123456",                 /* Serial Number */
 };
 
@@ -88,7 +89,7 @@ static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
     if (index > 3) {
         return NULL;
     }
-    return string_descriptors[index - 1];
+    return string_descriptors[index];
 }
 
 const struct usb_descriptor cdc_msc_descriptor = {

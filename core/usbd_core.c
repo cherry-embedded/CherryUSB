@@ -187,21 +187,20 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
                 desc = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->string;
                 desc_len = g_usbd_core[busid].descriptors->msosv1_descriptor->string[0];
             } else {
-                if (index == USB_STRING_LANGID_INDEX) {
-                    uint16_t STRING_LANGID = CONFIG_USBDEV_STRING_LANGID;
-
-                    (*data)[0] = 0x04;
-                    (*data)[1] = USB_DESCRIPTOR_TYPE_STRING;
-                    (*data)[2] = (uint8_t)(STRING_LANGID & 0xff);
-                    (*data)[3] = (uint8_t)((STRING_LANGID & 0xff00) >> 8);
-
-                    *len = 4;
-                    return true;
-                }
                 string = g_usbd_core[busid].descriptors->string_descriptor_callback(g_usbd_core[busid].speed, index);
                 if (string == NULL) {
                     found = false;
                     break;
+                }
+
+                if (index == USB_STRING_LANGID_INDEX) {
+                    (*data)[0] = 4;
+                    (*data)[1] = USB_DESCRIPTOR_TYPE_STRING;
+                    (*data)[2] = string[0];
+                    (*data)[3] = string[1];
+
+                    *len = 4;
+                    return true;
                 }
 
                 uint16_t str_size = strlen(string);
