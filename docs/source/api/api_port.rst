@@ -210,6 +210,8 @@ usbh_submit_urb
 - **arg** 传输完成时携带的参数
 - **iso_packet** iso 数据包
 
+.. note:: timeout 如何没有特别对时间的要求，必须设置成 0xffffffff，原则上不允许超时，如果超时了，一般不能再继续工作
+
 `errorcode` 可以返回以下值：
 
 .. code-block:: C
