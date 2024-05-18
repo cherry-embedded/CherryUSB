@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 HPMicro
+ * Copyright (c) 2022-2024 HPMicro
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -15,10 +15,6 @@
 
 #if !defined(CONFIG_USB_EHCI_HCCR_OFFSET) || CONFIG_USB_EHCI_HCCR_OFFSET != 0x100
 #error "hpm ehci must config CONFIG_USB_EHCI_HCCR_OFFSET to 0x100"
-#endif
-
-#if !defined(CONFIG_USB_EHCI_CONFIGFLAG)
-#error "hpm ehci must set CONFIG_USB_EHCI_CONFIGFLAG"
 #endif
 
 static uint32_t _hcd_irqnum[CONFIG_USBHOST_MAX_BUS];
