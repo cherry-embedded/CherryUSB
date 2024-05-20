@@ -21,7 +21,6 @@ static struct usbd_endpoint rndis_ep_data[3];
 struct usbd_rndis_priv {
     uint32_t drv_version;
     uint32_t link_status;
-    uint32_t speed;
     uint32_t net_filter;
     usb_eth_stat_t eth_state;
     rndis_state_t init_state;
@@ -546,7 +545,6 @@ struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
 
     g_usbd_rndis.drv_version = 0x0001;
     g_usbd_rndis.link_status = NDIS_MEDIA_STATE_DISCONNECTED;
-    g_usbd_rndis.speed = RNDIS_LINK_SPEED;
 
     rndis_ep_data[RNDIS_OUT_EP_IDX].ep_addr = out_ep;
     rndis_ep_data[RNDIS_OUT_EP_IDX].ep_cb = rndis_bulk_out;
