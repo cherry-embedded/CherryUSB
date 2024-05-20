@@ -264,8 +264,7 @@ static void dwc2_set_turnaroundtime(uint32_t hclk, uint8_t speed)
 static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
 {
     uint8_t i;
-    uint32_t Tx_Offset;
-    uint32_t Tx_Size;
+    uint32_t tx_offset;
 
     /*  TXn min size = 16 words. (n  : Transmit FIFO index)
       When a TxFIFO is not used, the Configuration should be as follows:
@@ -277,24 +276,21 @@ static void dwc2_set_txfifo(uint8_t fifo, uint16_t size)
          of the FIFO.Ex: use EP1 and EP2 as IN instead of EP1 and EP3 as IN ones.
      When DMA is used 3n * FIFO locations should be reserved for internal DMA registers */
 
-    Tx_Offset = USB_OTG_GLB->GRXFSIZ;
+    tx_offset = USB_OTG_GLB->GRXFSIZ;
 
     if (fifo == 0U) {
-        USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ = ((uint32_t)size << 16) | Tx_Offset;
-        Tx_Size = USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ;
+        USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ = ((uint32_t)size << 16) | tx_offset;
     } else {
-        Tx_Offset += (USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ) >> 16;
+        tx_offset += (USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ) >> 16;
         for (i = 0U; i < (fifo - 1U); i++) {
-            Tx_Offset += (USB_OTG_GLB->DIEPTXF[i] >> 16);
+            tx_offset += (USB_OTG_GLB->DIEPTXF[i] >> 16);
         }
 
         /* Multiply Tx_Size by 2 to get higher performance */
-        USB_OTG_GLB->DIEPTXF[fifo - 1U] = ((uint32_t)size << 16) | Tx_Offset;
-
-        Tx_Size = USB_OTG_GLB->DIEPTXF[fifo - 1U];
+        USB_OTG_GLB->DIEPTXF[fifo - 1U] = ((uint32_t)size << 16) | tx_offset;
     }
 
-    USB_LOG_INFO("fifo%d size:%04x, offset:%04x\r\n", fifo, size, Tx_Offset);
+    USB_LOG_INFO("fifo%d size:%04x, offset:%04x\r\n", fifo, size, tx_offset);
 }
 
 static uint8_t dwc2_get_devspeed(void)

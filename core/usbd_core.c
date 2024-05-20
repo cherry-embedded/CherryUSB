@@ -301,7 +301,7 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             return false;
         }
 
-        *data = g_usbd_core[busid].bos_desc->string;
+        *data = (uint8_t *)g_usbd_core[busid].bos_desc->string;
         //memcpy(*data, (uint8_t *)g_usbd_core[busid].bos_desc->string, g_usbd_core[busid].bos_desc->string_len);
         *len = g_usbd_core[busid].bos_desc->string_len;
         return true;
