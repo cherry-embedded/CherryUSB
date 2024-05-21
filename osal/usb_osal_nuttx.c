@@ -32,7 +32,7 @@
 #include <nuttx/signal.h>
 
 #if 1
-#error please modfiy all thread param(void *argument) with (char argc, char *argv), and argument = ((uintptr_t)strtoul(argv[1], NULL, 16));
+#error please modfiy all thread param (void *argument) with (int argc, char **argv), and argument = ((uintptr_t)strtoul(argv[1], NULL, 16));
 #endif
 
 struct mq_adpt {
