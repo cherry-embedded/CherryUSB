@@ -39,7 +39,7 @@ typedef struct
     uint32_t  Reserved43[39];         /*!< Reserved                                058h-0FFh */
   __IO uint32_t HPTXFSIZ;             /*!< Host Periodic Tx FIFO Size Reg               100h */
   __IO uint32_t DIEPTXF[0x0F];        /*!< dev Periodic Transmit FIFO */
-} USB_OTG_GlobalTypeDef;
+} DWC2_GlobalTypeDef;
 
 /**
   * @brief USB_OTG_device_Registers
@@ -66,7 +66,7 @@ typedef struct
   __IO uint32_t DINEP1MSK;       /*!< dedicated EP mask            844h */
   uint32_t  Reserved44[15];      /*!< Reserved                 844-87Ch */
   __IO uint32_t DOUTEP1MSK;      /*!< dedicated EP msk             884h */
-} USB_OTG_DeviceTypeDef;
+} DWC2_DeviceTypeDef;
 
 /**
   * @brief USB_OTG_IN_Endpoint-Specific_Register
@@ -81,7 +81,7 @@ typedef struct
   __IO uint32_t DIEPDMA;           /*!< IN Endpoint DMA Address Reg    900h + (ep_num * 20h) + 14h */
   __IO uint32_t DTXFSTS;           /*!< IN Endpoint Tx FIFO Status Reg 900h + (ep_num * 20h) + 18h */
   uint32_t Reserved18;             /*!< Reserved  900h+(ep_num*20h)+1Ch-900h+ (ep_num * 20h) + 1Ch */
-} USB_OTG_INEndpointTypeDef;
+} DWC2_INEndpointTypeDef;
 
 /**
   * @brief USB_OTG_OUT_Endpoint-Specific_Registers
@@ -95,7 +95,7 @@ typedef struct
   __IO uint32_t DOEPTSIZ;      /*!< dev OUT Endpoint Txfer Size            B00h + (ep_num * 20h) + 10h */
   __IO uint32_t DOEPDMA;       /*!< dev OUT Endpoint DMA Address           B00h + (ep_num * 20h) + 14h */
   uint32_t Reserved18[2];      /*!< Reserved B00h + (ep_num * 20h) + 18h - B00h + (ep_num * 20h) + 1Ch */
-} USB_OTG_OUTEndpointTypeDef;
+} DWC2_OUTEndpointTypeDef;
 
 /**
   * @brief USB_OTG_Host_Mode_Register_Structures
@@ -112,7 +112,7 @@ typedef struct
   __IO uint32_t HFLBADDR;         /*!< Host frame list base address register 41Ch */
   uint32_t Reserved420[8];        /*!< Reserved                              420h */
   __IO uint32_t HPRT;             /*!< Host port control and status register 440h */
-} USB_OTG_HostTypeDef;
+} DWC2_HostTypeDef;
 
 /**
   * @brief USB_OTG_Host_Channel_Specific_Registers
@@ -128,7 +128,7 @@ typedef struct
   uint32_t Reserved0;             /*!< Reserved                                 518h */
   __IO uint32_t HCDMAB;           /*!< Host Channel DMA Address Buffer Register 51Ch */
   uint32_t Reserved[2];           /*!< Reserved                                      */
-} USB_OTG_HostChannelTypeDef;
+} DWC2_HostChannelTypeDef;
 
 #define USB_OTG_GLOBAL_BASE                  0x000UL
 #define USB_OTG_DEVICE_BASE                  0x800UL

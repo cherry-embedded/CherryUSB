@@ -29,12 +29,11 @@
 #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
 #endif
 
-#define USB_OTG_GLB     ((USB_OTG_GlobalTypeDef *)(bus->hcd.reg_base))
+#define USB_OTG_GLB     ((DWC2_GlobalTypeDef *)(bus->hcd.reg_base))
 #define USB_OTG_PCGCCTL *(__IO uint32_t *)((uint32_t)bus->hcd.reg_base + USB_OTG_PCGCCTL_BASE)
 #define USB_OTG_HPRT    *(__IO uint32_t *)((uint32_t)bus->hcd.reg_base + USB_OTG_HOST_PORT_BASE)
-#define USB_OTG_HOST    ((USB_OTG_HostTypeDef *)(bus->hcd.reg_base + USB_OTG_HOST_BASE))
-#define USB_OTG_HC(i)   ((USB_OTG_HostChannelTypeDef *)(bus->hcd.reg_base + USB_OTG_HOST_CHANNEL_BASE + ((i)*USB_OTG_HOST_CHANNEL_SIZE)))
-#define USB_OTG_FIFO(i) *(__IO uint32_t *)(bus->hcd.reg_base + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
+#define USB_OTG_HOST    ((DWC2_HostTypeDef *)(bus->hcd.reg_base + USB_OTG_HOST_BASE))
+#define USB_OTG_HC(i)   ((DWC2_HostChannelTypeDef *)(bus->hcd.reg_base + USB_OTG_HOST_CHANNEL_BASE + ((i)*USB_OTG_HOST_CHANNEL_SIZE)))
 
 struct dwc2_chan {
     uint8_t ep0_state;

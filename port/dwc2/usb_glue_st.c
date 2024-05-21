@@ -153,7 +153,7 @@ static int usb_hsphy_init(uint32_t hse_value)
 uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
 #if __has_include("stm32h7xx.h") || __has_include("stm32f7xx.h") || __has_include("stm32l4xx.h")
-#define USB_OTG_GLB ((USB_OTG_GlobalTypeDef *)(reg_base))
+#define USB_OTG_GLB ((DWC2_GlobalTypeDef *)(reg_base))
     /* B-peripheral session valid override enable */
     USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
     USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOVAL;
@@ -179,7 +179,7 @@ uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
 uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
 #if __has_include("stm32h7xx.h") || __has_include("stm32f7xx.h") || __has_include("stm32l4xx.h")
-#define USB_OTG_GLB ((USB_OTG_GlobalTypeDef *)(reg_base))
+#define USB_OTG_GLB ((DWC2_GlobalTypeDef *)(reg_base))
     /* B-peripheral session valid override enable */
     USB_OTG_GLB->GOTGCTL &= ~USB_OTG_GOTGCTL_BVALOEN;
     USB_OTG_GLB->GOTGCTL &= ~USB_OTG_GOTGCTL_BVALOVAL;

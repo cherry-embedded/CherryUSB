@@ -95,11 +95,11 @@
 
 #define USBD_BASE (g_usbdev_bus[0].reg_base)
 
-#define USB_OTG_GLB      ((USB_OTG_GlobalTypeDef *)(USBD_BASE))
-#define USB_OTG_DEV      ((USB_OTG_DeviceTypeDef *)(USBD_BASE + USB_OTG_DEVICE_BASE))
+#define USB_OTG_GLB      ((DWC2_GlobalTypeDef *)(USBD_BASE))
+#define USB_OTG_DEV      ((DWC2_DeviceTypeDef *)(USBD_BASE + USB_OTG_DEVICE_BASE))
 #define USB_OTG_PCGCCTL  *(__IO uint32_t *)((uint32_t)USBD_BASE + USB_OTG_PCGCCTL_BASE)
-#define USB_OTG_INEP(i)  ((USB_OTG_INEndpointTypeDef *)(USBD_BASE + USB_OTG_IN_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
-#define USB_OTG_OUTEP(i) ((USB_OTG_OUTEndpointTypeDef *)(USBD_BASE + USB_OTG_OUT_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
+#define USB_OTG_INEP(i)  ((DWC2_INEndpointTypeDef *)(USBD_BASE + USB_OTG_IN_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
+#define USB_OTG_OUTEP(i) ((DWC2_OUTEndpointTypeDef *)(USBD_BASE + USB_OTG_OUT_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
 #define USB_OTG_FIFO(i)  *(__IO uint32_t *)(USBD_BASE + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
 
 extern uint32_t SystemCoreClock;
