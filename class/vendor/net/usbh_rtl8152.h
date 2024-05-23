@@ -6,9 +6,6 @@
 #ifndef USBH_RTL8152_H
 #define USBH_RTL8152_H
 
-#include "lwip/netif.h"
-#include "lwip/pbuf.h"
-
 struct usbh_rtl8152 {
     struct usbh_hubport *hport;
     struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
@@ -23,10 +20,6 @@ struct usbh_rtl8152 {
     uint8_t mac[6];
     bool connect_status;
     uint32_t speed[2];
-
-    ip_addr_t ipaddr;
-    ip_addr_t netmask;
-    ip_addr_t gateway;
 
     uint8_t version;
     uint8_t eee_adv;
@@ -63,8 +56,9 @@ int usbh_rtl8152_get_connect_status(struct usbh_rtl8152 *rtl8152_class);
 void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class);
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class);
 
+int usbh_rtl8152_eth_output(uint8_t *buf, uint32_t buflen);
+void usbh_rtl8152_eth_input(uint8_t *buf, uint32_t buflen);
 void usbh_rtl8152_rx_thread(void *argument);
-err_t usbh_rtl8152_linkoutput(struct netif *netif, struct pbuf *p);
 
 #ifdef __cplusplus
 }

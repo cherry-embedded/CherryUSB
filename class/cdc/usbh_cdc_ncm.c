@@ -248,14 +248,6 @@ void usbh_cdc_ncm_rx_thread(void *argument)
 {
     uint32_t g_cdc_ncm_rx_length;
     int ret;
-    err_t err;
-    struct pbuf *p;
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-    pbuf_type type = PBUF_ROM;
-#else
-    pbuf_type type = PBUF_POOL;
-#endif
-    struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create cdc ncm rx thread\r\n");
     // clang-format off
@@ -311,20 +303,8 @@ find_class:
                 if (ndp16_datagram->wDatagramIndex && ndp16_datagram->wDatagramLength) {
                     USB_LOG_DBG("ndp16_datagram index:%02x, length:%02x\r\n", ndp16_datagram->wDatagramIndex, ndp16_datagram->wDatagramLength);
 
-                    p = pbuf_alloc(PBUF_RAW, ndp16_datagram->wDatagramLength, type);
-                    if (p != NULL) {
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-                        p->payload = (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex];
-#else
-                        memcpy(p->payload, (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex], ndp16_datagram->wDatagramLength);
-#endif
-                        err = netif->input(p, netif);
-                        if (err != ERR_OK) {
-                            pbuf_free(p);
-                        }
-                    } else {
-                        USB_LOG_ERR("No memory to alloc pbuf for cdc ncm rx\r\n");
-                    }
+                    uint8_t *buf = (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex];
+                    usbh_cdc_ncm_eth_input(buf, ndp16_datagram->wDatagramLength);
                 }
             }
 
@@ -344,15 +324,13 @@ delete:
     // clang-format on
 }
 
-err_t usbh_cdc_ncm_linkoutput(struct netif *netif, struct pbuf *p)
+int usbh_cdc_ncm_eth_output(uint8_t *buf, uint32_t buflen)
 {
-    int ret;
-    struct pbuf *q;
     uint8_t *buffer;
     struct cdc_ncm_ndp16_datagram *ndp16_datagram;
 
     if (g_cdc_ncm_class.connect_status == false) {
-        return ERR_BUF;
+        return -USB_ERR_NOTCONN;
     }
 
     struct cdc_ncm_nth16 *nth16 = (struct cdc_ncm_nth16 *)&g_cdc_ncm_tx_buffer[0];
@@ -360,8 +338,8 @@ err_t usbh_cdc_ncm_linkoutput(struct netif *netif, struct pbuf *p)
     nth16->dwSignature = CDC_NCM_NTH16_SIGNATURE;
     nth16->wHeaderLength = 12;
     nth16->wSequence = g_cdc_ncm_class.bulkout_sequence++;
-    nth16->wBlockLength = 16 + 16 + USB_ALIGN_UP(p->tot_len, 4);
-    nth16->wNdpIndex = 16 + USB_ALIGN_UP(p->tot_len, 4);
+    nth16->wBlockLength = 16 + 16 + USB_ALIGN_UP(buflen, 4);
+    nth16->wNdpIndex = 16 + USB_ALIGN_UP(buflen, 4);
 
     struct cdc_ncm_ndp16 *ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_tx_buffer[nth16->wNdpIndex];
 
@@ -371,28 +349,19 @@ err_t usbh_cdc_ncm_linkoutput(struct netif *netif, struct pbuf *p)
 
     ndp16_datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_tx_buffer[nth16->wNdpIndex + 8 + 4 * 0];
     ndp16_datagram->wDatagramIndex = 16;
-    ndp16_datagram->wDatagramLength = p->tot_len;
+    ndp16_datagram->wDatagramLength = buflen;
 
     ndp16_datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_tx_buffer[nth16->wNdpIndex + 8 + 4 * 1];
     ndp16_datagram->wDatagramIndex = 0;
     ndp16_datagram->wDatagramLength = 0;
 
     buffer = &g_cdc_ncm_tx_buffer[16];
-
-    for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
-        buffer += q->len;
-    }
+    memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", nth16->wBlockLength);
 
     usbh_bulk_urb_fill(&g_cdc_ncm_class.bulkout_urb, g_cdc_ncm_class.hport, g_cdc_ncm_class.bulkout, g_cdc_ncm_tx_buffer, nth16->wBlockLength, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&g_cdc_ncm_class.bulkout_urb);
-    if (ret < 0) {
-        return ERR_BUF;
-    }
-
-    return ERR_OK;
+    return usbh_submit_urb(&g_cdc_ncm_class.bulkout_urb);
 }
 
 __WEAK void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)

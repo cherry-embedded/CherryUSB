@@ -36,27 +36,14 @@ Taking into account USB performance issues and trying to achieve the theoretical
 
 ## Directoy Structure
 
-```
-.
-├── class
-├── common
-├── core
-├── demo
-├── docs
-├── osal
-├── packet capture
-└── port
-└── tools
-
-```
-
 |   Directory       |  Description            |
 |:-------------:|:---------------------------:|
 |class          |  usb class driver           |
 |common         |  usb spec macros and utils  |
 |core           |  usb core implementation    |
-|demo           |  different chips demo       |
+|demo           |  usb device and host demo   |
 |osal           |  os wrapper                 |
+|platform       |  class support for other os |
 |docs           |  doc for guiding            |
 |port           |  usb dcd and hcd porting    |
 |tools          |  tool url                   |

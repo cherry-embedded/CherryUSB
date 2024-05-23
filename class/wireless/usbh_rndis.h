@@ -8,9 +8,6 @@
 
 #include "usb_cdc.h"
 
-#include "lwip/netif.h"
-#include "lwip/pbuf.h"
-
 struct usbh_rndis {
     struct usbh_hubport *hport;
     struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
@@ -30,10 +27,6 @@ struct usbh_rndis {
     bool connect_status;
     uint8_t mac[6];
 
-    ip_addr_t ipaddr;
-    ip_addr_t netmask;
-    ip_addr_t gateway;
-
     void *user_data;
 };
 
@@ -47,7 +40,8 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class);
 void usbh_rndis_run(struct usbh_rndis *rndis_class);
 void usbh_rndis_stop(struct usbh_rndis *rndis_class);
 
-err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p);
+int usbh_rndis_eth_output(uint8_t *buf, uint32_t buflen);
+void usbh_rndis_eth_input(uint8_t *buf, uint32_t buflen);
 void usbh_rndis_rx_thread(void *argument);
 
 #ifdef __cplusplus

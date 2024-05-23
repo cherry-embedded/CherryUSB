@@ -2122,16 +2122,8 @@ void usbh_rtl8152_rx_thread(void *argument)
 {
     uint32_t g_rtl8152_rx_length;
     int ret;
-    err_t err;
     uint16_t len;
     uint16_t data_offset;
-    struct pbuf *p;
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-    pbuf_type type = PBUF_ROM;
-#else
-    pbuf_type type = PBUF_POOL;
-#endif
-    struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create rtl8152 rx thread\r\n");
     // clang-format off
@@ -2181,20 +2173,9 @@ find_class:
 
                 USB_LOG_DBG("data_offset:%d, eth len:%d\r\n", data_offset, len);
 
-                p = pbuf_alloc(PBUF_RAW, len, type);
-                if (p != NULL) {
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-                    p->payload = (uint8_t *)&g_rtl8152_rx_buffer[data_offset + sizeof(struct rx_desc)];
-#else
-                    memcpy(p->payload, (uint8_t *)&g_rtl8152_rx_buffer[data_offset + sizeof(struct rx_desc)], len);
-#endif
-                    err = netif->input(p, netif);
-                    if (err != ERR_OK) {
-                        pbuf_free(p);
-                    }
-                } else {
-                    USB_LOG_ERR("No memory to alloc pbuf for rtl8152 rx\r\n");
-                }
+                uint8_t *buf = (uint8_t *)&g_rtl8152_rx_buffer[data_offset + sizeof(struct rx_desc)];
+                usbh_rtl8152_eth_input(buf, len);
+
                 data_offset += (len + sizeof(struct rx_desc));
                 g_rtl8152_rx_length -= (len + sizeof(struct rx_desc));
 
@@ -2217,36 +2198,26 @@ delete:
     // clang-format on
 }
 
-err_t usbh_rtl8152_linkoutput(struct netif *netif, struct pbuf *p)
+int usbh_rtl8152_eth_output(uint8_t *buf, uint32_t buflen)
 {
-    int ret;
-    struct pbuf *q;
     uint8_t *buffer;
-    struct tx_desc *tx_desc = (struct tx_desc *)g_rtl8152_tx_buffer;
+    struct tx_desc *tx_desc;
 
     if (g_rtl8152_class.connect_status == false) {
-        return ERR_BUF;
+        return -USB_ERR_NOTCONN;
     }
 
-    tx_desc->opts1 = p->tot_len | TX_FS | TX_LS;
+    tx_desc = (struct tx_desc *)g_rtl8152_tx_buffer;
+    tx_desc->opts1 = buflen | TX_FS | TX_LS;
     tx_desc->opts2 = 0;
 
     buffer = g_rtl8152_tx_buffer + sizeof(struct tx_desc);
+    memcpy(buffer, buf, buflen);
 
-    for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
-        buffer += q->len;
-    }
+    USB_LOG_DBG("txlen:%d\r\n", buflen + sizeof(struct tx_desc));
 
-    USB_LOG_DBG("txlen:%d\r\n", p->tot_len + sizeof(struct tx_desc));
-
-    usbh_bulk_urb_fill(&g_rtl8152_class.bulkout_urb, g_rtl8152_class.hport, g_rtl8152_class.bulkout, g_rtl8152_tx_buffer, p->tot_len + sizeof(struct tx_desc), USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&g_rtl8152_class.bulkout_urb);
-    if (ret < 0) {
-        return ERR_BUF;
-    }
-
-    return ERR_OK;
+    usbh_bulk_urb_fill(&g_rtl8152_class.bulkout_urb, g_rtl8152_class.hport, g_rtl8152_class.bulkout, g_rtl8152_tx_buffer, buflen + sizeof(struct tx_desc), USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    return usbh_submit_urb(&g_rtl8152_class.bulkout_urb);
 }
 
 __WEAK void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)

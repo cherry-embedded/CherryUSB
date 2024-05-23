@@ -8,9 +8,6 @@
 
 #include "usb_cdc.h"
 
-#include "lwip/netif.h"
-#include "lwip/pbuf.h"
-
 struct usbh_cdc_ecm {
     struct usbh_hubport *hport;
     struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
@@ -29,10 +26,6 @@ struct usbh_cdc_ecm {
     uint16_t max_segment_size;
     uint32_t speed[2];
 
-    ip_addr_t ipaddr;
-    ip_addr_t netmask;
-    ip_addr_t gateway;
-
     void *user_data;
 };
 
@@ -45,7 +38,8 @@ int usbh_cdc_ecm_get_connect_status(struct usbh_cdc_ecm *cdc_ecm_class);
 void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class);
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class);
 
-err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p);
+int usbh_cdc_ecm_eth_output(uint8_t *buf, uint32_t buflen);
+void usbh_cdc_ecm_eth_input(uint8_t *buf, uint32_t buflen);
 void usbh_cdc_ecm_rx_thread(void *argument);
 
 #ifdef __cplusplus

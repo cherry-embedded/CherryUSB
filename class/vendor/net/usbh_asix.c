@@ -653,16 +653,8 @@ void usbh_asix_rx_thread(void *argument)
 {
     uint32_t g_asix_rx_length;
     int ret;
-    err_t err;
     uint16_t len;
     uint16_t len_crc;
-    struct pbuf *p;
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-    pbuf_type type = PBUF_ROM;
-#else
-    pbuf_type type = PBUF_POOL;
-#endif
-    struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create asix rx thread\r\n");
     // clang-format off
@@ -702,23 +694,9 @@ find_class:
 
             USB_LOG_DBG("rxlen:%d\r\n", g_asix_rx_length);
 
-            p = pbuf_alloc(PBUF_RAW, len, type);
-            if (p != NULL) {
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-                p->payload = (uint8_t *)&g_asix_rx_buffer[4];
-#else
-                memcpy(p->payload, (uint8_t *)&g_asix_rx_buffer[4], len);
-#endif
-                g_asix_rx_length = 0;
-
-                err = netif->input(p, netif);
-                if (err != ERR_OK) {
-                    pbuf_free(p);
-                }
-            } else {
-                g_asix_rx_length = 0;
-                USB_LOG_ERR("No memory to alloc pbuf for asix rx\r\n");
-            }
+            uint8_t *buf = (uint8_t *)&g_asix_rx_buffer[4];
+            usbh_asix_eth_input(buf, len);
+            g_asix_rx_length = 0;
         } else {
             if (g_asix_rx_length > CONFIG_USBHOST_ASIX_ETH_MAX_SIZE) {
                 USB_LOG_ERR("Rx packet is overflow\r\n");
@@ -733,46 +711,37 @@ delete:
     // clang-format on
 }
 
-err_t usbh_asix_linkoutput(struct netif *netif, struct pbuf *p)
+int usbh_asix_eth_output(uint8_t *buf, uint32_t buflen)
 {
-    int ret;
-    struct pbuf *q;
     uint16_t actual_len;
-    uint8_t *buffer = &g_asix_tx_buffer[4];
+    uint8_t *buffer;
 
     if (g_asix_class.connect_status == false) {
-        return ERR_BUF;
+        return -USB_ERR_NOTCONN;
     }
 
-    for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
-        buffer += q->len;
-    }
+    buffer = &g_asix_tx_buffer[4];
+    memcpy(buffer, buf, buflen);
 
-    g_asix_tx_buffer[0] = p->tot_len & 0xff;
-    g_asix_tx_buffer[1] = (p->tot_len >> 8) & 0xff;
+    g_asix_tx_buffer[0] = buflen & 0xff;
+    g_asix_tx_buffer[1] = (buflen >> 8) & 0xff;
     g_asix_tx_buffer[2] = ~g_asix_tx_buffer[0];
     g_asix_tx_buffer[3] = ~g_asix_tx_buffer[1];
 
-    if (!(p->tot_len + 4) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
-        USB_LOG_DBG("txlen:%d\r\n", p->tot_len + 8);
-        g_asix_tx_buffer[p->tot_len + 4 + 0] = 0x00;
-        g_asix_tx_buffer[p->tot_len + 4 + 1] = 0x00;
-        g_asix_tx_buffer[p->tot_len + 4 + 2] = 0xff;
-        g_asix_tx_buffer[p->tot_len + 4 + 3] = 0xff;
-        actual_len = p->tot_len + 8;
+    if (!(buflen + 4) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
+        USB_LOG_DBG("txlen:%d\r\n", buflen + 8);
+        g_asix_tx_buffer[buflen + 4 + 0] = 0x00;
+        g_asix_tx_buffer[buflen + 4 + 1] = 0x00;
+        g_asix_tx_buffer[buflen + 4 + 2] = 0xff;
+        g_asix_tx_buffer[buflen + 4 + 3] = 0xff;
+        actual_len = buflen + 8;
     } else {
-        USB_LOG_DBG("txlen:%d\r\n", p->tot_len + 4);
-        actual_len = p->tot_len + 4;
+        USB_LOG_DBG("txlen:%d\r\n", buflen + 4);
+        actual_len = buflen + 4;
     }
 
     usbh_bulk_urb_fill(&g_asix_class.bulkout_urb, g_asix_class.hport, g_asix_class.bulkout, g_asix_tx_buffer, actual_len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&g_asix_class.bulkout_urb);
-    if (ret < 0) {
-        return ERR_BUF;
-    }
-
-    return ERR_OK;
+    return usbh_submit_urb(&g_asix_class.bulkout_urb);
 }
 
 __WEAK void usbh_asix_run(struct usbh_asix *asix_class)

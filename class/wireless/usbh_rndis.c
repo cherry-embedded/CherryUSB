@@ -425,18 +425,10 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
 void usbh_rndis_rx_thread(void *argument)
 {
     uint32_t g_rndis_rx_length;
-    uint32_t pmg_offset;
     int ret;
-    err_t err;
-    struct pbuf *p;
+    uint32_t pmg_offset;
     rndis_data_packet_t *pmsg;
     rndis_data_packet_t temp;
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-    pbuf_type type = PBUF_ROM;
-#else
-    pbuf_type type = PBUF_POOL;
-#endif
-    struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create rndis rx thread\r\n");
     // clang-format off
@@ -481,28 +473,15 @@ find_class:
                 }
 
                 if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) {
-                    p = pbuf_alloc(PBUF_RAW, pmsg->DataLength, type);
-                    if (p != NULL) {
-                        void *src = (void *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-                        p->payload = src;
-#else
-                        memcpy(p->payload, src, pmsg->DataLength);
-#endif
-                        err = netif->input(p, netif);
-                        if (err != ERR_OK) {
-                            pbuf_free(p);
-                        }
-                        pmg_offset += pmsg->MessageLength;
-                        g_rndis_rx_length -= pmsg->MessageLength;
+                    uint8_t *buf = (uint8_t *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
 
-                        /* drop the last dummy byte, it is a short packet to tell us we have received a multiple of wMaxPacketSize */
-                        if (g_rndis_rx_length < 4) {
-                            g_rndis_rx_length = 0;
-                        }
-                    } else {
+                    usbh_rndis_eth_input(buf, pmsg->DataLength);
+                    pmg_offset += pmsg->MessageLength;
+                    g_rndis_rx_length -= pmsg->MessageLength;
+
+                    /* drop the last dummy byte, it is a short packet to tell us we have received a multiple of wMaxPacketSize */
+                    if (g_rndis_rx_length < 4) {
                         g_rndis_rx_length = 0;
-                        USB_LOG_ERR("No memory to alloc pbuf for rndis rx\r\n");
                     }
                 } else {
                     USB_LOG_ERR("offset:%d,remain:%d,total:%d\r\n", pmg_offset, g_rndis_rx_length, total_len);
@@ -525,31 +504,26 @@ delete:
     // clang-format on
 }
 
-err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
+int usbh_rndis_eth_output(uint8_t *buf, uint32_t buflen)
 {
-    int ret;
-    struct pbuf *q;
     uint8_t *buffer;
     rndis_data_packet_t *hdr;
     uint32_t len;
 
     if (g_rndis_class.connect_status == false) {
-        return ERR_BUF;
+        return -USB_ERR_NOTCONN;
     }
 
     hdr = (rndis_data_packet_t *)g_rndis_tx_buffer;
     memset(hdr, 0, sizeof(rndis_data_packet_t));
 
     hdr->MessageType = REMOTE_NDIS_PACKET_MSG;
-    hdr->MessageLength = sizeof(rndis_data_packet_t) + p->tot_len;
+    hdr->MessageLength = sizeof(rndis_data_packet_t) + buflen;
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
-    hdr->DataLength = p->tot_len;
+    hdr->DataLength = buflen;
 
     buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
-    for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
-        buffer += q->len;
-    }
+    memcpy(buffer, buf, buflen);
 
     len = hdr->MessageLength;
     /* if message length is the multiple of wMaxPacketSize, we should add a short packet to tell device transfer is over. */
@@ -560,12 +534,7 @@ err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
     USB_LOG_DBG("txlen:%d\r\n", len);
 
     usbh_bulk_urb_fill(&g_rndis_class.bulkout_urb, g_rndis_class.hport, g_rndis_class.bulkout, g_rndis_tx_buffer, len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&g_rndis_class.bulkout_urb);
-    if (ret < 0) {
-        return ERR_BUF;
-    }
-
-    return ERR_OK;
+    return usbh_submit_urb(&g_rndis_class.bulkout_urb);
 }
 
 __WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)

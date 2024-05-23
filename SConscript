@@ -191,11 +191,18 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
         src += Glob('demo/usb_host.c')
 
-    if GetDepend('RT_USING_DFS'):
-       src += Glob('third_party/rt-thread-5.0/dfs_usbh_msc.c')
+    if GetDepend('RT_USING_DFS') and GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
+       src += Glob('platform/rtthread/usbh_dfs.c')
 
-src += Glob('third_party/rt-thread-5.0/usb_msh.c')
-src += Glob('third_party/rt-thread-5.0/usb_check.c')
+    if GetDepend('PKG_CHERRYUSB_HOST_CDC_ECM') \
+        or GetDepend('PKG_CHERRYUSB_HOST_CDC_RNDIS') \
+        or GetDepend('PKG_CHERRYUSB_HOST_CDC_NCM') \
+        or GetDepend('PKG_CHERRYUSB_HOST_CDC_ASIX') \
+        or GetDepend('PKG_CHERRYUSB_HOST_CDC_RTL8152'):
+       src += Glob('platform/rtthread/usbh_lwip.c')
+
+src += Glob('platform/rtthread/usb_msh.c')
+src += Glob('platform/rtthread/usb_check.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], CPPPATH = path, CPPDEFINES = CPPDEFINES)
 

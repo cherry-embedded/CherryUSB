@@ -36,26 +36,15 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带
 
 ## 目录结构
 
-```
-.
-├── class
-├── common
-├── core
-├── demo
-├── docs
-├── osal
-└── port
-└── tools
-```
-
 |   目录名       |  描述                          |
 |:-------------:|:-------------------------------:|
 |class          |  usb class 类主从驱动           |
 |common         |  usb spec 定义、常用宏、标准接口定义 |
 |core           |  usb 主从协议栈核心实现          |
-|demo           |  示例                            |
+|demo           |  主从 class demo                 |
 |docs           |  文档                            |
 |osal           |  os 封装层                       |
+|platform       |  其他 os 全家桶适配              |
 |port           |  usb 主从需要实现的 porting 接口 |
 |tools          |  工具链接                        |
 

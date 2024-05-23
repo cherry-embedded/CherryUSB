@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "ff.h"
 #include "diskio.h"
 #include "usbh_core.h"
@@ -9,6 +14,7 @@ int USB_disk_status(void)
 {
     return 0;
 }
+
 int USB_disk_initialize(void)
 {
     active_msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");

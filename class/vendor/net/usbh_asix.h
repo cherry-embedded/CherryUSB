@@ -6,9 +6,6 @@
 #ifndef USBH_ASIX_H
 #define USBH_ASIX_H
 
-#include "lwip/netif.h"
-#include "lwip/pbuf.h"
-
 /* ASIX AX8817X based USB 2.0 Ethernet Devices */
 
 #define AX_CMD_SET_SW_MII         0x06
@@ -156,10 +153,6 @@ struct usbh_asix {
     bool connect_status;
     uint8_t mac[6];
 
-    ip_addr_t ipaddr;
-    ip_addr_t netmask;
-    ip_addr_t gateway;
-
     void *user_data;
 };
 
@@ -172,8 +165,9 @@ int usbh_asix_get_connect_status(struct usbh_asix *asix_class);
 void usbh_asix_run(struct usbh_asix *asix_class);
 void usbh_asix_stop(struct usbh_asix *asix_class);
 
+int usbh_asix_eth_output(uint8_t *buf, uint32_t buflen);
+void usbh_asix_eth_input(uint8_t *buf, uint32_t buflen);
 void usbh_asix_rx_thread(void *argument);
-err_t usbh_asix_linkoutput(struct netif *netif, struct pbuf *p);
 
 #ifdef __cplusplus
 }

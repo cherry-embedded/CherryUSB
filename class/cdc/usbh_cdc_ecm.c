@@ -230,14 +230,6 @@ void usbh_cdc_ecm_rx_thread(void *argument)
 {
     uint32_t g_cdc_ecm_rx_length;
     int ret;
-    err_t err;
-    struct pbuf *p;
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-    pbuf_type type = PBUF_ROM;
-#else
-    pbuf_type type = PBUF_POOL;
-#endif
-    struct netif *netif = (struct netif *)argument;
 
     USB_LOG_INFO("Create cdc ecm rx thread\r\n");
     // clang-format off
@@ -269,23 +261,9 @@ find_class:
         if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
-            p = pbuf_alloc(PBUF_RAW, g_cdc_ecm_rx_length, type);
-            if (p != NULL) {
-#if LWIP_TCPIP_CORE_LOCKING_INPUT
-                p->payload = g_cdc_ecm_rx_buffer;
-#else
-                memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
-#endif
-                g_cdc_ecm_rx_length = 0;
+            usbh_cdc_ecm_eth_input(g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
 
-                err = netif->input(p, netif);
-                if (err != ERR_OK) {
-                    pbuf_free(p);
-                }
-            } else {
-                g_cdc_ecm_rx_length = 0;
-                USB_LOG_ERR("No memory to alloc pbuf for cdc ecm rx\r\n");
-            }
+            g_cdc_ecm_rx_length = 0;
         } else {
             /* read continue util read short packet */
             if (g_cdc_ecm_rx_length > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
@@ -301,30 +279,20 @@ delete:
     // clang-format on
 }
 
-err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
+int usbh_cdc_ecm_eth_output(uint8_t *buf, uint32_t buflen)
 {
-    int ret;
-    struct pbuf *q;
     uint8_t *buffer = g_cdc_ecm_tx_buffer;
 
     if (g_cdc_ecm_class.connect_status == false) {
-        return ERR_BUF;
+        return -USB_ERR_NOTCONN;
     }
 
-    for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
-        buffer += q->len;
-    }
+    memcpy(buffer, buf, buflen);
 
-    USB_LOG_DBG("txlen:%d\r\n", p->tot_len);
+    USB_LOG_DBG("txlen:%d\r\n", buflen);
 
-    usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkout_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkout, g_cdc_ecm_tx_buffer, p->tot_len, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&g_cdc_ecm_class.bulkout_urb);
-    if (ret < 0) {
-        return ERR_BUF;
-    }
-
-    return ERR_OK;
+    usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkout_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkout, g_cdc_ecm_tx_buffer, buflen, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+    return usbh_submit_urb(&g_cdc_ecm_class.bulkout_urb);
 }
 
 __WEAK void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)

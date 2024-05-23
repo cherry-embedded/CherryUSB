@@ -197,19 +197,22 @@ if CHERRYUSB
             prompt "Enable usb msc driver"
             default n
 
-        config CHERRYUSB_HOST_CDC_RNDIS
-            bool
-            prompt "Enable usb rndis driver"
-            default n
-
         config CHERRYUSB_HOST_CDC_ECM
             bool
             prompt "Enable usb cdc ecm driver"
+            select USBHOST_PLATFORM_CDC_ECM
+            default n
+
+        config CHERRYUSB_HOST_CDC_RNDIS
+            bool
+            prompt "Enable usb rndis driver"
+            select USBHOST_PLATFORM_CDC_RNDIS
             default n
 
         config CHERRYUSB_HOST_CDC_NCM
             bool
             prompt "Enable usb cdc ncm driver"
+            select USBHOST_PLATFORM_CDC_NCM
             default n
 
         config CHERRYUSB_HOST_VIDEO
@@ -230,11 +233,13 @@ if CHERRYUSB
         config CHERRYUSB_HOST_ASIX
             bool
             prompt "Enable usb asix driver"
+            select USBHOST_PLATFORM_ASIX
             default n
 
         config CHERRYUSB_HOST_RTL8152
             bool
             prompt "Enable usb rtl8152 driver"
+            select USBHOST_PLATFORM_RTL8152
             default n
 
         config CHERRYUSB_HOST_FTDI
@@ -251,6 +256,26 @@ if CHERRYUSB
             bool
             prompt "Enable usb cp210x driver"
             default n
+
+        config CHERRYUSB_HOST_PL2303
+            bool
+            prompt "Enable usb pl2303 driver"
+            default n
+
+        config USBHOST_PLATFORM_CDC_ECM
+            bool
+
+        config USBHOST_PLATFORM_CDC_RNDIS
+            bool
+
+        config USBHOST_PLATFORM_CDC_NCM
+            bool
+
+        config USBHOST_PLATFORM_ASIX
+            bool
+
+        config USBHOST_PLATFORM_RTL152
+            bool
 
         config CHERRYUSB_HOST_TEMPLATE
             bool
@@ -270,34 +295,9 @@ if CHERRYUSB
                 depends on CHERRYUSB_HOST_HID
             config TEST_USBH_MSC
                 int
-                prompt "demo for test msc, do not enable because it has used dfs instead"
+                prompt "demo for test msc"
                 default 0
                 depends on CHERRYUSB_HOST_MSC
-            config TEST_USBH_CDC_ECM
-                int
-                prompt "demo for test cdc ecm"
-                default 0
-                depends on CHERRYUSB_HOST_CDC_ECM
-            config TEST_USBH_CDC_NCM
-                int
-                prompt "demo for test cdc ncm"
-                default 0
-                depends on CHERRYUSB_HOST_CDC_NCM
-            config TEST_USBH_RNDIS
-                int
-                prompt "demo for test cdc rndis"
-                default 0
-                depends on CHERRYUSB_HOST_CDC_RNDIS
-            config TEST_USBH_ASIX
-                int
-                prompt "demo for test asix"
-                default 0
-                depends on CHERRYUSB_HOST_ASIX
-            config TEST_USBH_RTL8152
-                int
-                prompt "demo for test rtl8152"
-                default 0
-                depends on CHERRYUSB_HOST_RTL8152
         endif
     endif
 
