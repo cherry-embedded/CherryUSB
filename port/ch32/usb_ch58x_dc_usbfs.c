@@ -71,8 +71,8 @@
     CH58x_USBFS_DEV->USB_RX_LEN
 
 /*!< ep nums */
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 5
+#ifndef CONFIG_USBDEV_EP_NUM
+#define CONFIG_USBDEV_EP_NUM 5
 #endif
 /*!< ep mps */
 #define EP_MPS 64
@@ -86,7 +86,7 @@ __attribute__((aligned(4))) uint8_t ep0_data_buff[64 + EP4_OUT_MPS + EP4_IN_MPS]
 __attribute__((aligned(4))) uint8_t ep1_data_buff[64 + 64];                       /*!< ep1_out(64)+ep1_in(64) */
 __attribute__((aligned(4))) uint8_t ep2_data_buff[64 + 64];                       /*!< ep2_out(64)+ep2_in(64) */
 __attribute__((aligned(4))) uint8_t ep3_data_buff[64 + 64];                       /*!< ep3_out(64)+ep3_in(64) */
-#if (EP_NUMS == 8)
+#if (CONFIG_USBDEV_EP_NUM == 8)
 /**
  * This dcd porting can be used on ch581, ch582, ch583,
  * and also on ch571, ch572, and ch573. Note that only five endpoints are available for ch571, ch572, and ch573.
@@ -112,8 +112,8 @@ typedef struct _usbd_ep_info {
 /*!< ch58x usb */
 static struct _ch58x_core_prvi {
     uint8_t address; /*!< Address */
-    usbd_ep_info ep_in[USB_NUM_BIDIR_ENDPOINTS];
-    usbd_ep_info ep_out[USB_NUM_BIDIR_ENDPOINTS];
+    usbd_ep_info ep_in[CONFIG_USBDEV_EP_NUM];
+    usbd_ep_info ep_out[CONFIG_USBDEV_EP_NUM];
     struct usb_setup_packet setup;
 } usb_dc_cfg;
 
@@ -147,7 +147,7 @@ int usb_dc_init(uint8_t busid)
 
     usb_dc_cfg.ep_in[4].ep_ram_addr = ep0_data_buff + 64 + EP4_OUT_MPS;
     usb_dc_cfg.ep_out[4].ep_ram_addr = ep0_data_buff + 64;
-#if (EP_NUMS == 8)
+#if (CONFIG_USBDEV_EP_NUM == 8)
     usb_dc_cfg.ep_in[5].ep_ram_addr = ep5_data_buff + 64;
     usb_dc_cfg.ep_out[5].ep_ram_addr = ep5_data_buff;
 
@@ -161,14 +161,14 @@ int usb_dc_init(uint8_t busid)
     CH58x_USBFS_DEV->USB_CTRL = 0x00;
     CH58x_USBFS_DEV->UEP4_1_MOD = RB_UEP4_RX_EN | RB_UEP4_TX_EN | RB_UEP1_RX_EN | RB_UEP1_TX_EN; /*!< EP4 OUT+IN   EP1 OUT+IN */
     CH58x_USBFS_DEV->UEP2_3_MOD = RB_UEP2_RX_EN | RB_UEP2_TX_EN | RB_UEP3_RX_EN | RB_UEP3_TX_EN; /*!< EP2 OUT+IN   EP3 OUT+IN */
-#if (EP_NUMS == 8)
+#if (CONFIG_USBDEV_EP_NUM == 8)
     CH58x_USBFS_DEV->UEP567_MOD = RB_UEP5_RX_EN | RB_UEP5_TX_EN | RB_UEP6_RX_EN | RB_UEP6_TX_EN | RB_UEP7_RX_EN | RB_UEP7_TX_EN; /*!< EP5 EP6 EP7   OUT+IN */
 #endif
     CH58x_USBFS_DEV->UEP0_DMA = (uint16_t)(uint32_t)ep0_data_buff;
     CH58x_USBFS_DEV->UEP1_DMA = (uint16_t)(uint32_t)ep1_data_buff;
     CH58x_USBFS_DEV->UEP2_DMA = (uint16_t)(uint32_t)ep2_data_buff;
     CH58x_USBFS_DEV->UEP3_DMA = (uint16_t)(uint32_t)ep3_data_buff;
-#if (EP_NUMS == 8)
+#if (CONFIG_USBDEV_EP_NUM == 8)
     CH58x_USBFS_DEV->UEP5_DMA = (uint16_t)(uint32_t)ep5_data_buff;
     CH58x_USBFS_DEV->UEP6_DMA = (uint16_t)(uint32_t)ep6_data_buff;
     CH58x_USBFS_DEV->UEP7_DMA = (uint16_t)(uint32_t)ep7_data_buff;
@@ -178,7 +178,7 @@ int usb_dc_init(uint8_t busid)
     CH58x_USBFS_DEV->UEP2_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK | RB_UEP_AUTO_TOG;
     CH58x_USBFS_DEV->UEP3_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK | RB_UEP_AUTO_TOG;
     CH58x_USBFS_DEV->UEP4_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK;
-#if (EP_NUMS == 8)
+#if (CONFIG_USBDEV_EP_NUM == 8)
     CH58x_USBFS_DEV->UEP5_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK | RB_UEP_AUTO_TOG;
     CH58x_USBFS_DEV->UEP6_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK | RB_UEP_AUTO_TOG;
     CH58x_USBFS_DEV->UEP7_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK | RB_UEP_AUTO_TOG;
@@ -238,9 +238,9 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     /*!< ep id */
     uint8_t epid = USB_EP_GET_IDX(ep->bEndpointAddress);
-    if (epid > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+    if (epid > (CONFIG_USBDEV_EP_NUM - 1)) {
         /**
-         * If you use ch58x, you can change the EP_NUMS set to 8
+         * If you use ch58x, you can change the CONFIG_USBDEV_EP_NUM set to 8
          */
         USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
         return -1;
@@ -542,6 +542,8 @@ USBD_IRQHandler(void)
                     }
                     break;
                 case UIS_TOKEN_OUT:
+                    EPn_SET_RX_NAK(epid);
+                    
                     if (epid == 0) {
                         /*!< ep0 out */
                         CH58x_USBFS_DEV->UEP0_CTRL ^= RB_UEP_R_TOG;
