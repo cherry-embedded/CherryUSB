@@ -217,7 +217,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
         case OID_GEN_MAXIMUM_FRAME_SIZE:
         case OID_GEN_TRANSMIT_BLOCK_SIZE:
         case OID_GEN_RECEIVE_BLOCK_SIZE:
-            RNDIS_INQUIRY_PUT_LE32(0x05DC);
+            RNDIS_INQUIRY_PUT_LE32(0x05DC); /* mtu 1500 */
             infomation_len = 4;
             break;
         case OID_GEN_VENDOR_ID:
@@ -255,7 +255,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             infomation_len = 4;
             break;
         case OID_GEN_MAXIMUM_TOTAL_SIZE:
-            RNDIS_INQUIRY_PUT_LE32(CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE + CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE);
+            RNDIS_INQUIRY_PUT_LE32(0x0616); /* 1514 + 44 */
             infomation_len = 4;
             break;
         case OID_GEN_MEDIA_CONNECT_STATUS:
