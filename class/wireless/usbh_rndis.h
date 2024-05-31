@@ -22,6 +22,9 @@ struct usbh_rndis {
     uint8_t minor;
 
     uint32_t request_id;
+    uint32_t tx_offset;
+    uint32_t max_transfer_pkts; /* max packets in one transfer */
+    uint32_t max_transfer_size; /* max size in one transfer */
 
     uint32_t link_speed;
     bool connect_status;

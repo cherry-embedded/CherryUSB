@@ -82,6 +82,11 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
         return ret;
     }
 
+    rndis_class->max_transfer_pkts = resp->MaxPacketsPerTransfer;
+    rndis_class->max_transfer_size = resp->MaxTransferSize;
+    USB_LOG_INFO("MaxPacketsPerTransfer:%d\r\n", resp->MaxPacketsPerTransfer);
+    USB_LOG_INFO("MaxTransferSize:%d\r\n", resp->MaxTransferSize);
+
     return ret;
 }
 
