@@ -94,8 +94,8 @@ CherryUSB Host Stack has the following functions：
 - Support Communication Device Class (CDC_ACM, CDC_ECM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
-- Support USB Video CLASS (commercial charge)
-- Support USB Audio CLASS (commercial charge)
+- Support USB Video CLASS (UVC1.0、UVC1.5)
+- Support USB Audio CLASS (UAC 1.0)
 - Support Remote NDIS (RNDIS)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
 - Support Vendor class
@@ -184,6 +184,10 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 |WCH    |  CH32V307/ch58x | ch32_usbfs/ch32_usbhs/ch58x |[wch_repo](https://github.com/CherryUSB/cherryusb_wch)|<= v0.10.2 | TBD |
 |Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|<= v0.10.2 | No more updated |
 |Raspberry pi |  rp2040 | rp2040 |[pico-examples](https://github.com/CherryUSB/pico-examples)|<= v0.10.2 | No more updated |
+
+## Commercial Support
+
+Refer to https://cherryusb.readthedocs.io/zh-cn/latest/support.html.
 
 ## Contact
 

@@ -94,8 +94,8 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 支持 Communication Device Class (CDC_ACM, CDC_ECM)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
-- Support USB Video CLASS（商业收费）
-- Support USB Audio CLASS（商业收费）
+- Support USB Video CLASS (UVC1.0、UVC1.5)
+- Support USB Audio CLASS (UAC1.0)
 - 支持 Remote NDIS (RNDIS)
 - 支持 USB Bluetooth (支持 nimble and zephyr bluetooth 协议栈，支持 **CLASS: 0xE0** 或者厂家自定义类，类似于 cdc acm 功能)
 - 支持 Vendor 类 class
@@ -186,7 +186,11 @@ CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和�
 |Nordicsemi |  Nrf52840 | nrf5x |[nrf5x_repo](https://github.com/CherryUSB/cherryusb_nrf5x)|<= v0.10.2 | No more updated |
 |Raspberry pi |  rp2040 | rp2040 |[pico-examples](https://github.com/CherryUSB/pico-examples)|<= v0.10.2 | No more updated |
 
-## Contact
+## 商业支持
+
+参考 https://cherryusb.readthedocs.io/zh-cn/latest/support.html。
+
+## 联系
 
 CherryUSB QQ 群:642693751
 CherryUSB 微信群：与我联系后邀请加入
