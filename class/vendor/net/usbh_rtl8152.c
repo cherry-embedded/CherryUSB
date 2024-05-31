@@ -2212,7 +2212,7 @@ int usbh_rtl8152_eth_output(uint8_t *buf, uint32_t buflen)
     tx_desc->opts2 = 0;
 
     buffer = g_rtl8152_tx_buffer + sizeof(struct tx_desc);
-    memcpy(buffer, buf, buflen);
+    usb_memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", buflen + sizeof(struct tx_desc));
 

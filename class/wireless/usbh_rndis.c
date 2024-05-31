@@ -468,7 +468,7 @@ find_class:
 
                 /* Not word-aligned case */
                 if (pmg_offset & 0x3) {
-                    memcpy(&temp, pmsg, sizeof(rndis_data_packet_t));
+                    usb_memcpy(&temp, pmsg, sizeof(rndis_data_packet_t));
                     pmsg = &temp;
                 }
 
@@ -523,11 +523,11 @@ int usbh_rndis_eth_output(uint8_t *buf, uint32_t buflen)
     hdr->DataLength = buflen;
 
     buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
-    memcpy(buffer, buf, buflen);
+    usb_memcpy(buffer, buf, buflen);
 
     len = hdr->MessageLength;
     /* if message length is the multiple of wMaxPacketSize, we should add a short packet to tell device transfer is over. */
-    if (!(hdr->MessageLength % g_rndis_class.bulkout->wMaxPacketSize)) {
+    if (!(len % g_rndis_class.bulkout->wMaxPacketSize)) {
         len += 1;
     }
 

@@ -488,7 +488,7 @@ struct pbuf *usbd_rndis_eth_rx(void)
     if (p == NULL) {
         return NULL;
     }
-    memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
+    usb_memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
     p->len = g_rndis_rx_data_length;
 
     USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_data_length);
@@ -518,7 +518,7 @@ int usbd_rndis_eth_tx(struct pbuf *p)
 
     buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
     for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
+        usb_memcpy(buffer, q->payload, q->len);
         buffer += q->len;
     }
 

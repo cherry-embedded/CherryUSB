@@ -721,7 +721,7 @@ int usbh_asix_eth_output(uint8_t *buf, uint32_t buflen)
     }
 
     buffer = &g_asix_tx_buffer[4];
-    memcpy(buffer, buf, buflen);
+    usb_memcpy(buffer, buf, buflen);
 
     g_asix_tx_buffer[0] = buflen & 0xff;
     g_asix_tx_buffer[1] = (buflen >> 8) & 0xff;

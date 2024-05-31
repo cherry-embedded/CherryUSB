@@ -183,7 +183,7 @@ struct pbuf *usbd_cdc_ecm_eth_rx(void)
         usbd_cdc_ecm_start_read_next();
         return NULL;
     }
-    memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_data_length);
+    usb_memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_data_length);
     p->len = g_cdc_ecm_rx_data_length;
 
     USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_data_length);
@@ -206,7 +206,7 @@ int usbd_cdc_ecm_eth_tx(struct pbuf *p)
 
     buffer = g_cdc_ecm_tx_buffer;
     for (q = p; q != NULL; q = q->next) {
-        memcpy(buffer, q->payload, q->len);
+        usb_memcpy(buffer, q->payload, q->len);
         buffer += q->len;
     }
 

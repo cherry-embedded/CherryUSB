@@ -356,7 +356,7 @@ int usbh_cdc_ncm_eth_output(uint8_t *buf, uint32_t buflen)
     ndp16_datagram->wDatagramLength = 0;
 
     buffer = &g_cdc_ncm_tx_buffer[16];
-    memcpy(buffer, buf, buflen);
+    usb_memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", nth16->wBlockLength);
 

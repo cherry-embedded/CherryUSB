@@ -20,6 +20,7 @@
 #include "usb_hc.h"
 #include "usb_osal.h"
 #include "usbh_hub.h"
+#include "usb_memcpy.h"
 
 #ifdef __cplusplus
 extern "C" {

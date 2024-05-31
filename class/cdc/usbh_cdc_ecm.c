@@ -287,7 +287,7 @@ int usbh_cdc_ecm_eth_output(uint8_t *buf, uint32_t buflen)
         return -USB_ERR_NOTCONN;
     }
 
-    memcpy(buffer, buf, buflen);
+    usb_memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", buflen);
 
