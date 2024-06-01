@@ -274,7 +274,7 @@ if CHERRYUSB
         config USBHOST_PLATFORM_ASIX
             bool
 
-        config USBHOST_PLATFORM_RTL152
+        config USBHOST_PLATFORM_RTL8152
             bool
 
         config CHERRYUSB_HOST_TEMPLATE
