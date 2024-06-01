@@ -246,30 +246,33 @@ find_class:
             usb_osal_msleep(100);
             goto find_class;
         }
+        usb_osal_msleep(128);
     }
 
     g_cdc_ecm_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, &g_cdc_ecm_rx_buffer[g_cdc_ecm_rx_length], CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, g_cdc_ecm_rx_buffer, CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_cdc_ecm_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
         }
 
-        g_cdc_ecm_rx_length += g_cdc_ecm_class.bulkin_urb.actual_length;
+        g_cdc_ecm_rx_length = g_cdc_ecm_class.bulkin_urb.actual_length;
 
-        if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize)) {
+        /* A transfer is complete because last packet is a short packet.
+         * Short packet is not zero, match g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize).
+         * Short packet is zero, check if g_cdc_ecm_class.bulkin_urb.actual_length < transfer_size, for example transfer is complete with size is 512 < 1514.
+         * This case is always true
+        */
+        if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize) ||
+            (g_cdc_ecm_class.bulkin_urb.actual_length < CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE)) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
             usbh_cdc_ecm_eth_input(g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
 
             g_cdc_ecm_rx_length = 0;
         } else {
-            /* read continue util read short packet */
-            if (g_cdc_ecm_rx_length > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
-                USB_LOG_ERR("Rx packet is overflow\r\n");
-                g_cdc_ecm_rx_length = 0;
-            }
+            /* There's no way to run here. */
         }
     }
     // clang-format off

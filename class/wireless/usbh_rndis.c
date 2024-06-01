@@ -434,6 +434,11 @@ void usbh_rndis_rx_thread(void *argument)
     uint32_t pmg_offset;
     rndis_data_packet_t *pmsg;
     rndis_data_packet_t temp;
+#if CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE <= (16 * 1024)
+    uint32_t transfer_size = CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE;
+#else
+    uint32_t transfer_size = (16 * 1024);
+#endif
 
     USB_LOG_INFO("Create rndis rx thread\r\n");
     // clang-format off
@@ -450,17 +455,23 @@ find_class:
             usb_osal_msleep(100);
             goto find_class;
         }
+        usb_osal_msleep(128);
     }
 
     g_rndis_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, g_rndis_rx_buffer, (CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE > (16 * 1024)) ? (16 * 1024) : CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, &g_rndis_rx_buffer[g_rndis_rx_length], transfer_size, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_rndis_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
         }
 
         g_rndis_rx_length += g_rndis_class.bulkin_urb.actual_length;
+
+        /* A transfer is complete because last packet is a short packet.
+         * Short packet is not zero, match g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize).
+         * Short packet cannot be zero.
+        */
         if (g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize)) {
             pmg_offset = 0;
 
@@ -495,9 +506,14 @@ find_class:
                 }
             }
         } else {
-            if (g_rndis_rx_length > CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
-                USB_LOG_ERR("Rx packet is overflow\r\n");
-                g_rndis_rx_length = 0;
+#if CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE <= (16 * 1024)
+            if (g_rndis_rx_length == CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
+#else
+            if ((g_rndis_rx_length + (16 * 1024)) > CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
+#endif
+                USB_LOG_ERR("Rx packet is overflow, please ruduce tcp window size or increase CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE\r\n");
+                while (1) {
+                }
             }
         }
     }
