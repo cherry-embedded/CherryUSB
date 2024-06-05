@@ -210,9 +210,7 @@ int usbd_cdc_ecm_eth_tx(struct pbuf *p)
         buffer += q->len;
     }
 
-    g_cdc_ecm_tx_data_length = p->tot_len;
-
-    return usbd_cdc_ecm_start_write(g_cdc_ecm_tx_buffer, g_cdc_ecm_tx_data_length);
+    return usbd_cdc_ecm_start_write(g_cdc_ecm_tx_buffer, p->tot_len);
 }
 #endif
 
