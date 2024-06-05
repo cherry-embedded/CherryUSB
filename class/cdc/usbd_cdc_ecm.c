@@ -167,7 +167,7 @@ void usbd_cdc_ecm_start_read_next(void)
 {
     g_cdc_ecm_rx_data_length = 0;
     g_cdc_ecm_rx_data_buffer = NULL;
-    usbd_ep_start_read(0, cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr, g_cdc_ecm_rx_buffer, usbd_get_ep_mps(busid, cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr));
+    usbd_ep_start_read(0, cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr, g_cdc_ecm_rx_buffer, usbd_get_ep_mps(0, cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr));
 }
 
 #ifdef CONFIG_USBDEV_CDC_ECM_USING_LWIP
