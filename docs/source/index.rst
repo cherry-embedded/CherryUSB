@@ -114,4 +114,4 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    :maxdepth: 1
    :caption: 商业支持
 
-   support
+   support/index

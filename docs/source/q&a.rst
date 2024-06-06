@@ -50,7 +50,14 @@ port 中 urb->timeout 清0 的处理有点问题（大数据量传输时会出�
 CherryUSB 性能能到多少
 ----------------------------------------------------------------
 
-可以达到硬件极限性能，比如 HPM 系列，从机可以到 42MB/s, 主机 44MB/s，全速芯片一般 800 ~ 1000KB/s，当然需要硬件理论支持到这速度，CherryUSB 就支持到这速度
+可以达到硬件极限性能，当然需要硬件理论支持到这速度，CherryUSB 就支持到这速度,举例如下：
+
+- HPM 系列(从机可以到 42MB/S, 主机 44MB/S, 已经达到硬件极限)
+- BL 系列（从机 32MB/S, 主机 25MB/S, 已经达到硬件极限）
+- STM32F4 全速（从机 900KB/S, 主机 1.12MB/S, 已经达到硬件极限）
+
+从机测速demo: cdc_acm_template.c 并且关闭 log，脚本使用 `tools/test_srcipts/test_cdc_speed.py`
+主机测速demo: usb_host.c 中 TEST_USBH_CDC_SPEED=1
 
 ST IP 命名问题
 ------------------
