@@ -21,9 +21,9 @@
 #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
 #endif
 
-/*  
- * (largest USB packet used / 4) + 1 for status information + 1 transfer complete + 
- * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario 
+/*
+ * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
+ * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
  */
 #ifndef CONFIG_USB_DWC2_RX_FIFO_SIZE
 #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
@@ -742,6 +742,25 @@ int usbh_submit_urb(struct usbh_urb *urb)
     if (chidx == -1) {
         usb_osal_leave_critical_section(flags);
         return -USB_ERR_NOMEM;
+    }
+
+    if (urb->ep->bEndpointAddress & 0x80) {
+        /* Check if pipe rx fifo is overflow */
+        if (USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) > (CONFIG_USB_DWC2_RX_FIFO_SIZE * 4)) {
+            return -USB_ERR_RANGE;
+        }
+    } else {
+        /* Check if intr and iso pipe tx fifo is overflow */
+        if (((USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) == USB_ENDPOINT_TYPE_ISOCHRONOUS) ||
+             (USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) == USB_ENDPOINT_TYPE_INTERRUPT)) &&
+            USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) > (CONFIG_USB_DWC2_PTX_FIFO_SIZE * 4)) {
+            return -USB_ERR_RANGE;
+        } else {
+            /* Check if control and bulk pipe tx fifo is overflow */
+            if (USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) > (CONFIG_USB_DWC2_NPTX_FIFO_SIZE * 4)) {
+                return -USB_ERR_RANGE;
+            }
+        }
     }
 
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx];
