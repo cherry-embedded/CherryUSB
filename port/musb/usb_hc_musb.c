@@ -307,7 +307,6 @@ void musb_bulk_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *ur
         }
 
         musb_write_packet(bus, chidx, buffer, buflen);
-        HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) &= ~USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) |= USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
 
@@ -354,7 +353,6 @@ void musb_intr_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *ur
         }
 
         musb_write_packet(bus, chidx, buffer, buflen);
-        HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) &= ~USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) |= USB_TXCSRH1_MODE;
         HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) = USB_TXCSRL1_TXRDY;
 
@@ -633,6 +631,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
         chidx = (urb->ep->bEndpointAddress & 0x0f);
 
         if (chidx > (CONFIG_USBHOST_PIPE_NUM - 1)) {
+            usb_osal_leave_critical_section(flags);
             return -USB_ERR_RANGE;
         }
     }
@@ -869,7 +868,7 @@ void USBH_IRQHandler(uint8_t busid)
     struct usbh_bus *bus;
 
     bus = &g_usbhost_bus[busid];
-    
+
     is = HWREGB(USB_BASE + MUSB_IS_OFFSET);
     txis = HWREGH(USB_BASE + MUSB_TXIS_OFFSET);
     rxis = HWREGH(USB_BASE + MUSB_RXIS_OFFSET);
