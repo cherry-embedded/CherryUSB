@@ -27,13 +27,6 @@ extern void usbh_hubport_release(struct usbh_hubport *hport);
 
 static const char *speed_table[] = { "error-speed", "low-speed", "full-speed", "high-speed", "wireless-speed", "super-speed", "superplus-speed" };
 
-#ifdef CONFIG_USBHOST_XHCI
-struct usbh_hubport *usbh_get_roothub_port(unsigned int port)
-{
-    return &roothub.child[port - 1];
-}
-#endif
-
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static struct usbh_hub g_hub_class[CONFIG_USBHOST_MAX_EXTHUBS];
 static uint32_t g_devinuse = 0;
@@ -563,24 +556,9 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     } else if (portstatus & HUB_PORT_STATUS_LOW_SPEED) {
                         speed = USB_SPEED_LOW;
                     }
-#ifdef CONFIG_USBHOST_XHCI
-                    else {
-                        extern uint8_t usbh_get_port_speed(struct usbh_hub * hub, const uint8_t port);
-
-                        /* USB3.0 speed cannot get from portstatus, checkout port speed instead */
-                        uint8_t super_speed = usbh_get_port_speed(hub, port + 1);
-                        if (super_speed > USB_SPEED_HIGH) {
-                            /* assert that when using USB 3.0 ports, attached device must also be USB 3.0 speed */
-                            speed = super_speed;
-                        } else {
-                            speed = USB_SPEED_FULL;
-                        }
-                    }
-#else
                     else {
                         speed = USB_SPEED_FULL;
                     }
-#endif
 
                     child = &hub->child[port];
                     /** release child sources first */

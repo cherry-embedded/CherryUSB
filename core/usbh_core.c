@@ -81,12 +81,6 @@ static int __usbh_free_devaddr(struct usbh_devaddr_map *devgen, uint8_t devaddr)
 
 static int usbh_free_devaddr(struct usbh_hubport *hport)
 {
-#ifndef CONFIG_USBHOST_XHCI
-    if (hport->dev_addr > 0) {
-        __usbh_free_devaddr(&hport->bus->devgen, hport->dev_addr);
-    }
-#endif
-
     hport->dev_addr = 0;
     return 0;
 }
@@ -398,23 +392,12 @@ int usbh_enumerate(struct usbh_hubport *hport)
     /* Reconfigure EP0 with the correct maximum packet size */
     ep->wMaxPacketSize = ep_mps;
 
-#ifdef CONFIG_USBHOST_XHCI
-    extern int usbh_get_xhci_devaddr(usbh_pipe_t * pipe);
-
-    /* Assign a function address to the device connected to this port */
-    dev_addr = usbh_get_xhci_devaddr(hport->ep0);
-    if (dev_addr < 0) {
-        USB_LOG_ERR("Failed to allocate devaddr,errorcode:%d\r\n", ret);
-        goto errout;
-    }
-#else
     /* Assign a function address to the device connected to this port */
     dev_addr = usbh_allocate_devaddr(&hport->bus->devgen);
     if (dev_addr < 0) {
         USB_LOG_ERR("Failed to allocate devaddr,errorcode:%d\r\n", ret);
         goto errout;
     }
-#endif
 
     /* Set the USB device address */
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;

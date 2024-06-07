@@ -110,9 +110,6 @@ struct usbh_hubport {
     struct usb_setup_packet *setup;
     struct usbh_hub *parent;
     struct usbh_bus *bus;
-#ifdef CONFIG_USBHOST_XHCI
-    uint32_t protocol; /* port protocol, for xhci, some ports are USB2.0, others are USB3.0 */
-#endif
     struct usb_endpoint_descriptor ep0;
     struct usbh_urb ep0_urb;
     usb_osal_mutex_t mutex;
