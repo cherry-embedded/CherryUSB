@@ -2,10 +2,6 @@
 
 ## Support Chip List
 
-### HEZHOU
-
-- AIR105
-
 ### ES32
 
 - ES32F3xx
@@ -14,6 +10,14 @@
 
 - MSP432E4x
 
+### Bekencorp
+
+- BK7256/BK7258
+
 ### AllwinnerTech
 
 - F1Cxxx, F2Cxxx
+
+### HEZHOU
+
+- AIR105
