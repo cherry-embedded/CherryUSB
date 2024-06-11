@@ -1245,7 +1245,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
         }
     } else {
 #ifdef CONFIG_USB_EHCI_ISO
-        ehci_remove_itd_urb(bus, urb);
+        ehci_kill_iso_urb(bus, urb);
         EHCI_HCOR->usbcmd |= (EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN);
         usb_osal_leave_critical_section(flags);
         return 0;
@@ -1346,8 +1346,8 @@ void USBH_IRQHandler(uint8_t busid)
                     for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
                         g_ehci_hcd[bus->hcd.hcd_id].ehci_qh_used[index] = false;
                     }
-                    for (uint8_t index = 0; index < CONFIG_USB_EHCI_ITD_NUM; index++) {
-                        g_ehci_hcd[bus->hcd.hcd_id].ehci_itd_used[index] = false;
+                    for (uint8_t index = 0; index < CONFIG_USB_EHCI_ISO_NUM; index++) {
+                        g_ehci_hcd[bus->hcd.hcd_id].ehci_iso_used[index] = false;
                     }
                 }
 
