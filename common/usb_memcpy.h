@@ -18,8 +18,8 @@ static inline void dword2array(char *addr, uint32_t w)
 
 static inline void *usb_memcpy(void *s1, const void *s2, size_t n)
 {
-    char *b1 = s1;
-    const char *b2 = s2;
+    char *b1 = (char *)s1;
+    const char *b2 = (const char *)s2;
     uint32_t *w1;
     const uint32_t *w2;
 
