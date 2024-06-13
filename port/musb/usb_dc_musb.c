@@ -113,7 +113,6 @@ struct musb_udc {
 } g_musb_udc;
 
 static volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
-volatile bool zlp_flag = 0;
 
 /* get current active ep */
 static uint8_t musb_get_active_ep(void)
@@ -264,12 +263,6 @@ uint8_t usbd_get_port_speed(uint8_t busid)
         speed = USB_SPEED_LOW;
 
     return speed;
-}
-
-uint8_t usbd_force_full_speed(const uint8_t port)
-{
-    HWREGB(USB_BASE + MUSB_POWER_OFFSET) &= ~USB_POWER_HSENAB;
-    return (HWREGB(USB_BASE + MUSB_POWER_OFFSET) & USB_POWER_HSENAB);
 }
 
 int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)

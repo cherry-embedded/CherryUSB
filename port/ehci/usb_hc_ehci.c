@@ -1160,21 +1160,18 @@ int usbh_submit_urb(struct usbh_urb *urb)
             if (qh == NULL) {
                 return -USB_ERR_NOMEM;
             }
-            urb->hcpriv = qh;
             break;
         case USB_ENDPOINT_TYPE_BULK:
             qh = ehci_bulk_urb_init(bus, urb, urb->transfer_buffer, urb->transfer_buffer_length);
             if (qh == NULL) {
                 return -USB_ERR_NOMEM;
             }
-            urb->hcpriv = qh;
             break;
         case USB_ENDPOINT_TYPE_INTERRUPT:
             qh = ehci_intr_urb_init(bus, urb, urb->transfer_buffer, urb->transfer_buffer_length);
             if (qh == NULL) {
                 return -USB_ERR_NOMEM;
             }
-            urb->hcpriv = qh;
             break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
 #ifdef CONFIG_USB_EHCI_ISO
