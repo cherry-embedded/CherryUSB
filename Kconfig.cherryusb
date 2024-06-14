@@ -36,12 +36,16 @@ if CHERRYUSB
                 bool "dwc2_at"
             config CHERRYUSB_DEVICE_DWC2_GD
                 bool "dwc2_gd"
+            config CHERRYUSB_DEVICE_DWC2_HC
+                bool "dwc2_hc"
             config CHERRYUSB_DEVICE_DWC2_CUSTOM
                 bool "dwc2_custom"
-            config CHERRYUSB_DEVICE_MUSB_STANDARD
-                bool "musb_standard"
+            config CHERRYUSB_DEVICE_MUSB_ES
+                bool "musb_es"
             config CHERRYUSB_DEVICE_MUSB_SUNXI
                 bool "musb_sunxi"
+            config CHERRYUSB_DEVICE_MUSB_BK
+                bool "musb_bk"
             config CHERRYUSB_DEVICE_MUSB_CUSTOM
                 bool "musb_custom"
             config CHERRYUSB_DEVICE_BL
@@ -168,12 +172,16 @@ if CHERRYUSB
                 bool "dwc2_st"
             config CHERRYUSB_HOST_DWC2_ESP
                 bool "dwc2_esp"
+            config CHERRYUSB_HOST_DWC2_HC
+                bool "dwc2_hc"
             config CHERRYUSB_HOST_DWC2_CUSTOM
                 bool "dwc2_custom"
-            config CHERRYUSB_HOST_MUSB_STANDARD
-                bool "musb_standard"
+            config CHERRYUSB_HOST_MUSB_ES
+                bool "musb_es"
             config CHERRYUSB_HOST_MUSB_SUNXI
                 bool "musb_sunxi"
+            config CHERRYUSB_HOST_MUSB_BK
+                bool "musb_bk"
             config CHERRYUSB_HOST_MUSB_CUSTOM
                 bool "musb_custom"
             config CHERRYUSB_HOST_PUSB2

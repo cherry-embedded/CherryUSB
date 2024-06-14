@@ -2,7 +2,7 @@
 
 ## Support Chip List
 
-### ES32
+### Eastsoft
 
 - ES32F3xx
 
@@ -17,7 +17,3 @@
 ### AllwinnerTech
 
 - F1Cxxx, F2Cxxx
-
-### HEZHOU
-
-- AIR105
