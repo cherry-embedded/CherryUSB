@@ -807,7 +807,7 @@ struct video_cs_if_vc_header_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
     uint8_t bDescriptorSubType;
-    uint16_t bcdVDC;
+    uint16_t bcdUVC;
     uint16_t wTotalLength;
     uint32_t dwClockFrequency;
     uint8_t bInCollection;
