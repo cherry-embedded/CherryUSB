@@ -1078,8 +1078,10 @@ struct video_autoexposure_mode {
 
 #define VIDEO_GUID_YUY2 0x59, 0x55, 0x59, 0x32, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71
 #define VIDEO_GUID_NV12 0x4E, 0x56, 0x31, 0x32, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71
+#define VIDEO_GUID_NV21 0x4E, 0x56, 0x32, 0x31, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71
 #define VIDEO_GUID_M420 0x4D, 0x34, 0x32, 0x30, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71
 #define VIDEO_GUID_I420 0x49, 0x34, 0x32, 0x30, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71
+#define VIDEO_GUID_H264 0x48, 0x32, 0x36, 0x34, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71
 
 #define VIDEO_VC_TERMINAL_LEN (13 + 18 + 12 + 9)
 
@@ -1317,25 +1319,21 @@ struct video_autoexposure_mode {
     bFrameIntervalType,                      /* bFrameIntervalType : Indicates how the frame interval can be programmed. 0: Continuous frame interval 1..255: The number of discrete frame   */ \
     __VA_ARGS__
 
-#define VIDEO_VS_FORMAT_H264_DESCRIPTOR_INIT(bFormatIndex, bNumFrameDescriptors)                                                                                   \
-    /*Payload Format(H264) Descriptor */                                                                                                                           \
-    0x1c,                                                                                                /* bLength */                                             \
-    0x24,                                                                                            /* bDescriptorType : CS_INTERFACE */                          \
-    0x10,                                                                                            /* bDescriptorSubType : VS_FORMAT_FRAME_BASED subtype */      \
-    bFormatIndex,                                                                                    /* bFormatIndex : First (and only) format descriptor */       \
-    bNumFrameDescriptors, /* bNumFrameDescriptors : One frame descriptor for this format follows. */ /* guidFormat {34363248-0000-0010-8000-00AA00389B71}(H264) */ \
-    0x48, 0x32, 0x36, 0x34,                                                                                                                                        \
-    0x00, 0x00,                                                                                                                                                    \
-    0x10, 0x00,                                                                                                                                                    \
-    0x80, 0x00,                                                                                                                                                    \
-    0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71,                                                                                                                            \
-    0x10, /* bBitsPerPixel */                                                                                                                                      \
-    0x01, /* bDefaultFrameIndex : Default frame index is 1. */                                                                                                     \
-    0x00, /* bAspectRatioX : Non-interlaced stream – not required. */                                                                                              \
-    0x00, /* bAspectRatioY : Non-interlaced stream – not required. */                                                                                              \
-    0x00, /* bmInterlaceFlags : Non-interlaced stream */                                                                                                           \
-    0x00, /* bCopyProtect : No restrictions imposed on the duplication of this video stream. */                                                                    \
-    0x01  /* bVariableSize */
+#define VIDEO_VS_FORMAT_H264_DESCRIPTOR_INIT(bFormatIndex, bNumFrameDescriptors)                     \
+    /*Payload Format(H.264) Descriptor */                                                            \
+    0x1c,                 /* bLength */                                                              \
+    0x24,                 /* bDescriptorType : CS_INTERFACE */                                       \
+    VIDEO_VS_FORMAT_FRAME_BASED_DESCRIPTOR_SUBTYPE,  /* bDescriptorSubType : VS_FORMAT_FRAME_BASED subtype */\
+    bFormatIndex,         /* bFormatIndex : First (and only) format descriptor */                    \
+    bNumFrameDescriptors, /* bNumFrameDescriptors : One frame descriptor for this format follows. */ \
+    VIDEO_GUID_H264,                                                                                 \
+    0x00,                 /* bmFlags : Uses fixed size samples.. */                                  \
+    0x01,                 /* bDefaultFrameIndex : Default frame index is 1. */                       \
+    0x00,                 /* bAspectRatioX : Non-interlaced stream – not required. */                \
+    0x00,                 /* bAspectRatioY : Non-interlaced stream – not required. */                \
+    0x00,                 /* bmInterlaceFlags : Non-interlaced stream */                             \
+    0x00,                 /* bCopyProtect : No restrictions imposed on the duplication of this video stream. */ \
+    0x00                  /* Variable size: False */
 
 #define VIDEO_VS_FRAME_H264_DESCRIPTOR_INIT(bFrameIndex, wWidth, wHeight, dwMinBitRate, dwMaxBitRate,                                                                                                 \
                                             dwDefaultFrameInterval, bFrameIntervalType, ...)                                                                                                          \
