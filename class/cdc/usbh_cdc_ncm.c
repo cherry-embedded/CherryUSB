@@ -206,7 +206,7 @@ get_mac:
         }
     }
 
-    memcpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register CDC NCM Class:%s\r\n", hport->config.intf[intf].devname);
 

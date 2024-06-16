@@ -96,7 +96,7 @@ static int usbh_bluetooth_connect(struct usbh_hubport *hport, uint8_t intf)
     }
     USB_LOG_INFO("Bluetooth select altsetting 0\r\n");
 #endif
-    snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT);
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
     USB_LOG_INFO("Register Bluetooth Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_bluetooth_run(bluetooth_class);
     return ret;

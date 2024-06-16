@@ -188,7 +188,7 @@ get_mac:
     }
     USB_LOG_INFO("Set CDC ECM packet filter:%04x\r\n", CONFIG_USBHOST_CDC_ECM_PKT_FILTER);
 
-    memcpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register CDC ECM Class:%s\r\n", hport->config.intf[intf].devname);
 

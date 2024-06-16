@@ -2080,7 +2080,7 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    memcpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register RTL8152 Class:%s\r\n", hport->config.intf[intf].devname);
 

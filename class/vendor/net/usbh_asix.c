@@ -597,7 +597,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
 
     USB_LOG_INFO("Init %s done\r\n", asix_class->name);
 
-    memcpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register ASIX Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_asix_run(asix_class);

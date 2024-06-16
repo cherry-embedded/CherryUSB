@@ -387,7 +387,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                  rndis_class->mac[4],
                  rndis_class->mac[5]);
 
-    memcpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_rndis_run(rndis_class);
