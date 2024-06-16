@@ -95,7 +95,7 @@ CherryUSB Host Stack has the following functions：
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
 - Support USB Video CLASS (UVC1.0、UVC1.5)
-- Support USB Audio CLASS (UAC 1.0)
+- Support USB Audio CLASS (UAC1.0)
 - Support Remote NDIS (RNDIS)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
 - Support Vendor class

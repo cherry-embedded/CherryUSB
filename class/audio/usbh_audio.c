@@ -367,9 +367,9 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                             audio_class->module[format_offset].altsetting[cur_alt_setting].sampfreq_num = desc->bSamFreqType;
 
                             for (uint8_t j = 0; j < desc->bSamFreqType; j++) {
-                                audio_class->module[format_offset].altsetting[cur_alt_setting].sampfreq[j] = (uint32_t)(p[10 + j] << 16) |
-                                                                                                             (uint32_t)(p[9 + j] << 8) |
-                                                                                                             (uint32_t)(p[8 + j] << 0);
+                                audio_class->module[format_offset].altsetting[cur_alt_setting].sampfreq[j] = (uint32_t)(p[10 + j * 3] << 16) |
+                                                                                                             (uint32_t)(p[9 + j * 3] << 8) |
+                                                                                                             (uint32_t)(p[8 + j * 3] << 0);
                             }
                             if (cur_alt_setting == (hport->config.intf[intf + 1].altsetting_num - 1)) {
                                 format_offset++;
