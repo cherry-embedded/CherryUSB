@@ -124,8 +124,10 @@ void usbh_hid_callback(void *arg, int nbytes)
             USB_LOG_RAW("0x%02x ", hid_buffer[i]);
         }
         USB_LOG_RAW("nbytes:%d\r\n", nbytes);
+        usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
         usbh_submit_urb(&hid_class->intin_urb);
     } else if (nbytes == -USB_ERR_NAK) { /* only dwc2 should do this */
+        usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
         usbh_submit_urb(&hid_class->intin_urb);
     } else {
     }
