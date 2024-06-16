@@ -52,10 +52,10 @@ extern "C" {
         ep = ep_desc;                                                        \
         USB_LOG_INFO("Ep=%02x Attr=%02u Mps=%d Interval=%02u Mult=%02u\r\n", \
                      ep_desc->bEndpointAddress,                              \
-                     USB_GET_ENDPOINT_TYPE(ep_desc->bmAttributes),           \
+                     ep_desc->bmAttributes,                                  \
                      USB_GET_MAXPACKETSIZE(ep_desc->wMaxPacketSize),         \
                      ep_desc->bInterval,                                     \
-                     USB_GET_MULT(ep_desc->bmAttributes));                   \
+                     USB_GET_MULT(ep_desc->wMaxPacketSize));                 \
     } while (0)
 
 struct usbh_class_info {
