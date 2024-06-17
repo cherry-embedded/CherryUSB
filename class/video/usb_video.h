@@ -806,6 +806,7 @@ struct video_still_probe_and_commit_controls {
 struct video_cs_if_vc_header_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
     uint16_t bcdVDC;
     uint16_t wTotalLength;
     uint32_t dwClockFrequency;
@@ -813,7 +814,7 @@ struct video_cs_if_vc_header_descriptor {
     uint8_t baInterfaceNr[];
 } __PACKED;
 
-#define VIDEO_SIZEOF_VC_HEADER_DESC(n) (11 + n)
+#define VIDEO_SIZEOF_VC_HEADER_DESC(n) (12 + n)
 
 struct video_cs_if_vc_input_terminal_descriptor {
     uint8_t bLength;
