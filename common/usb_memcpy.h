@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef USB_MEMCPY_H
+#define USB_MEMCPY_H
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -85,3 +88,4 @@ static inline void *usb_memcpy(void *s1, const void *s2, size_t n)
     }
     return s1;
 }
+#endif
