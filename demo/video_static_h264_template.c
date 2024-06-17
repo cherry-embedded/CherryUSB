@@ -59,12 +59,7 @@ const uint8_t video_descriptor[] = {
     VIDEO_VS_FRAME_H264_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, DBVAL(INTERVAL), 0x01, DBVAL(INTERVAL)),
     VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x01, 0x01),
     /* 1.2.2.2 Standard VideoStream Isochronous Video Data Endpoint Descriptor */
-    0x07,                         /* bLength */
-    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: ENDPOINT */
-    0x81,                         /* bEndpointAddress: IN endpoint 2 */
-    0x01,                         /* bmAttributes: Isochronous transfer type. Asynchronous synchronization type. */
-    WBVAL(VIDEO_PACKET_SIZE),     /* wMaxPacketSize */
-    0x01,                         /* bInterval: One frame interval */
+    USB_ENDPOINT_DESCRIPTOR_INIT(VIDEO_IN_EP, 0x05, VIDEO_PACKET_SIZE, 0x01),
 
     ///////////////////////////////////////
     /// string0 descriptor
