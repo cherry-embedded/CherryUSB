@@ -861,6 +861,22 @@ struct video_cs_if_vc_output_terminal_descriptor {
 
 #define VIDEO_SIZEOF_VC_OUTPUT_TERMINAL_DESC 9
 
+struct video_cs_if_vc_extension_unit_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubType;
+    uint8_t bUnitID;
+    uint8_t guidExtensionCode[16];
+    uint8_t bNumControls;
+    uint8_t bNrInPins;
+    // uint8_t baSourceID[];
+    uint8_t bControlSize;
+    // uint8_t bmControls[]
+    uint8_t iExtension;
+} __PACKED;
+
+#define VIDEO_SIZEOF_VC_EXTENSION_UNIT_DESC(p, n) (24 + p + n)
+
 struct video_cs_ep_vc_ep_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
