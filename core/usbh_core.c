@@ -81,7 +81,9 @@ static int __usbh_free_devaddr(struct usbh_devaddr_map *devgen, uint8_t devaddr)
 
 static int usbh_free_devaddr(struct usbh_hubport *hport)
 {
-    hport->dev_addr = 0;
+    if (hport->dev_addr > 0) {
+        __usbh_free_devaddr(&hport->bus->devgen, hport->dev_addr);
+    }
     return 0;
 }
 
