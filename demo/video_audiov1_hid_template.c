@@ -112,12 +112,7 @@ const uint8_t video_audio_hid_descriptor[] = {
     VIDEO_VS_FRAME_MJPEG_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, MAX_FRAME_SIZE, DBVAL(INTERVAL), 0x01, DBVAL(INTERVAL)),
     VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x01, 0x01),
     /* 1.2.2.2 Standard VideoStream Isochronous Video Data Endpoint Descriptor */
-    0x07,                         /* bLength */
-    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: ENDPOINT */
-    0x81,                         /* bEndpointAddress: IN endpoint 2 */
-    0x01,                         /* bmAttributes: Isochronous transfer type. Asynchronous synchronization type. */
-    WBVAL(VIDEO_PACKET_SIZE),     /* wMaxPacketSize */
-    0x01,                         /* bInterval: One frame interval */
+    USB_ENDPOINT_DESCRIPTOR_INIT(VIDEO_IN_EP, 0x05, VIDEO_PACKET_SIZE, 0x01),
     AUDIO_AC_DESCRIPTOR_INIT(0x02, 0x03, AUDIO_AC_SIZ, 0x00, 0x03, 0x04),
     AUDIO_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x01, AUDIO_INTERM_MIC, 0x02, 0x0003),
     AUDIO_AC_FEATURE_UNIT_DESCRIPTOR_INIT(0x02, 0x01, 0x01, 0x03, 0x00, 0x00),
@@ -353,7 +348,7 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
         usbd_ep_start_read(busid, AUDIO_OUT_EP, audio_read_buffer, AUDIO_OUT_PACKET);
         printf("OPEN1\r\n");
     } else if (intf == 4) {
-        video_tx_flag = 1;
+        audio_tx_flag = 1;
         audio_iso_tx_busy = false;
         printf("OPEN2\r\n");
     }
@@ -365,7 +360,7 @@ void usbd_audio_close(uint8_t busid, uint8_t intf)
         audio_rx_flag = 0;
         printf("CLOSE1\r\n");
     } else if (intf == 4) {
-        video_tx_flag = 0;
+        audio_tx_flag = 0;
         audio_iso_tx_busy = false;
         printf("CLOSE2\r\n");
     }
