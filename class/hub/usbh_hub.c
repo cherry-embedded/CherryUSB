@@ -366,8 +366,6 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     hub->connected = true;
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, hub->index);
 
-    usb_slist_add_tail(&hub->bus->hub_list, &hub->list);
-
     USB_LOG_INFO("Register HUB Class:%s\r\n", hport->config.intf[intf].devname);
 
     hub->int_buffer = g_hub_intbuf[hub->bus->busid][hub->index - 1];
@@ -405,7 +403,6 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
         if (hport->config.intf[intf].devname[0] != '\0') {
             USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
-            usb_slist_remove(&hub->bus->hub_list, &hub->list);
         }
 
         usbh_hub_class_free(hub);
@@ -555,8 +552,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                         speed = USB_SPEED_HIGH;
                     } else if (portstatus & HUB_PORT_STATUS_LOW_SPEED) {
                         speed = USB_SPEED_LOW;
-                    }
-                    else {
+                    } else {
                         speed = USB_SPEED_FULL;
                     }
 
@@ -626,6 +622,17 @@ void usbh_hub_thread_wakeup(struct usbh_hub *hub)
 int usbh_hub_initialize(struct usbh_bus *bus)
 {
     char thread_name[32] = { 0 };
+    struct usbh_hub *hub;
+
+    hub = &bus->hcd.roothub;
+    hub->connected = true;
+    hub->index = 1;
+    hub->is_roothub = true;
+    hub->parent = NULL;
+    hub->hub_addr = 1;
+    hub->hub_desc.bNbrPorts = CONFIG_USBHOST_MAX_RHPORTS;
+    hub->int_buffer = bus->hcd.roothub_intbuf;
+    hub->bus = bus;
 
     bus->hub_mq = usb_osal_mq_create(7);
     if (bus->hub_mq == NULL) {
@@ -644,21 +651,17 @@ int usbh_hub_initialize(struct usbh_bus *bus)
 
 int usbh_hub_deinitialize(struct usbh_bus *bus)
 {
-    usb_slist_t *hub_list;
     struct usbh_hubport *hport;
+    struct usbh_hub *hub;
     size_t flags;
 
     flags = usb_osal_enter_critical_section();
 
-    usb_slist_for_each(hub_list, &bus->hub_list)
-    {
-        struct usbh_hub *hub = usb_slist_entry(hub_list, struct usbh_hub, list);
+    hub = &bus->hcd.roothub;
+    for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
+        hport = &hub->child[port];
 
-        for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
-            hport = &hub->child[port];
-
-            usbh_hubport_release(hport);
-        }
+        usbh_hubport_release(hport);
     }
 
     usb_hc_deinit(bus);

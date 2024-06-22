@@ -116,7 +116,6 @@ struct usbh_hubport {
 };
 
 struct usbh_hub {
-    usb_slist_t list;
     bool connected;
     bool is_roothub;
     uint8_t index;
@@ -157,7 +156,6 @@ struct usbh_bus {
     struct usbh_devaddr_map devgen;
     usb_osal_thread_t hub_thread;
     usb_osal_mq_t hub_mq;
-    usb_slist_t hub_list;
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,
