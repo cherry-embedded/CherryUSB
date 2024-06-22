@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define ALIGN_UP_DWORD(x) ((uint32_t)(x) & (sizeof(uint32_t) - 1))
+#define ALIGN_UP_DWORD(x) ((uint32_t)(uintptr_t)(x) & (sizeof(uint32_t) - 1))
 
 static inline void dword2array(char *addr, uint32_t w)
 {
