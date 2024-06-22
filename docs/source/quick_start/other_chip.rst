@@ -1,7 +1,22 @@
 芯片通用移植指南
 =========================
 
-本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在往下看之前，需要 **你准备好一个可以打印 helloworld 的基本工程** ，并且实现了 `printf` 、 `malloc`、 `free`。如果是主机，需要 **准备好可以打印 helloworld 的带 OS 的工程**。
+本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在往下看之前，需要 **你准备好一个可以打印 helloworld 的基本工程** ，并且实现了 `printf` 、 `malloc`、 `free`。如果是主机，需要 **准备好可以打印 helloworld 的带 OS 的工程**。通常来说， `printf` 大家都会实现，
+`malloc`、 `free` 主要给主机使用, 默认 config 文件使用的就是  `malloc`、 `free`，推荐修改为 os 相关接口, 不推荐使用系统库，尤其是 keil 自带的这种。举例如下：
+
+.. code-block:: C
+
+        // default config
+        #define usb_malloc(size) malloc(size)
+        #define usb_free(ptr)    free(ptr)
+
+        // freertos
+        #define usb_malloc(size) pvPortMalloc(size)
+        #define usb_free(ptr)    vPortFree(ptr)
+
+        //rtthread
+        #define usb_malloc(size) rt_malloc(size)
+        #define usb_free(ptr)    rt_free(ptr)
 
 USB Device 移植要点
 -----------------------
