@@ -234,7 +234,12 @@ delete :
 static int usbh_bluetooth_hci_cmd(uint8_t *buffer, uint32_t buflen)
 {
     struct usbh_bluetooth *bluetooth_class = &g_bluetooth_class;
-    struct usb_setup_packet *setup = bluetooth_class->hport->setup;
+    struct usb_setup_packet *setup;
+
+    if (!bluetooth_class || !bluetooth_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = bluetooth_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = 0x00;

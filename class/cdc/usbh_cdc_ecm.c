@@ -32,7 +32,12 @@ static struct usbh_cdc_ecm g_cdc_ecm_class;
 
 static int usbh_cdc_ecm_set_eth_packet_filter(struct usbh_cdc_ecm *cdc_ecm_class, uint16_t filter_value)
 {
-    struct usb_setup_packet *setup = cdc_ecm_class->hport->setup;
+    struct usb_setup_packet *setup;
+
+    if (!cdc_ecm_class || !cdc_ecm_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = cdc_ecm_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_SET_ETHERNET_PACKET_FILTER;

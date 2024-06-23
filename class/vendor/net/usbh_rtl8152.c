@@ -946,8 +946,13 @@ static int usbh_rtl8152_read_regs(struct usbh_rtl8152 *rtl8152_class,
                                   uint16_t size,
                                   void *data)
 {
-    struct usb_setup_packet *setup = rtl8152_class->hport->setup;
+    struct usb_setup_packet *setup;
     int ret;
+
+    if (!rtl8152_class || !rtl8152_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = rtl8152_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = RTL8152_REQ_GET_REGS;
@@ -970,7 +975,12 @@ static int usbh_rtl8152_write_regs(struct usbh_rtl8152 *rtl8152_class,
                                    uint16_t size,
                                    void *data)
 {
-    struct usb_setup_packet *setup = rtl8152_class->hport->setup;
+    struct usb_setup_packet *setup;
+
+    if (!rtl8152_class || !rtl8152_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = rtl8152_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
     setup->bRequest = RTL8152_REQ_SET_REGS;

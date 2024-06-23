@@ -33,8 +33,13 @@ static struct usbh_cdc_ncm g_cdc_ncm_class;
 
 static int usbh_cdc_ncm_get_ntb_parameters(struct usbh_cdc_ncm *cdc_ncm_class, struct cdc_ncm_ntb_parameters *param)
 {
-    struct usb_setup_packet *setup = cdc_ncm_class->hport->setup;
+    struct usb_setup_packet *setup;
     int ret;
+
+    if (!cdc_ncm_class || !cdc_ncm_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = cdc_ncm_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CDC_REQUEST_GET_NTB_PARAMETERS;

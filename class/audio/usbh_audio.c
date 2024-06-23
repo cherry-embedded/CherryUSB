@@ -57,13 +57,18 @@ static void usbh_audio_class_free(struct usbh_audio *audio_class)
 
 int usbh_audio_open(struct usbh_audio *audio_class, const char *name, uint32_t samp_freq)
 {
-    struct usb_setup_packet *setup = audio_class->hport->setup;
+    struct usb_setup_packet *setup;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
     int ret;
     uint8_t intf = 0xff;
     uint8_t altsetting = 1;
+
+    if (!audio_class || !audio_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = audio_class->hport->setup;
 
     if (audio_class->is_opened) {
         return 0;
@@ -129,11 +134,16 @@ freq_found:
 
 int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
 {
-    struct usb_setup_packet *setup = audio_class->hport->setup;
+    struct usb_setup_packet *setup;
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
     uint8_t intf = 0xff;
     uint8_t altsetting = 1;
+
+    if (!audio_class || !audio_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = audio_class->hport->setup;
 
     for (size_t i = 0; i < audio_class->module_num; i++) {
         if (strcmp(name, audio_class->module[i].name) == 0) {
@@ -172,11 +182,16 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
 
 int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint8_t ch, uint8_t volume)
 {
-    struct usb_setup_packet *setup = audio_class->hport->setup;
+    struct usb_setup_packet *setup;
     int ret;
     uint8_t intf = 0xff;
     uint8_t feature_id = 0xff;
     uint16_t volume_hex;
+
+    if (!audio_class || !audio_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = audio_class->hport->setup;
 
     for (size_t i = 0; i < audio_class->module_num; i++) {
         if (strcmp(name, audio_class->module[i].name) == 0) {
@@ -205,10 +220,15 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
 
 int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_t ch, bool mute)
 {
-    struct usb_setup_packet *setup = audio_class->hport->setup;
+    struct usb_setup_packet *setup;
     int ret;
     uint8_t intf = 0xff;
     uint8_t feature_id = 0xff;
+
+    if (!audio_class || !audio_class->hport) {
+        return -USB_ERR_INVAL;
+    }
+    setup = audio_class->hport->setup;
 
     for (size_t i = 0; i < audio_class->module_num; i++) {
         if (strcmp(name, audio_class->module[i].name) == 0) {
