@@ -57,7 +57,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
 #ifdef CONFIG_USBDEV_TEST_MODE
     bool test_req;
 #endif
-    struct usbd_interface *intf[8];
+    struct usbd_interface *intf[16];
     uint8_t intf_offset;
 
     struct usbd_tx_rx_msg tx_msg[CONFIG_USBDEV_EP_NUM];
