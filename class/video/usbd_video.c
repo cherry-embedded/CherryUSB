@@ -761,7 +761,7 @@ struct usbd_interface *usbd_video_init_intf(uint8_t busid, struct usbd_interface
     return intf;
 }
 
-uint32_t usbd_video_mjpeg_payload_fill(uint8_t busid, uint8_t *input, uint32_t input_len, uint8_t *output, uint32_t *out_len)
+uint32_t usbd_video_payload_fill(uint8_t busid, uint8_t *input, uint32_t input_len, uint8_t *output, uint32_t *out_len)
 {
     uint32_t packets;
     uint32_t last_packet_size;

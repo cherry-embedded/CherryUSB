@@ -213,7 +213,7 @@ void video_test(uint8_t busid)
     memset(packet_buffer, 0, 40 * 1024);
     while (1) {
         if (tx_flag) {
-            packets = usbd_video_mjpeg_payload_fill(busid, (uint8_t *)cherryusb_mjpeg, sizeof(cherryusb_mjpeg), packet_buffer, &out_len);
+            packets = usbd_video_payload_fill(busid, (uint8_t *)cherryusb_mjpeg, sizeof(cherryusb_mjpeg), packet_buffer, &out_len);
 #if 1
             iso_tx_busy = true;
             usbd_ep_start_write(busid, VIDEO_IN_EP, packet_buffer, out_len);

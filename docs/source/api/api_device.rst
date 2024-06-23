@@ -453,14 +453,14 @@ usbd_video_close
 
 - **intf** 关闭的接口号
 
-usbd_video_mjpeg_payload_fill
+usbd_video_payload_fill
 """"""""""""""""""""""""""""""""""""
 
-``usbd_video_mjpeg_payload_fill``  用来填充 mjpeg 到新的 buffer中，其中会对 mjpeg 数据按帧进行切分，切分大小由 ``dwMaxPayloadTransferSize`` 控制，并添加头部信息，当前头部字节数为 2。头部信息见 ``struct video_mjpeg_payload_header``
+``usbd_video_payload_fill``  用来填充 mjpeg 到新的 buffer中，其中会对 mjpeg 数据按帧进行切分，切分大小由 ``dwMaxPayloadTransferSize`` 控制，并添加头部信息，当前头部字节数为 2。头部信息见 ``struct video_mjpeg_payload_header``
 
 .. code-block:: C
 
-    uint32_t usbd_video_mjpeg_payload_fill(uint8_t *input, uint32_t input_len, uint8_t *output, uint32_t *out_len);
+    uint32_t usbd_video_payload_fill(uint8_t *input, uint32_t input_len, uint8_t *output, uint32_t *out_len);
 
 - **input** mjpeg 格式的数据包，从 FFD8~FFD9结束
 - **input_len** mjpeg数据包大小
