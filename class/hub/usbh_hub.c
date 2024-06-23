@@ -411,18 +411,6 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
 }
 #endif
 
-static void usbh_hubport_enumerate_thread(void *argument)
-{
-    struct usbh_hubport *child = (struct usbh_hubport *)argument;
-
-    if (usbh_enumerate(child) < 0) {
-        /** release child sources */
-        usbh_hubport_release(child);
-        USB_LOG_ERR("Port %u enumerate fail\r\n", child->port);
-    }
-    usb_osal_thread_delete(NULL);
-}
-
 static void usbh_hub_events(struct usbh_hub *hub)
 {
     struct usbh_hubport *child;
@@ -434,13 +422,16 @@ static void usbh_hub_events(struct usbh_hub *hub)
     uint16_t feat;
     uint8_t speed;
     int ret;
+    size_t flags;
 
     if (!hub->connected) {
         return;
     }
 
+    flags = usb_osal_enter_critical_section();
     portchange_index = hub->int_buffer[0];
     hub->int_buffer[0] &= ~portchange_index;
+    usb_osal_leave_critical_section(flags);
 
     for (uint8_t port = 0; port < hub->hub_desc.bNbrPorts; port++) {
         USB_LOG_DBG("Port change:0x%02x\r\n", portchange_index);
@@ -570,8 +561,11 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
                     USB_LOG_INFO("New %s device on Bus %u, Hub %u, Port %u connected\r\n", speed_table[speed], hub->bus->busid, hub->index, port + 1);
 
-                    /* create disposable thread to enumerate device on current hport, do not block hub thread */
-                    usb_osal_thread_create("usbh_enum", CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hubport_enumerate_thread, (void *)child);
+                    if (usbh_enumerate(child) < 0) {
+                        /** release child sources */
+                        usbh_hubport_release(child);
+                        USB_LOG_ERR("Port %u enumerate fail\r\n", child->port);
+                    }
                 } else {
                     child = &hub->child[port];
                     /** release child sources */
