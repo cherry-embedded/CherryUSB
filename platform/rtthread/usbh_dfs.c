@@ -16,7 +16,7 @@
 #endif
 
 #if defined(SOC_SERIES_STM32H7) || defined(SOC_SERIES_STM32F7) || \
-    defined(SOC_HPM5000) || defined(SOC_HPM6000) || defined(BSP_USING_BL61X)
+    defined(SOC_HPM5000) || defined(SOC_HPM6000) || defined(SOC_HPM6E00) || defined(BSP_USING_BL61X)
 #ifndef RT_USING_CACHE
 #error usbh msc must enable RT_USING_CACHE in this chip
 #endif
@@ -34,17 +34,6 @@ void rt_hw_cpu_dcache_ops(int ops, void *addr, int size)
         bflb_l1c_dcache_clean_range(addr, size);
     } else {
         bflb_l1c_dcache_invalidate_range(addr, size);
-    }
-}
-#elif defined(SOC_HPM5000) || defined(SOC_HPM6000)
-#include "hpm_l1c_drv.h"
-
-void rt_hw_cpu_dcache_ops(int ops, void *addr, int size)
-{
-    if (ops == RT_HW_CACHE_FLUSH) {
-        l1c_dc_flush((uint32_t)addr, size);
-    } else {
-        l1c_dc_invalidate((uint32_t)addr, size);
     }
 }
 #endif
