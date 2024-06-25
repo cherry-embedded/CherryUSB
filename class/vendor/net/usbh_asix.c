@@ -731,6 +731,10 @@ find_class:
                 usbh_asix_eth_input(buf, len);
                 g_asix_rx_length -= (len + 4);
                 data_offset += (len + 4);
+
+                if (g_asix_rx_length < 4) {
+                    g_asix_rx_length = 0;
+                }
             }
         } else {
 #if CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE <= (16 * 1024)
