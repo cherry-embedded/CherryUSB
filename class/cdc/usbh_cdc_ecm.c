@@ -287,15 +287,16 @@ delete:
     // clang-format on
 }
 
-int usbh_cdc_ecm_eth_output(uint8_t *buf, uint32_t buflen)
+uint8_t *usbh_cdc_ecm_get_eth_txbuf(void)
 {
-    uint8_t *buffer = g_cdc_ecm_tx_buffer;
+    return g_cdc_ecm_tx_buffer;
+}
 
+int usbh_cdc_ecm_eth_output(uint32_t buflen)
+{
     if (g_cdc_ecm_class.connect_status == false) {
         return -USB_ERR_NOTCONN;
     }
-
-    usb_memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", buflen);
 

@@ -19,11 +19,11 @@
 
 #include "usbh_core.h"
 
-#if LWIP_TCPIP_CORE_LOCKING_INPUT !=1
+#if LWIP_TCPIP_CORE_LOCKING_INPUT != 1
 #warning suggest you to set LWIP_TCPIP_CORE_LOCKING_INPUT to 1, usb handles eth input with own thread
 #endif
 
-#if LWIP_TCPIP_CORE_LOCKING !=1
+#if LWIP_TCPIP_CORE_LOCKING != 1
 #error must set LWIP_TCPIP_CORE_LOCKING to 1
 #endif
 
@@ -41,6 +41,18 @@ ip_addr_t g_ipaddr;
 ip_addr_t g_netmask;
 ip_addr_t g_gateway;
 
+void usbh_lwip_eth_output_common(struct pbuf *p, uint8_t *buf)
+{
+    struct pbuf *q;
+    uint8_t *buffer;
+
+    buffer = buf;
+    for (q = p; q != NULL; q = q->next) {
+        usb_memcpy(buffer, q->payload, q->len);
+        buffer += q->len;
+    }
+}
+
 void usbh_lwip_eth_input_common(struct netif *netif, uint8_t *buf, uint32_t len)
 {
 #if LWIP_TCPIP_CORE_LOCKING_INPUT
@@ -56,7 +68,7 @@ void usbh_lwip_eth_input_common(struct netif *netif, uint8_t *buf, uint32_t len)
 #if LWIP_TCPIP_CORE_LOCKING_INPUT
         p->payload = buf;
 #else
-        memcpy(p->payload, buf, len);
+        usb_memcpy(p->payload, buf, len);
 #endif
         err = netif->input(p, netif);
         if (err != ERR_OK) {
@@ -94,7 +106,10 @@ struct netif g_cdc_ecm_netif;
 
 static err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
 {
-    int ret = usbh_cdc_ecm_eth_output(p->payload, p->tot_len);
+    int ret;
+
+    usbh_lwip_eth_output_common(p, usbh_cdc_ecm_get_eth_txbuf());
+    ret = usbh_cdc_ecm_eth_output(p->tot_len);
     if (ret < 0) {
         return ERR_BUF;
     } else {
@@ -193,7 +208,10 @@ struct netif g_rndis_netif;
 
 static err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 {
-    int ret = usbh_rndis_eth_output(p->payload, p->tot_len);
+    int ret;
+
+    usbh_lwip_eth_output_common(p, usbh_rndis_get_eth_txbuf());
+    ret = usbh_rndis_eth_output(p->tot_len);
     if (ret < 0) {
         return ERR_BUF;
     } else {
@@ -276,7 +294,10 @@ struct netif g_cdc_ncm_netif;
 
 static err_t usbh_cdc_ncm_linkoutput(struct netif *netif, struct pbuf *p)
 {
-    int ret = usbh_cdc_ncm_eth_output(p->payload, p->tot_len);
+    int ret;
+
+    usbh_lwip_eth_output_common(p, usbh_cdc_ncm_get_eth_txbuf());
+    ret = usbh_cdc_ncm_eth_output(p->tot_len);
     if (ret < 0) {
         return ERR_BUF;
     } else {
@@ -354,7 +375,10 @@ struct netif g_asix_netif;
 
 static err_t usbh_asix_linkoutput(struct netif *netif, struct pbuf *p)
 {
-    int ret = usbh_asix_eth_output(p->payload, p->tot_len);
+    int ret;
+
+    usbh_lwip_eth_output_common(p, usbh_asix_get_eth_txbuf());
+    ret = usbh_asix_eth_output(p->tot_len);
     if (ret < 0) {
         return ERR_BUF;
     } else {
@@ -432,7 +456,10 @@ struct netif g_rtl8152_netif;
 
 static err_t usbh_rtl8152_linkoutput(struct netif *netif, struct pbuf *p)
 {
-    int ret = usbh_rtl8152_eth_output(p->payload, p->tot_len);
+    int ret;
+
+    usbh_lwip_eth_output_common(p, usbh_rtl8152_get_eth_txbuf());
+    ret = usbh_rtl8152_eth_output(p->tot_len);
     if (ret < 0) {
         return ERR_BUF;
     } else {

@@ -751,17 +751,18 @@ delete:
     // clang-format on
 }
 
-int usbh_asix_eth_output(uint8_t *buf, uint32_t buflen)
+uint8_t *usbh_asix_get_eth_txbuf(void)
+{
+    return &g_asix_tx_buffer[4];
+}
+
+int usbh_asix_eth_output(uint32_t buflen)
 {
     uint16_t actual_len;
-    uint8_t *buffer;
 
     if (g_asix_class.connect_status == false) {
         return -USB_ERR_NOTCONN;
     }
-
-    buffer = &g_asix_tx_buffer[4];
-    usb_memcpy(buffer, buf, buflen);
 
     g_asix_tx_buffer[0] = buflen & 0xff;
     g_asix_tx_buffer[1] = (buflen >> 8) & 0xff;

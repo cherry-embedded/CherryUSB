@@ -2223,9 +2223,13 @@ delete:
     // clang-format on
 }
 
-int usbh_rtl8152_eth_output(uint8_t *buf, uint32_t buflen)
+uint8_t *usbh_rtl8152_get_eth_txbuf(void)
 {
-    uint8_t *buffer;
+    return (g_rtl8152_tx_buffer + sizeof(struct tx_desc));
+}
+
+int usbh_rtl8152_eth_output(uint32_t buflen)
+{
     struct tx_desc *tx_desc;
 
     if (g_rtl8152_class.connect_status == false) {
@@ -2235,9 +2239,6 @@ int usbh_rtl8152_eth_output(uint8_t *buf, uint32_t buflen)
     tx_desc = (struct tx_desc *)g_rtl8152_tx_buffer;
     tx_desc->opts1 = buflen | TX_FS | TX_LS;
     tx_desc->opts2 = 0;
-
-    buffer = g_rtl8152_tx_buffer + sizeof(struct tx_desc);
-    usb_memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", buflen + sizeof(struct tx_desc));
 

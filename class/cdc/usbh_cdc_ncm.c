@@ -343,9 +343,13 @@ delete:
     // clang-format on
 }
 
-int usbh_cdc_ncm_eth_output(uint8_t *buf, uint32_t buflen)
+uint8_t *usbh_cdc_ncm_get_eth_txbuf(void)
 {
-    uint8_t *buffer;
+    return &g_cdc_ncm_tx_buffer[16];
+}
+
+int usbh_cdc_ncm_eth_output(uint32_t buflen)
+{
     struct cdc_ncm_ndp16_datagram *ndp16_datagram;
 
     if (g_cdc_ncm_class.connect_status == false) {
@@ -373,9 +377,6 @@ int usbh_cdc_ncm_eth_output(uint8_t *buf, uint32_t buflen)
     ndp16_datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_tx_buffer[nth16->wNdpIndex + 8 + 4 * 1];
     ndp16_datagram->wDatagramIndex = 0;
     ndp16_datagram->wDatagramLength = 0;
-
-    buffer = &g_cdc_ncm_tx_buffer[16];
-    usb_memcpy(buffer, buf, buflen);
 
     USB_LOG_DBG("txlen:%d\r\n", nth16->wBlockLength);
 

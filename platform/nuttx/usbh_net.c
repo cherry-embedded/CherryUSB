@@ -18,11 +18,11 @@
 
 #include "usbh_core.h"
 
-#define CONFIG_USBHOST_PLATFORM_CDC_ECM
+// #define CONFIG_USBHOST_PLATFORM_CDC_ECM
 #define CONFIG_USBHOST_PLATFORM_CDC_RNDIS
-#define CONFIG_USBHOST_PLATFORM_CDC_NCM
-#define CONFIG_USBHOST_PLATFORM_ASIX
-#define CONFIG_USBHOST_PLATFORM_RTL8152
+// #define CONFIG_USBHOST_PLATFORM_CDC_NCM
+// #define CONFIG_USBHOST_PLATFORM_ASIX
+// #define CONFIG_USBHOST_PLATFORM_RTL8152
 
 struct usbh_net {
     struct net_driver_s netdev;
@@ -30,7 +30,12 @@ struct usbh_net {
     bool linkup;
 };
 
-void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t len, int (*eth_output)(uint8_t *buf, uint32_t buflen))
+void usbh_net_eth_output_common(struct net_driver_s *dev, uint8_t *buf)
+{
+    usb_memcpy(buf, dev->d_buf, dev->d_len);
+}
+
+void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t len, int (*eth_output)(uint32_t buflen))
 {
     FAR struct eth_hdr_s *hdr;
 
@@ -56,7 +61,8 @@ void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t le
         ipv4_input(dev);
         if (dev->d_len > 0) {
             /* And send the packet */
-            eth_output(dev->d_buf, dev->d_len);
+            usbh_net_eth_output_common(dev, usbh_rndis_get_eth_txbuf());
+            eth_output(dev->d_len);
         }
     } else
 #endif
@@ -70,7 +76,8 @@ void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t le
 
         if (dev->d_len > 0) {
             /* And send the packet */
-            eth_output(dev->d_buf, dev->d_len);
+            usbh_net_eth_output_common(dev, usbh_rndis_get_eth_txbuf());
+            eth_output(dev->d_len);
         }
     } else
 #endif
@@ -80,7 +87,8 @@ void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t le
 
         arp_input(dev);
         if (dev->d_len > 0) {
-            eth_output(dev->d_buf, dev->d_len);
+            usbh_net_eth_output_common(dev, usbh_rndis_get_eth_txbuf());
+            eth_output(dev->d_len);
         }
     } else
 #endif
@@ -113,7 +121,8 @@ static int rndis_ifdown(struct net_driver_s *dev)
 
 static int rndis_txpoll(struct net_driver_s *dev)
 {
-    return usbh_rndis_eth_output(g_rndis_dev.netdev.d_buf, g_rndis_dev.netdev.d_len);
+    usbh_net_eth_output_common(&g_rndis_dev, usbh_rndis_get_eth_txbuf());
+    return usbh_rndis_eth_output(g_rndis_dev.netdev.d_len);
 }
 
 static void rndis_txavail_work(void *arg)

@@ -545,9 +545,13 @@ delete:
     // clang-format on
 }
 
-int usbh_rndis_eth_output(uint8_t *buf, uint32_t buflen)
+uint8_t *usbh_rndis_get_eth_txbuf(void)
 {
-    uint8_t *buffer;
+    return (g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
+}
+
+int usbh_rndis_eth_output(uint32_t buflen)
+{
     rndis_data_packet_t *hdr;
     uint32_t len;
 
@@ -562,9 +566,6 @@ int usbh_rndis_eth_output(uint8_t *buf, uint32_t buflen)
     hdr->MessageLength = sizeof(rndis_data_packet_t) + buflen;
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
     hdr->DataLength = buflen;
-
-    buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));
-    usb_memcpy(buffer, buf, buflen);
 
     len = hdr->MessageLength;
     /* if message length is the multiple of wMaxPacketSize, we should add a short packet to tell device transfer is over. */
