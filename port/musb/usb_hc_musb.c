@@ -684,18 +684,17 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     bus = urb->hport->bus;
 
-    flags = usb_osal_enter_critical_section();
-
     if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
         chidx = 0;
     } else {
         chidx = (urb->ep->bEndpointAddress & 0x0f);
 
         if (chidx > (CONFIG_USBHOST_PIPE_NUM - 1)) {
-            usb_osal_leave_critical_section(flags);
             return -USB_ERR_RANGE;
         }
     }
+
+    flags = usb_osal_enter_critical_section();
 
     pipe = &g_musb_hcd[bus->hcd.hcd_id].pipe_pool[chidx];
     pipe->chidx = chidx;
@@ -704,8 +703,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->hcpriv = pipe;
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
-
-    usb_osal_sem_reset(pipe->waitsem);
 
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:

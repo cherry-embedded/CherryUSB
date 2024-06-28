@@ -32,9 +32,9 @@ static struct ehci_qh_hw *ehci_qh_alloc(struct usbh_bus *bus)
     struct ehci_qtd_hw *qtd;
     size_t flags;
 
+    flags = usb_osal_enter_critical_section();
     for (uint32_t i = 0; i < CONFIG_USB_EHCI_QH_NUM; i++) {
         if (!g_ehci_hcd[bus->hcd.hcd_id].ehci_qh_used[i]) {
-            flags = usb_osal_enter_critical_section();
             g_ehci_hcd[bus->hcd.hcd_id].ehci_qh_used[i] = true;
             usb_osal_leave_critical_section(flags);
 
@@ -56,6 +56,7 @@ static struct ehci_qh_hw *ehci_qh_alloc(struct usbh_bus *bus)
             return qh;
         }
     }
+    usb_osal_leave_critical_section(flags);
     return NULL;
 }
 
