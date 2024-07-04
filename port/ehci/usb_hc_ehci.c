@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "usb_ehci_priv.h"
+#include "usb_hc_ehci.h"
 #ifdef CONFIG_USB_EHCI_WITH_OHCI
-#include "usb_ohci_priv.h"
+#include "usb_hc_ohci.h"
 #endif
 
 #define EHCI_TUNE_CERR    3 /* 0-3 qtd retries; 0 == don't stop */
