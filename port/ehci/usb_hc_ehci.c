@@ -777,6 +777,8 @@ int usb_hc_init(struct usbh_bus *bus)
                  g_ehci_hcd[bus->hcd.hcd_id].n_cc,
                  g_ehci_hcd[bus->hcd.hcd_id].n_pcc);
 
+    EHCI_HCOR->usbcmd &= ~EHCI_USBCMD_RUN;
+    usb_osal_msleep(2);
     EHCI_HCOR->usbcmd |= EHCI_USBCMD_HCRESET;
     while (EHCI_HCOR->usbcmd & EHCI_USBCMD_HCRESET) {
         usb_osal_msleep(1);
@@ -872,7 +874,7 @@ int usb_hc_deinit(struct usbh_bus *bus)
     regval &= ~EHCI_USBCMD_RUN;
     EHCI_HCOR->usbcmd = regval;
 
-    while ((EHCI_HCOR->usbsts & (EHCI_USBSTS_PSS | EHCI_USBSTS_ASS))) {
+    while ((EHCI_HCOR->usbsts & (EHCI_USBSTS_PSS | EHCI_USBSTS_ASS)) || ((EHCI_HCOR->usbsts & EHCI_USBSTS_HALTED) == 0)) {
         usb_osal_msleep(1);
         timeout++;
         if (timeout > 100) {
@@ -893,6 +895,7 @@ int usb_hc_deinit(struct usbh_bus *bus)
 #endif
 
     EHCI_HCOR->usbsts = EHCI_HCOR->usbsts;
+    EHCI_HCOR->usbcmd |= EHCI_USBCMD_HCRESET;
 
     for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
         qh = &ehci_qh_pool[bus->hcd.hcd_id][index];
