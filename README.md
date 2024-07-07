@@ -87,6 +87,7 @@ The CherryUSB Host Stack has a standard enumeration implementation for devices m
 
 CherryUSB Host Stack has the following functions：
 
+- Support low speed, full speed, high speed and super speed devices
 - Automatic loading of supported Class drivers
 - Support blocking transfers and asynchronous transfers
 - Support Composite Device
