@@ -99,7 +99,7 @@ CherryUSB Host Stack has the following functions：
 - Support USB Audio CLASS (UAC1.0)
 - Support Remote NDIS (RNDIS)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
-- Support Vendor class
+- Support Vendor class (serial, net, wifi)
 - Support USB modeswitch
 - Support multi host with the same USB IP
 

@@ -99,7 +99,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - Support USB Audio CLASS (UAC1.0)
 - 支持 Remote NDIS (RNDIS)
 - 支持 USB Bluetooth (支持 nimble and zephyr bluetooth 协议栈，支持 **CLASS: 0xE0** 或者厂家自定义类，类似于 cdc acm 功能)
-- 支持 Vendor 类 class
+- 支持 Vendor 类 class (serial, net, wifi)
 - 支持 USB modeswitch
 - 支持相同 USB IP 的多主机
 

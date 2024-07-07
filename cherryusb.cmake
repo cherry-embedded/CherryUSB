@@ -38,6 +38,7 @@ ${CMAKE_CURRENT_LIST_DIR}/class/wireless
 ${CMAKE_CURRENT_LIST_DIR}/class/midi
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/serial
+${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi
 )
 
 if(CONFIG_CHERRYUSB_DEVICE)
@@ -208,6 +209,9 @@ if(CONFIG_CHERRYUSB_HOST)
     endif()
     if(CONFIG_CHERRYUSB_HOST_PL2303)
     list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/serial/usbh_pl2303.c)
+    endif()
+    if(CONFIG_CHERRYUSB_HOST_BL616)
+    list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi/usbh_bl616.c)
     endif()
 
     if(DEFINED CONFIG_CHERRYUSB_HOST_HCD)
