@@ -99,9 +99,9 @@ static bool is_device_configured(uint8_t busid)
 static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     USB_LOG_DBG("Open ep:0x%02x type:%u mps:%u\r\n",
-                 ep->bEndpointAddress,
-                 USB_GET_ENDPOINT_TYPE(ep->bmAttributes),
-                 USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
+                ep->bEndpointAddress,
+                USB_GET_ENDPOINT_TYPE(ep->bmAttributes),
+                USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
 
     if (ep->bEndpointAddress & 0x80) {
         g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
@@ -126,8 +126,8 @@ static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descripto
 static bool usbd_reset_endpoint(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     USB_LOG_DBG("Close ep:0x%02x type:%u\r\n",
-                 ep->bEndpointAddress,
-                 USB_GET_ENDPOINT_TYPE(ep->bmAttributes));
+                ep->bEndpointAddress,
+                USB_GET_ENDPOINT_TYPE(ep->bmAttributes));
 
     return usbd_ep_close(busid, ep->bEndpointAddress) == 0 ? true : false;
 }
@@ -556,14 +556,16 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
             break;
 
         case USB_REQUEST_GET_CONFIGURATION:
-            *data = (uint8_t *)&g_usbd_core[busid].configuration;
+            (*data)[0] = g_usbd_core[busid].configuration;
             *len = 1;
             break;
 
         case USB_REQUEST_SET_CONFIGURATION:
             value &= 0xFF;
 
-            if (!usbd_set_configuration(busid, value, 0)) {
+            if (value == 0) {
+                g_usbd_core[busid].configuration = 0;
+            } else if (!usbd_set_configuration(busid, value, 0)) {
                 ret = false;
             } else {
                 g_usbd_core[busid].configuration = value;
@@ -663,6 +665,7 @@ static bool usbd_std_endpoint_req_handler(uint8_t busid, struct usb_setup_packet
 {
     uint8_t ep = (uint8_t)setup->wIndex;
     bool ret = true;
+    uint8_t stalled;
 
     /* Only when device is configured, then endpoint requests can be valid. */
     if (!is_device_configured(busid)) {
@@ -671,7 +674,12 @@ static bool usbd_std_endpoint_req_handler(uint8_t busid, struct usb_setup_packet
 
     switch (setup->bRequest) {
         case USB_REQUEST_GET_STATUS:
-            (*data)[0] = 0x00;
+            usbd_ep_is_stalled(busid, ep, &stalled);
+            if (stalled) {
+                (*data)[0] = 0x01;
+            } else {
+                (*data)[0] = 0x00;
+            }
             (*data)[1] = 0x00;
             *len = 2;
             break;

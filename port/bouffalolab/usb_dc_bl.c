@@ -822,6 +822,29 @@ int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
 
 int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
 {
+    uint32_t regval;
+
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+
+    if (ep_idx == 0) {
+    } else {
+        if (USB_EP_DIR_IS_OUT(ep)) {
+            regval = getreg32(BFLB_USB_BASE + USB_DEV_OUTMPS1_OFFSET + (ep_idx - 1) * 4);
+            if (regval & USB_STL_OEP1) {
+                *stalled = 1;
+            } else {
+                *stalled = 0;
+            }
+        } else {
+            regval = getreg32(BFLB_USB_BASE + USB_DEV_INMPS1_OFFSET + (ep_idx - 1) * 4);
+            if (regval & USB_STL_IEP1) {
+                *stalled = 1;
+            } else {
+                *stalled = 0;
+            }
+        }
+    }
+
     return 0;
 }
 
