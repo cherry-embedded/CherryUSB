@@ -508,13 +508,13 @@ int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
     musb_set_active_ep(ep_idx);
 
     if (USB_EP_DIR_IS_OUT(ep)) {
-        if(HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) & USB_RXCSRL1_STALLED) {
+        if(HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) & USB_RXCSRL1_STALL) {
             *stalled = 1;
         } else {
             *stalled = 0;
         }
     } else {
-        if(HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_STALLED) {
+        if(HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_STALL) {
             *stalled = 1;
         } else {
             *stalled = 0;
