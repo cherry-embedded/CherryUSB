@@ -51,6 +51,9 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
 
     /** Currently selected configuration */
     uint8_t configuration;
+    bool self_powered;
+    bool remote_wakeup_support;
+    bool remote_wakeup_enabled;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     uint8_t speed;
 #endif
@@ -174,6 +177,9 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
                 break;
             }
             desc_len = ((desc[CONF_DESC_wTotalLength]) | (desc[CONF_DESC_wTotalLength + 1] << 8));
+
+            g_usbd_core[busid].self_powered = (desc[7] & USB_CONFIG_SELF_POWERED) ? true : false;
+            g_usbd_core[busid].remote_wakeup_support = (desc[7] & USB_CONFIG_REMOTE_WAKEUP) ? true : false;
             break;
         case USB_DESCRIPTOR_TYPE_STRING:
             if (index == USB_OSDESC_STRING_DESC_INDEX) {
@@ -336,6 +342,9 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
              */
             *len = (p[CONF_DESC_wTotalLength]) |
                    (p[CONF_DESC_wTotalLength + 1] << 8);
+
+            g_usbd_core[busid].self_powered = (p[7] & USB_CONFIG_SELF_POWERED) ? true : false;
+            g_usbd_core[busid].remote_wakeup_support = (p[7] & USB_CONFIG_REMOTE_WAKEUP) ? true : false;
         } else {
             /* normally length is at offset 0 */
             *len = p[DESC_bLength];
@@ -522,6 +531,12 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
             /* bit 0: self-powered */
             /* bit 1: remote wakeup */
             (*data)[0] = 0x00;
+            if (g_usbd_core[busid].self_powered) {
+                (*data)[0] |= USB_GETSTATUS_SELF_POWERED;
+            }
+            if (g_usbd_core[busid].remote_wakeup_enabled) {
+                (*data)[0] |= USB_GETSTATUS_REMOTE_WAKEUP;
+            }
             (*data)[1] = 0x00;
             *len = 2;
             break;
@@ -530,8 +545,10 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
         case USB_REQUEST_SET_FEATURE:
             if (value == USB_FEATURE_REMOTE_WAKEUP) {
                 if (setup->bRequest == USB_REQUEST_SET_FEATURE) {
+                    g_usbd_core[busid].remote_wakeup_enabled = true;
                     g_usbd_core[busid].event_handler(busid, USBD_EVENT_SET_REMOTE_WAKEUP);
                 } else {
+                    g_usbd_core[busid].remote_wakeup_enabled = false;
                     g_usbd_core[busid].event_handler(busid, USBD_EVENT_CLR_REMOTE_WAKEUP);
                 }
             } else if (value == USB_FEATURE_TEST_MODE) {
@@ -602,6 +619,16 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
     uint8_t type = HI_BYTE(setup->wValue);
     uint8_t intf_num = LO_BYTE(setup->wIndex);
     bool ret = true;
+    const uint8_t *p;
+    uint32_t desc_len = 0;
+    uint32_t current_desc_len = 0;
+    uint8_t cur_iface = 0xFF;
+
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
+    p = g_usbd_core[busid].descriptors->config_descriptor_callback(g_usbd_core[busid].speed);
+#else
+    p = (uint8_t *)g_usbd_core[busid].descriptors;
+#endif
 
     /* Only when device is configured, then interface requests can be valid. */
     if (!is_device_configured(busid)) {
@@ -616,7 +643,39 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
             break;
 
         case USB_REQUEST_GET_DESCRIPTOR:
-            if (type == 0x22) { /* HID_DESCRIPTOR_TYPE_HID_REPORT */
+            if (type == 0x21) { /* HID_DESCRIPTOR_TYPE_HID */
+                while (p[DESC_bLength] != 0U) {
+                    switch (p[DESC_bDescriptorType]) {
+                        case USB_DESCRIPTOR_TYPE_CONFIGURATION:
+                            current_desc_len = 0;
+                            desc_len = (p[CONF_DESC_wTotalLength]) |
+                                       (p[CONF_DESC_wTotalLength + 1] << 8);
+
+                            break;
+
+                        case USB_DESCRIPTOR_TYPE_INTERFACE:
+                            cur_iface = p[INTF_DESC_bInterfaceNumber];
+                            break;
+                        case 0x21:
+                            if (cur_iface == intf_num) {
+                                *data = (uint8_t *)p;
+                                //memcpy(*data, p, p[DESC_bLength]);
+                                *len = p[DESC_bLength];
+                                return true;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    /* skip to next descriptor */
+                    p += p[DESC_bLength];
+                    current_desc_len += p[DESC_bLength];
+                    if (current_desc_len >= desc_len && desc_len) {
+                        break;
+                    }
+                }
+            } else if (type == 0x22) { /* HID_DESCRIPTOR_TYPE_HID_REPORT */
                 for (uint8_t i = 0; i < g_usbd_core[busid].intf_offset; i++) {
                     struct usbd_interface *intf = g_usbd_core[busid].intf[i];
 
