@@ -187,6 +187,8 @@ void usbd_event_ep_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbyt
 void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode);
 #endif
 
+void usbd_send_remote_wakeup(uint8_t busid);
+
 #ifdef __cplusplus
 }
 #endif
