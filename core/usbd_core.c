@@ -653,13 +653,24 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
                             break;
 
                         case USB_DESCRIPTOR_TYPE_INTERFACE:
-                            if ((p[INTF_DESC_bInterfaceNumber] == intf_num) && (p[1] == 0x21)) {
+                            /*find intf*/
+                            if ((p[INTF_DESC_bInterfaceNumber] == intf_num)) {
                                 *data = (uint8_t *)p;
-                                //memcpy(*data, p, p[DESC_bLength]);
+                            }
+                            else {
+                                *data = 0;
+                            }
+                            break;    
+                            
+                        case 0x21:    
+                            /*find hid_descriptor after interface_descriptor*/
+                            if ((*data)) {
+                                *data = (uint8_t *)p;
                                 *len = p[DESC_bLength];
                                 return true;
                             }
                             break;
+                            
                         default:
                             break;
                     }
