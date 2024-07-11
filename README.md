@@ -17,7 +17,7 @@ In order to make it easier for users to learn USB basics, enumeration, driver lo
 - Class-drivers and porting-drivers are templating and simplification
 - Clear API classification (slave: initialisation, registration api, command callback api, data sending and receiving api; host: initialisation, lookup api, data sending and receiving api)
 
-### Easy to use  USB
+### Easy to use USB
 
 In order to facilitate the use of the USB interface and to take into account the fact that users have learned about uart and dma, the following advantages have been designed for the data sending and receiving class of interface:
 
@@ -34,7 +34,7 @@ Taking into account USB performance issues and trying to achieve the theoretical
 - Unlimited length make it easier to interface with hardware DMA and take advantage of DMA
 - Subcontracting function is handled in interrupt
 
-## Directoy Structure
+## Directory Structure
 
 |   Directory       |  Description            |
 |:-------------:|:---------------------------:|
