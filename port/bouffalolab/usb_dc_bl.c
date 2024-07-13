@@ -1042,12 +1042,11 @@ void USBD_IRQHandler(uint8_t busid)
 }
 
 #ifdef CONFIG_USBDEV_TEST_MODE
-void usbd_execute_test_mode(struct usb_setup_packet *setup)
+void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
 {
     uint32_t regval;
-    uint8_t index = setup->wIndex >> 8;
 
-    switch (index) {
+    switch (test_mode) {
         case 1: // Test_J
         {
             regval = getreg32(BFLB_USB_BASE + USB_PHY_TST_OFFSET);
