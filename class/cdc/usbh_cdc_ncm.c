@@ -330,7 +330,7 @@ find_class:
 #else
             if ((g_cdc_ncm_rx_length + (16 * 1024)) > CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE) {
 #endif
-                USB_LOG_ERR("Rx packet is overflow, please ruduce tcp window size or increase CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE\r\n");
+                USB_LOG_ERR("Rx packet is overflow, please reduce tcp window size or increase CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE\r\n");
                 while (1) {
                 }
             }
