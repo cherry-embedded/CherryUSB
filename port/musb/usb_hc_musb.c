@@ -653,6 +653,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                     }
                 }
 
+                status |= (1 << HUB_PORT_FEATURE_POWER);
                 memcpy(buf, &status, 4);
                 break;
             default:
