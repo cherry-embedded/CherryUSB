@@ -627,6 +627,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                     case HUB_PORT_FEATURE_C_SUSPEND:
                         break;
                     case HUB_PORT_FEATURE_POWER:
+                        dwc2_drivebus(bus, 0);
                         break;
                     case HUB_PORT_FEATURE_C_CONNECTION:
                         g_dwc2_hcd[bus->hcd.hcd_id].port_csc = 0;
@@ -652,7 +653,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                     case HUB_PORT_FEATURE_SUSPEND:
                         break;
                     case HUB_PORT_FEATURE_POWER:
-                        USB_OTG_HPRT &= ~USB_OTG_HPRT_PPWR;
+                        dwc2_drivebus(bus, 1);
                         break;
                     case HUB_PORT_FEATURE_RESET:
                         usbh_reset_port(bus, port);
