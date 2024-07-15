@@ -1101,8 +1101,8 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                 if (temp & EHCI_PORTSC_RESET) {
                     status |= (1 << HUB_PORT_FEATURE_RESET);
                 }
-                if (temp & EHCI_PORTSC_PP) {
-                    status |= (1 << HUB_PORT_FEATURE_POWER);
+                if (temp & EHCI_PORTSC_PP || !(EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_PPC) ) {
+                    status |= (1 << HUB_PORT_FEATURE_POWER );
                 }
                 memcpy(buf, &status, 4);
                 break;
