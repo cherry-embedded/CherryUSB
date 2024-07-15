@@ -151,18 +151,16 @@ __ALIGN_BEGIN const uint8_t WINUSB_IF1_WCIDProperties [142] __ALIGN_END = {
 
 const uint8_t *WINUSB_IFx_WCIDProperties[] = {
     WINUSB_IF0_WCIDProperties,
+#if DOUBLE_WINUSB == 1
     WINUSB_IF1_WCIDProperties,
+#endif
 };
 
 struct usb_msosv1_descriptor msosv1_desc = {
     .string = WCID_StringDescriptor_MSOS,
     .vendor_code = WCID_VENDOR_CODE,
     .compat_id = WINUSB_WCIDDescriptor,
-#if DOUBLE_WINUSB == 0
-    .comp_id_property = &WINUSB_IF0_WCIDProperties,
-#else
     .comp_id_property = WINUSB_IFx_WCIDProperties,
-#endif
 };
 
 #define WINUSB_IN_EP  0x81
