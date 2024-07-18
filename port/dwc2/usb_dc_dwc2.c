@@ -433,7 +433,8 @@ static inline uint32_t dwc2_get_outep_intstatus(uint8_t epnum)
     uint32_t tmpreg;
 
     tmpreg = USB_OTG_OUTEP((uint32_t)epnum)->DOEPINT;
-    tmpreg &= USB_OTG_DEV->DOEPMSK;
+    USB_OTG_OUTEP((uint32_t)epnum)->DOEPINT = tmpreg;
+    tmpreg = tmpreg & USB_OTG_DEV->DOEPMSK;
 
     return tmpreg;
 }
@@ -451,7 +452,10 @@ static inline uint32_t dwc2_get_inep_intstatus(uint8_t epnum)
     msk = USB_OTG_DEV->DIEPMSK;
     emp = USB_OTG_DEV->DIEPEMPMSK;
     msk |= ((emp >> (epnum & 0x07)) & 0x1U) << 7;
-    tmpreg = USB_OTG_INEP((uint32_t)epnum)->DIEPINT & msk;
+
+    tmpreg = USB_OTG_INEP((uint32_t)epnum)->DIEPINT;
+    USB_OTG_INEP((uint32_t)epnum)->DIEPINT = tmpreg;
+    tmpreg = tmpreg & msk;
 
     return tmpreg;
 }
@@ -1028,8 +1032,6 @@ void USBD_IRQHandler(uint8_t busid)
             while (ep_intr != 0U) {
                 if ((ep_intr & 0x1U) != 0U) {
                     epint = dwc2_get_outep_intstatus(ep_idx);
-                    uint32_t DoepintReg = USB_OTG_OUTEP(ep_idx)->DOEPINT;
-                    USB_OTG_OUTEP(ep_idx)->DOEPINT = DoepintReg;
 
                     if ((epint & USB_OTG_DOEPINT_XFRC) == USB_OTG_DOEPINT_XFRC) {
                         if (ep_idx == 0) {
@@ -1062,8 +1064,6 @@ void USBD_IRQHandler(uint8_t busid)
             while (ep_intr != 0U) {
                 if ((ep_intr & 0x1U) != 0U) {
                     epint = dwc2_get_inep_intstatus(ep_idx);
-                    uint32_t DiepintReg = USB_OTG_INEP(ep_idx)->DIEPINT;
-                    USB_OTG_INEP(ep_idx)->DIEPINT = DiepintReg;
 
                     if ((epint & USB_OTG_DIEPINT_XFRC) == USB_OTG_DIEPINT_XFRC) {
                         if (ep_idx == 0) {
