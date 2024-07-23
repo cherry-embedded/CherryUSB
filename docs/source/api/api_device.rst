@@ -1,10 +1,10 @@
 设备协议栈
 =========================
 
-设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 `usbd_add_interface` 函数，记录传入的接口驱动保存到链表中，当主机进行类请求时就可以查找链表进行访问了。
+设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 `usbd_add_interface` 函数，用于记录传入的接口驱动并保存到接口数组表，当主机进行类请求时就可以查找接口表进行访问了。
 在调用 `usbd_desc_register` 以后需要进行接口注册和端点注册，口诀如下：
 
-- 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_init_intf`, 如果没有支持的，手动创建一个填入
+- 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_init_intf`, 如果没有支持的，手动创建一个 intf 填入
 - 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
 CORE
@@ -38,7 +38,6 @@ CORE
 .. code-block:: C
 
     struct usbd_interface {
-        usb_slist_t list;
         usbd_request_handler class_interface_handler;
         usbd_request_handler class_endpoint_handler;
         usbd_request_handler vendor_handler;
@@ -48,7 +47,6 @@ CORE
         uint8_t intf_num;
     };
 
-- **list** 接口的链表节点
 - **class_interface_handler** class setup 请求回调函数,接收者为接口
 - **class_endpoint_handler** class setup 请求回调函数,接收者为端点
 - **vendor_handler** vendor setup 请求回调函数
@@ -68,6 +66,9 @@ usbd_desc_register
     void usbd_desc_register(const uint8_t *desc);
 
 - **desc**  描述符的句柄
+
+.. note:: 当前 API 仅支持一种速度，如果需要更高级的速度切换功能，请开启 CONFIG_USBDEV_ADVANCE_DESC，并且包含了下面所有描述符注册功能
+
 
 usbd_msosv1_desc_register
 """"""""""""""""""""""""""""""""""""
@@ -284,7 +285,7 @@ usbd_msc_sector_read
 
 - **sector** 扇区偏移
 - **buffer** 存储读取的数据的指针
-- **length** 读取长度，当前为1个扇区的大小
+- **length** 读取长度
 
 
 usbd_msc_sector_write
@@ -298,7 +299,7 @@ usbd_msc_sector_write
 
 - **sector** 扇区偏移
 - **buffer** 写入数据指针
-- **length** 写入长度，当前为1个扇区的大小
+- **length** 写入长度
 
 UAC
 -----------------

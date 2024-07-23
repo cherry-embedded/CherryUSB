@@ -49,11 +49,11 @@ CLASS 驱动信息结构体
 .. code-block:: C
 
     struct usbh_interface {
-        struct usbh_interface_altsetting altsetting[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
-        uint8_t altsetting_num;
         char devname[CONFIG_USBHOST_DEV_NAMELEN];
         struct usbh_class_driver *class_driver;
         void *priv;
+        struct usbh_interface_altsetting altsetting[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
+        uint8_t altsetting_num;
     };
 
 配置结构体
@@ -76,6 +76,9 @@ hubport 结构体
         uint8_t port;     /* Hub port index */
         uint8_t dev_addr; /* device address */
         uint8_t speed;    /* device speed */
+        uint8_t depth;    /* distance from root hub */
+        uint8_t route;    /* route string */
+        uint8_t slot_id;  /* slot id */
         struct usb_device_descriptor device_desc;
         struct usbh_configuration config;
         const char *iManufacturer;
@@ -84,6 +87,8 @@ hubport 结构体
         uint8_t *raw_config_desc;
         struct usb_setup_packet *setup;
         struct usbh_hub *parent;
+        struct usbh_hub *self; /* if this hubport is a hub */
+        struct usbh_bus *bus;
         struct usb_endpoint_descriptor ep0;
         struct usbh_urb ep0_urb;
         usb_osal_mutex_t mutex;
@@ -95,17 +100,24 @@ hub 结构体
 .. code-block:: C
 
     struct usbh_hub {
-        usb_slist_t list;
         bool connected;
         bool is_roothub;
         uint8_t index;
         uint8_t hub_addr;
-        struct usb_hub_descriptor hub_desc;
+        uint8_t speed;
+        uint8_t nports;
+        uint8_t powerdelay;
+        uint8_t tt_think;
+        bool ismtt;
+        struct usb_hub_descriptor hub_desc; /* USB 2.0 only */
+        struct usb_hub_ss_descriptor hub_ss_desc; /* USB 3.0 only */
         struct usbh_hubport child[CONFIG_USBHOST_MAX_EHPORTS];
         struct usbh_hubport *parent;
+        struct usbh_bus *bus;
         struct usb_endpoint_descriptor *intin;
         struct usbh_urb intin_urb;
         uint8_t *int_buffer;
+        struct usb_osal_timer *int_timer;
     };
 
 usbh_initialize

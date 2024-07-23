@@ -19,7 +19,7 @@ v1.1.0 过度版本
 ----------------------
 
 - **主从机支持多 USB IP 且要相同 IP**
-- host 增加 bluetooth, chh340, ftdi, cp210x, asix 驱动
+- host 增加 bluetooth, ch340, ftdi, cp210x, asix 驱动
 - device msc 支持多 lun，并且 CONFIG_USBDEV_MSC_BLOCK_SIZE 修改为 CONFIG_USBDEV_MSC_MAX_BUFSIZE
 
 v1.2.0

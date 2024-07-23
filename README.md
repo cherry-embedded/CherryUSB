@@ -73,7 +73,7 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2):
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)     |
 |:-------------:|:--------------:|:-------------------------:|:-------------:|:----------------:|
-|usbd_core.c    |  3516          | 256(default) + 320        | 0             | 0                |
+|usbd_core.c    |  3516          | 512(default) + 320        | 0             | 0                |
 |usbd_cdc.c     |  392           | 0                         | 0             | 0                |
 |usbd_msc.c     |  2839          | 128 + 512(default)        | 16            | 0                |
 |usbd_hid.c     |  364           | 0                         | 0             | 0                |
@@ -109,7 +109,7 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte) |
 |:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:------------:|
-|usbh_core.c    |  ~7700          | 512 + 8 * (1+x) *n              | 28                          | 0            |
+|usbh_core.c    |  ~7700          | 512 + 8 * (1+x) *n              | 28                          | raw_config_desc |
 |usbh_hub.c     |  ~5600          | 32 + 4* (1+x) | 12 + sizeof(struct usbh_hub) * (1+x)          | 0            |
 |usbh_cdc_acm.c |  ~1200          | 7             | 4  + sizeof(struct usbh_cdc_acm) * x          | 0            |
 |usbh_msc.c     |  ~2500          | 32            | 4  + sizeof(struct usbh_msc) * x              | 0            |

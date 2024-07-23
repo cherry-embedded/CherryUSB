@@ -1,22 +1,7 @@
 芯片通用移植指南
 =========================
 
-本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在往下看之前，需要 **你准备好一个可以打印 helloworld 的基本工程** ，并且实现了 `printf` 、 `malloc`、 `free`。如果是主机，需要 **准备好可以打印 helloworld 的带 OS 的工程**。通常来说， `printf` 大家都会实现，
-`malloc`、 `free` 主要给主机使用, 默认 config 文件使用的就是  `malloc`、 `free`，推荐修改为 os 相关接口, 不推荐使用系统库，尤其是 keil 自带的这种。举例如下：
-
-.. code-block:: C
-
-        // default config
-        #define usb_malloc(size) malloc(size)
-        #define usb_free(ptr)    free(ptr)
-
-        // freertos
-        #define usb_malloc(size) pvPortMalloc(size)
-        #define usb_free(ptr)    vPortFree(ptr)
-
-        //rtthread
-        #define usb_malloc(size) rt_malloc(size)
-        #define usb_free(ptr)    rt_free(ptr)
+本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在移植之前，需要 **你准备好一个可以打印 helloworld 的基本工程** ，默认打印使用 `printf`, 如果是主机模式， **则需要准备好可以正常执行 os 调度的基本工程**。
 
 USB Device 移植要点
 -----------------------
@@ -32,7 +17,7 @@ USB Device 移植要点
 USB Host 移植要点
 -----------------------
 
-- 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbh_core.c` 、 `usb_hc_xxx.c` 以及 **osal** 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 `usb_hc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
+- 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbh_core.c` 、 `usb_hc_xxx.c` 以及 **osal** 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 `usb_hc_xxx.c` 是芯片所对应的 USB IP hcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`

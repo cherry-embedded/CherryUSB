@@ -25,11 +25,6 @@
 
         #define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
 
-        #define usb_malloc(size) rt_malloc(size)
-        #define usb_free(ptr)    rt_free(ptr)
-
-        #define memcpy rt_memcpy
-
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
 * 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
@@ -71,11 +66,6 @@
         #include "rtthread.h"
 
         #define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
-
-        #define usb_malloc(size) rt_malloc(size)
-        #define usb_free(ptr)    rt_free(ptr)
-
-        #define memcpy rt_memcpy
 
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 在代码中实现 `usb_hc_low_level_init` 函数

@@ -9,10 +9,16 @@
 
 仓库参考：https://github.com/CherryUSB/cherryusb_bouffalolab
 
-- BL702 是一个 USB2.0 全速芯片，共 8 个端点（包含端点0）。仅支持从机。
 - BL616/BL808 是一个 USB2.0 并且内置高速 PHY 芯片，共 5个端点（包含端点0）。支持主从机。
 - USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，根据官方环境搭建完成后，即可编译使用。
 
+基于 HPMicro 系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
+
+- HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机
+- USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。
 
 基于 ST 系列芯片
 ---------------------------
@@ -173,10 +179,3 @@ USB Host 移植要点
 
 .. figure:: img/stm32_21.png
 
-基于 HPMicro 系列芯片
----------------------------
-
-仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
-
-- HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机
-- USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。
