@@ -13,9 +13,6 @@
 
 #define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
 
-#define usb_malloc(size) malloc(size)
-#define usb_free(ptr)    free(ptr)
-
 #ifndef CONFIG_USB_DBG_LEVEL
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
 #endif

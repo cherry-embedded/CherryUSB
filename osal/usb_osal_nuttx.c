@@ -367,3 +367,13 @@ void usb_osal_msleep(uint32_t delay)
 
     nxsig_usleep(usec);
 }
+
+void *usb_osal_malloc(size_t size)
+{
+    return kmm_malloc(size);
+}
+
+void usb_osal_free(void *ptr)
+{
+    kmm_free(ptr);
+}

@@ -53,7 +53,7 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
 
 void usb_osal_sem_reset(usb_osal_sem_t sem)
 {
-    
+
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)
@@ -122,4 +122,14 @@ void usb_osal_leave_critical_section(size_t flag)
 void usb_osal_msleep(uint32_t delay)
 {
     aos_msleep(delay);
+}
+
+void *usb_osal_malloc(size_t size)
+{
+    return aos_malloc(size);
+}
+
+void usb_osal_free(void *ptr)
+{
+    aos_free(ptr);
 }

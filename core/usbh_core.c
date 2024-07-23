@@ -486,7 +486,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
     USB_LOG_INFO("The device has %d interfaces\r\n", ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->bNumInterfaces);
-    hport->raw_config_desc = usb_malloc(wTotalLength);
+    hport->raw_config_desc = usb_osal_malloc(wTotalLength);
     if (hport->raw_config_desc == NULL) {
         ret = -USB_ERR_NOMEM;
         USB_LOG_ERR("No memory to alloc for raw_config_desc\r\n");
@@ -576,7 +576,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
 errout:
     if (hport->raw_config_desc) {
-        usb_free(hport->raw_config_desc);
+        usb_osal_free(hport->raw_config_desc);
         hport->raw_config_desc = NULL;
     }
     return ret;
