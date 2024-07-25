@@ -65,7 +65,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 Device Firmware Upgrade CLASS (DFU)
 - 支持 USB MIDI CLASS (MIDI)
 - 支持 Remote NDIS (RNDIS)
-- 支持 WINUSB1.0、WINUSB2.0(带 BOS )
+- 支持 WINUSB1.0、WINUSB2.0、WEBUSB、BOS
 - 支持 Vendor 类 class
 - 支持 UF2
 - 支持相同 USB IP 的多从机

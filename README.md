@@ -65,7 +65,7 @@ CherryUSB Device Stack has the following functions：
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
 - Support Remote NDIS (RNDIS)
-- Support WINUSB1.0、WINUSB2.0(with BOS)
+- Support WINUSB1.0、WINUSB2.0、WEBUSB、BOS
 - Support Vendor class
 - Support UF2
 - Support multi device with the same USB IP

@@ -93,6 +93,7 @@ void usbd_desc_register(uint8_t busid, const uint8_t *desc);
 void usbd_msosv1_desc_register(uint8_t busid, struct usb_msosv1_descriptor *desc);
 void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc);
 void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
+void usbd_webusb_desc_register(uint8_t busid, struct usb_webusb_descriptor *desc);
 #endif
 
 void usbd_add_interface(uint8_t busid, struct usbd_interface *intf);

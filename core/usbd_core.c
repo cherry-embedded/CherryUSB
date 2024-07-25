@@ -45,6 +45,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     struct usb_msosv1_descriptor *msosv1_desc;
     struct usb_msosv2_descriptor *msosv2_desc;
     struct usb_bos_descriptor *bos_desc;
+    struct usb_webusb_descriptor *webusb_url_desc;
 #endif
     /* Buffer used for storing standard, class and vendor request data */
     USB_MEM_ALIGNX uint8_t req_data[CONFIG_USBDEV_REQUEST_BUFFER_LEN];
@@ -908,10 +909,12 @@ static int usbd_vendor_request_handler(uint8_t busid, struct usb_setup_packet *s
                     return -1;
             }
         }
-    } else if (g_usbd_core[busid].descriptors->webusb_url_descriptor) {
+    }
+
+    if (g_usbd_core[busid].descriptors->webusb_url_descriptor) {
         if (setup->bRequest == g_usbd_core[busid].descriptors->webusb_url_descriptor->vendor_code) {
             switch (setup->wIndex) {
-                case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
+                case WEBUSB_REQUEST_GET_URL:
                     desclen = g_usbd_core[busid].descriptors->webusb_url_descriptor->string_len;
                     *data = (uint8_t *)g_usbd_core[busid].descriptors->webusb_url_descriptor->string;
                     //memcpy(*data, g_usbd_core[busid].descriptors->webusb_url_descriptor->string, desclen);
@@ -957,6 +960,22 @@ static int usbd_vendor_request_handler(uint8_t busid, struct usb_setup_packet *s
                     *data = (uint8_t *)g_usbd_core[busid].msosv2_desc->compat_id;
                     //memcpy(*data, g_usbd_core[busid].msosv2_desc->compat_id, g_usbd_core[busid].msosv2_desc->compat_id_len);
                     *len = g_usbd_core[busid].msosv2_desc->compat_id_len;
+                    return 0;
+                default:
+                    USB_LOG_ERR("unknown vendor code\r\n");
+                    return -1;
+            }
+        }
+    }
+
+    if (g_usbd_core[busid].webusb_url_desc) {
+        if (setup->bRequest == g_usbd_core[busid].webusb_url_desc->vendor_code) {
+            switch (setup->wIndex) {
+                case WEBUSB_REQUEST_GET_URL:
+                    desclen = g_usbd_core[busid].webusb_url_desc->string_len;
+                    *data = (uint8_t *)g_usbd_core[busid].webusb_url_desc->string;
+                    //memcpy(*data, g_usbd_core[busid].webusb_url_desc->string, desclen);
+                    *len = desclen;
                     return 0;
                 default:
                     USB_LOG_ERR("unknown vendor code\r\n");
@@ -1279,6 +1298,11 @@ void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc
 void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc)
 {
     g_usbd_core[busid].bos_desc = desc;
+}
+
+void usbd_webusb_desc_register(uint8_t busid, struct usb_webusb_descriptor *desc)
+{
+    g_usbd_core[busid].webusb_url_desc = desc;
 }
 #endif
 
