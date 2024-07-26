@@ -52,9 +52,11 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
 
     /** Currently selected configuration */
     uint8_t configuration;
+    uint8_t device_address;
     bool self_powered;
     bool remote_wakeup_support;
     bool remote_wakeup_enabled;
+    bool is_suspend;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     uint8_t speed;
 #endif
@@ -561,6 +563,7 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
             break;
 
         case USB_REQUEST_SET_ADDRESS:
+            g_usbd_core[busid].device_address = value;
             usbd_set_address(busid, value);
             *len = 0;
             break;
@@ -587,6 +590,7 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
                 ret = false;
             } else {
                 g_usbd_core[busid].configuration = value;
+                g_usbd_core[busid].is_suspend = false;
                 usbd_class_event_notify_handler(busid, USBD_EVENT_CONFIGURED, NULL);
                 g_usbd_core[busid].event_handler(busid, USBD_EVENT_CONFIGURED);
             }
@@ -1071,17 +1075,22 @@ void usbd_event_disconnect_handler(uint8_t busid)
 
 void usbd_event_resume_handler(uint8_t busid)
 {
+    g_usbd_core[busid].is_suspend = false;
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_RESUME);
 }
 
 void usbd_event_suspend_handler(uint8_t busid)
 {
-    g_usbd_core[busid].event_handler(busid, USBD_EVENT_SUSPEND);
+    if (g_usbd_core[busid].device_address > 0) {
+        g_usbd_core[busid].is_suspend = true;
+        g_usbd_core[busid].event_handler(busid, USBD_EVENT_SUSPEND);
+    }
 }
 
 void usbd_event_reset_handler(uint8_t busid)
 {
     usbd_set_address(busid, 0);
+    g_usbd_core[busid].device_address = 0;
     g_usbd_core[busid].configuration = 0;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     g_usbd_core[busid].speed = USB_SPEED_UNKNOWN;
@@ -1345,6 +1354,24 @@ uint8_t usbd_get_ep_mult(uint8_t busid, uint8_t ep)
 bool usb_device_is_configured(uint8_t busid)
 {
     return g_usbd_core[busid].configuration;
+}
+
+int usbd_send_remote_wakeup(uint8_t busid)
+{
+    if (g_usbd_core[busid].remote_wakeup_support && g_usbd_core[busid].remote_wakeup_enabled && g_usbd_core[busid].is_suspend) {
+        return usbd_set_remote_wakeup(busid);
+    } else {
+        if (!g_usbd_core[busid].remote_wakeup_support) {
+            USB_LOG_ERR("device does not support remote wakeup\r\n");
+        }
+        if (!g_usbd_core[busid].remote_wakeup_enabled) {
+            USB_LOG_ERR("device remote wakeup is not enabled\r\n");
+        }
+        if (!g_usbd_core[busid].is_suspend) {
+            USB_LOG_ERR("device is not in suspend state\r\n");
+        }
+        return -1;
+    }
 }
 
 int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event))

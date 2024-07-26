@@ -571,6 +571,7 @@ int usb_dc_init(uint8_t busid)
     /* Enable interrupts matching to the Device mode ONLY */
     USB_OTG_GLB->GINTMSK = USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
                            USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IEPINT |
+                           USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_WUIM |
                            USB_OTG_GINTMSK_IISOIXFRM | USB_OTG_GINTMSK_PXFRM_IISOOXFRM;
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
@@ -675,6 +676,17 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
 {
     USB_OTG_DEV->DCFG &= ~(USB_OTG_DCFG_DAD);
     USB_OTG_DEV->DCFG |= ((uint32_t)addr << 4) & USB_OTG_DCFG_DAD;
+    return 0;
+}
+
+int usbd_set_remote_wakeup(uint8_t busid)
+{
+    if (!(USB_OTG_DEV->DSTS & USB_OTG_DSTS_SUSPSTS)) {
+        return -1;
+    }
+    USB_OTG_DEV->DCTL |= USB_OTG_DCTL_RWUSIG;
+    usbd_dwc2_delay_ms(10);
+    USB_OTG_DEV->DCTL &= ~USB_OTG_DCTL_RWUSIG;
     return 0;
 }
 
@@ -1188,9 +1200,11 @@ void USBD_IRQHandler(uint8_t busid)
         }
         if (gint_status & USB_OTG_GINTSTS_USBSUSP) {
             USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_USBSUSP;
+            usbd_event_suspend_handler(0);
         }
         if (gint_status & USB_OTG_GINTSTS_WKUINT) {
             USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_WKUINT;
+            usbd_event_resume_handler(0);
         }
         if (gint_status & USB_OTG_GINTSTS_OTGINT) {
             temp = USB_OTG_GLB->GOTGINT;

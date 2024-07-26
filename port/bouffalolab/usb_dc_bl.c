@@ -613,6 +613,23 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
     return 0;
 }
 
+int usbd_set_remote_wakeup(uint8_t busid)
+{
+    uint32_t regval;
+
+    regval = getreg32(BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
+    regval |= USB_CAP_RMWAKUP;
+    putreg32(regval, BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
+
+    bflb_mtimer_delay_ms(10);
+
+    regval = getreg32(BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
+    regval &= ~USB_CAP_RMWAKUP;
+    putreg32(regval, BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
+
+    return 0;
+}
+
 uint8_t usbd_get_port_speed(uint8_t busid)
 {
     uint8_t speed = 3;

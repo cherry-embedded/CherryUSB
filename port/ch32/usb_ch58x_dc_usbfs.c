@@ -223,6 +223,11 @@ int usbd_set_address(uint8_t busid, const uint8_t address)
     return 0;
 }
 
+int usbd_set_remote_wakeup(uint8_t busid)
+{
+    return -1;
+}
+
 uint8_t usbd_get_port_speed(uint8_t busid)
 {
     return USB_SPEED_FULL;
@@ -543,7 +548,7 @@ USBD_IRQHandler(void)
                     break;
                 case UIS_TOKEN_OUT:
                     EPn_SET_RX_NAK(epid);
-                    
+
                     if (epid == 0) {
                         /*!< ep0 out */
                         CH58x_USBFS_DEV->UEP0_CTRL ^= RB_UEP_R_TOG;

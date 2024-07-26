@@ -1718,4 +1718,5 @@ typedef struct
 
 uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base);
 uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base);
+void usbd_dwc2_delay_ms(uint8_t ms);
 #endif

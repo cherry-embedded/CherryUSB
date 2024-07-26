@@ -118,3 +118,8 @@ uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
     return 0;
 }
+
+void usbd_dwc2_delay_ms(uint8_t ms)
+{
+    vTaskDelay(pdMS_TO_TICKS(ms));
+}

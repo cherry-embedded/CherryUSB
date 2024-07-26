@@ -91,7 +91,7 @@ int usb_dc_init(uint8_t busid)
     }
 
     uint32_t int_mask;
-    int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK |
+    int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK | USB_USBSTS_SLI_MASK |
                 USB_USBINTR_PCE_MASK | USB_USBINTR_URE_MASK);
 
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
@@ -113,6 +113,23 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
 {
     usb_device_handle_t *handle = g_hpm_udc[busid].handle;
     usb_dcd_set_address(handle->regs, addr);
+    return 0;
+}
+
+int usbd_set_remote_wakeup(uint8_t busid)
+{
+    USB_Type *ptr;
+
+    ptr = g_hpm_udc[busid].handle->regs;
+
+    if (!usb_get_suspend_status(ptr)) {
+        return -1;
+    }
+    ptr->PORTSC1 &= ~USB_PORTSC1_PHCD_MASK;
+    usb_force_port_resume(g_hpm_udc[busid].handle->regs);
+    while (ptr->PORTSC1 & USB_PORTSC1_FPR_MASK) {
+    }
+
     return 0;
 }
 
@@ -314,7 +331,7 @@ void USBD_IRQHandler(uint8_t busid)
                             transfer_len += p_qtd->expected_bytes - p_qtd->total_bytes;
                         }
 
-                        if (p_qtd->next == USB_SOC_DCD_QTD_NEXT_INVALID){
+                        if (p_qtd->next == USB_SOC_DCD_QTD_NEXT_INVALID) {
                             break;
                         } else {
                             p_qtd = (dcd_qtd_t *)p_qtd->next;
