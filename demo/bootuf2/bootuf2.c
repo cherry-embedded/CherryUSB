@@ -18,7 +18,7 @@ const char file_IDEX[] = {
     "<html>"
     "<body>"
     "<script>\n"
-    "location.replace(\"" CONFIG_BOOT_UF2_INDEX_URL "\");\n"
+    "location.replace(\"" CONFIG_BOOTUF2_INDEX_URL "\");\n"
     "</script>"
     "</body>"
     "</html>\n"
@@ -29,7 +29,7 @@ const char file_JOIN[] = {
     "<html>"
     "<body>"
     "<script>\n"
-    "location.replace(\"" CONFIG_BOOT_UF2_JOIN_URL "\");\n"
+    "location.replace(\"" CONFIG_BOOTUF2_JOIN_URL "\");\n"
     "</script>"
     "</body>"
     "</html>\n"
@@ -42,6 +42,18 @@ static struct bootuf2_FILE files[] = {
     [1] = { .Name = "INFO_UF2TXT", .Content = file_INFO, .FileSize = sizeof(file_INFO) - 1 },
     [2] = { .Name = "INDEX   HTM", .Content = file_IDEX, .FileSize = sizeof(file_IDEX) - 1 },
     [3] = { .Name = "JOIN    HTM", .Content = file_JOIN, .FileSize = sizeof(file_JOIN) - 1 },
+};
+
+struct bootuf2_data {
+    const struct bootuf2_DBR *const DBR;
+    struct bootuf2_STATE *const STATE;
+    uint8_t *const fbuff;
+    uint8_t *const erase;
+    size_t page_count;
+    uint8_t *const cache;
+    const size_t cache_size;
+    uint32_t cached_address;
+    size_t cached_bytes;
 };
 
 /*!< define DBRs */
@@ -140,36 +152,15 @@ static int ffind_by_cluster(uint32_t cluster)
     return -1;
 }
 
-static bool uf2block_check_address(struct bootuf2_data *ctx,
-                                   struct bootuf2_BLOCK *uf2)
-{
-    uint32_t beg;
-    uint32_t end;
-
-    beg = uf2->TargetAddress;
-    end = uf2->TargetAddress + uf2->PayloadSize;
-
-    // if ((end >= beg) && (beg >= ctx->offset) &&
-    //     (end <= ctx->offset + ctx->size))
-    // {
-    //     return true;
-    // }
-
-    return true;
-}
-
 static bool bootuf2block_check_writable(struct bootuf2_STATE *STATE,
-                                    struct bootuf2_BLOCK *uf2, uint32_t block_max)
+                                        struct bootuf2_BLOCK *uf2, uint32_t block_max)
 {
-    if (uf2->NumberOfBlock)
-    {
-        if (uf2->BlockIndex < block_max)
-        {
+    if (uf2->NumberOfBlock) {
+        if (uf2->BlockIndex < block_max) {
             uint8_t mask = 1 << (uf2->BlockIndex % 8);
             uint32_t pos = uf2->BlockIndex / 8;
 
-            if ((STATE->Mask[pos] & mask) == 0)
-            {
+            if ((STATE->Mask[pos] & mask) == 0) {
                 return true;
             }
         }
@@ -179,32 +170,25 @@ static bool bootuf2block_check_writable(struct bootuf2_STATE *STATE,
 }
 
 static void bootuf2block_state_update(struct bootuf2_STATE *STATE,
-                                  struct bootuf2_BLOCK *uf2, uint32_t block_max)
+                                      struct bootuf2_BLOCK *uf2, uint32_t block_max)
 {
-    if (uf2->NumberOfBlock)
-    {
-        if (STATE->NumberOfBlock != uf2->NumberOfBlock)
-        {
+    if (uf2->NumberOfBlock) {
+        if (STATE->NumberOfBlock != uf2->NumberOfBlock) {
             if ((uf2->NumberOfBlock >= BOOTUF2_BLOCKSMAX) ||
-                STATE->NumberOfBlock)
-            {
+                STATE->NumberOfBlock) {
                 /*!< uf2 block only can be update once */
                 /*!< this will cause never auto reboot */
                 STATE->NumberOfBlock = 0xffffffff;
-            }
-            else
-            {
+            } else {
                 STATE->NumberOfBlock = uf2->NumberOfBlock;
             }
         }
 
-        if (uf2->BlockIndex < block_max)
-        {
+        if (uf2->BlockIndex < block_max) {
             uint8_t mask = 1 << (uf2->BlockIndex % 8);
             uint32_t pos = uf2->BlockIndex / 8;
 
-            if ((STATE->Mask[pos] & mask) == 0)
-            {
+            if ((STATE->Mask[pos] & mask) == 0) {
                 STATE->Mask[pos] |= mask;
                 STATE->NumberOfWritten++;
             }
@@ -212,13 +196,54 @@ static void bootuf2block_state_update(struct bootuf2_STATE *STATE,
     }
 
     USB_LOG_DBG("UF2 block total %d written %d index %d\r\n",
-                 uf2->NumberOfBlock, STATE->NumberOfWritten, uf2->BlockIndex);
+                uf2->NumberOfBlock, STATE->NumberOfWritten, uf2->BlockIndex);
 }
 
 static bool bootuf2block_state_check(struct bootuf2_STATE *STATE)
 {
     return (STATE->NumberOfWritten >= STATE->NumberOfBlock) &&
            STATE->NumberOfBlock;
+}
+
+static int bootuf2_flash_flush(struct bootuf2_data *ctx)
+{
+    int err;
+
+    if (ctx->cached_bytes == 0) {
+        return 0;
+    }
+
+    err = bootuf2_flash_write(ctx->cached_address, ctx->cache, ctx->cached_bytes);
+
+    if (err) {
+        USB_LOG_ERR("UF2 slot flash write error %d at offset %08lx len %d\r\n",
+                    err, ctx->cached_address, ctx->cached_bytes);
+        return -1;
+    }
+
+    ctx->cached_bytes = 0;
+
+    return 0;
+}
+
+int bootuf2_flash_write_internal(struct bootuf2_data *ctx, struct bootuf2_BLOCK *uf2)
+{
+    /*!< 1.cache not empty and address not continue */
+    /*!< 2.cache full */
+    if ((ctx->cached_bytes && ((ctx->cached_address + ctx->cached_bytes) != uf2->TargetAddress)) ||
+        (ctx->cached_bytes == ctx->cache_size)) {
+        int err = bootuf2_flash_flush(ctx);
+        if (err)
+            return err;
+    }
+
+    /*!< write len always is 256, cache_size always is a multiple of 256 */
+    memcpy(ctx->cache + ctx->cached_bytes, uf2->Data, uf2->PayloadSize);
+
+    ctx->cached_address = uf2->TargetAddress - ctx->cached_bytes;
+    ctx->cached_bytes += uf2->PayloadSize;
+
+    return 0;
 }
 
 void bootuf2_init(void)
@@ -228,6 +253,9 @@ void bootuf2_init(void)
     ctx = &bootuf2_disk;
 
     fcalculate_cluster(ctx);
+
+    ctx->cached_bytes = 0;
+    ctx->cached_address = 0;
 }
 
 int boot2uf2_read_sector(uint32_t start_sector, uint8_t *buff, uint32_t sector_count)
@@ -394,14 +422,13 @@ int bootuf2_write_sector(uint32_t start_sector, const uint8_t *buff, uint32_t se
 
         if (uf2->FamilyID == CONFIG_BOOTUF2_FAMILYID) {
             if (bootuf2block_check_writable(ctx->STATE, uf2, CONFIG_BOOTUF2_FLASHMAX)) {
-                bootuf2_write_flash(ctx, uf2);
+                bootuf2_flash_write_internal(ctx, uf2);
                 bootuf2block_state_update(ctx->STATE, uf2, CONFIG_BOOTUF2_FLASHMAX);
             } else {
                 USB_LOG_DBG("UF2 block %d already written\r\n",
-                       uf2->BlockIndex);
+                            uf2->BlockIndex);
             }
-        }
-        else {
+        } else {
             USB_LOG_DBG("UF2 block illegal id %08x\r\n", uf2->FamilyID);
         }
 
@@ -426,5 +453,11 @@ uint32_t bootuf2_get_sector_count(void)
 
 bool bootuf2_is_write_done(void)
 {
-    return bootuf2block_state_check(&bootuf2_disk.STATE);
+    if (bootuf2block_state_check(bootuf2_disk.STATE)) {
+        bootuf2_flash_flush(&bootuf2_disk);
+        USB_LOG_DBG("UF2 update ok\r\n");
+        return true;
+    } else {
+        return false;
+    }
 }

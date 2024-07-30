@@ -8,8 +8,8 @@
 
 #define CONFIG_PRODUCT            "CherryUSB"
 #define CONFIG_BOARD              "CherryUSB BOARD"
-#define CONFIG_BOOT_UF2_INDEX_URL "https://github.com/cherry-embedded"
-#define CONFIG_BOOT_UF2_JOIN_URL  "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=GyH2M5XfWTHQzmZis4ClpgvfdObPrvtk&authKey=LmcLhfno%2BiW51wmgVC%2F8WoYwUXqiclzWDHMU1Jy1d6S8cECJ4Q7bfJ%2FTe67RLakI&noverify=0&group_code=642693751"
+#define CONFIG_BOOTUF2_INDEX_URL "https://github.com/cherry-embedded"
+#define CONFIG_BOOTUF2_JOIN_URL  "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=GyH2M5XfWTHQzmZis4ClpgvfdObPrvtk&authKey=LmcLhfno%2BiW51wmgVC%2F8WoYwUXqiclzWDHMU1Jy1d6S8cECJ4Q7bfJ%2FTe67RLakI&noverify=0&group_code=642693751"
 
 #define CONFIG_BOOTUF2_CACHE_SIZE         4096
 #define CONFIG_BOOTUF2_SECTOR_SIZE        512

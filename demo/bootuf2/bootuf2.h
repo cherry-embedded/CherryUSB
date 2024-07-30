@@ -108,18 +108,6 @@ struct bootuf2_FILE
     uint16_t ClusterEnd;
 };
 
-struct bootuf2_data {
-    const struct bootuf2_DBR *const DBR;
-    struct bootuf2_STATE *const STATE;
-    uint8_t *const fbuff;
-    uint8_t *const erase;
-    size_t page_count;
-    uint8_t *const cache;
-    const size_t cache_size;
-    uint32_t cached_address;
-    size_t cached_bytes;
-};
-
 #define BOOTUF2_DIVCEIL(_v, _d) (((_v) / (_d)) + ((_v) % (_d) ? 1 : 0))
 
 #define BOOTUF2_MAGIC_START0 0x0A324655u
@@ -223,6 +211,8 @@ uint16_t bootuf2_get_sector_size(void);
 uint32_t bootuf2_get_sector_count(void);
 
 bool bootuf2_is_write_done(void);
-int bootuf2_write_flash(struct bootuf2_data *ctx, struct bootuf2_BLOCK *uf2);
+
+void boot2uf2_flash_init(void);
+int bootuf2_flash_write(uint32_t address, const uint8_t *data, size_t size);
 
 #endif /*  BOOTUF2_H */

@@ -7,15 +7,15 @@
 #include "usbd_msc.h"
 #include "bootuf2.h"
 
-#define MSC_IN_EP          0x81
-#define MSC_OUT_EP         0x02
+#define MSC_IN_EP  0x81
+#define MSC_OUT_EP 0x02
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
 #define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
-#define USB_CONFIG_SIZE    (9 + MSC_DESCRIPTOR_LEN)
+#define USB_CONFIG_SIZE (9 + MSC_DESCRIPTOR_LEN)
 
 #ifdef CONFIG_USB_HS
 #define MSC_MAX_MPS 512
@@ -115,6 +115,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
+            bootuf2_init();
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -149,15 +150,19 @@ static struct usbd_interface intf0;
 
 void msc_bootuf2_init(uint8_t busid, uint32_t reg_base)
 {
-    bootuf2_init();
-
+    boot2uf2_flash_init();
     usbd_desc_register(busid, msc_bootuf2_descriptor);
     usbd_add_interface(busid, usbd_msc_init_intf(busid, &intf0, MSC_OUT_EP, MSC_IN_EP));
 
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
 
-int bootuf2_write_flash(struct bootuf2_data *ctx, struct bootuf2_BLOCK *uf2)
+void boot2uf2_flash_init(void)
 {
+}
+
+int bootuf2_flash_write(uint32_t address, const uint8_t *data, size_t size)
+{
+    USB_LOG_INFO("address:%08x, size:%d\n", address, size);
     return 0;
 }
