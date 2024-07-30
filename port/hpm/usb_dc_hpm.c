@@ -39,6 +39,7 @@ struct hpm_ep_state {
 /* Driver state */
 struct hpm_udc {
     usb_device_handle_t *handle;
+    bool is_suspend;
     struct hpm_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct hpm_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_hpm_udc[CONFIG_USBDEV_MAX_BUS];
@@ -282,13 +283,19 @@ void USBD_IRQHandler(uint8_t busid)
         usb_device_bus_reset(handle, 64);
     }
 
-    if (int_status & intr_suspend) {
+    if (!g_hpm_udc[busid].is_suspend && (int_status & intr_suspend)) {
         if (usb_device_get_suspend_status(handle)) {
+            g_hpm_udc[busid].is_suspend = true;
             usbd_event_suspend_handler(busid);
             /* Note: Host may delay more than 3 ms before and/or after bus reset before doing enumeration. */
             if (usb_device_get_address(handle)) {
             }
+        } else {
         }
+    } else if (g_hpm_udc[busid].is_suspend && (!(int_status & intr_suspend))) {
+        g_hpm_udc[busid].is_suspend = false;
+        usbd_event_resume_handler(busid);
+    } else {
     }
 
     if (int_status & intr_port_change) {
