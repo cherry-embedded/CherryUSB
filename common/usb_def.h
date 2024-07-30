@@ -190,7 +190,7 @@
 #define USB_CONFIG_REMOTE_WAKEUP 0x20
 #define USB_CONFIG_POWERED_MASK  0x40
 #define USB_CONFIG_BUS_POWERED   0x80
-#define USB_CONFIG_SELF_POWERED  0xC0
+#define USB_CONFIG_SELF_POWERED  0x40
 
 /* bMaxPower in Configuration Descriptor */
 #define USB_CONFIG_POWER_MA(mA) ((mA) / 2)
