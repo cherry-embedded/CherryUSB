@@ -126,7 +126,7 @@ int usbd_set_remote_wakeup(uint8_t busid)
     if (!usb_get_suspend_status(ptr)) {
         return -1;
     }
-    ptr->PORTSC1 &= ~USB_PORTSC1_PHCD_MASK;
+
     usb_force_port_resume(g_hpm_udc[busid].handle->regs);
     while (ptr->PORTSC1 & USB_PORTSC1_FPR_MASK) {
     }
