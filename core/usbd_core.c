@@ -181,7 +181,7 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             }
             desc_len = ((desc[CONF_DESC_wTotalLength]) | (desc[CONF_DESC_wTotalLength + 1] << 8));
 
-            g_usbd_core[busid].self_powered = (desc[7] & USB_CONFIG_SELF_POWERED) ? true : false;
+            g_usbd_core[busid].self_powered = (desc[7] & USB_CONFIG_POWERED_MASK) ? true : false;
             g_usbd_core[busid].remote_wakeup_support = (desc[7] & USB_CONFIG_REMOTE_WAKEUP) ? true : false;
             break;
         case USB_DESCRIPTOR_TYPE_STRING:
@@ -346,7 +346,7 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             *len = (p[CONF_DESC_wTotalLength]) |
                    (p[CONF_DESC_wTotalLength + 1] << 8);
 
-            g_usbd_core[busid].self_powered = (p[7] & USB_CONFIG_SELF_POWERED) ? true : false;
+            g_usbd_core[busid].self_powered = (p[7] & USB_CONFIG_POWERED_MASK) ? true : false;
             g_usbd_core[busid].remote_wakeup_support = (p[7] & USB_CONFIG_REMOTE_WAKEUP) ? true : false;
         } else {
             /* normally length is at offset 0 */
