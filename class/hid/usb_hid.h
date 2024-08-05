@@ -569,7 +569,7 @@ struct usb_hid_mouse_report
   int8_t ydisp;     /* y displacement */
                      /* Device specific additional bytes may follow */
 #ifdef CONFIG_INPUT_MOUSE_WHEEL
-  uint8_t wdisp;     /* Wheel displacement */
+  int8_t wdisp;     /* Wheel displacement */
 #endif
 };
 
