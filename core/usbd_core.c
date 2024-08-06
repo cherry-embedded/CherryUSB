@@ -1397,9 +1397,9 @@ int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint
 
 int usbd_deinitialize(uint8_t busid)
 {
-    g_usbd_core[busid].intf_offset = 0;
-    usb_dc_deinit(busid);
-    usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_DEINIT);
+    usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
+    usb_dc_deinit(busid);
+    g_usbd_core[busid].intf_offset = 0;
     return 0;
 }
