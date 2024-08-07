@@ -25,7 +25,13 @@
 
 ---------------------------------------------
 
-- XHCI 的驱动功能以静态库的方式提供，仅限在 Phytium 系列 CPU 平台使用，需要获取源代码请联系 `opensource_embedded@phytium.com.cn` 获取，如需移植运行到非 Phytium 系列 CPU 平台请提前联系`opensource_embedded@phytium.com.cn`获得允许
+- XHCI 的驱动功能以静态库的方式提供，仅限在 Phytium 系列 CPU 平台使用，
+
+- - libxhci_a64.a : AARCH64 驱动库
+- - libxhci_a32_hardfp.a : AARCH32 驱动库，使用硬浮点
+- - libxhci_a32_softfp.a : AARCH32 驱动库，使用软浮点
+
+需要获取源代码请联系 `opensource_embedded@phytium.com.cn` 获取，如需移植运行到非 Phytium 系列 CPU 平台请提前联系`opensource_embedded@phytium.com.cn`获得允许
 
 # USB 3.0 Host Controller (XHCI)
 
@@ -54,4 +60,11 @@
 
 ---------------------------------------------
 
-- This XHCI driver functionality is provided as a static library and is only available for Phytium series CPU platforms. To obtain the source code, please contact `opensource_embedded@phytium.com.cn`. For porting to non-Phytium CPU platforms, please contact `opensource_embedded@phytium.com.cn` in advance for permission.
+- This XHCI driver functionality is provided as a static library and is only available for Phytium series CPU platforms. 
+
+  - - `libxhci_a64.a` : Driver library for AARCH64
+  - - `libxhci_a32_hardfp.a` : Driver library for AARCH32, using hard floating point
+  - - `libxhci_a32_softfp.a` : Driver library for AARCH32, using soft floating point
+
+- To obtain the source code, please contact `opensource_embedded@phytium.com.cn`. 
+- For porting to non-Phytium CPU platforms, shall contact `opensource_embedded@phytium.com.cn` in advance for permission.

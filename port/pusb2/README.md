@@ -22,7 +22,15 @@
 
 ---------------------------------------------
 
-- PUSB2 的驱动功能以静态库的方式提供，需要获取源代码请联系 `opensource_embedded@phytium.com.cn` 获取
+- PUSB2 的驱动功能以静态库的方式提供，
+- - libpusb2_hc_a64.a : AARCH64 主机模式驱动库
+- - libpusb2_dc_a64.a : AARCH64 从机模式驱动库
+- - libpusb2_hc_a32_hardfp.a ：AARCH32 主机模式驱动库，使用硬浮点
+- - libpusb2_hc_a32_softfp.a ：AARCH32 主机模式驱动库，使用软浮点
+- - libpusb2_dc_a32_hardfp.a ：AARCH32 从机模式驱动库，使用硬浮点
+- - libpusb2_dc_a32_softfp.a ：AARCH32 从机模式驱动库，使用软浮点
+
+需要获取源代码请联系 `opensource_embedded@phytium.com.cn` 获取
 
 # USB 2.0 OTG Controller (PUSB2)
 
@@ -47,4 +55,12 @@
 
 ---------------------------------------------
 
-- The driver functionality for PUSB2 is provided as a static library. To obtain the source code, shall contact `opensource_embedded@phytium.com.cn`.
+- The driver functionality of PUSB2 is provided as static libraries:
+  - - `libpusb2_hc_a64.a` : Host mode driver library for AARCH64
+  - - `libpusb2_dc_a64.a` : Device mode driver library for AARCH64
+  - - `libpusb2_hc_a32_hardfp.a` : Host mode driver library for AARCH32, using hard floating point
+  - - `libpusb2_hc_a32_softfp.a` : Host mode driver library for AARCH32, using soft floating point
+  - - `libpusb2_dc_a32_hardfp.a` : Device mode driver library for AARCH32, using hard floating point
+  - - `libpusb2_dc_a32_softfp.a` : Device mode driver library for AARCH32, using soft floating point
+
+- To obtain the source code, please contact `opensource_embedded@phytium.com.cn`.
