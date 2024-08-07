@@ -13,8 +13,13 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_USB_INTR_SOURCE ETS_USB_INTR_SOURCE
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_USB_INTR_SOURCE ETS_USB_INTR_SOURCE
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_USB_INTR_SOURCE ETS_USB_OTG_INTR_SOURCE
 #else
 #define DEFAULT_CPU_FREQ_MHZ 160
 #endif
@@ -44,7 +49,7 @@ void usb_dc_low_level_init(void)
     }
 
     // TODO: Check when to enable interrupt
-    ret = esp_intr_alloc(ETS_USB_INTR_SOURCE, ESP_INTR_FLAG_LEVEL2, usb_dc_interrupt_cb, 0, &s_interrupt_handle);
+    ret = esp_intr_alloc(DEFAULT_USB_INTR_SOURCE, ESP_INTR_FLAG_LEVEL2, usb_dc_interrupt_cb, 0, &s_interrupt_handle);
     if (ret != ESP_OK) {
         USB_LOG_ERR("USB Interrupt Init Failed!\r\n");
         return;
@@ -94,7 +99,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
     }
 
     // TODO: Check when to enable interrupt
-    ret = esp_intr_alloc(ETS_USB_INTR_SOURCE, ESP_INTR_FLAG_LEVEL2, usb_hc_interrupt_cb, 0, &s_interrupt_handle);
+    ret = esp_intr_alloc(DEFAULT_USB_INTR_SOURCE, ESP_INTR_FLAG_LEVEL2, usb_hc_interrupt_cb, 0, &s_interrupt_handle);
     if (ret != ESP_OK) {
         USB_LOG_ERR("USB Interrupt Init Failed!\r\n");
         return;
