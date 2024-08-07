@@ -193,15 +193,15 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
                 LIBS = ['libpusb2_hc_a32_softfp.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_XHCI']):
-        path += [cwd + '/port/xhci/rt-thread']
-        src += Glob('port/xhci/rt-thread/usb_glue_phytium_plat.c')
-        src += Glob('port/xhci/rt-thread/usb_glue_phytium.c')
+        path += [cwd + '/port/xhci/phytium/rt-thread']
+        src += Glob('port/xhci/phytium/rt-thread/usb_glue_phytium_plat.c')
+        src += Glob('port/xhci/phytium/rt-thread/usb_glue_phytium.c')
         if GetDepend(['ARCH_ARMV8']):
             if GetDepend(['ARCH_CPU_64BIT']):
-                LIBPATH = [cwd + '/port/xhci']
+                LIBPATH = [cwd + '/port/xhci/phytium']
                 LIBS = ['libxhci_a64.a']
             else:
-                LIBPATH = [cwd + '/port/xhci']
+                LIBPATH = [cwd + '/port/xhci/phytium']
                 LIBS = ['libxhci_a32_softfp.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM']):
