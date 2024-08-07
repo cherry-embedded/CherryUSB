@@ -132,3 +132,13 @@ void usb_dc_low_level_deinit(void)
     usb_sys_mem_deinit();
     usb_dc_revoke_pusb2_interrupt(CONFIG_USB_PUSB2_BUS_ID);
 }
+
+size_t usb_osal_enter_critical_section(void) 
+{
+    return 0;
+}
+
+void usb_osal_leave_critical_section(size_t flag) 
+{
+    
+}

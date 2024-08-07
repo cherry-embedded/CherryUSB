@@ -30,6 +30,9 @@ void *usb_sys_malloc_align(size_t align, size_t size);
 
 unsigned long usb_dc_get_register_base(uint32_t id);
 
+size_t usb_osal_enter_critical_section(void);
+void usb_osal_leave_critical_section(size_t flag);
+
 #ifndef CONFIG_USB_DBG_LEVEL
 #if defined(CONFIG_LOG_ERROR)
 #define CONFIG_USB_DBG_LEVEL USB_DBG_ERROR
