@@ -21,7 +21,6 @@
 #include "finterrupt.h"
 
 #include "usbh_core.h"
-#include "usb_hc_xhci.h"
 
 #if defined(CONFIG_CHERRY_USB_PORT_XHCI_PCIE)
 
