@@ -15,6 +15,8 @@ path += [cwd + '/class/vendor/net']
 path += [cwd + '/class/vendor/serial']
 src = []
 
+LIBS    = []
+LIBPATH = []
 CPPDEFINES = []
 
 # USB DEVICE
@@ -68,6 +70,16 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             src += Glob('port/ch32/usb_dc_usbhs.c')
         else:
             src += Glob('port/ch32/usb_dc_usbfs.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
+        path += [cwd + '/port/xhci/rt-thread']
+        src += Glob('port/pusb2/rt-thread/usb_dc_glue_phytium.c')
+        if GetDepend(['ARCH_ARMV8']):
+            if GetDepend(['ARCH_CPU_64BIT']):
+                LIBPATH = [cwd + '/port/pusb2']
+                LIBS = ['libpusb2_dc_a64.a']
+            else:
+                LIBPATH = [cwd + '/port/pusb2']
+                LIBS = ['libpusb2_dc_a32_softfp.a']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc.c')
@@ -169,6 +181,28 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/musb/usb_glue_bk.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_hc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_PUSB2']):
+        path += [cwd + '/port/pusb2/rt-thread']
+        src += Glob('port/pusb2/rt-thread/usb_hc_glue_phytium.c')
+        if GetDepend(['ARCH_ARMV8']):
+            if GetDepend(['ARCH_CPU_64BIT']):
+                LIBPATH = [cwd + '/port/pusb2']
+                LIBS = ['libpusb2_hc_a64.a']
+            else:
+                LIBPATH = [cwd + '/port/pusb2']
+                LIBS = ['libpusb2_hc_a32_softfp.a']
+
+    if GetDepend(['PKG_CHERRYUSB_HOST_XHCI']):
+        path += [cwd + '/port/xhci/rt-thread']
+        src += Glob('port/xhci/rt-thread/usb_glue_phytium_plat.c')
+        src += Glob('port/xhci/rt-thread/usb_glue_phytium.c')
+        if GetDepend(['ARCH_ARMV8']):
+            if GetDepend(['ARCH_CPU_64BIT']):
+                LIBPATH = [cwd + '/port/xhci']
+                LIBS = ['libxhci_a64.a']
+            else:
+                LIBPATH = [cwd + '/port/xhci']
+                LIBS = ['libxhci_a32_softfp.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM']):
         src += Glob('class/cdc/usbh_cdc_acm.c')
