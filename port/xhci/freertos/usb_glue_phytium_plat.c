@@ -22,7 +22,6 @@
 #include "fmemory_pool.h"
 
 #include "usbh_core.h"
-#include "usb_hc_xhci.h"
 
 /************************** Constant Definitions *****************************/
 
