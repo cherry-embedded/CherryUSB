@@ -78,7 +78,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             LIBS = ['libpusb2_dc_a64.a']
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/pusb2']
-            LIBS = ['libpusb2_dc_a32_softfp.a']
+            LIBS = ['libpusb2_dc_a32_softfp_neon.a']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc.c')
@@ -188,7 +188,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
             LIBS = ['libpusb2_hc_a64.a']
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/pusb2']
-            LIBS = ['libpusb2_hc_a32_softfp.a']
+            LIBS = ['libpusb2_hc_a32_softfp_neon.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_XHCI']):
         path += [cwd + '/port/xhci/phytium/rt-thread']
@@ -199,7 +199,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
             LIBS = ['libxhci_a64.a']
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/xhci/phytium']
-            LIBS = ['libxhci_a32_softfp.a']
+            LIBS = ['libxhci_a32_softfp_neon.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM']):
         src += Glob('class/cdc/usbh_cdc_acm.c')
