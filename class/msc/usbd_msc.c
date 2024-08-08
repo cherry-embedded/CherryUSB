@@ -968,7 +968,7 @@ void usbd_msc_set_readonly(uint8_t busid, bool readonly)
     g_usbd_msc[busid].readonly = readonly;
 }
 
-bool usbd_msc_set_popup(uint8_t busid)
+bool usbd_msc_get_popup(uint8_t busid)
 {
     return g_usbd_msc[busid].popup;
 }
