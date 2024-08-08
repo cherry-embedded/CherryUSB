@@ -69,6 +69,10 @@
 #define CONFIG_USBDEV_MSC_VERSION_STRING "0.01"
 #endif
 
+/* move msc read & write from isr to while(1), you should call usbd_msc_polling in while(1) */
+// #define CONFIG_USBDEV_MSC_POLLING
+
+/* move msc read & write from isr to thread */
 // #define CONFIG_USBDEV_MSC_THREAD
 
 #ifndef CONFIG_USBDEV_MSC_PRIO
