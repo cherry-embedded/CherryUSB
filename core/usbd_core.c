@@ -1374,7 +1374,7 @@ int usbd_send_remote_wakeup(uint8_t busid)
     }
 }
 
-int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event))
+int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event))
 {
     int ret;
     struct usbd_bus *bus;

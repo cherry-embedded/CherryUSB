@@ -153,7 +153,7 @@ struct usbh_devaddr_map {
 };
 
 struct usbh_hcd {
-    uint32_t reg_base;
+    uintptr_t reg_base;
     uint8_t hcd_id;
     uint8_t roothub_intbuf[2]; /* at most 15 roothub ports */
     struct usbh_hub roothub;
@@ -271,7 +271,7 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
  */
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
 
-int usbh_initialize(uint8_t busid, uint32_t reg_base);
+int usbh_initialize(uint8_t busid, uintptr_t reg_base);
 int usbh_deinitialize(uint8_t busid);
 void *usbh_find_class_instance(const char *devname);
 

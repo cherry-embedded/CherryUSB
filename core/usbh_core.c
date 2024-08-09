@@ -600,7 +600,7 @@ void usbh_hubport_release(struct usbh_hubport *hport)
     }
 }
 
-static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uint32_t reg_base)
+static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uintptr_t reg_base)
 {
     memset(bus, 0, sizeof(struct usbh_bus));
     bus->busid = busid;
@@ -613,7 +613,7 @@ static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uint32_t reg_base
     usb_slist_add_tail(&g_bus_head, &bus->list);
 }
 
-int usbh_initialize(uint8_t busid, uint32_t reg_base)
+int usbh_initialize(uint8_t busid, uintptr_t reg_base)
 {
     struct usbh_bus *bus;
 

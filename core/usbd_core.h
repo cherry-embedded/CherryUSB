@@ -77,7 +77,7 @@ struct usb_descriptor {
 
 struct usbd_bus {
     uint8_t busid;
-    uint32_t reg_base;
+    uintptr_t reg_base;
 };
 
 extern struct usbd_bus g_usbdev_bus[];
@@ -104,7 +104,7 @@ uint8_t usbd_get_ep_mult(uint8_t busid, uint8_t ep);
 bool usb_device_is_configured(uint8_t busid);
 int usbd_send_remote_wakeup(uint8_t busid);
 
-int usbd_initialize(uint8_t busid, uint32_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event));
+int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event));
 int usbd_deinitialize(uint8_t busid);
 
 #ifdef __cplusplus
