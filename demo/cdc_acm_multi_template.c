@@ -223,7 +223,7 @@ struct usbd_interface intf5;
 struct usbd_interface intf6;
 struct usbd_interface intf7;
 
-void cdc_acm_multi_init(uint8_t busid, uint32_t reg_base)
+void cdc_acm_multi_init(uint8_t busid, uintptr_t reg_base)
 {
     usbd_desc_register(busid, cdc_descriptor);
 

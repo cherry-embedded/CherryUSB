@@ -148,7 +148,7 @@ int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *
 
 static struct usbd_interface intf0;
 
-void msc_bootuf2_init(uint8_t busid, uint32_t reg_base)
+void msc_bootuf2_init(uint8_t busid, uintptr_t reg_base)
 {
     boot2uf2_flash_init();
     usbd_desc_register(busid, msc_bootuf2_descriptor);

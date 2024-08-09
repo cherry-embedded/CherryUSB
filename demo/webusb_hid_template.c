@@ -353,7 +353,7 @@ static struct usbd_endpoint hid_in_ep = {
 
 static struct usbd_interface intf0;
 
-void webusb_hid_keyboard_init(uint8_t busid, uint32_t reg_base)
+void webusb_hid_keyboard_init(uint8_t busid, uintptr_t reg_base)
 {
     usbd_desc_register(busid, webusb_hid_descriptor);
     usbd_bos_desc_register(busid, &bos_desc);

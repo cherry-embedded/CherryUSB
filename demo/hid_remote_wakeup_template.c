@@ -239,7 +239,7 @@ static struct usbd_endpoint hid_in_ep = {
 
 static struct usbd_interface intf0;
 
-void hid_mouse_init(uint8_t busid, uint32_t reg_base)
+void hid_mouse_init(uint8_t busid, uintptr_t reg_base)
 {
     usbd_desc_register(busid, hid_descriptor);
     usbd_add_interface(busid, usbd_hid_init_intf(busid, &intf0, hid_mouse_report_desc, HID_MOUSE_REPORT_DESC_SIZE));

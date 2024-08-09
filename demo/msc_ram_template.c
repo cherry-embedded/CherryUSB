@@ -156,7 +156,7 @@ int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *
 
 static struct usbd_interface intf0;
 
-void msc_ram_init(uint8_t busid, uint32_t reg_base)
+void msc_ram_init(uint8_t busid, uintptr_t reg_base)
 {
     usbd_desc_register(busid, msc_ram_descriptor);
     usbd_add_interface(busid, usbd_msc_init_intf(busid, &intf0, MSC_OUT_EP, MSC_IN_EP));

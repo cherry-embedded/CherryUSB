@@ -174,7 +174,7 @@ struct usbd_endpoint cdc_in_ep = {
 static struct usbd_interface intf0;
 static struct usbd_interface intf1;
 
-void cdc_acm_init(uint8_t busid, uint32_t reg_base)
+void cdc_acm_init(uint8_t busid, uintptr_t reg_base)
 {
     const uint8_t data[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
 

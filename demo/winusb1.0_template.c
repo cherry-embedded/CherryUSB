@@ -444,7 +444,7 @@ struct usbd_interface intf1;
 
 #endif
 
-void winusb_init(uint8_t busid, uint32_t reg_base)
+void winusb_init(uint8_t busid, uintptr_t reg_base)
 {
     usbd_desc_register(busid, winusb_descriptor);
     usbd_msosv1_desc_register(busid, &msosv1_desc);
