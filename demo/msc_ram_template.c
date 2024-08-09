@@ -163,3 +163,10 @@ void msc_ram_init(uint8_t busid, uint32_t reg_base)
 
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
+
+#if defined(CONFIG_USBDEV_MSC_POLLING)
+void msc_ram_polling(uint8_t busid)
+{
+    usbd_msc_polling(busid);
+}
+#endif
