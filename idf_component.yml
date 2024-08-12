@@ -1,0 +1,5 @@
+description: CherryUSB is a tiny and portable USB Stack (device & host) for embedded system with USB IP
+url: https://github.com/cherry-embedded/CherryUSB
+repository: https://github.com/cherry-embedded/CherryUSB.git
+documentation: https://cherryusb.readthedocs.io/
+issues: https://github.com/cherry-embedded/CherryUSB/issues

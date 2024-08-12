@@ -1,0 +1,13 @@
+[sections:usbh_class_info]
+entries:
+    .usbh_class_info+
+
+[scheme:usbh_class_info_array]
+entries:
+    usbh_class_info -> flash_rodata
+
+[mapping:usbh_class_info_table]
+archive: *
+entries:
+    * (usbh_class_info_array);
+        usbh_class_info -> flash_rodata KEEP() SURROUND(usbh_class_info)

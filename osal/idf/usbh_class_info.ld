@@ -1,0 +1,2 @@
+__usbh_class_info_start__ = _usbh_class_info_start;
+__usbh_class_info_end__ = _usbh_class_info_end;
