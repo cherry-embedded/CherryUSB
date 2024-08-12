@@ -186,7 +186,9 @@ if CHERRYUSB
                 bool "musb_custom"
             config CHERRYUSB_HOST_PUSB2
                 bool "pusb2"
-            config CHERRYUSB_HOST_XHCI
+            config CHERRYUSB_HOST_XHCI_PHYTIUM
+                bool "xhci_phytium"
+            config CHERRYUSB_HOST_XHCI_CUSTOM
                 bool "xhci"
         endchoice
 
