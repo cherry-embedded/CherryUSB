@@ -191,7 +191,7 @@ CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和�
 
 ## 商业支持
 
-参考 https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html。
+参考 https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html 。
 
 ## 联系
 
