@@ -558,7 +558,7 @@ struct usb_hid_kbd_report
 };
 
 /* Keyboard output report (1 byte) (HID B.1),
- * see USBHID_KBDOUT_* definitions
+ * see HID_KBD_OUTPUT_* definitions
  */
 
 /* Mouse input report (HID B.2) */
