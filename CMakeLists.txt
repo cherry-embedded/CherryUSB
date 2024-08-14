@@ -27,7 +27,7 @@ set(CONFIG_CHERRYUSB_HOST_PL2303 1)
 set(CONFIG_CHERRYUSB_OSAL "freertos")
 set(CONFIG_CHERRYUSB_HOST_HCD "ehci_bouffalo")
 
-include(cherryusb.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
 
 sdk_generate_library(cherryusb)
 sdk_add_include_directories(${cherryusb_incs})
@@ -56,7 +56,7 @@ set(CONFIG_CHERRYUSB_HOST_BL616 1)
 set(CONFIG_CHERRYUSB_OSAL "freertos")
 set(CONFIG_CHERRYUSB_HOST_HCD "ehci_hpm")
 
-include(cherryusb.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
 
 sdk_inc(${cherryusb_incs})
 sdk_src(${cherryusb_srcs})
@@ -69,7 +69,7 @@ set(CONFIG_CHERRYUSB_DEVICE_DCD "dwc2_esp")
 set(CONFIG_CHERRYUSB_HOST_HCD "dwc2_esp")
 set(CONFIG_CHERRYUSB_OSAL "idf")
 
-include(cherryusb.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
 
 set(ldfragments "osal/idf/linker.lf")
 

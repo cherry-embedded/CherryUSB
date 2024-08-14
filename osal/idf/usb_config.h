@@ -16,9 +16,6 @@
 
 #define CONFIG_USB_PRINTF(...) esp_rom_printf(__VA_ARGS__)
 
-#define usb_malloc(size) malloc(size)
-#define usb_free(ptr)    free(ptr)
-
 #ifndef CONFIG_USB_DBG_LEVEL
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
 #endif
@@ -103,14 +100,10 @@
 #define CONFIG_USBDEV_RNDIS_VENDOR_DESC "CherryUSB"
 #endif
 
-/******
 #define CONFIG_USBDEV_RNDIS_USING_LWIP
-******/
 
 /* ================ USB HOST Stack Configuration ================== */
-// NOTE: Below configurations are removed to Kconfig, `idf.py menuconfig` to config them
 
-/******
 #define CONFIG_USBHOST_MAX_RHPORTS          1
 #define CONFIG_USBHOST_MAX_EXTHUBS          1
 #define CONFIG_USBHOST_MAX_EHPORTS          4
@@ -125,7 +118,6 @@
 #define CONFIG_USBHOST_MAX_VIDEO_CLASS   1
 
 #define CONFIG_USBHOST_DEV_NAMELEN 16
-******/
 
 #ifndef CONFIG_USBHOST_PSC_PRIO
 #define CONFIG_USBHOST_PSC_PRIO 0
@@ -143,7 +135,7 @@
 
 /* Ep0 max transfer buffer */
 #ifndef CONFIG_USBHOST_REQUEST_BUFFER_LEN
-#define CONFIG_USBHOST_REQUEST_BUFFER_LEN 512
+#define CONFIG_USBHOST_REQUEST_BUFFER_LEN 2048
 #endif
 
 #ifndef CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT
