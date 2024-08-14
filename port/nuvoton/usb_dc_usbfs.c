@@ -82,7 +82,7 @@ struct usb_dc_config_priv {
     struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_nuvoton_udc;
 
-static uint8_t usdb_set_address_flag = 0;
+static uint8_t usbd_set_address_flag = 0;
 static uint8_t usbd_out_toggle[USB_NUM_BIDIR_ENDPOINTS] = { 0 };
 
 __WEAK void usb_dc_low_level_init(void)
@@ -159,7 +159,7 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
     uint8_t usbd_addr = USBD_GET_ADDR();
     if ((usbd_addr == 0) && (usbd_addr != addr)) {
         g_nuvoton_udc.dev_addr = addr;
-        usdb_set_address_flag = 1;
+        usbd_set_address_flag = 1;
     }
 
     return 0;
@@ -369,9 +369,9 @@ void USBD_IRQHandler(uint8_t busid)
 
         if (int_flag & USBD_INTSTS_EP0) {
             /* In ACK for Set address */
-            if (usdb_set_address_flag == 1) {
+            if (usbd_set_address_flag == 1) {
                 USBD_SET_ADDR(g_nuvoton_udc.dev_addr);
-                usdb_set_address_flag = 0;
+                usbd_set_address_flag = 0;
             }
         }
 
