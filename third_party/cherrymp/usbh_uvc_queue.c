@@ -1,32 +1,31 @@
 #include "usbh_uvc_queue.h"
-#include "chry_pool.h"
+#include "chry_mempool.h"
 
-struct chry_pool usbh_uvc_pool;
-uint32_t usbh_uvc_pool_buf[10];
+struct chry_mempool usbh_uvc_pool;
 
 int usbh_uvc_frame_create(struct usbh_videoframe *frame, uint32_t count)
 {
-    return chry_pool_create(&usbh_uvc_pool, usbh_uvc_pool_buf, frame, sizeof(struct usbh_videoframe), count);
+    return chry_mempool_create(&usbh_uvc_pool, frame, sizeof(struct usbh_videoframe), count);
 }
 
 struct usbh_videoframe *usbh_uvc_frame_alloc(void)
 {
-    return (struct usbh_videoframe *)chry_pool_item_alloc(&usbh_uvc_pool);
+    return (struct usbh_videoframe *)chry_mempool_alloc(&usbh_uvc_pool);
 }
 
 int usbh_uvc_frame_free(struct usbh_videoframe *frame)
 {
-    return chry_pool_item_free(&usbh_uvc_pool, (uintptr_t *)frame);
+    return chry_mempool_free(&usbh_uvc_pool, (uintptr_t *)frame);
 }
 
 int usbh_uvc_frame_send(struct usbh_videoframe *frame)
 {
-    return chry_pool_item_send(&usbh_uvc_pool, (uintptr_t *)frame);
+    return chry_mempool_send(&usbh_uvc_pool, (uintptr_t *)frame);
 }
 
 int usbh_uvc_frame_recv(struct usbh_videoframe **frame, uint32_t timeout)
 {
-    return chry_pool_item_recv(&usbh_uvc_pool, (uintptr_t **)frame, timeout);
+    return chry_mempool_recv(&usbh_uvc_pool, (uintptr_t **)frame, timeout);
 }
 
 uint8_t frame_buffer1[1]; /* just for test */

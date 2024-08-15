@@ -1,7 +1,7 @@
 #ifndef USBH_UVC_QUEUE_H
 #define USBH_UVC_QUEUE_H
 
-#include "chry_pool.h"
+#include "chry_mempool.h"
 #include "usbh_core.h"
 #include "usbh_video.h"
 
