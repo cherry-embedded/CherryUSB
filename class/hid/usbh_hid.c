@@ -12,7 +12,7 @@
 
 #define DEV_FORMAT "/dev/input%d"
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[128];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[CONFIG_USBHOST_MAX_HID_CLASS][USB_ALIGN_UP(256, CONFIG_USB_ALIGN_SIZE)];
 
 static struct usbh_hid g_hid_class[CONFIG_USBHOST_MAX_HID_CLASS];
 static uint32_t g_devinuse = 0;
@@ -58,11 +58,11 @@ static int usbh_hid_get_report_descriptor(struct usbh_hid *hid_class, uint8_t *b
     setup->wIndex = hid_class->intf;
     setup->wLength = 128;
 
-    ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf);
+    ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hid_buf, ret - 8);
+    memcpy(buffer, g_hid_buf[hid_class->minor], ret - 8);
     return ret;
 }
 
@@ -100,11 +100,11 @@ int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer)
     setup->wIndex = hid_class->intf;
     setup->wLength = 1;
 
-    ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf);
+    ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
     if (ret < 0) {
         return ret;
     }
-    memcpy(buffer, g_hid_buf, 1);
+    memcpy(buffer, g_hid_buf[hid_class->minor], ret - 8);
     return ret;
 }
 
@@ -147,6 +147,7 @@ int usbh_hid_set_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
 int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t report_id, uint8_t *buffer, uint32_t buflen)
 {
     struct usb_setup_packet *setup;
+    int ret;
 
     if (!hid_class || !hid_class->hport) {
         return -USB_ERR_INVAL;
@@ -159,7 +160,12 @@ int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
     setup->wIndex = 0;
     setup->wLength = buflen;
 
-    return usbh_control_transfer(hid_class->hport, setup, buffer);
+    ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
+    if (ret < 0) {
+        return ret;
+    }
+    memcpy(buffer, g_hid_buf[hid_class->minor], ret - 8);
+    return ret;
 }
 
 int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
