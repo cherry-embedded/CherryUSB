@@ -50,12 +50,12 @@ void usb_dc_low_level_init(void)
     }
 
     // TODO: Check when to enable interrupt
-    ret = esp_intr_alloc(DEFAULT_USB_INTR_SOURCE, ESP_INTR_FLAG_LEVEL2, usb_dc_interrupt_cb, 0, &s_interrupt_handle);
+    ret = esp_intr_alloc(DEFAULT_USB_INTR_SOURCE, ESP_INTR_FLAG_LOWMED, usb_dc_interrupt_cb, 0, &s_interrupt_handle);
     if (ret != ESP_OK) {
         USB_LOG_ERR("USB Interrupt Init Failed!\r\n");
         return;
     }
-    USB_LOG_INFO("cherryusb, version: 0x%06x\r\n", CHERRYUSB_VERSION);
+    USB_LOG_INFO("cherryusb, version: "CHERRYUSB_VERSION_STR"\r\n");
 }
 
 void usb_dc_low_level_deinit(void)
@@ -100,12 +100,12 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
     }
 
     // TODO: Check when to enable interrupt
-    ret = esp_intr_alloc(DEFAULT_USB_INTR_SOURCE, ESP_INTR_FLAG_LEVEL2, usb_hc_interrupt_cb, 0, &s_interrupt_handle);
+    ret = esp_intr_alloc(DEFAULT_USB_INTR_SOURCE, ESP_INTR_FLAG_LOWMED, usb_hc_interrupt_cb, 0, &s_interrupt_handle);
     if (ret != ESP_OK) {
         USB_LOG_ERR("USB Interrupt Init Failed!\r\n");
         return;
     }
-    USB_LOG_INFO("cherryusb, version: 0x%06x\r\n", CHERRYUSB_VERSION);
+    USB_LOG_INFO("cherryusb, version: "CHERRYUSB_VERSION_STR"\r\n");
 }
 
 void usb_hc_low_level_deinit(struct usbh_bus *bus)
