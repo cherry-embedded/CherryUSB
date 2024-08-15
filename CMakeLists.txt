@@ -141,7 +141,5 @@ if(CONFIG_CHERRYUSB)
     set_source_files_properties("class/audio/usbd_audio.c"
         PROPERTIES COMPILE_FLAGS
         -Wno-maybe-uninitialized)
-    include(package_manager)
-    cu_pkg_define_version(${CMAKE_CURRENT_LIST_DIR})
 endif()
 endif()
