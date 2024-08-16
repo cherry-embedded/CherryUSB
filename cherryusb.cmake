@@ -44,7 +44,7 @@ ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi
 if(CONFIG_CHERRYUSB_DEVICE)
     list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/core/usbd_core.c)
     if(CONFIG_CHERRYUSB_DEVICE_CDC_ACM)
-    list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/cdc/usbd_cdc.c)
+    list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/cdc/usbd_cdc_acm.c)
     endif()
     if(CONFIG_CHERRYUSB_DEVICE_HID)
     list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/hid/usbd_hid.c)
