@@ -6,9 +6,6 @@
 #ifndef CHERRYUSB_CONFIG_H
 #define CHERRYUSB_CONFIG_H
 
-#define CHERRYUSB_VERSION     0x010301
-#define CHERRYUSB_VERSION_STR "v1.3.1"
-
 /* ================ USB common Configuration ================ */
 
 #define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)

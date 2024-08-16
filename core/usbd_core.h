@@ -23,6 +23,7 @@ extern "C" {
 #include "usb_log.h"
 #include "usb_dc.h"
 #include "usb_memcpy.h"
+#include "usb_version.h"
 
 enum usbd_event_type {
     /* USB DCD IRQ */

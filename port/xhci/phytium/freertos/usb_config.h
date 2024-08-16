@@ -16,9 +16,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#define CHERRYUSB_VERSION     0x010400
-#define CHERRYUSB_VERSION_STR "v1.4.0"
-
 /* ================ USB common Configuration ================ */
 
 #define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
