@@ -832,6 +832,7 @@ int usb_hc_init(struct usbh_bus *bus)
         for (uint8_t port = 0; port < g_ehci_hcd[bus->hcd.hcd_id].n_ports; port++) {
             regval = EHCI_HCOR->portsc[port];
             regval |= EHCI_PORTSC_PP;
+            regval &= ~(EHCI_PORTSC_CSC | EHCI_PORTSC_PEC | EHCI_PORTSC_OCC);
             EHCI_HCOR->portsc[port] = regval;
         }
     }
