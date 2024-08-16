@@ -127,7 +127,7 @@ int usbd_set_remote_wakeup(uint8_t busid)
         return -1;
     }
 
-    usb_force_port_resume(g_hpm_udc[busid].handle->regs);
+    usb_force_port_resume(ptr);
     while (ptr->PORTSC1 & USB_PORTSC1_FPR_MASK) {
     }
 
