@@ -145,9 +145,10 @@ int usb_dc_init(uint8_t busid)
     usb_dc_cfg.ep_in[3].ep_ram_addr = ep3_data_buff + 64;
     usb_dc_cfg.ep_out[3].ep_ram_addr = ep3_data_buff;
 
+#if (CONFIG_USBDEV_EP_NUM == 8)
     usb_dc_cfg.ep_in[4].ep_ram_addr = ep0_data_buff + 64 + EP4_OUT_MPS;
     usb_dc_cfg.ep_out[4].ep_ram_addr = ep0_data_buff + 64;
-#if (CONFIG_USBDEV_EP_NUM == 8)
+
     usb_dc_cfg.ep_in[5].ep_ram_addr = ep5_data_buff + 64;
     usb_dc_cfg.ep_out[5].ep_ram_addr = ep5_data_buff;
 
