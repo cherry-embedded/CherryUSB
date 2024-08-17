@@ -36,6 +36,7 @@ ${CMAKE_CURRENT_LIST_DIR}/class/audio
 ${CMAKE_CURRENT_LIST_DIR}/class/video
 ${CMAKE_CURRENT_LIST_DIR}/class/wireless
 ${CMAKE_CURRENT_LIST_DIR}/class/midi
+${CMAKE_CURRENT_LIST_DIR}/class/adb
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/serial
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi
@@ -69,6 +70,9 @@ if(CONFIG_CHERRYUSB_DEVICE)
     endif()
     if(CONFIG_CHERRYUSB_DEVICE_DFU)
     list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/dfu/usbd_dfu.c)
+    endif()
+    if(CONFIG_CHERRYUSB_DEVICE_ADB)
+    list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/adb/usbd_adb.c)
     endif()
 
     if(DEFINED CONFIG_CHERRYUSB_DEVICE_DCD)

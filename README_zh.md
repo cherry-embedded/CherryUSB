@@ -68,6 +68,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 WINUSB1.0、WINUSB2.0、WEBUSB、BOS
 - 支持 Vendor 类 class
 - 支持 UF2
+- 支持 Android Debug Bridge (Only support shell)
 - 支持相同 USB IP 的多从机
 
 CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：

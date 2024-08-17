@@ -68,6 +68,7 @@ CherryUSB Device Stack has the following functions：
 - Support WINUSB1.0、WINUSB2.0、WEBUSB、BOS
 - Support Vendor class
 - Support UF2
+- Support Android Debug Bridge (Only support shell)
 - Support multi device with the same USB IP
 
 CherryUSB Device Stack resource usage (GCC 10.2 with -O2):

@@ -105,6 +105,11 @@ if CHERRYUSB
             prompt "Enable usb dfu device"
             default n
 
+        config CHERRYUSB_DEVICE_ADB
+            bool
+            prompt "Enable usb adb device"
+            default n
+
         choice
             prompt "Select usb device template"
             default CHERRYUSB_DEVICE_TEMPLATE_NONE
