@@ -12,6 +12,14 @@
 
 #define DEV_FORMAT "/dev/input%d"
 
+/* general descriptor field offsets */
+#define DESC_bLength         0 /** Length offset */
+#define DESC_bDescriptorType 1 /** Descriptor type offset */
+
+/* interface descriptor field offsets */
+#define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
+#define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
+
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[CONFIG_USBHOST_MAX_HID_CLASS][USB_ALIGN_UP(256, CONFIG_USB_ALIGN_SIZE)];
 
 static struct usbh_hid g_hid_class[CONFIG_USBHOST_MAX_HID_CLASS];
@@ -56,7 +64,7 @@ static int usbh_hid_get_report_descriptor(struct usbh_hid *hid_class, uint8_t *b
     setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
     setup->wValue = HID_DESCRIPTOR_TYPE_HID_REPORT << 8;
     setup->wIndex = hid_class->intf;
-    setup->wLength = 128;
+    setup->wLength = hid_class->report_size;
 
     ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
     if (ret < 0) {
@@ -172,6 +180,9 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
+    uint8_t cur_iface = 0xff;
+    uint8_t *p;
+    bool found = false;
 
     struct usbh_hid *hid_class = usbh_hid_class_alloc();
     if (hid_class == NULL) {
@@ -184,6 +195,47 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     hport->config.intf[intf].priv = hid_class;
 
+    p = hport->raw_config_desc;
+    while (p[DESC_bLength]) {
+        switch (p[DESC_bDescriptorType]) {
+            case USB_DESCRIPTOR_TYPE_INTERFACE:
+                cur_iface = p[INTF_DESC_bInterfaceNumber];
+                if (cur_iface == intf) {
+                    hid_class->protocol = p[7];
+                    struct usb_hid_descriptor *desc = (struct usb_hid_descriptor *)(p + 9);
+
+                    if (desc->bDescriptorType != HID_DESCRIPTOR_TYPE_HID) {
+                        USB_LOG_ERR("HID descriptor not found\r\n");
+                        return -USB_ERR_INVAL;
+                    }
+
+                    if (desc->subdesc[0].bDescriptorType != HID_DESCRIPTOR_TYPE_HID_REPORT) {
+                        USB_LOG_ERR("HID report descriptor not found\r\n");
+                        return -USB_ERR_INVAL;
+                    }
+
+                    hid_class->report_size = desc->subdesc[0].wDescriptorLength;
+
+                    if (hid_class->report_size > sizeof(g_hid_buf[hid_class->minor])) {
+                        USB_LOG_ERR("HID report descriptor too large\r\n");
+                        return -USB_ERR_INVAL;
+                    }
+                    found = true;
+                    goto found;
+                }
+                break;
+            default:
+                break;
+        }
+        /* skip to next descriptor */
+        p += p[DESC_bLength];
+    }
+
+    if (found == false) {
+        USB_LOG_ERR("HID interface not found\r\n");
+        return -USB_ERR_INVAL;
+    }
+found:
     // /* 0x0 = boot protocol, 0x1 = report protocol */
     // ret = usbh_hid_set_protocol(hid_class, 0x1);
     // if (ret < 0) {
