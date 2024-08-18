@@ -1,6 +1,6 @@
 # Kconfig file for CherryUSB
 menuconfig CHERRYUSB
-    bool "Using CherryUSB"
+    bool "CherryUSB Configuration"
     default n
 
 if CHERRYUSB
