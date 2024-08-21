@@ -155,6 +155,7 @@ Only standard and commercial USB IP are listed.
 |  DWC2(synopsys)  |  DWC2      | DWC2     |  √   |
 |  MUSB(mentor)    |  MUSB      | MUSB     |  √   |
 |  FOTG210(faraday)|  FOTG210   | EHCI     |  √   |
+|  CHIPIDEA(synopsys)| CHIPIDEA | EHCI     |  √   |
 |  CDNS2(cadence)  |  CDNS2     | CDNS2    |  √   |
 |  CDNS3(cadence)  |  CDNS3     | XHCI     |  ×   |
 |  DWC3(synopsys)  |  DWC3      | XHCI     |  ×   |
@@ -180,7 +181,7 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 |ST             |  STM32F4/STM32H7 | dwc2 |[stm32_repo](https://github.com/CherryUSB/cherryusb_stm32)|<= latest | Long-term |
 |HPMicro        |  HPM6750 | hpm/ehci |[hpm_sdk](https://github.com/CherryUSB/hpm_sdk)|<= latest | Long-term |
 |Essemi         |  ES32F36xx | musb |[es32f369_repo](https://github.com/CherryUSB/cherryusb_es32)|<= latest | Long-term |
-|Phytium        |  e2000 | pusb2/xhci |[phytium_repo](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk)|v0.10.2  | Long-term |
+|Phytium        |  e2000 | pusb2/xhci |[phytium_repo](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk)|>=1.4.0  | Long-term |
 |Artinchip      |  d12x/d13x/d21x | aic/ehci/ohci |[luban-lite](https://gitee.com/artinchip/luban-lite)|<= latest  | Long-term |
 |Espressif      |  esp32s2/esp32s3 | dwc2 |[esp32_repo](https://github.com/CherryUSB/cherryusb_esp32)|<= latest | the same with ST |
 |AllwinnerTech  |  F1C100S/F1C200S | musb |[cherryusb_rtt_f1c100s](https://github.com/CherryUSB/cherryusb_rtt_f1c100s)|<= latest | the same with Essemi |
@@ -188,6 +189,14 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 |Sophgo         |  cv18xx | dwc2 |[cvi_alios_open](https://github.com/CherryUSB/cvi_alios_open)| v0.7.0 | the same with ST |
 |WCH            |  CH32V307/ch58x | ch32_usbfs/ch32_usbhs/ch58x |[wch_repo](https://github.com/CherryUSB/cherryusb_wch)|<= v0.10.2 | TBD |
 |Raspberry pi   |  rp2040 | rp2040 |[pico-examples](https://github.com/CherryUSB/pico-examples)|<= v0.10.2 | No more updated |
+
+## Package Support
+
+CherryUSB package is available as follows:
+
+- [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
+- [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
+- [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
 
 ## Commercial Support
 

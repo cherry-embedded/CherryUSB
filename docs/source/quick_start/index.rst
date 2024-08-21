@@ -17,8 +17,24 @@
 
 仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
 
-- HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机
+- HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机，端点共 8/16 个，并且可以同时使用双向，不同芯片个数有差异
 - USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。
+
+基于 esp32s2/s3/p4 系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_esp32
+
+- esp32s2/s3 支持全速主从机，esp32p4 支持高速主从机
+- 默认提供主机 demo，并且使用 esp 组件库进行开发， 在 https://components.espressif.com/ 中搜索 cherryusb 即可
+
+基于飞腾派系列芯片
+---------------------------
+
+仓库参考：https://gitee.com/phytium_embedded/phytium-free-rtos-sdk
+
+- 飞腾派支持两个 USB3.0 主机， 两个 USB2.0 主从机
+- USB 的相关应用位于 `example/peripheral/usb` ，根据官方环境搭建完成后，即可编译使用。
 
 基于 ST 系列芯片
 ---------------------------
@@ -31,7 +47,7 @@
 - F429 主从使用 USB1, 引脚 pb14/pb15, 并且都使用 dma 模式
 - H7 设备使用 USB0, 引脚 pa11/pa12，主机使用 USB_OTG_HS ,引脚 pb14/pb15，并且需要做 nocache 处理
 
-默认删除 Drivers ，所以需要使用 stm32cubemx 生成一下 Drivers 目录下的文件，demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
+demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
 
 .. caution:: 生成完以后，请使用 git reset 功能将被覆盖的 `main.c` 和 `stm32xxx_it.c` 文件撤回，禁止被 cubemx 覆盖。
 
