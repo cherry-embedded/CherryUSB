@@ -359,6 +359,8 @@ void USBD_IRQHandler(uint8_t busid)
     }
 }
 
+#if !defined(USBD_USE_CUSTOM_ISR) || !USBD_USE_CUSTOM_ISR
+
 void isr_usbd0(void)
 {
     USBD_IRQHandler(_dcd_busid[0]);
@@ -371,4 +373,6 @@ void isr_usbd1(void)
     USBD_IRQHandler(_dcd_busid[1]);
 }
 SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbd1)
+#endif
+
 #endif
