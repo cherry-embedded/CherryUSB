@@ -100,6 +100,8 @@ static int msc_storage_class_interface_request_handler(uint8_t busid, struct usb
 
 void msc_storage_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
+    (void)arg;
+
     switch (event) {
         case USBD_EVENT_INIT:
 #if defined(CONFIG_USBDEV_MSC_THREAD)
@@ -508,6 +510,9 @@ static bool SCSI_readCapacity10(uint8_t busid, uint8_t **data, uint32_t *len)
 
 static bool SCSI_read10(uint8_t busid, uint8_t **data, uint32_t *len)
 {
+    (void)data;
+    (void)len;
+
     if (((g_usbd_msc[busid].cbw.bmFlags & 0x80U) != 0x80U) || (g_usbd_msc[busid].cbw.dDataLength == 0U)) {
         SCSI_SetSenseData(busid, SCSI_KCQIR_INVALIDCOMMAND);
         return false;
@@ -542,6 +547,9 @@ static bool SCSI_read10(uint8_t busid, uint8_t **data, uint32_t *len)
 
 static bool SCSI_read12(uint8_t busid, uint8_t **data, uint32_t *len)
 {
+    (void)data;
+    (void)len;
+
     if (((g_usbd_msc[busid].cbw.bmFlags & 0x80U) != 0x80U) || (g_usbd_msc[busid].cbw.dDataLength == 0U)) {
         SCSI_SetSenseData(busid, SCSI_KCQIR_INVALIDCOMMAND);
         return false;
@@ -577,6 +585,10 @@ static bool SCSI_read12(uint8_t busid, uint8_t **data, uint32_t *len)
 static bool SCSI_write10(uint8_t busid, uint8_t **data, uint32_t *len)
 {
     uint32_t data_len = 0;
+
+    (void)data;
+    (void)len;
+
     if (((g_usbd_msc[busid].cbw.bmFlags & 0x80U) != 0x00U) || (g_usbd_msc[busid].cbw.dDataLength == 0U)) {
         SCSI_SetSenseData(busid, SCSI_KCQIR_INVALIDCOMMAND);
         return false;
@@ -606,6 +618,10 @@ static bool SCSI_write10(uint8_t busid, uint8_t **data, uint32_t *len)
 static bool SCSI_write12(uint8_t busid, uint8_t **data, uint32_t *len)
 {
     uint32_t data_len = 0;
+
+    (void)data;
+    (void)len;
+
     if (((g_usbd_msc[busid].cbw.bmFlags & 0x80U) != 0x00U) || (g_usbd_msc[busid].cbw.dDataLength == 0U)) {
         SCSI_SetSenseData(busid, SCSI_KCQIR_INVALIDCOMMAND);
         return false;
@@ -815,6 +831,8 @@ static bool SCSI_CBWDecode(uint8_t busid, uint32_t nbytes)
 
 void mass_storage_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    (void)ep;
+
     switch (g_usbd_msc[busid].stage) {
         case MSC_READ_CBW:
             if (SCSI_CBWDecode(busid, nbytes) == false) {
@@ -850,6 +868,9 @@ void mass_storage_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 void mass_storage_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    (void)ep;
+    (void)nbytes;
+
     switch (g_usbd_msc[busid].stage) {
         case MSC_DATA_IN:
             switch (g_usbd_msc[busid].cbw.CB[0]) {

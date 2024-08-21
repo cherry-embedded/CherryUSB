@@ -128,6 +128,7 @@ static void __usb_timeout(TimerHandle_t *handle)
 struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
 {
     struct usb_osal_timer *timer;
+    (void)name;
 
     timer = pvPortMalloc(sizeof(struct usb_osal_timer));
 

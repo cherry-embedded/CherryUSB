@@ -114,6 +114,7 @@ struct netif g_cdc_ecm_netif;
 static err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    (void)netif;
 
     usbh_lwip_eth_output_common(p, usbh_cdc_ecm_get_eth_txbuf());
     ret = usbh_cdc_ecm_eth_output(p->tot_len);
@@ -176,6 +177,8 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 {
     struct netif *netif = &g_cdc_ecm_netif;
+    (void)cdc_ecm_class;
+
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
@@ -216,6 +219,7 @@ struct netif g_rndis_netif;
 static err_t usbh_rndis_linkoutput(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    (void)netif;
 
     usbh_lwip_eth_output_common(p, usbh_rndis_get_eth_txbuf());
     ret = usbh_rndis_eth_output(p->tot_len);
@@ -281,6 +285,8 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
 void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 {
     struct netif *netif = &g_rndis_netif;
+    (void)rndis_class;
+
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
@@ -302,6 +308,7 @@ struct netif g_cdc_ncm_netif;
 static err_t usbh_cdc_ncm_linkoutput(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    (void)netif;
 
     usbh_lwip_eth_output_common(p, usbh_cdc_ncm_get_eth_txbuf());
     ret = usbh_cdc_ncm_eth_output(p->tot_len);
@@ -364,6 +371,8 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
 void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
 {
     struct netif *netif = &g_cdc_ncm_netif;
+    (void)cdc_ncm_class;
+
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
@@ -383,6 +392,7 @@ struct netif g_asix_netif;
 static err_t usbh_asix_linkoutput(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    (void)netif;
 
     usbh_lwip_eth_output_common(p, usbh_asix_get_eth_txbuf());
     ret = usbh_asix_eth_output(p->tot_len);
@@ -445,6 +455,8 @@ void usbh_asix_run(struct usbh_asix *asix_class)
 void usbh_asix_stop(struct usbh_asix *asix_class)
 {
     struct netif *netif = &g_asix_netif;
+    (void)asix_class;
+
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
@@ -464,6 +476,7 @@ struct netif g_rtl8152_netif;
 static err_t usbh_rtl8152_linkoutput(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    (void)netif;
 
     usbh_lwip_eth_output_common(p, usbh_rtl8152_get_eth_txbuf());
     ret = usbh_rtl8152_eth_output(p->tot_len);
@@ -526,6 +539,8 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 {
     struct netif *netif = &g_rtl8152_netif;
+    (void)rtl8152_class;
+
 #if LWIP_DHCP
     dhcp_stop(netif);
     dhcp_cleanup(netif);
@@ -544,6 +559,7 @@ struct netif g_bl616_netif;
 static err_t usbh_bl616_linkoutput(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    (void)netif;
 
     usbh_lwip_eth_output_common(p, usbh_bl616_get_eth_txbuf());
     ret = usbh_bl616_eth_output(p->tot_len);
@@ -583,6 +599,7 @@ void usbh_bl616_sta_disconnect_callback(void)
 
     netif_set_down(netif);
 }
+
 void usbh_bl616_sta_update_ip(uint8_t ip4_addr[4], uint8_t ip4_mask[4], uint8_t ip4_gw[4])
 {
     struct netif *netif = &g_bl616_netif;
@@ -593,6 +610,7 @@ void usbh_bl616_sta_update_ip(uint8_t ip4_addr[4], uint8_t ip4_mask[4], uint8_t 
 
     netif_set_up(netif);
 }
+
 void usbh_bl616_run(struct usbh_bl616 *bl616_class)
 {
     struct netif *netif = &g_bl616_netif;
@@ -622,6 +640,8 @@ void usbh_bl616_run(struct usbh_bl616 *bl616_class)
 void usbh_bl616_stop(struct usbh_bl616 *bl616_class)
 {
     struct netif *netif = &g_bl616_netif;
+
+    (void)bl616_class;
 
     netif_set_down(netif);
     netif_remove(netif);

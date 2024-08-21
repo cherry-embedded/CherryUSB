@@ -26,6 +26,7 @@ static struct usbh_rndis g_rndis_class;
 
 static int usbh_rndis_get_notification(struct usbh_rndis *rndis_class)
 {
+    (void)rndis_class;
     // int ret;
     // struct usbh_urb *urb = &rndis_class->intin_urb;
 
@@ -460,6 +461,8 @@ void usbh_rndis_rx_thread(void *argument)
     uint32_t transfer_size = (16 * 1024);
 #endif
 
+    (void)argument;
+
     USB_LOG_INFO("Create rndis rx thread\r\n");
     // clang-format off
 find_class:
@@ -581,10 +584,12 @@ int usbh_rndis_eth_output(uint32_t buflen)
 
 __WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)
 {
+    (void)rndis_class;
 }
 
 __WEAK void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 {
+    (void)rndis_class;
 }
 
 static const struct usbh_class_driver rndis_class_driver = {

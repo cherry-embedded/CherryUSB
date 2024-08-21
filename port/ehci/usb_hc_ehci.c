@@ -167,6 +167,7 @@ static void ehci_qh_fill(struct ehci_qh_hw *qh,
     switch (speed) {
         case USB_SPEED_LOW:
             epchar |= QH_EPCHAR_EPS_LOW;
+            __attribute__((fallthrough));
         case USB_SPEED_FULL:
             if (ep_type == USB_ENDPOINT_TYPE_CONTROL) {
                 epchar |= QH_EPCHAR_C; /* for TT */
@@ -379,7 +380,7 @@ static struct ehci_qh_hw *ehci_bulk_urb_init(struct usbh_bus *bus, struct usbh_u
                  urb->hport->parent->hub_addr,
                  urb->hport->port);
 
-    while (buflen >= 0) {
+    while (1) {
         qtd = &qh->qtd_pool[qtd_num];
 
         if (buflen > 0x4000) {
@@ -480,7 +481,7 @@ static struct ehci_qh_hw *ehci_intr_urb_init(struct usbh_bus *bus, struct usbh_u
                  urb->hport->parent->hub_addr,
                  urb->hport->port);
 
-    while (buflen >= 0) {
+    while (1) {
         qtd = &qh->qtd_pool[qtd_num];
 
         if (buflen > 0x4000) {
@@ -583,6 +584,8 @@ static void ehci_qh_scan_qtds(struct usbh_bus *bus, struct ehci_qh_hw *qhead, st
 {
     struct ehci_qtd_hw *qtd;
 
+    (void)bus;
+
     ehci_qh_remove(qhead, qh);
 
     qtd = EHCI_ADDR2QTD(qh->first_qtd);
@@ -655,6 +658,8 @@ static void ehci_kill_qh(struct usbh_bus *bus, struct ehci_qh_hw *qhead, struct 
 {
     struct ehci_qtd_hw *qtd;
 
+    (void)bus;
+
     ehci_qh_remove(qhead, qh);
 
     qtd = EHCI_ADDR2QTD(qh->first_qtd);
@@ -697,14 +702,17 @@ static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
 
 __WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
 {
+    (void)bus;
 }
 
 __WEAK void usb_hc_low_level2_init(struct usbh_bus *bus)
 {
+    (void)bus;
 }
 
 __WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
 {
+    (void)bus;
 }
 
 int usb_hc_init(struct usbh_bus *bus)

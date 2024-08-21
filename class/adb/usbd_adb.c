@@ -61,7 +61,7 @@ USB_NOCACHE_RAM_SECTION struct adb_packet rx_packet;
 static inline uint32_t adb_packet_checksum(struct adb_packet *packet)
 {
     uint32_t sum = 0;
-    int i;
+    uint32_t i;
 
     for (i = 0; i < packet->msg.data_length; ++i) {
         sum += (uint32_t)(packet->payload[i]);
@@ -111,6 +111,8 @@ static void adb_send_close(struct adb_packet *packet, uint32_t localid, uint32_t
 
 void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    (void)ep;
+
     if (adb_client.common_state == ADB_STATE_READ_MSG) {
         if (nbytes != sizeof(struct adb_msg)) {
             USB_LOG_ERR("invalid adb msg size:%d\r\n", nbytes);
@@ -202,6 +204,9 @@ void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 void usbd_adb_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    (void)ep;
+    (void)nbytes;
+
     if (adb_client.common_state == ADB_STATE_WRITE_MSG) {
         if (tx_packet.msg.data_length) {
             adb_client.common_state = ADB_STATE_WRITE_DATA;
@@ -235,6 +240,8 @@ void usbd_adb_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 void adb_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
+    (void)arg;
+
     switch (event) {
         case USBD_EVENT_INIT:
             break;
@@ -255,6 +262,8 @@ void adb_notify_handler(uint8_t busid, uint8_t event, void *arg)
 
 struct usbd_interface *usbd_adb_init_intf(uint8_t busid, struct usbd_interface *intf, uint8_t in_ep, uint8_t out_ep)
 {
+    (void)busid;
+
     intf->class_interface_handler = NULL;
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;

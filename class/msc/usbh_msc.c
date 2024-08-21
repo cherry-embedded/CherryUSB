@@ -87,6 +87,8 @@ static void usbh_msc_cbw_dump(struct CBW *cbw)
 
 static void usbh_msc_csw_dump(struct CSW *csw)
 {
+    (void)csw;
+
     USB_LOG_DBG("CSW:\r\n");
     USB_LOG_DBG("  signature: 0x%08x\r\n", (unsigned int)csw->dSignature);
     USB_LOG_DBG("  tag:       0x%08x\r\n", (unsigned int)csw->dTag);
@@ -421,10 +423,12 @@ void usbh_msc_modeswitch_enable(struct usbh_msc_modeswitch_config *config)
 
 __WEAK void usbh_msc_run(struct usbh_msc *msc_class)
 {
+    (void)msc_class;
 }
 
 __WEAK void usbh_msc_stop(struct usbh_msc *msc_class)
 {
+    (void)msc_class;
 }
 
 const struct usbh_class_driver msc_class_driver = {

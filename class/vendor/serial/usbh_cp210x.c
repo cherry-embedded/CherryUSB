@@ -298,10 +298,12 @@ int usbh_cp210x_bulk_out_transfer(struct usbh_cp210x *cp210x_class, uint8_t *buf
 
 __WEAK void usbh_cp210x_run(struct usbh_cp210x *cp210x_class)
 {
+    (void)cp210x_class;
 }
 
 __WEAK void usbh_cp210x_stop(struct usbh_cp210x *cp210x_class)
 {
+    (void)cp210x_class;
 }
 
 static const uint16_t cp210x_id_table[][2] = {

@@ -86,7 +86,7 @@ void usb_assert(const char *filename, int linenum);
 static inline void usb_hexdump(const void *ptr, uint32_t buflen)
 {
     unsigned char *buf = (unsigned char *)ptr;
-    int i, j;
+    uint32_t i, j;
 
     for (i = 0; i < buflen; i += 16) {
         CONFIG_USB_PRINTF("%08X:", i);

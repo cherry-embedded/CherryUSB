@@ -231,20 +231,26 @@ int usbh_cdc_acm_bulk_out_transfer(struct usbh_cdc_acm *cdc_acm_class, uint8_t *
 
 static int usbh_cdc_data_connect(struct usbh_hubport *hport, uint8_t intf)
 {
+    (void)hport;
+    (void)intf;
     return 0;
 }
 
 static int usbh_cdc_data_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
+    (void)hport;
+    (void)intf;
     return 0;
 }
 
 __WEAK void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
+    (void)cdc_acm_class;
 }
 
 __WEAK void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
 {
+    (void)cdc_acm_class;
 }
 
 const struct usbh_class_driver cdc_acm_class_driver = {

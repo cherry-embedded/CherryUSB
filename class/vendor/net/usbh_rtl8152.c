@@ -2140,6 +2140,7 @@ void usbh_rtl8152_rx_thread(void *argument)
     uint32_t transfer_size = (16 * 1024);
 #endif
 
+    (void)argument;
     USB_LOG_INFO("Create rtl8152 rx thread\r\n");
     // clang-format off
 find_class:
@@ -2248,10 +2249,12 @@ int usbh_rtl8152_eth_output(uint32_t buflen)
 
 __WEAK void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 {
+    (void)rtl8152_class;
 }
 
 __WEAK void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 {
+    (void)rtl8152_class;
 }
 
 static const uint16_t rtl_id_table[][2] = {

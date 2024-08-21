@@ -118,6 +118,7 @@ static rt_err_t rt_usbh_cdc_ecm_control(rt_device_t dev, int cmd, void *args)
 static rt_err_t rt_usbh_cdc_ecm_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     int ret;
+    (void)dev;
 
     usbh_lwip_eth_output_common(p, usbh_cdc_ecm_get_eth_txbuf());
     ret = usbh_cdc_ecm_eth_output(p->tot_len);
@@ -150,6 +151,8 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 {
+    (void)cdc_ecm_class;
+
     eth_device_deinit(&g_cdc_ecm_dev);
 }
 #endif
@@ -204,6 +207,7 @@ static rt_err_t rt_usbh_rndis_control(rt_device_t dev, int cmd, void *args)
 static rt_err_t rt_usbh_rndis_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     int ret;
+    (void)dev;
 
     usbh_lwip_eth_output_common(p, usbh_rndis_get_eth_txbuf());
     ret = usbh_rndis_eth_output(p->tot_len);
@@ -237,6 +241,8 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
 
 void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 {
+    (void)rndis_class;
+
     eth_device_deinit(&g_rndis_dev);
     // rt_timer_stop(keep_timer);
     // rt_timer_delete(keep_timer);
@@ -273,6 +279,7 @@ static rt_err_t rt_usbh_cdc_ncm_control(rt_device_t dev, int cmd, void *args)
 static rt_err_t rt_usbh_cdc_ncm_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     int ret;
+    (void)dev;
 
     usbh_lwip_eth_output_common(p, usbh_cdc_ncm_get_eth_txbuf());
     ret = usbh_cdc_ncm_eth_output(p->tot_len);
@@ -305,6 +312,8 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
 
 void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
 {
+    (void)cdc_ncm_class;
+
     eth_device_deinit(&g_cdc_ncm_dev);
 }
 #endif
@@ -339,6 +348,7 @@ static rt_err_t rt_usbh_asix_control(rt_device_t dev, int cmd, void *args)
 static rt_err_t rt_usbh_asix_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     int ret;
+    (void)dev;
 
     usbh_lwip_eth_output_common(p, usbh_asix_get_eth_txbuf());
     ret = usbh_asix_eth_output(p->tot_len);
@@ -371,6 +381,8 @@ void usbh_asix_run(struct usbh_asix *asix_class)
 
 void usbh_asix_stop(struct usbh_asix *asix_class)
 {
+    (void)asix_class;
+
     eth_device_deinit(&g_asix_dev);
 }
 #endif
@@ -405,6 +417,7 @@ static rt_err_t rt_usbh_rtl8152_control(rt_device_t dev, int cmd, void *args)
 static rt_err_t rt_usbh_rtl8152_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     int ret;
+    (void)dev;
 
     usbh_lwip_eth_output_common(p, usbh_rtl8152_get_eth_txbuf());
     ret = usbh_rtl8152_eth_output(p->tot_len);
@@ -437,6 +450,8 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 {
+    (void)rtl8152_class;
+
     eth_device_deinit(&g_rtl8152_dev);
 }
 #endif

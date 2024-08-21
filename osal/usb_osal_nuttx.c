@@ -310,6 +310,9 @@ static void os_timer_callback(wdparm_t arg)
 struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
 {
     struct timer_adpt *timer = kmm_malloc(sizeof(struct timer_adpt));
+
+    (void)name;
+
     if (!timer) {
         return NULL;
     }

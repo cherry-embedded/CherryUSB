@@ -170,6 +170,8 @@ static int _usbh_hub_set_depth(struct usbh_hub *hub, uint16_t depth)
 #if CONFIG_USBHOST_MAX_EXTHUBS > 0
 static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length)
 {
+    (void)length;
+
     if (desc->bLength != USB_SIZEOF_HUB_DESC) {
         USB_LOG_ERR("invalid device bLength 0x%02x\r\n", desc->bLength);
         return -1;
@@ -192,6 +194,8 @@ static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length
 
 static int parse_hub_ss_descriptor(struct usb_hub_ss_descriptor *desc, uint16_t length)
 {
+    (void)length;
+
     if (desc->bLength < USB_SIZEOF_HUB_SS_DESC) {
         USB_LOG_ERR("invalid device bLength 0x%02x\r\n", desc->bLength);
         return -1;

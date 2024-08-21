@@ -259,6 +259,7 @@ void usbh_cdc_ncm_rx_thread(void *argument)
     uint32_t transfer_size = (16 * 1024);
 #endif
 
+    (void)argument;
     USB_LOG_INFO("Create cdc ncm rx thread\r\n");
     // clang-format off
 find_class:
@@ -386,10 +387,12 @@ int usbh_cdc_ncm_eth_output(uint32_t buflen)
 
 __WEAK void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
 {
+    (void)cdc_ncm_class;
 }
 
 __WEAK void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
 {
+    (void)cdc_ncm_class;
 }
 
 const struct usbh_class_driver cdc_ncm_class_driver = {

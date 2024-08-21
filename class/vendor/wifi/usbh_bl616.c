@@ -356,6 +356,7 @@ void usbh_bl616_rx_thread(void *argument)
     rnm_scan_ind_msg_t *scanmsg;
     uint8_t *data;
 
+    (void)argument;
     USB_LOG_INFO("Create bl616 wifi rx thread\r\n");
 
     while (1) {
@@ -473,15 +474,21 @@ int wifi_sta_connect(int argc, char **argv)
 
 int wifi_scan(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
+
     usbh_bl616_wifi_scan();
     return 0;
 }
+
 __WEAK void usbh_bl616_run(struct usbh_bl616 *bl616_class)
 {
+    (void)bl616_class;
 }
 
 __WEAK void usbh_bl616_stop(struct usbh_bl616 *bl616_class)
 {
+    (void)bl616_class;
 }
 
 static const uint16_t bl616_id_table[][2] = {

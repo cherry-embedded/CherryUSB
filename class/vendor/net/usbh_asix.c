@@ -680,6 +680,7 @@ void usbh_asix_rx_thread(void *argument)
     uint32_t transfer_size = (16 * 1024);
 #endif
 
+    (void)argument;
     USB_LOG_INFO("Create asix rx thread\r\n");
     // clang-format off
 find_class:
@@ -791,10 +792,12 @@ int usbh_asix_eth_output(uint32_t buflen)
 
 __WEAK void usbh_asix_run(struct usbh_asix *asix_class)
 {
+    (void)asix_class;
 }
 
 __WEAK void usbh_asix_stop(struct usbh_asix *asix_class)
 {
+    (void)asix_class;
 }
 
 static const uint16_t asix_id_table[][2] = {

@@ -297,10 +297,12 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
 __WEAK void usbh_hid_run(struct usbh_hid *hid_class)
 {
+    (void)hid_class;
 }
 
 __WEAK void usbh_hid_stop(struct usbh_hid *hid_class)
 {
+    (void)hid_class;
 }
 
 const struct usbh_class_driver hid_class_driver = {

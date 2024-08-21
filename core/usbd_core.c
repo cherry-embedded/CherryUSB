@@ -1186,6 +1186,8 @@ void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbyt
 {
     struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
 
+    (void)ep;
+
     g_usbd_core[busid].ep0_data_buf += nbytes;
     g_usbd_core[busid].ep0_data_buf_residue -= nbytes;
 
@@ -1224,6 +1226,8 @@ void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbyt
 void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
+
+    (void)ep;
 
     if (nbytes > 0) {
         g_usbd_core[busid].ep0_data_buf += nbytes;

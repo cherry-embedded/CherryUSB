@@ -413,10 +413,12 @@ int usbh_pl2303_bulk_out_transfer(struct usbh_pl2303 *pl2303_class, uint8_t *buf
 
 __WEAK void usbh_pl2303_run(struct usbh_pl2303 *pl2303_class)
 {
+    (void)pl2303_class;
 }
 
 __WEAK void usbh_pl2303_stop(struct usbh_pl2303 *pl2303_class)
 {
+    (void)pl2303_class;
 }
 
 static const uint16_t pl2303_id_table[][2] = {
