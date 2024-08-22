@@ -113,7 +113,7 @@ static void usb_dc_interrupt_cb(int irq, void *arg_pv)
 }
 
 #ifdef CHERRYUSB_DEVICE_USING_USB0
-void usb_dc_low_level_init(void)
+void usb_dc_low_level_init(uint8_t busid)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 0, 28);
     uint32_t *hs_reg = (uint32_t *)rt_ioremap((void *)(0x91585000 + 0x7C), 0x1000);
@@ -124,12 +124,12 @@ void usb_dc_low_level_init(void)
     rt_hw_interrupt_umask(173);
 }
 
-void usb_dc_low_level_deinit(void)
+void usb_dc_low_level_deinit(uint8_t busid)
 {
     rt_hw_interrupt_mask(173);
 }
 #else
-void usb_dc_low_level_init(void)
+void usb_dc_low_level_init(uint8_t busid)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 1, 29);
     uint32_t *hs_reg = (uint32_t *)rt_ioremap((void *)(0x91585000 + 0x9C), 0x1000);
@@ -140,7 +140,7 @@ void usb_dc_low_level_init(void)
     rt_hw_interrupt_umask(174);
 }
 
-void usb_dc_low_level_deinit(void)
+void usb_dc_low_level_deinit(uint8_t busid)
 {
     rt_hw_interrupt_mask(174);
 }

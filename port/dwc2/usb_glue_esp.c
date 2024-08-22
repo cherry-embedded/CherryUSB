@@ -35,7 +35,7 @@ static void usb_dc_interrupt_cb(void *arg_pv)
     USBD_IRQHandler(0);
 }
 
-void usb_dc_low_level_init(void)
+void usb_dc_low_level_init(uint8_t busid)
 {
     usb_phy_config_t phy_config = {
         .controller = USB_PHY_CTRL_OTG,
@@ -58,7 +58,7 @@ void usb_dc_low_level_init(void)
     USB_LOG_INFO("cherryusb, version: "CHERRYUSB_VERSION_STR"\r\n");
 }
 
-void usb_dc_low_level_deinit(void)
+void usb_dc_low_level_deinit(uint8_t busid)
 {
     if (s_interrupt_handle) {
         esp_intr_free(s_interrupt_handle);
