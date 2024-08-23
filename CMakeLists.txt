@@ -73,6 +73,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
 
 set(ldfragments "osal/idf/linker.lf")
 
+if(CONFIG_CHERRYUSB_HOST_CDC_ECM OR CONFIG_CHERRYUSB_HOST_CDC_RNDIS OR CONFIG_CHERRYUSB_HOST_CDC_NCM
+OR CONFIG_CHERRYUSB_HOST_ASIX OR CONFIG_CHERRYUSB_HOST_RTL8152 OR CONFIG_CHERRYUSB_HOST_BL616)
+list(APPEND cherryusb_srcs platform/none/usbh_lwip.c)
+endif()
+
 idf_component_register(SRCS ${cherryusb_srcs}
     INCLUDE_DIRS ${cherryusb_incs}
     PRIV_REQUIRES usb
