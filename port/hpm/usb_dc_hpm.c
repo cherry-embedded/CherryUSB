@@ -92,7 +92,7 @@ int usb_dc_init(uint8_t busid)
     }
 
     uint32_t int_mask;
-    int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK | USB_USBSTS_SLI_MASK |
+    int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK | USB_USBINTR_SLE_MASK |
                 USB_USBINTR_PCE_MASK | USB_USBINTR_URE_MASK);
 
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
@@ -277,31 +277,32 @@ void USBD_IRQHandler(uint8_t busid)
     }
 
     if (int_status & intr_reset) {
+        g_hpm_udc[busid].is_suspend = false;
         memset(g_hpm_udc[busid].in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
         memset(g_hpm_udc[busid].out_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
         usbd_event_reset_handler(busid);
         usb_device_bus_reset(handle, 64);
     }
 
-    if (!g_hpm_udc[busid].is_suspend && (int_status & intr_suspend)) {
+    if (int_status & intr_suspend) {
         if (usb_device_get_suspend_status(handle)) {
-            g_hpm_udc[busid].is_suspend = true;
-            usbd_event_suspend_handler(busid);
             /* Note: Host may delay more than 3 ms before and/or after bus reset before doing enumeration. */
             if (usb_device_get_address(handle)) {
+                g_hpm_udc[busid].is_suspend = true;
+                usbd_event_suspend_handler(busid);
             }
         } else {
         }
-    } else if (g_hpm_udc[busid].is_suspend && (!(int_status & intr_suspend))) {
-        g_hpm_udc[busid].is_suspend = false;
-        usbd_event_resume_handler(busid);
-    } else {
     }
 
     if (int_status & intr_port_change) {
         if (!usb_device_get_port_ccs(handle)) {
             usbd_event_disconnect_handler(busid);
         } else {
+            if (g_hpm_udc[busid].is_suspend) {
+                g_hpm_udc[busid].is_suspend = false;
+                usbd_event_resume_handler(busid);
+            }
             usbd_event_connect_handler(busid);
         }
     }
