@@ -549,7 +549,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wLength = 16;
 
     ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
-    if (ret < 0 && (ret != -EPERM)) {
+    if (ret < 0 && (ret != -USB_ERR_STALL)) {
         USB_LOG_ERR("Failed to get msosv1 compat id,errorcode:%d\r\n", ret);
         goto errout;
     }
