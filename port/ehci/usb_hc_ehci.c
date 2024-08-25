@@ -1110,8 +1110,8 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                 if (temp & EHCI_PORTSC_RESET) {
                     status |= (1 << HUB_PORT_FEATURE_RESET);
                 }
-                if (temp & EHCI_PORTSC_PP || !(EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_PPC) ) {
-                    status |= (1 << HUB_PORT_FEATURE_POWER );
+                if (temp & EHCI_PORTSC_PP || !(EHCI_HCCR->hcsparams & EHCI_HCSPARAMS_PPC)) {
+                    status |= (1 << HUB_PORT_FEATURE_POWER);
                 }
                 memcpy(buf, &status, 4);
                 break;
@@ -1353,6 +1353,11 @@ void USBH_IRQHandler(uint8_t busid)
             if (portsc & EHCI_PORTSC_CSC) {
                 if ((portsc & EHCI_PORTSC_CCS) == EHCI_PORTSC_CCS) {
                 } else {
+#if defined(CONFIG_USB_EHCI_NXP)
+                    /* kUSB_ControllerEhci0 and kUSB_ControllerEhci1*/
+                    extern void USB_EhcihostPhyDisconnectDetectCmd(uint8_t controllerId, uint8_t enable);
+                    USB_EhcihostPhyDisconnectDetectCmd(2 + busid, 0);
+#endif
                     for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
                         g_ehci_hcd[bus->hcd.hcd_id].ehci_qh_used[index] = false;
                     }
