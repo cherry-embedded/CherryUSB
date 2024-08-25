@@ -655,7 +655,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 
     uint8_t ep_idx = USB_EP_GET_IDX(ep_addr);
 
-    if ((ep_idx > 4) && (ep_idx < 9)) {
+    if (ep_idx > 4) {
         return 0;
     }
 
