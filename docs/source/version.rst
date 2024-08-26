@@ -56,10 +56,11 @@ v1.3.1
 v1.4.0
 ----------------------
 
-- device 开始支持 remote wakeup 功能, hid request(0x21)，完善 GET STATUS 请求（可以通过 USB3CV 测试）
-- device 增加 UF2, ADB, WEBUSB 功能， usbd_cdc 改名为 usbd_cdc_acm
-- device msc 增加裸机的读写 polling 功能，将读写放在 while1中执行
+- device 开始支持 remote wakeup 功能, hid request(0x21)，完善 GET STATUS 请求（此版本开始可以通过 USB3CV 测试）
+- device 增加 UF2, ADB, WEBUSB 功能； msc 增加裸机的读写 polling 功能，将读写放在 while1中执行； usbd_cdc 改名为 usbd_cdc_acm
 - host 增加 usbwifi(bl616), xbox驱动；重构 USB3.0 枚举逻辑
 - host 中 cdc_acm,hid,msc,serial 传输共享 buffer，如果存在多个相同的设备会有问题，修改为单独的 buffer
 - porting 重构 XHCI/PUSB2 驱动，不开源；ehci 和 ohci 文件改名；增加 remote wakeup api
 - esp 组件库支持
+- chipidea 从机驱动支持，nxp mcx 系列主从支持
+- threadx os 支持
