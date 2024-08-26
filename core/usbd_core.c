@@ -1360,6 +1360,11 @@ bool usb_device_is_configured(uint8_t busid)
     return g_usbd_core[busid].configuration;
 }
 
+bool usb_device_is_suspend(uint8_t busid)
+{
+    return g_usbd_core[busid].is_suspend;
+}
+
 int usbd_send_remote_wakeup(uint8_t busid)
 {
     if (g_usbd_core[busid].remote_wakeup_support && g_usbd_core[busid].remote_wakeup_enabled && g_usbd_core[busid].is_suspend) {
