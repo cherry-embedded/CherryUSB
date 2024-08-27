@@ -1111,7 +1111,7 @@ void USBD_IRQHandler(uint8_t busid)
             }
         }
         if (gint_status & USB_OTG_GINTSTS_USBRST) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_USBRST;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_USBRST;
             USB_OTG_DEV->DCTL &= ~USB_OTG_DCTL_RWUSIG;
 
             dwc2_flush_txfifo(busid, 0x10U);
@@ -1202,14 +1202,14 @@ void USBD_IRQHandler(uint8_t busid)
         }
 
         if (gint_status & USB_OTG_GINTSTS_SOF) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_SOF;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_SOF;
         }
         if (gint_status & USB_OTG_GINTSTS_USBSUSP) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_USBSUSP;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_USBSUSP;
             usbd_event_suspend_handler(busid);
         }
         if (gint_status & USB_OTG_GINTSTS_WKUINT) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_WKUINT;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_WKUINT;
             usbd_event_resume_handler(busid);
         }
         if (gint_status & USB_OTG_GINTSTS_OTGINT) {
