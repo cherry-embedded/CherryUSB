@@ -51,7 +51,7 @@ if CHERRYUSB
             config CHERRYUSB_DEVICE_CHIPIDEA_MCX
                 bool "chipidea_mcx"
             config CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM
-                bool "chipidea_mcx"
+                bool "chipidea_custom"
             config CHERRYUSB_DEVICE_BL
                 bool "bouffalo"
             config CHERRYUSB_DEVICE_HPM
