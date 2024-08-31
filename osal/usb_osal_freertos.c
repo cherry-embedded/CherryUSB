@@ -5,6 +5,8 @@
  */
 #include "usb_osal.h"
 #include "usb_errno.h"
+#include "usb_config.h"
+#include "usb_log.h"
 #include <FreeRTOS.h>
 #include "semphr.h"
 #include "timers.h"
@@ -15,6 +17,11 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     TaskHandle_t htask = NULL;
     stack_size /= sizeof(StackType_t);
     xTaskCreate(entry, name, stack_size, args, configMAX_PRIORITIES - 1 - prio, &htask);
+    if (htask == NULL) {
+        USB_LOG_ERR("Create thread %s failed\r\n", name);
+        while (1) {
+        }
+    }
     return (usb_osal_thread_t)htask;
 }
 
@@ -25,7 +32,13 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
 
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
-    return (usb_osal_sem_t)xSemaphoreCreateCounting(1, initial_count);
+    usb_osal_sem_t sem = (usb_osal_sem_t)xSemaphoreCreateCounting(1, initial_count);
+    if (sem == NULL) {
+        USB_LOG_ERR("Create semaphore failed\r\n");
+        while (1) {
+        }
+    }
+    return sem;
 }
 
 void usb_osal_sem_delete(usb_osal_sem_t sem)
@@ -66,7 +79,13 @@ void usb_osal_sem_reset(usb_osal_sem_t sem)
 
 usb_osal_mutex_t usb_osal_mutex_create(void)
 {
-    return (usb_osal_mutex_t)xSemaphoreCreateMutex();
+    usb_osal_mutex_t mutex = (usb_osal_mutex_t)xSemaphoreCreateMutex();
+    if (mutex == NULL) {
+        USB_LOG_ERR("Create mutex failed\r\n");
+        while (1) {
+        }
+    }
+    return mutex;
 }
 
 void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
@@ -131,7 +150,9 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     timer = pvPortMalloc(sizeof(struct usb_osal_timer));
 
     if (timer == NULL) {
-        return NULL;
+        USB_LOG_ERR("Create usb_osal_timer failed\r\n");
+        while (1) {
+        }
     }
     memset(timer, 0, sizeof(struct usb_osal_timer));
 
@@ -140,7 +161,9 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
 
     timer->timer = (void *)xTimerCreate("usb_tim", pdMS_TO_TICKS(timeout_ms), is_period, timer, (TimerCallbackFunction_t)__usb_timeout);
     if (timer->timer == NULL) {
-        return NULL;
+        USB_LOG_ERR("Create timer failed\r\n");
+        while (1) {
+        }
     }
     return timer;
 }

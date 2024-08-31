@@ -5,6 +5,8 @@
  */
 #include "usb_osal.h"
 #include "usb_errno.h"
+#include "usb_config.h"
+#include "usb_log.h"
 #include "tx_api.h"
 
 /* create bytepool in tx_application_define
@@ -22,12 +24,16 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&thread_ptr, sizeof(TX_THREAD), TX_NO_WAIT);
 
     if (thread_ptr == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create thread %s failed\r\n", name);
+        while (1) {
+        }
     }
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, stack_size, TX_NO_WAIT);
     if (pointer == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create thread %s failed\r\n", name);
+        while (1) {
+        }
     }
 
     tx_thread_create(thread_ptr, (CHAR *)name, (VOID(*)(ULONG))entry, (uintptr_t)args,
@@ -70,7 +76,9 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     tx_byte_allocate(&usb_byte_pool, (VOID **)&sem_ptr, sizeof(TX_SEMAPHORE), TX_NO_WAIT);
 
     if (sem_ptr == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create semaphore failed\r\n");
+        while (1) {
+        }
     }
 
     tx_semaphore_create(sem_ptr, "usbh_sem", initial_count);
@@ -115,7 +123,9 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
     tx_byte_allocate(&usb_byte_pool, (VOID **)&mutex_ptr, sizeof(TX_MUTEX), TX_NO_WAIT);
 
     if (mutex_ptr == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create mutex failed\r\n");
+        while (1) {
+        }
     }
 
     tx_mutex_create(mutex_ptr, "usbh_mutx", TX_INHERIT);
@@ -157,13 +167,17 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
     tx_byte_allocate(&usb_byte_pool, (VOID **)&queue_ptr, sizeof(TX_QUEUE), TX_NO_WAIT);
 
     if (queue_ptr == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create TX_QUEUE failed\r\n");
+        while (1) {
+        }
     }
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, sizeof(uintptr_t) * max_msgs, TX_NO_WAIT);
 
     if (pointer == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create mq failed\r\n");
+        while (1) {
+        }
     }
 
     tx_queue_create(queue_ptr, "usbh_mq", sizeof(uintptr_t) / 4, pointer, sizeof(uintptr_t) * max_msgs);
@@ -206,14 +220,18 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer, sizeof(struct usb_osal_timer), TX_NO_WAIT);
 
     if (timer == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create usb_osal_timer failed\r\n");
+        while (1) {
+        }
     }
     memset(timer, 0, sizeof(struct usb_osal_timer));
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer_ptr, sizeof(TX_TIMER), TX_NO_WAIT);
 
     if (timer_ptr == TX_NULL) {
-        return NULL;
+        USB_LOG_ERR("Create TX_TIMER failed\r\n");
+        while (1) {
+        }
     }
 
     timer->timer = timer_ptr;
