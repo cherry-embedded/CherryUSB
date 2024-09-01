@@ -498,9 +498,6 @@ int usb_hc_init(struct usbh_bus *bus)
     /* Restart the Phy Clock */
     USB_OTG_PCGCCTL = 0U;
 
-    dwc2_drivebus(bus, 1);
-    usb_osal_msleep(200);
-
     /* Set default Max speed support */
     USB_OTG_HOST->HCFG &= ~(USB_OTG_HCFG_FSLSS);
 
@@ -530,6 +527,9 @@ int usb_hc_init(struct usbh_bus *bus)
     /* Enable interrupts matching to the Host mode ONLY */
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_PRTIM | USB_OTG_GINTMSK_HCIM |
                              USB_OTG_GINTSTS_DISCINT);
+
+    dwc2_drivebus(bus, 1);
+    usb_osal_msleep(200);
 
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
 
