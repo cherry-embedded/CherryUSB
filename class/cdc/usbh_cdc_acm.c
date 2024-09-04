@@ -266,10 +266,10 @@ const struct usbh_class_driver cdc_data_class_driver = {
 };
 
 CLASS_INFO_DEFINE const struct usbh_class_info cdc_acm_class_info = {
-    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS,
     .class = USB_DEVICE_CLASS_CDC,
     .subclass = CDC_ABSTRACT_CONTROL_MODEL,
-    .protocol = CDC_COMMON_PROTOCOL_AT_COMMANDS,
+    .protocol = 0x00,
     .id_table = NULL,
     .class_driver = &cdc_acm_class_driver
 };
