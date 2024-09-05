@@ -5,6 +5,7 @@
  */
 #include "usb_osal.h"
 #include "usb_errno.h"
+#include "usb_config.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
@@ -192,10 +193,18 @@ void usb_osal_msleep(uint32_t delay)
 
 void *usb_osal_malloc(size_t size)
 {
+#ifdef CONFIG_USB_MALLOC
+    return CONFIG_USB_MALLOC(size);
+#else
     return malloc(size);
+#endif
 }
 
 void usb_osal_free(void *ptr)
 {
+#ifdef CONFIG_USB_MALLOC
+    CONFIG_USB_FREE(ptr);
+#else
     free(ptr);
+#endif
 }

@@ -13,6 +13,10 @@
 
 #define CONFIG_USB_PRINTF(...) esp_rom_printf(__VA_ARGS__)
 
+/* Can provide your personal memory management API otherwise depending on osal */
+// #define CONFIG_USB_MALLOC(size) malloc(size)
+// #define CONFIG_USB_FREE(ptr)    free(ptr)
+
 #ifndef CONFIG_USB_DBG_LEVEL
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
 #endif
