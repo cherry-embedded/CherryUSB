@@ -301,12 +301,20 @@ void *usb_osal_malloc(size_t size)
 {
     CHAR *pointer = TX_NULL;
 
+#ifdef CONFIG_USB_MALLOC
+    pointer = (CHAR *)CONFIG_USB_MALLOC(size);
+#else
     tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, size, TX_WAIT_FOREVER);
+#endif
 
     return pointer;
 }
 
 void usb_osal_free(void *ptr)
 {
+#ifdef CONFIG_USB_MALLOC
+    CONFIG_USB_FREE(ptr);
+#else
     tx_byte_release(ptr);
+#endif
 }

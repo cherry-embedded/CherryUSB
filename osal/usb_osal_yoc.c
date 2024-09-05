@@ -126,10 +126,18 @@ void usb_osal_msleep(uint32_t delay)
 
 void *usb_osal_malloc(size_t size)
 {
+#ifdef CONFIG_USB_MALLOC
+    return CONFIG_USB_MALLOC(size);
+#else
     return aos_malloc(size);
+#endif
 }
 
 void usb_osal_free(void *ptr)
 {
+#ifdef CONFIG_USB_MALLOC
+    CONFIG_USB_FREE(ptr);
+#else
     aos_free(ptr);
+#endif
 }
