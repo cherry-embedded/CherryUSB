@@ -287,6 +287,5 @@ endif()
 
 if(CONFIG_CHERRYMP)
 list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/cherrymp/chry_mempool.c)
-list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/cherrymp/usbh_uvc_queue.c)
 list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/third_party/cherrymp)
 endif()
