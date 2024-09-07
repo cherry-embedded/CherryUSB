@@ -495,6 +495,8 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     config_value = ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->bConfigurationValue;
     memcpy(hport->raw_config_desc, ep0_request_buffer[hport->bus->busid], wTotalLength);
+    hport->raw_config_desc[wTotalLength] = '\0';
+
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     uint8_t string_buffer[128];
 
