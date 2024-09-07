@@ -1,6 +1,8 @@
 基于 RT-Thread 软件包开发指南
 ===============================
 
+.. note:: CherryUSB 已经加入 RT-Thread 主线，可以选择使用主线版本，配置方式相同。
+
 本节主要介绍使用 RT-Thread 提供的软件包管理器来配置工程，以 env 作为演示。本节操作不同芯片都一样，后续不再重复讲解。打开 env 以后使用 menuconfig 进入包管理器，并在如图所示路径中选择 CherryUSB。
 
 .. figure:: img/env0.png
