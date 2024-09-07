@@ -53,10 +53,10 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    :maxdepth: 1
    :caption: 快速上手
 
-   quick_start/index
-   quick_start/rt-thread/rtthread
-   quick_start/other_chip
-   version
+   quick_start/demo
+   quick_start/transplant
+   quick_start/rtthread
+   quick_start/esp
    q&a
 
 .. toctree::
@@ -92,22 +92,51 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 
 .. toctree::
    :maxdepth: 1
-   :caption: 基本例程
+   :caption: 例程说明
 
-   demo/index
+   demo/usbd_cdc_acm
+   demo/usbd_hid
+   demo/usbd_msc
+   demo/usbd_rndis
+   demo/usbd_ecm
+   demo/usbd_audiov1
+   demo/usbd_audiov2
+   demo/usbd_video
+   demo/usbd_winusb
+   demo/usbd_webusb
+   demo/usbh_serial
+   demo/usbh_hid
+   demo/usbh_msc
+   demo/usbh_net
+   demo/usbh_bluetooth
+   demo/usbh_wifi
 
 .. toctree::
    :maxdepth: 1
-   :caption: Porting 说明
+   :caption: USBIP 介绍
 
-   porting
-   porting_usbip
+   usbip/ohci
+   usbip/ehci
+   usbip/xhci
+   usbip/chipidea
+   usbip/dwc2
+   usbip/musb
+   usbip/fotg210
+   usbip/cdns2
+   usbip/cdns3
+   usbip/dwc3
 
 .. toctree::
    :maxdepth: 1
    :caption: 工具使用
 
    tools/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: 版本说明
+
+   version
 
 .. toctree::
    :maxdepth: 1

@@ -142,6 +142,17 @@ usb_hc_init
 
 - **return** 返回 0 表示正确，其他表示错误
 
+usb_hc_deinit
+""""""""""""""""""""""""""""""""""""
+
+``usb_hc_deinit`` 用于反初始化 usb host controller 寄存器。 **此函数不对用户开放**。
+
+.. code-block:: C
+
+    int usb_hc_deinit(void);
+
+- **return** 返回 0 表示正确，其他表示错误
+
 usbh_roothub_control
 """"""""""""""""""""""""""""""""""""
 

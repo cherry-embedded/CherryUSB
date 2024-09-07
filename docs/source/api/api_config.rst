@@ -1,7 +1,7 @@
-USB CONFIG 宏
+USB CONFIG 说明
 =========================
 
-通用 CONFIG  宏
+通用 CONFIG
 ---------------------
 
 CONFIG_USB_PRINTF
@@ -29,13 +29,13 @@ USB_NOCACHE_RAM_SECTION
 
 如果芯片没有 cache 功能，此宏无效。如果有，则 USB 的输入输出 buffer 必须放在 nocache ram 中，保证数据一致性。
 
-设备相关 CONFIG  宏
+设备协议栈 CONFIG
 ---------------------
 
 CONFIG_USBDEV_REQUEST_BUFFER_LEN
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-控制传输接收和发送的 buffer 最大长度，默认是 256。
+控制传输接收和发送的 buffer 最大长度，默认是 512。
 
 CONFIG_USBDEV_SETUP_LOG_PRINT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -55,7 +55,7 @@ CONFIG_USBDEV_MSC_MAX_BUFSIZE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 msc 缓存的最大长度，缓存越大，USB 的速度越高，因为介质一般多个 block 读写速度比单个 block 高很多，比如 sd 卡。
-默认 512 ，如果是 flash 需要改成 4K, 缓存的大小需要是 介质的一个 block size 的整数倍。
+默认 512 ，如果是 flash 需要改成 4K, 缓存的大小需要是介质的一个 block size 的整数倍。
 
 CONFIG_USBDEV_MSC_MANUFACTURER_STRING
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,6 +65,11 @@ CONFIG_USBDEV_MSC_PRODUCT_STRING
 
 CONFIG_USBDEV_MSC_VERSION_STRING
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CONFIG_USBDEV_MSC_POLLING
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+将 usbd_msc_sector_read 和 usbd_msc_sector_write 操作放在 while1 中运行，裸机下使用。
 
 CONFIG_USBDEV_MSC_THREAD
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -90,7 +95,7 @@ rndis 控制传输最大接收和发送的长度，根据 RNDIS options list 决
 CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-rndis 以太网帧的最大长度，默认 1536
+rndis 以太网帧的最大长度，默认 1580
 
 CONFIG_USBDEV_RNDIS_VENDOR_ID
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -103,7 +108,7 @@ CONFIG_USBDEV_RNDIS_USING_LWIP
 
 rndis 与 lwip 接口的对接
 
-主机相关 CONFIG  宏
+主机协议栈 CONFIG
 ---------------------
 
 以下参数决定了支持的最大外部hub数量，接口数，每个接口的端点数和 altsetting 数量，更改此值会影响 ram 的大小，建议根据实际情况更改。
