@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "chry_mempool.h"
 
 int chry_mempool_create(struct chry_mempool *pool, void *block, uint32_t block_size, uint32_t block_count)
@@ -8,7 +13,10 @@ int chry_mempool_create(struct chry_mempool *pool, void *block, uint32_t block_s
     ringbuf = usb_osal_malloc(sizeof(uintptr_t) * block_count);
     memset(ringbuf, 0, sizeof(uintptr_t) * block_count);
 
-    chry_ringbuffer_init(&pool->rb, ringbuf, sizeof(uintptr_t) * block_count);
+    if (chry_ringbuffer_init(&pool->rb, ringbuf, sizeof(uintptr_t) * block_count) == -1) {
+        usb_osal_free(ringbuf);
+        return -1;
+    }
 
     for (uint32_t i = 0; i < block_count; i++) {
         addr = ((uintptr_t)block + i * block_size);
