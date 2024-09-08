@@ -249,7 +249,7 @@
  * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
  * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
  */
-#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((200 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
+#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((200 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE))
 
 #elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32P4
 // todo: check c5, p4 in later
