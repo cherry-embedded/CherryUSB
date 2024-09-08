@@ -521,6 +521,7 @@ int usb_hc_init(struct usbh_bus *bus)
     ret = dwc2_flush_txfifo(bus, 0x10U);
     ret = dwc2_flush_rxfifo(bus);
 
+    USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_HBSTLEN;
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_HBSTLEN_4;
     USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_DMAEN;
 
@@ -895,6 +896,7 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
     //printf("s1:%08x\r\n", chan_intstatus);
 
     if (chan_intstatus & USB_OTG_HCINT_CHH) {
+        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
         if (chan_intstatus & USB_OTG_HCINT_XFRC) {
             urb->errorcode = 0;
 
@@ -948,7 +950,6 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             urb->errorcode = -USB_ERR_IO;
             dwc2_urb_waitup(urb);
         }
-        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
     }
 }
 
@@ -965,6 +966,7 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
     //printf("s2:%08x\r\n", chan_intstatus);
 
     if (chan_intstatus & USB_OTG_HCINT_CHH) {
+        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
         if (chan_intstatus & USB_OTG_HCINT_XFRC) {
             urb->errorcode = 0;
 
@@ -1029,7 +1031,6 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             urb->errorcode = -USB_ERR_IO;
             dwc2_urb_waitup(urb);
         }
-        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
     }
 }
 
