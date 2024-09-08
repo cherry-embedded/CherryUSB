@@ -26,7 +26,7 @@
  * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
  */
 #ifndef CONFIG_USB_DWC2_RX_FIFO_SIZE
-#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
+#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE))
 #endif
 
 #define USB_OTG_GLB     ((DWC2_GlobalTypeDef *)(bus->hcd.reg_base))
