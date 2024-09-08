@@ -129,7 +129,7 @@ freq_found:
         USBH_EP_INIT(audio_class->isoout, ep_desc);
     }
 
-    USB_LOG_INFO("Open audio module :%s, altsetting: %u\r\n", name, altsetting);
+    USB_LOG_INFO("Open audio stream :%s, altsetting: %u\r\n", name, altsetting);
     audio_class->is_opened = true;
     return ret;
 }
@@ -157,6 +157,16 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
         return -USB_ERR_NODEV;
     }
 
+    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = USB_REQUEST_SET_INTERFACE;
+    setup->wValue = 0;
+    setup->wIndex = intf;
+    setup->wLength = 0;
+
+    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
+    if (ret < 0) {
+        return ret;
+    }
     USB_LOG_INFO("Close audio stream :%s\r\n", name);
     audio_class->is_opened = false;
 
@@ -171,14 +181,6 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
         }
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = 0;
-    setup->wIndex = intf;
-    setup->wLength = 0;
-
-    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
-
     return ret;
 }
 
@@ -186,7 +188,6 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
 {
     struct usb_setup_packet *setup;
     int ret;
-    uint8_t intf = 0xff;
     uint8_t feature_id = 0xff;
     uint16_t volume_hex;
 
@@ -202,19 +203,14 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
 
     for (uint8_t i = 0; i < audio_class->stream_intf_num; i++) {
         if (strcmp(name, audio_class->as_msg_table[i].stream_name) == 0) {
-            intf = audio_class->as_msg_table[i].stream_intf;
             feature_id = audio_class->as_msg_table[i].feature_terminal_id;
         }
-    }
-
-    if (intf == 0xff) {
-        return -USB_ERR_NODEV;
     }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = AUDIO_REQUEST_SET_CUR;
     setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
-    setup->wIndex = (feature_id << 8) | intf;
+    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
     setup->wLength = 2;
 
     volume_hex = -0xDB00 / 100 * volume + 0xdb00;
@@ -229,7 +225,6 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
 {
     struct usb_setup_packet *setup;
     int ret;
-    uint8_t intf = 0xff;
     uint8_t feature_id = 0xff;
 
     if (!audio_class || !audio_class->hport) {
@@ -239,19 +234,14 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
 
     for (uint8_t i = 0; i < audio_class->stream_intf_num; i++) {
         if (strcmp(name, audio_class->as_msg_table[i].stream_name) == 0) {
-            intf = audio_class->as_msg_table[i].stream_intf;
             feature_id = audio_class->as_msg_table[i].feature_terminal_id;
         }
-    }
-
-    if (intf == 0xff) {
-        return -USB_ERR_NODEV;
     }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = AUDIO_REQUEST_SET_CUR;
     setup->wValue = (AUDIO_FU_CONTROL_MUTE << 8) | ch;
-    setup->wIndex = (feature_id << 8) | intf;
+    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
     setup->wLength = 1;
 
     memcpy(g_audio_buf, &mute, 1);
