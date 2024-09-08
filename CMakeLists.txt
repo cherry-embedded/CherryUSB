@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-if(DEFINED ENV{BL_SDK_BASE})
+if(BL_SDK_BASE)
 set(CONFIG_CHERRYUSB_DEVICE 1)
 set(CONFIG_CHERRYUSB_DEVICE_CDC 1)
 set(CONFIG_CHERRYUSB_DEVICE_HID 1)
@@ -35,7 +35,7 @@ sdk_library_add_sources(${cherryusb_srcs})
 
 sdk_library_add_sources(platform/none/usbh_lwip.c)
 
-elseif(DEFINED ENV{HPM_SDK_BASE})
+elseif(HPM_SDK_BASE)
 set(CONFIG_CHERRYUSB_HOST 1)
 set(CONFIG_CHERRYUSB_HOST_CDC_ACM 1)
 set(CONFIG_CHERRYUSB_HOST_CDC_ECM 1)
