@@ -1,4 +1,4 @@
-Porting
+主从驱动
 =========================
 
 .. note:: 请注意，v1.1 版本开始增加 busid 形参，其余保持不变，所以 API 说明不做更新
@@ -37,6 +37,7 @@ usbd_set_address
 
     int usbd_set_address(const uint8_t addr);
 
+- **addr** 设备地址
 - **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_open
@@ -46,8 +47,9 @@ usbd_ep_open
 
 .. code-block:: C
 
-    int usbd_ep_open(const struct usbd_endpoint_cfg *ep_cfg);
+    int usbd_ep_open(const struct usb_endpoint_descriptor *ep);
 
+- **ep** 端点描述符
 - **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_close
@@ -59,7 +61,7 @@ usbd_ep_close
 
     int usbd_ep_close(const uint8_t ep);
 
-- **event**
+- **ep** 端点地址
 - **return** 返回 0 表示正确，其他表示错误
 
 usbd_ep_set_stall
@@ -126,7 +128,7 @@ usbd_ep_start_read
 - **data_len** 接收长度，原则上无限长，推荐 16K 字节以内，并且推荐是最大包长的整数倍
 - **return** 返回 0 表示正确，其他表示错误
 
-.. note:: 启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包；2、接收总长度等于 data_len
+.. note:: 启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包（小于 EP MPS）；2、接收总长度等于 data_len
 
 host controller(hcd)
 ------------------------

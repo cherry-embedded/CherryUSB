@@ -4,6 +4,8 @@ Q & A
 移植提问模板
 ----------------
 
+提问提交地址： https://club.rt-thread.org/ask/tag/5f5f851966917b14.html
+
 - 使用的板子，引脚，USB IP
 - USB 中断，时钟，引脚，寄存器地址是否正确，截图
 - 是否能进 USB 中断
