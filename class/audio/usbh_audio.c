@@ -28,11 +28,11 @@ static uint32_t g_devinuse = 0;
 
 static struct usbh_audio *usbh_audio_class_alloc(void)
 {
-    int devno;
+    uint8_t devno;
 
     for (devno = 0; devno < CONFIG_USBHOST_MAX_AUDIO_CLASS; devno++) {
-        if ((g_devinuse & (1 << devno)) == 0) {
-            g_devinuse |= (1 << devno);
+        if ((g_devinuse & (1U << devno)) == 0) {
+            g_devinuse |= (1U << devno);
             memset(&g_audio_class[devno], 0, sizeof(struct usbh_audio));
             g_audio_class[devno].minor = devno;
             return &g_audio_class[devno];
@@ -43,10 +43,10 @@ static struct usbh_audio *usbh_audio_class_alloc(void)
 
 static void usbh_audio_class_free(struct usbh_audio *audio_class)
 {
-    int devno = audio_class->minor;
+    uint8_t devno = audio_class->minor;
 
-    if (devno >= 0 && devno < 32) {
-        g_devinuse &= ~(1 << devno);
+    if (devno < 32) {
+        g_devinuse &= ~(1U << devno);
     }
     memset(audio_class, 0, sizeof(struct usbh_audio));
 }
@@ -330,7 +330,6 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                             memcpy(&audio_class->ac_msg_table[input_offset].ac_input, desc, sizeof(struct audio_cs_if_ac_input_terminal_descriptor));
                             input_offset++;
                         } break;
-                            break;
                         case AUDIO_CONTROL_OUTPUT_TERMINAL: {
                             struct audio_cs_if_ac_output_terminal_descriptor *desc = (struct audio_cs_if_ac_output_terminal_descriptor *)p;
 

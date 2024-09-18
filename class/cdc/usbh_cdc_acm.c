@@ -19,11 +19,11 @@ static uint32_t g_devinuse = 0;
 
 static struct usbh_cdc_acm *usbh_cdc_acm_class_alloc(void)
 {
-    int devno;
+    uint8_t devno;
 
     for (devno = 0; devno < CONFIG_USBHOST_MAX_CDC_ACM_CLASS; devno++) {
-        if ((g_devinuse & (1 << devno)) == 0) {
-            g_devinuse |= (1 << devno);
+        if ((g_devinuse & (1U << devno)) == 0) {
+            g_devinuse |= (1U << devno);
             memset(&g_cdc_acm_class[devno], 0, sizeof(struct usbh_cdc_acm));
             g_cdc_acm_class[devno].minor = devno;
             return &g_cdc_acm_class[devno];
@@ -34,10 +34,10 @@ static struct usbh_cdc_acm *usbh_cdc_acm_class_alloc(void)
 
 static void usbh_cdc_acm_class_free(struct usbh_cdc_acm *cdc_acm_class)
 {
-    int devno = cdc_acm_class->minor;
+    uint8_t devno = cdc_acm_class->minor;
 
-    if (devno >= 0 && devno < 32) {
-        g_devinuse &= ~(1 << devno);
+    if (devno < 32) {
+        g_devinuse &= ~(1U << devno);
     }
     memset(cdc_acm_class, 0, sizeof(struct usbh_cdc_acm));
 }

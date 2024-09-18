@@ -1406,6 +1406,12 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 
 int usbd_deinitialize(uint8_t busid)
 {
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        USB_LOG_ERR("bus overflow\r\n");
+        while (1) {
+        }
+    }
+
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_DEINIT);
     usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
     usb_dc_deinit(busid);

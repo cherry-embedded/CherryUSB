@@ -27,11 +27,11 @@ static uint32_t g_devinuse = 0;
 
 static struct usbh_hid *usbh_hid_class_alloc(void)
 {
-    int devno;
+    uint8_t devno;
 
     for (devno = 0; devno < CONFIG_USBHOST_MAX_HID_CLASS; devno++) {
-        if ((g_devinuse & (1 << devno)) == 0) {
-            g_devinuse |= (1 << devno);
+        if ((g_devinuse & (1U << devno)) == 0) {
+            g_devinuse |= (1U << devno);
             memset(&g_hid_class[devno], 0, sizeof(struct usbh_hid));
             g_hid_class[devno].minor = devno;
             return &g_hid_class[devno];
@@ -42,10 +42,10 @@ static struct usbh_hid *usbh_hid_class_alloc(void)
 
 static void usbh_hid_class_free(struct usbh_hid *hid_class)
 {
-    int devno = hid_class->minor;
+    uint8_t devno = hid_class->minor;
 
-    if (devno >= 0 && devno < 32) {
-        g_devinuse &= ~(1 << devno);
+    if (devno < 32) {
+        g_devinuse &= ~(1U << devno);
     }
     memset(hid_class, 0, sizeof(struct usbh_hid));
 }
@@ -67,7 +67,7 @@ static int usbh_hid_get_report_descriptor(struct usbh_hid *hid_class, uint8_t *b
     setup->wLength = hid_class->report_size;
 
     ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
-    if (ret < 0) {
+    if (ret < 8) {
         return ret;
     }
     memcpy(buffer, g_hid_buf[hid_class->minor], ret - 8);
@@ -109,7 +109,7 @@ int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer)
     setup->wLength = 1;
 
     ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
-    if (ret < 0) {
+    if (ret < 8) {
         return ret;
     }
     memcpy(buffer, g_hid_buf[hid_class->minor], ret - 8);
@@ -169,7 +169,7 @@ int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
     setup->wLength = buflen;
 
     ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
-    if (ret < 0) {
+    if (ret < 8) {
         return ret;
     }
     memcpy(buffer, g_hid_buf[hid_class->minor], ret - 8);

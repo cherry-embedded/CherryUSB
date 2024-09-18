@@ -651,6 +651,12 @@ int usbh_deinitialize(uint8_t busid)
 {
     struct usbh_bus *bus;
 
+    if (busid >= CONFIG_USBHOST_MAX_BUS) {
+        USB_LOG_ERR("bus overflow\r\n");
+        while (1) {
+        }
+    }
+
     bus = &g_usbhost_bus[busid];
 
     usbh_hub_deinitialize(bus);

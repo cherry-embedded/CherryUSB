@@ -387,14 +387,14 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     uint32_t packet_filter = 0x0f;
-    usbh_rndis_set_msg_transfer(rndis_class, OID_GEN_CURRENT_PACKET_FILTER, (uint8_t *)&packet_filter, 4);
+    ret = usbh_rndis_set_msg_transfer(rndis_class, OID_GEN_CURRENT_PACKET_FILTER, (uint8_t *)&packet_filter, 4);
     if (ret < 0) {
         return ret;
     }
     USB_LOG_INFO("rndis set OID_GEN_CURRENT_PACKET_FILTER success\r\n");
 
     uint8_t multicast_list[6] = { 0x01, 0x00, 0x5E, 0x00, 0x00, 0x01 };
-    usbh_rndis_set_msg_transfer(rndis_class, OID_802_3_MULTICAST_LIST, multicast_list, 6);
+    ret = usbh_rndis_set_msg_transfer(rndis_class, OID_802_3_MULTICAST_LIST, multicast_list, 6);
     if (ret < 0) {
         return ret;
     }

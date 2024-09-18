@@ -23,11 +23,11 @@ static struct usbh_msc_modeswitch_config *g_msc_modeswitch_config = NULL;
 
 static struct usbh_msc *usbh_msc_class_alloc(void)
 {
-    int devno;
+    uint8_t devno;
 
     for (devno = 0; devno < CONFIG_USBHOST_MAX_MSC_CLASS; devno++) {
-        if ((g_devinuse & (1 << devno)) == 0) {
-            g_devinuse |= (1 << devno);
+        if ((g_devinuse & (1U << devno)) == 0) {
+            g_devinuse |= (1U << devno);
             memset(&g_msc_class[devno], 0, sizeof(struct usbh_msc));
             g_msc_class[devno].sdchar = 'a' + devno;
             return &g_msc_class[devno];
@@ -38,10 +38,10 @@ static struct usbh_msc *usbh_msc_class_alloc(void)
 
 static void usbh_msc_class_free(struct usbh_msc *msc_class)
 {
-    int devno = msc_class->sdchar - 'a';
+    uint8_t devno = msc_class->sdchar - 'a';
 
-    if (devno >= 0 && devno < 32) {
-        g_devinuse &= ~(1 << devno);
+    if (devno < 32) {
+        g_devinuse &= ~(1U << devno);
     }
     memset(msc_class, 0, sizeof(struct usbh_msc));
 }
