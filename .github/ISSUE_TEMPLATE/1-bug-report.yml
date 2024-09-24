@@ -42,13 +42,21 @@ body:
     id: log
     attributes:
       label: 日志 / Log
-      description: 打开 `CONFGI_USBDEV_SETUP_LOG_PRINT`，并提供 log
+      description: 请提供输出 log
       placeholder: |-
         [D/USB] EP0 send 18 bytes, 0 remained
         [D/USB] EP0 recv out status
         [D/USB] EP0 send 0 bytes, 0 remained
         [D/USB] EP0 send 18 bytes, 0 remained
         [D/USB] EP0 recv out status
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        以下的部分仅在移植的时候需要填写，如果不是移植问题，请忽略这部分。
+        The following section is only required when porting, if it is not a porting issue, please ignore this section.
 
   - type: textarea
     id: configure
