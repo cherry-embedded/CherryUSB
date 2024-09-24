@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USB IP 勘误 &mdash; CherryUSB 1.4.0 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            CherryUSB
+          </a>
+              <div class="version">
+                1.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">快速上手</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/start.html">入门必看</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/demo.html">基于现有 demo 快速验证</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/transplant.html">芯片通用移植指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="q&amp;a.html">Q &amp; A</a></li>
+</ul>
+<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_desc.html">USB 描述符</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_request.html">USB 设备请求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_enum.html">USB 枚举</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_ext.html">USB 知识点拓展</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API 手册</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_host.html">主机协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_port.html">主从驱动</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_config.html">USB CONFIG 说明</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption"><span class="caption-text">例程说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_hid.html">usbd_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_msc.html">usbd_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_rndis.html">usbd_rndis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_ecm.html">usbd_cdc_ecm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_audiov1.html">usbd_audiov1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_audiov2.html">usbd_audiov2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_video.html">usbd_video</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_winusb.html">usbd_winusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_webusb.html">usbd_webusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_serial.html">usbh_serial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_hid.html">usbh_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_msc.html">usbh_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_net.html">usbh_net</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_wifi.html">usbh_wifi</a></li>
+</ul>
+<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usbip/ohci.html">OHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/ehci.html">EHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/xhci.html">XHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/chipidea.html">CHIPIDEA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/dwc2.html">DWC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/musb.html">MUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/fotg210.html">FOTG210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/cdns2.html">CDNS2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/cdns3.html">CDNS3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/dwc3.html">DWC3</a></li>
+</ul>
+<p class="caption"><span class="caption-text">工具使用</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">chryusb_configurator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#wireshark">Wireshark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#audacity">Audacity</a></li>
+</ul>
+<p class="caption"><span class="caption-text">版本说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="version.html">版本说明</a></li>
+</ul>
+<p class="caption"><span class="caption-text">商业支持</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="support/index.html">商业支持</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CherryUSB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">USB IP 勘误</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/porting_usbip.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="usb-ip">
+<h1>USB IP 勘误<a class="headerlink" href="#usb-ip" title="Permalink to this headline">¶</a></h1>
+<p>本节主要对已经支持的 USB IP 在不同厂家上的一些差别说明并进行校对。欢迎补充。</p>
+<div class="section" id="fsdev">
+<h2>FSDEV<a class="headerlink" href="#fsdev" title="Permalink to this headline">¶</a></h2>
+<p>FSDEV 仅支持从机。这个 ip 不同厂家基本都是基于标准的 usb 寄存器，有些芯片可能还需要配置 <cite>PMA_ACCESS</cite> 的值，默认为2。下表为具体芯片相关宏的修改值：</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 14%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>芯片</p></th>
+<th class="head"><p>中断名</p></th>
+<th class="head"><p>寄存器地址</p></th>
+<th class="head"><p>CONFIG_USBDEV_EP_NUM</p></th>
+<th class="head"><p>PMA_ACCESS</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>STM32F0</p></td>
+<td><p>USB_IRQHandler</p></td>
+<td><p>0x40005C00</p></td>
+<td><p>8</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>STM32F1</p></td>
+<td><p>USB_LP_CAN1_RX0_IRQHandler</p></td>
+<td><p>同上</p></td>
+<td><p>同上</p></td>
+<td><p>同上</p></td>
+</tr>
+<tr class="row-even"><td><p>STM32F3</p></td>
+<td><p>USB_LP_CAN_RX0_IRQHandler</p></td>
+<td><p>同上</p></td>
+<td><p>同上</p></td>
+<td><p>1 or 2</p></td>
+</tr>
+<tr class="row-odd"><td><p>STM32L0</p></td>
+<td><p>USB_IRQHandler</p></td>
+<td><p>同上</p></td>
+<td><p>同上</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>STM32L1</p></td>
+<td><p>USB_LP_IRQHandler</p></td>
+<td><p>同上</p></td>
+<td><p>同上</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>STM32L4</p></td>
+<td><p>USB_IRQHandler</p></td>
+<td><p>同上</p></td>
+<td><p>同上</p></td>
+<td><p>1</p></td>
+</tr>
+</tbody>
+</table>
+<p>fsdev 需要外置 dp 上拉才能使用，有些芯片可能是接上拉电阻，有些芯片可能是设置寄存器，举例如下：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB</span><span class="o">-&gt;</span><span class="n">BCDR</span> <span class="o">|=</span> <span class="p">(</span><span class="kt">uint16_t</span><span class="p">)</span><span class="n">USB_BCDR_DPPU</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>如果不存在 BCDR 寄存器，则一般是配置如下，并且该设置需要配置到 <cite>usb_dc_low_level_init</cite> 中或者 <cite>usb_dc_init</cite> 最后都行：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cm">/* Pull up controller register */</span>
+<span class="cp">#define DP_CTRL ((__IO unsigned*)(0x40001820))</span>
+
+<span class="cp">#define _EnPortPullup() (*DP_CTRL = (*DP_CTRL) | 0x10000000);</span>
+<span class="cp">#define _DisPortPullup() (*DP_CTRL = (*DP_CTRL) &amp; 0xEFFFFFFF);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="musb">
+<h2>MUSB<a class="headerlink" href="#musb" title="Permalink to this headline">¶</a></h2>
+<p>MUSB IP 支持主从，并且由 <strong>mentor</strong> 定义了一套标准的寄存器偏移，如果非标准，则需要实现以下宏的偏移，以标准为例：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define MUSB_FADDR_OFFSET 0x00</span>
+<span class="cp">#define MUSB_POWER_OFFSET 0x01</span>
+<span class="cp">#define MUSB_TXIS_OFFSET  0x02</span>
+<span class="cp">#define MUSB_RXIS_OFFSET  0x04</span>
+<span class="cp">#define MUSB_TXIE_OFFSET  0x06</span>
+<span class="cp">#define MUSB_RXIE_OFFSET  0x08</span>
+<span class="cp">#define MUSB_IS_OFFSET    0x0A</span>
+<span class="cp">#define MUSB_IE_OFFSET    0x0B</span>
+
+<span class="cp">#define MUSB_EPIDX_OFFSET 0x0E</span>
+
+<span class="cp">#define MUSB_IND_TXMAP_OFFSET      0x10</span>
+<span class="cp">#define MUSB_IND_TXCSRL_OFFSET     0x12</span>
+<span class="cp">#define MUSB_IND_TXCSRH_OFFSET     0x13</span>
+<span class="cp">#define MUSB_IND_RXMAP_OFFSET      0x14</span>
+<span class="cp">#define MUSB_IND_RXCSRL_OFFSET     0x16</span>
+<span class="cp">#define MUSB_IND_RXCSRH_OFFSET     0x17</span>
+<span class="cp">#define MUSB_IND_RXCOUNT_OFFSET    0x18</span>
+<span class="cp">#define MUSB_IND_TXTYPE_OFFSET     0x1A</span>
+<span class="cp">#define MUSB_IND_TXINTERVAL_OFFSET 0x1B</span>
+<span class="cp">#define MUSB_IND_RXTYPE_OFFSET     0x1C</span>
+<span class="cp">#define MUSB_IND_RXINTERVAL_OFFSET 0x1D</span>
+
+<span class="cp">#define MUSB_FIFO_OFFSET 0x20</span>
+
+<span class="cp">#define MUSB_DEVCTL_OFFSET 0x60</span>
+
+<span class="cp">#define MUSB_TXFIFOSZ_OFFSET  0x62</span>
+<span class="cp">#define MUSB_RXFIFOSZ_OFFSET  0x63</span>
+<span class="cp">#define MUSB_TXFIFOADD_OFFSET 0x64</span>
+<span class="cp">#define MUSB_RXFIFOADD_OFFSET 0x66</span>
+
+<span class="cp">#define MUSB_TXFUNCADDR0_OFFSET 0x80</span>
+<span class="cp">#define MUSB_TXHUBADDR0_OFFSET  0x82</span>
+<span class="cp">#define MUSB_TXHUBPORT0_OFFSET  0x83</span>
+<span class="cp">#define MUSB_TXFUNCADDRx_OFFSET 0x88</span>
+<span class="cp">#define MUSB_TXHUBADDRx_OFFSET  0x8A</span>
+<span class="cp">#define MUSB_TXHUBPORTx_OFFSET  0x8B</span>
+<span class="cp">#define MUSB_RXFUNCADDRx_OFFSET 0x8C</span>
+<span class="cp">#define MUSB_RXHUBADDRx_OFFSET  0x8E</span>
+<span class="cp">#define MUSB_RXHUBPORTx_OFFSET  0x8F</span>
+
+<span class="cp">#define USB_TXADDR_BASE(ep_idx)    (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx)</span>
+<span class="cp">#define USB_TXHUBADDR_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 2)</span>
+<span class="cp">#define USB_TXHUBPORT_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 3)</span>
+<span class="cp">#define USB_RXADDR_BASE(ep_idx)    (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 4)</span>
+<span class="cp">#define USB_RXHUBADDR_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 6)</span>
+<span class="cp">#define USB_RXHUBPORT_BASE(ep_idx) (USB_BASE + MUSB_TXFUNCADDR0_OFFSET + 0x8 * ep_idx + 7)</span>
+</pre></div>
+</div>
+<p>下表为具体芯片从机相关宏的修改值：</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>芯片</p></th>
+<th class="head"><p>中断名</p></th>
+<th class="head"><p>寄存器地址</p></th>
+<th class="head"><p>CONFIG_USBDEV_EP_NUM</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ES32F3xx</p></td>
+<td><p>USB_INT_Handler</p></td>
+<td><p>0x40086400</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>MSP432Ex</p></td>
+<td><p>同上</p></td>
+<td><p>0x40050000</p></td>
+<td><p>同上</p></td>
+</tr>
+<tr class="row-even"><td><p>F1C100S</p></td>
+<td><p>USB_INT_Handler</p></td>
+<td><p>0x01c13000</p></td>
+<td><p>4</p></td>
+</tr>
+</tbody>
+</table>
+<p>下表为具体芯片主机相关宏的修改值：</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>芯片</p></th>
+<th class="head"><p>中断名</p></th>
+<th class="head"><p>寄存器地址</p></th>
+<th class="head"><p>CONIFG_USB_MUSB_EP_NUM</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ES32F3xx</p></td>
+<td><p>USB_INT_Handler</p></td>
+<td><p>0x40086400</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>MSP432Ex</p></td>
+<td><p>同上</p></td>
+<td><p>0x40050000</p></td>
+<td><p>同上</p></td>
+</tr>
+<tr class="row-even"><td><p>F1C100S</p></td>
+<td><p>USB_INT_Handler</p></td>
+<td><p>0x01c13000</p></td>
+<td><p>4</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="dwc2">
+<h2>DWC2<a class="headerlink" href="#dwc2" title="Permalink to this headline">¶</a></h2>
+<p>DWC2 IP 支持主从，并且由 <strong>synopsys</strong> 定义了一套标准的寄存器偏移。大部分厂家都使用标准的寄存器偏移(除了 GCCFG(GGPIO)寄存器)，所以如果是从机仅需要修改 <cite>中断名</cite> 、 <cite>USB_BASE</cite> 、 <cite>CONFIG_USBDEV_EP_NUM</cite> ，主机仅需要修改 <cite>中断名</cite> 、 <cite>USB_BASE</cite>  即可。</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>GCCFG(GGPIO) 根据不同的厂家设置不同，会影响 usb 枚举，需要根据厂家提供的手册进行配置,并实现 usbd_get_dwc2_gccfg_conf 和 usbh_get_dwc2_gccfg_conf 函数，填充相应需要使能的bit</p>
+</div>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>主机 port 仅支持有 dma 功能的 dwc2 ip(代码中会判断当前 ip 是否支持), 如果不支持 dma 模式，则无法使用。</p>
+</div>
+<p>下表为具体芯片从机相关宏的修改值：</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>芯片</p></th>
+<th class="head"><p>中断名</p></th>
+<th class="head"><p>寄存器地址</p></th>
+<th class="head"><p>CONFIG_USBDEV_EP_NUM</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>STM32 非 H7</p></td>
+<td><p>OTG_FS_IRQHandler/OTG_HS_IRQHandler</p></td>
+<td><p>0x50000000UL/0x40040000UL</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>STM32 H7</p></td>
+<td><p>同上</p></td>
+<td><p>0x40080000UL/0x40040000UL</p></td>
+<td><p>9</p></td>
+</tr>
+</tbody>
+</table>
+<p>下表为具体芯片主机相关宏的修改值：</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>芯片</p></th>
+<th class="head"><p>中断名</p></th>
+<th class="head"><p>寄存器地址</p></th>
+<th class="head"><p>CONFIG_USBHOST_PIPE_NUM</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>STM32 全系列</p></td>
+<td><p>OTG_HS_IRQHandler</p></td>
+<td><p>0x40040000UL</p></td>
+<td><p>12</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="ehci">
+<h2>EHCI<a class="headerlink" href="#ehci" title="Permalink to this headline">¶</a></h2>
+<p>EHCI 是 intel 制定的标准主机控制器接口，任何厂家都必须实现 EHCI 中定义的寄存器以及寄存器的功能。EHCI 相关配置宏如下：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USB_EHCI_HCCR_OFFSET     (0x0)</span>
+<span class="cp">#define CONFIG_USB_EHCI_FRAME_LIST_SIZE 1024</span>
+<span class="cp">#define CONFIG_USB_EHCI_QH_NUM          CONFIG_USBHOST_PIPE_NUM</span>
+<span class="cp">#define CONFIG_USB_EHCI_QTD_NUM         3</span>
+<span class="cp">#define CONFIG_USB_EHCI_ITD_NUM         20</span>
+<span class="c1">//是否关闭保留寄存器的占位，默认保留 9 个双字的占位</span>
+<span class="cp">#define CONFIG_USB_EHCI_HCOR_RESERVED_DISABLE</span>
+<span class="c1">//是否使能 configflag 寄存器中的 bit0</span>
+<span class="cp">#define CONFIG_USB_EHCI_CONFIGFLAG</span>
+<span class="cp">#define CONFIG_USB_EHCI_ISO</span>
+<span class="c1">// 不带 tt的 IP 一般使用OHCI</span>
+<span class="cp">#define CONFIG_USB_EHCI_WITH_OHCI</span>
+</pre></div>
+</div>
+<p>同时由于 EHCI 只是主机控制器并且只支持高速，一般配合一个 otg 控制器和一个低速全速兼容控制单元，而速度的获取一般是在 otg 寄存器中，所以需要用户实现 <cite>usbh_get_port_speed</cite> 函数。</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, sakumisu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

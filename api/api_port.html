@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>主从驱动 &mdash; CherryUSB 1.4.0 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="USB CONFIG 说明" href="api_config.html" />
+    <link rel="prev" title="主机协议栈" href="api_host.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            CherryUSB
+          </a>
+              <div class="version">
+                1.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">快速上手</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/start.html">入门必看</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+</ul>
+<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_desc.html">USB 描述符</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_request.html">USB 设备请求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API 手册</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_host.html">主机协议栈</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">主从驱动</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#device-controller-dcd">device controller(dcd)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usb-dc-init">usb_dc_init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-dc-deinit">usb_dc_deinit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-set-address">usbd_set_address</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-open">usbd_ep_open</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-close">usbd_ep_close</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-set-stall">usbd_ep_set_stall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-clear-stall">usbd_ep_clear_stall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-is-stalled">usbd_ep_is_stalled</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-start-write">usbd_ep_start_write</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-ep-start-read">usbd_ep_start_read</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#host-controller-hcd">host controller(hcd)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usb-hc-init">usb_hc_init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-hc-deinit">usb_hc_deinit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-roothub-control">usbh_roothub_control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-submit-urb">usbh_submit_urb</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_config.html">USB CONFIG 说明</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption"><span class="caption-text">例程说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_msc.html">usbd_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_rndis.html">usbd_rndis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_ecm.html">usbd_cdc_ecm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov1.html">usbd_audiov1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov2.html">usbd_audiov2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_video.html">usbd_video</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_winusb.html">usbd_winusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_webusb.html">usbd_webusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_serial.html">usbh_serial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_hid.html">usbh_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_msc.html">usbh_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_net.html">usbh_net</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
+</ul>
+<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/xhci.html">XHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/chipidea.html">CHIPIDEA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc2.html">DWC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/musb.html">MUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/fotg210.html">FOTG210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns2.html">CDNS2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
+</ul>
+<p class="caption"><span class="caption-text">工具使用</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
+</ul>
+<p class="caption"><span class="caption-text">版本说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+</ul>
+<p class="caption"><span class="caption-text">商业支持</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CherryUSB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">主从驱动</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/api_port.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="id1">
+<h1>主从驱动<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>请注意，v1.1 版本开始增加 busid 形参，其余保持不变，所以 API 说明不做更新</p>
+</div>
+<div class="section" id="device-controller-dcd">
+<h2>device controller(dcd)<a class="headerlink" href="#device-controller-dcd" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="usb-dc-init">
+<h3>usb_dc_init<a class="headerlink" href="#usb-dc-init" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usb_dc_init</span></code> 用于初始化 usb device controller 寄存器，设置 usb 引脚、时钟、中断等等。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usb_dc_init</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usb-dc-deinit">
+<h3>usb_dc_deinit<a class="headerlink" href="#usb-dc-deinit" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usb_dc_deinit</span></code> 用于反初始化 usb device controller 寄存器。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usb_dc_deinit</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-set-address">
+<h3>usbd_set_address<a class="headerlink" href="#usbd-set-address" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_set_address</span></code> 设置设备地址。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_set_address</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">addr</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>addr</strong> 设备地址</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-open">
+<h3>usbd_ep_open<a class="headerlink" href="#usbd-ep-open" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_open</span></code> 设置端点的属性，开启对应端点的中断。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_open</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">usb_endpoint_descriptor</span> <span class="o">*</span><span class="n">ep</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> 端点描述符</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-close">
+<h3>usbd_ep_close<a class="headerlink" href="#usbd-ep-close" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_close</span></code> 关闭端点。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_close</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> 端点地址</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-set-stall">
+<h3>usbd_ep_set_stall<a class="headerlink" href="#usbd-ep-set-stall" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_set_stall</span></code> 将端点设置成 stall 状态并发送 stall 握手包。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_set_stall</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> 端点地址</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-clear-stall">
+<h3>usbd_ep_clear_stall<a class="headerlink" href="#usbd-ep-clear-stall" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_clear_stall</span></code> 清除端点的 stall 状态。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_clear_stall</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> 端点地址</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-is-stalled">
+<h3>usbd_ep_is_stalled<a class="headerlink" href="#usbd-ep-is-stalled" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_is_stalled</span></code> 读取当前端点的 stall 状态。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_is_stalled</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">stalled</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> 端点地址</p></li>
+<li><p><strong>return</strong> 返回 1 表示 stalled，0 表示没有 stall</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-start-write">
+<h3>usbd_ep_start_write<a class="headerlink" href="#usbd-ep-start-write" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_start_write</span></code> 启动端点发送，发送完成以后，会调用注册的 in 端点传输完成中断回调函数。该函数为异步发送。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_start_write</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">data_len</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> in 端点地址</p></li>
+<li><p><strong>data</strong> 发送数据缓冲区</p></li>
+<li><p><strong>data_len</strong> 发送长度，原则上无限长，推荐 16K 字节以内</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbd-ep-start-read">
+<h3>usbd_ep_start_read<a class="headerlink" href="#usbd-ep-start-read" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_start_read</span></code>  启动端点接收，接收完成以后，会调用注册的 out 端点传输完成中断回调函数。该函数为异步接收。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_ep_start_read</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">data_len</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>ep</strong> out 端点地址</p></li>
+<li><p><strong>data</strong> 接收数据缓冲区</p></li>
+<li><p><strong>data_len</strong> 接收长度，原则上无限长，推荐 16K 字节以内，并且推荐是最大包长的整数倍</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包（小于 EP MPS）；2、接收总长度等于 data_len</p>
+</div>
+</div>
+</div>
+<div class="section" id="host-controller-hcd">
+<h2>host controller(hcd)<a class="headerlink" href="#host-controller-hcd" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="usb-hc-init">
+<h3>usb_hc_init<a class="headerlink" href="#usb-hc-init" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usb_hc_init</span></code> 用于初始化 usb host controller 寄存器，设置 usb 引脚、时钟、中断等等。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usb_hc_init</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usb-hc-deinit">
+<h3>usb_hc_deinit<a class="headerlink" href="#usb-hc-deinit" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usb_hc_deinit</span></code> 用于反初始化 usb host controller 寄存器。 <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usb_hc_deinit</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbh-roothub-control">
+<h3>usbh_roothub_control<a class="headerlink" href="#usbh-roothub-control" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_roothub_control</span></code> 用来对 roothub 发起请求， <strong>此函数不对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbh_roothub_control</span><span class="p">(</span><span class="k">struct</span> <span class="n">usb_setup_packet</span> <span class="o">*</span><span class="n">setup</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>setup</strong> 请求</p></li>
+<li><p><strong>buf</strong> 接收缓冲区</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+</div>
+<div class="section" id="usbh-submit-urb">
+<h3>usbh_submit_urb<a class="headerlink" href="#usbh-submit-urb" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_submit_urb</span></code> 对某个地址上的端点进行数据请求。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbh_submit_urb</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbh_urb</span> <span class="o">*</span><span class="n">urb</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>urb</strong> usb 请求块</p></li>
+<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+</ul>
+<p>其中， <cite>urb</cite> 结构体信息如下：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_urb</span> <span class="p">{</span>
+    <span class="kt">void</span> <span class="o">*</span><span class="n">hcpriv</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">usbh_hubport</span> <span class="o">*</span><span class="n">hport</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">usb_endpoint_descriptor</span> <span class="o">*</span><span class="n">ep</span><span class="p">;</span>
+    <span class="kt">uint8_t</span> <span class="n">data_toggle</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">usb_setup_packet</span> <span class="o">*</span><span class="n">setup</span><span class="p">;</span>
+    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">transfer_buffer</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">transfer_buffer_length</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">transfer_flags</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">actual_length</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">timeout</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">errorcode</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">num_of_iso_packets</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">start_frame</span><span class="p">;</span>
+    <span class="n">usbh_complete_callback_t</span> <span class="n">complete</span><span class="p">;</span>
+    <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">;</span>
+<span class="cp">#if defined(__ICCARM__) || defined(__ICCRISCV__) || defined(__ICCRX__)</span>
+    <span class="k">struct</span> <span class="n">usbh_iso_frame_packet</span> <span class="o">*</span><span class="n">iso_packet</span><span class="p">;</span>
+<span class="cp">#else</span>
+    <span class="k">struct</span> <span class="n">usbh_iso_frame_packet</span> <span class="n">iso_packet</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="cp">#endif</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>hcpriv</strong> 主机控制器驱动私有成员</p></li>
+<li><p><strong>hport</strong> 当前 urb 使用的 hport</p></li>
+<li><p><strong>ep</strong> 当前 urb 使用的 ep</p></li>
+<li><p><strong>data_toggle</strong> 当前 data toggle</p></li>
+<li><p><strong>setup</strong> setup 请求缓冲区，端点0使用</p></li>
+<li><p><strong>transfer_buffer</strong> 传输的数据缓冲区</p></li>
+<li><p><strong>transfer_buffer_length</strong> 传输长度</p></li>
+<li><p><strong>transfer_flags</strong> 传输时携带的 flag</p></li>
+<li><p><strong>actual_length</strong> 实际传输长度</p></li>
+<li><p><strong>timeout</strong> 传输超时时间，为 0 该函数则为非阻塞，可在中断中使用</p></li>
+<li><p><strong>errorcode</strong> 错误码</p></li>
+<li><p><strong>num_of_iso_packets</strong> iso 帧或者微帧个数</p></li>
+<li><p><strong>complete</strong> 传输完成回调函数</p></li>
+<li><p><strong>arg</strong> 传输完成时携带的参数</p></li>
+<li><p><strong>iso_packet</strong> iso 数据包</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>timeout 如何没有特别对时间的要求，必须设置成 0xffffffff，原则上不允许超时，如果超时了，一般不能再继续工作</p>
+</div>
+<p><cite>errorcode</cite> 可以返回以下值：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define USB_ERR_NOMEM    1</span>
+<span class="cp">#define USB_ERR_INVAL    2</span>
+<span class="cp">#define USB_ERR_NODEV    3</span>
+<span class="cp">#define USB_ERR_NOTCONN  4</span>
+<span class="cp">#define USB_ERR_NOTSUPP  5</span>
+<span class="cp">#define USB_ERR_BUSY     6</span>
+<span class="cp">#define USB_ERR_RANGE    7</span>
+<span class="cp">#define USB_ERR_STALL    8</span>
+<span class="cp">#define USB_ERR_BABBLE   9</span>
+<span class="cp">#define USB_ERR_NAK      10</span>
+<span class="cp">#define USB_ERR_DT       11</span>
+<span class="cp">#define USB_ERR_IO       12</span>
+<span class="cp">#define USB_ERR_SHUTDOWN 13</span>
+<span class="cp">#define USB_ERR_TIMEOUT  14</span>
+</pre></div>
+</div>
+<p>其中 <cite>iso_packet</cite> 结构体信息如下：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_iso_frame_packet</span> <span class="p">{</span>
+    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">transfer_buffer</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">transfer_buffer_length</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">actual_length</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">errorcode</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>transfer_buffer</strong> 传输的数据缓冲区</p></li>
+<li><p><strong>transfer_buffer_length</strong> 传输长度</p></li>
+<li><p><strong>actual_length</strong> 实际传输长度</p></li>
+<li><p><strong>errorcode</strong> 错误码</p></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api_host.html" class="btn btn-neutral float-left" title="主机协议栈" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api_config.html" class="btn btn-neutral float-right" title="USB CONFIG 说明" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, sakumisu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

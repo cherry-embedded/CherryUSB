@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>基于现有 demo 快速验证 &mdash; CherryUSB 1.4.0 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="芯片通用移植指南" href="transplant.html" />
+    <link rel="prev" title="入门必看" href="start.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            CherryUSB
+          </a>
+              <div class="version">
+                1.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">快速上手</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="start.html">入门必看</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">基于现有 demo 快速验证</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bouffalolab">基于 bouffalolab 系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hpmicro">基于 HPMicro 系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#esp32s2-s3-p4">基于 esp32s2/s3/p4 系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">基于飞腾派系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#st">基于 ST 系列芯片</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usb-device">USB Device 移植要点</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-host">USB Host 移植要点</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transplant.html">芯片通用移植指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="esp.html">基于 ESP-Registry 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+</ul>
+<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_desc.html">USB 描述符</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_request.html">USB 设备请求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API 手册</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_host.html">主机协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_port.html">主从驱动</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_config.html">USB CONFIG 说明</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption"><span class="caption-text">例程说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_msc.html">usbd_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_rndis.html">usbd_rndis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_ecm.html">usbd_cdc_ecm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov1.html">usbd_audiov1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov2.html">usbd_audiov2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_video.html">usbd_video</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_winusb.html">usbd_winusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_webusb.html">usbd_webusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_serial.html">usbh_serial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_hid.html">usbh_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_msc.html">usbh_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_net.html">usbh_net</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
+</ul>
+<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/xhci.html">XHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/chipidea.html">CHIPIDEA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc2.html">DWC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/musb.html">MUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/fotg210.html">FOTG210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns2.html">CDNS2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
+</ul>
+<p class="caption"><span class="caption-text">工具使用</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
+</ul>
+<p class="caption"><span class="caption-text">版本说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+</ul>
+<p class="caption"><span class="caption-text">商业支持</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CherryUSB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">基于现有 demo 快速验证</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/quick_start/demo.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="demo">
+<h1>基于现有 demo 快速验证<a class="headerlink" href="#demo" title="Permalink to this headline">¶</a></h1>
+<p>在学习 USB 或者是学习 CherryUSB 代码之前，我们需要先基于现有的 demo 进行快速验证，为什么？是为了提升对 USB 的兴趣，能有信心进行下一步的动作，如果 demo 都跑不起来，或者自己摸索写代码，或者先看 USB 基本概念，结果看到最后，
+发现一点都看不懂，概念好多，根本记不住，从而丧失对 USB 的兴趣。因此，先跑 demo 非常重要。下面我将给大家罗列目前支持的 demo 仓库。</p>
+<div class="section" id="bouffalolab">
+<h2>基于 bouffalolab 系列芯片<a class="headerlink" href="#bouffalolab" title="Permalink to this headline">¶</a></h2>
+<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_bouffalolab">https://github.com/CherryUSB/cherryusb_bouffalolab</a></p>
+<ul class="simple">
+<li><p>BL616/BL808 是一个 USB2.0 并且内置高速 PHY 芯片，共 5个端点（包含端点0）。支持主从机。</p></li>
+<li><p>USB 的相关应用位于 <cite>examples/usbdev</cite> 和 <cite>examples/usbhost</cite> 目录下，根据官方环境搭建完成后，即可编译使用。</p></li>
+</ul>
+</div>
+<div class="section" id="hpmicro">
+<h2>基于 HPMicro 系列芯片<a class="headerlink" href="#hpmicro" title="Permalink to this headline">¶</a></h2>
+<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_hpmicro">https://github.com/CherryUSB/cherryusb_hpmicro</a></p>
+<ul class="simple">
+<li><p>HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机，端点共 8/16 个，并且可以同时使用双向，不同芯片个数有差异</p></li>
+<li><p>USB 的相关应用位于 <cite>samples/cherryusb</cite> ，根据官方环境搭建完成后，即可编译使用。</p></li>
+</ul>
+</div>
+<div class="section" id="esp32s2-s3-p4">
+<h2>基于 esp32s2/s3/p4 系列芯片<a class="headerlink" href="#esp32s2-s3-p4" title="Permalink to this headline">¶</a></h2>
+<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_esp32">https://github.com/CherryUSB/cherryusb_esp32</a></p>
+<ul class="simple">
+<li><p>esp32s2/s3 支持全速主从机，esp32p4 支持高速主从机</p></li>
+<li><p>默认提供主机 demo，并且使用 esp 组件库进行开发， 在 <a class="reference external" href="https://components.espressif.com/">https://components.espressif.com/</a> 中搜索 cherryusb 即可</p></li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>基于飞腾派系列芯片<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>仓库参考：<a class="reference external" href="https://gitee.com/phytium_embedded/phytium-free-rtos-sdk">https://gitee.com/phytium_embedded/phytium-free-rtos-sdk</a></p>
+<ul class="simple">
+<li><p>飞腾派支持两个 USB3.0 主机， 两个 USB2.0 主从机</p></li>
+<li><p>USB 的相关应用位于 <cite>example/peripheral/usb</cite> ，根据官方环境搭建完成后，即可编译使用。</p></li>
+</ul>
+</div>
+<div class="section" id="st">
+<h2>基于 ST 系列芯片<a class="headerlink" href="#st" title="Permalink to this headline">¶</a></h2>
+<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_stm32">https://github.com/CherryUSB/cherryusb_stm32</a></p>
+<p>默认提供以下 demo 工程：</p>
+<ul class="simple">
+<li><p>F103 使用 fsdev ip</p></li>
+<li><p>F429 主从使用 USB1, 引脚 pb14/pb15, 并且都使用 dma 模式</p></li>
+<li><p>H7 设备使用 USB0, 引脚 pa11/pa12，主机使用 USB_OTG_HS ,引脚 pb14/pb15，并且需要做 nocache 处理</p></li>
+</ul>
+<p>demo 底下提供了 <strong>stm32xxx.ioc</strong> 文件，双击打开，点击 <strong>Generate Code</strong> 即可。</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>生成完以后，请使用 git reset 功能将被覆盖的 <cite>main.c</cite> 和 <cite>stm32xxx_it.c</cite> 文件撤回，禁止被 cubemx 覆盖。</p>
+</div>
+<p>涵盖 F1/F4/H7，其余芯片基本类似，不再赘述，具体区别有：</p>
+<ul class="simple">
+<li><p>usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2</p></li>
+<li><p>dwc2 ip 区别： USB0 (引脚是 PA11/PA12) 和 USB1 (引脚是 PB14/PB15), 其中 USB1 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能</p></li>
+<li><p>F4 无cache，H7 有 cache</p></li>
+</ul>
+<p>如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">cpu_mpu_config</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">MPU_Normal_NonCache</span><span class="p">,</span> <span class="mh">0x24070000</span><span class="p">,</span> <span class="n">MPU_REGION_SIZE_64KB</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>对应 keil 中的 sct 脚本修改：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span>LR_IROM1 0x08000000 0x00200000  {    ; load region size_region
+ER_IROM1 0x08000000 0x00200000  {  ; load address = execution address
+*.o (RESET, +First)
+*(InRoot$$Sections)
+.ANY (+RO)
+.ANY (+XO)
+}
+RW_IRAM2 0x24000000 0x00070000  {  ; RW data
+.ANY (+RW +ZI)
+}
+USB_NOCACHERAM 0x24070000 0x00010000  {  ; RW data
+*(.noncacheable)
+}
+}
+</pre></div>
+</div>
+<div class="section" id="usb-device">
+<h3>USB Device 移植要点<a class="headerlink" href="#usb-device" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>使用 <strong>stm32cubemx</strong> 创建工程，配置基本的 RCC、UART (作为log使用)</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_1.png" src="../_images/stm32_1.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_2.png" src="../_images/stm32_2.png" />
+</div>
+<ul class="simple">
+<li><p>如果使用 fsdev ip，勾选 <strong>USB</strong> 。如果使用 dwc2 ip，勾选 <strong>USB_OTG_FS</strong> 或者勾选  <strong>USB_OTG_HS</strong>。开启 USB 中断，其他配置对我们没用，代码中不会使用任何 st 的 usb 库。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_3_1.png" src="../_images/stm32_3_1.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_3.png" src="../_images/stm32_3.png" />
+</div>
+<ul class="simple">
+<li><p>配置 usb clock 为 48M</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_4_1.png" src="../_images/stm32_4_1.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_4.png" src="../_images/stm32_4.png" />
+</div>
+<ul class="simple">
+<li><p>选择好工程，这里我们选择 keil，设置好 stack 和 heap，如果使用 msc 可以推荐设置大点，然后点击 <strong>Generate Code</strong>。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_5.png" src="../_images/stm32_5.png" />
+</div>
+<ul class="simple">
+<li><p>添加 CherryUSB 必须要的源码（ <strong>usbd_core.c</strong> 、 <strong>usb_dc_dwc2.c</strong> 或者是 <strong>usb_dc_fsdev.c</strong>  ）,以及想要使用的 class 驱动，可以将对应的 class template 添加方便测试。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_6.png" src="../_images/stm32_6.png" />
+</div>
+<ul class="simple">
+<li><p>头文件该加的加</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_7.png" src="../_images/stm32_7.png" />
+</div>
+<ul class="simple">
+<li><p>复制一份 <strong>cherryusb_config_template.h</strong>，放到 <cite>Core/Inc</cite> 目录下，并命名为 <cite>usb_config.h</cite></p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_8.png" src="../_images/stm32_8.png" />
+</div>
+<ul class="simple">
+<li><p>如果使用 dwc2 ip，需要增加 <strong>usb_glue_st.c</strong> 文件，并在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="c1">// 以下细节如有出入，请对照 stm32xxx.h 文件修改</span>
+<span class="c1">// 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置</span>
+<span class="cp">#define CONFIG_USBDEV_EP_NUM 6</span>
+<span class="cp">#define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1012 - 16 * 6)</span>
+<span class="cp">#define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (64 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>如果使用 fsdev ip，在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USBDEV_EP_NUM 8</span>
+<span class="cp">#define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>编译器推荐使用 <strong>AC6</strong>。勾选 <strong>Microlib</strong>，并实现 <strong>printf</strong> ，方便后续查看 log。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_10.png" src="../_images/stm32_10.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_11.png" src="../_images/stm32_11.png" />
+</div>
+<ul class="simple">
+<li><p>拷贝 <strong>xxx_msp.c</strong> 中的 <strong>HAL_PCD_MspInit</strong> 函数中的内容到 <strong>usb_dc_low_level_init</strong> 函数中，屏蔽 st 生成的 usb 初始化</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_12.png" src="../_images/stm32_12.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_14.png" src="../_images/stm32_14.png" />
+</div>
+<ul class="simple">
+<li><p>在中断函数中调用 <cite>USBD_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_13.png" src="../_images/stm32_13.png" />
+</div>
+<ul class="simple">
+<li><p>调用 template 的内容初始化，并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite></p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_15.png" src="../_images/stm32_15.png" />
+</div>
+</div>
+<div class="section" id="usb-host">
+<h3>USB Host 移植要点<a class="headerlink" href="#usb-host" title="Permalink to this headline">¶</a></h3>
+<p>前面 6 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port (引脚是 PB14/PB15)，所以 fs port (引脚是 PA11/PA12)不做支持（没有 dma 你玩什么主机）。</p>
+<ul class="simple">
+<li><p>添加 CherryUSB 必须要的源码（ <strong>usbh_core.c</strong> 、 <strong>usbh_hub.c</strong> 、 <strong>usb_hc_dwc2.c</strong> 、以及 <strong>osal</strong> 目录下的适配层文件）,以及想要使用的 class 驱动，并且可以将对应的 <strong>usb host.c</strong> 添加方便测试。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_16.png" src="../_images/stm32_16.png" />
+</div>
+<ul class="simple">
+<li><p>编译器推荐使用 <strong>AC6</strong>。勾选 <strong>Microlib</strong>，并实现 <strong>printf</strong> ，方便后续查看 log。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_10.png" src="../_images/stm32_10.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_11.png" src="../_images/stm32_11.png" />
+</div>
+<ul class="simple">
+<li><p>复制一份 <strong>cherryusb_config_template.h</strong>，放到 <cite>Core/Inc</cite> 目录下，并命名为 <cite>usb_config.h</cite></p></li>
+<li><p>增加 <strong>usb_glue_st.c</strong> 文件，并在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="c1">// 以下细节如有出入，请对照 stm32xxx.h 文件修改</span>
+<span class="c1">// 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置</span>
+<span class="cp">#define CONFIG_USBHOST_PIPE_NUM 12</span>
+<span class="cp">#define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)</span>
+<span class="cp">#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>拷贝 <strong>xxx_msp.c</strong> 中的 <cite>HAL_HCD_MspInit</cite> 函数中的内容到 <cite>usb_hc_low_level_init</cite> 函数中，屏蔽 st 生成的 usb 初始化</p></li>
+<li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
+<li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
+<li><p>启动线程</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_18.png" src="../_images/stm32_18.png" />
+</div>
+<div class="figure align-default">
+<img alt="../_images/stm32_19.png" src="../_images/stm32_19.png" />
+</div>
+<ul class="simple">
+<li><p>如果使用 <strong>msc</strong>，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 <strong>fatfs_usbh.c</strong> 文件。</p></li>
+</ul>
+<div class="figure align-default">
+<img alt="../_images/stm32_21.png" src="../_images/stm32_21.png" />
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="start.html" class="btn btn-neutral float-left" title="入门必看" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="transplant.html" class="btn btn-neutral float-right" title="芯片通用移植指南" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, sakumisu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
