@@ -5,7 +5,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        感谢你上报新的问题！ / Thanks for taking the time to fill out this bug report!
+        感谢上报新的问题！请填写以下信息，以帮助我们更好地理解问题。请注意，如果您不按模板填写issue，那您的issue可能会被关闭或者删除！
+        我们的工作语言是中文或者英文，请使用这两种语言之一填写issue。
+
+        Thank you for reporting a new issue! Please fill in the following information to help us better understand the problem. Please note that if you do not fill in the issue according to the template, your issue may be closed or deleted!
+        Our working languages are Chinese or English, please use one of these two languages to fill in the issue.
   - type: textarea
     id: bug-description
     attributes:
