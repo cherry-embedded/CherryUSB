@@ -1,0 +1,85 @@
+name: "🐞 上报bug / Bug report"
+description: "提交bug以让改进软件功能 / Create a report to help us improve"
+labels: ["peding"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢上报新的问题！请填写以下信息，以帮助我们更好地理解问题。请注意，如果您不按模板填写issue，那您的issue可能会被关闭或者删除！
+        我们的工作语言是中文或者英文，请使用这两种语言之一填写issue。
+
+        Thank you for reporting a new issue! Please fill in the following information to help us better understand the problem. Please note that if you do not fill in the issue according to the template, your issue may be closed or deleted!
+        Our working languages are Chinese or English, please use one of these two languages to fill in the issue.
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 描述一下这个bug / Describe the bug
+      description: 请使用简介并详细的语句，来描述这个bug。 / A clear and concise description of what the bug is.
+      placeholder: 我准备……我想要……但是实际上它……了 / I am doing ... What I expect is ... What actually happening is ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤 / To Reproduce
+      description: 按照下面的步骤，可以复现bug / Steps to reproduce the behavior
+      placeholder: 首先……然后……接着…… / Go to '...', Click on '....', Scroll down to '....'
+    validations:
+      required: true
+  - type: textarea
+    id: target
+    attributes:
+      label: 设备信息 / Target Device
+      description: 您使用的板子/芯片型号、使用的引脚、以及USB IP类型 / Your target board/chip model, the pins you used, and the type of USB IP you used
+      placeholder: |-
+        板子型号：HPM5301EVKLite
+        引脚：PA24 PA25
+        USB IP：/
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: 日志 / Log
+      description: 请提供输出 log
+      placeholder: |-
+        [D/USB] EP0 send 18 bytes, 0 remained
+        [D/USB] EP0 recv out status
+        [D/USB] EP0 send 0 bytes, 0 remained
+        [D/USB] EP0 send 18 bytes, 0 remained
+        [D/USB] EP0 recv out status
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        以下的部分仅在移植的时候需要填写，如果不是移植问题，请忽略这部分。
+        The following section is only required when porting, if it is not a porting issue, please ignore this section.
+
+  - type: textarea
+    id: configure
+    attributes:
+      label: 配置 / Configuration
+      description: 请确认 USB 中断，时钟，引脚，寄存器地址是否正确，并截图 / Please confirm that the USB interrupt, clock, pin, and register address are correct, and provide a screenshot
+
+  - type: textarea
+    id: USBIrq
+    attributes:
+      label: USB中断 / USB Interrupt
+      description: 请确认是否能进入USB中断
+
+  - type: textarea
+    id: cache
+    attributes:
+      label: 缓存 / Cache
+      description: 芯片是否带有 cache功能，是否做了 no cache 处理，并截图 / Whether the chip has a cache function, whether no cache processing is done, and provide a screenshot
+
+  - type: checkboxes
+    id: bussiness
+    attributes:
+      label: 商业 / Business
+      description: 是否流片并销售 / Whether it is mass-produced and sold
+      options:
+        - label: 是 / Yes
