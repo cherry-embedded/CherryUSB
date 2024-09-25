@@ -447,6 +447,7 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
 static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting)
 {
     const uint8_t *if_desc = NULL;
+    struct usb_endpoint_descriptor *found_ep_desc = NULL;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t cur_alt_setting = 0xFF;
     uint8_t cur_iface = 0xFF;
@@ -481,7 +482,7 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                     if_desc = (void *)p;
                 }
 
-                USB_LOG_DBG("Current iface %u alt setting %u",
+                USB_LOG_DBG("Current iface %u alt setting %u\r\n",
                             cur_iface, cur_alt_setting);
                 break;
 
@@ -492,7 +493,7 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                     if (cur_alt_setting != alt_setting) {
                         ret = usbd_reset_endpoint(busid, ep_desc);
                     } else {
-                        ret = usbd_set_endpoint(busid, ep_desc);
+                        found_ep_desc = ep_desc;
                     }
                 }
 
@@ -508,6 +509,10 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
         if (current_desc_len >= desc_len && desc_len) {
             break;
         }
+    }
+
+    if (found_ep_desc != NULL) {
+        ret = usbd_set_endpoint(busid, found_ep_desc);
     }
 
     usbd_class_event_notify_handler(busid, USBD_EVENT_SET_INTERFACE, (void *)if_desc);
