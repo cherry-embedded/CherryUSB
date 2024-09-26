@@ -130,6 +130,8 @@ usbd_ep_start_read
 
 .. note:: 启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包（小于 EP MPS）；2、接收总长度等于 data_len
 
+.. note:: 对于 bulk 传输，data_len 通常设计为 EP MPS，以下三种情况可以修改为多个 EP MPS: 固定长度；自定义协议并携带长度（MSC）; 主机手动发送 ZLP 或者短包（RNDIS）
+
 host controller(hcd)
 ------------------------
 
