@@ -51,8 +51,6 @@
 #endif
 // clang-format on
 
-//#define CONFIG_USB_DWC2_DMA_ENABLE
-
 #ifndef CONFIG_USB_DWC2_RXALL_FIFO_SIZE
 #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1024 / 4)
 #endif
@@ -62,7 +60,7 @@
 #endif
 
 #ifndef CONFIG_USB_DWC2_TX1_FIFO_SIZE
-#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (512 / 4)
+#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (1024 / 4)
 #endif
 
 #ifndef CONFIG_USB_DWC2_TX2_FIFO_SIZE
