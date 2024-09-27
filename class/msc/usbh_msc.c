@@ -278,7 +278,12 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 
     ret = usbh_msc_get_maxlun(msc_class, g_msc_buf[msc_class->sdchar - 'a']);
     if (ret < 0) {
-        return ret;
+        if (ret == -USB_ERR_STALL) {
+            USB_LOG_WRN("Device does not support multiple LUNs\r\n");
+            g_msc_buf[msc_class->sdchar - 'a'][0] = 0;
+        } else {
+            return ret;
+        }
     }
 
     USB_LOG_INFO("Get max LUN:%u\r\n", g_msc_buf[msc_class->sdchar - 'a'][0] + 1);
@@ -371,7 +376,6 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     return ret;
 }
-
 
 int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)
 {
