@@ -20,7 +20,7 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[CONFIG_USBHOST_MAX_HID_CLASS][USB_ALIGN_UP(256, CONFIG_USB_ALIGN_SIZE)];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_buf[CONFIG_USBHOST_MAX_HID_CLASS][USB_ALIGN_UP(64, CONFIG_USB_ALIGN_SIZE)];
 
 static struct usbh_hid g_hid_class[CONFIG_USBHOST_MAX_HID_CLASS];
 static uint32_t g_devinuse = 0;
