@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "usb_chipidea_reg.h"
+#include "usb_chipidea_hs_reg.h"
 
 #define USB_OTG_DEV ((CHIPIDEA_TypeDef *)g_usbdev_bus[busid].reg_base)
 
@@ -104,7 +104,7 @@ struct chipidea_udc {
     bool is_suspend;
     struct chipidea_ep_state in_ep[CONFIG_USBDEV_EP_NUM];  /*!< IN endpoint parameters*/
     struct chipidea_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
-} g_chipidea_udc[CONFIG_USBDEV_MAX_BUS];
+} g_chipidea_hs_udc[CONFIG_USBDEV_MAX_BUS];
 
 static USB_NOCACHE_RAM_SECTION __attribute__((aligned(2048))) dcd_data_t _dcd_data0;
 #if CONFIG_USBDEV_MAX_BUS == 2
@@ -302,7 +302,7 @@ static dcd_qhd_t *chipidea_qhd_get(uint8_t busid, uint8_t ep_idx)
 {
     dcd_data_t *dcd_data;
 
-    dcd_data = g_chipidea_udc[busid].dcd_data;
+    dcd_data = g_chipidea_hs_udc[busid].dcd_data;
     return &dcd_data->qhd[ep_idx];
 }
 
@@ -310,7 +310,7 @@ static dcd_qtd_t *chipidea_qtd_get(uint8_t busid, uint8_t ep_idx)
 {
     dcd_data_t *dcd_data;
 
-    dcd_data = g_chipidea_udc[busid].dcd_data;
+    dcd_data = g_chipidea_hs_udc[busid].dcd_data;
     return &dcd_data->qtd[ep_idx * QTD_COUNT_EACH_ENDPOINT];
 }
 
@@ -318,7 +318,7 @@ static void chipidea_bus_reset(uint8_t busid, uint16_t ep0_max_packet_size)
 {
     dcd_data_t *dcd_data;
 
-    dcd_data = g_chipidea_udc[busid].dcd_data;
+    dcd_data = g_chipidea_hs_udc[busid].dcd_data;
     __chipidea_bus_reset(USB_OTG_DEV);
 
     /* Queue Head & Queue TD */
@@ -342,7 +342,7 @@ static void chipidea_edpt_open(uint8_t busid, uint8_t ep_addr, uint8_t ep_type, 
     dcd_qhd_t *p_qhd;
 
     /* Prepare Queue Head */
-    dcd_data = g_chipidea_udc[busid].dcd_data;
+    dcd_data = g_chipidea_hs_udc[busid].dcd_data;
     p_qhd = &dcd_data->qhd[ep_idx];
     memset(p_qhd, 0, sizeof(dcd_qhd_t));
 
@@ -370,7 +370,7 @@ static bool chipidea_start_xfer(uint8_t busid, uint8_t ep_addr, uint8_t *buffer,
     dcd_qtd_t *prev_p_qtd = NULL;
     dcd_data_t *dcd_data;
 
-    dcd_data = g_chipidea_udc[busid].dcd_data;
+    dcd_data = g_chipidea_hs_udc[busid].dcd_data;
 
     if (epnum == 0) {
         /* follows UM Setup packet handling using setup lockout mechanism
@@ -439,14 +439,14 @@ int usb_dc_init(uint8_t busid)
 
     usb_dc_low_level_init(busid);
 
-    memset(&g_chipidea_udc[busid], 0, sizeof(struct chipidea_udc));
-    g_chipidea_udc[busid].dcd_data = g_dcd_data[busid];
-    memset(g_chipidea_udc[busid].dcd_data, 0, sizeof(dcd_data_t));
+    memset(&g_chipidea_hs_udc[busid], 0, sizeof(struct chipidea_udc));
+    g_chipidea_hs_udc[busid].dcd_data = g_dcd_data[busid];
+    memset(g_chipidea_hs_udc[busid].dcd_data, 0, sizeof(dcd_data_t));
 
     chipidea_init(USB_OTG_DEV);
 
     /* Set endpoint list address */
-    USB_OTG_DEV->ENDPTLISTADDR = ((uint32_t)g_chipidea_udc[busid].dcd_data->qhd) & USB_ENDPTLISTADDR_EPBASE_MASK;
+    USB_OTG_DEV->ENDPTLISTADDR = ((uint32_t)g_chipidea_hs_udc[busid].dcd_data->qhd) & USB_ENDPTLISTADDR_EPBASE_MASK;
 
     /* Clear status */
     USB_OTG_DEV->USBSTS = USB_OTG_DEV->USBSTS;
@@ -522,13 +522,13 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
     chipidea_edpt_open(busid, ep->bEndpointAddress, USB_GET_ENDPOINT_TYPE(ep->bmAttributes), ep->wMaxPacketSize);
 
     if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
-        g_chipidea_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-        g_chipidea_udc[busid].out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
-        g_chipidea_udc[busid].out_ep[ep_idx].ep_enable = true;
+        g_chipidea_hs_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_chipidea_hs_udc[busid].out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+        g_chipidea_hs_udc[busid].out_ep[ep_idx].ep_enable = true;
     } else {
-        g_chipidea_udc[busid].in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-        g_chipidea_udc[busid].in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
-        g_chipidea_udc[busid].in_ep[ep_idx].ep_enable = true;
+        g_chipidea_hs_udc[busid].in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        g_chipidea_hs_udc[busid].in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+        g_chipidea_hs_udc[busid].in_ep[ep_idx].ep_enable = true;
     }
 
     return 0;
@@ -539,9 +539,9 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
     if (USB_EP_DIR_IS_OUT(ep)) {
-        g_chipidea_udc[busid].out_ep[ep_idx].ep_enable = false;
+        g_chipidea_hs_udc[busid].out_ep[ep_idx].ep_enable = false;
     } else {
-        g_chipidea_udc[busid].in_ep[ep_idx].ep_enable = false;
+        g_chipidea_hs_udc[busid].in_ep[ep_idx].ep_enable = false;
     }
 
     chipidea_edpt_close(USB_OTG_DEV, ep);
@@ -574,13 +574,13 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
     if (!data && data_len) {
         return -1;
     }
-    if (!g_chipidea_udc[busid].in_ep[ep_idx].ep_enable) {
+    if (!g_chipidea_hs_udc[busid].in_ep[ep_idx].ep_enable) {
         return -2;
     }
 
-    g_chipidea_udc[busid].in_ep[ep_idx].xfer_buf = (uint8_t *)data;
-    g_chipidea_udc[busid].in_ep[ep_idx].xfer_len = data_len;
-    g_chipidea_udc[busid].in_ep[ep_idx].actual_xfer_len = 0;
+    g_chipidea_hs_udc[busid].in_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_chipidea_hs_udc[busid].in_ep[ep_idx].xfer_len = data_len;
+    g_chipidea_hs_udc[busid].in_ep[ep_idx].actual_xfer_len = 0;
 
     chipidea_start_xfer(busid, ep, (uint8_t *)data, data_len);
 
@@ -594,13 +594,13 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     if (!data && data_len) {
         return -1;
     }
-    if (!g_chipidea_udc[busid].out_ep[ep_idx].ep_enable) {
+    if (!g_chipidea_hs_udc[busid].out_ep[ep_idx].ep_enable) {
         return -2;
     }
 
-    g_chipidea_udc[busid].out_ep[ep_idx].xfer_buf = (uint8_t *)data;
-    g_chipidea_udc[busid].out_ep[ep_idx].xfer_len = data_len;
-    g_chipidea_udc[busid].out_ep[ep_idx].actual_xfer_len = 0;
+    g_chipidea_hs_udc[busid].out_ep[ep_idx].xfer_buf = (uint8_t *)data;
+    g_chipidea_hs_udc[busid].out_ep[ep_idx].xfer_len = data_len;
+    g_chipidea_hs_udc[busid].out_ep[ep_idx].actual_xfer_len = 0;
 
     chipidea_start_xfer(busid, ep, data, data_len);
 
@@ -623,9 +623,9 @@ void USBD_IRQHandler(uint8_t busid)
     }
 
     if (int_status & intr_reset) {
-        g_chipidea_udc[busid].is_suspend = false;
-        memset(g_chipidea_udc[busid].in_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
-        memset(g_chipidea_udc[busid].out_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
+        g_chipidea_hs_udc[busid].is_suspend = false;
+        memset(g_chipidea_hs_udc[busid].in_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
+        memset(g_chipidea_hs_udc[busid].out_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
         usbd_event_reset_handler(busid);
         chipidea_bus_reset(busid, 64);
     }
@@ -634,7 +634,7 @@ void USBD_IRQHandler(uint8_t busid)
         if (USB_PORTSC1_SUSP_GET(USB_OTG_DEV->PORTSC1)) {
             /* Note: Host may delay more than 3 ms before and/or after bus reset before doing enumeration. */
             if (USB_DEVICEADDR_USBADR_GET(USB_OTG_DEV->DEVICEADDR)) {
-                g_chipidea_udc[busid].is_suspend = true;
+                g_chipidea_hs_udc[busid].is_suspend = true;
                 usbd_event_suspend_handler(busid);
             }
         } else {
@@ -645,8 +645,8 @@ void USBD_IRQHandler(uint8_t busid)
         if (!USB_PORTSC1_CCS_GET(USB_OTG_DEV->PORTSC1)) {
             usbd_event_disconnect_handler(busid);
         } else {
-            if (g_chipidea_udc[busid].is_suspend) {
-                g_chipidea_udc[busid].is_suspend = false;
+            if (g_chipidea_hs_udc[busid].is_suspend) {
+                g_chipidea_hs_udc[busid].is_suspend = false;
                 usbd_event_resume_handler(busid);
             }
             usbd_event_connect_handler(busid);

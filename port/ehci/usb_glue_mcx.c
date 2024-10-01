@@ -1,6 +1,6 @@
 #include "usbh_core.h"
 #include "fsl_common.h"
-#include "usb_chipidea_reg.h"
+#include "usb_chipidea_hs_reg.h"
 
 #define USB_DEVICE_CONFIG_EHCI 1
 

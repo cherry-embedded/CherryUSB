@@ -48,10 +48,16 @@ if CHERRYUSB
                 bool "musb_bk"
             config CHERRYUSB_DEVICE_MUSB_CUSTOM
                 bool "musb_custom"
-            config CHERRYUSB_DEVICE_CHIPIDEA_MCX
-                bool "chipidea_mcx"
-            config CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM
-                bool "chipidea_custom"
+            config CHERRYUSB_DEVICE_CHIPIDEA_FS_MCX
+                bool "chipidea_fs_mcx"
+            config CHERRYUSB_DEVICE_CHIPIDEA_FS_MM32
+                bool "chipidea_fs_mm32"
+            config CHERRYUSB_DEVICE_CHIPIDEA_FS_CUSTOM
+                bool "chipidea_fs_custom"
+            config CHERRYUSB_DEVICE_CHIPIDEA_HS_MCX
+                bool "chipidea_hs_mcx"
+            config CHERRYUSB_DEVICE_CHIPIDEA_HS_CUSTOM
+                bool "chipidea_hs_custom"
             config CHERRYUSB_DEVICE_BL
                 bool "bouffalo"
             config CHERRYUSB_DEVICE_HPM
@@ -201,6 +207,12 @@ if CHERRYUSB
                 bool "xhci_phytium"
             config CHERRYUSB_HOST_XHCI_CUSTOM
                 bool "xhci"
+            config CHERRYUSB_HOST_CHIPIDEA_FS_MCX
+                bool "chipidea_fs_mcx"
+            config CHERRYUSB_HOST_CHIPIDEA_FS_MM32
+                bool "chipidea_fs_mm32"
+            config CHERRYUSB_HOST_CHIPIDEA_FS_CUSTOM
+                bool "chipidea_fs_custom"
         endchoice
 
         config CHERRYUSB_HOST_CDC_ACM

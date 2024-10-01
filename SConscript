@@ -58,9 +58,12 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('port/musb/usb_glue_bk.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_dc_musb.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_MCX']):
-        src += Glob('port/chipidea/usb_dc_chipidea.c')
-        src += Glob('port/chipidea/usb_glue_mcx.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_FS_MCX']):
+        src += Glob('port/chipidea/fs/usb_dc_chipidea_fs.c')
+        src += Glob('port/chipidea/fs/usb_glue_mcx.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_HS_MCX']):
+        src += Glob('port/chipidea/hs/usb_dc_chipidea_hs.c')
+        src += Glob('port/chipidea/hs/usb_glue_mcx.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_BL']):
         src += Glob('port/bouffalolab/usb_dc_bl.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HPM']):
@@ -155,7 +158,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/ehci/usb_glue_aic.c')
         src += Glob('port/ohci/usb_hc_ohci.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_MCX']):
-        path += [cwd + '/port/chipidea']
+        path += [cwd + '/port/chipidea/hs']
         src += Glob('port/ehci/usb_hc_ehci.c')
         src += Glob('port/ehci/usb_glue_mcx.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_NUC980']):
@@ -187,6 +190,12 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/musb/usb_glue_bk.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_hc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CHIPIDEA_FS_MCX']):
+        path += [cwd + '/port/chipidea/fs']
+        src += Glob('port/chipidea/fs/usb_chipidea_fs.c')
+        src += Glob('port/chipidea/fs/usb_glue_mcx.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_CHIPIDEA_FS_CUSTOM']):
+        src += Glob('port/chipidea/fs/usb_chipidea_fs.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_PUSB2']):
         path += [cwd + '/port/pusb2/rt-thread']
         src += Glob('port/pusb2/rt-thread/usb_hc_glue_phytium.c')
