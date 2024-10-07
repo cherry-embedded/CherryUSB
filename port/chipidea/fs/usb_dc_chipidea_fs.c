@@ -124,6 +124,12 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
 
 int usbd_set_remote_wakeup(uint8_t busid)
 {
+    USB_OTG_DEV->CTL |= USB_CTL_RESUME_MASK;
+
+    usbd_chipidea_fs_delay_ms(10);
+
+    USB_OTG_DEV->CTL &= ~USB_CTL_RESUME_MASK;
+
     return 0;
 }
 
@@ -184,13 +190,24 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint8_t dir;
+    chipidea_fs_bd_t *bd;
 
     if (USB_EP_DIR_IS_OUT(ep)) {
         g_chipidea_fs_udc[busid].out_ep[ep_idx].ep_enable = false;
+        dir = 0;
     } else {
         g_chipidea_fs_udc[busid].in_ep[ep_idx].ep_enable = false;
+        dir = 1;
     }
 
+    bd = &g_chipidea_fs_bdt[busid].table[ep_idx][dir][0];
+    bd->head = 0;
+
+    bd = &g_chipidea_fs_bdt[busid].table[ep_idx][dir][1];
+    bd->head = 0;
+
+    USB_OTG_DEV->ENDPOINT[ep_idx].ENDPT &= ~(dir ? USB_ENDPT_EPTXEN_MASK : USB_ENDPT_EPRXEN_MASK);
     return 0;
 }
 

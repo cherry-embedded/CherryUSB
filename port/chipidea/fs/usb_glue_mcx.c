@@ -44,3 +44,8 @@ void usb_dc_low_level_deinit(uint8_t busid)
     USB_OTG_DEV->CONTROL &= ~USB_CONTROL_DPPULLUPNONOTG_MASK;
     DisableIRQ((IRQn_Type)USB0_FS_IRQn);
 }
+
+void usbd_chipidea_fs_delay_ms(uint8_t ms)
+{
+
+}

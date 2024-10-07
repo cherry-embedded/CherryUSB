@@ -1483,4 +1483,5 @@ typedef struct {
 void usb_dc_low_level_init(uint8_t busid);
 void usb_dc_low_level_deinit(uint8_t busid);
 
+void usbd_chipidea_fs_delay_ms(uint8_t ms);
 #endif
