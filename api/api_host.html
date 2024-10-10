@@ -1,17 +1,21 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>主机协议栈 &mdash; CherryUSB 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../_static/jquery.js"></script>
-      <script src="../_static/underscore.js"></script>
-      <script src="../_static/doctools.js"></script>
-      <script src="../_static/language_data.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9172181d"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,16 +42,16 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">快速上手</span></p>
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/start.html">入门必看</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
@@ -56,7 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API 手册</span></p>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api_device.html">设备协议栈</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">主机协议栈</a><ul>
@@ -82,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api_port.html">主从驱动</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api_config.html">USB CONFIG 说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Class 指南</span></p>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
@@ -91,7 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
@@ -110,7 +114,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
@@ -123,18 +127,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
 </ul>
-<p class="caption"><span class="caption-text">工具使用</span></p>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
 </ul>
-<p class="caption"><span class="caption-text">版本说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">商业支持</span></p>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
 </ul>
@@ -163,125 +167,125 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="id1">
-<h1>主机协议栈<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+  <section id="id1">
+<h1>主机协议栈<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
 <p>关于主机协议栈中结构体的命名、分类、成员组成，参考下面这两张图：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/api_host1.png" src="../_images/api_host1.png" />
-</div>
-<div class="figure align-default">
+</figure>
+<figure class="align-default">
 <img alt="../_images/api_host2.png" src="../_images/api_host2.png" />
-</div>
-<div class="section" id="core">
-<h2>CORE<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="class">
-<h3>CLASS 驱动信息结构体<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_class_info</span> <span class="p">{</span>
-    <span class="kt">uint8_t</span> <span class="n">match_flags</span><span class="p">;</span> <span class="cm">/* Used for product specific matches; range is inclusive */</span>
-    <span class="kt">uint8_t</span> <span class="n">class</span><span class="p">;</span>       <span class="cm">/* Base device class code */</span>
-    <span class="kt">uint8_t</span> <span class="n">subclass</span><span class="p">;</span>    <span class="cm">/* Sub-class, depends on base class. Eg. */</span>
-    <span class="kt">uint8_t</span> <span class="n">protocol</span><span class="p">;</span>    <span class="cm">/* Protocol, depends on base class. Eg. */</span>
-    <span class="kt">uint16_t</span> <span class="n">vid</span><span class="p">;</span>        <span class="cm">/* Vendor ID (for vendor/product specific devices) */</span>
-    <span class="kt">uint16_t</span> <span class="n">pid</span><span class="p">;</span>        <span class="cm">/* Product ID (for vendor/product specific devices) */</span>
-    <span class="k">const</span> <span class="k">struct</span> <span class="n">usbh_class_driver</span> <span class="o">*</span><span class="n">class_driver</span><span class="p">;</span>
+</figure>
+<section id="core">
+<h2>CORE<a class="headerlink" href="#core" title="Link to this heading"></a></h2>
+<section id="class">
+<h3>CLASS 驱动信息结构体<a class="headerlink" href="#class" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_class_info</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">match_flags</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Used for product specific matches; range is inclusive */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">class</span><span class="p">;</span><span class="w">       </span><span class="cm">/* Base device class code */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">subclass</span><span class="p">;</span><span class="w">    </span><span class="cm">/* Sub-class, depends on base class. Eg. */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">protocol</span><span class="p">;</span><span class="w">    </span><span class="cm">/* Protocol, depends on base class. Eg. */</span>
+<span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">vid</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Vendor ID (for vendor/product specific devices) */</span>
+<span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">pid</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Product ID (for vendor/product specific devices) */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_class_driver</span><span class="w"> </span><span class="o">*</span><span class="n">class_driver</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id2">
-<h3>端点结构体<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_endpoint</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">usb_endpoint_descriptor</span> <span class="n">ep_desc</span><span class="p">;</span>
+</section>
+<section id="id2">
+<h3>端点结构体<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_endpoint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_endpoint_descriptor</span><span class="w"> </span><span class="n">ep_desc</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id3">
-<h3>接口备用结构体<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_interface_altsetting</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">usb_interface_descriptor</span> <span class="n">intf_desc</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_endpoint</span> <span class="n">ep</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_ENDPOINTS</span><span class="p">];</span>
+</section>
+<section id="id3">
+<h3>接口备用结构体<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_interface_altsetting</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_interface_descriptor</span><span class="w"> </span><span class="n">intf_desc</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_endpoint</span><span class="w"> </span><span class="n">ep</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_ENDPOINTS</span><span class="p">];</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id4">
-<h3>接口结构体<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_interface</span> <span class="p">{</span>
-    <span class="kt">char</span> <span class="n">devname</span><span class="p">[</span><span class="n">CONFIG_USBHOST_DEV_NAMELEN</span><span class="p">];</span>
-    <span class="k">struct</span> <span class="n">usbh_class_driver</span> <span class="o">*</span><span class="n">class_driver</span><span class="p">;</span>
-    <span class="kt">void</span> <span class="o">*</span><span class="n">priv</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_interface_altsetting</span> <span class="n">altsetting</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_INTF_ALTSETTINGS</span><span class="p">];</span>
-    <span class="kt">uint8_t</span> <span class="n">altsetting_num</span><span class="p">;</span>
+</section>
+<section id="id4">
+<h3>接口结构体<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_interface</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">devname</span><span class="p">[</span><span class="n">CONFIG_USBHOST_DEV_NAMELEN</span><span class="p">];</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_class_driver</span><span class="w"> </span><span class="o">*</span><span class="n">class_driver</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">priv</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_interface_altsetting</span><span class="w"> </span><span class="n">altsetting</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_INTF_ALTSETTINGS</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">altsetting_num</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id5">
-<h3>配置结构体<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_configuration</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">usb_configuration_descriptor</span> <span class="n">config_desc</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_interface</span> <span class="n">intf</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_INTERFACES</span><span class="p">];</span>
+</section>
+<section id="id5">
+<h3>配置结构体<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_configuration</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_configuration_descriptor</span><span class="w"> </span><span class="n">config_desc</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_interface</span><span class="w"> </span><span class="n">intf</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_INTERFACES</span><span class="p">];</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="hubport">
-<h3>hubport 结构体<a class="headerlink" href="#hubport" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_hubport</span> <span class="p">{</span>
-    <span class="kt">bool</span> <span class="n">connected</span><span class="p">;</span>   <span class="cm">/* True: device connected; false: disconnected */</span>
-    <span class="kt">uint8_t</span> <span class="n">port</span><span class="p">;</span>     <span class="cm">/* Hub port index */</span>
-    <span class="kt">uint8_t</span> <span class="n">dev_addr</span><span class="p">;</span> <span class="cm">/* device address */</span>
-    <span class="kt">uint8_t</span> <span class="n">speed</span><span class="p">;</span>    <span class="cm">/* device speed */</span>
-    <span class="kt">uint8_t</span> <span class="n">depth</span><span class="p">;</span>    <span class="cm">/* distance from root hub */</span>
-    <span class="kt">uint8_t</span> <span class="n">route</span><span class="p">;</span>    <span class="cm">/* route string */</span>
-    <span class="kt">uint8_t</span> <span class="n">slot_id</span><span class="p">;</span>  <span class="cm">/* slot id */</span>
-    <span class="k">struct</span> <span class="n">usb_device_descriptor</span> <span class="n">device_desc</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_configuration</span> <span class="n">config</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">iManufacturer</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">iProduct</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">iSerialNumber</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">raw_config_desc</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usb_setup_packet</span> <span class="o">*</span><span class="n">setup</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_hub</span> <span class="o">*</span><span class="n">parent</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_hub</span> <span class="o">*</span><span class="n">self</span><span class="p">;</span> <span class="cm">/* if this hubport is a hub */</span>
-    <span class="k">struct</span> <span class="n">usbh_bus</span> <span class="o">*</span><span class="n">bus</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usb_endpoint_descriptor</span> <span class="n">ep0</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_urb</span> <span class="n">ep0_urb</span><span class="p">;</span>
-    <span class="n">usb_osal_mutex_t</span> <span class="n">mutex</span><span class="p">;</span>
+</section>
+<section id="hubport">
+<h3>hubport 结构体<a class="headerlink" href="#hubport" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hubport</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">connected</span><span class="p">;</span><span class="w">   </span><span class="cm">/* True: device connected; false: disconnected */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">port</span><span class="p">;</span><span class="w">     </span><span class="cm">/* Hub port index */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">dev_addr</span><span class="p">;</span><span class="w"> </span><span class="cm">/* device address */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">speed</span><span class="p">;</span><span class="w">    </span><span class="cm">/* device speed */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">depth</span><span class="p">;</span><span class="w">    </span><span class="cm">/* distance from root hub */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">route</span><span class="p">;</span><span class="w">    </span><span class="cm">/* route string */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">slot_id</span><span class="p">;</span><span class="w">  </span><span class="cm">/* slot id */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_device_descriptor</span><span class="w"> </span><span class="n">device_desc</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_configuration</span><span class="w"> </span><span class="n">config</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">iManufacturer</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">iProduct</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">iSerialNumber</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">raw_config_desc</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_setup_packet</span><span class="w"> </span><span class="o">*</span><span class="n">setup</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hub</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hub</span><span class="w"> </span><span class="o">*</span><span class="n">self</span><span class="p">;</span><span class="w"> </span><span class="cm">/* if this hubport is a hub */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_bus</span><span class="w"> </span><span class="o">*</span><span class="n">bus</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_endpoint_descriptor</span><span class="w"> </span><span class="n">ep0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="n">ep0_urb</span><span class="p">;</span>
+<span class="w">    </span><span class="n">usb_osal_mutex_t</span><span class="w"> </span><span class="n">mutex</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="hub">
-<h3>hub 结构体<a class="headerlink" href="#hub" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbh_hub</span> <span class="p">{</span>
-    <span class="kt">bool</span> <span class="n">connected</span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="n">is_roothub</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">index</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">hub_addr</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">speed</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">nports</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">powerdelay</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">tt_think</span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="n">ismtt</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usb_hub_descriptor</span> <span class="n">hub_desc</span><span class="p">;</span> <span class="cm">/* USB 2.0 only */</span>
-    <span class="k">struct</span> <span class="n">usb_hub_ss_descriptor</span> <span class="n">hub_ss_desc</span><span class="p">;</span> <span class="cm">/* USB 3.0 only */</span>
-    <span class="k">struct</span> <span class="n">usbh_hubport</span> <span class="n">child</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_EHPORTS</span><span class="p">];</span>
-    <span class="k">struct</span> <span class="n">usbh_hubport</span> <span class="o">*</span><span class="n">parent</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_bus</span> <span class="o">*</span><span class="n">bus</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usb_endpoint_descriptor</span> <span class="o">*</span><span class="n">intin</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usbh_urb</span> <span class="n">intin_urb</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">int_buffer</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">usb_osal_timer</span> <span class="o">*</span><span class="n">int_timer</span><span class="p">;</span>
+</section>
+<section id="hub">
+<h3>hub 结构体<a class="headerlink" href="#hub" title="Link to this heading"></a></h3>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hub</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">connected</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_roothub</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">index</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">hub_addr</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">speed</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">nports</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">powerdelay</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">tt_think</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">ismtt</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_hub_descriptor</span><span class="w"> </span><span class="n">hub_desc</span><span class="p">;</span><span class="w"> </span><span class="cm">/* USB 2.0 only */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_hub_ss_descriptor</span><span class="w"> </span><span class="n">hub_ss_desc</span><span class="p">;</span><span class="w"> </span><span class="cm">/* USB 3.0 only */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hubport</span><span class="w"> </span><span class="n">child</span><span class="p">[</span><span class="n">CONFIG_USBHOST_MAX_EHPORTS</span><span class="p">];</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hubport</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_bus</span><span class="w"> </span><span class="o">*</span><span class="n">bus</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_endpoint_descriptor</span><span class="w"> </span><span class="o">*</span><span class="n">intin</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="n">intin_urb</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">int_buffer</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_osal_timer</span><span class="w"> </span><span class="o">*</span><span class="n">int_timer</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="usbh-initialize">
-<h3>usbh_initialize<a class="headerlink" href="#usbh-initialize" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbh-initialize">
+<h3>usbh_initialize<a class="headerlink" href="#usbh-initialize" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code> 用来初始化 usb 主机协议栈，包括：初始化 usb 主机控制器，创建 roothub 设备，创建 hub 检测线程。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbh_initialize</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">busid</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">reg_base</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_initialize</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">reg_base</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -289,39 +293,39 @@
 <li><p><strong>reg_base</strong>  hcd 寄存器基地址</p></li>
 <li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
 </ul>
-</div>
-<div class="section" id="usbh-find-class-instance">
-<h3>usbh_find_class_instance<a class="headerlink" href="#usbh-find-class-instance" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbh-find-class-instance">
+<h3>usbh_find_class_instance<a class="headerlink" href="#usbh-find-class-instance" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbh_find_class_instance</span></code> 根据注册的 class 名称查找对应的 class 结构体句柄。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="o">*</span><span class="nf">usbh_find_class_instance</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">devname</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="nf">usbh_find_class_instance</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">devname</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>devname</strong>  class 名称</p></li>
 <li><p><strong>return</strong>  class 结构体句柄</p></li>
 </ul>
-</div>
-<div class="section" id="lsusb">
-<h3>lsusb<a class="headerlink" href="#lsusb" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="lsusb">
+<h3>lsusb<a class="headerlink" href="#lsusb" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">lsusb</span></code> 用来查看和操作 hub 上的设备信息。需要借助 shell 插件使用。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">lsusb</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">lsusb</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">);</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="cdc-acm">
-<h2>CDC ACM<a class="headerlink" href="#cdc-acm" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="hid">
-<h2>HID<a class="headerlink" href="#hid" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="msc">
-<h2>MSC<a class="headerlink" href="#msc" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="rndis">
-<h2>RNDIS<a class="headerlink" href="#rndis" title="Permalink to this headline">¶</a></h2>
-</div>
-</div>
+</section>
+</section>
+<section id="cdc-acm">
+<h2>CDC ACM<a class="headerlink" href="#cdc-acm" title="Link to this heading"></a></h2>
+</section>
+<section id="hid">
+<h2>HID<a class="headerlink" href="#hid" title="Link to this heading"></a></h2>
+</section>
+<section id="msc">
+<h2>MSC<a class="headerlink" href="#msc" title="Link to this heading"></a></h2>
+</section>
+<section id="rndis">
+<h2>RNDIS<a class="headerlink" href="#rndis" title="Link to this heading"></a></h2>
+</section>
+</section>
 
 
            </div>

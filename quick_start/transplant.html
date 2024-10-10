@@ -1,17 +1,21 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>芯片通用移植指南 &mdash; CherryUSB 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../_static/jquery.js"></script>
-      <script src="../_static/underscore.js"></script>
-      <script src="../_static/doctools.js"></script>
-      <script src="../_static/language_data.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9172181d"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,7 +42,7 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">快速上手</span></p>
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="start.html">入门必看</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo.html">基于现有 demo 快速验证</a></li>
@@ -50,9 +54,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
@@ -61,14 +65,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API 手册</span></p>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_device.html">设备协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_host.html">主机协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_port.html">主从驱动</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_config.html">USB CONFIG 说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Class 指南</span></p>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
@@ -77,7 +81,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
@@ -96,7 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
@@ -109,18 +113,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
 </ul>
-<p class="caption"><span class="caption-text">工具使用</span></p>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
 </ul>
-<p class="caption"><span class="caption-text">版本说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">商业支持</span></p>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
 </ul>
@@ -149,11 +153,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="id1">
-<h1>芯片通用移植指南<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+  <section id="id1">
+<h1>芯片通用移植指南<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
 <p>本节主要介绍所有带 USB IP 的芯片，移植 CherryUSB 主从协议栈时的通用步骤和注意事项。在移植之前，需要 <strong>你准备好一个可以打印 helloworld 的基本工程</strong> ，默认打印使用 <cite>printf</cite>, 如果是主机模式， <strong>则需要准备好可以正常执行 os 调度的基本工程</strong>。</p>
-<div class="section" id="usb-device">
-<h2>USB Device 移植要点<a class="headerlink" href="#usb-device" title="Permalink to this headline">¶</a></h2>
+<section id="usb-device">
+<h2>USB Device 移植要点<a class="headerlink" href="#usb-device" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 <cite>usbd_core.c</cite> 和 <cite>usb_dc_xxx.c</cite> 为必须添加项。而 <cite>usb_dc_xxx.c</cite> 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 <strong>port</strong> 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了</p></li>
 <li><p>拷贝 <cite>cherryusb_config_template.h</cite> 文件到自己工程目录下，命名为 <cite>usb_config.h</cite>，并添加相应的目录头文件路径</p></li>
@@ -163,9 +167,9 @@
 <li><p>在中断函数中调用 <cite>USBD_IRQHandler</cite>，并传入 <cite>busid</cite>, 如果你的 SDK 中中断入口已经存在 <cite>USBD_IRQHandler</cite> ，请更改 USB 协议栈中的名称</p></li>
 <li><p>编译使用。各个 class 如何使用，参考 demo 下的 template</p></li>
 </ul>
-</div>
-<div class="section" id="usb-host">
-<h2>USB Host 移植要点<a class="headerlink" href="#usb-host" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="usb-host">
+<h2>USB Host 移植要点<a class="headerlink" href="#usb-host" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 <cite>usbh_core.c</cite> 、 <cite>usb_hc_xxx.c</cite> 以及 <strong>osal</strong> 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 <cite>usb_hc_xxx.c</cite> 是芯片所对应的 USB IP hcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 <strong>port</strong> 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了</p></li>
 <li><p>拷贝 <cite>cherryusb_config_template.h</cite> 文件到自己工程目录下，命名为 <cite>usb_config.h</cite>，并添加相应的目录头文件路径</p></li>
@@ -175,93 +179,93 @@
 <li><p>如果使用的是 GCC ，需要在链接脚本中添加如下代码（需要放在 flash 位置）：</p></li>
 </ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="c1">// 在 ld 文件中添加如下代码</span>
-<span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="n">__usbh_class_info_start__</span> <span class="o">=</span> <span class="p">.;</span>
+<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="n">__usbh_class_info_start__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
 <span class="n">KEEP</span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">usbh_class_info</span><span class="p">))</span>
-<span class="n">__usbh_class_info_end__</span> <span class="o">=</span> <span class="p">.;</span>
+<span class="n">__usbh_class_info_end__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
 </pre></div>
 </div>
 <p>GCC 举例如下：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cm">/* The program code and other data into &quot;FLASH&quot; Rom type memory */</span>
-<span class="p">.</span><span class="nl">text</span> <span class="p">:</span>
+<span class="p">.</span><span class="n">text</span><span class="w"> </span><span class="o">:</span>
 <span class="p">{</span>
-<span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="p">)</span>           <span class="cm">/* .text sections (code) */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="o">*</span><span class="p">)</span>          <span class="cm">/* .text* sections (code) */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">glue_7</span><span class="p">)</span>         <span class="cm">/* glue arm to thumb code */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">glue_7t</span><span class="p">)</span>        <span class="cm">/* glue thumb to arm code */</span>
+<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="p">)</span><span class="w">           </span><span class="cm">/* .text sections (code) */</span>
+<span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="o">*</span><span class="p">)</span><span class="w">          </span><span class="cm">/* .text* sections (code) */</span>
+<span class="o">*</span><span class="p">(.</span><span class="n">glue_7</span><span class="p">)</span><span class="w">         </span><span class="cm">/* glue arm to thumb code */</span>
+<span class="o">*</span><span class="p">(.</span><span class="n">glue_7t</span><span class="p">)</span><span class="w">        </span><span class="cm">/* glue thumb to arm code */</span>
 <span class="o">*</span><span class="p">(.</span><span class="n">eh_frame</span><span class="p">)</span>
 
-<span class="n">KEEP</span> <span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">init</span><span class="p">))</span>
-<span class="n">KEEP</span> <span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">fini</span><span class="p">))</span>
-<span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="n">__usbh_class_info_start__</span> <span class="o">=</span> <span class="p">.;</span>
+<span class="n">KEEP</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">init</span><span class="p">))</span>
+<span class="n">KEEP</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">fini</span><span class="p">))</span>
+<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="n">__usbh_class_info_start__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
 <span class="n">KEEP</span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">usbh_class_info</span><span class="p">))</span>
-<span class="n">__usbh_class_info_end__</span> <span class="o">=</span> <span class="p">.;</span>
-<span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="n">_etext</span> <span class="o">=</span> <span class="p">.;</span>        <span class="cm">/* define a global symbols at end of code */</span>
-<span class="p">}</span> <span class="o">&gt;</span> <span class="n">FLASH</span>
+<span class="n">__usbh_class_info_end__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
+<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="n">_etext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span><span class="w">        </span><span class="cm">/* define a global symbols at end of code */</span>
+<span class="p">}</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">FLASH</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p>Segger Embedded Studio 举例如下：</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">define</span> <span class="n">block</span> <span class="n">cherryusb_usbh_class_info</span> <span class="p">{</span> <span class="n">section</span> <span class="p">.</span><span class="n">usbh_class_info</span> <span class="p">};</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">define</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="n">cherryusb_usbh_class_info</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">section</span><span class="w"> </span><span class="p">.</span><span class="n">usbh_class_info</span><span class="w"> </span><span class="p">};</span>
 
-<span class="n">define</span> <span class="n">exported</span> <span class="n">symbol</span> <span class="n">__usbh_class_info_start__</span>  <span class="o">=</span> <span class="n">start</span> <span class="n">of</span> <span class="n">block</span> <span class="n">cherryusb_usbh_class_info</span><span class="p">;</span>
-<span class="n">define</span> <span class="n">exported</span> <span class="n">symbol</span> <span class="n">__usbh_class_info_end__</span>  <span class="o">=</span> <span class="n">end</span> <span class="n">of</span> <span class="n">block</span> <span class="n">cherryusb_usbh_class_info</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">define</span><span class="w"> </span><span class="n">exported</span><span class="w"> </span><span class="n">symbol</span><span class="w"> </span><span class="n">__usbh_class_info_start__</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">start</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="n">cherryusb_usbh_class_info</span><span class="p">;</span>
+<span class="n">define</span><span class="w"> </span><span class="n">exported</span><span class="w"> </span><span class="n">symbol</span><span class="w"> </span><span class="n">__usbh_class_info_end__</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="n">cherryusb_usbh_class_info</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="n">place</span> <span class="n">in</span> <span class="n">AXI_SRAM</span>                         <span class="p">{</span> <span class="n">block</span> <span class="n">cherryusb_usbh_class_info</span> <span class="p">};</span>
-<span class="n">keep</span> <span class="p">{</span> <span class="n">section</span> <span class="p">.</span><span class="n">usbh_class_info</span><span class="p">};</span>
+<span class="n">place</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">AXI_SRAM</span><span class="w">                         </span><span class="p">{</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="n">cherryusb_usbh_class_info</span><span class="w"> </span><span class="p">};</span>
+<span class="n">keep</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">section</span><span class="w"> </span><span class="p">.</span><span class="n">usbh_class_info</span><span class="p">};</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p>编译使用。各个 class 如何使用，参考 demo 下的 <cite>usb_host.c</cite> 文件</p></li>
 </ul>
-</div>
-<div class="section" id="cache">
-<h2>带 cache 功能的芯片使用注意<a class="headerlink" href="#cache" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="cache">
+<h2>带 cache 功能的芯片使用注意<a class="headerlink" href="#cache" title="Link to this heading"></a></h2>
 <p>协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。 <cite>USB_NOCACHE_RAM_SECTION</cite> 宏表示将变量指定到非 cache ram上，
 因此，用户需要在对应的链接脚本中添加 no cache ram 的 section。默认 <cite>USB_NOCACHE_RAM_SECTION</cite> 定义为  <cite>__attribute__((section(“.noncacheable”)))</cite>。</p>
 <p>GCC:</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">MEMORY</span>
 <span class="p">{</span>
-<span class="n">RAM</span>    <span class="p">(</span><span class="n">xrw</span><span class="p">)</span>    <span class="o">:</span> <span class="n">ORIGIN</span> <span class="o">=</span> <span class="mh">0x20000000</span><span class="p">,</span>   <span class="n">LENGTH</span> <span class="o">=</span> <span class="mi">256</span><span class="n">K</span> <span class="o">-</span> <span class="mi">64</span><span class="n">K</span>
-<span class="n">RAM_nocache</span>    <span class="p">(</span><span class="n">xrw</span><span class="p">)</span>    <span class="o">:</span> <span class="n">ORIGIN</span> <span class="o">=</span> <span class="mh">0x20030000</span><span class="p">,</span>   <span class="n">LENGTH</span> <span class="o">=</span> <span class="mi">64</span><span class="n">K</span>
-<span class="n">FLASH</span>    <span class="p">(</span><span class="n">rx</span><span class="p">)</span>    <span class="o">:</span> <span class="n">ORIGIN</span> <span class="o">=</span> <span class="mh">0x8000000</span><span class="p">,</span>   <span class="n">LENGTH</span> <span class="o">=</span> <span class="mi">512</span><span class="n">K</span>
+<span class="n">RAM</span><span class="w">    </span><span class="p">(</span><span class="n">xrw</span><span class="p">)</span><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="n">ORIGIN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x20000000</span><span class="p">,</span><span class="w">   </span><span class="n">LENGTH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">256</span><span class="n">K</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">64</span><span class="n">K</span>
+<span class="n">RAM_nocache</span><span class="w">    </span><span class="p">(</span><span class="n">xrw</span><span class="p">)</span><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="n">ORIGIN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x20030000</span><span class="p">,</span><span class="w">   </span><span class="n">LENGTH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">64</span><span class="n">K</span>
+<span class="n">FLASH</span><span class="w">    </span><span class="p">(</span><span class="n">rx</span><span class="p">)</span><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="n">ORIGIN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x8000000</span><span class="p">,</span><span class="w">   </span><span class="n">LENGTH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">512</span><span class="n">K</span>
 <span class="p">}</span>
 
-<span class="p">.</span><span class="nl">_nocache_ram</span> <span class="p">:</span>
+<span class="p">.</span><span class="n">_nocache_ram</span><span class="w"> </span><span class="o">:</span>
 <span class="p">{</span>
-<span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
 <span class="o">*</span><span class="p">(.</span><span class="n">noncacheable</span><span class="p">)</span>
-<span class="p">}</span> <span class="o">&gt;</span><span class="n">RAM_nocache</span>
+<span class="p">}</span><span class="w"> </span><span class="o">&gt;</span><span class="n">RAM_nocache</span>
 </pre></div>
 </div>
 <p>SCT:</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span>LR_IROM1 0x08000000 0x00200000  {    ; load region size_region
-ER_IROM1 0x08000000 0x00200000  {  ; load address = execution address
-*.o (RESET, +First)
-*(InRoot$$Sections)
-.ANY (+RO)
-.ANY (+XO)
-}
-RW_IRAM2 0x24000000 0x00070000  {  ; RW data
-.ANY (+RW +ZI)
-}
-USB_NOCACHERAM 0x24070000 0x00010000  {  ; RW data
-*(.noncacheable)
-}
-}
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">LR_IROM1</span><span class="w"> </span><span class="mh">0x08000000</span><span class="w"> </span><span class="mh">0x00200000</span><span class="w">  </span><span class="p">{</span><span class="w">    </span><span class="p">;</span><span class="w"> </span><span class="n">load</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="n">size_region</span>
+<span class="n">ER_IROM1</span><span class="w"> </span><span class="mh">0x08000000</span><span class="w"> </span><span class="mh">0x00200000</span><span class="w">  </span><span class="p">{</span><span class="w">  </span><span class="p">;</span><span class="w"> </span><span class="n">load</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">execution</span><span class="w"> </span><span class="n">address</span>
+<span class="o">*</span><span class="p">.</span><span class="n">o</span><span class="w"> </span><span class="p">(</span><span class="n">RESET</span><span class="p">,</span><span class="w"> </span><span class="o">+</span><span class="n">First</span><span class="p">)</span>
+<span class="o">*</span><span class="p">(</span><span class="n">InRoot$$Sections</span><span class="p">)</span>
+<span class="p">.</span><span class="n">ANY</span><span class="w"> </span><span class="p">(</span><span class="o">+</span><span class="n">RO</span><span class="p">)</span>
+<span class="p">.</span><span class="n">ANY</span><span class="w"> </span><span class="p">(</span><span class="o">+</span><span class="n">XO</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="n">RW_IRAM2</span><span class="w"> </span><span class="mh">0x24000000</span><span class="w"> </span><span class="mh">0x00070000</span><span class="w">  </span><span class="p">{</span><span class="w">  </span><span class="p">;</span><span class="w"> </span><span class="n">RW</span><span class="w"> </span><span class="n">data</span>
+<span class="p">.</span><span class="n">ANY</span><span class="w"> </span><span class="p">(</span><span class="o">+</span><span class="n">RW</span><span class="w"> </span><span class="o">+</span><span class="n">ZI</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="n">USB_NOCACHERAM</span><span class="w"> </span><span class="mh">0x24070000</span><span class="w"> </span><span class="mh">0x00010000</span><span class="w">  </span><span class="p">{</span><span class="w">  </span><span class="p">;</span><span class="w"> </span><span class="n">RW</span><span class="w"> </span><span class="n">data</span>
+<span class="o">*</span><span class="p">(.</span><span class="n">noncacheable</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>ICF:</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">define</span> <span class="n">region</span> <span class="n">NONCACHEABLE_RAM</span> <span class="o">=</span> <span class="p">[</span><span class="n">from</span> <span class="mh">0x1140000</span> <span class="n">size</span> <span class="mi">256</span><span class="n">K</span><span class="p">];</span>
-<span class="n">place</span> <span class="n">in</span> <span class="n">NONCACHEABLE_RAM</span>                   <span class="p">{</span> <span class="n">section</span> <span class="p">.</span><span class="n">noncacheable</span><span class="p">,</span> <span class="n">section</span> <span class="p">.</span><span class="n">noncacheable</span><span class="p">.</span><span class="n">init</span><span class="p">,</span> <span class="n">section</span> <span class="p">.</span><span class="n">noncacheable</span><span class="p">.</span><span class="n">bss</span> <span class="p">};</span>  <span class="c1">// Noncacheable</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">define</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="n">NONCACHEABLE_RAM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="n">from</span><span class="w"> </span><span class="mh">0x1140000</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="mi">256</span><span class="n">K</span><span class="p">];</span>
+<span class="n">place</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">NONCACHEABLE_RAM</span><span class="w">                   </span><span class="p">{</span><span class="w"> </span><span class="n">section</span><span class="w"> </span><span class="p">.</span><span class="n">noncacheable</span><span class="p">,</span><span class="w"> </span><span class="n">section</span><span class="w"> </span><span class="p">.</span><span class="n">noncacheable</span><span class="p">.</span><span class="n">init</span><span class="p">,</span><span class="w"> </span><span class="n">section</span><span class="w"> </span><span class="p">.</span><span class="n">noncacheable</span><span class="p">.</span><span class="n">bss</span><span class="w"> </span><span class="p">};</span><span class="w">  </span><span class="c1">// Noncacheable</span>
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

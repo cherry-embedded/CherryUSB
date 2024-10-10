@@ -1,22 +1,26 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>USB 基本概念(2.0 为主) &mdash; CherryUSB 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../_static/jquery.js"></script>
-      <script src="../_static/underscore.js"></script>
-      <script src="../_static/doctools.js"></script>
-      <script src="../_static/language_data.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9172181d"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="USB 基本概念(3.0 为主)" href="usb3.0_basic.html" />
-    <link rel="prev" title="Q &amp; A" href="../q&amp;a.html" /> 
+    <link rel="prev" title="Q &amp; A" href="../q%26a.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -38,16 +42,16 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">快速上手</span></p>
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/start.html">入门必看</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">USB 基本概念(2.0 为主)</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id1">简介</a></li>
@@ -101,14 +105,14 @@
 <li class="toctree-l1"><a class="reference internal" href="usb_enum.html">USB 枚举</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usb_ext.html">USB 知识点拓展</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API 手册</span></p>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_device.html">设备协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_host.html">主机协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_port.html">主从驱动</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/api_config.html">USB CONFIG 说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Class 指南</span></p>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
@@ -117,7 +121,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
@@ -136,7 +140,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
@@ -149,18 +153,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
 </ul>
-<p class="caption"><span class="caption-text">工具使用</span></p>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
 </ul>
-<p class="caption"><span class="caption-text">版本说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">商业支持</span></p>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
 </ul>
@@ -189,33 +193,33 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="usb-2-0">
-<h1>USB 基本概念(2.0 为主)<a class="headerlink" href="#usb-2-0" title="Permalink to this headline">¶</a></h1>
+  <section id="usb-2-0">
+<h1>USB 基本概念(2.0 为主)<a class="headerlink" href="#usb-2-0" title="Link to this heading"></a></h1>
 <p>本文主要对 USB 官方手册 <a class="reference external" href="https://www.usb.org/document-library/usb-20-specification">usb2.0.pdf</a> 中提供的第五章、第七章、第八章、第九章进行讲解。
 如果是初学 usb 的同学，推荐先不要看本节，而是将示例 demo 能够跑通了，熟悉了使用，再来看。</p>
-<div class="section" id="id1">
-<h2>简介<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<section id="id1">
+<h2>简介<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <p>USB 是什么？干什么用的？有什么优点?这些大家可以百度，我就不提了。主要先说 USB 的接口和速度根据不同的 USB 版本的分类，如图所示：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/overview1.png" src="../_images/overview1.png" />
-</div>
+</figure>
 <p>其次是 USB 需要满足的电平标准，有了电平标准后，下面说的信号状态就可以进行分类了。USB2.0 和 USB3.0 支持的电压范围和最大电流如下：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/overview2.png" src="../_images/overview2.png" />
-</div>
-</div>
-<div class="section" id="usb">
-<h2>USB 信号状态<a class="headerlink" href="#usb" title="Permalink to this headline">¶</a></h2>
+</figure>
+</section>
+<section id="usb">
+<h2>USB 信号状态<a class="headerlink" href="#usb" title="Link to this heading"></a></h2>
 <p>首先我们需要了解的是 USB 的电气特性中的 Signaling Level，也就是信号状态。USB 主要是靠 D+ 和 D- 来实现不同的信号状态，然后进行通信。官方手册 7.1.7 中列举出了低速、全速和高速时的信号状态对应的 D+ 和 D- 需要满足的要求。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/1.png" src="../_images/1.png" />
-</div>
-<div class="figure align-default">
+</figure>
+<figure class="align-default">
 <img alt="../_images/2.png" src="../_images/2.png" />
-</div>
-<div class="figure align-default">
+</figure>
+<figure class="align-default">
 <img alt="../_images/3.png" src="../_images/3.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p><strong>差分 0 和差分 1</strong>： 这两个状态用于通过 USB 进行的通用数据通信。当 D+线为高电平、 D-线为低电平时，该状态为差分 1。当 D+线为低电平、 D-线为高电平时，该状态为差分 0。</p></li>
 <li><p><strong>J 状态和 K 状态</strong>： 除了差分信号外， USB 规范还定义了其他两个差分状态： J 状态和 K 状态。它们的定义由设备速度决定。在全速和高速设备上， J 状态为差分 1 而 K 状态是差分 0。在低速设备上，该情况则相反。</p></li>
@@ -229,9 +233,9 @@
 <li><p><strong>保持活动（ Keep Alive）</strong>： 在低速设备中使用的信号。低速设备缺少了一个帧起始数据包（用于防止挂起状态）。每次经过 1 ms，它们都会使用一个 EOP 来防止设备进入挂起状态。</p></li>
 </ul>
 <p>下面我们通过一个波形，来区分这些信号状态：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/4.png" src="../_images/4.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p>第一个红框，可以看出是一个数据包的开始，并且假设这是一个全速设备，那么D+ 为高，D- 为低，是一个闲置状态。</p></li>
 <li><p>第二个红框，D+为低，D- 为高，说明是一个 K 状态，由 闲置转 K 状态说明他是一个 SOP。</p></li>
@@ -239,40 +243,40 @@
 <li><p>第四个红框表示 SE0 ,因为D+和 D-均为低电平。</p></li>
 <li><p>第五个红框，而 SE0 持续了一段时间后，变成了 D+高，D- 低，说明他是一个 J 状态，从 SE0 切换成 J 状态，说明他是一个 EOP。</p></li>
 </ul>
-</div>
-<div class="section" id="id2">
-<h2>USB 速度识别<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="id2">
+<h2>USB 速度识别<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
 <p>USB 的速度是如何判定的？ 这个见手册 7.1.5.1。USB 的速度检测主要是靠 D+ 和 D-线上拉 1.5K决定，如果 D+上拉1.5k，则该设备为全速设备，如果 D-上拉1.5k，则为低速设备。而高速设备初始是以一个全速设备的身份出现，和全速设备一样，D+线上有一个1.5k的上拉电阻。USB2.0的hub把它当作一个全速设备，之后，hub 和设备通过一系列握手信号确认双方的身份，最终判定该设备为高速设备。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/5.png" src="../_images/5.png" />
-</div>
-</div>
-<div class="section" id="id3">
-<h2>USB 连接与断开检测<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+</figure>
+</section>
+<section id="id3">
+<h2>USB 连接与断开检测<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
 <p>那么 当我们的设备插上 USB 主机时，主机是如何知道有设备插入或者拔出呢？手册 7.1.7.3 给出了答案，如图所示：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/6.png" src="../_images/6.png" />
-</div>
-<div class="figure align-default">
+</figure>
+<figure class="align-default">
 <img alt="../_images/7.png" src="../_images/7.png" />
-</div>
+</figure>
 <p>首先是连接检测，主机检测到某一个数据线电平拉高保持了一段时间，就认为有设备连接上来了。低速设备连接时，主机会检测到D-线被拉高，全速/高速设备连接时，主机会检测到D+线被拉高。
 而断开检测，则是主机端D+、D-数据线上的下拉电阻起作用，断开后使得二者都在低电平；当低电平持续 TDDIS 时间就会被主机认为是断开状态。上图中，TDDIS在2到2.5us之间。</p>
-</div>
-<div class="section" id="id4">
-<h2>USB 电源<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="id4">
+<h2>USB 电源<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
 <p>作为 USB 电源时， USB 设备可被划分为两种设备类型：总线供电和自供电。</p>
 <ul class="simple">
 <li><p>总线供电是 USB 设计的一个优势。由于设备通过总线供电，因此不需要使用笨重的内部或外部电源，它仍能够维持自身操作。总线可由主机或集线器供电。使用某个总线供电的设备时，用户将设备配置为某种状态前必须考虑其功耗。</p></li>
 <li><p>自供电设备通过使用外部电源（如直流电源适配器或电池）为自己供电。自供电设备在进行设计的过程中需要考虑到一些注意事项。 USB 规范要求自供电设备一直监控自己的 VBUS 线。 VBUS 不存在的时间内，设备必须断开提供给 D+/D-线上的上拉电阻的电源，从而防止向主机或集线器供电。 否则，会导致 USB 合规性测试发生失败。但是自供电集线器能够从总线获得最多 100 mA 的电流。</p></li>
 </ul>
-</div>
-<div class="section" id="id5">
-<h2>USB 设备状态<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="id5">
+<h2>USB 设备状态<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
 <p>在 USB 插上主机的那一刻， USB 设备本身的设备状态是会变化的。而这个设备状态，后面如果学习到枚举过程，可以知道，其实这段变化描述的就是枚举过程。这部分见手册 9.1.1。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/9.png" src="../_images/9.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p>连接状态： 当将某个设备插入到主机/集线器，但主机/集线器不给 VBUS 线供电时，会出现这种状态。它通常在集线器检测到一个过流事件时出现。虽然仍连接着设备，但主机移除了供给它的电源。</p></li>
 <li><p>供电： 某个设备被连接到 USB 上并得到供电，但仍未接收到一个复位请求。</p></li>
@@ -282,116 +286,116 @@
 <li><p>挂起： 如上面所述，设备已经建立好了连接，并且得到配置，但在 3 ms 时间内不会进行任意总线操作。</p></li>
 </ul>
 <p>翻译成中文图就是：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/10.png" src="../_images/10.png" />
-</div>
-</div>
-<div class="section" id="id6">
-<h2>USB 编码与位填充<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+</figure>
+</section>
+<section id="id6">
+<h2>USB 编码与位填充<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
 <p>首先，USB 的数据是串行发送的，就像 UART、I2C、SPI 等等，连续的01 信号只通过一根数据线发送给接受者。但是因为发送者和接收者运行的频率不一样，信号的同步就是个问题，比如，接受者接收到了一个持续一段时间的低电平，无法得知这究竟是代表了 5 个 0 还是 1000 个 0。一个解决办法，就是在传输数据信号的同时，附加一个时钟信号，用来同步两端的传输，接受者在时钟信号的辅助下对数据信号采样，就可以正确解析出发送的数据了，比如 I2C 就是这样做的，SDA 来传输数据，SCL 来传输同步时钟：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/11.png" src="../_images/11.png" />
-</div>
+</figure>
 <p>虽然这样解决了问题，但是却需要附加一根时钟信号线来传输时钟。因为USB没有时钟信号，有没有不需要附加的时钟信号，也能保持两端的同步呢？
 有的，这就是 RZ 编码（Return-to-zero Code），也叫做归零编码。</p>
-<div class="section" id="rz-return-to-zero-code">
-<h3>RZ 编码（Return-to-zero Code）<a class="headerlink" href="#rz-return-to-zero-code" title="Permalink to this headline">¶</a></h3>
+<section id="rz-return-to-zero-code">
+<h3>RZ 编码（Return-to-zero Code）<a class="headerlink" href="#rz-return-to-zero-code" title="Link to this heading"></a></h3>
 <p>RZ 编码（Return-to-zero Code），也叫做归零编码。在 RZ 编码中，正电平代表逻辑 1，负电平代表逻辑 0，并且，每传输完一位数据，信号返回到零电平，也就是说，信号线上会出现 3 种电平：正电平、负电平、零电平。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/12.png" src="../_images/12.png" />
-</div>
+</figure>
 <p>从图上就可以看出来，因为每位传输之后都要归零，所以接受者只要在信号归零后采样即可，这样就不在需要单独的时钟信号。实际上， RZ 编码就是相当于把时钟信号用归零编码在了数据之内。这样的信号也叫做自同步（self-clocking）信号。
 这样虽然省了时钟数据线，但是还是有缺点的，因为在 RZ 编码中，大部分的数据带宽，都用来传输“归零”而浪费掉了。</p>
-</div>
-<div class="section" id="nrz-non-return-to-zero-code">
-<h3>NRZ 编码（Non-return-to-zero Code）<a class="headerlink" href="#nrz-non-return-to-zero-code" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="nrz-non-return-to-zero-code">
+<h3>NRZ 编码（Non-return-to-zero Code）<a class="headerlink" href="#nrz-non-return-to-zero-code" title="Link to this heading"></a></h3>
 <p>去掉这个归零步骤，NRZ 编码（Non-return-to-zero Code）就出现了，和 RZ 的区别就是 NRZ 是不需要归零的。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/13.png" src="../_images/13.png" />
-</div>
-</div>
-<div class="section" id="nrzi-non-return-to-zero-inverted-code">
-<h3>NRZI 编码（Non-Return-to-Zero Inverted Code）<a class="headerlink" href="#nrzi-non-return-to-zero-inverted-code" title="Permalink to this headline">¶</a></h3>
+</figure>
+</section>
+<section id="nrzi-non-return-to-zero-inverted-code">
+<h3>NRZI 编码（Non-Return-to-Zero Inverted Code）<a class="headerlink" href="#nrzi-non-return-to-zero-inverted-code" title="Link to this heading"></a></h3>
 <p>NRZI 编码（Non-Return-to-Zero Inverted Code）和 NRZ 的区别就是 NRZI 用信号的翻转代表一个逻辑，信号保持不变代表另外一个逻辑。这个见手册 7.1.8。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/14.png" src="../_images/14.png" />
-</div>
+</figure>
 <p>如图所示，可以得出一个简单的记忆方式：遇到 0 的边沿电平就翻转，遇到 1 的边沿则不变。</p>
-</div>
-<div class="section" id="bit-stuffing">
-<h3>位填充（bit-stuffing）<a class="headerlink" href="#bit-stuffing" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="bit-stuffing">
+<h3>位填充（bit-stuffing）<a class="headerlink" href="#bit-stuffing" title="Link to this heading"></a></h3>
 <p>但是，这样还是会有一个问题，就是虽然接受者可以主动和发送者的频率匹配，但是两者之间总会有误差。假如数据信号是 1000 个逻辑 1，经过 USB 的 NRZI 编码之后，就是很长一段没有变化的电平，在这种情况下，即使接受者的频率和发送者相差千分之一，就会造成把数据采样成 1001 个或者 999 个 1了。
 USB 对这个问题的解决办法，就是强制插 0，也就是（位填充）bit-stuffing，如果要传输的数据中有 6个连续的 1，发送前就会在第 6 个 1 后面强制插入一个 0，让发送的信号强制出现翻转，从而强制接受者进行频率调整。
 接受者只要删除 6 个连续 1 之后的 0，就可以恢复原始的数据了。这部分见手册 7.1.9。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/15.png" src="../_images/15.png" />
-</div>
-<div class="figure align-default">
+</figure>
+<figure class="align-default">
 <img alt="../_images/16.png" src="../_images/16.png" />
-</div>
-<div class="figure align-default">
+</figure>
+<figure class="align-default">
 <img alt="../_images/17.png" src="../_images/17.png" />
-</div>
+</figure>
 <p>在数据被NRZI编码之前，在数据流中每六个连续的1之后插入一个0，以强制NRZI数据流中的过渡，这使接收器逻辑至少每七位有一次数据转换，以保证数据和时钟的锁定。比特填充是从同步模式开始启用。结束同步模式的数据 “一 “被算作是序列中的第一个 “一”。序列中的第一个。除了高速EOP期间，发射器的位填充总是被强制执行。如果需要按照
 位填充规则的要求，零位将被插入，即使它是数据包结束（EOP）信号前的最后一位。接收器必须对NRZI数据进行解码，识别填充位，并将其丢弃。</p>
-</div>
-</div>
-<div class="section" id="id7">
-<h2>USB 字段(域)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="id7">
+<h2>USB 字段(域)<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
 <p>USB 字段构成了 USB 通信中最基本也是最小的单元，后面的包、事务，最根本都是由字段构成，而字段又是由比特构成。字段部分见手册 8.1。</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>USB 的比特先行模式是按照 LSB 先行原则。</p>
 </div>
-<div class="section" id="id8">
-<h3>同步字段<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<section id="id8">
+<h3>同步字段<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
 <p>在 USB 系统中，主机和设备不是共享一个时钟，这使得接收方没办法准确知道发送方什么时候发送数据，尽管能检测到SOP，但是远远不够，所有这个时候就需要同步字段，使得接收方和发送方收发过程中保持同步，所以任何一个包都要以同步字段开始。同步字段0x01，经过编码以后就是01010100B。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/18.png" src="../_images/18.png" />
-</div>
-</div>
-<div class="section" id="id9">
-<h3>包标识符字段<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
+</figure>
+</section>
+<section id="id9">
+<h3>包标识符字段<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
 <p>PID 由一个四位数据包类型字段和一个四位校验字段组成，占用 8 个bit，如图所示。 PID指示数据包的类型，并通过推断，数据包的格式和应用于数据包的错误检测类型包。 PID的四位校验字段是通过执行分组类型字段的一个补码来生成，从而确保PID的可靠解码，以便正确解释分组的其余部分，如果四个PID校验位不是它们各自的分组标识符位的补码，则存在PID错误。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/19.png" src="../_images/19.png" />
-</div>
+</figure>
 <p>既然是 4个比特，说明了 PID 类型可以分为16种，从16种中，又细分成4类：令牌 PID,数据 PID，握手 PID 和特殊 PID。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/20.png" src="../_images/20.png" />
-</div>
-</div>
-<div class="section" id="id10">
-<h3>地址字段<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+</figure>
+</section>
+<section id="id10">
+<h3>地址字段<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
 <p>地址字段又分为设备地址字段和端点地址字段，其中设备地址字段占用 7 个bit，除去0 地址，主机可以分配的地址有 127个。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/21.png" src="../_images/21.png" />
-</div>
+</figure>
 <p>端点地址字段占用 4个 bit，总共可以提供 16 个端点。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/22.png" src="../_images/22.png" />
-</div>
-</div>
-<div class="section" id="id11">
-<h3>帧号字段<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+</figure>
+</section>
+<section id="id11">
+<h3>帧号字段<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
 <p>帧号字段占用 11 个bit，主机每发出一个帧，帧号都会加1，如图所示。而高速设备中，帧中又包含微帧，1帧=8微帧，微帧则是加0.1。关于帧和微帧的概念，后续补充。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/23.png" src="../_images/23.png" />
-</div>
-</div>
-<div class="section" id="id12">
-<h3>数据字段<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+</figure>
+</section>
+<section id="id12">
+<h3>数据字段<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
 <p>根据传输类型不同，数据字段中的数据长度也是不定的，从 0-1024不等。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/24.png" src="../_images/24.png" />
-</div>
-</div>
-<div class="section" id="crc">
-<h3>CRC 字段<a class="headerlink" href="#crc" title="Permalink to this headline">¶</a></h3>
+</figure>
+</section>
+<section id="crc">
+<h3>CRC 字段<a class="headerlink" href="#crc" title="Link to this heading"></a></h3>
 <p>循环冗余校验（CRC）用于保护令牌和数据包中的所有非PID字段。PID不包含在包含CRC的分组的CRC校验中。 在执行比特填充之前，在发送器中的各个字段上生成所有CRC。 类似地，在去除填充位之后，在接收器中对CRC进行解码。令牌和数据包CRC为所有单比特和双比特错误提供100％的覆盖。 CRC失败被认为表示一个或多个受保护字段已损坏并导致接收器忽略这些字段，并且在大多数情况下，忽略整个数据包。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/24.png" src="../_images/24.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p>令牌CRC</p></li>
 </ul>
@@ -404,24 +408,24 @@ USB 对这个问题的解决办法，就是强制插 0，也就是（位填充�
 <p>数据CRC是应用于数据分组的数据字段的16位多项式。</p>
 <p>生成多项式是：G（X）= X^16 + X^15 + X^2 + 1
 表示该多项式的二进制位模式是1000000000000101B。 如果没有错误地接收到所有数据和CRC位，则16位校验和将为1000000000001101B。</p>
-</div>
-</div>
-<div class="section" id="id13">
-<h2>USB 包<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="id13">
+<h2>USB 包<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
 <p>包由字段组成，根据 PID 类型，包分为四大类：令牌包、数据包、握手包、特殊包。此节内容见官方 8.4.1。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/25.png" src="../_images/25.png" />
-</div>
+</figure>
 <p>算上 SOP,则如图，组成一个完整的包。</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/26.png" src="../_images/26.png" />
-</div>
-<div class="section" id="id14">
-<h3>令牌包<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+</figure>
+<section id="id14">
+<h3>令牌包<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
 <p>令牌包分为：SETUP、IN、OUT、SOF，其中 SETUP、IN、OUT的字段组成一样，如图：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/27.png" src="../_images/27.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p>PID 字段：定义了数据传输方向为USB主机到USB设备。</p></li>
 <li><p>ADDR 字段：指明了USB设备地址。</p></li>
@@ -429,75 +433,75 @@ USB 对这个问题的解决办法，就是强制插 0，也就是（位填充�
 <li><p>CRC 字段：用于ADDR字段和ENDP字段进行循环冗余校验。</p></li>
 </ul>
 <p>SOF 包的字段组成，如图：</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/28.png" src="../_images/28.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p>PID 字段：定义了数据传输方向为USB主机到USB设备。</p></li>
 <li><p>帧号 字段：指明了USB传输的帧号，其11位。</p></li>
 <li><p>CRC 字段：用于ADDR字段和ENDP字段进行循环冗余校验。</p></li>
 </ul>
-</div>
-<div class="section" id="id15">
-<h3>数据包<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
-<div class="figure align-default">
+</section>
+<section id="id15">
+<h3>数据包<a class="headerlink" href="#id15" title="Link to this heading"></a></h3>
+<figure class="align-default">
 <img alt="../_images/29.png" src="../_images/29.png" />
-</div>
+</figure>
 <ul class="simple">
 <li><p>PID 字段：用于指明不同的数据包类型。支持 4 种数据包，分别为： DATAO 、 DATA1 、DATA2 和MDATA。</p></li>
 <li><p>数据 字段：其中包含了传输的数据。其数据的大小根据数据传输类吧和川户需要而定。根据 USB 协议的规定，对于低速 USB 数据传输， 最大长度为8字节对于全速SB 数据传输，其最大长度为 1023 字节；对于高速 USB 数据传输，数据最大长度为 1024 。</p></li>
 <li><p>CRC 字段：这里使用 16 位的循环冗余校验来对数据字段进行保护。</p></li>
 </ul>
-</div>
-<div class="section" id="id16">
-<h3>握手包<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="id16">
+<h3>握手包<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
 <p>握手包由8位的PID构成，用于数据传输的末位报告本次数据传输的状成。握手包之后使是整个事务处理的结束信号EOP.</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/30.png" src="../_images/30.png" />
-</div>
-</div>
-<div class="section" id="id17">
-<h3>特殊包<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
-</div>
-</div>
-<div class="section" id="id18">
-<h2>USB 事务<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h2>
+</figure>
+</section>
+<section id="id17">
+<h3>特殊包<a class="headerlink" href="#id17" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="id18">
+<h2>USB 事务<a class="headerlink" href="#id18" title="Link to this heading"></a></h2>
 <p>USB 常用事务共有三种：SETUP、IN、OUT，除了控制传输使用三个事务，其他传输都使用两个事务。特殊事务则是不携带数据的事务。</p>
-<div class="section" id="setup">
-<h3>SETUP 事务<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="in">
-<h3>IN 事务<a class="headerlink" href="#in" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="out">
-<h3>OUT 事务<a class="headerlink" href="#out" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="id19">
-<h3>特殊事务<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h3>
-</div>
-</div>
-<div class="section" id="id20">
-<h2>USB 传输<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id21">
-<h3>控制传输<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="id22">
-<h3>批量传输<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="id23">
-<h3>中断传输<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="id24">
-<h3>同步传输<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h3>
-</div>
-</div>
-</div>
+<section id="setup">
+<h3>SETUP 事务<a class="headerlink" href="#setup" title="Link to this heading"></a></h3>
+</section>
+<section id="in">
+<h3>IN 事务<a class="headerlink" href="#in" title="Link to this heading"></a></h3>
+</section>
+<section id="out">
+<h3>OUT 事务<a class="headerlink" href="#out" title="Link to this heading"></a></h3>
+</section>
+<section id="id19">
+<h3>特殊事务<a class="headerlink" href="#id19" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="id20">
+<h2>USB 传输<a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
+<section id="id21">
+<h3>控制传输<a class="headerlink" href="#id21" title="Link to this heading"></a></h3>
+</section>
+<section id="id22">
+<h3>批量传输<a class="headerlink" href="#id22" title="Link to this heading"></a></h3>
+</section>
+<section id="id23">
+<h3>中断传输<a class="headerlink" href="#id23" title="Link to this heading"></a></h3>
+</section>
+<section id="id24">
+<h3>同步传输<a class="headerlink" href="#id24" title="Link to this heading"></a></h3>
+</section>
+</section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../q&amp;a.html" class="btn btn-neutral float-left" title="Q &amp; A" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../q%26a.html" class="btn btn-neutral float-left" title="Q &amp; A" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="usb3.0_basic.html" class="btn btn-neutral float-right" title="USB 基本概念(3.0 为主)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

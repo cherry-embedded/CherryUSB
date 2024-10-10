@@ -1,17 +1,21 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>USB CONFIG 说明 &mdash; CherryUSB 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../_static/jquery.js"></script>
-      <script src="../_static/underscore.js"></script>
-      <script src="../_static/doctools.js"></script>
-      <script src="../_static/language_data.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9172181d"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,16 +42,16 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">快速上手</span></p>
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/start.html">入门必看</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
@@ -56,7 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API 手册</span></p>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api_device.html">设备协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api_host.html">主机协议栈</a></li>
@@ -101,7 +105,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">Class 指南</span></p>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
@@ -110,7 +114,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
@@ -129,7 +133,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
@@ -142,18 +146,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
 </ul>
-<p class="caption"><span class="caption-text">工具使用</span></p>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
 </ul>
-<p class="caption"><span class="caption-text">版本说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">商业支持</span></p>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
 </ul>
@@ -182,101 +186,101 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="usb-config">
-<h1>USB CONFIG 说明<a class="headerlink" href="#usb-config" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="config">
-<h2>通用 CONFIG<a class="headerlink" href="#config" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="config-usb-printf">
-<h3>CONFIG_USB_PRINTF<a class="headerlink" href="#config-usb-printf" title="Permalink to this headline">¶</a></h3>
+  <section id="usb-config">
+<h1>USB CONFIG 说明<a class="headerlink" href="#usb-config" title="Link to this heading"></a></h1>
+<section id="config">
+<h2>通用 CONFIG<a class="headerlink" href="#config" title="Link to this heading"></a></h2>
+<section id="config-usb-printf">
+<h3>CONFIG_USB_PRINTF<a class="headerlink" href="#config-usb-printf" title="Link to this heading"></a></h3>
 <p>USB log 功能，默认重定向到 printf，需要注意，USB log 会在中断中使用，因此重定向的 api 不允许阻塞。举例，如果使用的是 rt-thread，请更换成 rt-kprintf</p>
-</div>
-<div class="section" id="config-usb-dbg-level">
-<h3>CONFIG_USB_DBG_LEVEL<a class="headerlink" href="#config-usb-dbg-level" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usb-dbg-level">
+<h3>CONFIG_USB_DBG_LEVEL<a class="headerlink" href="#config-usb-dbg-level" title="Link to this heading"></a></h3>
 <p>控制 log 的打印级别</p>
-</div>
-<div class="section" id="config-usb-printf-color-enable">
-<h3>CONFIG_USB_PRINTF_COLOR_ENABLE<a class="headerlink" href="#config-usb-printf-color-enable" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usb-printf-color-enable">
+<h3>CONFIG_USB_PRINTF_COLOR_ENABLE<a class="headerlink" href="#config-usb-printf-color-enable" title="Link to this heading"></a></h3>
 <p>控制 log 颜色打印，默认开启</p>
-</div>
-<div class="section" id="config-usb-align-size">
-<h3>CONFIG_USB_ALIGN_SIZE<a class="headerlink" href="#config-usb-align-size" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usb-align-size">
+<h3>CONFIG_USB_ALIGN_SIZE<a class="headerlink" href="#config-usb-align-size" title="Link to this heading"></a></h3>
 <p>USB buffer 的对齐大小，默认是 4。IP 在 dma 模式下可能对输入的 buffer有对齐要求，一般是4，如果是其他对齐方式，请修改此值。</p>
-</div>
-<div class="section" id="usb-nocache-ram-section">
-<h3>USB_NOCACHE_RAM_SECTION<a class="headerlink" href="#usb-nocache-ram-section" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usb-nocache-ram-section">
+<h3>USB_NOCACHE_RAM_SECTION<a class="headerlink" href="#usb-nocache-ram-section" title="Link to this heading"></a></h3>
 <p>如果芯片没有 cache 功能，此宏无效。如果有，则 USB 的输入输出 buffer 必须放在 nocache ram 中，保证数据一致性。</p>
-</div>
-</div>
-<div class="section" id="id1">
-<h2>设备协议栈 CONFIG<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="config-usbdev-request-buffer-len">
-<h3>CONFIG_USBDEV_REQUEST_BUFFER_LEN<a class="headerlink" href="#config-usbdev-request-buffer-len" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="id1">
+<h2>设备协议栈 CONFIG<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<section id="config-usbdev-request-buffer-len">
+<h3>CONFIG_USBDEV_REQUEST_BUFFER_LEN<a class="headerlink" href="#config-usbdev-request-buffer-len" title="Link to this heading"></a></h3>
 <p>控制传输接收和发送的 buffer 最大长度，默认是 512。</p>
-</div>
-<div class="section" id="config-usbdev-setup-log-print">
-<h3>CONFIG_USBDEV_SETUP_LOG_PRINT<a class="headerlink" href="#config-usbdev-setup-log-print" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-setup-log-print">
+<h3>CONFIG_USBDEV_SETUP_LOG_PRINT<a class="headerlink" href="#config-usbdev-setup-log-print" title="Link to this heading"></a></h3>
 <p>使能或者关闭 setup 包的 dump 信息，默认关闭。</p>
-</div>
-<div class="section" id="config-usbdev-desc-check">
-<h3>CONFIG_USBDEV_DESC_CHECK<a class="headerlink" href="#config-usbdev-desc-check" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-desc-check">
+<h3>CONFIG_USBDEV_DESC_CHECK<a class="headerlink" href="#config-usbdev-desc-check" title="Link to this heading"></a></h3>
 <p>暂时没有实现</p>
-</div>
-<div class="section" id="config-usbdev-test-mode">
-<h3>CONFIG_USBDEV_TEST_MODE<a class="headerlink" href="#config-usbdev-test-mode" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-test-mode">
+<h3>CONFIG_USBDEV_TEST_MODE<a class="headerlink" href="#config-usbdev-test-mode" title="Link to this heading"></a></h3>
 <p>使能或者关闭 usb test mode</p>
-</div>
-<div class="section" id="config-usbdev-msc-max-bufsize">
-<h3>CONFIG_USBDEV_MSC_MAX_BUFSIZE<a class="headerlink" href="#config-usbdev-msc-max-bufsize" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-msc-max-bufsize">
+<h3>CONFIG_USBDEV_MSC_MAX_BUFSIZE<a class="headerlink" href="#config-usbdev-msc-max-bufsize" title="Link to this heading"></a></h3>
 <p>msc 缓存的最大长度，缓存越大，USB 的速度越高，因为介质一般多个 block 读写速度比单个 block 高很多，比如 sd 卡。
 默认 512 ，如果是 flash 需要改成 4K, 缓存的大小需要是介质的一个 block size 的整数倍。</p>
-</div>
-<div class="section" id="config-usbdev-msc-manufacturer-string">
-<h3>CONFIG_USBDEV_MSC_MANUFACTURER_STRING<a class="headerlink" href="#config-usbdev-msc-manufacturer-string" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="config-usbdev-msc-product-string">
-<h3>CONFIG_USBDEV_MSC_PRODUCT_STRING<a class="headerlink" href="#config-usbdev-msc-product-string" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="config-usbdev-msc-version-string">
-<h3>CONFIG_USBDEV_MSC_VERSION_STRING<a class="headerlink" href="#config-usbdev-msc-version-string" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="config-usbdev-msc-polling">
-<h3>CONFIG_USBDEV_MSC_POLLING<a class="headerlink" href="#config-usbdev-msc-polling" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-msc-manufacturer-string">
+<h3>CONFIG_USBDEV_MSC_MANUFACTURER_STRING<a class="headerlink" href="#config-usbdev-msc-manufacturer-string" title="Link to this heading"></a></h3>
+</section>
+<section id="config-usbdev-msc-product-string">
+<h3>CONFIG_USBDEV_MSC_PRODUCT_STRING<a class="headerlink" href="#config-usbdev-msc-product-string" title="Link to this heading"></a></h3>
+</section>
+<section id="config-usbdev-msc-version-string">
+<h3>CONFIG_USBDEV_MSC_VERSION_STRING<a class="headerlink" href="#config-usbdev-msc-version-string" title="Link to this heading"></a></h3>
+</section>
+<section id="config-usbdev-msc-polling">
+<h3>CONFIG_USBDEV_MSC_POLLING<a class="headerlink" href="#config-usbdev-msc-polling" title="Link to this heading"></a></h3>
 <p>将 usbd_msc_sector_read 和 usbd_msc_sector_write 操作放在 while1 中运行，裸机下使用。</p>
-</div>
-<div class="section" id="config-usbdev-msc-thread">
-<h3>CONFIG_USBDEV_MSC_THREAD<a class="headerlink" href="#config-usbdev-msc-thread" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-msc-thread">
+<h3>CONFIG_USBDEV_MSC_THREAD<a class="headerlink" href="#config-usbdev-msc-thread" title="Link to this heading"></a></h3>
 <p>使能或者关闭 msc 线程，默认关闭。usbd_msc_sector_read 和 usbd_msc_sector_write 默认是在中断中执行，所以如果开启了 os 建议开启此宏，那么，
 usbd_msc_sector_read 和 usbd_msc_sector_write 就会在线程中执行。</p>
-</div>
-<div class="section" id="config-usbdev-msc-prio">
-<h3>CONFIG_USBDEV_MSC_PRIO<a class="headerlink" href="#config-usbdev-msc-prio" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-msc-prio">
+<h3>CONFIG_USBDEV_MSC_PRIO<a class="headerlink" href="#config-usbdev-msc-prio" title="Link to this heading"></a></h3>
 <p>MSC 读写线程的优先级，默认是 4，数值越小，优先级越高</p>
-</div>
-<div class="section" id="config-usbdev-msc-stacksize">
-<h3>CONFIG_USBDEV_MSC_STACKSIZE<a class="headerlink" href="#config-usbdev-msc-stacksize" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-msc-stacksize">
+<h3>CONFIG_USBDEV_MSC_STACKSIZE<a class="headerlink" href="#config-usbdev-msc-stacksize" title="Link to this heading"></a></h3>
 <p>MSC 读写线程的堆栈大小，默认 2K 字节</p>
-</div>
-<div class="section" id="config-usbdev-rndis-resp-buffer-size">
-<h3>CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE<a class="headerlink" href="#config-usbdev-rndis-resp-buffer-size" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-rndis-resp-buffer-size">
+<h3>CONFIG_USBDEV_RNDIS_RESP_BUFFER_SIZE<a class="headerlink" href="#config-usbdev-rndis-resp-buffer-size" title="Link to this heading"></a></h3>
 <p>rndis 控制传输最大接收和发送的长度，根据 RNDIS options list 决定最小长度，默认要大于等于 156</p>
-</div>
-<div class="section" id="config-usbdev-rndis-eth-max-frame-size">
-<h3>CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE<a class="headerlink" href="#config-usbdev-rndis-eth-max-frame-size" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-rndis-eth-max-frame-size">
+<h3>CONFIG_USBDEV_RNDIS_ETH_MAX_FRAME_SIZE<a class="headerlink" href="#config-usbdev-rndis-eth-max-frame-size" title="Link to this heading"></a></h3>
 <p>rndis 以太网帧的最大长度，默认 1580</p>
-</div>
-<div class="section" id="config-usbdev-rndis-vendor-id">
-<h3>CONFIG_USBDEV_RNDIS_VENDOR_ID<a class="headerlink" href="#config-usbdev-rndis-vendor-id" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="config-usbdev-rndis-vendor-desc">
-<h3>CONFIG_USBDEV_RNDIS_VENDOR_DESC<a class="headerlink" href="#config-usbdev-rndis-vendor-desc" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="config-usbdev-rndis-using-lwip">
-<h3>CONFIG_USBDEV_RNDIS_USING_LWIP<a class="headerlink" href="#config-usbdev-rndis-using-lwip" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbdev-rndis-vendor-id">
+<h3>CONFIG_USBDEV_RNDIS_VENDOR_ID<a class="headerlink" href="#config-usbdev-rndis-vendor-id" title="Link to this heading"></a></h3>
+</section>
+<section id="config-usbdev-rndis-vendor-desc">
+<h3>CONFIG_USBDEV_RNDIS_VENDOR_DESC<a class="headerlink" href="#config-usbdev-rndis-vendor-desc" title="Link to this heading"></a></h3>
+</section>
+<section id="config-usbdev-rndis-using-lwip">
+<h3>CONFIG_USBDEV_RNDIS_USING_LWIP<a class="headerlink" href="#config-usbdev-rndis-using-lwip" title="Link to this heading"></a></h3>
 <p>rndis 与 lwip 接口的对接</p>
-</div>
-</div>
-<div class="section" id="id2">
-<h2>主机协议栈 CONFIG<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="id2">
+<h2>主机协议栈 CONFIG<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
 <p>以下参数决定了支持的最大外部hub数量，接口数，每个接口的端点数和 altsetting 数量，更改此值会影响 ram 的大小，建议根据实际情况更改。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USBHOST_MAX_RHPORTS          1</span>
 <span class="cp">#define CONFIG_USBHOST_MAX_EXTHUBS          1</span>
@@ -294,28 +298,28 @@ usbd_msc_sector_read 和 usbd_msc_sector_write 就会在线程中执行。</p>
 <span class="cp">#define CONFIG_USBHOST_MAX_VIDEO_CLASS   1</span>
 </pre></div>
 </div>
-<div class="section" id="config-usbhost-psc-prio">
-<h3>CONFIG_USBHOST_PSC_PRIO<a class="headerlink" href="#config-usbhost-psc-prio" title="Permalink to this headline">¶</a></h3>
+<section id="config-usbhost-psc-prio">
+<h3>CONFIG_USBHOST_PSC_PRIO<a class="headerlink" href="#config-usbhost-psc-prio" title="Link to this heading"></a></h3>
 <p>主机插拔线程的优先级，默认是 0，数值越小，优先级越高</p>
-</div>
-<div class="section" id="config-usbhost-psc-stacksize">
-<h3>CONFIG_USBHOST_PSC_STACKSIZE<a class="headerlink" href="#config-usbhost-psc-stacksize" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbhost-psc-stacksize">
+<h3>CONFIG_USBHOST_PSC_STACKSIZE<a class="headerlink" href="#config-usbhost-psc-stacksize" title="Link to this heading"></a></h3>
 <p>主机插拔线程的堆栈大小，默认 2K 字节</p>
-</div>
-<div class="section" id="config-usbhost-request-buffer-len">
-<h3>CONFIG_USBHOST_REQUEST_BUFFER_LEN<a class="headerlink" href="#config-usbhost-request-buffer-len" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbhost-request-buffer-len">
+<h3>CONFIG_USBHOST_REQUEST_BUFFER_LEN<a class="headerlink" href="#config-usbhost-request-buffer-len" title="Link to this heading"></a></h3>
 <p>控制传输能够接收或者发送的最大长度</p>
-</div>
-<div class="section" id="config-usbhost-control-transfer-timeout">
-<h3>CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT<a class="headerlink" href="#config-usbhost-control-transfer-timeout" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbhost-control-transfer-timeout">
+<h3>CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT<a class="headerlink" href="#config-usbhost-control-transfer-timeout" title="Link to this heading"></a></h3>
 <p>控制传输发送或者接收的超时时间，默认 1s</p>
-</div>
-<div class="section" id="config-usbhost-msc-timeout">
-<h3>CONFIG_USBHOST_MSC_TIMEOUT<a class="headerlink" href="#config-usbhost-msc-timeout" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="config-usbhost-msc-timeout">
+<h3>CONFIG_USBHOST_MSC_TIMEOUT<a class="headerlink" href="#config-usbhost-msc-timeout" title="Link to this heading"></a></h3>
 <p>MSC 读写传输的超时时间，默认 5s</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>

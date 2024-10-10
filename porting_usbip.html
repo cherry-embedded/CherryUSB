@@ -1,17 +1,21 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>USB IP 勘误 &mdash; CherryUSB 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/jquery.js"></script>
-      <script src="_static/underscore.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/language_data.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=9172181d"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
@@ -36,16 +40,16 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">快速上手</span></p>
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/start.html">入门必看</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/demo.html">基于现有 demo 快速验证</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="q&amp;a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="q%26a.html">Q &amp; A</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
@@ -54,14 +58,14 @@
 <li class="toctree-l1"><a class="reference internal" href="usb/usb_enum.html">USB 枚举</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usb/usb_ext.html">USB 知识点拓展</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API 手册</span></p>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api/api_device.html">设备协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/api_host.html">主机协议栈</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/api_port.html">主从驱动</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/api_config.html">USB CONFIG 说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Class 指南</span></p>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="class/class_cdc.html">CDC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="class/class_hid.html">HID</a></li>
@@ -70,7 +74,7 @@
 <li class="toctree-l1"><a class="reference internal" href="class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo/usbd_hid.html">usbd_hid</a></li>
@@ -89,7 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo/usbh_wifi.html">usbh_wifi</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="usbip/ohci.html">OHCI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbip/ehci.html">EHCI</a></li>
@@ -102,18 +106,18 @@
 <li class="toctree-l1"><a class="reference internal" href="usbip/cdns3.html">CDNS3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbip/dwc3.html">DWC3</a></li>
 </ul>
-<p class="caption"><span class="caption-text">工具使用</span></p>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tools/index.html">chryusb_configurator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tools/index.html#wireshark">Wireshark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tools/index.html#audacity">Audacity</a></li>
 </ul>
-<p class="caption"><span class="caption-text">版本说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="version.html">版本说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">商业支持</span></p>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="support/index.html">商业支持</a></li>
 </ul>
@@ -142,19 +146,19 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="usb-ip">
-<h1>USB IP 勘误<a class="headerlink" href="#usb-ip" title="Permalink to this headline">¶</a></h1>
+  <section id="usb-ip">
+<h1>USB IP 勘误<a class="headerlink" href="#usb-ip" title="Link to this heading"></a></h1>
 <p>本节主要对已经支持的 USB IP 在不同厂家上的一些差别说明并进行校对。欢迎补充。</p>
-<div class="section" id="fsdev">
-<h2>FSDEV<a class="headerlink" href="#fsdev" title="Permalink to this headline">¶</a></h2>
+<section id="fsdev">
+<h2>FSDEV<a class="headerlink" href="#fsdev" title="Link to this heading"></a></h2>
 <p>FSDEV 仅支持从机。这个 ip 不同厂家基本都是基于标准的 usb 寄存器，有些芯片可能还需要配置 <cite>PMA_ACCESS</cite> 的值，默认为2。下表为具体芯片相关宏的修改值：</p>
-<table class="colwidths-given docutils align-default">
+<table class="docutils align-default">
 <colgroup>
-<col style="width: 21%" />
-<col style="width: 14%" />
-<col style="width: 21%" />
-<col style="width: 21%" />
-<col style="width: 21%" />
+<col style="width: 21.4%" />
+<col style="width: 14.3%" />
+<col style="width: 21.4%" />
+<col style="width: 21.4%" />
+<col style="width: 21.4%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>芯片</p></th>
@@ -204,7 +208,7 @@
 </tbody>
 </table>
 <p>fsdev 需要外置 dp 上拉才能使用，有些芯片可能是接上拉电阻，有些芯片可能是设置寄存器，举例如下：</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB</span><span class="o">-&gt;</span><span class="n">BCDR</span> <span class="o">|=</span> <span class="p">(</span><span class="kt">uint16_t</span><span class="p">)</span><span class="n">USB_BCDR_DPPU</span><span class="p">;</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB</span><span class="o">-&gt;</span><span class="n">BCDR</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint16_t</span><span class="p">)</span><span class="n">USB_BCDR_DPPU</span><span class="p">;</span>
 </pre></div>
 </div>
 <p>如果不存在 BCDR 寄存器，则一般是配置如下，并且该设置需要配置到 <cite>usb_dc_low_level_init</cite> 中或者 <cite>usb_dc_init</cite> 最后都行：</p>
@@ -215,9 +219,9 @@
 <span class="cp">#define _DisPortPullup() (*DP_CTRL = (*DP_CTRL) &amp; 0xEFFFFFFF);</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="musb">
-<h2>MUSB<a class="headerlink" href="#musb" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="musb">
+<h2>MUSB<a class="headerlink" href="#musb" title="Link to this heading"></a></h2>
 <p>MUSB IP 支持主从，并且由 <strong>mentor</strong> 定义了一套标准的寄存器偏移，如果非标准，则需要实现以下宏的偏移，以标准为例：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define MUSB_FADDR_OFFSET 0x00</span>
 <span class="cp">#define MUSB_POWER_OFFSET 0x01</span>
@@ -270,12 +274,12 @@
 </pre></div>
 </div>
 <p>下表为具体芯片从机相关宏的修改值：</p>
-<table class="colwidths-given docutils align-default">
+<table class="docutils align-default">
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>芯片</p></th>
@@ -303,12 +307,12 @@
 </tbody>
 </table>
 <p>下表为具体芯片主机相关宏的修改值：</p>
-<table class="colwidths-given docutils align-default">
+<table class="docutils align-default">
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>芯片</p></th>
@@ -335,9 +339,9 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="dwc2">
-<h2>DWC2<a class="headerlink" href="#dwc2" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="dwc2">
+<h2>DWC2<a class="headerlink" href="#dwc2" title="Link to this heading"></a></h2>
 <p>DWC2 IP 支持主从，并且由 <strong>synopsys</strong> 定义了一套标准的寄存器偏移。大部分厂家都使用标准的寄存器偏移(除了 GCCFG(GGPIO)寄存器)，所以如果是从机仅需要修改 <cite>中断名</cite> 、 <cite>USB_BASE</cite> 、 <cite>CONFIG_USBDEV_EP_NUM</cite> ，主机仅需要修改 <cite>中断名</cite> 、 <cite>USB_BASE</cite>  即可。</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -348,12 +352,12 @@
 <p>主机 port 仅支持有 dma 功能的 dwc2 ip(代码中会判断当前 ip 是否支持), 如果不支持 dma 模式，则无法使用。</p>
 </div>
 <p>下表为具体芯片从机相关宏的修改值：</p>
-<table class="colwidths-given docutils align-default">
+<table class="docutils align-default">
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>芯片</p></th>
@@ -376,12 +380,12 @@
 </tbody>
 </table>
 <p>下表为具体芯片主机相关宏的修改值：</p>
-<table class="colwidths-given docutils align-default">
+<table class="docutils align-default">
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>芯片</p></th>
@@ -398,9 +402,9 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="ehci">
-<h2>EHCI<a class="headerlink" href="#ehci" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="ehci">
+<h2>EHCI<a class="headerlink" href="#ehci" title="Link to this heading"></a></h2>
 <p>EHCI 是 intel 制定的标准主机控制器接口，任何厂家都必须实现 EHCI 中定义的寄存器以及寄存器的功能。EHCI 相关配置宏如下：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USB_EHCI_HCCR_OFFSET     (0x0)</span>
 <span class="cp">#define CONFIG_USB_EHCI_FRAME_LIST_SIZE 1024</span>
@@ -417,8 +421,8 @@
 </pre></div>
 </div>
 <p>同时由于 EHCI 只是主机控制器并且只支持高速，一般配合一个 otg 控制器和一个低速全速兼容控制单元，而速度的获取一般是在 otg 寄存器中，所以需要用户实现 <cite>usbh_get_port_speed</cite> 函数。</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

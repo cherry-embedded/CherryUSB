@@ -1,17 +1,21 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>设备协议栈 &mdash; CherryUSB 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../_static/jquery.js"></script>
-      <script src="../_static/underscore.js"></script>
-      <script src="../_static/doctools.js"></script>
-      <script src="../_static/language_data.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9172181d"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,16 +42,16 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">快速上手</span></p>
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/start.html">入门必看</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q&amp;a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USB 基本知识点</span></p>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
@@ -56,7 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API 手册</span></p>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">设备协议栈</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#core">CORE</a><ul>
@@ -120,7 +124,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api_port.html">主从驱动</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api_config.html">USB CONFIG 说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Class 指南</span></p>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
@@ -129,7 +133,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
@@ -148,7 +152,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
 </ul>
-<p class="caption"><span class="caption-text">USBIP 介绍</span></p>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
@@ -161,18 +165,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
 </ul>
-<p class="caption"><span class="caption-text">工具使用</span></p>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
 </ul>
-<p class="caption"><span class="caption-text">版本说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
 </ul>
-<p class="caption"><span class="caption-text">商业支持</span></p>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
 </ul>
@@ -201,26 +205,26 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="id1">
-<h1>设备协议栈<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+  <section id="id1">
+<h1>设备协议栈<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
 <p>设备协议栈主要负责枚举和驱动加载，枚举这边就不说了，驱动加载，也就是接口驱动加载，主要是依靠 <cite>usbd_add_interface</cite> 函数，用于记录传入的接口驱动并保存到接口数组表，当主机进行类请求时就可以查找接口表进行访问了。
 在调用 <cite>usbd_desc_register</cite> 以后需要进行接口注册和端点注册，口诀如下：</p>
 <ul class="simple">
 <li><p>有多少个接口就调用多少次 <cite>usbd_add_interface</cite>，参数填相关 <cite>xxx_init_intf</cite>, 如果没有支持的，手动创建一个 intf 填入</p></li>
 <li><p>有多少个端点就调用多少次 <cite>usbd_add_endpoint</cite>，当中断完成时，会调用到注册的端点回调中。</p></li>
 </ul>
-<div class="section" id="core">
-<h2>CORE<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h2>
+<section id="core">
+<h2>CORE<a class="headerlink" href="#core" title="Link to this heading"></a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>请注意，v1.1 版本开始增加 busid 形参，其余保持不变，所以 API 说明不做更新</p>
 </div>
-<div class="section" id="id2">
-<h3>端点结构体<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h3>端点结构体<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <p>端点结构体主要用于注册不同端点地址的中断完成回调函数。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_endpoint</span> <span class="p">{</span>
-    <span class="kt">uint8_t</span> <span class="n">ep_addr</span><span class="p">;</span>
-    <span class="n">usbd_endpoint_callback</span> <span class="n">ep_cb</span><span class="p">;</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_endpoint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep_addr</span><span class="p">;</span>
+<span class="w">    </span><span class="n">usbd_endpoint_callback</span><span class="w"> </span><span class="n">ep_cb</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
@@ -233,18 +237,18 @@
 <p class="admonition-title">Note</p>
 <p>总结一句话：in 回调函数等价于 dma 发送完成中断回调函数；out 回调函数等价于 dma 接收完成中断回调函数</p>
 </div>
-</div>
-<div class="section" id="id3">
-<h3>接口结构体<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="id3">
+<h3>接口结构体<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <p>接口结构体主要用于注册不同类设备除了标准设备请求外的其他请求，包括类设备请求、厂商设备请求和自定义设备请求。以及协议栈中的相关通知回调函数。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="p">{</span>
-    <span class="n">usbd_request_handler</span> <span class="n">class_interface_handler</span><span class="p">;</span>
-    <span class="n">usbd_request_handler</span> <span class="n">class_endpoint_handler</span><span class="p">;</span>
-    <span class="n">usbd_request_handler</span> <span class="n">vendor_handler</span><span class="p">;</span>
-    <span class="n">usbd_notify_handler</span> <span class="n">notify_handler</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">hid_report_descriptor</span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="n">hid_report_descriptor_len</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">intf_num</span><span class="p">;</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">usbd_request_handler</span><span class="w"> </span><span class="n">class_interface_handler</span><span class="p">;</span>
+<span class="w">    </span><span class="n">usbd_request_handler</span><span class="w"> </span><span class="n">class_endpoint_handler</span><span class="p">;</span>
+<span class="w">    </span><span class="n">usbd_request_handler</span><span class="w"> </span><span class="n">vendor_handler</span><span class="p">;</span>
+<span class="w">    </span><span class="n">usbd_notify_handler</span><span class="w"> </span><span class="n">notify_handler</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">hid_report_descriptor</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">hid_report_descriptor_len</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf_num</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
@@ -258,11 +262,11 @@
 <li><p><strong>intf_num</strong> 当前接口偏移</p></li>
 <li><p><strong>ep_list</strong> 端点的链表节点</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-desc-register">
-<h3>usbd_desc_register<a class="headerlink" href="#usbd-desc-register" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-desc-register">
+<h3>usbd_desc_register<a class="headerlink" href="#usbd-desc-register" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_desc_register</span></code> 用来注册 USB 描述符，描述符种类包括：设备描述符、配置描述符（包含配置描述符、接口描述符、class 类描述符、端点描述符）、字符串描述符、设备限定描述符。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_desc_register</span><span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">desc</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_desc_register</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">desc</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -272,136 +276,136 @@
 <p class="admonition-title">Note</p>
 <p>当前 API 仅支持一种速度，如果需要更高级的速度切换功能，请开启 CONFIG_USBDEV_ADVANCE_DESC，并且包含了下面所有描述符注册功能</p>
 </div>
-</div>
-<div class="section" id="usbd-msosv1-desc-register">
-<h3>usbd_msosv1_desc_register<a class="headerlink" href="#usbd-msosv1-desc-register" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-msosv1-desc-register">
+<h3>usbd_msosv1_desc_register<a class="headerlink" href="#usbd-msosv1-desc-register" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_msosv1_desc_register</span></code> 用来注册一个 WINUSB 1.0 描述符。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_msosv1_desc_register</span><span class="p">(</span><span class="k">struct</span> <span class="n">usb_msosv1_descriptor</span> <span class="o">*</span><span class="n">desc</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_msosv1_desc_register</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_msosv1_descriptor</span><span class="w"> </span><span class="o">*</span><span class="n">desc</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>desc</strong>  描述符句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-msosv2-desc-register">
-<h3>usbd_msosv2_desc_register<a class="headerlink" href="#usbd-msosv2-desc-register" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-msosv2-desc-register">
+<h3>usbd_msosv2_desc_register<a class="headerlink" href="#usbd-msosv2-desc-register" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_msosv2_desc_register</span></code> 用来注册一个 WINUSB 2.0 描述符。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_msosv2_desc_register</span><span class="p">(</span><span class="k">struct</span> <span class="n">usb_msosv2_descriptor</span> <span class="o">*</span><span class="n">desc</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_msosv2_desc_register</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_msosv2_descriptor</span><span class="w"> </span><span class="o">*</span><span class="n">desc</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>desc</strong>  描述符句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-bos-desc-register">
-<h3>usbd_bos_desc_register<a class="headerlink" href="#usbd-bos-desc-register" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-bos-desc-register">
+<h3>usbd_bos_desc_register<a class="headerlink" href="#usbd-bos-desc-register" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_bos_desc_register</span></code> 用来注册一个 BOS 描述符， USB 2.1 版本以上必须注册。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_bos_desc_register</span><span class="p">(</span><span class="k">struct</span> <span class="n">usb_bos_descriptor</span> <span class="o">*</span><span class="n">desc</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_bos_desc_register</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_bos_descriptor</span><span class="w"> </span><span class="o">*</span><span class="n">desc</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>desc</strong>  描述符句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-add-interface">
-<h3>usbd_add_interface<a class="headerlink" href="#usbd-add-interface" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-add-interface">
+<h3>usbd_add_interface<a class="headerlink" href="#usbd-add-interface" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_add_interface</span></code> 添加一个接口驱动。 <strong>添加顺序必须按照描述符顺序</strong>。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_add_interface</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_add_interface</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong>  接口驱动句柄，通常从不同 class 的 <cite>xxx_init_intf</cite> 函数获取</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-add-endpoint">
-<h3>usbd_add_endpoint<a class="headerlink" href="#usbd-add-endpoint" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-add-endpoint">
+<h3>usbd_add_endpoint<a class="headerlink" href="#usbd-add-endpoint" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_add_endpoint</span></code> 添加一个端点中断完成回调函数。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_add_endpoint</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_endpoint</span> <span class="o">*</span><span class="n">ep</span><span class="p">);;</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_add_endpoint</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_endpoint</span><span class="w"> </span><span class="o">*</span><span class="n">ep</span><span class="p">);;</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>ep</strong>    端点句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-initialize">
-<h3>usbd_initialize<a class="headerlink" href="#usbd-initialize" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-initialize">
+<h3>usbd_initialize<a class="headerlink" href="#usbd-initialize" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_initialize</span></code> 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。 <strong>如果使用 os，必须放在线程中执行</strong>。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="usbd-event-handler">
-<h3>usbd_event_handler<a class="headerlink" href="#usbd-event-handler" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-event-handler">
+<h3>usbd_event_handler<a class="headerlink" href="#usbd-event-handler" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_event_handler</span></code> 是协议栈中中断或者协议栈一些状态的回调函数。大部分 IP 仅支持 USBD_EVENT_RESET 和 USBD_EVENT_CONFIGURED</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_event_handler</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">event</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_event_handler</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">event</span><span class="p">);</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="cdc-acm">
-<h2>CDC ACM<a class="headerlink" href="#cdc-acm" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="usbd-cdc-acm-init-intf">
-<h3>usbd_cdc_acm_init_intf<a class="headerlink" href="#usbd-cdc-acm-init-intf" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="cdc-acm">
+<h2>CDC ACM<a class="headerlink" href="#cdc-acm" title="Link to this heading"></a></h2>
+<section id="usbd-cdc-acm-init-intf">
+<h3>usbd_cdc_acm_init_intf<a class="headerlink" href="#usbd-cdc-acm-init-intf" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_cdc_acm_init_intf</span></code> 用来初始化 USB CDC ACM 类接口，并实现该接口相关的函数。</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">cdc_acm_class_interface_request_handler</span></code> 用来处理 USB CDC ACM 类 Setup 请求。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cdc_notify_handler</span></code> 用来处理 USB CDC 其他中断回调函数。</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="nf">usbd_cdc_acm_init_intf</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">usbd_cdc_acm_init_intf</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>return</strong>  接口句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-cdc-acm-set-line-coding">
-<h3>usbd_cdc_acm_set_line_coding<a class="headerlink" href="#usbd-cdc-acm-set-line-coding" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-cdc-acm-set-line-coding">
+<h3>usbd_cdc_acm_set_line_coding<a class="headerlink" href="#usbd-cdc-acm-set-line-coding" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_cdc_acm_set_line_coding</span></code> 用来对串口进行配置，如果仅使用 USB 而不用 串口，该接口不用用户实现，使用默认。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_cdc_acm_set_line_coding</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">,</span> <span class="k">struct</span> <span class="n">cdc_line_coding</span> <span class="o">*</span><span class="n">line_coding</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_set_line_coding</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdc_line_coding</span><span class="w"> </span><span class="o">*</span><span class="n">line_coding</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 控制接口号</p></li>
 <li><p><strong>line_coding</strong> 串口配置</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-cdc-acm-get-line-coding">
-<h3>usbd_cdc_acm_get_line_coding<a class="headerlink" href="#usbd-cdc-acm-get-line-coding" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-cdc-acm-get-line-coding">
+<h3>usbd_cdc_acm_get_line_coding<a class="headerlink" href="#usbd-cdc-acm-get-line-coding" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_cdc_acm_get_line_coding</span></code> 用来获取串口进行配置，如果仅使用 USB 而不用 串口，该接口不用用户实现，使用默认。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_cdc_acm_get_line_coding</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">,</span> <span class="k">struct</span> <span class="n">cdc_line_coding</span> <span class="o">*</span><span class="n">line_coding</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_get_line_coding</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdc_line_coding</span><span class="w"> </span><span class="o">*</span><span class="n">line_coding</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 控制接口号</p></li>
 <li><p><strong>line_coding</strong> 串口配置</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-cdc-acm-set-dtr">
-<h3>usbd_cdc_acm_set_dtr<a class="headerlink" href="#usbd-cdc-acm-set-dtr" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-cdc-acm-set-dtr">
+<h3>usbd_cdc_acm_set_dtr<a class="headerlink" href="#usbd-cdc-acm-set-dtr" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_cdc_acm_set_dtr</span></code> 用来控制串口 DTR 。如果仅使用 USB 而不用 串口，该接口不用用户实现，使用默认。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_cdc_acm_set_dtr</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">dtr</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_set_dtr</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">dtr</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 控制接口号</p></li>
 <li><p><strong>dtr</strong> dtr 为1表示拉低电平，为0表示拉高电平</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-cdc-acm-set-rts">
-<h3>usbd_cdc_acm_set_rts<a class="headerlink" href="#usbd-cdc-acm-set-rts" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-cdc-acm-set-rts">
+<h3>usbd_cdc_acm_set_rts<a class="headerlink" href="#usbd-cdc-acm-set-rts" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_cdc_acm_set_rts</span></code> 用来控制串口 RTS 。如果仅使用 USB 而不用 串口，该接口不用用户实现，使用默认。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_cdc_acm_set_rts</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">rts</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_set_rts</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">rts</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 控制接口号</p></li>
 <li><p><strong>rts</strong> rts 为1表示拉低电平，为0表示拉高电平</p></li>
 </ul>
-</div>
-<div class="section" id="cdc-acm-descriptor-init">
-<h3>CDC_ACM_DESCRIPTOR_INIT<a class="headerlink" href="#cdc-acm-descriptor-init" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="cdc-acm-descriptor-init">
+<h3>CDC_ACM_DESCRIPTOR_INIT<a class="headerlink" href="#cdc-acm-descriptor-init" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">CDC_ACM_DESCRIPTOR_INIT</span></code> 配置了默认的 cdc acm 需要的描述符以及参数，方便用户使用。总长度为 <cite>CDC_ACM_DESCRIPTOR_LEN</cite> 。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">CDC_ACM_DESCRIPTOR_INIT</span><span class="p">(</span><span class="n">bFirstInterface</span><span class="p">,</span> <span class="n">int_ep</span><span class="p">,</span> <span class="n">out_ep</span><span class="p">,</span> <span class="n">in_ep</span><span class="p">,</span> <span class="n">str_idx</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">CDC_ACM_DESCRIPTOR_INIT</span><span class="p">(</span><span class="n">bFirstInterface</span><span class="p">,</span><span class="w"> </span><span class="n">int_ep</span><span class="p">,</span><span class="w"> </span><span class="n">out_ep</span><span class="p">,</span><span class="w"> </span><span class="n">in_ep</span><span class="p">,</span><span class="w"> </span><span class="n">str_idx</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -411,30 +415,30 @@
 <li><p><strong>in_ep</strong> 表示 bulk in 端点地址（带方向）</p></li>
 <li><p><strong>str_idx</strong> 控制接口对应的字符串 id</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="hid">
-<h2>HID<a class="headerlink" href="#hid" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="usbd-hid-init-intf">
-<h3>usbd_hid_init_intf<a class="headerlink" href="#usbd-hid-init-intf" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="hid">
+<h2>HID<a class="headerlink" href="#hid" title="Link to this heading"></a></h2>
+<section id="usbd-hid-init-intf">
+<h3>usbd_hid_init_intf<a class="headerlink" href="#usbd-hid-init-intf" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_hid_init_intf</span></code> 用来初始化 USB HID 类接口，并实现该接口相关的函数：</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">hid_class_interface_request_handler</span></code> 用来处理 USB HID 类的 Setup 请求。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">hid_notify_handler</span></code> 用来处理 USB HID 其他中断回调函数。</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="nf">usbd_hid_init_intf</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="n">intf</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">desc</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">desc_len</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">usbd_hid_init_intf</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">desc_len</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>desc</strong> 报告描述符</p></li>
 <li><p><strong>desc_len</strong> 报告描述符长度</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="msc">
-<h2>MSC<a class="headerlink" href="#msc" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="usbd-msc-init-intf">
-<h3>usbd_msc_init_intf<a class="headerlink" href="#usbd-msc-init-intf" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="msc">
+<h2>MSC<a class="headerlink" href="#msc" title="Link to this heading"></a></h2>
+<section id="usbd-msc-init-intf">
+<h3>usbd_msc_init_intf<a class="headerlink" href="#usbd-msc-init-intf" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_msc_init_intf</span></code> 用来初始化 MSC 类接口，并实现该接口相关函数，并且注册端点回调函数。（因为 msc bot 协议是固定的，所以不需要用于实现，因此端点回调函数自然不需要用户实现）。</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">msc_storage_class_interface_request_handler</span></code> 用于处理 USB MSC Setup 中断请求。</p></li>
@@ -442,18 +446,18 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">mass_storage_bulk_out</span></code> 用于处理 USB MSC 端点 out 中断。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mass_storage_bulk_in</span></code> 用于处理 USB MSC 端点 in 中断。</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="nf">usbd_msc_init_intf</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="n">intf</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">out_ep</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">in_ep</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">usbd_msc_init_intf</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">out_ep</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">in_ep</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>out_ep</strong>     out 端点地址</p></li>
 <li><p><strong>in_ep</strong>      in 端点地址</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-msc-get-cap">
-<h3>usbd_msc_get_cap<a class="headerlink" href="#usbd-msc-get-cap" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-msc-get-cap">
+<h3>usbd_msc_get_cap<a class="headerlink" href="#usbd-msc-get-cap" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_msc_get_cap</span></code> 用来获取存储器的 lun、扇区个数和每个扇区大小。用户必须实现该函数。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_msc_get_cap</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">lun</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="n">block_num</span><span class="p">,</span> <span class="kt">uint16_t</span> <span class="o">*</span><span class="n">block_size</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_msc_get_cap</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">lun</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">block_num</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="n">block_size</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -461,11 +465,11 @@
 <li><p><strong>block_num</strong>  存储扇区个数</p></li>
 <li><p><strong>block_size</strong>  存储扇区大小</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-msc-sector-read">
-<h3>usbd_msc_sector_read<a class="headerlink" href="#usbd-msc-sector-read" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-msc-sector-read">
+<h3>usbd_msc_sector_read<a class="headerlink" href="#usbd-msc-sector-read" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_msc_sector_read</span></code> 用来对存储器某个扇区开始的地址进行数据读取。用户必须实现该函数。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_msc_sector_read</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">sector</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">length</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_msc_sector_read</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sector</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">length</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -473,11 +477,11 @@
 <li><p><strong>buffer</strong> 存储读取的数据的指针</p></li>
 <li><p><strong>length</strong> 读取长度</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-msc-sector-write">
-<h3>usbd_msc_sector_write<a class="headerlink" href="#usbd-msc-sector-write" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-msc-sector-write">
+<h3>usbd_msc_sector_write<a class="headerlink" href="#usbd-msc-sector-write" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_msc_sector_write</span></code>  用来对存储器某个扇区开始写入数据。用户必须实现该函数。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">usbd_msc_sector_write</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">sector</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">length</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_msc_sector_write</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sector</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">length</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -485,156 +489,156 @@
 <li><p><strong>buffer</strong> 写入数据指针</p></li>
 <li><p><strong>length</strong> 写入长度</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="uac">
-<h2>UAC<a class="headerlink" href="#uac" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="usbd-audio-init-intf">
-<h3>usbd_audio_init_intf<a class="headerlink" href="#usbd-audio-init-intf" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="uac">
+<h2>UAC<a class="headerlink" href="#uac" title="Link to this heading"></a></h2>
+<section id="usbd-audio-init-intf">
+<h3>usbd_audio_init_intf<a class="headerlink" href="#usbd-audio-init-intf" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_init_intf</span></code>  用来初始化 USB Audio 类接口，并实现该接口相关的函数：</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">audio_class_interface_request_handler</span></code> 用于处理 USB Audio Setup 接口接收者中断请求。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">audio_class_endpoint_request_handler</span></code> 用于处理 USB Audio Setup 端点接收者中断请求。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">audio_notify_handler</span></code> 用于实现 USB Audio 其他中断回调函数。</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="nf">usbd_audio_init_intf</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">usbd_audio_init_intf</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>class</strong> 类的句柄</p></li>
 <li><p><strong>intf</strong>  接口句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-open">
-<h3>usbd_audio_open<a class="headerlink" href="#usbd-audio-open" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-open">
+<h3>usbd_audio_open<a class="headerlink" href="#usbd-audio-open" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_open</span></code>  用来开启音频数据传输。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_open</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_open</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 开启的接口号</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-close">
-<h3>usbd_audio_close<a class="headerlink" href="#usbd-audio-close" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-close">
+<h3>usbd_audio_close<a class="headerlink" href="#usbd-audio-close" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_close</span></code>  用来关闭音频数据传输。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_close</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_close</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 关闭的接口号</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-add-entity">
-<h3>usbd_audio_add_entity<a class="headerlink" href="#usbd-audio-add-entity" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-add-entity">
+<h3>usbd_audio_add_entity<a class="headerlink" href="#usbd-audio-add-entity" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_add_entity</span></code>  用来添加 unit 相关控制，例如 feature unit、clock source。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_add_entity</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">entity_id</span><span class="p">,</span> <span class="kt">uint16_t</span> <span class="n">bDescriptorSubtype</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_add_entity</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">entity_id</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">bDescriptorSubtype</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>entity_id</strong> 要添加的 unit id</p></li>
 <li><p><strong>bDescriptorSubtype</strong> entity_id 的描述符子类型</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-set-mute">
-<h3>usbd_audio_set_mute<a class="headerlink" href="#usbd-audio-set-mute" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-set-mute">
+<h3>usbd_audio_set_mute<a class="headerlink" href="#usbd-audio-set-mute" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_set_mute</span></code>  用来设置静音。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_set_mute</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">ch</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="n">enable</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_set_mute</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ch</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">enable</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>ch</strong> 要设置静音的通道</p></li>
 <li><p><strong>enable</strong> 为1 表示静音，0相反</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-set-volume">
-<h3>usbd_audio_set_volume<a class="headerlink" href="#usbd-audio-set-volume" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-set-volume">
+<h3>usbd_audio_set_volume<a class="headerlink" href="#usbd-audio-set-volume" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_set_volume</span></code>  用来设置音量。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_set_volume</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">ch</span><span class="p">,</span> <span class="kt">float</span> <span class="n">dB</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_set_volume</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ch</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dB</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>ch</strong> 要设置音量的通道</p></li>
 <li><p><strong>dB</strong> 要设置音量的分贝，其中 UAC1.0范围从 -127 ~ +127dB，UAC2.0 从 0 ~ 256dB</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-set-sampling-freq">
-<h3>usbd_audio_set_sampling_freq<a class="headerlink" href="#usbd-audio-set-sampling-freq" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-set-sampling-freq">
+<h3>usbd_audio_set_sampling_freq<a class="headerlink" href="#usbd-audio-set-sampling-freq" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_set_sampling_freq</span></code>  用来设置设备上音频模块的采样率</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_set_sampling_freq</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">ep_ch</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">sampling_freq</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_set_sampling_freq</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep_ch</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sampling_freq</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>ch</strong> 要设置采样率的端点或者通道，UAC1.0为端点，UAC2.0 为通道</p></li>
 <li><p><strong>dB</strong> 要设置的采样率</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-get-sampling-freq-table">
-<h3>usbd_audio_get_sampling_freq_table<a class="headerlink" href="#usbd-audio-get-sampling-freq-table" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-get-sampling-freq-table">
+<h3>usbd_audio_get_sampling_freq_table<a class="headerlink" href="#usbd-audio-get-sampling-freq-table" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_get_sampling_freq_table</span></code>  用来获取支持的采样率列表，如果函数没有实现，则使用默认采样率列表。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_get_sampling_freq_table</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="o">**</span><span class="n">sampling_freq_table</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_get_sampling_freq_table</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">**</span><span class="n">sampling_freq_table</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>sampling_freq_table</strong> 采样率列表地址，格式参考默认采样率列表</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-audio-set-pitch">
-<h3>usbd_audio_set_pitch<a class="headerlink" href="#usbd-audio-set-pitch" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-audio-set-pitch">
+<h3>usbd_audio_set_pitch<a class="headerlink" href="#usbd-audio-set-pitch" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_set_pitch</span></code>  用来设置音频音调，仅 UAC1.0 有这功能。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_audio_set_pitch</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">ep</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">enable</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_set_pitch</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">enable</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>ep</strong> 要设置音调的端点</p></li>
 <li><p><strong>enable</strong> 开启或关闭音调</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="uvc">
-<h2>UVC<a class="headerlink" href="#uvc" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="usbd-video-init-intf">
-<h3>usbd_video_init_intf<a class="headerlink" href="#usbd-video-init-intf" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="uvc">
+<h2>UVC<a class="headerlink" href="#uvc" title="Link to this heading"></a></h2>
+<section id="usbd-video-init-intf">
+<h3>usbd_video_init_intf<a class="headerlink" href="#usbd-video-init-intf" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_video_init_intf</span></code>  用来初始化 USB Video 类接口，并实现该接口相关的函数：</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">video_class_interface_request_handler</span></code> 用于处理 USB Video Setup 中断请求。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">video_notify_handler</span></code> 用于实现 USB Video 其他中断回调函数。</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="nf">usbd_video_init_intf</span><span class="p">(</span><span class="k">struct</span> <span class="n">usbd_interface</span> <span class="o">*</span><span class="n">intf</span><span class="p">,</span>
-                                         <span class="kt">uint32_t</span> <span class="n">dwFrameInterval</span><span class="p">,</span>
-                                         <span class="kt">uint32_t</span> <span class="n">dwMaxVideoFrameSize</span><span class="p">,</span>
-                                         <span class="kt">uint32_t</span> <span class="n">dwMaxPayloadTransferSize</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">usbd_video_init_intf</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbd_interface</span><span class="w"> </span><span class="o">*</span><span class="n">intf</span><span class="p">,</span>
+<span class="w">                                         </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">dwFrameInterval</span><span class="p">,</span>
+<span class="w">                                         </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">dwMaxVideoFrameSize</span><span class="p">,</span>
+<span class="w">                                         </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">dwMaxPayloadTransferSize</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>class</strong> 类的句柄</p></li>
 <li><p><strong>intf</strong>  接口句柄</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-video-open">
-<h3>usbd_video_open<a class="headerlink" href="#usbd-video-open" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-video-open">
+<h3>usbd_video_open<a class="headerlink" href="#usbd-video-open" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_video_open</span></code>  用来开启视频数据传输。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_video_open</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_video_open</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 开启的接口号</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-video-close">
-<h3>usbd_video_close<a class="headerlink" href="#usbd-video-close" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-video-close">
+<h3>usbd_video_close<a class="headerlink" href="#usbd-video-close" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_video_close</span></code>  用来关闭视频数据传输。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">usbd_video_open</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">intf</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_video_open</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>intf</strong> 关闭的接口号</p></li>
 </ul>
-</div>
-<div class="section" id="usbd-video-payload-fill">
-<h3>usbd_video_payload_fill<a class="headerlink" href="#usbd-video-payload-fill" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="usbd-video-payload-fill">
+<h3>usbd_video_payload_fill<a class="headerlink" href="#usbd-video-payload-fill" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_video_payload_fill</span></code>  用来填充 mjpeg 到新的 buffer中，其中会对 mjpeg 数据按帧进行切分，切分大小由 <code class="docutils literal notranslate"><span class="pre">dwMaxPayloadTransferSize</span></code> 控制，并添加头部信息，当前头部字节数为 2。头部信息见 <code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">video_mjpeg_payload_header</span></code></p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">uint32_t</span> <span class="nf">usbd_video_payload_fill</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="n">input</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">input_len</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">output</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="n">out_len</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">uint32_t</span><span class="w"> </span><span class="nf">usbd_video_payload_fill</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">input_len</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">output</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">out_len</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -644,18 +648,18 @@
 <li><p><strong>out_len</strong> 输出实际要发送的长度大小</p></li>
 <li><p><strong>return</strong> 返回 usb 按照 <code class="docutils literal notranslate"><span class="pre">dwMaxPayloadTransferSize</span></code> 大小要发多少帧</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="dfu">
-<h2>DFU<a class="headerlink" href="#dfu" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="printer">
-<h2>PRINTER<a class="headerlink" href="#printer" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="mtp">
-<h2>MTP<a class="headerlink" href="#mtp" title="Permalink to this headline">¶</a></h2>
-</div>
-</div>
+</section>
+</section>
+<section id="dfu">
+<h2>DFU<a class="headerlink" href="#dfu" title="Link to this heading"></a></h2>
+</section>
+<section id="printer">
+<h2>PRINTER<a class="headerlink" href="#printer" title="Link to this heading"></a></h2>
+</section>
+<section id="mtp">
+<h2>MTP<a class="headerlink" href="#mtp" title="Link to this heading"></a></h2>
+</section>
+</section>
 
 
            </div>
