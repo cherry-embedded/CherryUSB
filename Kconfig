@@ -48,6 +48,12 @@ if CHERRYUSB
                 bool "musb_bk"
             config CHERRYUSB_DEVICE_MUSB_CUSTOM
                 bool "musb_custom"
+            config CHERRYUSB_DEVICE_KINETIS_MCX
+                bool "kinetis_mcx"
+            config CHERRYUSB_DEVICE_KINETIS_MM32
+                bool "kinetis_mm32"
+            config CHERRYUSB_DEVICE_KINETIS_CUSTOM
+                bool "kinetis_custom"
             config CHERRYUSB_DEVICE_CHIPIDEA_MCX
                 bool "chipidea_mcx"
             config CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM
@@ -201,6 +207,12 @@ if CHERRYUSB
                 bool "xhci_phytium"
             config CHERRYUSB_HOST_XHCI_CUSTOM
                 bool "xhci"
+            config CHERRYUSB_HOST_KINETIS_MCX
+                bool "kinetis_mcx"
+            config CHERRYUSB_HOST_KINETIS_MM32
+                bool "kinetis_mm32"
+            config CHERRYUSB_HOST_KINETIS_CUSTOM
+                bool "kinetis_custom"
         endchoice
 
         config CHERRYUSB_HOST_CDC_ACM
