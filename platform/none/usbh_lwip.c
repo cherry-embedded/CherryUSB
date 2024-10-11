@@ -27,7 +27,7 @@
 #endif
 
 #if TCPIP_THREAD_STACKSIZE < 1024
-#error "TCPIP_THREAD_STACKSIZE must be >= 1024"
+#error TCPIP_THREAD_STACKSIZE must be >= 1024
 #endif
 
 // #define CONFIG_USBHOST_PLATFORM_CDC_ECM
