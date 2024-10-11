@@ -10,8 +10,8 @@ Modify USB_NOCACHE_RAM_SECTION
 #define USB_NOCACHE_RAM_SECTION __attribute__((section(".NonCacheable")))
 ```
 
-- MCXC/MCXA (device only)
-- MCXN
+- MCXC444/MCXA153 (device only)
+- MCXN947
 
 ### MM32
 
