@@ -770,8 +770,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
         }
     } else {
         /* Check if intr and iso pipe tx fifo is overflow */
-        if (((USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) == USB_ENDPOINT_TYPE_ISOCHRONOUS) ||
-             (USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) == USB_ENDPOINT_TYPE_INTERRUPT)) &&
+        if (((USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_ISOCHRONOUS) ||
+             (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_INTERRUPT)) &&
             USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) > (CONFIG_USB_DWC2_PTX_FIFO_SIZE * 4)) {
             return -USB_ERR_RANGE;
         } else {
