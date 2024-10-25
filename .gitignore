@@ -21,3 +21,5 @@
 *.uvguix.*
 *.scvd
 *.usb.tmp
+/out/build/x64-Debug
+/.vs
