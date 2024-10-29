@@ -2272,8 +2272,8 @@ static const struct usbh_class_driver rtl8152_class_driver = {
 
 CLASS_INFO_DEFINE const struct usbh_class_info rtl8152_class_info = {
     .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
-    .class = 0xff,
-    .subclass = 0x00,
+    .class_code = 0xff,
+    .subclass_code = 0x00,
     .protocol = 0x00,
     .id_table = rtl_id_table,
     .class_driver = &rtl8152_class_driver

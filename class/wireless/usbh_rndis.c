@@ -600,8 +600,8 @@ static const struct usbh_class_driver rndis_class_driver = {
 
 CLASS_INFO_DEFINE const struct usbh_class_info rndis_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
-    .class = USB_DEVICE_CLASS_WIRELESS,
-    .subclass = 0x01,
+    .class_code = USB_DEVICE_CLASS_WIRELESS,
+    .subclass_code = 0x01,
     .protocol = 0x03,
     .id_table = NULL,
     .class_driver = &rndis_class_driver

@@ -89,8 +89,8 @@ static const struct usbh_class_driver xxx_class_driver = {
 
 CLASS_INFO_DEFINE const struct usbh_class_info xxx_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
-    .class = 0,
-    .subclass = 0,
+    .class_code = 0,
+    .subclass_code = 0,
     .protocol = 0,
     .id_table = NULL,
     .class_driver = &xxx_class_driver

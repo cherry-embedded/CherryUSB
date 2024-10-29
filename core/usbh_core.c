@@ -93,10 +93,10 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
     struct usbh_class_info *index = NULL;
 
     for (index = usbh_class_info_table_begin; index < usbh_class_info_table_end; index++) {
-        if ((index->match_flags & USB_CLASS_MATCH_INTF_CLASS) && !(index->class == class)) {
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_CLASS) && !(index->class_code == class)) {
             continue;
         }
-        if ((index->match_flags & USB_CLASS_MATCH_INTF_SUBCLASS) && !(index->subclass == subclass)) {
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_SUBCLASS) && !(index->subclass_code == subclass)) {
             continue;
         }
         if ((index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL) && !(index->protocol == protocol)) {
