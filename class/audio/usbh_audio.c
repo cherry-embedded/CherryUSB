@@ -189,7 +189,10 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
     struct usb_setup_packet *setup;
     int ret;
     uint8_t feature_id = 0xff;
+    uint8_t intf;
     uint16_t volume_hex;
+    uint16_t volume_max;
+    uint16_t volume_add;
 
     if (!audio_class || !audio_class->hport) {
         return -USB_ERR_INVAL;
@@ -204,8 +207,63 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
     for (uint8_t i = 0; i < audio_class->stream_intf_num; i++) {
         if (strcmp(name, audio_class->as_msg_table[i].stream_name) == 0) {
             feature_id = audio_class->as_msg_table[i].feature_terminal_id;
+            intf = audio_class->as_msg_table[i].stream_intf;
         }
     }
+
+    if (feature_id == 0xff) {
+        return -USB_ERR_NODEV;
+    }
+
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = AUDIO_REQUEST_GET_CUR;
+    setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+    setup->wLength = 2;
+
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    if (ret < 0) {
+        return ret;
+    }
+
+    memcpy(&audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_cur, g_audio_buf, 2);
+
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = AUDIO_REQUEST_GET_MIN;
+    setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+    setup->wLength = 2;
+
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    if (ret < 0) {
+        return ret;
+    }
+
+    memcpy(&audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min, g_audio_buf, 2);
+
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = AUDIO_REQUEST_GET_MAX;
+    setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+    setup->wLength = 2;
+
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    if (ret < 0) {
+        return ret;
+    }
+    memcpy(&audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max, g_audio_buf, 2);
+
+    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup->bRequest = AUDIO_REQUEST_GET_RES;
+    setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+    setup->wLength = 2;
+
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    if (ret < 0) {
+        return ret;
+    }
+    memcpy(&audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_res, g_audio_buf, 2);
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = AUDIO_REQUEST_SET_CUR;
@@ -213,11 +271,23 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
     setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
     setup->wLength = 2;
 
-    volume_hex = -0xDB00 / 100 * volume + 0xdb00;
+    /* change volume range start with zero */
+    volume_add = 0x10000 - audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min;
+    volume_max = audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max + volume_add;
+    volume_hex = volume * volume_max / 100.0;
+
+    if (volume_hex >= volume_add) {
+        volume_hex = volume_hex - volume_add;
+    } else {
+        volume_hex = 0x10000 - (volume_add - volume_hex);
+    }
 
     memcpy(g_audio_buf, &volume_hex, 2);
-    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
-
+    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    if (ret < 0) {
+        return ret;
+    }
+    audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_cur = volume_hex;
     return ret;
 }
 
@@ -226,6 +296,7 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
     struct usb_setup_packet *setup;
     int ret;
     uint8_t feature_id = 0xff;
+    uint8_t intf = 0xff;
 
     if (!audio_class || !audio_class->hport) {
         return -USB_ERR_INVAL;
@@ -235,7 +306,12 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
     for (uint8_t i = 0; i < audio_class->stream_intf_num; i++) {
         if (strcmp(name, audio_class->as_msg_table[i].stream_name) == 0) {
             feature_id = audio_class->as_msg_table[i].feature_terminal_id;
+            intf = audio_class->as_msg_table[i].stream_intf;
         }
+    }
+
+    if (feature_id == 0xff) {
+        return -USB_ERR_NODEV;
     }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
@@ -246,7 +322,10 @@ int usbh_audio_set_mute(struct usbh_audio *audio_class, const char *name, uint8_
 
     memcpy(g_audio_buf, &mute, 1);
     ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
-
+    if (ret < 0) {
+        return ret;
+    }
+    audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].mute = mute;
     return ret;
 }
 
@@ -286,13 +365,14 @@ void usbh_audio_list_module(struct usbh_audio *audio_class)
 static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret;
-    uint8_t cur_iface = 0xff;
-    uint8_t cur_iface_count = 0xff;
-    uint8_t cur_alt_setting = 0xff;
+    uint8_t cur_iface = 0;
+    uint8_t cur_iface_count = 0;
+    uint8_t cur_alt_setting = 0;
     uint8_t input_offset = 0;
     uint8_t output_offset = 0;
     uint8_t feature_unit_offset = 0;
     uint8_t *p;
+    struct usbh_audio_ac_msg ac_msg_table[CONFIG_USBHOST_AUDIO_MAX_STREAMS];
 
     struct usbh_audio *audio_class = usbh_audio_class_alloc();
     if (audio_class == NULL) {
@@ -327,26 +407,24 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                         case AUDIO_CONTROL_INPUT_TERMINAL: {
                             struct audio_cs_if_ac_input_terminal_descriptor *desc = (struct audio_cs_if_ac_input_terminal_descriptor *)p;
 
-                            memcpy(&audio_class->ac_msg_table[input_offset].ac_input, desc, sizeof(struct audio_cs_if_ac_input_terminal_descriptor));
+                            memcpy(&ac_msg_table[input_offset].ac_input, desc, sizeof(struct audio_cs_if_ac_input_terminal_descriptor));
                             input_offset++;
                         } break;
                         case AUDIO_CONTROL_OUTPUT_TERMINAL: {
                             struct audio_cs_if_ac_output_terminal_descriptor *desc = (struct audio_cs_if_ac_output_terminal_descriptor *)p;
 
-                            memcpy(&audio_class->ac_msg_table[output_offset].ac_output, desc, sizeof(struct audio_cs_if_ac_output_terminal_descriptor));
+                            memcpy(&ac_msg_table[output_offset].ac_output, desc, sizeof(struct audio_cs_if_ac_output_terminal_descriptor));
                             output_offset++;
                         } break;
                         case AUDIO_CONTROL_FEATURE_UNIT: {
                             struct audio_cs_if_ac_feature_unit_descriptor *desc = (struct audio_cs_if_ac_feature_unit_descriptor *)p;
 
-                            memcpy(&audio_class->ac_msg_table[feature_unit_offset].ac_feature_unit, desc, desc->bLength);
+                            memcpy(&ac_msg_table[feature_unit_offset].ac_feature_unit, desc, desc->bLength);
                             feature_unit_offset++;
                         } break;
-                        case AUDIO_CONTROL_PROCESSING_UNIT:
-
-                            break;
                         default:
-                            break;
+                            USB_LOG_ERR("Do not support %02x subtype\r\n", p[DESC_bDescriptorSubType]);
+                            return -USB_ERR_NOTSUPP;
                     }
                 } else if ((cur_iface > audio_class->ctrl_intf) && (cur_iface < (audio_class->ctrl_intf + cur_iface_count))) {
                     switch (p[DESC_bDescriptorSubType]) {
@@ -383,7 +461,12 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     if ((input_offset != output_offset) && (input_offset != feature_unit_offset)) {
-        USB_LOG_ERR("Audio descriptor is invalid\r\n");
+        USB_LOG_ERR("Audio control descriptor is invalid\r\n");
+        return -USB_ERR_INVAL;
+    }
+
+    if (cur_iface_count == 0xff) {
+        USB_LOG_ERR("Audio descriptor must have iad descriptor\r\n");
         return -USB_ERR_INVAL;
     }
 
@@ -392,21 +475,21 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     for (uint8_t i = 0; i < audio_class->stream_intf_num; i++) {
         /* Search 0x0101 in input or output desc */
         for (uint8_t streamidx = 0; streamidx < audio_class->stream_intf_num; streamidx++) {
-            if (audio_class->as_msg_table[i].as_general.bTerminalLink == audio_class->ac_msg_table[streamidx].ac_input.bTerminalID) {
+            if (audio_class->as_msg_table[i].as_general.bTerminalLink == ac_msg_table[streamidx].ac_input.bTerminalID) {
                 /* INPUT --> FEATURE UNIT --> OUTPUT */
-                audio_class->as_msg_table[i].input_terminal_id = audio_class->ac_msg_table[streamidx].ac_input.bTerminalID;
+                audio_class->as_msg_table[i].input_terminal_id = ac_msg_table[streamidx].ac_input.bTerminalID;
 
                 /* Search input terminal id in feature desc */
                 for (uint8_t featureidx = 0; featureidx < audio_class->stream_intf_num; featureidx++) {
-                    if (audio_class->ac_msg_table[streamidx].ac_input.bTerminalID == audio_class->ac_msg_table[featureidx].ac_feature_unit.bSourceID) {
-                        audio_class->as_msg_table[i].feature_terminal_id = audio_class->ac_msg_table[featureidx].ac_feature_unit.bUnitID;
+                    if (ac_msg_table[streamidx].ac_input.bTerminalID == ac_msg_table[featureidx].ac_feature_unit.bSourceID) {
+                        audio_class->as_msg_table[i].feature_terminal_id = ac_msg_table[featureidx].ac_feature_unit.bUnitID;
 
                         /* Search feature unit id in output desc */
                         for (uint8_t outputid = 0; outputid < audio_class->stream_intf_num; outputid++) {
-                            if (audio_class->ac_msg_table[featureidx].ac_feature_unit.bUnitID == audio_class->ac_msg_table[outputid].ac_output.bSourceID) {
-                                audio_class->as_msg_table[i].output_terminal_id = audio_class->ac_msg_table[outputid].ac_output.bTerminalID;
+                            if (ac_msg_table[featureidx].ac_feature_unit.bUnitID == ac_msg_table[outputid].ac_output.bSourceID) {
+                                audio_class->as_msg_table[i].output_terminal_id = ac_msg_table[outputid].ac_output.bTerminalID;
 
-                                switch (audio_class->ac_msg_table[outputid].ac_output.wTerminalType) {
+                                switch (ac_msg_table[outputid].ac_output.wTerminalType) {
                                     case AUDIO_OUTTERM_SPEAKER:
                                         audio_class->as_msg_table[i].stream_name = "speaker";
                                         break;
@@ -426,21 +509,21 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                         break;
                     }
                 }
-            } else if (audio_class->as_msg_table[i].as_general.bTerminalLink == audio_class->ac_msg_table[streamidx].ac_output.bTerminalID) {
+            } else if (audio_class->as_msg_table[i].as_general.bTerminalLink == ac_msg_table[streamidx].ac_output.bTerminalID) {
                 /* OUTPUT --> FEATURE UNIT --> INPUT */
-                audio_class->as_msg_table[i].output_terminal_id = audio_class->ac_msg_table[streamidx].ac_output.bTerminalID;
+                audio_class->as_msg_table[i].output_terminal_id = ac_msg_table[streamidx].ac_output.bTerminalID;
 
                 /* Search output terminal id in feature desc */
                 for (uint8_t featureidx = 0; featureidx < audio_class->stream_intf_num; featureidx++) {
-                    if (audio_class->ac_msg_table[streamidx].ac_output.bSourceID == audio_class->ac_msg_table[featureidx].ac_feature_unit.bUnitID) {
-                        audio_class->as_msg_table[i].feature_terminal_id = audio_class->ac_msg_table[featureidx].ac_feature_unit.bUnitID;
+                    if (ac_msg_table[streamidx].ac_output.bSourceID == ac_msg_table[featureidx].ac_feature_unit.bUnitID) {
+                        audio_class->as_msg_table[i].feature_terminal_id = ac_msg_table[featureidx].ac_feature_unit.bUnitID;
 
                         /* Search feature unit id in input desc */
                         for (uint8_t inputid = 0; inputid < audio_class->stream_intf_num; inputid++) {
-                            if (audio_class->ac_msg_table[featureidx].ac_feature_unit.bSourceID == audio_class->ac_msg_table[inputid].ac_input.bTerminalID) {
-                                audio_class->as_msg_table[i].input_terminal_id = audio_class->ac_msg_table[inputid].ac_input.bTerminalID;
+                            if (ac_msg_table[featureidx].ac_feature_unit.bSourceID == ac_msg_table[inputid].ac_input.bTerminalID) {
+                                audio_class->as_msg_table[i].input_terminal_id = ac_msg_table[inputid].ac_input.bTerminalID;
 
-                                switch (audio_class->ac_msg_table[inputid].ac_input.wTerminalType) {
+                                switch (ac_msg_table[inputid].ac_input.wTerminalType) {
                                     case AUDIO_INTERM_MIC:
                                         audio_class->as_msg_table[i].stream_name = "mic";
                                         break;
@@ -455,6 +538,13 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                     }
                 }
             }
+        }
+    }
+
+    for (uint8_t i = 0; i < audio_class->stream_intf_num; i++) {
+        if (audio_class->as_msg_table[i].stream_name == NULL) {
+            USB_LOG_ERR("Audio stream search fail\r\n");
+            return -USB_ERR_NODEV;
         }
     }
 

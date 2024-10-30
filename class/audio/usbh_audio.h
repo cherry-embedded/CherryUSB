@@ -26,6 +26,11 @@ struct usbh_audio_as_msg {
     uint8_t output_terminal_id;
     uint8_t ep_attr;
     uint8_t num_of_altsetting;
+    uint16_t volume_min;
+    uint16_t volume_max;
+    uint16_t volume_res;
+    uint16_t volume_cur;
+    bool mute;
     struct audio_cs_if_as_general_descriptor as_general;
     struct audio_cs_if_as_format_type_descriptor as_format[CONFIG_USBHOST_MAX_INTF_ALTSETTINGS];
 };
@@ -43,7 +48,6 @@ struct usbh_audio {
     uint16_t bcdADC;
     uint8_t bInCollection;
     uint8_t stream_intf_num;
-    struct usbh_audio_ac_msg ac_msg_table[CONFIG_USBHOST_AUDIO_MAX_STREAMS];
     struct usbh_audio_as_msg as_msg_table[CONFIG_USBHOST_AUDIO_MAX_STREAMS];
 
     void *user_data;
