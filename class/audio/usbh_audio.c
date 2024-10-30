@@ -537,18 +537,18 @@ const struct usbh_class_driver audio_streaming_class_driver = {
 
 CLASS_INFO_DEFINE const struct usbh_class_info audio_ctrl_intf_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS,
-    .class = USB_DEVICE_CLASS_AUDIO,
-    .subclass = AUDIO_SUBCLASS_AUDIOCONTROL,
-    .protocol = 0x00,
+    .bInterfaceClass = USB_DEVICE_CLASS_AUDIO,
+    .bInterfaceSubClass = AUDIO_SUBCLASS_AUDIOCONTROL,
+    .bInterfaceProtocol = 0x00,
     .id_table = NULL,
     .class_driver = &audio_ctrl_class_driver
 };
 
 CLASS_INFO_DEFINE const struct usbh_class_info audio_streaming_intf_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS,
-    .class = USB_DEVICE_CLASS_AUDIO,
-    .subclass = AUDIO_SUBCLASS_AUDIOSTREAMING,
-    .protocol = 0x00,
+    .bInterfaceClass = USB_DEVICE_CLASS_AUDIO,
+    .bInterfaceSubClass = AUDIO_SUBCLASS_AUDIOSTREAMING,
+    .bInterfaceProtocol = 0x00,
     .id_table = NULL,
     .class_driver = &audio_streaming_class_driver
 };
