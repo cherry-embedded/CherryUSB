@@ -64,6 +64,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     bool test_req;
 #endif
     struct usbd_interface *intf[16];
+    uint8_t intf_altsetting[16];
     uint8_t intf_offset;
 
     struct usbd_tx_rx_msg tx_msg[CONFIG_USBDEV_EP_NUM];
@@ -710,11 +711,12 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
             ret = false;
             break;
         case USB_REQUEST_GET_INTERFACE:
-            (*data)[0] = 0;
+            (*data)[0] = g_usbd_core[busid].intf_altsetting[intf_num];
             *len = 1;
             break;
 
         case USB_REQUEST_SET_INTERFACE:
+            g_usbd_core[busid].intf_altsetting[intf_num] = LO_BYTE(setup->wValue);
             usbd_set_interface(busid, setup->wIndex, setup->wValue);
             *len = 0;
             break;
