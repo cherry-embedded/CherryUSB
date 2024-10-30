@@ -36,6 +36,17 @@ sdk_library_add_sources(${cherryusb_srcs})
 
 sdk_library_add_sources(platform/none/usbh_lwip.c)
 
+if((NOT ("${CHIP}" STREQUAL "bl702")))
+sdk_add_compile_definitions(-DCONFIG_USB_ALIGN_SIZE=32)
+if(CONFIG_USB_HS)
+sdk_add_compile_definitions(-DCONFIG_USB_HS)
+endif()
+else()
+if(CONFIG_USB_HS)
+message(FATAL_ERROR "BL702 USB do not support high speed")
+endif()
+endif()
+
 elseif(HPM_SDK_BASE)
 set(CONFIG_CHERRYUSB_HOST 1)
 set(CONFIG_CHERRYUSB_HOST_CDC_ACM 1)
