@@ -103,6 +103,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 支持 USB Bluetooth (支持 nimble and zephyr bluetooth 协议栈，支持 **CLASS: 0xE0** 或者厂家自定义类，类似于 cdc acm 功能)
 - 支持 Vendor 类 class (serial, net, wifi)
 - 支持 USB modeswitch
+- 支持 Android Open Accessory
 - 支持相同 USB IP 的多主机
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。

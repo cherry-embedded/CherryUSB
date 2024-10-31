@@ -295,6 +295,11 @@ if CHERRYUSB
             prompt "Enable usb pl2303 driver"
             default n
 
+        config CHERRYUSB_HOST_AOA
+            bool
+            prompt "Enable usb aoa driver"
+            default n
+
         config USBHOST_PLATFORM_CDC_ECM
             bool
 

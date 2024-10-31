@@ -103,6 +103,7 @@ CherryUSB Host Stack has the following functions：
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
 - Support Vendor class (serial, net, wifi)
 - Support USB modeswitch
+- Support Android Open Accessory
 - Support multi host with the same USB IP
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
