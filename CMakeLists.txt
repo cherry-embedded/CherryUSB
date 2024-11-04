@@ -77,10 +77,14 @@ set(ldfragments "osal/idf/linker.lf")
 if(CONFIG_CHERRYUSB_HOST_CDC_ECM OR CONFIG_CHERRYUSB_HOST_CDC_RNDIS OR CONFIG_CHERRYUSB_HOST_CDC_NCM
 OR CONFIG_CHERRYUSB_HOST_ASIX OR CONFIG_CHERRYUSB_HOST_RTL8152 OR CONFIG_CHERRYUSB_HOST_BL616)
 list(APPEND cherryusb_srcs platform/none/usbh_lwip.c)
+idf_component_get_property(lwip lwip COMPONENT_LIB)
+target_compile_definitions(${lwip} PRIVATE "-DPBUF_POOL_BUFSIZE=1600")
 endif()
 
+idf_component_get_property(freertos_include freertos ORIG_INCLUDE_PATH)
+
 idf_component_register(SRCS ${cherryusb_srcs}
-    INCLUDE_DIRS ${cherryusb_incs}
+    INCLUDE_DIRS ${cherryusb_incs} ${freertos_include}
     PRIV_REQUIRES usb
     LDFRAGMENTS  ${ldfragments}
 )
