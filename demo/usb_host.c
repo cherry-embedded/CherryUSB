@@ -254,38 +254,38 @@ delete:
 }
 #endif
 
+#if TEST_USBH_CDC_ACM
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
 {
-#if TEST_USBH_CDC_ACM
     usb_osal_thread_create("usbh_cdc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_acm_thread, cdc_acm_class);
-#endif
 }
 
 void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
 {
 }
+#endif
 
+#if TEST_USBH_HID
 void usbh_hid_run(struct usbh_hid *hid_class)
 {
-#if TEST_USBH_HID
     usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, hid_class);
-#endif
 }
 
 void usbh_hid_stop(struct usbh_hid *hid_class)
 {
 }
+#endif
 
+#if TEST_USBH_MSC
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
-#if TEST_USBH_MSC
     usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, msc_class);
-#endif
 }
 
 void usbh_msc_stop(struct usbh_msc *msc_class)
 {
 }
+#endif
 
 #if TEST_USBH_AUDIO
 #error "commercial charge"
