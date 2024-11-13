@@ -39,10 +39,10 @@ void chry_mempool_delete(struct chry_mempool *pool)
 uintptr_t *chry_mempool_alloc(struct chry_mempool *pool)
 {
     uintptr_t *addr;
-    bool ret;
+    uint32_t len;
 
-    ret = chry_ringbuffer_read(&pool->rb, (uintptr_t *)&addr, sizeof(uintptr_t));
-    if (ret == false) {
+    len = chry_ringbuffer_read(&pool->rb, (uintptr_t *)&addr, sizeof(uintptr_t));
+    if (len == 0) {
         return NULL;
     } else {
         return addr;
