@@ -225,6 +225,5 @@ void video_test(uint8_t busid)
                 }
             }
         }
-        }
     }
 }
