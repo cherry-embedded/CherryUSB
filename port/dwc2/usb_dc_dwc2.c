@@ -790,7 +790,7 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
             } while ((USB_OTG_OUTEP(ep_idx)->DOEPINT & USB_OTG_DOEPINT_EPDISD) != USB_OTG_DOEPINT_EPDISD);
 
             /* Clear and unmask endpoint disabled interrupt */
-            USB_OTG_OUTEP(ep_idx)->DOEPINT |= USB_OTG_DOEPINT_EPDISD;
+            USB_OTG_OUTEP(ep_idx)->DOEPINT = USB_OTG_DOEPINT_EPDISD;
         }
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
@@ -810,7 +810,7 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
             } while ((USB_OTG_INEP(ep_idx)->DIEPINT & USB_OTG_DIEPINT_EPDISD) != USB_OTG_DIEPINT_EPDISD);
 
             /* Clear and unmask endpoint disabled interrupt */
-            USB_OTG_INEP(ep_idx)->DIEPINT |= USB_OTG_DIEPINT_EPDISD;
+            USB_OTG_INEP(ep_idx)->DIEPINT = USB_OTG_DIEPINT_EPDISD;
         }
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << (ep_idx & 0x07)));
@@ -1161,17 +1161,17 @@ void USBD_IRQHandler(uint8_t busid)
             dwc2_ep0_start_read_setup(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
         }
         if (gint_status & USB_OTG_GINTSTS_ENUMDNE) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_ENUMDNE;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_ENUMDNE;
             dwc2_set_turnaroundtime(busid, SystemCoreClock, dwc2_get_devspeed(busid));
 
             USB_OTG_DEV->DCTL |= USB_OTG_DCTL_CGINAK;
         }
         if (gint_status & USB_OTG_GINTSTS_PXFR_INCOMPISOOUT) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_PXFR_INCOMPISOOUT;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_PXFR_INCOMPISOOUT;
         }
 
         if (gint_status & USB_OTG_GINTSTS_IISOIXFR) {
-            USB_OTG_GLB->GINTSTS |= USB_OTG_GINTSTS_IISOIXFR;
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_IISOIXFR;
         }
 
         if (gint_status & USB_OTG_GINTSTS_SOF) {
