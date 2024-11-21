@@ -29,6 +29,7 @@ void usbd_audio_close(uint8_t busid, uint8_t intf);
 
 void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int volume);
 int usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch);
+void usbd_audio_get_volume_table(uint8_t busid, uint8_t ep, uint8_t **volume_table);
 void usbd_audio_set_mute(uint8_t busid, uint8_t ep, uint8_t ch, bool mute);
 bool usbd_audio_get_mute(uint8_t busid, uint8_t ep, uint8_t ch);
 void usbd_audio_set_sampling_freq(uint8_t busid, uint8_t ep, uint32_t sampling_freq);

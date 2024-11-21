@@ -190,11 +190,10 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 break;
                             case AUDIO_REQUEST_RANGE:
                                 if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                                    *((uint16_t *)(*data + 0)) = 1;
-                                    *((uint16_t *)(*data + 2)) = 0;
-                                    *((uint16_t *)(*data + 4)) = 100;
-                                    *((uint16_t *)(*data + 6)) = 1;
-                                    *len = 8;
+                                    usbd_audio_get_volume_table(busid, ep, data);
+                                    num = (uint16_t)((uint16_t)(sampling_freq_table[1] << 8) | ((uint16_t)sampling_freq_table[0]));
+                                    *len = (6 * num + 2);
+                                    memcpy(*data, sampling_freq_table, *len);
                                 } else {
                                 }
                                 break;
@@ -327,6 +326,14 @@ __WEAK int usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
     (void)ch;
 
     return 0;
+}
+
+__WEAK void usbd_audio_get_volume_table(uint8_t busid, uint8_t ep, uint8_t **volume_table)
+{
+    *((uint16_t *)(*volume_table + 0)) = 1;
+    *((uint16_t *)(*volume_table + 2)) = 0;
+    *((uint16_t *)(*volume_table + 4)) = 100;
+    *((uint16_t *)(*volume_table + 6)) = 1;
 }
 
 __WEAK void usbd_audio_set_mute(uint8_t busid, uint8_t ep, uint8_t ch, bool mute)
