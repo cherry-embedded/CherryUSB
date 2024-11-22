@@ -190,19 +190,27 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 break;
                             case AUDIO_REQUEST_RANGE:
                                 if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                                    uint16_t **volume_range_table = (uint16_t**)data;
-                                    uint16_t num;
 
+
+                                    uint16_t *volume_range_buffer = NULL;
+                                    uint16_t **volume_range_table = &volume_range_buffer;
+                                    
                                     usbd_audio_get_volume_table(busid, ep, volume_range_table);
-                                    if (volume_range_table == NULL) {
+                                    if (volume_range_table == NULL || *volume_range_table == NULL) {
+                                        return -1;
+                                    }
+                                    
+                                    uint16_t num_entries = (*volume_range_table)[0];
+                                    size_t total_size = (6 * num_entries + 2);
+                                    
+                                    /* Validate against max USB control transfer size */
+                                    if (total_size > 256) {
                                         return -1;
                                     }
 
-                                    num = (*volume_range_table)[0];
-                                    *len = (6 * num + 2);
                                     if (volume_range_table != (uint16_t**)data) {
                                         /* callback has changed the pointer. Copy the data to the usb buffer. */
-                                        memcpy(*data, volume_range_table, *len);
+                                        memcpy(*data, *volume_range_table, total_size);
                                     }
                                 } else {
                                 }
@@ -346,8 +354,8 @@ __WEAK void usbd_audio_get_volume_table(uint8_t busid, uint8_t ep, uint16_t **vo
 
     (*volume_range_table)[0] = 1; /* number of entries */
     (*volume_range_table)[1] = 0; /* minimum: 0 dB */
-    (*volume_range_table)[2] = 100; /* maximum: 100/256 dB =~ 0.39dB*/
-    (*volume_range_table)[3] = 1; /* step size: 1/256 dB*/
+    (*volume_range_table)[2] = 100 << 8; /* maximum: 100 dB */
+    (*volume_range_table)[3] = 1 << 8; /* step size: 1 dB */
 }
 
 __WEAK void usbd_audio_set_mute(uint8_t busid, uint8_t ep, uint8_t ch, bool mute)
