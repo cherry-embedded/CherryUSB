@@ -801,9 +801,9 @@ bool usbd_video_stream_split_transfer(uint8_t busid, uint8_t ep)
 
         uint32_t len2 = MIN(len, g_usbd_video[busid].probe.dwMaxPayloadTransferSize - g_usbd_video[busid].stream_headerlen);
 
-        memcpy(&g_usbd_video[busid].ep_buffer[offset + g_usbd_video[busid].stream_headerlen],
-               &g_usbd_video[busid].stream_buf[g_usbd_video[busid].stream_offset],
-               len2);
+        usb_memcpy(&g_usbd_video[busid].ep_buffer[offset + g_usbd_video[busid].stream_headerlen],
+                   &g_usbd_video[busid].stream_buf[g_usbd_video[busid].stream_offset],
+                   len2);
 
         g_usbd_video[busid].stream_offset += len2;
         len -= len2;

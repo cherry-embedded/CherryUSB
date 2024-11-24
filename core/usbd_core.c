@@ -1177,7 +1177,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
 #ifdef CONFIG_USBDEV_EP0_INDATA_NO_COPY
         g_usbd_core[busid].ep0_data_buf = buf;
 #else
-        memcpy(g_usbd_core[busid].ep0_data_buf, buf, g_usbd_core[busid].ep0_data_buf_residue);
+        usb_memcpy(g_usbd_core[busid].ep0_data_buf, buf, g_usbd_core[busid].ep0_data_buf_residue);
 #endif
     } else {
         /* use memcpy(*data, xxx, len); has copied into ep0 buffer, we do nothing */
