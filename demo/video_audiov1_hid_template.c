@@ -269,7 +269,7 @@ static const uint8_t hid_keyboard_report_desc[HID_KEYBOARD_REPORT_DESC_SIZE] = {
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t audio_read_buffer[AUDIO_OUT_PACKET];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t audio_write_buffer[AUDIO_IN_PACKET];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t video_packet_buffer[MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t video_packet_buffer[2][MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE];
 
 volatile bool video_tx_flag = 0;
 volatile bool audio_tx_flag = 0;
@@ -480,7 +480,7 @@ void video_test(uint8_t busid)
     while (1) {
         if (video_tx_flag) {
             video_iso_tx_busy = true;
-            usbd_video_stream_start_write(busid, VIDEO_IN_EP, video_packet_buffer, MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE, (uint8_t *)cherryusb_mjpeg, sizeof(cherryusb_mjpeg));
+            usbd_video_stream_start_write(busid, VIDEO_IN_EP, &video_packet_buffer[0][0], &video_packet_buffer[1][0], MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE, (uint8_t *)cherryusb_mjpeg, sizeof(cherryusb_mjpeg));
             while (video_iso_tx_busy) {
                 if (video_tx_flag == 0) {
                     break;
