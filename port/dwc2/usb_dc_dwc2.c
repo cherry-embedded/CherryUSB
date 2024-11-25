@@ -136,9 +136,11 @@ static inline int dwc2_reset(uint8_t busid)
 
     do {
         if (++count > 200000U) {
-            return -1;
+            break;
         }
     } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+
+    USB_OTG_GLB->GRSTCTL &= ~USB_OTG_GRSTCTL_CSRST;
 
     return 0;
 }
