@@ -184,21 +184,21 @@ int usbh_audio_close(struct usbh_audio *audio_class, const char *name)
     return ret;
 }
 
-int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint8_t ch, uint8_t volume)
+int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint8_t ch, int volume_db)
 {
     struct usb_setup_packet *setup;
     int ret;
     uint8_t feature_id = 0xff;
     uint8_t intf;
     uint16_t volume_hex;
-    uint16_t volume_max;
-    uint16_t volume_add;
+    int volume_min_db;
+    int volume_max_db;
 
     if (!audio_class || !audio_class->hport) {
         return -USB_ERR_INVAL;
     }
 
-    if (volume > 100) {
+    if ((volume_db > 127) || (volume_db < -127)) {
         return -USB_ERR_INVAL;
     }
 
@@ -271,15 +271,30 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, const char *name, uint
     setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
     setup->wLength = 2;
 
-    /* change volume range start with zero */
-    volume_add = 0x10000 - audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min;
-    volume_max = audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max + volume_add;
-    volume_hex = volume * volume_max / 100.0;
-
-    if (volume_hex >= volume_add) {
-        volume_hex = volume_hex - volume_add;
+    if (audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min < 0x8000) {
+        volume_min_db = audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min / 256;
     } else {
-        volume_hex = 0x10000 - (volume_add - volume_hex);
+        volume_min_db = (audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min - 0x10000) / 256;
+    }
+
+    if (audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max < 0x8000) {
+        volume_max_db = audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max / 256;
+    } else {
+        volume_max_db = (audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max - 0x10000) / 256;
+    }
+
+    USB_LOG_INFO("Get ch:%d dB range: %d dB ~ %d dB\r\n", volume_min_db, volume_max_db);
+
+    if (volume_db >= 0) {
+        volume_hex = volume_db * 256;
+        if (volume_hex > audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_max) {
+            return -USB_ERR_RANGE;
+        }
+    } else {
+        volume_hex = volume_db * 256 + 0x10000;
+        if (volume_hex < audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].volume_min) {
+            return -USB_ERR_RANGE;
+        }
     }
 
     memcpy(g_audio_buf, &volume_hex, 2);
