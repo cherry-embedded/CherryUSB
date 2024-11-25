@@ -206,7 +206,7 @@ void video_init(uint8_t busid, uintptr_t reg_base)
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[40 * 1024];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[2][40 * 1024];
 
 void video_test(uint8_t busid)
 {
@@ -214,11 +214,11 @@ void video_test(uint8_t busid)
     uint32_t packets;
 
     (void)packets;
-    memset(packet_buffer, 0, 40 * 1024);
+    memset(packet_buffer, 0, sizeof(packet_buffer));
     while (1) {
         if (tx_flag) {
             iso_tx_busy = true;
-            usbd_video_stream_start_write(busid, VIDEO_IN_EP, packet_buffer, MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE, (uint8_t *)cherryusb_h264, sizeof(cherryusb_h264));
+            usbd_video_stream_start_write(busid, VIDEO_IN_EP, &packet_buffer[0][0], &packet_buffer[1][0], MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE, (uint8_t *)cherryusb_h264, sizeof(cherryusb_h264));
             while (iso_tx_busy) {
                 if (tx_flag == 0) {
                     break;
