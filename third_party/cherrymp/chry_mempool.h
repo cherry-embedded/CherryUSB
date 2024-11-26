@@ -10,8 +10,9 @@
 #include "chry_ringbuffer.h"
 
 struct chry_mempool {
-    chry_ringbuffer_t rb;
-    usb_osal_mq_t mq;
+    chry_ringbuffer_t in;
+    chry_ringbuffer_t out;
+    usb_osal_sem_t out_sem;
 };
 
 #ifdef __cplusplus
