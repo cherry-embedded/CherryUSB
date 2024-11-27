@@ -151,6 +151,104 @@
              
   <section id="usbd-cdc-acm">
 <h1>usbd_cdc_acm<a class="headerlink" href="#usbd-cdc-acm" title="Link to this heading"></a></h1>
+<p>本 demo 主要用于演示 cdc acm 功能，包含收发测试，DTR 控制，ZLP 测试，性能测试。</p>
+<ul class="simple">
+<li><p>开辟读写 buffer，用于收发数据，并且buffer需要用 nocache 修饰，这里我们读写都是用 2048字节，是为了后面的 ZLP 测试和性能测试使用。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB_NOCACHE_RAM_SECTION</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">read_buffer</span><span class="p">[</span><span class="mi">2048</span><span class="p">];</span><span class="w"> </span><span class="cm">/* 2048 is only for test speed , please use CDC_MAX_MPS for common*/</span>
+<span class="n">USB_NOCACHE_RAM_SECTION</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">write_buffer</span><span class="p">[</span><span class="mi">2048</span><span class="p">];</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>协议栈回调中，我们需要在枚举完成后启动第一次传输，并清除相关 flag，可以在 reset 事件中清除，也可以在 configured 事件中清除。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_event_handler</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">event</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">event</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_RESET</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_CONNECTED</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_DISCONNECTED</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_RESUME</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_SUSPEND</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_CONFIGURED</span><span class="p">:</span>
+<span class="w">            </span><span class="n">ep_tx_busy_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">            </span><span class="cm">/* setup first out ep read transfer */</span>
+<span class="w">            </span><span class="n">usbd_ep_start_read</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">CDC_OUT_EP</span><span class="p">,</span><span class="w"> </span><span class="n">read_buffer</span><span class="p">,</span><span class="w"> </span><span class="mi">2048</span><span class="p">);</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_SET_REMOTE_WAKEUP</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">USBD_EVENT_CLR_REMOTE_WAKEUP</span><span class="p">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">default</span><span class="o">:</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>在接收完成中断中继续发起接收；在发送完成中断中判断是否需要发送 ZLP。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_bulk_out</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">nbytes</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;actual out len:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">nbytes</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// for (int i = 0; i &lt; 100; i++) {</span>
+<span class="w">    </span><span class="c1">//     printf(&quot;%02x &quot;, read_buffer[i]);</span>
+<span class="w">    </span><span class="c1">// }</span>
+<span class="w">    </span><span class="c1">// printf(&quot;\r\n&quot;);</span>
+<span class="w">    </span><span class="cm">/* setup next out ep read transfer */</span>
+<span class="w">    </span><span class="n">usbd_ep_start_read</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">CDC_OUT_EP</span><span class="p">,</span><span class="w"> </span><span class="n">read_buffer</span><span class="p">,</span><span class="w"> </span><span class="mi">2048</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_bulk_in</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">nbytes</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;actual in len:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">nbytes</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">nbytes</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">usbd_get_ep_mps</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">ep</span><span class="p">))</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">nbytes</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* send zlp */</span>
+<span class="w">        </span><span class="n">usbd_ep_start_write</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">CDC_IN_EP</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ep_tx_busy_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>以下是为了测试 DTR 功能并控制 USB 发送，DTR 和 RTS 只用于搭配 UART 使用，如果是纯 USB，没什么用，这里仅做测试。DTR 开关使用任意串口上位机并勾选 DTR。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_set_dtr</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">dtr</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">dtr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">dtr_enable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">dtr_enable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>在主函数中一直调用发送即可</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">cdc_acm_data_send_with_dtr_test</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">dtr_enable</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ep_tx_busy_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="w">        </span><span class="n">usbd_ep_start_write</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">CDC_IN_EP</span><span class="p">,</span><span class="w"> </span><span class="n">write_buffer</span><span class="p">,</span><span class="w"> </span><span class="mi">2048</span><span class="p">);</span>
+<span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">ep_tx_busy_flag</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>上述我们需要注意，长度设置为 2048 是为了测试 ZLP 功能，通常实际使用时，接收长度应该使用 CDC_MAX_MPS 。具体原因参考 <a class="reference internal" href="../usb/usb_ext.html#usb-ext"><span class="std std-ref">USB 知识点拓展</span></a></p></li>
+<li><p>如果需要做性能测试，使用 tools/test_srcipts/test_cdc_speed.py 进行测试,并在测试之前删除 <cite>usbd_cdc_acm_bulk_out</cite> 和 <cite>usbd_cdc_acm_bulk_in</cite> 中的打印，否则会影响测试结果。</p></li>
+</ul>
 </section>
 
 

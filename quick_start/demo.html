@@ -50,6 +50,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#hpmicro">基于 HPMicro 系列芯片</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#esp32s2-s3-p4">基于 esp32s2/s3/p4 系列芯片</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">基于飞腾派系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#essemi">基于 Essemi 系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nxp-mcx">基于 NXP MCX系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#artinchip">基于 Artinchip 系列芯片</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st">基于 ST 系列芯片</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#usb-device">USB Device 移植要点</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usb-host">USB Host 移植要点</a></li>
@@ -192,8 +195,30 @@
 <h2>基于飞腾派系列芯片<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <p>仓库参考：<a class="reference external" href="https://gitee.com/phytium_embedded/phytium-free-rtos-sdk">https://gitee.com/phytium_embedded/phytium-free-rtos-sdk</a></p>
 <ul class="simple">
-<li><p>飞腾派支持两个 USB3.0 主机， 两个 USB2.0 主从机</p></li>
+<li><p>飞腾派支持两个 USB3.0 主机（采用 XHCI）， 两个 USB2.0 主从机</p></li>
 <li><p>USB 的相关应用位于 <cite>example/peripheral/usb</cite> ，根据官方环境搭建完成后，即可编译使用。</p></li>
+</ul>
+</section>
+<section id="essemi">
+<h2>基于 Essemi 系列芯片<a class="headerlink" href="#essemi" title="Link to this heading"></a></h2>
+<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_es32">https://github.com/CherryUSB/cherryusb_es32</a></p>
+<ul class="simple">
+<li><p>支持全速和高速主从机</p></li>
+</ul>
+</section>
+<section id="nxp-mcx">
+<h2>基于 NXP MCX系列芯片<a class="headerlink" href="#nxp-mcx" title="Link to this heading"></a></h2>
+<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_mcx">https://github.com/CherryUSB/cherryusb_mcx</a> 或者 <a class="reference external" href="https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx">https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx</a></p>
+<ul class="simple">
+<li><p>支持全速 IP 和高速 IP， 高速 IP 支持主机和从机</p></li>
+<li><p>支持全速和高速主从机</p></li>
+</ul>
+</section>
+<section id="artinchip">
+<h2>基于 Artinchip 系列芯片<a class="headerlink" href="#artinchip" title="Link to this heading"></a></h2>
+<p>仓库参考：<a class="reference external" href="https://gitee.com/artinchip/luban-lite">https://gitee.com/artinchip/luban-lite</a></p>
+<ul class="simple">
+<li><p>支持全速和高速主从机，主机采用 EHCI + OHCI。</p></li>
 </ul>
 </section>
 <section id="st">
