@@ -193,7 +193,7 @@ int usbd_cdc_ecm_start_read(uint8_t *buf, uint32_t len)
     }
 
     g_cdc_ecm_rx_data_length = 0;
-    usbd_ep_start_read(0, cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr, buf, len);
+    return usbd_ep_start_read(0, cdc_ecm_ep_data[CDC_ECM_OUT_EP_IDX].ep_addr, buf, len);
 }
 
 #ifdef CONFIG_USBDEV_CDC_ECM_USING_LWIP
