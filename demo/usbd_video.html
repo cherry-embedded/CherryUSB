@@ -195,9 +195,9 @@
 <ul class="simple">
 <li><p>使用 <cite>usbd_video_stream_start_write</cite> 传输数据</p></li>
 </ul>
-<p>1，采用双缓冲的形式， <strong>MAX_PACKETS_IN_ONE_TRANSFER</strong> 表示一次传输可以携带多少个 <strong>MAX_PAYLOAD_SIZE</strong>，通常 IP 只能为 1。
-2，在中断完成中，调用 <cite>usbd_video_stream_split_transfer</cite> 继续下一次传输，直到返回为 true 表示传输完成。这边的分裂传输只是表示将图片数据拆成 <strong>MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE</strong> 份传输。
-3，通常 IP 不支持一次传输非常大的数据，比如传输 1MB，因此需要做分裂传输，但是会增加中断次数。并且一次传输非常大数据也是需要足够的 RAM。</p>
+<p>1，传输采用双缓冲的形式， <strong>MAX_PACKETS_IN_ONE_TRANSFER</strong> 表示一次传输可以携带多少个 <strong>MAX_PAYLOAD_SIZE</strong>，通常 IP 只能为 1。</p>
+<p>2，在中断完成中，调用 <cite>usbd_video_stream_split_transfer</cite> 继续下一次传输，直到返回为 true 表示传输完成。这边的分裂传输只是表示将图片数据拆成 <strong>MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE</strong> 份传输。</p>
+<p>3，通常 IP 不支持一次传输非常大的数据，比如传输 1MB，因此需要做分裂传输，但是会增加中断次数。并且一次传输非常大数据也是需要足够的 RAM。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_video_iso_callback</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">nbytes</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">usbd_video_stream_split_transfer</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">ep</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>

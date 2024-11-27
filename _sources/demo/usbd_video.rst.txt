@@ -47,8 +47,10 @@ demo 包含 **video_static_yuyv_template**, **video_static_mjpeg_template**, **v
 
 - 使用 `usbd_video_stream_start_write` 传输数据
 
-1，采用双缓冲的形式， **MAX_PACKETS_IN_ONE_TRANSFER** 表示一次传输可以携带多少个 **MAX_PAYLOAD_SIZE**，通常 IP 只能为 1。
+1，传输采用双缓冲的形式， **MAX_PACKETS_IN_ONE_TRANSFER** 表示一次传输可以携带多少个 **MAX_PAYLOAD_SIZE**，通常 IP 只能为 1。
+
 2，在中断完成中，调用 `usbd_video_stream_split_transfer` 继续下一次传输，直到返回为 true 表示传输完成。这边的分裂传输只是表示将图片数据拆成 **MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE** 份传输。
+
 3，通常 IP 不支持一次传输非常大的数据，比如传输 1MB，因此需要做分裂传输，但是会增加中断次数。并且一次传输非常大数据也是需要足够的 RAM。
 
 .. code-block:: C
