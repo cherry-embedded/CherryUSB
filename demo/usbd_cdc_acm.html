@@ -219,7 +219,7 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>以下是为了测试 DTR 功能并控制 USB 发送，DTR 和 RST 只用于搭配 UART 使用，如果是纯 USB，没什么用，这里仅做测试。DTR 开关使用任意串口上位机并勾选 DTR。</p></li>
+<li><p>以下是为了测试 DTR 功能并控制 USB 发送，DTR 和 RTS 只用于搭配 UART 使用，如果是纯 USB，没什么用，这里仅做测试。DTR 开关使用任意串口上位机并勾选 DTR。</p></li>
 </ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_cdc_acm_set_dtr</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">intf</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">dtr</span><span class="p">)</span>
 <span class="p">{</span>
