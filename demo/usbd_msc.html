@@ -151,6 +151,40 @@
              
   <section id="usbd-msc">
 <h1>usbd_msc<a class="headerlink" href="#usbd-msc" title="Link to this heading"></a></h1>
+<p>本节主要演示 USB 模拟 U 盘功能。默认使用RAM 作为存储介质模拟 U 盘。</p>
+<ul class="simple">
+<li><p>实现 U 盘的读写和获取容量接口，注意，容量 block_num 为虚拟的，实际没有这么多 block，读写的数据超过 BLOCK_COUNT 会丢弃。</p></li>
+</ul>
+<p>block_size 一般为 512/2048/4096。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_msc_get_cap</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">lun</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">block_num</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">block_size</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="o">*</span><span class="n">block_num</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1000</span><span class="p">;</span><span class="w"> </span><span class="c1">//Pretend having so many buffer,not has actually.</span>
+<span class="w">    </span><span class="o">*</span><span class="n">block_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BLOCK_SIZE</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">usbd_msc_sector_read</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">lun</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sector</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">length</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sector</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">BLOCK_COUNT</span><span class="p">)</span>
+<span class="w">        </span><span class="n">memcpy</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">mass_block</span><span class="p">[</span><span class="n">sector</span><span class="p">].</span><span class="n">BlockSpace</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">usbd_msc_sector_write</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">lun</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sector</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">length</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sector</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">BLOCK_COUNT</span><span class="p">)</span>
+<span class="w">        </span><span class="n">memcpy</span><span class="p">(</span><span class="n">mass_block</span><span class="p">[</span><span class="n">sector</span><span class="p">].</span><span class="n">BlockSpace</span><span class="p">,</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>默认上述 API 在中断中执行，如果需要在非中断中执行，可以选择如下：</p></li>
+</ul>
+<p>1，裸机下开启 <cite>CONFIG_USBDEV_MSC_POLLING</cite> 并在 while1 中调用 <cite>usbd_msc_polling</cite>，则读写函数在 while1 中执行。</p>
+<p>2, OS 下开启 <cite>CONFIG_USBDEV_MSC_THREAD</cite>，则读写函数在线程中执行。</p>
+<ul class="simple">
+<li><p>修改  <cite>CONFIG_USBDEV_MSC_STACKSIZE</cite> 会影响 U 盘的读写速度，必须是 block_size 的整数倍，当然，也会增加 RAM 的占用。</p></li>
+<li><p>如果 RAM 例程可以用，但是介质更换成 SD 或者 FLASH 后不可用，则一定是介质驱动问题。</p></li>
+</ul>
 </section>
 
 

@@ -160,7 +160,7 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>协议栈回调中，我们需要在枚举完成后启动第一次传输，并清除相关 flag，可以在 reset 事件中清除，也可以在 configured 事件中清除。</p></li>
+<li><p>在协议栈事件回调中，我们需要在枚举完成后启动第一次传输，并清除相关 flag，可以在 reset 事件中清除，也可以在 configured 事件中清除。</p></li>
 </ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_event_handler</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">event</span><span class="p">)</span>
 <span class="p">{</span>
@@ -249,6 +249,7 @@
 <li><p>上述我们需要注意，长度设置为 2048 是为了测试 ZLP 功能，通常实际使用时，接收长度应该使用 CDC_MAX_MPS 。具体原因参考 <a class="reference internal" href="../usb/usb_ext.html#usb-ext"><span class="std std-ref">USB 知识点拓展</span></a></p></li>
 <li><p>如果需要做性能测试，使用 tools/test_srcipts/test_cdc_speed.py 进行测试,并在测试之前删除 <cite>usbd_cdc_acm_bulk_out</cite> 和 <cite>usbd_cdc_acm_bulk_in</cite> 中的打印，否则会影响测试结果。</p></li>
 </ul>
+<p>此外，对于 CDC ACM 搭配 OS 的情况，通常我们 read 使用异步并将数据存储到 ringbuffer 中，write 使用同步搭配 sem 使用。</p>
 </section>
 
 

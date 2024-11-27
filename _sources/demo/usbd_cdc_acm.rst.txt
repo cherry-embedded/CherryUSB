@@ -11,7 +11,7 @@ usbd_cdc_acm
     USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
 
 
-- 协议栈回调中，我们需要在枚举完成后启动第一次传输，并清除相关 flag，可以在 reset 事件中清除，也可以在 configured 事件中清除。
+- 在协议栈事件回调中，我们需要在枚举完成后启动第一次传输，并清除相关 flag，可以在 reset 事件中清除，也可以在 configured 事件中清除。
 
 .. code-block:: C
 
@@ -99,3 +99,6 @@ usbd_cdc_acm
 
 - 上述我们需要注意，长度设置为 2048 是为了测试 ZLP 功能，通常实际使用时，接收长度应该使用 CDC_MAX_MPS 。具体原因参考 :ref:`usb_ext`
 - 如果需要做性能测试，使用 tools/test_srcipts/test_cdc_speed.py 进行测试,并在测试之前删除 `usbd_cdc_acm_bulk_out` 和 `usbd_cdc_acm_bulk_in` 中的打印，否则会影响测试结果。
+
+
+此外，对于 CDC ACM 搭配 OS 的情况，通常我们 read 使用异步并将数据存储到 ringbuffer 中，write 使用同步搭配 sem 使用。
