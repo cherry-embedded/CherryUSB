@@ -6,24 +6,41 @@
 #ifndef CHRY_MEMPOOL_H
 #define CHRY_MEMPOOL_H
 
-#include "usb_osal.h"
+#include <stdint.h>
+#include <string.h>
+#include <stdbool.h>
+
 #include "chry_ringbuffer.h"
+
+typedef void *chry_mempool_osal_sem_t;
 
 struct chry_mempool {
     chry_ringbuffer_t in;
     chry_ringbuffer_t out;
-    usb_osal_sem_t out_sem;
+    chry_mempool_osal_sem_t out_sem;
+
+    void *block;
+    uint32_t block_size;
+    uint32_t block_count;
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+chry_mempool_osal_sem_t chry_mempool_osal_sem_create(uint32_t max_count);
+void chry_mempool_osal_sem_delete(chry_mempool_osal_sem_t sem);
+int chry_mempool_osal_sem_take(chry_mempool_osal_sem_t sem, uint32_t timeout);
+int chry_mempool_osal_sem_give(chry_mempool_osal_sem_t sem);
+void *chry_mempool_osal_malloc(size_t size);
+void chry_mempool_osal_free(void *ptr);
+
 int chry_mempool_create(struct chry_mempool *pool, void *block, uint32_t block_size, uint32_t block_count);
 uintptr_t *chry_mempool_alloc(struct chry_mempool *pool);
 int chry_mempool_free(struct chry_mempool *pool, uintptr_t *item);
 int chry_mempool_send(struct chry_mempool *pool, uintptr_t *item);
 int chry_mempool_recv(struct chry_mempool *pool, uintptr_t **item, uint32_t timeout);
+void chry_mempool_reset(struct chry_mempool *pool);
 
 #ifdef __cplusplus
 }
