@@ -151,6 +151,35 @@
              
   <section id="usbd-winusb">
 <h1>usbd_winusb<a class="headerlink" href="#usbd-winusb" title="Link to this heading"></a></h1>
+<p>本节主要介绍 winusb 驱动。winusb 是 windows 为了让用户友好的访问 USB 自定义类设备提供的一套通用驱动，其实本质就是 CDC ACM。
+WINUSB 版本根据 USB 版本分为 V1/V2 版本，V2 版本需要包含 BOS 描述符，V1 版本不需要。V2 版本需要在设备描述符中设置为 USB2.1 的版本号。</p>
+<ul class="simple">
+<li><p>V1 版本注册描述符</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">usbd_msosv1_desc_register</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msosv1_desc</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>V2 版本注册描述符</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">usbd_bos_desc_register</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">bos_desc</span><span class="p">);</span>
+<span class="n">usbd_msosv2_desc_register</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msosv2_desc</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>接口描述符注册</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cm">/* Interface 0 */</span>
+<span class="n">USB_INTERFACE_DESCRIPTOR_INIT</span><span class="p">(</span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x02</span><span class="p">,</span><span class="w"> </span><span class="mh">0xFF</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x02</span><span class="p">),</span>
+<span class="cm">/* Endpoint OUT 2 */</span>
+<span class="n">USB_ENDPOINT_DESCRIPTOR_INIT</span><span class="p">(</span><span class="n">WINUSB_OUT_EP</span><span class="p">,</span><span class="w"> </span><span class="n">USB_ENDPOINT_TYPE_BULK</span><span class="p">,</span><span class="w"> </span><span class="n">WINUSB_EP_MPS</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">),</span>
+<span class="cm">/* Endpoint IN 1 */</span>
+<span class="n">USB_ENDPOINT_DESCRIPTOR_INIT</span><span class="p">(</span><span class="n">WINUSB_IN_EP</span><span class="p">,</span><span class="w"> </span><span class="n">USB_ENDPOINT_TYPE_BULK</span><span class="p">,</span><span class="w"> </span><span class="n">WINUSB_EP_MPS</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">),</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>其余操作与 CDC ACM 相同，不再赘述</p></li>
+</ul>
 </section>
 
 

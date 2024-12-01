@@ -151,6 +151,52 @@
              
   <section id="usbh-hid">
 <h1>usbh_hid<a class="headerlink" href="#usbh-hid" title="Link to this heading"></a></h1>
+<p>本节主要介绍 HID 类的使用。</p>
+<ul class="simple">
+<li><p>HID 枚举完成回调中创建一次性线程</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_hid_run</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hid</span><span class="w"> </span><span class="o">*</span><span class="n">hid_class</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">usb_osal_thread_create</span><span class="p">(</span><span class="s">&quot;usbh_hid&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2048</span><span class="p">,</span><span class="w"> </span><span class="n">CONFIG_USBHOST_PSC_PRIO</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_hid_thread</span><span class="p">,</span><span class="w"> </span><span class="n">hid_class</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">usbh_hid_stop</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hid</span><span class="w"> </span><span class="o">*</span><span class="n">hid_class</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>这里我们使用 usbh_submit_urb 的异步操作，在中断中处理数据并继续接收下一次数据。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_hid_thread</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">argument</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hid</span><span class="w"> </span><span class="o">*</span><span class="n">hid_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hid</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">argument</span><span class="p">;</span>
+<span class="w">    </span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* test with only one buffer, if you have more hid class, modify by yourself */</span>
+
+<span class="w">    </span><span class="cm">/* Suggest you to use timer for int transfer and use ep interval */</span>
+<span class="w">    </span><span class="n">usbh_int_urb_fill</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hid_class</span><span class="o">-&gt;</span><span class="n">intin_urb</span><span class="p">,</span><span class="w"> </span><span class="n">hid_class</span><span class="o">-&gt;</span><span class="n">hport</span><span class="p">,</span><span class="w"> </span><span class="n">hid_class</span><span class="o">-&gt;</span><span class="n">intin</span><span class="p">,</span><span class="w"> </span><span class="n">hid_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">hid_class</span><span class="o">-&gt;</span><span class="n">intin</span><span class="o">-&gt;</span><span class="n">wMaxPacketSize</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_hid_callback</span><span class="p">,</span><span class="w"> </span><span class="n">hid_class</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_submit_urb</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hid_class</span><span class="o">-&gt;</span><span class="n">intin_urb</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// clang-format off</span>
+<span class="nl">delete</span><span class="p">:</span>
+<span class="w">    </span><span class="n">usb_osal_thread_delete</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// clang-format on</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>当然，也可以不使用异步操作，而是使用 timeout 的同步操作。</p></li>
+<li><p>HID 使用的是中断传输，因此正常来说，我们需要根据 <strong>bInterval</strong> 来设置定时器，定时触发中断传输，demo 这里没有使用，如果对时间有精确要求，可以选择使用定时器来触发异步发送。</p></li>
+<li><p>以 hub 通信为例，采用的是一次性定时器，也可以使用周期性定时器。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">hub</span><span class="o">-&gt;</span><span class="n">int_timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usb_osal_timer_create</span><span class="p">(</span><span class="s">&quot;hubint_tim&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">USBH_GET_URB_INTERVAL</span><span class="p">(</span><span class="n">hub</span><span class="o">-&gt;</span><span class="n">intin</span><span class="o">-&gt;</span><span class="n">bInterval</span><span class="p">,</span><span class="w"> </span><span class="n">hport</span><span class="o">-&gt;</span><span class="n">speed</span><span class="p">),</span><span class="w"> </span><span class="n">hub_int_timeout</span><span class="p">,</span><span class="w"> </span><span class="n">hub</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+</div>
 </section>
 
 

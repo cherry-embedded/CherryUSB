@@ -151,6 +151,26 @@
              
   <section id="usbd-webusb">
 <h1>usbd_webusb<a class="headerlink" href="#usbd-webusb" title="Link to this heading"></a></h1>
+<p>本 demo 主要演示 webusb 功能，webusb 主要用于弹出网页并对 USB 设备进行访问。示例使用 webusb_hid_template.c。</p>
+<ul class="simple">
+<li><p>在注册描述符时注册 BOS, MSOSV2, WEBUSB 描述符即可。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">usbd_bos_desc_register</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">bos_desc</span><span class="p">);</span>
+<span class="n">usbd_msosv2_desc_register</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msosv2_desc</span><span class="p">);</span>
+<span class="n">usbd_webusb_desc_register</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">webusb_url_desc</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>增加一个接口描述符用于 webusb</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<p>USB_INTERFACE_DESCRIPTOR_INIT(USBD_WEBUSB_INTF_NUM, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)</p>
+<ul class="simple">
+<li><p>其余使用 hid 描述符，不再赘述</p></li>
+<li><p>枚举完成后，电脑右下角会弹出网页信息，点击即可打开网页</p></li>
+</ul>
 </section>
 
 
