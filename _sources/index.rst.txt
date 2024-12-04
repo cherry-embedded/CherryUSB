@@ -112,6 +112,8 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    demo/usbh_net
    demo/usbh_bluetooth
    demo/usbh_wifi
+   demo/usbd_vendor
+   demo/usbh_vendor
 
 .. toctree::
    :maxdepth: 1

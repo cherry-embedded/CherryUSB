@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>usbd_hid &mdash; CherryUSB 1.4.1 documentation</title>
+  <title>vendor device 驱动编写 &mdash; CherryUSB 1.4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
@@ -19,8 +19,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="usbd_msc" href="usbd_msc.html" />
-    <link rel="prev" title="usbd_cdc_acm" href="usbd_cdc_acm.html" /> 
+    <link rel="next" title="vendor host 驱动编写" href="usbh_vendor.html" />
+    <link rel="prev" title="usbh_wifi" href="usbh_wifi.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -80,7 +80,7 @@
 <p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usbd_cdc_acm.html">usbd_cdc_acm</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">usbd_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_hid.html">usbd_hid</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_msc.html">usbd_msc</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_rndis.html">usbd_rndis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_ecm.html">usbd_cdc_ecm</a></li>
@@ -95,7 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="usbh_net.html">usbh_net</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_bluetooth.html">usbh_bluetooth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_wifi.html">usbh_wifi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_vendor.html">vendor device 驱动编写</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">vendor device 驱动编写</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_vendor.html">vendor host 驱动编写</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
@@ -141,9 +141,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">usbd_hid</li>
+      <li class="breadcrumb-item active">vendor device 驱动编写</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/demo/usbd_hid.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/demo/usbd_vendor.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -151,17 +151,56 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="usbd-hid">
-<h1>usbd_hid<a class="headerlink" href="#usbd-hid" title="Link to this heading"></a></h1>
-<p>HID 功能比较简单，因此不作赘述，需要注意，使用 hid custom 例程时，需要搭配 <cite>tools/test_srcipts/test_hid_inout.py</cite> 使用。</p>
+  <section id="vendor-device">
+<h1>vendor device 驱动编写<a class="headerlink" href="#vendor-device" title="Link to this heading"></a></h1>
+<p>本节主要介绍如何编写一个 vendor device 驱动。</p>
+<ul class="simple">
+<li><p>首先复制一份 class/template/usbd_xxx.c 文件</p></li>
+<li><p>实现以下三个回调函数，通常来说，vendor 驱动只需要实现 vendor_handler</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">intf</span><span class="o">-&gt;</span><span class="n">class_interface_handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xxx_class_interface_request_handler</span><span class="p">;</span>
+<span class="n">intf</span><span class="o">-&gt;</span><span class="n">class_endpoint_handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="n">intf</span><span class="o">-&gt;</span><span class="n">vendor_handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="n">intf</span><span class="o">-&gt;</span><span class="n">notify_handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xxx_notify_handler</span><span class="p">;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>举例如下</p></li>
+</ul>
+<p>case1 演示对于主机 IN 数据的处理，将数据拷贝到 <a href="#id1"><span class="problematic" id="id2">*</span></a>data 中，并指定*len 的长度。协议栈会自动发送给主机，不需要用户手动调用发送 API。</p>
+<p>case2 演示对于主机 OUT 数据的处理，当执行到此函数时，说明数据都已经接收完成，可以直接读取 <a href="#id3"><span class="problematic" id="id4">*</span></a>data 中的数据，长度为 <a href="#id5"><span class="problematic" id="id6">*</span></a>len。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">xxx_vendor_request_handler</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_setup_packet</span><span class="w"> </span><span class="o">*</span><span class="n">setup</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">**</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">len</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">USB_LOG_WRN</span><span class="p">(</span><span class="s">&quot;XXX Class request: &quot;</span>
+<span class="w">                </span><span class="s">&quot;bRequest 0x%02x</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="n">setup</span><span class="o">-&gt;</span><span class="n">bRequest</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">setup</span><span class="o">-&gt;</span><span class="n">bRequest</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span>
+<span class="w">        </span><span class="n">memcpy</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">xxx</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">xxx</span><span class="p">));</span>
+<span class="w">        </span><span class="o">*</span><span class="n">len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">xxx</span><span class="p">);</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span>
+<span class="w">        </span><span class="n">hexdump</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">len</span><span class="p">);</span>
+<span class="w">        </span><span class="k">default</span><span class="o">:</span>
+<span class="w">            </span><span class="n">USB_LOG_WRN</span><span class="p">(</span><span class="s">&quot;Unhandled XXX Class bRequest 0x%02x</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">setup</span><span class="o">-&gt;</span><span class="n">bRequest</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>最后使用形如 usbd_add_interface(busid, usbd_xxx_init_intf(&amp;intf)) 注册接口</p></li>
+</ul>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="usbd_cdc_acm.html" class="btn btn-neutral float-left" title="usbd_cdc_acm" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="usbd_msc.html" class="btn btn-neutral float-right" title="usbd_msc" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="usbh_wifi.html" class="btn btn-neutral float-left" title="usbh_wifi" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="usbh_vendor.html" class="btn btn-neutral float-right" title="vendor host 驱动编写" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
