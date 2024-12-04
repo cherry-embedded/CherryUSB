@@ -14,6 +14,10 @@
 #error "aic ehci must define CONFIG_USB_EHCI_CONFIGFLAG"
 #endif
 
+#if CONFIG_USB_OHCI_HCOR_OFFSET != 0x400
+#error "aic CONFIG_USB_OHCI_HCOR_OFFSET must be 0x400"
+#endif
+
 extern void USBH_IRQHandler(uint8_t busid);
 
 static void aic_ehci_isr(int vector, void *arg)
@@ -121,6 +125,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
     aicos_request_irq(config[i].irq_num + 1, (irq_handler_t)aic_ohci_isr,
                       0, "usb_host_ohci", bus);
     aicos_irq_enable(config[i].irq_num);
+    aicos_irq_enable(config[i].irq_num + 1);
 }
 
 uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
