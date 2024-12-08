@@ -9,9 +9,14 @@
 #include <hal_syscfg.h>
 #include "usbh_core.h"
 #include "usb_hc_ehci.h"
+#include "usb_hc_ohci.h"
 
 #if !defined(CONFIG_USB_EHCI_CONFIGFLAG)
 #error "aic ehci must define CONFIG_USB_EHCI_CONFIGFLAG"
+#endif
+
+#if !defined(CONFIG_USB_EHCI_WITH_OHCI)
+#error "aic must define CONFIG_USB_EHCI_WITH_OHCI for ls/fs device"
 #endif
 
 #if CONFIG_USB_OHCI_HCOR_OFFSET != 0x400
@@ -130,17 +135,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
 
 uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 {
-    /* Defined by individual manufacturers */
-    uint32_t regval;
-
-    regval = EHCI_HCOR->portsc[port-1];
-    if ((regval & EHCI_PORTSC_LSTATUS_MASK) == EHCI_PORTSC_LSTATUS_KSTATE)
-        return USB_SPEED_LOW;
-
-    if (regval & EHCI_PORTSC_PE)
-        return USB_SPEED_HIGH;
-    else
-        return USB_SPEED_FULL;
+    return USB_SPEED_HIGH;
 }
 
 void usb_ehci_dcache_clean(uintptr_t addr, uint32_t len)
