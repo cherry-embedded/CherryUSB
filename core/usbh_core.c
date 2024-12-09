@@ -889,7 +889,6 @@ void *usbh_find_class_instance(const char *devname)
 struct usbh_hubport *usbh_find_hubport(uint8_t busid, uint8_t hub_index, uint8_t hub_port)
 {
     struct usbh_hub *hub;
-    struct usbh_hub *hub_next;
     struct usbh_bus *bus;
     struct usbh_hubport *hport;
     size_t flags;
