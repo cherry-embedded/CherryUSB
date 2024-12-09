@@ -150,7 +150,7 @@ Only standard and commercial USB IP are listed.
 
 |   IP             |  device    | host     | Support status |
 |:----------------:|:----------:|:--------:|:--------------:|
-|  OHCI(intel)     |  none      | OHCI     |  ×   |
+|  OHCI(intel)     |  none      | OHCI     |  √   |
 |  EHCI(intel)     |  none      | EHCI     |  √   |
 |  XHCI(intel)     |  none      | XHCI     |  √   |
 |  UHCI(intel)     |  none      | UHCI     |  ×   |

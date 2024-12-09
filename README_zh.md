@@ -150,7 +150,7 @@ x 受以下宏影响：
 
 |   IP             |  device    | host     | Support status |
 |:----------------:|:----------:|:--------:|:--------------:|
-|  OHCI(intel)     |  none      | OHCI     |  ×   |
+|  OHCI(intel)     |  none      | OHCI     |  √   |
 |  EHCI(intel)     |  none      | EHCI     |  √   |
 |  XHCI(intel)     |  none      | XHCI     |  √   |
 |  UHCI(intel)     |  none      | UHCI     |  ×   |
