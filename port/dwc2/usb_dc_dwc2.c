@@ -480,7 +480,7 @@ static inline uint32_t dwc2_get_inep_intstatus(uint8_t busid, uint8_t epnum)
 
     msk = USB_OTG_DEV->DIEPMSK;
     emp = USB_OTG_DEV->DIEPEMPMSK;
-    msk |= ((emp >> (epnum & 0x07)) & 0x1U) << 7;
+    msk |= ((emp >> (epnum & 0x0F)) & 0x1U) << 7;
 
     tmpreg = USB_OTG_INEP((uint32_t)epnum)->DIEPINT;
     USB_OTG_INEP((uint32_t)epnum)->DIEPINT = tmpreg;
