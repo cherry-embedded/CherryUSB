@@ -205,8 +205,15 @@
 <h2>GD IP 问题<a class="headerlink" href="#gd-ip" title="Link to this heading"></a></h2>
 <p>GD IP 采用 DWC2，但是读取的硬件参数都是 0（我也不懂为什么不给人知道），因此需要用户自行知道硬件信息，以下列举 GD32F4 的信息：</p>
 <p>CONFIG_USBDEV_EP_NUM pa11/pa12 引脚必须为 4，PB14/PB15 引脚必须为 6，并删除 usb_dc_dwc2.c 中 while(1){}</p>
-<p>当 CONFIG_USBDEV_EP_NUM 为4 时，fifo_num 不得大于 320 字
-当 CONFIG_USBDEV_EP_NUM 为6 时，fifo_num 不得大于 1280 字</p>
+<ul class="simple">
+<li><p>当 CONFIG_USBDEV_EP_NUM 为4 时，fifo_num 不得大于 320 字</p></li>
+<li><p>当 CONFIG_USBDEV_EP_NUM 为6 时，fifo_num 不得大于 1280 字</p></li>
+</ul>
+<p>其次 GD 复位以后无法使用 EPDIS 功能关闭端点，需要用户删除 reset 中断中的以下代码：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB_OTG_INEP</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">DIEPCTL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">USB_OTG_DIEPCTL_EPDIS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USB_OTG_DIEPCTL_SNAK</span><span class="p">);</span>
+<span class="n">USB_OTG_OUTEP</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">DOEPCTL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">USB_OTG_DOEPCTL_EPDIS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USB_OTG_DOEPCTL_SNAK</span><span class="p">);</span>
+</pre></div>
+</div>
 </section>
 <section id="dwc2-has-less-endpoints-than-config-please-check">
 <h2>dwc2 has less endpoints than config, please check<a class="headerlink" href="#dwc2-has-less-endpoints-than-config-please-check" title="Link to this heading"></a></h2>

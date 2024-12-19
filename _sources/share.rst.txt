@@ -18,3 +18,5 @@
 - `printalyzer-timer: F-Stop enlarging timer and print exposure meter <https://github.com/dektronics/printalyzer-timer>`_
 
 - `MiSTeryNano: Atari STE MiSTery core for the Tang Nano 20k FPGA <https://github.com/harbaum/MiSTeryNano>`_
+
+- `Cherryuf2 <https://github.com/zhaqian12/Cherryuf2>`_
