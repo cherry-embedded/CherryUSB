@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, sakumisu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "fsl_device_registers.h"
 #include "fsl_power.h"
 #include "usbh_core.h"
