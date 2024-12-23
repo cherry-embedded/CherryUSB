@@ -1,6 +1,16 @@
-# CherryUSB
+<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">CherryUSB</h1>
+<p align="center">
+	<a href="https://github.com/cherry-embedded/CherryUSB/releases"><img src="https://img.shields.io/github/release/cherry-embedded/CherryUSB.svg"><a>
+	<a href="https://github.com/cherry-embedded/CherryUSB/blob/master/LICENSE"><img src="https://img.shields.io/github/license/cherry-embedded/CherryUSB.svg?style=flat-square"></a>
+    <a href="https://github.com/cherry-embedded/CherryUSB/actions/workflows/deploy-docs.yml"><img src="https://github.com/cherry-embedded/CherryUSB/actions/workflows/deploy-docs.yml/badge.svg"> </a>
+    <a href="https://discord.com/invite/wFfvrSAey8"><img src="https://img.shields.io/badge/Discord-blue?logo=discord&style=flat-square"> </a>
+</p>
 
-[中文版](./README_zh.md)
+<p align="center">
+    <a href="./README_zh.md">中文</a>
+    |
+    <a href="./README.md">English</a>
+</p>
 
 CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system with USB IP.
 
