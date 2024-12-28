@@ -500,7 +500,6 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                         goto find_end;
                     } else if (cur_alt_setting == alt_setting) {
                         ret = usbd_set_endpoint(busid, ep_desc);
-                        goto find_end;
                     } else {
                     }
                 }
