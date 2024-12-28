@@ -162,7 +162,10 @@ static const uint8_t mic_default_sampling_freq_table[] = {
     AUDIO_SAMPLE_FREQ_4B(0x00)
 };
 
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[AUDIO_IN_PACKET];
+
 volatile bool tx_flag = 0;
+volatile bool ep_tx_busy_flag = false;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -210,6 +213,7 @@ void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sam
 
 void usbd_audio_iso_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    ep_tx_busy_flag = false;
 }
 
 static struct usbd_endpoint audio_in_ep = {
@@ -242,5 +246,13 @@ void audio_v2_init(uint8_t busid, uintptr_t reg_base)
 void audio_v2_test(uint8_t busid)
 {
     if (tx_flag) {
+        memset(write_buffer, 'a', AUDIO_IN_PACKET);
+        ep_tx_busy_flag = true;
+        usbd_ep_start_write(busid, AUDIO_IN_EP, write_buffer, AUDIO_IN_PACKET);
+        while (ep_tx_busy_flag) {
+            if (tx_flag == false) {
+                break;
+            }
+        }
     }
 }

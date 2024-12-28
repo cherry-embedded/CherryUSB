@@ -233,6 +233,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[AUDIO_IN_PACKET];
 
 volatile bool tx_flag = 0;
 volatile bool rx_flag = 0;
+volatile bool ep_tx_busy_flag = false;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -293,20 +294,6 @@ void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sam
     }
 }
 
-void usbd_audio_set_sampling_freq(uint8_t busid, uint8_t ep, uint32_t sampling_freq)
-{
-    uint16_t packet_size = 0;
-    if (ep == AUDIO_OUT_EP) {
-        packet_size = ((sampling_freq * 2 * OUT_CHANNEL_NUM) / 1000);
-        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 11] = packet_size;
-        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - AUDIO_V2_AS_DESCRIPTOR_INIT_LEN - 10] = packet_size >> 8;
-    } else if (ep == AUDIO_IN_EP) {
-        packet_size = ((sampling_freq * 2 * IN_CHANNEL_NUM) / 1000);
-        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 11] = packet_size;
-        audio_v2_descriptor[18 + USB_AUDIO_CONFIG_DESC_SIZ - 10] = packet_size >> 8;
-    }
-}
-
 void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual out len:%d\r\n", nbytes);
@@ -361,6 +348,14 @@ void audio_v2_init(uint8_t busid, uintptr_t reg_base)
 void audio_v2_test(uint8_t busid)
 {
     if (tx_flag) {
+        memset(write_buffer, 'a', AUDIO_IN_PACKET);
+        ep_tx_busy_flag = true;
+        usbd_ep_start_write(busid, AUDIO_IN_EP, write_buffer, AUDIO_IN_PACKET);
+        while (ep_tx_busy_flag) {
+            if (tx_flag == false) {
+                break;
+            }
+        }
     }
     if (rx_flag) {
     }

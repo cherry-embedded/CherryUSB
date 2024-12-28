@@ -6,18 +6,23 @@
 #include "usbd_core.h"
 #include "usbd_audio.h"
 
+#define USING_FEEDBACK 0
+
 #define USBD_VID           0xffff
 #define USBD_PID           0xffff
 #define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
 #ifdef CONFIG_USB_HS
-#define EP_INTERVAL 0x04
+#define EP_INTERVAL               0x04
+#define FEEDBACK_ENDP_PACKET_SIZE 0x04
 #else
-#define EP_INTERVAL 0x01
+#define EP_INTERVAL               0x01
+#define FEEDBACK_ENDP_PACKET_SIZE 0x03
 #endif
 
-#define AUDIO_OUT_EP 0x01
+#define AUDIO_OUT_EP          0x01
+#define AUDIO_OUT_FEEDBACK_EP 0x82
 
 #define AUDIO_OUT_CLOCK_ID 0x01
 #define AUDIO_OUT_FU_ID    0x03
@@ -58,6 +63,7 @@
 
 #define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
 
+#if USING_FEEDBACK == 0
 #define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                     \
                                    AUDIO_V2_AC_DESCRIPTOR_INIT_LEN +                       \
                                    AUDIO_V2_SIZEOF_AC_CLOCK_SOURCE_DESC +                  \
@@ -65,6 +71,15 @@
                                    AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(OUT_CHANNEL_NUM) + \
                                    AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC +               \
                                    AUDIO_V2_AS_DESCRIPTOR_INIT_LEN)
+#else
+#define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                     \
+                                   AUDIO_V2_AC_DESCRIPTOR_INIT_LEN +                       \
+                                   AUDIO_V2_SIZEOF_AC_CLOCK_SOURCE_DESC +                  \
+                                   AUDIO_V2_SIZEOF_AC_INPUT_TERMINAL_DESC +                \
+                                   AUDIO_V2_SIZEOF_AC_FEATURE_UNIT_DESC(OUT_CHANNEL_NUM) + \
+                                   AUDIO_V2_SIZEOF_AC_OUTPUT_TERMINAL_DESC +               \
+                                   AUDIO_V2_AS_FEEDBACK_DESCRIPTOR_INIT_LEN)
+#endif
 
 #define AUDIO_AC_SIZ (AUDIO_V2_SIZEOF_AC_HEADER_DESC +                        \
                       AUDIO_V2_SIZEOF_AC_CLOCK_SOURCE_DESC +                  \
@@ -80,7 +95,11 @@ const uint8_t audio_v2_descriptor[] = {
     AUDIO_V2_AC_INPUT_TERMINAL_DESCRIPTOR_INIT(0x02, AUDIO_TERMINAL_STREAMING, 0x01, OUT_CHANNEL_NUM, OUTPUT_CH_ENABLE, 0x0000),
     AUDIO_V2_AC_FEATURE_UNIT_DESCRIPTOR_INIT(AUDIO_OUT_FU_ID, 0x02, OUTPUT_CTRL),
     AUDIO_V2_AC_OUTPUT_TERMINAL_DESCRIPTOR_INIT(0x04, AUDIO_OUTTERM_SPEAKER, 0x03, 0x01, 0x0000),
+#if USING_FEEDBACK == 0
     AUDIO_V2_AS_DESCRIPTOR_INIT(0x01, 0x02, OUT_CHANNEL_NUM, OUTPUT_CH_ENABLE, HALF_WORD_BYTES, SAMPLE_BITS, AUDIO_OUT_EP, 0x09, AUDIO_OUT_PACKET, EP_INTERVAL),
+#else
+    AUDIO_V2_AS_FEEDBACK_DESCRIPTOR_INIT(0x01, 0x02, OUT_CHANNEL_NUM, OUTPUT_CH_ENABLE, HALF_WORD_BYTES, SAMPLE_BITS, AUDIO_OUT_EP, AUDIO_OUT_PACKET, EP_INTERVAL, AUDIO_OUT_FEEDBACK_EP),
+#endif
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -136,7 +155,11 @@ const uint8_t audio_v2_descriptor[] = {
     '1', 0x00,                  /* wcChar6 */
     '0', 0x00,                  /* wcChar7 */
     '0', 0x00,                  /* wcChar8 */
-    '3', 0x00,                  /* wcChar9 */
+#if USING_FEEDBACK == 0
+    '3', 0x00, /* wcChar9 */
+#else
+    '4', 0x00, /* wcChar9 */
+#endif
 #ifdef CONFIG_USB_HS
     ///////////////////////////////////////
     /// device qualifier descriptor
@@ -175,6 +198,7 @@ static const uint8_t default_sampling_freq_table[] = {
 };
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[AUDIO_OUT_PACKET];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t s_speaker_feedback_buffer[4];
 
 volatile bool rx_flag = 0;
 
@@ -208,6 +232,7 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
     rx_flag = 1;
     /* setup first out ep read transfer */
     usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
+    usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
     USB_LOG_RAW("OPEN\r\n");
 }
 
@@ -230,10 +255,25 @@ void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
     usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
 }
 
+#if USING_FEEDBACK == 1
+void usbd_audio_iso_out_feedback_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
+{
+    USB_LOG_RAW("actual feedback len:%d\r\n", nbytes);
+    usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
+}
+#endif
+
 static struct usbd_endpoint audio_out_ep = {
     .ep_cb = usbd_audio_iso_out_callback,
     .ep_addr = AUDIO_OUT_EP
 };
+
+#if USING_FEEDBACK == 1
+static struct usbd_endpoint audio_out_feedback_ep = {
+    .ep_cb = usbd_audio_iso_out_feedback_callback,
+    .ep_addr = AUDIO_OUT_FEEDBACK_EP
+};
+#endif
 
 struct usbd_interface intf0;
 struct usbd_interface intf1;
@@ -253,7 +293,9 @@ void audio_v2_init(uint8_t busid, uintptr_t reg_base)
     usbd_add_interface(busid, usbd_audio_init_intf(busid, &intf0, 0x0200, audio_entity_table, 2));
     usbd_add_interface(busid, usbd_audio_init_intf(busid, &intf1, 0x0200, audio_entity_table, 2));
     usbd_add_endpoint(busid, &audio_out_ep);
-
+#if USING_FEEDBACK == 1
+    usbd_add_endpoint(busid, &audio_out_feedback_ep);
+#endif
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
 
