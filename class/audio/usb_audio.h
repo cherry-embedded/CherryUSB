@@ -862,7 +862,7 @@ struct audio_cs_ep_ep_general_descriptor {
     0x05,                            /* bmAttributes */                                                                  \
     WBVAL(wMaxPacketSize),           /* wMaxPacketSize */                                                                \
     bInterval,                       /* bInterval : one packet per frame */                                              \
-    bInterval,                       /* bRefresh */                                                                      \
+    0x00,                            /* bRefresh */                                                                      \
     bFeedbackEndpointAddress,        /* bSynchAddress */                                                                 \
     0x07,                            /* bLength */                                                                       \
     AUDIO_ENDPOINT_DESCRIPTOR_TYPE,  /* bDescriptorType */                                                               \
@@ -874,10 +874,10 @@ struct audio_cs_ep_ep_general_descriptor {
     0x09,                            /* bLength */                                                                       \
     USB_DESCRIPTOR_TYPE_ENDPOINT,    /* bDescriptorType */                                                               \
     bFeedbackEndpointAddress,        /* bFeedbackEndpointAddress Revise Dir to bEndpointAddress */                       \
-    0x11,                            /* bmAttributes: TransferType=Isochronous  SyncType=None  EndpointType=Feedback */  \
+    0x15,                            /* bmAttributes: TransferType=Isochronous  SyncType=Asynchronous  EndpointType=Feedback */  \
     WBVAL(4),                        /* XXXX wMaxPacketSize in Bytes */                                                  \
     bInterval,                       /* bInterval */                                                                     \
-    0x00,                            /* bRefresh */                                                                      \
+    0x03,                            /* bRefresh, 8ms */                                                                 \
     0x00                             /* bSynchAddress */
 
 #define AUDIO_AS_DESCRIPTOR_INIT_LEN(n) (0x09 + 0x09 + 0x07 + 0x08 + 3 * n + 0x09 + 0x07)
@@ -1325,7 +1325,7 @@ struct audio_v2_control_range3_param_block {
     0x07,                            /* bLength */                                                                                                                        \
     USB_DESCRIPTOR_TYPE_ENDPOINT,    /* bDescriptorType */                                                                                                                \
     bFeedbackEndpointAddress,        /* bFeedbackEndpointAddress Revise Dir to bEndpointAddress */                                                                        \
-    0x11,                            /* bmAttributes: TransferType=Isochronous  SyncType=None  EndpointType=Feedback */                                                   \
+    0x15,                            /* bmAttributes: TransferType=Isochronous  SyncType=Asynchronous  EndpointType=Feedback */                                                   \
     WBVAL(4),                        /* XXXX wMaxPacketSize in Bytes */                                                                                                   \
     bInterval                        /* bInterval */
 
@@ -1339,5 +1339,20 @@ struct audio_v2_control_range3_param_block {
 #define AUDIO_SAMPLE_FREQ_3B(frq)  (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
 #define AUDIO_SAMPLE_FREQ_4B(frq)  (uint8_t)(frq), (uint8_t)((frq >> 8)), \
                                   (uint8_t)((frq >> 16)), (uint8_t)((frq >> 24))
+
+/* format 10.14 */
+#define AUDIO_UPDATE_FEEDBACK_DATA_FS(buf, freq)                   \
+    uint32_t value = ((freq / 1000) << 14) | ((freq % 1000) << 4); \
+    buf[0] = ((value >> 0U) & 0xFFU);                              \
+    buf[1] = ((value >> 8U) & 0xFFU);                              \
+    buf[2] = ((value >> 16U) & 0xFFU)
+
+/* format 16.16 */
+#define AUDIO_UPDATE_FEEDBACK_DATA_HS(buf, freq)                   \
+    uint32_t value = ((freq / 1000) << 13) | ((freq % 1000) << 3); \
+    buf[0] = ((value >> 0U) & 0xFFU);                              \
+    buf[1] = ((value >> 8U) & 0xFFU);                              \
+    buf[2] = ((value >> 16U) & 0xFFU);                             \
+    buf[3] = ((value >> 24U) & 0xFFU)
 
 #endif /* USB_AUDIO_H */
