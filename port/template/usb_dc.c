@@ -1,13 +1,5 @@
 #include "usbd_core.h"
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USBD_IRQHandler
-#endif
-
-#ifndef USB_NUM_BIDIR_ENDPOINTS
-#define USB_NUM_BIDIR_ENDPOINTS 5
-#endif
-
 /* Endpoint state */
 struct usb_dc_ep_state {
     uint16_t ep_mps;    /* Endpoint max packet size */
@@ -21,8 +13,8 @@ struct usb_dc_ep_state {
 /* Driver state */
 struct xxx_udc {
     volatile uint8_t dev_addr;
-    struct usb_dc_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
-    struct usb_dc_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
+    struct usb_dc_ep_state in_ep[CONFIG_USBDEV_EP_NUM];  /*!< IN endpoint parameters*/
+    struct usb_dc_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
 } g_xxx_udc;
 
 __WEAK void usb_dc_low_level_init(void)
@@ -121,6 +113,6 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
 }

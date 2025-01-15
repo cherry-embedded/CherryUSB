@@ -7,14 +7,6 @@
 #include "usbh_hub.h"
 #include "usb_xxx_reg.h"
 
-#ifndef USBH_IRQHandler
-#define USBH_IRQHandler OTG_HS_IRQHandler
-#endif
-
-#ifndef USB_BASE
-#define USB_BASE (0x40040000UL)
-#endif
-
 struct dwc2_pipe {
     bool inuse;
     uint32_t xfrd;
@@ -300,6 +292,6 @@ static inline void dwc2_urb_waitup(struct usbh_urb *urb)
     }
 }
 
-void USBH_IRQHandler(void)
+void USBH_IRQHandler(uint8_t busid)
 {
 }
