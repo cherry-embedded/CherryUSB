@@ -41,6 +41,7 @@ struct dwc2_chan {
     uint32_t xferlen;
     uint8_t chidx;
     bool inuse;
+    bool dir_in;
     usb_osal_sem_t waitsem;
     struct usbh_urb *urb;
     uint32_t iso_frame_idx;
@@ -260,11 +261,21 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
 {
     __IO uint32_t tmpreg;
     uint8_t is_oddframe;
+    struct dwc2_chan *chan;
+
+    chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[ch_num];
 
     /* Initialize the HCTSIZn register */
     USB_OTG_HC(ch_num)->HCTSIZ = (size & USB_OTG_HCTSIZ_XFRSIZ) |
                                  (((uint32_t)num_packets << 19) & USB_OTG_HCTSIZ_PKTCNT) |
                                  (((uint32_t)pid << 29) & USB_OTG_HCTSIZ_DPID);
+
+    if (!(ep_addr & 0x80)) {
+        chan->dir_in = false;
+        usb_dcache_clean((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
+    } else {
+        chan->dir_in = true;
+    }
 
     /* xfer_buff MUST be 32-bits aligned */
     USB_OTG_HC(ch_num)->HCDMA = (uint32_t)buf;
@@ -754,6 +765,13 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -USB_ERR_INVAL;
     }
 
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if (((uintptr_t)urb->setup % CONFIG_USB_ALIGN_SIZE) || ((uintptr_t)urb->transfer_buffer % CONFIG_USB_ALIGN_SIZE)) {
+        USB_LOG_ERR("urb buffer is not align with %d\r\n", CONFIG_USB_ALIGN_SIZE);
+        while (1) {
+        }
+    }
+#endif
     bus = urb->hport->bus;
 
     if (!(USB_OTG_HPRT & USB_OTG_HPRT_PCSTS) || !urb->hport->connected) {
@@ -917,6 +935,10 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
                 urb->data_toggle = 0;
             } else {
                 urb->data_toggle = 1;
+            }
+
+            if (chan->dir_in) {
+                usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(count, CONFIG_USB_ALIGN_SIZE));
             }
 
             if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
