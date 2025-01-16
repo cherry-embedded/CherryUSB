@@ -13,6 +13,10 @@
 
 #define DEV_FORMAT "/dev/sd%c"
 
+#ifndef CONFIG_USBHOST_MSC_READY_CHECK_TIMES
+#define CONFIG_USBHOST_MSC_READY_CHECK_TIMES 10
+#endif
+
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_cbw_csw[CONFIG_USBHOST_MAX_MSC_CLASS][USB_ALIGN_UP(64, CONFIG_USB_ALIGN_SIZE)];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[CONFIG_USBHOST_MAX_MSC_CLASS][USB_ALIGN_UP(64, CONFIG_USB_ALIGN_SIZE)];
 
@@ -323,7 +327,7 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
             USB_LOG_ERR("Fail to scsi_testunitready\r\n");
         }
         cnt++;
-        if (cnt > 10) {
+        if (cnt > CONFIG_USBHOST_MSC_READY_CHECK_TIMES) {
             return -USB_ERR_BUSY;
         }
     }
