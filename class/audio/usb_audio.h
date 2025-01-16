@@ -1341,18 +1341,18 @@ struct audio_v2_control_range3_param_block {
                                   (uint8_t)((frq >> 16)), (uint8_t)((frq >> 24))
 
 /* format 10.14 */
-#define AUDIO_UPDATE_FEEDBACK_DATA_FS(buf, freq)                   \
-    uint32_t value = ((freq / 1000) << 14) | ((freq % 1000) << 4); \
-    buf[0] = ((value >> 0U) & 0xFFU);                              \
-    buf[1] = ((value >> 8U) & 0xFFU);                              \
-    buf[2] = ((value >> 16U) & 0xFFU)
+#define AUDIO_UPDATE_FEEDBACK_DATA_FS(buf, freq) \
+    uint32_t value = ((freq << 10) / 1000);      \
+    buf[0] = ((value << 4) & 0xFFU);             \
+    buf[1] = (((value << 4) >> 8U) & 0xFFU);     \
+    buf[2] = (((value << 4) >> 16U) & 0xFFU)
 
 /* format 16.16 */
-#define AUDIO_UPDATE_FEEDBACK_DATA_HS(buf, freq)                   \
-    uint32_t value = ((freq / 1000) << 13) | ((freq % 1000) << 3); \
-    buf[0] = ((value >> 0U) & 0xFFU);                              \
-    buf[1] = ((value >> 8U) & 0xFFU);                              \
-    buf[2] = ((value >> 16U) & 0xFFU);                             \
-    buf[3] = ((value >> 24U) & 0xFFU)
+#define AUDIO_UPDATE_FEEDBACK_DATA_HS(buf, freq)            \
+    uint32_t value = ((freq << 13) / 1000);                 \
+    buf[0] = (((value & 0x00001FFFu) << 3) & 0xFFu);        \
+    buf[1] = ((((value & 0x00001FFFu) << 3) >> 8) & 0xFFu); \
+    buf[2] = (((value & 0x01FFE000u) >> 13) & 0xFFu);       \
+    buf[3] = (((value & 0x01FFE000u) >> 21) & 0xFFu)
 
 #endif /* USB_AUDIO_H */
