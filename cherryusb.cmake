@@ -116,6 +116,8 @@ if(CONFIG_CHERRYUSB_DEVICE)
         elseif("${CONFIG_CHERRYUSB_DEVICE_DCD}" STREQUAL "aic")
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/aic/usb_dc_aic.c)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/aic/usb_dc_aic_ll.c)
+        elseif("${CONFIG_CHERRYUSB_DEVICE_DCD}" STREQUAL "rp2040")
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/rp2040/usb_dc_rp2040.c)
         endif()
     endif()
 
