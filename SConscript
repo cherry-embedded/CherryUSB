@@ -114,6 +114,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/cdc_acm_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC']):
         src += Glob('demo/msc_ram_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC_BLKDEV']):
+        src += Glob('platform/rtthread/usbd_msc_blkdev.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_MOUSE']):
         src += Glob('demo/hid_mouse_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_KEYBOARD']):

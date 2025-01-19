@@ -6,7 +6,9 @@
 #include "usbd_core.h"
 #include "usbd_msc.h"
 
-#ifdef __RT_THREAD_H__
+#ifndef CONFIG_USBDEV_MSC_THREAD
+#error "Please enable CONFIG_USBDEV_MSC_THREAD, move msc read & write from isr to thread"
+#endif
 
 #define MSC_IN_EP  0x81
 #define MSC_OUT_EP 0x02
@@ -24,9 +26,8 @@
 #define MSC_MAX_MPS 64
 #endif
 
-
 const uint8_t msc_storage_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_1_1, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0200, 0x01),
+    USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0200, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     MSC_DESCRIPTOR_INIT(0x00, MSC_OUT_EP, MSC_IN_EP, MSC_MAX_MPS, 0x02),
     ///////////////////////////////////////
@@ -105,11 +106,12 @@ const uint8_t msc_storage_descriptor[] = {
 
 struct usbd_interface intf0;
 
-/* assume the block device is 512M */
-#define BLOCK_DEV_NAME      "sd0"
-#define BLOCK_SIZE          512U
-#define BLOCK_COUNT         0x1024U * 0x1024U
+#ifndef CONFIG_USBDEV_MSC_BLOCK_DEV_NAME
+#define CONFIG_USBDEV_MSC_BLOCK_DEV_NAME "sd0"
+#endif
+
 static rt_device_t blk_dev = RT_NULL;
+struct rt_device_blk_geometry geometry = { 0 };
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -138,19 +140,21 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
 
 void usbd_msc_get_cap(uint8_t busid, uint8_t lun, uint32_t *block_num, uint32_t *block_size)
 {
-    *block_num = BLOCK_COUNT;
-    *block_size = BLOCK_SIZE;
+    rt_device_control(blk_dev, RT_DEVICE_CTRL_BLK_GETGEOME, &geometry);
+
+    *block_num = geometry.sector_count;
+    *block_size = geometry.bytes_per_sector;
 }
 
 int usbd_msc_sector_read(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
 {
-    rt_device_read(blk_dev, sector, buffer, length / BLOCK_SIZE);
+    rt_device_read(blk_dev, sector, buffer, length / geometry.bytes_per_sector);
     return 0;
 }
 
 int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
 {
-    rt_device_write(blk_dev, sector, buffer, length / BLOCK_SIZE);
+    rt_device_write(blk_dev, sector, buffer, length / geometry.bytes_per_sector);
     return 0;
 }
 
@@ -158,7 +162,7 @@ void msc_storage_init(uint8_t busid, uintptr_t reg_base)
 {
     rt_err_t res;
 
-    blk_dev = rt_device_find(BLOCK_DEV_NAME);
+    blk_dev = rt_device_find(CONFIG_USBDEV_MSC_BLOCK_DEV_NAME);
     RT_ASSERT(blk_dev);
 
     res = rt_device_open(blk_dev, RT_DEVICE_OFLAG_RDWR);
@@ -169,4 +173,3 @@ void msc_storage_init(uint8_t busid, uintptr_t reg_base)
 
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
-#endif
