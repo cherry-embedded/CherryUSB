@@ -59,6 +59,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    quick_start/rtthread
    quick_start/esp
    q&a
+   opensource
    share
 
 .. toctree::
