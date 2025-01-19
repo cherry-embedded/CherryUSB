@@ -1,5 +1,5 @@
-开发者经验分享
-====================
+开发者经验/开源项目分享
+========================
 
 - `RT-Thread-CherryUSB - RT-Thread <https://club.rt-thread.org/ask/tag/5f5f851966917b14.html?type=article>`_
 
@@ -20,3 +20,8 @@
 - `MiSTeryNano: Atari STE MiSTery core for the Tang Nano 20k FPGA <https://github.com/harbaum/MiSTeryNano>`_
 
 - `Cherryuf2 <https://github.com/zhaqian12/Cherryuf2>`_
+
+- `PicoPiFi: Driverless RNDIS USB WIFI Dongle <https://github.com/sidd-kishan/PicoPiFi>`_
+
+- `phobia: Phobia Motor Controller <https://github.com/rombrew/phobia>`_
+

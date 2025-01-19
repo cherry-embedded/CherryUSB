@@ -197,7 +197,7 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 |Artinchip      |  d12x/d13x/d21x | aic/ehci/ohci |[luban-lite](https://gitee.com/artinchip/luban-lite)|<= latest  | Long-term |
 |Espressif      |  esp32s2/esp32s3/esp32p4 | dwc2 |[esp32_repo](https://github.com/CherryUSB/cherryusb_esp32)|<= latest | Long-term |
 |NXP            |  mcx | kinetis/chipidea/ehci |[nxp_mcx_repo](https://github.com/CherryUSB/cherryusb_mcx)|<= latest | Long-term |
-|Kendryte       |  k230 | dwc2 |[k230_repo](https://github.com/CherryUSB/canmv_k230)|v1.2.0 | Long-term |
+|Kendryte       |  k230 | dwc2 |[k230_repo](https://github.com/CherryUSB/k230_sdk)|v1.2.0 | Long-term |
 |Raspberry pi   |  rp2040/rp2350 | rp2040 |[pico-examples](https://github.com/CherryUSB/pico-examples)|<= latest | Long-term |
 |AllwinnerTech  |  F1C100S/F1C200S | musb |[cherryusb_rtt_f1c100s](https://github.com/CherryUSB/cherryusb_rtt_f1c100s)|<= latest | the same with musb |
 |Bekencorp      |  bk7256/bk7258 | musb |[bk_idk](https://github.com/CherryUSB/bk_idk)| v0.7.0 | the same with musb |
