@@ -448,7 +448,7 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-void usbh_rndis_rx_thread(void *argument)
+void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     uint32_t g_rndis_rx_length;
     int ret;
@@ -461,7 +461,7 @@ void usbh_rndis_rx_thread(void *argument)
     uint32_t transfer_size = (16 * 1024);
 #endif
 
-    (void)argument;
+    (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     USB_LOG_INFO("Create rndis rx thread\r\n");
     // clang-format off

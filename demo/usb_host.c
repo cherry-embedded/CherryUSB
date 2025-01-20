@@ -58,10 +58,10 @@ void usbh_cdc_acm_callback(void *arg, int nbytes)
     }
 }
 
-static void usbh_cdc_acm_thread(void *argument)
+static void usbh_cdc_acm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     int ret;
-    struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)argument;
+    struct usbh_cdc_acm *cdc_acm_class = (struct usbh_cdc_acm *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     /* test with only one buffer, if you have more cdc acm class, modify by yourself */
 #if TEST_USBH_CDC_SPEED
@@ -133,10 +133,10 @@ void usbh_hid_callback(void *arg, int nbytes)
     }
 }
 
-static void usbh_hid_thread(void *argument)
+static void usbh_hid_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     int ret;
-    struct usbh_hid *hid_class = (struct usbh_hid *)argument;
+    struct usbh_hid *hid_class = (struct usbh_hid *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
     ;
 
     /* test with only one buffer, if you have more hid class, modify by yourself */
@@ -222,10 +222,10 @@ unmount:
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t partition_table[512];
 
-static void usbh_msc_thread(void *argument)
+static void usbh_msc_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     int ret;
-    struct usbh_msc *msc_class = (struct usbh_msc *)argument;
+    struct usbh_msc *msc_class = (struct usbh_msc *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     /* test with only one buffer, if you have more msc class, modify by yourself */
 #if 1
