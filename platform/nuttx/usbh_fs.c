@@ -26,12 +26,17 @@
 #include "usbh_core.h"
 #include "usbh_msc.h"
 
-#ifdef CONFIG_ARCH_CHIP_HPMICRO
-#include "hpm_misc.h"
-#define usbhmsc_phy2sysaddr(a) core_local_mem_to_sys_address(0, a)
-#else
-#define usbhmsc_phy2sysaddr(a) (a)
+#ifndef CONFIG_FS_FAT
+#error "CONFIG_FS_FAT must be enabled"
 #endif
+
+#ifdef CONFIG_ARCH_DCACHE
+#ifndef CONFIG_FAT_DMAMEMORY
+#error "USBH MSC requires CONFIG_FAT_DMAMEMORY"
+#endif
+#endif
+
+#define DEV_FORMAT "/dev/sd%c"
 
 static int usbhost_open(FAR struct inode *inode);
 static int usbhost_close(FAR struct inode *inode);
@@ -86,11 +91,11 @@ static ssize_t usbhost_read(FAR struct inode *inode, unsigned char *buffer,
     msc_class = (struct usbh_msc *)inode->i_private;
 
     if (msc_class->hport && msc_class->hport->connected) {
-        ret = usbh_msc_scsi_read10(msc_class, startsector, (uint8_t *)usbhmsc_phy2sysaddr((uint32_t)buffer), nsectors);
+        ret = usbh_msc_scsi_read10(msc_class, startsector, (uint8_t *)buffer, nsectors);
         if (ret < 0) {
             return ret;
         } else {
-#ifdef CONFIG_USBHOST_MSC_DCACHE
+#ifdef CONFIG_ARCH_DCACHE
             up_invalidate_dcache((uintptr_t)buffer, (uintptr_t)(buffer + nsectors * msc_class->blocksize));
 #endif
             return nsectors;
@@ -111,10 +116,10 @@ static ssize_t usbhost_write(FAR struct inode *inode,
     msc_class = (struct usbh_msc *)inode->i_private;
 
     if (msc_class->hport && msc_class->hport->connected) {
-#ifdef CONFIG_USBHOST_MSC_DCACHE
+#ifdef CONFIG_ARCH_DCACHE
         up_flush_dcache((uintptr_t)buffer, (uintptr_t)(buffer + nsectors * msc_class->blocksize));
 #endif
-        ret = usbh_msc_scsi_write10(msc_class, startsector, (uint8_t *)usbhmsc_phy2sysaddr((uint32_t)buffer), nsectors);
+        ret = usbh_msc_scsi_write10(msc_class, startsector, (uint8_t *)buffer, nsectors);
         if (ret < 0) {
             return ret;
         } else {
@@ -167,8 +172,6 @@ static int usbhost_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
     return 0;
 }
-
-#define DEV_FORMAT "/dev/sd%c"
 
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
