@@ -281,7 +281,7 @@ static void ehci_qtd_fill(struct ehci_qtd_hw *qtd, uint32_t bufaddr, size_t bufl
 
     qtd->hw.token = token;
 
-    ehci_qtd_bpl_fill(qtd, bufaddr, buflen);
+    ehci_qtd_bpl_fill(qtd, usb_phyaddr2ramaddr(bufaddr), buflen);
     qtd->dir_in = ((token & QTD_TOKEN_PID_MASK) == QTD_TOKEN_PID_IN) ? true : false;
     qtd->bufaddr = bufaddr;
     qtd->length = buflen;

@@ -292,4 +292,12 @@
 // #define usb_dcache_flush(addr, size)
 #endif
 
+#ifndef usb_phyaddr2ramaddr
+#define usb_phyaddr2ramaddr(addr) (addr)
+#endif
+
+#ifndef usb_ramaddr2phyaddr
+#define usb_ramaddr2phyaddr(addr) (addr)
+#endif
+
 #endif
