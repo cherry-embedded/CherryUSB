@@ -3,16 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <nuttx/config.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <semaphore.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
-
 #include <nuttx/net/ip.h>
 #include <nuttx/net/netdev.h>
 
