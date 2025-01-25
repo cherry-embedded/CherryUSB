@@ -324,6 +324,17 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
     }
 }
 
+static void usbh_print_setup(struct usb_setup_packet *setup)
+{
+    USB_LOG_DBG("Setup: "
+                 "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
+                 setup->bmRequestType,
+                 setup->bRequest,
+                 setup->wValue,
+                 setup->wIndex,
+                 setup->wLength);
+}
+
 static int usbh_get_default_mps(int speed)
 {
     switch (speed) {
@@ -677,6 +688,8 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
     urb = &hport->ep0_urb;
 
     usb_osal_mutex_take(hport->mutex);
+
+    usbh_print_setup(setup);
 
     usbh_control_urb_fill(urb, hport, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
     ret = usbh_submit_urb(urb);
