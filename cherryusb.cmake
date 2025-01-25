@@ -272,6 +272,8 @@ if(CONFIG_CHERRYUSB_HOST)
         elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "kinetis_mcx")
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/kinetis/usb_hc_kinetis.c)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/kinetis/usb_glue_mcx.c)
+        elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "rp2040")
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/rp2040/usb_hc_rp2040.c)
         endif()
     endif()
 

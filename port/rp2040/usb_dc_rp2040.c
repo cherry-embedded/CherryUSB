@@ -48,6 +48,8 @@ struct rp2040_udc {
     struct usb_setup_packet setup;                       /*!< Setup package that may be used in interrupt processing (outside the protocol stack) */
 } g_rp2040_udc;
 
+void rp2040_usbd_irq(void);
+
 /**
  * @brief Take a buffer pointer located in the USB RAM and return as an offset of the RAM.
  *
@@ -73,7 +75,10 @@ void usb_setup_endpoint(const struct rp2040_ep_state *ep)
 
     // Get the data buffer as an offset of the USB controller's DPRAM
     uint32_t dpram_offset = usb_buffer_offset(ep->data_buffer);
-    uint32_t reg = EP_CTRL_ENABLE_BITS | EP_CTRL_INTERRUPT_PER_BUFFER | (ep->ep_type << EP_CTRL_BUFFER_TYPE_LSB) | dpram_offset;
+    uint32_t reg = EP_CTRL_ENABLE_BITS |
+                   EP_CTRL_INTERRUPT_PER_BUFFER |
+                   (ep->ep_type << EP_CTRL_BUFFER_TYPE_LSB) |
+                   dpram_offset;
     *ep->endpoint_control = reg;
 }
 
@@ -144,6 +149,11 @@ int usb_dc_init(uint8_t busid)
         next_buffer_ptr += 64;
     }
 
+    // Remove shared irq if it was previously added so as not to fill up shared irq slots
+    irq_remove_handler(USBCTRL_IRQ, rp2040_usbd_irq);
+
+    irq_add_shared_handler(USBCTRL_IRQ, rp2040_usbd_irq, PICO_SHARED_IRQ_HANDLER_HIGHEST_ORDER_PRIORITY);
+
     // Reset usb controller
     reset_unreset_block_num_wait_blocking(RESET_USBCTRL);
 
@@ -181,6 +191,9 @@ int usb_dc_init(uint8_t busid)
 int usb_dc_deinit(uint8_t busid)
 {
     irq_set_enabled(USBCTRL_IRQ, false);
+    // Remove shared irq if it was previously added so as not to fill up shared irq slots
+    irq_remove_handler(USBCTRL_IRQ, rp2040_usbd_irq);
+
     usb_hw_clear->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
     memset(&g_rp2040_udc, 0, sizeof(struct rp2040_udc));
 
@@ -330,7 +343,6 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
 
     if (data_len == 0) {
         usb_start_transfer(&g_rp2040_udc.out_ep[ep_idx], NULL, 0);
-        return 0;
     } else {
         /*!< Not zlp */
         data_len = MIN(data_len, g_rp2040_udc.out_ep[ep_idx].ep_mps);
@@ -461,8 +473,7 @@ static void usb_handle_buff_done(uint8_t ep_num, bool in)
  */
 static void usb_handle_buff_status(void)
 {
-    uint32_t buffers = usb_hw->buf_status;
-    uint32_t remaining_buffers = buffers;
+    uint32_t remaining_buffers = usb_hw->buf_status;
 
     uint32_t bit = 1u;
     for (uint8_t i = 0; remaining_buffers && i < USB_NUM_ENDPOINTS * 2; i++) {
@@ -571,7 +582,7 @@ void USBD_IRQHandler(uint8_t busid)
     }
 }
 
-void isr_usbctrl(void)
+void rp2040_usbd_irq(void)
 {
     USBD_IRQHandler(0);
 }
