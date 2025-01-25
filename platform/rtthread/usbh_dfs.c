@@ -42,6 +42,13 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t msc_sector[512];
 
 static rt_err_t rt_udisk_init(rt_device_t dev)
 {
+    struct usbh_msc *msc_class = (struct usbh_msc *)dev->user_data;
+
+    if (usbh_msc_scsi_init(msc_class) < 0) {
+        rt_kprintf("scsi_init error,ret:%d\r\n", ret);
+        return -RT_ERROR;
+    }
+
     return RT_EOK;
 }
 
@@ -161,7 +168,6 @@ int udisk_init(struct usbh_msc *msc_class)
 {
     rt_err_t ret = 0;
     rt_uint8_t i;
-    struct dfs_partition part0;
     struct rt_device *dev;
     char name[CONFIG_USBHOST_DEV_NAMELEN];
     char mount_point[CONFIG_USBHOST_DEV_NAMELEN];
@@ -171,25 +177,6 @@ int udisk_init(struct usbh_msc *msc_class)
 
     snprintf(name, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
     snprintf(mount_point, CONFIG_USBHOST_DEV_NAMELEN, CONFIG_USB_DFS_MOUNT_POINT, msc_class->sdchar);
-
-    ret = usbh_msc_scsi_read10(msc_class, 0, msc_sector, 1);
-    if (ret != RT_EOK) {
-        rt_kprintf("usb mass_storage read failed\n");
-        rt_free(dev);
-        return ret;
-    }
-
-    for (i = 0; i < 4; i++) {
-        /* Get the first partition */
-        ret = dfs_filesystem_get_partition(&part0, msc_sector, i);
-        if (ret == RT_EOK) {
-            rt_kprintf("Found partition %d: type = %d, offet=0x%x, size=0x%x\n",
-                       i, part0.type, part0.offset, part0.size);
-            break;
-        } else {
-            break;
-        }
-    }
 
     dev->type = RT_Device_Class_Block;
 #ifdef RT_USING_DEVICE_OPS

@@ -267,7 +267,6 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     struct usb_endpoint_descriptor *ep_desc;
     struct usbh_msc_modeswitch_config *config;
     int ret;
-    int cnt;
 
     struct usbh_msc *msc_class = usbh_msc_class_alloc();
     if (msc_class == NULL) {
@@ -319,38 +318,6 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    cnt = 0;
-    while (usbh_msc_scsi_testunitready(msc_class) < 0) {
-        USB_LOG_WRN("Device not ready, try again...\r\n");
-        ret = usbh_msc_scsi_requestsense(msc_class);
-        if (ret < 0) {
-            USB_LOG_ERR("Fail to scsi_testunitready\r\n");
-        }
-        cnt++;
-        if (cnt > CONFIG_USBHOST_MSC_READY_CHECK_TIMES) {
-            return -USB_ERR_BUSY;
-        }
-    }
-
-    ret = usbh_msc_scsi_inquiry(msc_class);
-    if (ret < 0) {
-        USB_LOG_ERR("Fail to scsi_inquiry\r\n");
-        return ret;
-    }
-    ret = usbh_msc_scsi_readcapacity10(msc_class);
-    if (ret < 0) {
-        USB_LOG_ERR("Fail to scsi_readcapacity10\r\n");
-        return ret;
-    }
-
-    if (msc_class->blocksize > 0) {
-        USB_LOG_INFO("Capacity info:\r\n");
-        USB_LOG_INFO("Block num:%d,block size:%d\r\n", (unsigned int)msc_class->blocknum, (unsigned int)msc_class->blocksize);
-    } else {
-        USB_LOG_ERR("Invalid block size\r\n");
-        return -USB_ERR_RANGE;
-    }
-
     snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT, msc_class->sdchar);
 
     USB_LOG_INFO("Register MSC Class:%s\r\n", hport->config.intf[intf].devname);
@@ -383,6 +350,46 @@ static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     return ret;
+}
+
+int usbh_msc_scsi_init(struct usbh_msc *msc_class)
+{
+    int ret;
+    uint16_t cnt;
+
+    cnt = 0;
+    while (usbh_msc_scsi_testunitready(msc_class) < 0) {
+        USB_LOG_WRN("Device not ready, try again...\r\n");
+        ret = usbh_msc_scsi_requestsense(msc_class);
+        if (ret < 0) {
+            USB_LOG_ERR("Fail to scsi_testunitready\r\n");
+        }
+        cnt++;
+        if (cnt > CONFIG_USBHOST_MSC_READY_CHECK_TIMES) {
+            return -USB_ERR_NODEV;
+        }
+    }
+    ret = usbh_msc_scsi_inquiry(msc_class);
+    if (ret < 0) {
+        USB_LOG_ERR("Fail to scsi_inquiry\r\n");
+        return ret;
+    }
+
+    ret = usbh_msc_scsi_readcapacity10(msc_class);
+    if (ret < 0) {
+        USB_LOG_ERR("Fail to scsi_readcapacity10\r\n");
+        return ret;
+    }
+
+    if (msc_class->blocksize > 0) {
+        USB_LOG_INFO("Capacity info:\r\n");
+        USB_LOG_INFO("Block num:%d,block size:%d\r\n", (unsigned int)msc_class->blocknum, (unsigned int)msc_class->blocksize);
+    } else {
+        USB_LOG_ERR("Invalid block size\r\n");
+        return -USB_ERR_RANGE;
+    }
+
+    return 0;
 }
 
 int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors)

@@ -228,7 +228,12 @@ static void usbh_msc_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     struct usbh_msc *msc_class = (struct usbh_msc *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     /* test with only one buffer, if you have more msc class, modify by yourself */
-#if 1
+#if TEST_USBH_MSC_FATFS == 0
+    ret = usbh_msc_scsi_init(msc_class);
+    if (ret < 0) {
+        USB_LOG_RAW("scsi_init error,ret:%d\r\n", ret);
+        goto delete;
+    }
     /* get the partition table */
     ret = usbh_msc_scsi_read10(msc_class, 0, partition_table, 1);
     if (ret < 0) {
@@ -242,11 +247,10 @@ static void usbh_msc_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
         USB_LOG_RAW("%02x ", partition_table[i]);
     }
     USB_LOG_RAW("\r\n");
-#endif
-
-#if TEST_USBH_MSC_FATFS
+#else
     usb_msc_fatfs_test();
 #endif
+
     // clang-format off
 delete:
     usb_osal_thread_delete(NULL);

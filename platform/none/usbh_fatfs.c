@@ -12,7 +12,7 @@ struct usbh_msc *active_msc_class;
 
 int USB_disk_status(void)
 {
-    return 0;
+    return RES_OK;
 }
 
 int USB_disk_initialize(void)
@@ -20,6 +20,9 @@ int USB_disk_initialize(void)
     active_msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
     if (active_msc_class == NULL) {
         printf("do not find /dev/sda\r\n");
+        return RES_NOTRDY;
+    }
+    if (usbh_msc_scsi_init(active_msc_class) < 0) {
         return RES_NOTRDY;
     }
     return RES_OK;

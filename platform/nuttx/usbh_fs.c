@@ -101,11 +101,11 @@ static int usbhost_open(FAR struct inode *inode)
     DEBUGASSERT(inode->i_private);
     msc_class = (struct usbh_msc *)inode->i_private;
 
-    if (msc_class->hport && msc_class->hport->connected) {
-        return OK;
-    } else {
+    if (usbh_msc_scsi_init(msc_class) < 0) {
         return -ENODEV;
     }
+
+    return OK;
 }
 
 static int usbhost_close(FAR struct inode *inode)
