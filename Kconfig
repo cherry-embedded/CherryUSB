@@ -66,6 +66,8 @@ if CHERRYUSB
                 bool "hpm"
             config CHERRYUSB_DEVICE_AIC
                 bool "aic"
+            config CHERRYUSB_DEVICE_RP2040
+                bool "rp2040"
             config CHERRYUSB_DEVICE_CH32
                 bool "ch32"
             config CHERRYUSB_DEVICE_PUSB2
@@ -217,6 +219,8 @@ if CHERRYUSB
                 bool "kinetis_mm32"
             config CHERRYUSB_HOST_KINETIS_CUSTOM
                 bool "kinetis_custom"
+            config CHERRYUSB_HOST_RP2040
+                bool "rp2040"
         endchoice
 
         config CHERRYUSB_HOST_CDC_ACM
