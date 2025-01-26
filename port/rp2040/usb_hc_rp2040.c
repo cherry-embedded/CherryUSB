@@ -41,6 +41,7 @@ struct rp2040_hcd {
     volatile bool port_csc;
     volatile bool port_pec;
     volatile bool port_pe;
+    usb_osal_mutex_t ep0_mutex;
     struct rp2040_pipe pipe_pool[1 + CONFIG_USBHOST_PIPE_NUM];
 } g_rp2040_hcd[CONFIG_USBHOST_MAX_BUS];
 
@@ -289,7 +290,14 @@ int usb_hc_init(struct usbh_bus *bus)
         g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem = usb_osal_sem_create(0);
         if (g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem == NULL) {
             USB_LOG_ERR("Failed to create waitsem\r\n");
+            return -USB_ERR_NOMEM;
         }
+    }
+
+    g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex = usb_osal_mutex_create();
+    if (g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex == NULL) {
+        USB_LOG_ERR("Failed to create ep0_mutex\r\n");
+        return -USB_ERR_NOMEM;
     }
 
     g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[0].endpoint_control = &usbh_dpram->epx_ctrl;
@@ -354,6 +362,8 @@ int usb_hc_deinit(struct usbh_bus *bus)
     for (uint8_t i = 0; i <= CONFIG_USBHOST_PIPE_NUM; i++) {
         usb_osal_sem_delete(g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem);
     }
+
+    usb_osal_mutex_delete(g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex);
 
     return 0;
 }
@@ -502,6 +512,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
         chidx = 0;
+        /* all the control transfers use the only one ep0 register, we need to lock */
+        usb_osal_mutex_take(g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex);
     } else {
         chidx = rp2040_pipe_alloc(bus);
         if (chidx == -1) {
@@ -543,9 +555,16 @@ int usbh_submit_urb(struct usbh_urb *urb)
         ret = urb->errorcode;
         /* we can free pipe when waitsem is done */
         rp2040_pipe_free(pipe);
+
+        if (chidx == 0) {
+            usb_osal_mutex_give(g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex);
+        }
     }
     return ret;
 errout_timeout:
+    if (chidx == 0) {
+        usb_osal_mutex_give(g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex);
+    }
     urb->timeout = 0;
     usbh_kill_urb(urb);
     return ret;
