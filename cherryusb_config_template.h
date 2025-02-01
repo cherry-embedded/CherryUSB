@@ -48,6 +48,17 @@
 /* Enable test mode */
 // #define CONFIG_USBDEV_TEST_MODE
 
+/* move ep0 setup handler from isr to thread */
+// #define CONFIG_USBDEV_EP0_THREAD
+
+#ifndef CONFIG_USBDEV_EP0_PRIO
+#define CONFIG_USBDEV_EP0_PRIO 4
+#endif
+
+#ifndef CONFIG_USBDEV_EP0_STACKSIZE
+#define CONFIG_USBDEV_EP0_STACKSIZE 2048
+#endif
+
 #ifndef CONFIG_USBDEV_MSC_MAX_LUN
 #define CONFIG_USBDEV_MSC_MAX_LUN 1
 #endif
