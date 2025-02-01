@@ -145,6 +145,89 @@ __ALIGN_BEGIN const uint8_t USBD_BinaryObjectStoreDescriptor[] = {
 #endif
 };
 
+struct usb_msosv2_descriptor msosv2_desc = {
+    .vendor_code = USBD_WINUSB_VENDOR_CODE,
+    .compat_id = USBD_WinUSBDescriptorSetDescriptor,
+    .compat_id_len = USBD_WINUSB_DESC_SET_LEN,
+};
+
+struct usb_bos_descriptor bos_desc = {
+    .string = USBD_BinaryObjectStoreDescriptor,
+    .string_len = USBD_BOS_WTOTALLENGTH
+};
+
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
+static const uint8_t device_descriptor[] = {
+    USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01)
+};
+
+static const uint8_t config_descriptor[] = {
+    /* Configuration 0 */
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTF_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    /* Interface 0 */
+    USB_INTERFACE_DESCRIPTOR_INIT(0x00, 0x00, 0x02, 0xFF, 0x00, 0x00, 0x02),
+    /* Endpoint OUT 2 */
+    USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_OUT_EP, USB_ENDPOINT_TYPE_BULK, WINUSB_EP_MPS, 0x00),
+    /* Endpoint IN 1 */
+    USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_IN_EP, USB_ENDPOINT_TYPE_BULK, WINUSB_EP_MPS, 0x00),
+    CDC_ACM_DESCRIPTOR_INIT(0x01, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, WINUSB_EP_MPS, 0x00)
+};
+
+static const uint8_t device_quality_descriptor[] = {
+    ///////////////////////////////////////
+    /// device qualifier descriptor
+    ///////////////////////////////////////
+    0x0a,
+    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
+    0x10,
+    0x02,
+    0x00,
+    0x00,
+    0x00,
+    0x40,
+    0x00,
+    0x00,
+};
+
+static const char *string_descriptors[] = {
+    (const char[]){ 0x09, 0x04 }, /* Langid */
+    "CherryUSB",                  /* Manufacturer */
+    "CherryUSB WINUSB DEMO",      /* Product */
+    "2022123456",                 /* Serial Number */
+};
+
+static const uint8_t *device_descriptor_callback(uint8_t speed)
+{
+    return device_descriptor;
+}
+
+static const uint8_t *config_descriptor_callback(uint8_t speed)
+{
+    return config_descriptor;
+}
+
+static const uint8_t *device_quality_descriptor_callback(uint8_t speed)
+{
+    return device_quality_descriptor;
+}
+
+static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
+{
+    if (index > 3) {
+        return NULL;
+    }
+    return string_descriptors[index];
+}
+
+const struct usb_descriptor winusbv2_descriptor = {
+    .device_descriptor_callback = device_descriptor_callback,
+    .config_descriptor_callback = config_descriptor_callback,
+    .device_quality_descriptor_callback = device_quality_descriptor_callback,
+    .string_descriptor_callback = string_descriptor_callback,
+    .msosv2_descriptor = &msosv2_desc,
+    .bos_descriptor = &bos_desc
+};
+#else
 const uint8_t winusbv2_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
     /* Configuration 0 */
@@ -170,7 +253,9 @@ const uint8_t winusbv2_descriptor[] = {
     'U', 0x00,                  /* wcChar6 */
     'S', 0x00,                  /* wcChar7 */
     'B', 0x00,                  /* wcChar8 */
-    /* String 2 (Product) */
+    ///////////////////////////////////////
+    /// string2 descriptor
+    ///////////////////////////////////////
     0x2C,                       /* bLength */
     USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
     'C', 0x00,                  /* wcChar0 */
@@ -194,21 +279,21 @@ const uint8_t winusbv2_descriptor[] = {
     'E', 0x00,                  /* wcChar18 */
     'M', 0x00,                  /* wcChar19 */
     'O', 0x00,                  /* wcChar20 */
-    /* String 3 (Serial Number) */
-    0x1A,                       // bLength
-    USB_DESCRIPTOR_TYPE_STRING, // bDescriptorType
-    '0', 0,                     // wcChar0
-    '1', 0,                     // wcChar1
-    '2', 0,                     // wcChar2
-    '3', 0,                     // wcChar3
-    '4', 0,                     // wcChar4
-    '5', 0,                     // wcChar5
-    'A', 0,                     // wcChar6
-    'B', 0,                     // wcChar7
-    'C', 0,                     // wcChar8
-    'D', 0,                     // wcChar9
-    'E', 0,                     // wcChar10
-    'F', 0,                     // wcChar11
+    ///////////////////////////////////////
+    /// string3 descriptor
+    ///////////////////////////////////////
+    0x16,                       /* bLength */
+    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
+    '2', 0x00,                  /* wcChar0 */
+    '0', 0x00,                  /* wcChar1 */
+    '2', 0x00,                  /* wcChar2 */
+    '2', 0x00,                  /* wcChar3 */
+    '1', 0x00,                  /* wcChar4 */
+    '2', 0x00,                  /* wcChar5 */
+    '3', 0x00,                  /* wcChar6 */
+    '4', 0x00,                  /* wcChar7 */
+    '5', 0x00,                  /* wcChar8 */
+    '6', 0x00,                  /* wcChar9 */
 #ifdef CONFIG_USB_HS
     /* Device Qualifier */
     0x0a,
@@ -225,6 +310,7 @@ const uint8_t winusbv2_descriptor[] = {
     /* End */
     0x00
 };
+#endif
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
@@ -307,23 +393,17 @@ struct usbd_interface winusb_intf;
 struct usbd_interface intf1;
 struct usbd_interface intf2;
 
-struct usb_msosv2_descriptor msosv2_desc = {
-    .vendor_code = USBD_WINUSB_VENDOR_CODE,
-    .compat_id = USBD_WinUSBDescriptorSetDescriptor,
-    .compat_id_len = USBD_WINUSB_DESC_SET_LEN,
-};
-
-struct usb_bos_descriptor bos_desc = {
-    .string = USBD_BinaryObjectStoreDescriptor,
-    .string_len = USBD_BOS_WTOTALLENGTH
-};
-
 void winusbv2_init(uint8_t busid, uintptr_t reg_base)
 {
+#ifdef CONFIG_USBDEV_ADVANCE_DESC
+    usbd_desc_register(busid, &winusbv2_descriptor);
+#else
     usbd_desc_register(busid, winusbv2_descriptor);
+#endif
+#ifndef CONFIG_USBDEV_ADVANCE_DESC
     usbd_bos_desc_register(busid, &bos_desc);
     usbd_msosv2_desc_register(busid, &msosv2_desc);
-
+#endif
     /*!< winusb */
     usbd_add_interface(busid, &winusb_intf);
     usbd_add_endpoint(busid, &winusb_out_ep1);
