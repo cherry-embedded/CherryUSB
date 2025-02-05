@@ -26,6 +26,7 @@
 # set(CONFIG_CHERRYUSB_HOST_HCD "ehci_xxx")
 
 list(APPEND cherryusb_incs
+${CMAKE_CURRENT_LIST_DIR}
 ${CMAKE_CURRENT_LIST_DIR}/common
 ${CMAKE_CURRENT_LIST_DIR}/core
 ${CMAKE_CURRENT_LIST_DIR}/class/hub
@@ -37,6 +38,7 @@ ${CMAKE_CURRENT_LIST_DIR}/class/video
 ${CMAKE_CURRENT_LIST_DIR}/class/wireless
 ${CMAKE_CURRENT_LIST_DIR}/class/midi
 ${CMAKE_CURRENT_LIST_DIR}/class/adb
+${CMAKE_CURRENT_LIST_DIR}/class/dfu
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/serial
 ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi

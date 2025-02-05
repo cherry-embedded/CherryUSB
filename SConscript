@@ -1,18 +1,23 @@
 from building import *
 
 cwd = GetCurrentDir()
-path = [cwd + '/common']
+path = [cwd]
+path += [cwd + '/common']
 path += [cwd + '/core']
+path += [cwd + '/class/hub']
 path += [cwd + '/class/cdc']
 path += [cwd + '/class/msc']
 path += [cwd + '/class/hid']
 path += [cwd + '/class/audio']
 path += [cwd + '/class/video']
 path += [cwd + '/class/wireless']
+path += [cwd + '/class/midi']
+path += [cwd + '/class/adb']
 path += [cwd + '/class/dfu']
 path += [cwd + '/class/midi']
 path += [cwd + '/class/vendor/net']
 path += [cwd + '/class/vendor/serial']
+path += [cwd + '/class/vendor/wifi']
 src = []
 
 LIBS    = []
@@ -147,7 +152,6 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_HOST']):
-    path += [cwd + '/class/hub']
     src += Glob('core/usbh_core.c')
     src += Glob('class/hub/usbh_hub.c')
     src += Glob('osal/usb_osal_rtthread.c')
