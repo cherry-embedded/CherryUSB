@@ -327,12 +327,12 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
 static void usbh_print_setup(struct usb_setup_packet *setup)
 {
     USB_LOG_DBG("Setup: "
-                 "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
-                 setup->bmRequestType,
-                 setup->bRequest,
-                 setup->wValue,
-                 setup->wIndex,
-                 setup->wLength);
+                "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
+                setup->bmRequestType,
+                setup->bRequest,
+                setup->wValue,
+                setup->wIndex,
+                setup->wLength);
 }
 
 static int usbh_get_default_mps(int speed)
@@ -854,7 +854,11 @@ static struct usbh_hubport *usbh_list_all_hubport(struct usbh_hub *hub, uint8_t 
 
     if (hub->index == hub_index) {
         hport = &hub->child[hub_port - 1];
-        return hport;
+        if (hport->connected) {
+            return hport;
+        } else {
+            return NULL;
+        }
     } else {
         for (uint8_t port = 0; port < hub->nports; port++) {
             hport = &hub->child[port];
@@ -878,6 +882,7 @@ static struct usbh_hubport *usbh_list_all_hubport(struct usbh_hub *hub, uint8_t 
     }
     return NULL;
 }
+
 void *usbh_find_class_instance(const char *devname)
 {
     usb_slist_t *bus_list;
