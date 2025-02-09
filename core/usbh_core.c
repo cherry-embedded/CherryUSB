@@ -685,6 +685,10 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
     struct usbh_urb *urb;
     int ret;
 
+    if (!hport || !setup) {
+        return -USB_ERR_INVAL;
+    }
+
     urb = &hport->ep0_urb;
 
     usb_osal_mutex_take(hport->mutex);
