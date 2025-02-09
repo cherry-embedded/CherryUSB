@@ -103,7 +103,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 自动加载支持的Class 驱动
 - 支持阻塞式传输和异步传输
 - 支持复合设备
-- 支持多级 HUB,最高可拓展到 7 级(目前测试 1拖 10 没有问题，当前仅支持 dwc2 和 ehci)
+- 支持多级 HUB,最高可拓展到 7 级(目前测试 1拖 10 没有问题，仅支持 dwc2/ehci/xhci/rp2040)
 - 支持 Communication Device Class (CDC_ACM, CDC_ECM)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
