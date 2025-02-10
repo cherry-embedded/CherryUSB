@@ -533,6 +533,7 @@ USBD_IRQHandler(void)
                                 memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].mps);
                             } else {
                                 memcpy(usb_dc_cfg.ep_in[epid].ep_ram_addr, usb_dc_cfg.ep_in[epid].xfer_buf, usb_dc_cfg.ep_in[epid].xfer_len);
+                                EPn_SET_TX_LEN(epid, usb_dc_cfg.ep_in[epid].xfer_len);
                             }
                             if (usb_dc_cfg.ep_in[epid].eptype != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                                 EPn_SET_TX_VALID(epid);
