@@ -1454,7 +1454,7 @@ static void usbdev_ep0_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
                 g_usbd_core[busid].ep0_data_buf = g_usbd_core[busid].req_data;
                 if (!usbd_setup_request_handler(busid, setup, &g_usbd_core[busid].ep0_data_buf, &g_usbd_core[busid].ep0_data_buf_len)) {
                     usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
-                    return;
+                    continue;
                 }
 
                 /*Send status to host*/
