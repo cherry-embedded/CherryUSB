@@ -334,6 +334,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
             ep_tx_busy_flag = false;
             /* setup first out ep read transfer */
             usbd_ep_start_read(busid, WINUSB_OUT_EP, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -369,6 +370,30 @@ void usbd_winusb_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
     }
 }
 
+void usbd_cdc_acm_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
+{
+    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    // for (int i = 0; i < 100; i++) {
+    //     printf("%02x ", read_buffer[i]);
+    // }
+    // printf("\r\n");
+    usbd_ep_start_write(busid, CDC_IN_EP, read_buffer, nbytes);
+    /* setup next out ep read transfer */
+    usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
+}
+
+void usbd_cdc_acm_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
+{
+    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+
+    if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
+        /* send zlp */
+        usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
+    } else {
+        ep_tx_busy_flag = false;
+    }
+}
+
 struct usbd_endpoint winusb_out_ep1 = {
     .ep_addr = WINUSB_OUT_EP,
     .ep_cb = usbd_winusb_out
@@ -381,12 +406,12 @@ struct usbd_endpoint winusb_in_ep1 = {
 
 static struct usbd_endpoint cdc_out_ep = {
     .ep_addr = CDC_OUT_EP,
-    .ep_cb = NULL
+    .ep_cb = usbd_cdc_acm_out
 };
 
 static struct usbd_endpoint cdc_in_ep = {
     .ep_addr = CDC_IN_EP,
-    .ep_cb = NULL
+    .ep_cb = usbd_cdc_acm_in
 };
 
 struct usbd_interface winusb_intf;
@@ -416,4 +441,26 @@ void winusbv2_init(uint8_t busid, uintptr_t reg_base)
     usbd_add_endpoint(busid, &cdc_in_ep);
 
     usbd_initialize(busid, reg_base, usbd_event_handler);
+}
+
+volatile uint8_t dtr_enable = 0;
+
+void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr)
+{
+    if (dtr) {
+        dtr_enable = 1;
+    } else {
+        dtr_enable = 0;
+    }
+}
+
+void cdc_acm_data_send_with_dtr_test(uint8_t busid)
+{
+    if (dtr_enable) {
+        memset(&write_buffer[10], 'a', 2038);
+        ep_tx_busy_flag = true;
+        usbd_ep_start_write(busid, CDC_IN_EP, write_buffer, 2048);
+        while (ep_tx_busy_flag) {
+        }
+    }
 }
