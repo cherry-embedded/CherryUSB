@@ -290,7 +290,8 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
         rx_flag = 1;
         /* setup first out ep read transfer */
         usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
-        AUDIO_UPDATE_FEEDBACK_DATA_FS(s_speaker_feedback_buffer, AUDIO_SPEAKER_FREQ); /* uac1 can only use 10.14 */
+        uint32_t feedback_value = AUDIO_FREQ_TO_FEEDBACK_FS(AUDIO_SPEAKER_FREQ);
+        AUDIO_FEEDBACK_TO_BUF_FS(s_speaker_feedback_buffer, feedback_value); /* uac1 can only use 10.14 */
         usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
         printf("OPEN1\r\n");
     } else {
@@ -328,7 +329,8 @@ void usbd_audio_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 void usbd_audio_iso_out_feedback_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     USB_LOG_RAW("actual feedback len:%d\r\n", nbytes);
-    AUDIO_UPDATE_FEEDBACK_DATA_FS(s_speaker_feedback_buffer, AUDIO_SPEAKER_FREQ);
+    uint32_t feedback_value = AUDIO_FREQ_TO_FEEDBACK_FS(AUDIO_SPEAKER_FREQ);
+    AUDIO_FEEDBACK_TO_BUF_FS(s_speaker_feedback_buffer, feedback_value);
     usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
 }
 #endif
