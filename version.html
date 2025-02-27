@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>版本说明 &mdash; CherryUSB 1.4.2 documentation</title>
+  <title>版本说明 &mdash; CherryUSB 1.4.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=02f2166e"></script>
+      <script src="_static/documentation_options.js?v=a68a9277"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -131,6 +131,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#v1-4-0">v1.4.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-4-1">v1.4.1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-4-2">v1.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-3">v1.4.3</a></li>
 </ul>
 </li>
 </ul>
@@ -258,6 +259,19 @@
 <li><p>兼容 C++ 相关修改</p></li>
 <li><p>fsdev 不支持 ISO 和 DWC2 高速 hub 不支持全速低速检查</p></li>
 <li><p>通用 OHCI 代码更新</p></li>
+</ul>
+</section>
+<section id="v1-4-3">
+<h2>v1.4.3<a class="headerlink" href="#v1-4-3" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>device ep0 处理增加线程模式</p></li>
+<li><p>device audio feedback 宏和demo</p></li>
+<li><p>device rndis 增加透传功能（无LWIP）</p></li>
+<li><p>host msc 将 scsi 初始化从枚举线程中移出，在mount阶段调用，并增加了testunity 多次尝试，兼容一部分 U 盘</p></li>
+<li><p>rp2040 主从支持</p></li>
+<li><p>nuttx fs，serial，net 组件支持</p></li>
+<li><p>dwc2、ehci、ohci 主机 dcache功能支持</p></li>
+<li><p>t113、MCXA156、CH585 、stm32h7r 支持</p></li>
 </ul>
 </section>
 </section>

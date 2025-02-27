@@ -91,7 +91,7 @@
         INIT_APP_EXPORT(usbh_init);
 
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
-* 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
+* 如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：
 
 .. code-block:: C
 
@@ -101,6 +101,30 @@
         KEEP(*(.usbh_class_info))
         __usbh_class_info_end__ = .;
 
+
+举例如下：
+
+.. code-block:: C
+
+        /* The program code and other data into "FLASH" Rom type memory */
+        .text :
+        {
+        . = ALIGN(4);
+        *(.text)           /* .text sections (code) */
+        *(.text*)          /* .text* sections (code) */
+        *(.glue_7)         /* glue arm to thumb code */
+        *(.glue_7t)        /* glue thumb to arm code */
+        *(.eh_frame)
+
+        KEEP (*(.init))
+        KEEP (*(.fini))
+        . = ALIGN(4);
+        __usbh_class_info_start__ = .;
+        KEEP(*(.usbh_class_info))
+        __usbh_class_info_end__ = .;
+        . = ALIGN(4);
+        _etext = .;        /* define a global symbols at end of code */
+        } > FLASH
 
 借助 STM32CubeMX 生成 USB 初始化
 ----------------------------------

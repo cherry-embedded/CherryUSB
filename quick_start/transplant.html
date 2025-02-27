@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>芯片通用移植指南 &mdash; CherryUSB 1.4.2 documentation</title>
+  <title>芯片通用移植指南 &mdash; CherryUSB 1.4.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/documentation_options.js?v=a68a9277"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -231,6 +231,10 @@
 <h2>带 cache 功能的芯片使用注意<a class="headerlink" href="#cache" title="Link to this heading"></a></h2>
 <p>协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。 <cite>USB_NOCACHE_RAM_SECTION</cite> 宏表示将变量指定到非 cache ram上，
 因此，用户需要在对应的链接脚本中添加 no cache ram 的 section。默认 <cite>USB_NOCACHE_RAM_SECTION</cite> 定义为  <cite>__attribute__((section(“.noncacheable”)))</cite>。</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>需要注意，光指定 section 是不够的，还需要配置该 section 中的 ram 是真的 nocache，一般需要配置 mpu 属性（arm 的参考 stm32h7 demo）。</p>
+</div>
 <p>GCC:</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">MEMORY</span>
 <span class="p">{</span>
