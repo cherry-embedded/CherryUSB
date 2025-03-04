@@ -99,3 +99,4 @@ v1.4.3
 - nuttx fs，serial，net 组件支持
 - dwc2、ehci、ohci 主机 dcache功能支持
 - t113、MCXA156、CH585 、stm32h7r 支持
+- 修复 v1.4.1 中 altsetting 为0时应该关闭所有端点的问题
