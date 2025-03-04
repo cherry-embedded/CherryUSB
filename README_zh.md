@@ -12,7 +12,7 @@
     <a href="./README.md">English</a>
 </p>
 
-CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带 USB IP)的 USB 主从协议栈。
+CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带 USB IP)的高性能 USB 主从协议栈。
 
 ![CherryUSB](CherryUSB.svg)
 

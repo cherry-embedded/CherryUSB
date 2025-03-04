@@ -87,3 +87,16 @@ v1.4.2
 - 兼容 C++ 相关修改
 - fsdev 不支持 ISO 和 DWC2 高速 hub 不支持全速低速检查
 - 通用 OHCI 代码更新
+
+v1.4.3
+----------------------
+
+- device ep0 处理增加线程模式
+- device audio feedback 宏和demo
+- device rndis 增加透传功能（无LWIP）
+- host msc 将 scsi 初始化从枚举线程中移出，在mount阶段调用，并增加了testunity 多次尝试，兼容一部分 U 盘
+- rp2040 主从支持
+- nuttx fs，serial，net 组件支持
+- dwc2、ehci、ohci 主机 dcache功能支持
+- t113、MCXA156、CH585 、stm32h7r 支持
+- 修复 v1.4.1 中 altsetting 为0时应该关闭所有端点的问题

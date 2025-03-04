@@ -12,7 +12,7 @@
     <a href="./README.md">English</a>
 </p>
 
-CherryUSB is a tiny, beautiful and portable USB host and device stack for embedded system with USB IP.
+CherryUSB is a tiny and beautiful, high performance and portable USB host and device stack for embedded system with USB IP.
 
 ![CherryUSB](CherryUSB.svg)
 
