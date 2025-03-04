@@ -19,8 +19,15 @@ void chry_mempool_osal_sem_delete(chry_mempool_osal_sem_t sem)
 
 int chry_mempool_osal_sem_take(chry_mempool_osal_sem_t sem, uint32_t timeout)
 {
-    if (timeout == 0xffffffff) {
-        return (xSemaphoreTake((SemaphoreHandle_t)sem, portMAX_DELAY) == pdPASS) ? 0 : -1;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    if (xPortIsInsideInterrupt()) {
+        ret = xSemaphoreTakeFromISR((SemaphoreHandle_t)sem, &xHigherPriorityTaskWoken);
+        if (ret == pdPASS) {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+        return (ret == pdPASS) ? 0 : -1;
     } else {
         return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -1;
     }
@@ -41,14 +48,4 @@ int chry_mempool_osal_sem_give(chry_mempool_osal_sem_t sem)
     }
 
     return (ret == pdPASS) ? 0 : -1;
-}
-
-void *chry_mempool_osal_malloc(size_t size)
-{
-    return pvPortMalloc(size);
-}
-
-void chry_mempool_osal_free(void *ptr)
-{
-    vPortFree(ptr);
 }
