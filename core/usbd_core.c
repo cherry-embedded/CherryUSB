@@ -446,8 +446,8 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
         }
 
         /* skip to next descriptor */
-        p += p[DESC_bLength];
         current_desc_len += p[DESC_bLength];
+        p += p[DESC_bLength];
         if (current_desc_len >= desc_len && desc_len) {
             break;
         }
@@ -512,7 +512,6 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
 
                     if (alt_setting == 0) {
                         ret = usbd_reset_endpoint(busid, ep_desc);
-                        goto find_end;
                     } else if (cur_alt_setting == alt_setting) {
                         ret = usbd_set_endpoint(busid, ep_desc);
                     } else {
@@ -526,14 +525,13 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
         }
 
         /* skip to next descriptor */
-        p += p[DESC_bLength];
         current_desc_len += p[DESC_bLength];
+        p += p[DESC_bLength];
         if (current_desc_len >= desc_len && desc_len) {
             break;
         }
     }
 
-find_end:
     usbd_class_event_notify_handler(busid, USBD_EVENT_SET_INTERFACE, (void *)if_desc);
 
     return ret;
@@ -700,8 +698,8 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
                     }
 
                     /* skip to next descriptor */
-                    p += p[DESC_bLength];
                     current_desc_len += p[DESC_bLength];
+                    p += p[DESC_bLength];
                     if (current_desc_len >= desc_len && desc_len) {
                         break;
                     }
