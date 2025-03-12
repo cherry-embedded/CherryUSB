@@ -843,7 +843,8 @@ int usb_hc_init(struct usbh_bus *bus)
     /* Set the Periodic Frame List Base Address. */
     EHCI_HCOR->periodiclistbase = EHCI_PTR2ADDR(g_framelist[bus->hcd.hcd_id]);
 
-    regval = 0;
+    regval = EHCI_HCOR->usbcmd;
+    regval &= ~(EHCI_USBCMD_ITHRE_MASK | EHCI_USBCMD_FLSIZE_MASK);
 #if CONFIG_USB_EHCI_FRAME_LIST_SIZE == 1024
     regval |= EHCI_USBCMD_FLSIZE_1024;
 #elif CONFIG_USB_EHCI_FRAME_LIST_SIZE == 512
@@ -854,7 +855,9 @@ int usb_hc_init(struct usbh_bus *bus)
 #error Unsupported frame size list size
 #endif
 
+#if !defined(CONFIG_USB_EHCI_HPMICRO) || !CONFIG_USB_EHCI_HPMICRO
     regval |= EHCI_USBCMD_ITHRE_1MF;
+#endif
     regval |= EHCI_USBCMD_ASEN;
     regval |= EHCI_USBCMD_PSEN;
     regval |= EHCI_USBCMD_RUN;
