@@ -1,3 +1,5 @@
+**English | [简体中文](README_zh-CN.md) | [繁體中文](README_zh-TW.md)**
+
 <h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">CherryUSB</h1>
 <p align="center">
 	<a href="https://github.com/cherry-embedded/CherryUSB/releases"><img src="https://img.shields.io/github/release/cherry-embedded/CherryUSB.svg"><a>
@@ -6,17 +8,11 @@
     <a href="https://discord.com/invite/wFfvrSAey8"><img src="https://img.shields.io/badge/Discord-blue?logo=discord&style=flat-square"> </a>
 </p>
 
-<p align="center">
-    <a href="./README_zh.md">中文</a>
-    |
-    <a href="./README.md">English</a>
-</p>
-
 CherryUSB is a tiny and beautiful, high performance and portable USB host and device stack for embedded system with USB IP.
 
 ![CherryUSB](CherryUSB.svg)
 
-## Why choose
+## Why choose CherryUSB
 
 ### Easy to study USB
 
@@ -62,7 +58,7 @@ Taking into account USB performance issues and trying to achieve the theoretical
 
 CherryUSB Device Stack provides a unified framework of functions for standard device requests, CLASS requests, VENDOR requests and custom special requests. The object-oriented and chained approach allows the user to quickly get started with composite devices without having to worry about the underlying logic. At the same time, a standard dcd porting interface has been standardised for adapting different USB IPs to achieve ip-oriented programming.
 
-CherryUSB Device Stack has the following functions：
+CherryUSB Device Stack has the following functions:
 
 - Support USB2.0 full and high speed, USB3.0 super speed
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
@@ -70,12 +66,12 @@ CherryUSB Device Stack has the following functions：
 - Support Communication Device Class (CDC_ACM, CDC_ECM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
-- Support USB VIDEO CLASS (UVC1.0、UVC1.5)
-- Support USB AUDIO CLASS (UAC1.0、UAC2.0)
+- Support USB VIDEO CLASS (UVC1.0, UVC1.5)
+- Support USB AUDIO CLASS (UAC1.0, UAC2.0)
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
 - Support Remote NDIS (RNDIS)
-- Support WINUSB1.0、WINUSB2.0、WEBUSB、BOS
+- Support WINUSB1.0, WINUSB2.0, WEBUSB, BOS
 - Support Vendor class
 - Support UF2
 - Support Android Debug Bridge (Only support shell)
@@ -95,9 +91,9 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2):
 
 ## Host Stack Overview
 
-The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on roothubs and external hubs, and a standard interface for different Classes to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the host stack is managed using os, and provides osal to make a adaptation for different os.
+The CherryUSB Host Stack has a standard enumeration implementation for devices mounted on root hubs and external hubs, and a standard interface for different Classes to indicate what the Class driver needs to do after enumeration and after disconnection. A standard hcd porting interface has also been standardised for adapting different USB IPs for IP-oriented programming. Finally, the host stack is managed using os, and provides osal to make a adaptation for different os.
 
-CherryUSB Host Stack has the following functions：
+CherryUSB Host Stack has the following functions:
 
 - Support low speed, full speed, high speed and super speed devices
 - Automatic loading of supported Class drivers
@@ -107,7 +103,7 @@ CherryUSB Host Stack has the following functions：
 - Support Communication Device Class (CDC_ACM, CDC_ECM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
-- Support USB Video CLASS (UVC1.0、UVC1.5)
+- Support USB Video CLASS (UVC1.0, UVC1.5)
 - Support USB Audio CLASS (UAC1.0)
 - Support Remote NDIS (RNDIS)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
@@ -134,7 +130,7 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2):
 |usbh_cdc_ncm.c |  ~3300          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1  | 0         |
 |usbh_bluetooth.c |  ~1000        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1       | 0            |
 
-Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affected by the following macros：
+Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affected by the following macros:
 
 ```
 #define CONFIG_USBHOST_MAX_EXTHUBS          1
@@ -144,7 +140,7 @@ Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affe
 #define CONFIG_USBHOST_MAX_ENDPOINTS        4
 ```
 
-x is affected by the following macros：
+x is affected by the following macros:
 
 ```
 #define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4
@@ -174,7 +170,7 @@ Only standard and commercial USB IP are listed.
 
 ## Documentation Tutorial
 
-Quickly start, USB basic concepts, API manual, Class basic concepts and examples, see [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/)
+Quickly start, USB basic concepts, API manual, Class basic concepts and examples, see [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/).
 
 ## Video Tutorial
 
@@ -182,7 +178,7 @@ USB basic concepts and how the CherryUSB Device stack is implemented, see [Cherr
 
 ## Graphical Config Tool
 
-[chryusb_configurator](https://github.com/Egahp/chryusb_configurator) is written in **electron + vite2 + ts** framework，currently used to automate the generation of descriptor arrays, with additional functionality to be added later.
+[chryusb_configurator](https://github.com/Egahp/chryusb_configurator) is written in **electron + vite2 + ts** framework, currently used to automate the generation of descriptor arrays, with additional functionality to be added later.
 
 ## Demo Repo
 
@@ -222,6 +218,6 @@ CherryUSB discord: https://discord.com/invite/wFfvrSAey8.
 
 ## Company Support
 
-Thanks to the following companies for their support (in no particular order).
+Thanks to the following companies for their support (in no particular order):
 
 <img src="docs/assets/bouffalolab.jpg"  width="100" height="80"/> <img src="docs/assets/hpmicro.jpg"  width="100" height="80" /> <img src="docs/assets/eastsoft.jpg"  width="100" height="80" /> <img src="docs/assets/rtthread.jpg"  width="100" height="80" /> <img src="docs/assets/sophgo.jpg"  width="100" height="80" /> <img src="docs/assets/phytium.jpg"  width="100" height="80" /> <img src="docs/assets/thead.jpg"  width="100" height="80" /> <img src="docs/assets/nuvoton.jpg"  width="100" height="80" /> <img src="docs/assets/artinchip.jpg"  width="100" height="80" /> <img src="docs/assets/bekencorp.jpg"  width="100" height="80" /> <img src="docs/assets/nxp.png"  width="100" height="80" /> <img src="docs/assets/espressif.png"  width="100" height="80" /> <img src="docs/assets/canaan.jpg"  width="100" height="80" />
