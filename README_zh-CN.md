@@ -1,4 +1,4 @@
-**[English](README.md) | 简体中文 | [繁體中文](README_zh-TW.md)**
+**[English](README.md) | 简体中文**
 
 <h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">CherryUSB</h1>
 <p align="center">
