@@ -91,7 +91,7 @@ CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
 ## Host 协议栈简介
 
-CherryUSB Host 协议栈对挂载在 root WEBUSBhub、外部 hub 上的设备规范了一套标准的枚举实现，对不同的 Class 类也规范了一套标准接口，用来指示在枚举后和断开连接后该 Class 驱动需要做的事情。同时，规范了一套标准的 hcd porting 接口，用于适配不同的 USB IP，达到面向 IP 编程。最后，协议栈使用 OS 管理，并提供了 osal 用来适配不同的 os。
+CherryUSB Host 协议栈对挂载在 root hub、外部 hub 上的设备规范了一套标准的枚举实现，对不同的 Class 类也规范了一套标准接口，用来指示在枚举后和断开连接后该 Class 驱动需要做的事情。同时，规范了一套标准的 hcd porting 接口，用于适配不同的 USB IP，达到面向 IP 编程。最后，协议栈使用 OS 管理，并提供了 osal 用来适配不同的 os。
 
 CherryUSB Host 协议栈当前实现以下功能：
 
