@@ -380,10 +380,10 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                 }
                 break;
             default:
-                USB_LOG_WRN("Ignore rndis query iod:%08lx\r\n", oid);
+                USB_LOG_WRN("Ignore rndis query iod:%08x\r\n", (unsigned int)oid);
                 continue;
         }
-        USB_LOG_INFO("rndis query iod:%08lx success\r\n", oid);
+        USB_LOG_INFO("rndis query iod:%08x success\r\n", (unsigned int)oid);
     }
 
     uint32_t packet_filter = 0x0f;
@@ -414,7 +414,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_rndis_run(rndis_class);
     return ret;
 query_errorout:
-    USB_LOG_ERR("rndis query iod:%08lx error\r\n", oid);
+    USB_LOG_ERR("rndis query iod:%08x error\r\n", (unsigned int)oid);
     return ret;
 }
 

@@ -1228,7 +1228,7 @@ static void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32
     g_usbd_core[busid].ep0_data_buf += nbytes;
     g_usbd_core[busid].ep0_data_buf_residue -= nbytes;
 
-    USB_LOG_DBG("EP0 send %d bytes, %d remained\r\n", nbytes, g_usbd_core[busid].ep0_data_buf_residue);
+    USB_LOG_DBG("EP0 send %d bytes, %d remained\r\n", (unsigned int)nbytes, (unsigned int)g_usbd_core[busid].ep0_data_buf_residue);
 
     if (g_usbd_core[busid].ep0_data_buf_residue != 0) {
         /* Start sending the remain data */
@@ -1271,7 +1271,7 @@ static void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint3
         g_usbd_core[busid].ep0_data_buf += nbytes;
         g_usbd_core[busid].ep0_data_buf_residue -= nbytes;
 
-        USB_LOG_DBG("EP0 recv %d bytes, %d remained\r\n", nbytes, g_usbd_core[busid].ep0_data_buf_residue);
+        USB_LOG_DBG("EP0 recv %d bytes, %d remained\r\n", (unsigned int)nbytes, (unsigned int)g_usbd_core[busid].ep0_data_buf_residue);
 
         if (g_usbd_core[busid].ep0_data_buf_residue == 0) {
 #ifdef CONFIG_USBDEV_EP0_THREAD
@@ -1438,7 +1438,7 @@ static void usbdev_ep0_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
         if (ret < 0) {
             continue;
         }
-        USB_LOG_DBG("event:%d\r\n", event);
+        USB_LOG_DBG("event:%d\r\n", (unsigned int)event);
 
         switch (event) {
             case USB_EP0_STATE_SETUP:

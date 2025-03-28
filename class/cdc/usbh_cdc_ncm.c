@@ -62,12 +62,12 @@ static void print_ntb_parameters(struct cdc_ncm_ntb_parameters *param)
     USB_LOG_RAW("wLength: 0x%02x             \r\n", param->wLength);
     USB_LOG_RAW("bmNtbFormatsSupported: %s     \r\n", param->bmNtbFormatsSupported ? "NTB16" : "NTB32");
 
-    USB_LOG_RAW("dwNtbInMaxSize: 0x%08lx           \r\n", param->dwNtbInMaxSize);
+    USB_LOG_RAW("dwNtbInMaxSize: 0x%08x           \r\n", (unsigned int)param->dwNtbInMaxSize);
     USB_LOG_RAW("wNdbInDivisor: 0x%02x \r\n", param->wNdbInDivisor);
     USB_LOG_RAW("wNdbInPayloadRemainder: 0x%02x      \r\n", param->wNdbInPayloadRemainder);
     USB_LOG_RAW("wNdbInAlignment: 0x%02x    \r\n", param->wNdbInAlignment);
 
-    USB_LOG_RAW("dwNtbOutMaxSize: 0x%08lx     \r\n", param->dwNtbOutMaxSize);
+    USB_LOG_RAW("dwNtbOutMaxSize: 0x%08x     \r\n", (unsigned int)param->dwNtbOutMaxSize);
     USB_LOG_RAW("wNdbOutDivisor: 0x%02x     \r\n", param->wNdbOutDivisor);
     USB_LOG_RAW("wNdbOutPayloadRemainder: 0x%02x     \r\n", param->wNdbOutPayloadRemainder);
     USB_LOG_RAW("wNdbOutAlignment: 0x%02x     \r\n", param->wNdbOutAlignment);

@@ -315,20 +315,20 @@ void usbd_audio_close(uint8_t busid, uint8_t intf)
 
 void usbd_audio_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    USB_LOG_RAW("actual out len:%d\r\n", (unsigned int)nbytes);
     usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
 }
 
 void usbd_audio_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+    USB_LOG_RAW("actual in len:%d\r\n", (unsigned int)nbytes);
     ep_tx_busy_flag = false;
 }
 
 #if USING_FEEDBACK == 1
 void usbd_audio_iso_out_feedback_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual feedback len:%d\r\n", nbytes);
+    USB_LOG_RAW("actual feedback len:%d\r\n", (unsigned int)nbytes);
     uint32_t feedback_value = AUDIO_FREQ_TO_FEEDBACK_FS(AUDIO_SPEAKER_FREQ);
     AUDIO_FEEDBACK_TO_BUF_FS(s_speaker_feedback_buffer, feedback_value);
     usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);

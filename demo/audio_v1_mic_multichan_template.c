@@ -262,7 +262,7 @@ void usbd_audio_close(uint8_t busid, uint8_t intf)
 
 void usbd_audio_iso_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+    USB_LOG_RAW("actual in len:%d\r\n", (unsigned int)nbytes);
     ep_tx_busy_flag = false;
 }
 

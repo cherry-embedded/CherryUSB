@@ -54,7 +54,7 @@ void usbh_cdc_acm_callback(void *arg, int nbytes)
         for (size_t i = 0; i < nbytes; i++) {
             USB_LOG_RAW("0x%02x ", cdc_buffer[i]);
         }
-        USB_LOG_RAW("nbytes:%d\r\n", nbytes);
+        USB_LOG_RAW("nbytes:%d\r\n", (unsigned int)nbytes);
     }
 }
 
@@ -82,7 +82,7 @@ static void usbh_cdc_acm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
             }
         }
         uint32_t time_ms = xTaskGetTickCount() - start_time;
-        USB_LOG_RAW("per packet len:%d, out speed:%f MB/S\r\n", test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((float)time_ms));
+        USB_LOG_RAW("per packet len:%d, out speed:%f MB/S\r\n", (unsigned int)test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((float)time_ms));
     }
 #endif
     memset(cdc_buffer, 0x55, 4096);
@@ -94,7 +94,7 @@ static void usbh_cdc_acm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
         USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
         goto delete;
     } else {
-        USB_LOG_RAW("send over:%d\r\n", cdc_acm_class->bulkout_urb.actual_length);
+        USB_LOG_RAW("send over:%d\r\n", (unsigned int)cdc_acm_class->bulkout_urb.actual_length);
     }
 
     /* we can change cdc_acm_class->bulkin->wMaxPacketSize with 4096 for testing zlp, default is ep mps  */
@@ -123,7 +123,7 @@ void usbh_hid_callback(void *arg, int nbytes)
         for (int i = 0; i < nbytes; i++) {
             USB_LOG_RAW("0x%02x ", hid_buffer[i]);
         }
-        USB_LOG_RAW("nbytes:%d\r\n", nbytes);
+        USB_LOG_RAW("nbytes:%d\r\n", (unsigned int)nbytes);
         usbh_int_urb_fill(&hid_class->intin_urb, hid_class->hport, hid_class->intin, hid_buffer, hid_class->intin->wMaxPacketSize, 0, usbh_hid_callback, hid_class);
         usbh_submit_urb(&hid_class->intin_urb);
     } else if (nbytes == -USB_ERR_NAK) { /* only dwc2 should do this */
@@ -170,14 +170,14 @@ int usb_msc_fatfs_test()
 {
     const char *tmp_data = "cherryusb fatfs demo...\r\n";
 
-    USB_LOG_RAW("data len:%d\r\n", strlen(tmp_data));
+    USB_LOG_RAW("data len:%d\r\n", (unsigned int)strlen(tmp_data));
     for (uint32_t i = 0; i < 100; i++) {
         memcpy(&read_write_buffer[i * 25], tmp_data, strlen(tmp_data));
     }
 
     res_sd = f_mount(&fs, "2:", 1);
     if (res_sd != FR_OK) {
-        USB_LOG_RAW("mount fail,res:%d\r\n", res_sd);
+        USB_LOG_RAW("mount fail,res:%d\r\n", (unsigned int)res_sd);
         return -1;
     }
 

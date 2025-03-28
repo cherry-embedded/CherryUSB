@@ -331,14 +331,14 @@ void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sam
 
 void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
+    USB_LOG_RAW("actual out len:%d\r\n", (unsigned int)nbytes);
     usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
 }
 
 #if USING_FEEDBACK == 1
 void usbd_audio_iso_out_feedback_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual feedback len:%d\r\n", nbytes);
+    USB_LOG_RAW("actual feedback len:%d\r\n", (unsigned int)nbytes);
 #ifdef CONFIG_USB_HS
     uint32_t feedback_value = AUDIO_FREQ_TO_FEEDBACK_HS(AUDIO_FREQ);
     AUDIO_FEEDBACK_TO_BUF_HS(s_speaker_feedback_buffer, feedback_value);

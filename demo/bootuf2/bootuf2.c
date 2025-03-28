@@ -196,7 +196,7 @@ static void bootuf2block_state_update(struct bootuf2_STATE *STATE,
     }
 
     USB_LOG_DBG("UF2 block total %d written %d index %d\r\n",
-                uf2->NumberOfBlock, STATE->NumberOfWritten, uf2->BlockIndex);
+                uf2->NumberOfBllock, STATE->NumberOfWritten, uf2->BlockIndex);
 }
 
 static bool bootuf2block_state_check(struct bootuf2_STATE *STATE)
