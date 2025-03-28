@@ -17,10 +17,10 @@
 static struct usbd_endpoint cdc_ecm_ep_data[3];
 
 #ifdef CONFIG_USBDEV_CDC_ECM_USING_LWIP
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[CONFIG_CDC_ECM_ETH_MAX_SEGSZE];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[CONFIG_CDC_ECM_ETH_MAX_SEGSZE];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[USB_ALIGN_UP(CONFIG_CDC_ECM_ETH_MAX_SEGSZE, CONFIG_USB_ALIGN_SIZE)];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[USB_ALIGN_UP(CONFIG_CDC_ECM_ETH_MAX_SEGSZE, CONFIG_USB_ALIGN_SIZE)];
 #endif
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_notify_buf[16];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_notify_buf[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
 
 volatile uint32_t g_cdc_ecm_rx_data_length = 0;
 volatile uint32_t g_cdc_ecm_tx_data_length = 0;

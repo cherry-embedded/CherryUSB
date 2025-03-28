@@ -39,8 +39,8 @@ struct adb_msg {
 };
 
 struct adb_packet {
-    struct adb_msg msg;
-    uint8_t payload[MAX_PAYLOAD];
+    USB_MEM_ALIGNX struct adb_msg msg;
+    USB_MEM_ALIGNX uint8_t payload[USB_ALIGN_UP(MAX_PAYLOAD, CONFIG_USB_ALIGN_SIZE)];
 };
 
 struct usbd_adb {

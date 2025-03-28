@@ -35,7 +35,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
     USB_MEM_ALIGNX struct CBW cbw;
     USB_MEM_ALIGNX struct CSW csw;
 
-    bool readonly;
+    USB_MEM_ALIGNX bool readonly;
     bool popup;
     uint8_t sKey; /* Sense key */
     uint8_t ASC;  /* Additional Sense Code */
