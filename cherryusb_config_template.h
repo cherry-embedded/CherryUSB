@@ -271,9 +271,13 @@
 // #define CONFIG_USB_EHCI_CONFIGFLAG
 // #define CONFIG_USB_EHCI_ISO
 // #define CONFIG_USB_EHCI_WITH_OHCI
+// #define CONFIG_USB_EHCI_DESC_DCACHE_ENABLE
 
 /* ---------------- OHCI Configuration ---------------- */
 #define CONFIG_USB_OHCI_HCOR_OFFSET (0x0)
+#define CONFIG_USB_OHCI_ED_NUM CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USB_OHCI_TD_NUM 3
+// #define CONFIG_USB_OHCI_DESC_DCACHE_ENABLE
 
 /* ---------------- XHCI Configuration ---------------- */
 #define CONFIG_USB_XHCI_HCCR_OFFSET (0x0)
