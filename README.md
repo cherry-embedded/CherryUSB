@@ -1,4 +1,4 @@
-**English | [简体中文](README_zh-CN.md)**
+**English | [简体中文](README_zh.md)**
 
 <h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">CherryUSB</h1>
 <p align="center">
@@ -60,7 +60,7 @@ CherryUSB Device Stack provides a unified framework of functions for standard de
 
 CherryUSB Device Stack has the following functions:
 
-- Support USB2.0 full and high speed, USB3.0 super speed
+- Support USB2.0 full and high speed(USB3.0 super speed TODO)
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
 - Support Composite Device
 - Support Communication Device Class (CDC_ACM, CDC_ECM)
@@ -174,11 +174,11 @@ Quickly start, USB basic concepts, API manual, Class basic concepts and examples
 
 ## Video Tutorial
 
-USB basic concepts and how the CherryUSB Device stack is implemented, see [CherryUSB Device Stack Tutorial](https://www.bilibili.com/video/BV1Ef4y1t73d).
+CherryUSB Cheese (based V1.4.3): https://www.bilibili.com/cheese/play/ss707687201 .
 
-## Graphical Config Tool
+## Descriptor Generator Tool
 
-[chryusb_configurator](https://github.com/Egahp/chryusb_configurator) is written in **electron + vite2 + ts** framework, currently used to automate the generation of descriptor arrays, with additional functionality to be added later.
+TODO
 
 ## Demo Repo
 

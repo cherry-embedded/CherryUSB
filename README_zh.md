@@ -60,7 +60,7 @@ CherryUSB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求�
 
 CherryUSB Device 协议栈当前实现以下功能：
 
-- 支持 USB2.0 全速和高速设备，USB3.0 超速设备
+- 支持 USB2.0 全速和高速设备（USB3.0 超高速 TODO）
 - 支持端点中断注册功能，porting 给用户自己处理中断里的数据
 - 支持复合设备
 - 支持 Communication Device Class (CDC_ACM, CDC_ECM)
@@ -95,7 +95,7 @@ CherryUSB Host 协议栈对挂载在 root hub、外部 hub 上的设备规范了
 
 CherryUSB Host 协议栈当前实现以下功能：
 
-- 支持 low speed, full speed, high speed 和 super speed 设备
+- 支持 USB2.0 full speed 和 high speed（USB3.0 TODO）
 - 自动加载支持的Class 驱动
 - 支持阻塞式传输和异步传输
 - 支持复合设备
@@ -174,12 +174,11 @@ CherryUSB 快速入门、USB 基本概念、API 手册、Class 基本概念和�
 
 ## 视频教程
 
-- USB 基本知识点与 CherryUSB Device 协议栈是如何编写的（使用 v0.4.1 版本），参考 https://www.bilibili.com/video/BV1Ef4y1t73d 。
-- CherryUSB 腾讯会议（使用 v1.1.0 版本），参考 https://www.bilibili.com/video/BV16x421y7mM 。
+CherryUSB 课程（基于 V1.4.3）：https://www.bilibili.com/cheese/play/ss707687201 。
 
-## 图形化界面配置工具
+## 描述符生成工具
 
-[chryusb_configurator](https://github.com/Egahp/chryusb_configurator) 采用 **electron + vite2 + ts** 框架编写，当前用于自动化生成描述符数组，后续会增加其他功能。
+TODO
 
 ## 示例仓库
 
