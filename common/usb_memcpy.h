@@ -88,4 +88,7 @@ static inline void *usb_memcpy(void *s1, const void *s2, size_t n)
     }
     return s1;
 }
+
+#define memcpy usb_memcpy
+
 #endif
