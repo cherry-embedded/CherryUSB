@@ -1,22 +1,18 @@
+**[English](README.md) | 简体中文**
+
 <h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">CherryUSB</h1>
 <p align="center">
-	<a href="https://github.com/cherry-embedded/CherryUSB/releases"><img src="https://img.shields.io/github/release/cherry-embedded/CherryUSB.svg"><a>
+	<a href="https://github.com/cherry-embedded/CherryUSB/releases"><img src="https://img.shields.io/github/release/cherry-embedded/CherryUSB.svg"></a>
 	<a href="https://github.com/cherry-embedded/CherryUSB/blob/master/LICENSE"><img src="https://img.shields.io/github/license/cherry-embedded/CherryUSB.svg?style=flat-square"></a>
     <a href="https://github.com/cherry-embedded/CherryUSB/actions/workflows/deploy-docs.yml"><img src="https://github.com/cherry-embedded/CherryUSB/actions/workflows/deploy-docs.yml/badge.svg"> </a>
     <a href="https://discord.com/invite/wFfvrSAey8"><img src="https://img.shields.io/badge/Discord-blue?logo=discord&style=flat-square"> </a>
 </p>
 
-<p align="center">
-    <a href="./README_zh.md">中文</a>
-    |
-    <a href="./README.md">English</a>
-</p>
-
-CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统(带 USB IP)的高性能 USB 主从协议栈。
+CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统（带 USB IP）的高性能 USB 主从协议栈。
 
 ![CherryUSB](CherryUSB.svg)
 
-## 为什么选择
+## 为什么选择 CherryUSB
 
 ### 易于学习 USB
 
@@ -95,7 +91,7 @@ CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
 ## Host 协议栈简介
 
-CherryUSB Host 协议栈对挂载在 roothub、外部 hub 上的设备规范了一套标准的枚举实现，对不同的 Class 类也规范了一套标准接口，用来指示在枚举后和断开连接后该 Class 驱动需要做的事情。同时，规范了一套标准的 hcd porting 接口，用于适配不同的 USB IP，达到面向 IP 编程。最后，协议栈使用 OS 管理，并提供了 osal 用来适配不同的 os。
+CherryUSB Host 协议栈对挂载在 root hub、外部 hub 上的设备规范了一套标准的枚举实现，对不同的 Class 类也规范了一套标准接口，用来指示在枚举后和断开连接后该 Class 驱动需要做的事情。同时，规范了一套标准的 hcd porting 接口，用于适配不同的 USB IP，达到面向 IP 编程。最后，协议栈使用 OS 管理，并提供了 osal 用来适配不同的 os。
 
 CherryUSB Host 协议栈当前实现以下功能：
 
@@ -103,7 +99,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 自动加载支持的Class 驱动
 - 支持阻塞式传输和异步传输
 - 支持复合设备
-- 支持多级 HUB,最高可拓展到 7 级(目前测试 1拖 10 没有问题，仅支持 dwc2/ehci/xhci/rp2040)
+- 支持多级 HUB，最高可拓展到 7 级(目前测试 1拖 10 没有问题，仅支持 dwc2/ehci/xhci/rp2040)
 - 支持 Communication Device Class (CDC_ACM, CDC_ECM)
 - 支持 Human Interface Device (HID)
 - 支持 Mass Storage Class (MSC)
@@ -174,12 +170,12 @@ x 受以下宏影响：
 
 ## 文档教程
 
-CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和例程，参考 [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/)
+CherryUSB 快速入门、USB 基本概念、API 手册、Class 基本概念和例程，参考 [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/)。
 
 ## 视频教程
 
-- USB 基本知识点与 CherryUSB Device 协议栈是如何编写的（使用v0.4.1 版本），参考 https://www.bilibili.com/video/BV1Ef4y1t73d.
-- CherryUSB 腾讯会议（使用v1.1.0 版本），参考 https://www.bilibili.com/video/BV16x421y7mM.
+- USB 基本知识点与 CherryUSB Device 协议栈是如何编写的（使用 v0.4.1 版本），参考 https://www.bilibili.com/video/BV1Ef4y1t73d 。
+- CherryUSB 腾讯会议（使用 v1.1.0 版本），参考 https://www.bilibili.com/video/BV16x421y7mM 。
 
 ## 图形化界面配置工具
 
@@ -207,7 +203,7 @@ CherryUSB 快速入门、USB 基本概念，API 手册，Class 基本概念和�
 
 ## 软件包支持
 
-CherryUSB 软件包可以通过以下方式获取:
+CherryUSB 软件包可以通过以下方式获取：
 
 - [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
 - [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
@@ -219,11 +215,12 @@ CherryUSB 软件包可以通过以下方式获取:
 
 ## 联系
 
-CherryUSB QQ 群:642693751
+CherryUSB QQ群：642693751
+
 CherryUSB 微信群：与我联系后邀请加入
 
 ## 支持企业
 
-感谢以下企业支持（顺序不分先后）。
+感谢以下企业支持（顺序不分先后）：
 
 <img src="docs/assets/bouffalolab.jpg"  width="100" height="80"/> <img src="docs/assets/hpmicro.jpg"  width="100" height="80" /> <img src="docs/assets/eastsoft.jpg"  width="100" height="80" /> <img src="docs/assets/rtthread.jpg"  width="100" height="80" /> <img src="docs/assets/sophgo.jpg"  width="100" height="80" /> <img src="docs/assets/phytium.jpg"  width="100" height="80" /> <img src="docs/assets/thead.jpg"  width="100" height="80" /> <img src="docs/assets/nuvoton.jpg"  width="100" height="80" /> <img src="docs/assets/artinchip.jpg"  width="100" height="80" /> <img src="docs/assets/bekencorp.jpg"  width="100" height="80" /> <img src="docs/assets/nxp.png"  width="100" height="80" /> <img src="docs/assets/espressif.png"  width="100" height="80" /> <img src="docs/assets/canaan.jpg"  width="100" height="80" />
