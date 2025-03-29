@@ -108,6 +108,15 @@ int usb_dc_init(uint8_t busid)
 
 int usb_dc_deinit(uint8_t busid)
 {
+    USB_OTG_DEV->INTEN = 0;
+    USB_OTG_DEV->CTL &= ~USB_CTL_USBENSOFEN_MASK;
+
+    memset(&g_kinetis_udc[busid], 0, sizeof(g_kinetis_udc[busid]));
+
+    USB_OTG_DEV->BDTPAGE1 = (uint8_t)((uintptr_t)&g_kinetis_bdt[busid] >> 8);
+    USB_OTG_DEV->BDTPAGE2 = (uint8_t)((uintptr_t)&g_kinetis_bdt[busid] >> 16);
+    USB_OTG_DEV->BDTPAGE3 = (uint8_t)((uintptr_t)&g_kinetis_bdt[busid] >> 24);
+
     usb_dc_low_level_deinit(busid);
     return 0;
 }
@@ -421,7 +430,7 @@ void USBD_IRQHandler(uint8_t busid)
                 usbd_event_ep_in_complete_handler(busid, ep_idx | 0x80, g_kinetis_udc[busid].in_ep[ep_idx].actual_xfer_len);
             } else {
                 kinetis_start_transfer(busid, ep_idx | 0x80, g_kinetis_udc[busid].in_ep[ep_idx].xfer_buf,
-                                           MIN(g_kinetis_udc[busid].in_ep[ep_idx].xfer_len, g_kinetis_udc[busid].in_ep[ep_idx].ep_mps));
+                                       MIN(g_kinetis_udc[busid].in_ep[ep_idx].xfer_len, g_kinetis_udc[busid].in_ep[ep_idx].ep_mps));
             }
         } else {
             g_kinetis_udc[busid].out_ep[ep_idx].xfer_buf += bc;
@@ -432,7 +441,7 @@ void USBD_IRQHandler(uint8_t busid)
                 usbd_event_ep_out_complete_handler(busid, ep_idx, g_kinetis_udc[busid].out_ep[ep_idx].actual_xfer_len);
             } else {
                 kinetis_start_transfer(busid, ep_idx, g_kinetis_udc[busid].out_ep[ep_idx].xfer_buf,
-                                           MIN(g_kinetis_udc[busid].out_ep[ep_idx].xfer_len, g_kinetis_udc[busid].out_ep[ep_idx].ep_mps));
+                                       MIN(g_kinetis_udc[busid].out_ep[ep_idx].xfer_len, g_kinetis_udc[busid].out_ep[ep_idx].ep_mps));
             }
         }
 
