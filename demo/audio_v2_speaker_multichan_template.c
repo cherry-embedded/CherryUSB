@@ -305,6 +305,7 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
     rx_flag = 1;
     /* setup first out ep read transfer */
     usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
+#if USING_FEEDBACK == 1
 #ifdef CONFIG_USB_HS
     uint32_t feedback_value = AUDIO_FREQ_TO_FEEDBACK_HS(AUDIO_FREQ);
     AUDIO_FEEDBACK_TO_BUF_HS(s_speaker_feedback_buffer, feedback_value);
@@ -313,6 +314,7 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
     AUDIO_FEEDBACK_TO_BUF_FS(s_speaker_feedback_buffer, feedback_value);
 #endif
     usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
+#endif
     USB_LOG_RAW("OPEN\r\n");
 }
 

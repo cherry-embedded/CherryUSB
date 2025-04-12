@@ -290,9 +290,11 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
         rx_flag = 1;
         /* setup first out ep read transfer */
         usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
+#if USING_FEEDBACK == 1
         uint32_t feedback_value = AUDIO_FREQ_TO_FEEDBACK_FS(AUDIO_SPEAKER_FREQ);
         AUDIO_FEEDBACK_TO_BUF_FS(s_speaker_feedback_buffer, feedback_value); /* uac1 can only use 10.14 */
         usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
+#endif
         printf("OPEN1\r\n");
     } else {
         tx_flag = 1;
