@@ -87,7 +87,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         else:
             src += Glob('port/ch32/usb_dc_usbfs.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
-        path += [cwd + '/port/xhci/rt-thread']
+        path += [cwd + '/port/pusb2/rt-thread']
         src += Glob('port/pusb2/rt-thread/usb_dc_glue_phytium.c')
         if GetDepend(['ARCH_ARMV8']):
             LIBPATH = [cwd + '/port/pusb2']
