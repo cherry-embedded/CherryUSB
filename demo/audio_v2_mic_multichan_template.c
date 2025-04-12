@@ -22,9 +22,9 @@
 #define AUDIO_IN_CLOCK_ID 0x01
 #define AUDIO_IN_FU_ID    0x03
 
-#define AUDIO_FREQ      48000
-#define HALF_WORD_BYTES 2  //2 half word (one channel)
-#define SAMPLE_BITS     16 //16 bit per channel
+#define AUDIO_IN_MAX_FREQ 16000
+#define HALF_WORD_BYTES   2  //2 half word (one channel)
+#define SAMPLE_BITS       16 //16 bit per channel
 
 #define BMCONTROL (AUDIO_V2_FU_CONTROL_MUTE | AUDIO_V2_FU_CONTROL_VOLUME)
 
@@ -56,7 +56,7 @@
 #define INPUT_CH_ENABLE 0x000000ff
 #endif
 
-#define AUDIO_IN_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * IN_CHANNEL_NUM) / 1000))
+#define AUDIO_IN_PACKET ((uint32_t)((AUDIO_IN_MAX_FREQ * HALF_WORD_BYTES * IN_CHANNEL_NUM) / 1000))
 
 #define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                    \
                                    AUDIO_V2_AC_DESCRIPTOR_INIT_LEN +                      \

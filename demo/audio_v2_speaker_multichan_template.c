@@ -27,9 +27,9 @@
 #define AUDIO_OUT_CLOCK_ID 0x01
 #define AUDIO_OUT_FU_ID    0x03
 
-#define AUDIO_FREQ      48000
-#define HALF_WORD_BYTES 2  //2 half word (one channel)
-#define SAMPLE_BITS     16 //16 bit per channel
+#define AUDIO_OUT_MAX_FREQ 96000
+#define HALF_WORD_BYTES    2  //2 half word (one channel)
+#define SAMPLE_BITS        16 //16 bit per channel
 
 #define BMCONTROL (AUDIO_V2_FU_CONTROL_MUTE | AUDIO_V2_FU_CONTROL_VOLUME)
 
@@ -61,7 +61,7 @@
 #define OUTPUT_CH_ENABLE 0x000000ff
 #endif
 
-#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
+#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_OUT_MAX_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
 
 #if USING_FEEDBACK == 0
 #define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                     \
@@ -228,7 +228,7 @@ const uint8_t audio_v2_descriptor[] = {
     '0', 0x00,                  /* wcChar7 */
     '0', 0x00,                  /* wcChar8 */
 #if USING_FEEDBACK == 0
-    '3', 0x00, /* wcChar9 */
+    '3', 0x00,                  /* wcChar9 */
 #else
     '4', 0x00, /* wcChar9 */
 #endif

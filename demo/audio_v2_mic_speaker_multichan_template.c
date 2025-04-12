@@ -30,7 +30,9 @@
 #define AUDIO_IN_CLOCK_ID  0x05
 #define AUDIO_IN_FU_ID     0x07
 
-#define AUDIO_FREQ      48000
+#define AUDIO_OUT_MAX_FREQ 96000
+#define AUDIO_IN_MAX_FREQ  16000
+
 #define HALF_WORD_BYTES 2  //2 half word (one channel)
 #define SAMPLE_BITS     16 //16 bit per channel
 
@@ -93,8 +95,8 @@
 #endif
 
 /* AudioFreq * DataSize (2 bytes) * NumChannels */
-#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
-#define AUDIO_IN_PACKET  ((uint32_t)((AUDIO_FREQ * HALF_WORD_BYTES * IN_CHANNEL_NUM) / 1000))
+#define AUDIO_OUT_PACKET ((uint32_t)((AUDIO_OUT_MAX_FREQ * HALF_WORD_BYTES * OUT_CHANNEL_NUM) / 1000))
+#define AUDIO_IN_PACKET  ((uint32_t)((AUDIO_IN_MAX_FREQ * HALF_WORD_BYTES * IN_CHANNEL_NUM) / 1000))
 
 #if USING_FEEDBACK == 0
 #define USB_AUDIO_CONFIG_DESC_SIZ (9 +                                                     \
@@ -418,6 +420,8 @@ void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 void usbd_audio_iso_in_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    USB_LOG_RAW("actual in len:%d\r\n", (unsigned int)nbytes);
+    ep_tx_busy_flag = false;
 }
 
 #if USING_FEEDBACK == 1
