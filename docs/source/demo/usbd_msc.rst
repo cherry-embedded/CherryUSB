@@ -34,6 +34,6 @@ block_size 一般为 512/2048/4096。
 
 2, OS 下开启 `CONFIG_USBDEV_MSC_THREAD`，则读写函数在线程中执行。
 
-- 修改  `CONFIG_USBDEV_MSC_STACKSIZE` 会影响 U 盘的读写速度，必须是 block_size 的整数倍，当然，也会增加 RAM 的占用。
+- 修改  `CONFIG_USBDEV_MSC_BUFSIZE` 会影响 U 盘的读写速度，必须是 block_size 的整数倍，当然，也会增加 RAM 的占用。
 
 - 如果 RAM 例程可以用，但是介质更换成 SD 或者 FLASH 后不可用，则一定是介质驱动问题。
