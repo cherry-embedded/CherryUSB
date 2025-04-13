@@ -185,7 +185,7 @@
 <p>1，裸机下开启 <cite>CONFIG_USBDEV_MSC_POLLING</cite> 并在 while1 中调用 <cite>usbd_msc_polling</cite>，则读写函数在 while1 中执行。</p>
 <p>2, OS 下开启 <cite>CONFIG_USBDEV_MSC_THREAD</cite>，则读写函数在线程中执行。</p>
 <ul class="simple">
-<li><p>修改  <cite>CONFIG_USBDEV_MSC_STACKSIZE</cite> 会影响 U 盘的读写速度，必须是 block_size 的整数倍，当然，也会增加 RAM 的占用。</p></li>
+<li><p>修改  <cite>CONFIG_USBDEV_MSC_BUFSIZE</cite> 会影响 U 盘的读写速度，必须是 block_size 的整数倍，当然，也会增加 RAM 的占用。</p></li>
 <li><p>如果 RAM 例程可以用，但是介质更换成 SD 或者 FLASH 后不可用，则一定是介质驱动问题。</p></li>
 </ul>
 </section>
