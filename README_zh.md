@@ -95,7 +95,7 @@ CherryUSB Host 协议栈对挂载在 root hub、外部 hub 上的设备规范了
 
 CherryUSB Host 协议栈当前实现以下功能：
 
-- 支持 USB2.0 full speed 和 high speed（USB3.0 TODO）
+- 支持 low speed，full speed，high speed 和 super speed 设备
 - 自动加载支持的Class 驱动
 - 支持阻塞式传输和异步传输
 - 支持复合设备
