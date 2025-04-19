@@ -90,8 +90,8 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
 
     rndis_class->max_transfer_pkts = resp->MaxPacketsPerTransfer;
     rndis_class->max_transfer_size = resp->MaxTransferSize;
-    USB_LOG_INFO("MaxPacketsPerTransfer:%ld\r\n", resp->MaxPacketsPerTransfer);
-    USB_LOG_INFO("MaxTransferSize:%ld\r\n", resp->MaxTransferSize);
+    USB_LOG_INFO("MaxPacketsPerTransfer:%u\r\n", (unsigned int)resp->MaxPacketsPerTransfer);
+    USB_LOG_INFO("MaxTransferSize:%u\r\n", (unsigned int)resp->MaxTransferSize);
 
     return ret;
 }
@@ -319,7 +319,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
         return ret;
     }
     oid_num = (data_len / 4);
-    USB_LOG_INFO("rndis query OID_GEN_SUPPORTED_LIST success,oid num :%ld\r\n", oid_num);
+    USB_LOG_INFO("rndis query OID_GEN_SUPPORTED_LIST success,oid num :%u\r\n", (unsigned int)oid_num);
 
     oid_support_list = (uint32_t *)tmp_buffer;
 
@@ -501,7 +501,7 @@ find_class:
             uint32_t total_len = g_rndis_rx_length;
 
             while (g_rndis_rx_length > 0) {
-                USB_LOG_DBG("rxlen:%ld\r\n", g_rndis_rx_length);
+                USB_LOG_DBG("rxlen:%u\r\n", (unsigned int)g_rndis_rx_length);
 
                 pmsg = (rndis_data_packet_t *)(g_rndis_rx_buffer + pmg_offset);
 
@@ -523,7 +523,7 @@ find_class:
                         g_rndis_rx_length = 0;
                     }
                 } else {
-                    USB_LOG_ERR("offset:%ld,remain:%ld,total:%ld\r\n", pmg_offset, g_rndis_rx_length, total_len);
+                    USB_LOG_ERR("offset:%u,remain:%u,total:%u\r\n", (unsigned int)pmg_offset, (unsigned int)g_rndis_rx_length, (unsigned int)total_len);
                     g_rndis_rx_length = 0;
                     USB_LOG_ERR("Error rndis packet message\r\n");
                 }
