@@ -64,6 +64,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     /** Currently selected configuration */
     uint8_t configuration;
     uint8_t device_address;
+    uint8_t ep0_next_state;
     bool self_powered;
     bool remote_wakeup_support;
     bool remote_wakeup_enabled;
@@ -1118,6 +1119,7 @@ void usbd_event_reset_handler(uint8_t busid)
     usbd_set_address(busid, 0);
     g_usbd_core[busid].device_address = 0;
     g_usbd_core[busid].configuration = 0;
+    g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     g_usbd_core[busid].speed = USB_SPEED_UNKNOWN;
 #endif
@@ -1162,12 +1164,14 @@ static void __usbd_event_ep0_setup_complete_handler(uint8_t busid, struct usb_se
     /* handle class request when all the data is received */
     if (setup->wLength && ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
         USB_LOG_DBG("Start reading %d bytes from ep0\r\n", setup->wLength);
+        g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_OUT_DATA;
         usbd_ep_start_read(busid, USB_CONTROL_OUT_EP0, g_usbd_core[busid].ep0_data_buf, setup->wLength);
         return;
     }
 
     /* Ask installed handler to process request */
     if (!usbd_setup_request_handler(busid, setup, &buf, &g_usbd_core[busid].ep0_data_buf_len)) {
+        g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
         usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
         return;
     }
@@ -1176,6 +1180,7 @@ static void __usbd_event_ep0_setup_complete_handler(uint8_t busid, struct usb_se
     g_usbd_core[busid].ep0_data_buf_residue = MIN(g_usbd_core[busid].ep0_data_buf_len, setup->wLength);
     if (g_usbd_core[busid].ep0_data_buf_residue > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
         USB_LOG_ERR("Request buffer too small\r\n");
+        g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
         usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
         return;
     }
@@ -1191,6 +1196,12 @@ static void __usbd_event_ep0_setup_complete_handler(uint8_t busid, struct usb_se
 #endif
     } else {
         /* use memcpy(*data, xxx, len); has copied into ep0 buffer, we do nothing */
+    }
+
+    if (g_usbd_core[busid].ep0_data_buf_residue > 0) {
+        g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_IN_DATA;
+    } else {
+        g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_IN_STATUS;
     }
 
     /* Send data or status to host */
@@ -1247,7 +1258,13 @@ static void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32
                 */
             if (setup->wLength && ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_IN)) {
                 /* if all data has sent completely, start reading out status */
+                g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_OUT_STATUS;
                 usbd_ep_start_read(busid, USB_CONTROL_OUT_EP0, NULL, 0);
+                return;
+            }
+
+            if (g_usbd_core[busid].ep0_next_state == USBD_EP0_STATE_IN_STATUS) {
+                g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
             }
 
 #ifdef CONFIG_USBDEV_TEST_MODE
@@ -1280,10 +1297,12 @@ static void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint3
             /* Received all, send data to handler */
             g_usbd_core[busid].ep0_data_buf = g_usbd_core[busid].req_data;
             if (!usbd_setup_request_handler(busid, setup, &g_usbd_core[busid].ep0_data_buf, &g_usbd_core[busid].ep0_data_buf_len)) {
+                g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
                 usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
                 return;
             }
 
+            g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_IN_STATUS;
             /*Send status to host*/
             usbd_ep_start_write(busid, USB_CONTROL_IN_EP0, NULL, 0);
 #endif
@@ -1292,6 +1311,7 @@ static void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint3
             usbd_ep_start_read(busid, USB_CONTROL_OUT_EP0, g_usbd_core[busid].ep0_data_buf, g_usbd_core[busid].ep0_data_buf_residue);
         }
     } else {
+        g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
         /* Read out status completely, do nothing */
         USB_LOG_DBG("EP0 recv out status\r\n");
     }
@@ -1425,6 +1445,11 @@ int usbd_send_remote_wakeup(uint8_t busid)
     }
 }
 
+uint8_t usbd_get_ep0_next_state(uint8_t busid)
+{
+    return g_usbd_core[busid].ep0_next_state;
+}
+
 #ifdef CONFIG_USBDEV_EP0_THREAD
 static void usbdev_ep0_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
@@ -1451,10 +1476,12 @@ static void usbdev_ep0_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
                 /* Received all, send data to handler */
                 g_usbd_core[busid].ep0_data_buf = g_usbd_core[busid].req_data;
                 if (!usbd_setup_request_handler(busid, setup, &g_usbd_core[busid].ep0_data_buf, &g_usbd_core[busid].ep0_data_buf_len)) {
+                    g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_SETUP;
                     usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
                     continue;
                 }
 
+                g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_IN_STATUS;
                 /*Send status to host*/
                 usbd_ep_start_write(busid, USB_CONTROL_IN_EP0, NULL, 0);
                 break;

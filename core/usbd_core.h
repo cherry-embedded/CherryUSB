@@ -45,6 +45,12 @@ enum usbd_event_type {
     USBD_EVENT_UNKNOWN
 };
 
+#define USBD_EP0_STATE_SETUP      0
+#define USBD_EP0_STATE_IN_DATA    1
+#define USBD_EP0_STATE_OUT_DATA   2
+#define USBD_EP0_STATE_IN_STATUS  3
+#define USBD_EP0_STATE_OUT_STATUS 4
+
 typedef int (*usbd_request_handler)(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len);
 typedef void (*usbd_endpoint_callback)(uint8_t busid, uint8_t ep, uint32_t nbytes);
 typedef void (*usbd_notify_handler)(uint8_t busid, uint8_t event, void *arg);
@@ -105,6 +111,7 @@ uint8_t usbd_get_ep_mult(uint8_t busid, uint8_t ep);
 bool usb_device_is_configured(uint8_t busid);
 bool usb_device_is_suspend(uint8_t busid);
 int usbd_send_remote_wakeup(uint8_t busid);
+uint8_t usbd_get_ep0_next_state(uint8_t busid);
 
 int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event));
 int usbd_deinitialize(uint8_t busid);
