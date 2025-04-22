@@ -9,8 +9,6 @@
 #include "usb_scsi.h"
 #if defined(CONFIG_USBDEV_MSC_THREAD)
 #include "usb_osal.h"
-#elif defined(CONFIG_USBDEV_MSC_POLLING)
-#include "chry_ringbuffer.h"
 #endif
 
 #define MSD_OUT_EP_IDX 0
@@ -53,8 +51,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
     usb_osal_thread_t usbd_msc_thread;
     uint32_t nbytes;
 #elif defined(CONFIG_USBDEV_MSC_POLLING)
-    chry_ringbuffer_t msc_rb;
-    uint8_t msc_rb_pool[2];
+    uint32_t event;
     uint32_t nbytes;
 #endif
 } g_usbd_msc[CONFIG_USBDEV_MAX_BUS];
@@ -114,7 +111,7 @@ void msc_storage_notify_handler(uint8_t busid, uint8_t event, void *arg)
                 USB_LOG_ERR("No memory to alloc for g_usbd_msc[busid].usbd_msc_thread\r\n");
             }
 #elif defined(CONFIG_USBDEV_MSC_POLLING)
-            chry_ringbuffer_init(&g_usbd_msc[busid].msc_rb, g_usbd_msc[busid].msc_rb_pool, sizeof(g_usbd_msc[busid].msc_rb_pool));
+            g_usbd_msc[busid].event = 0;
 #endif
             break;
         case USBD_EVENT_DEINIT:
@@ -539,7 +536,7 @@ static bool SCSI_read10(uint8_t busid, uint8_t **data, uint32_t *len)
     usb_osal_mq_send(g_usbd_msc[busid].usbd_msc_mq, MSC_DATA_IN);
     return true;
 #elif defined(CONFIG_USBDEV_MSC_POLLING)
-    chry_ringbuffer_write_byte(&g_usbd_msc[busid].msc_rb, MSC_DATA_IN);
+    g_usbd_msc[busid].event = MSC_DATA_IN;
     return true;
 #else
     return SCSI_processRead(busid);
@@ -577,7 +574,7 @@ static bool SCSI_read12(uint8_t busid, uint8_t **data, uint32_t *len)
     usb_osal_mq_send(g_usbd_msc[busid].usbd_msc_mq, MSC_DATA_IN);
     return true;
 #elif defined(CONFIG_USBDEV_MSC_POLLING)
-    chry_ringbuffer_write_byte(&g_usbd_msc[busid].msc_rb, MSC_DATA_IN);
+    g_usbd_msc[busid].event = MSC_DATA_IN;
     return true;
 #else
     return SCSI_processRead(busid);
@@ -852,7 +849,7 @@ void mass_storage_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
                     usb_osal_mq_send(g_usbd_msc[busid].usbd_msc_mq, MSC_DATA_OUT);
 #elif defined(CONFIG_USBDEV_MSC_POLLING)
                     g_usbd_msc[busid].nbytes = nbytes;
-                    chry_ringbuffer_write_byte(&g_usbd_msc[busid].msc_rb, MSC_DATA_OUT);
+                    g_usbd_msc[busid].event = MSC_DATA_OUT;
 #else
                     if (SCSI_processWrite(busid, nbytes) == false) {
                         usbd_msc_send_csw(busid, CSW_STATUS_CMD_FAILED); /* send fail status to host,and the host will retry*/
@@ -881,7 +878,7 @@ void mass_storage_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 #if defined(CONFIG_USBDEV_MSC_THREAD)
                     usb_osal_mq_send(g_usbd_msc[busid].usbd_msc_mq, MSC_DATA_IN);
 #elif defined(CONFIG_USBDEV_MSC_POLLING)
-                    chry_ringbuffer_write_byte(&g_usbd_msc[busid].msc_rb, MSC_DATA_IN);
+                    g_usbd_msc[busid].event = MSC_DATA_IN;
 #else
                     if (SCSI_processRead(busid) == false) {
                         usbd_msc_send_csw(busid, CSW_STATUS_CMD_FAILED); /* send fail status to host,and the host will retry*/
@@ -940,7 +937,10 @@ void usbd_msc_polling(uint8_t busid)
 {
     uint8_t event;
 
-    if (chry_ringbuffer_read_byte(&g_usbd_msc[busid].msc_rb, &event)) {
+    event = g_usbd_msc[busid].event;
+
+    if (event != 0) {
+        g_usbd_msc[busid].event = 0;
         USB_LOG_DBG("event:%d\r\n", event);
         if (event == MSC_DATA_OUT) {
             if (SCSI_processWrite(busid, g_usbd_msc[busid].nbytes) == false) {
@@ -979,7 +979,8 @@ struct usbd_interface *usbd_msc_init_intf(uint8_t busid, struct usbd_interface *
 
         if (CONFIG_USBDEV_MSC_MAX_BUFSIZE % g_usbd_msc[busid].scsi_blk_size[i]) {
             USB_LOG_ERR("CONFIG_USBDEV_MSC_MAX_BUFSIZE must be a multiple of block size\r\n");
-            while(1){}
+            while (1) {
+            }
         }
     }
 
