@@ -378,14 +378,14 @@ static void dwc2_chan_free(struct dwc2_chan *chan)
     usb_osal_leave_critical_section(flags);
 }
 
-static uint8_t dwc2_calculate_packet_num(uint32_t input_size, uint8_t ep_addr, uint16_t ep_mps, uint32_t *output_size)
+static uint16_t dwc2_calculate_packet_num(uint32_t input_size, uint8_t ep_addr, uint16_t ep_mps, uint32_t *output_size)
 {
     uint16_t num_packets;
 
     num_packets = (uint16_t)((input_size + ep_mps - 1U) / ep_mps);
 
-    if (num_packets > 256) {
-        num_packets = 256;
+    if (num_packets > 0x3FF) {
+        num_packets = 0x3FF; // pktcnt 10bits
     }
 
     if (input_size == 0) {
