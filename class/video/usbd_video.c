@@ -879,6 +879,5 @@ int usbd_video_stream_start_write(uint8_t busid, uint8_t ep, uint8_t *ep_buf0, u
     g_usbd_video[busid].stream_len = stream_len;
     g_usbd_video[busid].stream_offset = 0;
 
-    usbd_video_stream_split_transfer(busid, ep);
-    return 0;
+    return usbd_video_stream_split_transfer(busid, ep);
 }
