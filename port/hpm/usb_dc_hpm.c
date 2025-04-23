@@ -307,17 +307,10 @@ void USBD_IRQHandler(uint8_t busid)
 
     if (int_status & intr_usb) {
         uint32_t const edpt_complete = usb_device_get_edpt_complete_status(handle);
-        usb_device_clear_edpt_complete_status(handle, edpt_complete);
-        uint32_t edpt_setup_status = usb_device_get_setup_status(handle);
-
-        if (edpt_setup_status) {
-            /*------------- Set up Received -------------*/
-            usb_device_clear_setup_status(handle, edpt_setup_status);
-            dcd_qhd_t *qhd0 = usb_device_qhd_get(handle, 0);
-            usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&qhd0->setup_request);
-        }
+        uint32_t const edpt_setup_status = usb_device_get_setup_status(handle);
 
         if (edpt_complete) {
+            usb_device_clear_edpt_complete_status(handle, edpt_complete);
             for (uint8_t ep_idx = 0; ep_idx < USB_SOS_DCD_MAX_QHD_COUNT; ep_idx++) {
                 if (edpt_complete & (1 << ep_idx2bit(ep_idx))) {
                     transfer_len = 0;
@@ -354,6 +347,13 @@ void USBD_IRQHandler(uint8_t busid)
                     }
                 }
             }
+        }
+
+        if (edpt_setup_status) {
+            /*------------- Set up Received -------------*/
+            usb_device_clear_setup_status(handle, edpt_setup_status);
+            dcd_qhd_t *qhd0 = usb_device_qhd_get(handle, 0);
+            usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&qhd0->setup_request);
         }
     }
 }
