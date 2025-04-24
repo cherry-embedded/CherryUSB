@@ -257,7 +257,7 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
 }
 
 /* For IN channel HCTSIZ.XferSize is expected to be an integer multiple of ep_mps size.*/
-static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint8_t ep_addr, uint8_t *buf, uint32_t size, uint8_t num_packets, uint8_t pid)
+static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint8_t ep_addr, uint8_t *buf, uint32_t size, uint16_t num_packets, uint8_t pid)
 {
     __IO uint32_t tmpreg;
     uint8_t is_oddframe;
