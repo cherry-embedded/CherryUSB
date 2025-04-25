@@ -33,7 +33,10 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_ST']):
+        src += Glob('port/fsdev/usb_dc_fsdev.c')
+        src += Glob('port/fsdev/usb_glue_st.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_CUSTOM']):
         src += Glob('port/fsdev/usb_dc_fsdev.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_ST']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')

@@ -26,8 +26,10 @@ if CHERRYUSB
             default CHERRYUSB_DEVICE_CUSTOM
             config CHERRYUSB_DEVICE_CUSTOM
                 bool "CUSTOM (Implement it yourself)"
-            config CHERRYUSB_DEVICE_FSDEV
-                bool "fsdev"
+            config CHERRYUSB_DEVICE_FSDEV_ST
+                bool "fsdev_st"
+            config CHERRYUSB_DEVICE_FSDEV_CUSTOM
+                bool "fsdev_custom"
             config CHERRYUSB_DEVICE_DWC2_ST
                 bool "dwc2_st"
             config CHERRYUSB_DEVICE_DWC2_ESP
