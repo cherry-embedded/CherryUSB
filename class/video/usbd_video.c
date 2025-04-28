@@ -882,3 +882,15 @@ int usbd_video_stream_start_write(uint8_t busid, uint8_t ep, uint8_t *ep_buf0, u
     usbd_video_stream_split_transfer(busid, ep);
     return 0;
 }
+
+__WEAK void usbd_video_open(uint8_t busid, uint8_t intf)
+{
+    (void)busid;
+    (void)intf;
+}
+
+__WEAK void usbd_video_close(uint8_t busid, uint8_t intf)
+{
+    (void)busid;
+    (void)intf;
+}

@@ -996,3 +996,34 @@ bool usbd_msc_get_popup(uint8_t busid)
 {
     return g_usbd_msc[busid].popup;
 }
+
+__WEAK void usbd_msc_get_cap(uint8_t busid, uint8_t lun, uint32_t *block_num, uint32_t *block_size)
+{
+    (void)busid;
+    (void)lun;
+
+    *block_num = 0;
+    *block_size = 0;
+}
+
+__WEAK int usbd_msc_sector_read(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
+{
+    (void)busid;
+    (void)lun;
+    (void)sector;
+    (void)buffer;
+    (void)length;
+
+    return 0;
+}
+
+__WEAK int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
+{
+    (void)busid;
+    (void)lun;
+    (void)sector;
+    (void)buffer;
+    (void)length;
+
+    return 0;
+}
