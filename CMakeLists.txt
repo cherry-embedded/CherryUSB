@@ -34,7 +34,7 @@ if(BL_SDK_BASE)
     sdk_add_include_directories(${cherryusb_incs})
     sdk_library_add_sources(${cherryusb_srcs})
 
-    sdk_library_add_sources(platform/none/usbh_lwip.c)
+    sdk_library_add_sources(platform/lwip/usbh_lwip.c)
 
 elseif(HPM_SDK_BASE)
     set(CONFIG_CHERRYUSB_HOST 1)
@@ -62,7 +62,7 @@ elseif(HPM_SDK_BASE)
     sdk_inc(${cherryusb_incs})
     sdk_src(${cherryusb_srcs})
 
-    sdk_src(platform/none/usbh_lwip.c)
+    sdk_src(platform/lwip/usbh_lwip.c)
 
 elseif(ESP_PLATFORM)
 
@@ -81,7 +81,7 @@ elseif(ESP_PLATFORM)
        OR CONFIG_CHERRYUSB_HOST_RTL8152
        OR CONFIG_CHERRYUSB_HOST_BL616
     )
-        list(APPEND cherryusb_srcs platform/none/usbh_lwip.c)
+        list(APPEND cherryusb_srcs platform/lwip/usbh_lwip.c)
         idf_component_get_property(lwip lwip COMPONENT_LIB)
         target_compile_definitions(${lwip} PRIVATE "-DPBUF_POOL_BUFSIZE=1600")
     endif()
