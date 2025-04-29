@@ -19,24 +19,28 @@
 #define EHCI_ADDR2ITD(x) ((struct ehci_itd_hw *)(uintptr_t)((uint32_t)(x) & ~0x1F))
 
 #ifndef CONFIG_USB_EHCI_QH_NUM
-#define CONFIG_USB_EHCI_QH_NUM  CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USB_EHCI_QH_NUM CONFIG_USBHOST_PIPE_NUM
 #endif
 #ifndef CONFIG_USB_EHCI_QTD_NUM
-#define CONFIG_USB_EHCI_QTD_NUM  3
+#define CONFIG_USB_EHCI_QTD_NUM (CONFIG_USB_EHCI_QH_NUM * 3)
 #endif
 #ifndef CONFIG_USB_EHCI_ITD_NUM
-#define CONFIG_USB_EHCI_ITD_NUM  5
+#define CONFIG_USB_EHCI_ITD_NUM 5
 #endif
 #ifndef CONFIG_USB_EHCI_ISO_NUM
-#define CONFIG_USB_EHCI_ISO_NUM  4
+#define CONFIG_USB_EHCI_ISO_NUM 4
 #endif
 
 #if CONFIG_USB_ALIGN_SIZE <= 32
-#define CONFIG_USB_EHCI_ALIGN_SIZE  32
+#define CONFIG_USB_EHCI_ALIGN_SIZE 32
 #elif CONFIG_USB_ALIGN_SIZE <= 64
-#define CONFIG_USB_EHCI_ALIGN_SIZE  64
+#define CONFIG_USB_EHCI_ALIGN_SIZE 64
 #else
 #error "CONFIG_USB_ALIGN_SIZE must be 32 or 64"
+#endif
+
+#if CONFIG_USB_EHCI_QTD_NUM < 9
+#error CONFIG_USB_EHCI_QTD_NUM is too small, recommand CONFIG_USB_EHCI_QH_NUM * 3
 #endif
 
 struct ehci_qtd_hw {
@@ -44,6 +48,7 @@ struct ehci_qtd_hw {
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE) && (CONFIG_USB_ALIGN_SIZE == 64)
     uint8_t pad[32];
 #endif
+    bool inuse;
     struct usbh_urb *urb;
     uintptr_t bufaddr;
     uint32_t length;
@@ -54,7 +59,7 @@ struct ehci_qh_hw {
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
     uint16_t pad[16];
 #endif
-    struct ehci_qtd_hw qtd_pool[CONFIG_USB_EHCI_QTD_NUM];
+    bool inuse;
     uint32_t first_qtd;
     struct usbh_urb *urb;
     usb_osal_sem_t waitsem;
@@ -71,16 +76,14 @@ struct ehci_itd_hw {
     bool dir_in;
 } __attribute__((aligned(CONFIG_USB_EHCI_ALIGN_SIZE)));
 
-struct ehci_iso_hw
-{
+struct ehci_iso_hw {
     struct ehci_itd_hw itd_pool[CONFIG_USB_EHCI_ITD_NUM];
     uint32_t itd_num;
 };
 
 struct ehci_hcd {
-    bool ehci_qh_used[CONFIG_USB_EHCI_QH_NUM];
     bool ehci_iso_used[CONFIG_USB_EHCI_ISO_NUM];
-    bool ppc; /* Port Power Control */
+    bool ppc;      /* Port Power Control */
     bool has_tt;   /* if use tt instead of Companion Controller */
     uint8_t n_cc;  /* Number of Companion Controller */
     uint8_t n_pcc; /* Number of ports supported per companion host controller */
