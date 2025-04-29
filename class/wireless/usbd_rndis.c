@@ -24,6 +24,7 @@ struct usbd_rndis_priv {
     uint32_t net_filter;
     usb_eth_stat_t eth_state;
     rndis_state_t init_state;
+    bool set_rsp_get;
     uint8_t mac[6];
 } g_usbd_rndis;
 
@@ -109,9 +110,13 @@ static int rndis_class_interface_request_handler(uint8_t busid, struct usb_setup
 
     switch (setup->bRequest) {
         case CDC_REQUEST_SEND_ENCAPSULATED_COMMAND:
+            g_usbd_rndis.set_rsp_get = true;
+
             rndis_encapsulated_cmd_handler(*data, setup->wLength);
             break;
         case CDC_REQUEST_GET_ENCAPSULATED_RESPONSE:
+            g_usbd_rndis.set_rsp_get = false;
+
             *data = rndis_encapsulated_resp_buffer;
             *len = ((rndis_generic_msg_t *)rndis_encapsulated_resp_buffer)->MessageLength;
             break;
@@ -271,7 +276,7 @@ static int rndis_query_cmd_handler(uint8_t *data, uint32_t len)
             infomation_len = 4;
             break;
         case OID_GEN_MEDIA_CONNECT_STATUS:
-            RNDIS_INQUIRY_PUT_LE32(g_usbd_rndis.link_status);
+            RNDIS_INQUIRY_PUT_LE32(NDIS_MEDIA_STATE_CONNECTED);
             infomation_len = 4;
             break;
         case OID_GEN_RNDIS_CONFIG_PARAMETER:
@@ -625,9 +630,33 @@ struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
     return intf;
 }
 
-void usbd_rndis_set_connect(bool connect)
+int usbd_rndis_set_connect(bool connect)
 {
-    g_usbd_rndis.link_status = connect ? NDIS_MEDIA_STATE_CONNECTED : NDIS_MEDIA_STATE_DISCONNECTED;
+    if (!usb_device_is_configured(0)) {
+        return -USB_ERR_NODEV;
+    }
+
+    if(g_usbd_rndis.set_rsp_get)
+        return -USB_ERR_BUSY;
+
+    rndis_indicate_status_t *resp;
+
+    resp = ((rndis_indicate_status_t *)rndis_encapsulated_resp_buffer);
+    resp->MessageType = REMOTE_NDIS_INDICATE_STATUS_MSG;
+    resp->MessageLength = sizeof(rndis_indicate_status_t);
+    if(connect) {
+        resp->Status = RNDIS_STATUS_MEDIA_CONNECT;
+        g_usbd_rndis.link_status = NDIS_MEDIA_STATE_CONNECTED;
+    } else {
+        resp->Status = RNDIS_STATUS_MEDIA_DISCONNECT;
+        g_usbd_rndis.link_status = NDIS_MEDIA_STATE_DISCONNECTED;
+    }
+    resp->StatusBufferLength = 0;
+    resp->StatusBufferOffset = 0;
+
+    rndis_notify_rsp();
+
+    return 0;
 }
 
 __WEAK void usbd_rndis_data_recv_done(uint32_t len)
