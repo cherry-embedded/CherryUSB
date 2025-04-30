@@ -32,6 +32,7 @@
 struct usbd_tx_rx_msg {
     uint8_t ep;
     uint8_t ep_mult;
+    uint8_t iface;
     uint16_t ep_mps;
     uint32_t nbytes;
     usbd_endpoint_callback cb;
@@ -116,45 +117,67 @@ static bool is_device_configured(uint8_t busid)
  *
  * @param [in]  busid busid
  * @param [in]  ep Endpoint descriptor byte array
+ * @param [in]  iface Interface number for which the endpoint is enabled
  *
  * @return true if successfully configured and enabled
  */
-static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descriptor *ep)
+static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descriptor *ep, uint8_t iface)
 {
     USB_LOG_DBG("Open ep:0x%02x type:%u mps:%u\r\n",
                 ep->bEndpointAddress,
                 USB_GET_ENDPOINT_TYPE(ep->bmAttributes),
                 USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
+    struct usbd_tx_rx_msg* msg;
 
     if (ep->bEndpointAddress & 0x80) {
-        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
+        msg = &g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f];
     } else {
-        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
+        msg = &g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f];
     }
+    msg->ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+    msg->ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
+    msg->iface = iface;
 
     return usbd_ep_open(busid, ep) == 0 ? true : false;
 }
+
 /**
- * @brief Disable endpoint for transferring data
+ * @brief Disable all endpoints that were opened for a given interfade for transferring data.
  *
- * This function cancels transfers that are associated with endpoint and
- * disabled endpoint itself.
+ * This function cancels transfers that are associated with the endpoints and
+ * disables the endpoint itself.
  *
- * @param [in]  busid busid
- * @param [in]  ep Endpoint descriptor byte array
+ * @param busid busid
+ * @param iface Interface number for which the endpoints will be disabled 
  *
  * @return true if successfully deconfigured and disabled
  */
-static bool usbd_reset_endpoint(uint8_t busid, const struct usb_endpoint_descriptor *ep)
+static bool usbd_reset_endpoints(uint8_t busid, uint8_t iface)
 {
-    USB_LOG_DBG("Close ep:0x%02x type:%u\r\n",
-                ep->bEndpointAddress,
-                USB_GET_ENDPOINT_TYPE(ep->bmAttributes));
+    int ret;
+    for (uint8_t ep_addr = 0; ep_addr < CONFIG_USBDEV_EP_NUM; ep_addr++)
+    {
+        if (g_usbd_core[busid].tx_msg[ep_addr].iface == iface && g_usbd_core[busid].tx_msg[ep_addr].ep_mps > 0) {
+            ret = usbd_ep_close(busid, ep_addr | 0x80);
+            if (ret != 0) {
+                return false;
+            }
+            g_usbd_core[busid].tx_msg[ep_addr].ep_mps = 0;
+            g_usbd_core[busid].tx_msg[ep_addr].ep_mult = 0;
+        }
+        if (g_usbd_core[busid].rx_msg[ep_addr].iface == iface && g_usbd_core[busid].rx_msg[ep_addr].ep_mps > 0) {
+            ret = usbd_ep_close(busid, ep_addr);
+            if (ret != 0) {
+                return false;
+            }
+            g_usbd_core[busid].rx_msg[ep_addr].ep_mps = 0;
+            g_usbd_core[busid].rx_msg[ep_addr].ep_mult = 0;
+        }
+    }
 
-    return usbd_ep_close(busid, ep->bEndpointAddress) == 0 ? true : false;
+    return true;
 }
+
 
 /**
  * @brief get specified USB descriptor
@@ -397,12 +420,15 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
  */
 static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t alt_setting)
 {
+    uint8_t cur_iface = 0xFF;
     uint8_t cur_alt_setting = 0xFF;
     uint8_t cur_config = 0xFF;
     bool found = false;
     const uint8_t *p;
     uint32_t desc_len = 0;
     uint32_t current_desc_len = 0;
+
+    // TODO: Close all endpoints
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     p = g_usbd_core[busid].descriptors->config_descriptor_callback(g_usbd_core[busid].speed);
@@ -428,8 +454,8 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
 
             case USB_DESCRIPTOR_TYPE_INTERFACE:
                 /* remember current alternate setting */
-                cur_alt_setting =
-                    p[INTF_DESC_bAlternateSetting];
+                cur_alt_setting = p[INTF_DESC_bAlternateSetting];
+                cur_iface = p[INTF_DESC_bInterfaceNumber];
                 break;
 
             case USB_DESCRIPTOR_TYPE_ENDPOINT:
@@ -438,7 +464,7 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
                     break;
                 }
 
-                found = usbd_set_endpoint(busid, (struct usb_endpoint_descriptor *)p);
+                found = usbd_set_endpoint(busid, (struct usb_endpoint_descriptor *)p, cur_iface);
                 break;
 
             default:
@@ -483,6 +509,12 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
 #endif
     USB_LOG_DBG("iface %u alt_setting %u\r\n", iface, alt_setting);
 
+    // Close current endpoints that are currently open for this interface
+    ret = usbd_reset_endpoints(busid, iface);
+    if (!ret) {
+        return ret;
+    }
+
     while (p[DESC_bLength] != 0U) {
         switch (p[DESC_bDescriptorType]) {
             case USB_DESCRIPTOR_TYPE_CONFIGURATION:
@@ -510,10 +542,8 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                 if (cur_iface == iface) {
                     ep_desc = (struct usb_endpoint_descriptor *)p;
 
-                    if (alt_setting == 0) {
-                        ret = usbd_reset_endpoint(busid, ep_desc);
-                    } else if (cur_alt_setting == alt_setting) {
-                        ret = usbd_set_endpoint(busid, ep_desc);
+                    if (cur_alt_setting == alt_setting) {
+                        ret = usbd_set_endpoint(busid, ep_desc, iface);
                     } else {
                     }
                 }
