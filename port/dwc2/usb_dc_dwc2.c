@@ -1023,7 +1023,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
 
 void USBD_IRQHandler(uint8_t busid)
 {
-    uint32_t gint_status, temp, ep_idx, ep_intr, epint, read_count, daintmask;
+    uint32_t gint_status, temp, ep_idx, ep_intr, epint, read_count;
     gint_status = dwc2_get_glb_intstatus(busid);
 
     if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_DEVICE) {

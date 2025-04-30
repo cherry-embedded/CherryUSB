@@ -330,6 +330,8 @@ static void usbh_print_hubport_info(struct usbh_hubport *hport)
 
 static void usbh_print_setup(struct usb_setup_packet *setup)
 {
+    (void)setup;
+
     USB_LOG_DBG("Setup: "
                 "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex 0x%04x, wLength 0x%04x\r\n",
                 setup->bmRequestType,
