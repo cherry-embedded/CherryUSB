@@ -234,6 +234,16 @@ if(CONFIG_CHERRYUSB_HOST)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/aoa/usbh_aoa.c)
     endif()
 
+    if(CONFIG_CHERRYUSB_HOST_CDC_ECM
+       OR CONFIG_CHERRYUSB_HOST_CDC_RNDIS
+       OR CONFIG_CHERRYUSB_HOST_CDC_NCM
+       OR CONFIG_CHERRYUSB_HOST_ASIX
+       OR CONFIG_CHERRYUSB_HOST_RTL8152
+       OR CONFIG_CHERRYUSB_HOST_BL616
+    )
+        list(APPEND cherryusb_srcs platform/lwip/usbh_lwip.c)
+    endif()
+
     if(DEFINED CONFIG_CHERRYUSB_HOST_HCD)
         if("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "ehci_bouffalo")
             list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
@@ -247,9 +257,11 @@ if(CONFIG_CHERRYUSB_HOST)
             list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/port/ehci)
         elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "ehci_aic")
             list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
+            list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ohci/usb_hc_ohci.c)
             # list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci_iso.c)
             list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_glue_aic.c)
             list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/port/ehci)
+            list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/port/ohci)
         elseif("${CONFIG_CHERRYUSB_HOST_HCD}" STREQUAL "ehci_mcx")
             list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci.c)
             # list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/ehci/usb_hc_ehci_iso.c)
@@ -286,6 +298,9 @@ if(CONFIG_CHERRYUSB_HOST)
         endif()
     endif()
 
+    if(CHERRYUSB_HOST_TEMPLATE)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/demo/usb_host.c)
+    endif()
 endif()
 
 if(DEFINED CONFIG_CHERRYUSB_OSAL)

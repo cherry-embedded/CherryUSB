@@ -1,15 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
 
 if(BL_SDK_BASE)
-    set(CONFIG_CHERRYUSB_DEVICE 1)
     set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM 1)
     set(CONFIG_CHERRYUSB_DEVICE_HID 1)
     set(CONFIG_CHERRYUSB_DEVICE_MSC 1)
     set(CONFIG_CHERRYUSB_DEVICE_AUDIO 1)
     set(CONFIG_CHERRYUSB_DEVICE_VIDEO 1)
-    set(CONFIG_CHERRYUSB_DEVICE_DCD "bl")
 
-    set(CONFIG_CHERRYUSB_HOST 1)
     set(CONFIG_CHERRYUSB_HOST_CDC_ACM 1)
     set(CONFIG_CHERRYUSB_HOST_CDC_ECM 1)
     set(CONFIG_CHERRYUSB_HOST_CDC_NCM 1)
@@ -25,19 +22,23 @@ if(BL_SDK_BASE)
     set(CONFIG_CHERRYUSB_HOST_CP210X 1)
     set(CONFIG_CHERRYUSB_HOST_FTDI 1)
     set(CONFIG_CHERRYUSB_HOST_PL2303 1)
-    set(CONFIG_CHERRYUSB_OSAL "freertos")
+
+    set(CONFIG_CHERRYUSB_DEVICE_DCD "bl")
     set(CONFIG_CHERRYUSB_HOST_HCD "ehci_bouffalo")
+    set(CONFIG_CHERRYUSB_OSAL "freertos")
 
     include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
 
     sdk_generate_library(cherryusb)
     sdk_add_include_directories(${cherryusb_incs})
     sdk_library_add_sources(${cherryusb_srcs})
-
-    sdk_library_add_sources(platform/lwip/usbh_lwip.c)
-
 elseif(HPM_SDK_BASE)
-    set(CONFIG_CHERRYUSB_HOST 1)
+    set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM 1)
+    set(CONFIG_CHERRYUSB_DEVICE_HID 1)
+    set(CONFIG_CHERRYUSB_DEVICE_MSC 1)
+    set(CONFIG_CHERRYUSB_DEVICE_AUDIO 1)
+    set(CONFIG_CHERRYUSB_DEVICE_VIDEO 1)
+
     set(CONFIG_CHERRYUSB_HOST_CDC_ACM 1)
     set(CONFIG_CHERRYUSB_HOST_CDC_ECM 1)
     set(CONFIG_CHERRYUSB_HOST_CDC_NCM 1)
@@ -54,18 +55,16 @@ elseif(HPM_SDK_BASE)
     set(CONFIG_CHERRYUSB_HOST_FTDI 1)
     set(CONFIG_CHERRYUSB_HOST_PL2303 1)
     set(CONFIG_CHERRYUSB_HOST_BL616 1)
-    set(CONFIG_CHERRYUSB_OSAL "freertos")
+
+    set(CONFIG_CHERRYUSB_DEVICE_DCD "hpm")
     set(CONFIG_CHERRYUSB_HOST_HCD "ehci_hpm")
+    set(CONFIG_CHERRYUSB_OSAL "freertos")
 
     include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
 
     sdk_inc(${cherryusb_incs})
     sdk_src(${cherryusb_srcs})
-
-    sdk_src(platform/lwip/usbh_lwip.c)
-
 elseif(ESP_PLATFORM)
-
     set(CONFIG_CHERRYUSB_DEVICE_DCD "dwc2_esp")
     set(CONFIG_CHERRYUSB_HOST_HCD "dwc2_esp")
     set(CONFIG_CHERRYUSB_OSAL "idf")
@@ -81,7 +80,6 @@ elseif(ESP_PLATFORM)
        OR CONFIG_CHERRYUSB_HOST_RTL8152
        OR CONFIG_CHERRYUSB_HOST_BL616
     )
-        list(APPEND cherryusb_srcs platform/lwip/usbh_lwip.c)
         idf_component_get_property(lwip lwip COMPONENT_LIB)
         target_compile_definitions(${lwip} PRIVATE "-DPBUF_POOL_BUFSIZE=1600")
     endif()
@@ -160,5 +158,16 @@ elseif(ESP_PLATFORM)
 
     if(CONFIG_CHERRYUSB)
         set_source_files_properties("class/audio/usbd_audio.c" PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
+    endif()
+elseif(ZEPHYR_BASE)
+    include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
+
+    zephyr_library()
+    if(cherryusb_incs)
+        zephyr_include_directories(${cherryusb_incs})
+    endif()
+        zephyr_include_directories(${cherryusb_incs})
+    if(cherryusb_srcs)
+        zephyr_library_sources(${cherryusb_srcs})
     endif()
 endif()
