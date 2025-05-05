@@ -301,7 +301,7 @@
 <img alt="../_images/stm32_5.png" src="../_images/stm32_5.png" />
 </figure>
 <ul class="simple">
-<li><p>添加 CherryUSB 必须要的源码（ <strong>usbd_core.c</strong> 、 <strong>usb_dc_dwc2.c</strong> 或者是 <strong>usb_dc_fsdev.c</strong>  ）,以及想要使用的 class 驱动，可以将对应的 class template 添加方便测试。</p></li>
+<li><p>添加 CherryUSB 必须要的源码（ <strong>usbd_core.c</strong> 、 <strong>dwc2/usb_dc_dwc2.c</strong> 或者是 <strong>fsdev/usb_dc_fsdev.c</strong>  ）,以及想要使用的 class 驱动，可以将对应的 class template 添加方便测试。</p></li>
 </ul>
 <figure class="align-default">
 <img alt="../_images/stm32_6.png" src="../_images/stm32_6.png" />
@@ -319,7 +319,7 @@
 <img alt="../_images/stm32_8.png" src="../_images/stm32_8.png" />
 </figure>
 <ul class="simple">
-<li><p>如果使用 dwc2 ip，需要增加 <strong>usb_glue_st.c</strong> 文件，并在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
+<li><p>如果使用 dwc2 ip，需要增加 <strong>dwc2/usb_glue_st.c</strong> 文件，并在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
 </ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="c1">// 以下细节如有出入，请对照 stm32xxx.h 文件修改</span>
 <span class="c1">// 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置</span>
@@ -334,7 +334,7 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>如果使用 fsdev ip，在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
+<li><p>如果使用 fsdev ip，（V1.4.4 开始需要增加 <strong>fsdev/usb_glue_st.c</strong>） 在 <cite>usb_config.h</cite> 中实现以下宏：</p></li>
 </ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USBDEV_EP_NUM 8</span>
 <span class="cp">#define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2</span>
