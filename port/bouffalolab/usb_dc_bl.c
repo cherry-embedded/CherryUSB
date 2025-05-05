@@ -457,6 +457,11 @@ int usb_dc_init(uint8_t busid)
     bflb_irq_attach(37, USBD_IRQ, NULL);
     bflb_irq_enable(37);
 
+    /* disable device-A for device */
+    regval = getreg32(BFLB_PDS_BASE + PDS_USB_CTL_OFFSET);
+    regval |= PDS_REG_USB_IDDIG;
+    putreg32(regval, BFLB_PDS_BASE + PDS_USB_CTL_OFFSET);
+
     /* disable global irq */
     regval = getreg32(BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
     regval &= ~USB_GLINT_EN_HOV;
