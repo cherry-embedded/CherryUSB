@@ -127,7 +127,7 @@ USB Device 移植要点
 
 .. figure:: img/stm32_5.png
 
-- 添加 CherryUSB 必须要的源码（ **usbd_core.c** 、 **usb_dc_dwc2.c** 或者是 **usb_dc_fsdev.c**  ）,以及想要使用的 class 驱动，可以将对应的 class template 添加方便测试。
+- 添加 CherryUSB 必须要的源码（ **usbd_core.c** 、 **dwc2/usb_dc_dwc2.c** 或者是 **fsdev/usb_dc_fsdev.c**  ）,以及想要使用的 class 驱动，可以将对应的 class template 添加方便测试。
 
 .. figure:: img/stm32_6.png
 
@@ -139,7 +139,7 @@ USB Device 移植要点
 
 .. figure:: img/stm32_8.png
 
-- 如果使用 dwc2 ip，需要增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
+- 如果使用 dwc2 ip，需要增加 **dwc2/usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
 
 .. code-block:: C
 
@@ -154,7 +154,7 @@ USB Device 移植要点
     #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
     #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
 
-- 如果使用 fsdev ip，在 `usb_config.h` 中实现以下宏：
+- 如果使用 fsdev ip，（V1.4.4 开始需要增加 **fsdev/usb_glue_st.c**） 在 `usb_config.h` 中实现以下宏：
 
 .. code-block:: C
 
