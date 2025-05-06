@@ -37,11 +37,6 @@ struct mq_adpt {
     char name[16];    /* Message queue name */
 };
 
-struct timer_adpt {
-    struct usb_osal_timer timer;
-    struct wdog_s wdog;
-};
-
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
     int pid;
@@ -291,60 +286,58 @@ int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 
 static void os_timer_callback(wdparm_t arg)
 {
-    struct timer_adpt *timer;
+    struct usb_osal_timer *timer;
 
-    timer = (struct timer_adpt *)arg;
+    timer = (struct usb_osal_timer *)arg;
 
-    if (timer->timer.handler) {
-        timer->timer.handler(timer->timer.argument);
+    if (timer->handler) {
+        timer->handler(timer->argument);
     }
 
-    if (timer->timer.is_period) {
-        wd_start(&timer->wdog, timer->timer.ticks, os_timer_callback, arg);
+    if (timer->is_period) {
+        wd_start(timer->timer, timer->ticks, os_timer_callback, arg);
     }
 }
 
 struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
 {
-    struct timer_adpt *timer = kmm_malloc(sizeof(struct timer_adpt));
+    struct usb_osal_timer *timer = kmm_malloc(sizeof(struct usb_osal_timer));
+    struct wdog_s *wdog = kmm_malloc(sizeof(struct wdog_s));
 
     (void)name;
 
-    if (!timer) {
+    if (!timer || !wdog) {
         return NULL;
     }
 
-    memset((void *)timer, 0, sizeof(struct timer_adpt));
+    memset((void *)timer, 0, sizeof(struct usb_osal_timer));
+    memset((void *)wdog, 0, sizeof(struct wdog_s));
 
-    timer->timer.handler = handler;
-    timer->timer.argument = argument;
-    timer->timer.ticks = MSEC2TICK(timeout_ms);
-    timer->timer.is_period = is_period;
+    timer->handler = handler;
+    timer->argument = argument;
+    timer->ticks = MSEC2TICK(timeout_ms);
+    timer->is_period = is_period;
+    timer->timer = (void *)wdog;
 
     return (struct usb_osal_timer *)timer;
 }
 
 void usb_osal_timer_delete(struct usb_osal_timer *timer)
 {
-    struct timer_adpt *__timer = (struct timer_adpt *)timer;
+    wd_cancel(timer->timer);
 
-    wd_cancel(&__timer->wdog);
-
-    kmm_free(__timer);
+    kmm_free(timer->timer);
+    kmm_free(timer);
 }
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
-    struct timer_adpt *__timer = (struct timer_adpt *)timer;
-
-    wd_start(&__timer->wdog, __timer->timer.ticks, os_timer_callback, (wdparm_t)__timer);
+    wd_start(timer->timer, timer->ticks, os_timer_callback, (wdparm_t)timer);
 }
 
 void usb_osal_timer_stop(struct usb_osal_timer *timer)
 {
-    struct timer_adpt *__timer = (struct timer_adpt *)timer;
-
-    wd_cancel(&__timer->wdog);
+    wd_cancel(timer->timer);
 }
 
 size_t usb_osal_enter_critical_section(void)
