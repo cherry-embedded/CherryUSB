@@ -39,7 +39,7 @@ static struct dwc2_instance g_dwc2_instance;
 #ifdef HAL_PCD_MODULE_ENABLED
 void usb_dc_low_level_init(uint8_t busid)
 {
-    if (g_usbdev_bus[busid].reg_base == USB_OTG_HS_PERIPH_BASE) {
+    if (g_usbdev_bus[busid].reg_base == 0x40040000UL) { // USB_OTG_HS_PERIPH_BASE
         g_usb_dwc2_busid[1] = busid;
         g_usb_dwc2_irq[1] = USBD_IRQHandler;
     } else {
@@ -53,7 +53,7 @@ void usb_dc_low_level_init(uint8_t busid)
 
 void usb_dc_low_level_deinit(uint8_t busid)
 {
-    if (g_usbdev_bus[busid].reg_base == USB_OTG_HS_PERIPH_BASE) {
+    if (g_usbdev_bus[busid].reg_base == 0x40040000UL) { // USB_OTG_HS_PERIPH_BASE
         g_usb_dwc2_busid[1] = 0;
         g_usb_dwc2_irq[1] = NULL;
     } else {
@@ -69,7 +69,7 @@ void usb_dc_low_level_deinit(uint8_t busid)
 #ifdef HAL_HCD_MODULE_ENABLED
 void usb_hc_low_level_init(struct usbh_bus *bus)
 {
-    if (bus->hcd.reg_base == USB_OTG_HS_PERIPH_BASE) {
+    if (bus->hcd.reg_base == 0x40040000UL) { // USB_OTG_HS_PERIPH_BASE
         g_usb_dwc2_busid[1] = bus->hcd.hcd_id;
         g_usb_dwc2_irq[1] = USBH_IRQHandler;
     } else {
@@ -83,7 +83,7 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
 
 void usb_hc_low_level_deinit(struct usbh_bus *bus)
 {
-    if (bus->hcd.reg_base == USB_OTG_HS_PERIPH_BASE) {
+    if (bus->hcd.reg_base == 0x40040000UL) { // USB_OTG_HS_PERIPH_BASE
         g_usb_dwc2_busid[1] = 0;
         g_usb_dwc2_irq[1] = NULL;
     } else {
