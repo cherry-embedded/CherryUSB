@@ -182,7 +182,7 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     timer->handler = handler;
     timer->argument = argument;
     timer->is_period = is_period;
-    timer->ticks = timeout_ms;
+    timer->timeout_ms = timeout_ms;
 
     k_timer_init(timer->timer, zephyr_timer_wrapper, NULL);
     k_timer_user_data_set(timer->timer, timer);
@@ -200,9 +200,9 @@ void usb_osal_timer_delete(struct usb_osal_timer *timer)
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
     if (timer->is_period) {
-        k_timer_start(timer->timer, K_MSEC(timer->ticks), K_MSEC(timer->ticks));
+        k_timer_start(timer->timer, K_MSEC(timer->timeout_ms), K_MSEC(timer->timeout_ms));
     } else {
-        k_timer_start(timer->timer, K_MSEC(timer->ticks), K_NO_WAIT);
+        k_timer_start(timer->timer, K_MSEC(timer->timeout_ms), K_NO_WAIT);
     }
 }
 

@@ -236,7 +236,7 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     }
 
     timer->timer = timer_ptr;
-    timer->ticks = timeout_ms;
+    timer->timeout_ms = timeout_ms;
     timer->is_period = is_period;
     if (tx_timer_create(timer_ptr, (CHAR *)name, (void (*)(ULONG))handler, (uintptr_t)argument, 1, is_period ? 1 : 0,
                         TX_NO_ACTIVATE) != TX_SUCCESS) {
@@ -255,7 +255,7 @@ void usb_osal_timer_delete(struct usb_osal_timer *timer)
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
-    if (tx_timer_change((TX_TIMER *)timer->timer, timer->ticks, timer->is_period ? timer->ticks : 0) == TX_SUCCESS) {
+    if (tx_timer_change((TX_TIMER *)timer->timer, timer->timeout_ms, timer->is_period ? timer->timeout_ms : 0) == TX_SUCCESS) {
         /* Call the tx_timer_activate to activates the specified application
              timer. The expiration routines of timers that expire at the same
              time are executed in the order they were activated. */

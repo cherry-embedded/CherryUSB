@@ -33,7 +33,7 @@ struct usb_osal_timer {
     usb_timer_handler_t handler;
     void *argument;
     bool is_period;
-    uint32_t ticks;
+    uint32_t timeout_ms;
     void *timer;
 };
 

@@ -129,7 +129,7 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
 {
     UINT32 mux_handle;
     UINT32 ret;
-    
+
     ret = LOS_MuxCreate(&mux_handle);
     if (ret != LOS_OK) {
         USB_LOG_ERR("Create mux failed code[%u]\r\n", ret);
@@ -144,7 +144,7 @@ void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
     UINT32 mux_handle = (UINT32)mutex;
     UINT32 ret;
 
-    ret = LOS_MuxDelete(mux_handle); 
+    ret = LOS_MuxDelete(mux_handle);
     if (ret != LOS_OK) {
         USB_LOG_ERR("Delete mux handle[%u] failed code[%u]\r\n",\
                 mux_handle, ret);
@@ -263,7 +263,7 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     timer_handle->handler = handler;
     timer_handle->argument = argument;
     timer_handle->is_period = is_period;
-    timer_handle->ticks = timeout_ms;
+    timer_handle->timeout_ms = timeout_ms;
     timer_handle->timer = (void *)timer_id;
 
     return timer_handle;

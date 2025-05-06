@@ -295,7 +295,7 @@ static void os_timer_callback(wdparm_t arg)
     }
 
     if (timer->is_period) {
-        wd_start(timer->timer, timer->ticks, os_timer_callback, arg);
+        wd_start(timer->timer, timer->timeout_ms, os_timer_callback, arg);
     }
 }
 
@@ -315,7 +315,7 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
 
     timer->handler = handler;
     timer->argument = argument;
-    timer->ticks = MSEC2TICK(timeout_ms);
+    timer->timeout_ms = MSEC2TICK(timeout_ms);
     timer->is_period = is_period;
     timer->timer = (void *)wdog;
 
@@ -332,7 +332,7 @@ void usb_osal_timer_delete(struct usb_osal_timer *timer)
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
-    wd_start(timer->timer, timer->ticks, os_timer_callback, (wdparm_t)timer);
+    wd_start(timer->timer, timer->timeout_ms, os_timer_callback, (wdparm_t)timer);
 }
 
 void usb_osal_timer_stop(struct usb_osal_timer *timer)
