@@ -504,11 +504,7 @@ int usb_hc_init(struct usbh_bus *bus)
         offset = usbh_musb_fifo_config(bus, &cfg[i], offset);
     }
 
-    if (offset > usb_get_musb_ram_size()) {
-        USB_LOG_ERR("offset:%d is overflow, please check your table\r\n", offset);
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(offset <= usb_get_musb_ram_size(), "Your fifo config is overflow, please check");
 
     /* Enable USB interrupts */
     regval = USB_IE_RESET | USB_IE_CONN | USB_IE_DISCON |

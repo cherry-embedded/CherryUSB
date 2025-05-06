@@ -335,11 +335,7 @@ static struct ehci_qh_hw *ehci_control_urb_init(struct usbh_bus *bus, struct usb
     qtd_data = ehci_qtd_alloc(bus);
     qtd_status = ehci_qtd_alloc(bus);
 
-    if (!qtd_setup || !qtd_data || !qtd_status) {
-        USB_LOG_ERR("qtd alloc failed\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(qtd_setup && qtd_data && qtd_status, "ctrl qtd alloc failed");
 
     ehci_qh_fill(qh,
                  urb->hport->dev_addr,
@@ -424,7 +420,6 @@ static struct ehci_qh_hw *ehci_bulk_urb_init(struct usbh_bus *bus, struct usbh_u
     struct ehci_qtd_hw *qtd = NULL;
     struct ehci_qtd_hw *first_qtd = NULL;
     struct ehci_qtd_hw *prev_qtd = NULL;
-    uint32_t qtd_num = 0;
     uint32_t xfer_len = 0;
     uint32_t token;
     size_t flags;
@@ -447,11 +442,7 @@ static struct ehci_qh_hw *ehci_bulk_urb_init(struct usbh_bus *bus, struct usbh_u
 
     while (1) {
         qtd = ehci_qtd_alloc(bus);
-        if (qtd == NULL) {
-            USB_LOG_ERR("qtd alloc failed\r\n");
-            while (1) {
-            }
-        }
+        USB_ASSERT_MSG(qtd, "bulk qtd alloc failed");
 
         if (buflen > 0x4000) {
             xfer_len = 0x4000;
@@ -489,11 +480,6 @@ static struct ehci_qh_hw *ehci_bulk_urb_init(struct usbh_bus *bus, struct usbh_u
 
         if (buflen == 0) {
             break;
-        }
-        qtd_num++;
-
-        if (qtd_num == CONFIG_USB_EHCI_QTD_NUM) {
-            return NULL;
         }
     }
 
@@ -530,7 +516,6 @@ static struct ehci_qh_hw *ehci_intr_urb_init(struct usbh_bus *bus, struct usbh_u
     struct ehci_qtd_hw *qtd = NULL;
     struct ehci_qtd_hw *first_qtd = NULL;
     struct ehci_qtd_hw *prev_qtd = NULL;
-    uint32_t qtd_num = 0;
     uint32_t xfer_len = 0;
     uint32_t token;
     size_t flags;
@@ -553,11 +538,7 @@ static struct ehci_qh_hw *ehci_intr_urb_init(struct usbh_bus *bus, struct usbh_u
 
     while (1) {
         qtd = ehci_qtd_alloc(bus);
-        if (qtd == NULL) {
-            USB_LOG_ERR("qtd alloc failed\r\n");
-            while (1) {
-            }
-        }
+        USB_ASSERT_MSG(qtd, "intr qtd alloc failed");
 
         if (buflen > 0x4000) {
             xfer_len = 0x4000;
@@ -595,11 +576,6 @@ static struct ehci_qh_hw *ehci_intr_urb_init(struct usbh_bus *bus, struct usbh_u
 
         if (buflen == 0) {
             break;
-        }
-        qtd_num++;
-
-        if (qtd_num == CONFIG_USB_EHCI_QTD_NUM) {
-            return NULL;
         }
     }
 
@@ -1220,11 +1196,9 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
 
 #ifdef CONFIG_USB_DCACHE_ENABLE
-    if (((uintptr_t)urb->setup % CONFIG_USB_ALIGN_SIZE) || ((uintptr_t)urb->transfer_buffer % CONFIG_USB_ALIGN_SIZE)) {
-        USB_LOG_ERR("urb buffer is not align with %d\r\n", CONFIG_USB_ALIGN_SIZE);
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(!((uintptr_t)urb->setup % CONFIG_USB_ALIGN_SIZE) &&
+                       !((uintptr_t)urb->transfer_buffer % CONFIG_USB_ALIGN_SIZE),
+                   "urb->setup or urb->transfer_buffer is not aligned %d", CONFIG_USB_ALIGN_SIZE);
 #endif
     bus = urb->hport->bus;
 

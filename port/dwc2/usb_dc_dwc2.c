@@ -538,11 +538,7 @@ int usb_dc_init(uint8_t busid)
     USB_LOG_INFO("dwc2 has %d endpoints and dfifo depth(32-bit words) is %d, default config: %d endpoints\r\n", endpoints, (USB_OTG_GLB->GHWCFG3 >> 16), CONFIG_USBDEV_EP_NUM);
     USB_LOG_INFO("=================================\r\n");
 
-    if (endpoints < CONFIG_USBDEV_EP_NUM) {
-        USB_LOG_ERR("dwc2 has less endpoints than config, please check\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(endpoints >= CONFIG_USBDEV_EP_NUM, "dwc2 has less endpoints than config, please check");
 
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
@@ -591,11 +587,7 @@ int usb_dc_init(uint8_t busid)
                            USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_WUIM;
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
-    if (((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) != 2) {
-        USB_LOG_ERR("This dwc2 version does not support dma mode, so stop working\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) == 2, "This dwc2 version does not support dma mode, so stop working");
 
     USB_OTG_DEV->DCFG &= ~USB_OTG_DCFG_DESCDMA;
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_HBSTLEN;
@@ -643,18 +635,9 @@ int usb_dc_init(uint8_t busid)
     fifo_num += CONFIG_USB_DWC2_TX8_FIFO_SIZE;
 #endif
 
-    if (fifo_num > (USB_OTG_GLB->GHWCFG3 >> 16)) {
-        USB_LOG_ERR("Your fifo config is overflow, please check\r\n");
-        while (1) {
-        }
-    }
-
+    USB_ASSERT_MSG(fifo_num <= (USB_OTG_GLB->GHWCFG3 >> 16), "Your fifo config is overflow, please check");
     /* xxx32 chips do not follow (USB_OTG_GLB->GHWCFG3 >> 16) if hsphy_type is zero, they use 1.25KB(320 DWORD) */
-    if ((hsphy_type == 0) && (fifo_num > 320)) {
-        USB_LOG_ERR("Your fifo config is larger than 320 , please check\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(!((hsphy_type == 0) && (fifo_num > 320)), "Your fifo config is larger than 320 , please check");
 
     ret = dwc2_flush_txfifo(busid, 0x10U);
     ret = dwc2_flush_rxfifo(busid);
@@ -890,19 +873,14 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t pktcnt = 0;
 
+    USB_ASSERT_MSG(!((uint32_t)data % 0x04), "dwc2 data must be 4-byte aligned");
+
     if (!data && data_len) {
         return -1;
     }
-#if 0 /* some chips have confused with this, so disable as default */
-    if (USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
-        return -2;
-    }
-#endif
+
     if (ep_idx && !(USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_MPSIZ)) {
         return -3;
-    }
-    if ((uint32_t)data & 0x03) {
-        return -4;
     }
 
     g_dwc2_udc[busid].in_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -963,19 +941,14 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     uint32_t pktcnt = 0;
 
+    USB_ASSERT_MSG(!((uint32_t)data % 0x04), "dwc2 data must be 4-byte aligned");
+
     if (!data && data_len) {
         return -1;
     }
-#if 0 /* some chips have confused with this, so disable as default */
-    if (USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) {
-        return -2;
-    }
-#endif
+
     if (ep_idx && !(USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_MPSIZ)) {
         return -3;
-    }
-    if (((uint32_t)data) & 0x03) {
-        return -4;
     }
 
     g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf = (uint8_t *)data;

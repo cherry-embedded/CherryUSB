@@ -491,17 +491,9 @@ int usb_hc_init(struct usbh_bus *bus)
 
     USB_LOG_INFO("dwc2 has %d channels and dfifo depth(32-bit words) is %d\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1, (USB_OTG_GLB->GHWCFG3 >> 16));
 
-    if (((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) != 2) {
-        USB_LOG_ERR("This dwc2 version does not support dma mode, so stop working\r\n");
-        while (1) {
-        }
-    }
-
-    if ((CONFIG_USB_DWC2_RX_FIFO_SIZE + CONFIG_USB_DWC2_NPTX_FIFO_SIZE + CONFIG_USB_DWC2_PTX_FIFO_SIZE) > (USB_OTG_GLB->GHWCFG3 >> 16)) {
-        USB_LOG_ERR("Your fifo config is overflow, please check\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) == 2, "This dwc2 version does not support dma mode, so stop working");
+    USB_ASSERT_MSG((CONFIG_USB_DWC2_RX_FIFO_SIZE + CONFIG_USB_DWC2_NPTX_FIFO_SIZE + CONFIG_USB_DWC2_PTX_FIFO_SIZE) <= (USB_OTG_GLB->GHWCFG3 >> 16),
+                   "Your fifo config is overflow, please check");
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
@@ -763,16 +755,13 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
 
     /* dma addr must be aligned 4 bytes */
-    if ((((uint32_t)urb->setup) & 0x03) || (((uint32_t)urb->transfer_buffer) & 0x03)) {
-        return -USB_ERR_INVAL;
-    }
+    USB_ASSERT_MSG(!((uintptr_t)urb->setup % 4) && !((uintptr_t)urb->transfer_buffer % 4),
+                   "urb->setup or urb->transfer_buffer is not aligned 4 bytes");
 
 #ifdef CONFIG_USB_DCACHE_ENABLE
-    if (((uintptr_t)urb->setup % CONFIG_USB_ALIGN_SIZE) || ((uintptr_t)urb->transfer_buffer % CONFIG_USB_ALIGN_SIZE)) {
-        USB_LOG_ERR("urb buffer is not align with %d\r\n", CONFIG_USB_ALIGN_SIZE);
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(!((uintptr_t)urb->setup % CONFIG_USB_ALIGN_SIZE) &&
+                       !((uintptr_t)urb->transfer_buffer % CONFIG_USB_ALIGN_SIZE),
+                   "urb->setup or urb->transfer_buffer is not aligned %d", CONFIG_USB_ALIGN_SIZE);
 #endif
     bus = urb->hport->bus;
 
@@ -926,7 +915,7 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
         if (chan_intstatus & USB_OTG_HCINT_XFRC) {
             urb->errorcode = 0;
 
-            uint32_t count = chan->xferlen - (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ);                        /* how many size has received */
+            uint32_t count = chan->xferlen - (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ); /* how many size has received */
             //uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
             urb->actual_length += count;
