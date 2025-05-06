@@ -13,6 +13,9 @@
 #ifdef __INCLUDE_NUTTX_CONFIG_H
 #define CONFIG_USB_OSAL_THREAD_SET_ARGV int argc, char **argv
 #define CONFIG_USB_OSAL_THREAD_GET_ARGV ((uintptr_t)strtoul(argv[1], NULL, 16))
+#elif defined(__ZEPHYR__)
+#define CONFIG_USB_OSAL_THREAD_SET_ARGV void *p1, void *p2, void *p3
+#define CONFIG_USB_OSAL_THREAD_GET_ARGV ((uintptr_t)p1)
 #else
 #define CONFIG_USB_OSAL_THREAD_SET_ARGV void *argument
 #define CONFIG_USB_OSAL_THREAD_GET_ARGV ((uintptr_t)argument)
