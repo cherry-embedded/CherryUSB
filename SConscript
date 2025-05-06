@@ -44,18 +44,18 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_ESP']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')
         src += Glob('port/dwc2/usb_glue_esp.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_AT']):
-        src += Glob('port/dwc2/usb_dc_dwc2.c')
-        src += Glob('port/dwc2/usb_glue_at.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_GD']):
-        src += Glob('port/dwc2/usb_dc_dwc2.c')
-        src += Glob('port/dwc2/usb_glue_gd.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_HC']):
-        src += Glob('port/dwc2/usb_dc_dwc2.c')
-        src += Glob('port/dwc2/usb_glue_hc.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_KENDRYTE']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')
         src += Glob('port/dwc2/usb_glue_kendryte.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_AT']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_at.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_HC']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_hc.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_GD']):
+        src += Glob('port/dwc2/usb_dc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_gd.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DWC2_CUSTOM']):
         src += Glob('port/dwc2/usb_dc_dwc2.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_ES']):
@@ -69,14 +69,16 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('port/musb/usb_glue_bk.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_dc_musb.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_MCX']):
+        src += Glob('port/chipidea/usb_dc_chipidea.c')
+        src += Glob('port/chipidea/usb_glue_mcx.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM']):
+        src += Glob('port/chipidea/usb_dc_chipidea.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_KINETIS_MCX']):
         src += Glob('port/kinetis/usb_dc_kinetis.c')
         src += Glob('port/kinetis/usb_glue_mcx.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_KINETIS_CUSTOM']):
         src += Glob('port/kinetis/usb_dc_kinetis.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_MCX']):
-        src += Glob('port/chipidea/usb_dc_chipidea.c')
-        src += Glob('port/chipidea/usb_glue_mcx.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_BL']):
         src += Glob('port/bouffalolab/usb_dc_bl.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HPM']):
@@ -192,6 +194,9 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_KENDRYTE']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
         src += Glob('port/dwc2/usb_glue_kendryte.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_HC']):
+        src += Glob('port/dwc2/usb_hc_dwc2.c')
+        src += Glob('port/dwc2/usb_glue_hc.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_CUSTOM']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_STANDARD']):

@@ -34,14 +34,14 @@ if CHERRYUSB
                 bool "dwc2_st"
             config CHERRYUSB_DEVICE_DWC2_ESP
                 bool "dwc2_esp"
-            config CHERRYUSB_DEVICE_DWC2_AT
-                bool "dwc2_at"
-            config CHERRYUSB_DEVICE_DWC2_GD
-                bool "dwc2_gd"
-            config CHERRYUSB_DEVICE_DWC2_HC
-                bool "dwc2_hc"
             config CHERRYUSB_DEVICE_DWC2_KENDRYTE
                 bool "dwc2_kendryte"
+            config CHERRYUSB_DEVICE_DWC2_AT
+                bool "dwc2_at"
+            config CHERRYUSB_DEVICE_DWC2_HC
+                bool "dwc2_hc"
+            config CHERRYUSB_DEVICE_DWC2_GD
+                bool "dwc2_gd"
             config CHERRYUSB_DEVICE_DWC2_CUSTOM
                 bool "dwc2_custom"
             config CHERRYUSB_DEVICE_MUSB_ES
@@ -52,16 +52,16 @@ if CHERRYUSB
                 bool "musb_bk"
             config CHERRYUSB_DEVICE_MUSB_CUSTOM
                 bool "musb_custom"
+            config CHERRYUSB_DEVICE_CHIPIDEA_MCX
+                bool "chipidea_mcx"
+            config CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM
+                bool "chipidea_custom"
             config CHERRYUSB_DEVICE_KINETIS_MCX
                 bool "kinetis_mcx"
             config CHERRYUSB_DEVICE_KINETIS_MM32
                 bool "kinetis_mm32"
             config CHERRYUSB_DEVICE_KINETIS_CUSTOM
                 bool "kinetis_custom"
-            config CHERRYUSB_DEVICE_CHIPIDEA_MCX
-                bool "chipidea_mcx"
-            config CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM
-                bool "chipidea_custom"
             config CHERRYUSB_DEVICE_BL
                 bool "bouffalo"
             config CHERRYUSB_DEVICE_HPM
@@ -195,10 +195,10 @@ if CHERRYUSB
                 bool "dwc2_st"
             config CHERRYUSB_HOST_DWC2_ESP
                 bool "dwc2_esp"
-            config CHERRYUSB_HOST_DWC2_HC
-                bool "dwc2_hc"
             config CHERRYUSB_HOST_DWC2_KENDRYTE
                 bool "dwc2_kendryte"
+            config CHERRYUSB_HOST_DWC2_HC
+                bool "dwc2_hc"
             config CHERRYUSB_HOST_DWC2_CUSTOM
                 bool "dwc2_custom"
             config CHERRYUSB_HOST_MUSB_ES
