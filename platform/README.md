@@ -33,7 +33,7 @@ lwip support with usb host net class(cdc_ecm/cdc_ncm/cdc_rndis/asix/rtl8152/bl61
 
 ## LVGL
 
-- lvgl index support with usb host mouse and keyboard.
+- lvgl indev support with usb host mouse and keyboard. support both LVGL8.x.x and LVGL9.x.x
 
 ## Blackmagic
 
