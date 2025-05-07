@@ -515,7 +515,7 @@ void rndis_int_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 int usbd_rndis_start_write(uint8_t *buf, uint32_t len)
 {
     if (!usb_device_is_configured(0)) {
-        return -USB_ERR_NODEV;
+        return -USB_ERR_NOTCONN;
     }
 
     if (g_rndis_tx_data_length > 0) {
@@ -531,7 +531,7 @@ int usbd_rndis_start_write(uint8_t *buf, uint32_t len)
 int usbd_rndis_start_read(uint8_t *buf, uint32_t len)
 {
     if (!usb_device_is_configured(0)) {
-        return -USB_ERR_NODEV;
+        return -USB_ERR_NOTCONN;
     }
 
     g_rndis_rx_data_buffer = buf;
@@ -569,7 +569,7 @@ int usbd_rndis_eth_tx(struct pbuf *p)
     uint8_t *buffer;
     rndis_data_packet_t *hdr;
 
-    if (g_usbd_rndis.link_status == NDIS_MEDIA_STATE_DISCONNECTED) {
+    if (!usb_device_is_configured(0)) {
         return -USB_ERR_NOTCONN;
     }
 
@@ -630,7 +630,7 @@ struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
 int usbd_rndis_set_connect(bool connect)
 {
     if (!usb_device_is_configured(0)) {
-        return -USB_ERR_NODEV;
+        return -USB_ERR_NOTCONN;
     }
 
     if(g_usbd_rndis.set_rsp_get)
