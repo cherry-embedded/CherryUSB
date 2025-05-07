@@ -6,10 +6,6 @@
 #include "usbd_core.h"
 #include "usb_ch32_usbhs_reg.h"
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USBHS_IRQHandler //use actual usb irq name instead
-#endif
-
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 16
 #endif
@@ -42,8 +38,6 @@ struct ch32_usbhs_udc {
     struct ch32_usbhs_ep_state in_ep[USB_NUM_BIDIR_ENDPOINTS];  /*!< IN endpoint parameters*/
     struct ch32_usbhs_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_ch32_usbhs_udc;
-
-void USBHS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 volatile uint8_t mps_over_flag = 0;
 volatile bool ep0_rx_data_toggle;
@@ -255,7 +249,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     uint32_t ep_idx, token, write_count, read_count;
     uint8_t intflag = 0;
@@ -384,4 +378,11 @@ void USBD_IRQHandler(void)
         USBHS_DEVICE->UEP0_RX_CTRL = USBHS_EP_R_RES_ACK;
         USBHS_DEVICE->INT_FG = USBHS_DETECT_FLAG;
     }
+}
+
+void USBHS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void USBHS_IRQHandler(void)
+{
+    extern void USBD_IRQHandler(uint8_t busid);
+    USBD_IRQHandler(0);
 }

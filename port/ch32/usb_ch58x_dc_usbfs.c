@@ -17,10 +17,6 @@
 #endif
 #define CH58x_USBFS_DEV ((USB_FS_TypeDef *)USBD)
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB_IRQHandler //use actual usb irq name instead
-#endif
-
 /*!< 8-bit value of endpoint control register */
 #define EPn_CTRL(epid) \
     *(volatile uint8_t *)(&(CH58x_USBFS_DEV->UEP0_CTRL) + epid * 4 + (epid / 5) * 48)
@@ -456,9 +452,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
  * @param[in]        None
  * @retval           None
  */
-__attribute__((interrupt("WCH-Interrupt-fast")))
-__attribute__((section(".highcode"))) void
-USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     volatile uint8_t intflag = 0;
     intflag = CH58x_USBFS_DEV->USB_INT_FG;
@@ -636,4 +630,11 @@ USBD_IRQHandler(void)
     } else {
         CH58x_USBFS_DEV->USB_INT_FG = intflag;
     }
+}
+
+void USB_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast"))) __attribute__((section(".highcode")));
+void USB_IRQHandler(void)
+{
+    extern void USBD_IRQHandler(uint8_t busid);
+    USBD_IRQHandler(0);
 }

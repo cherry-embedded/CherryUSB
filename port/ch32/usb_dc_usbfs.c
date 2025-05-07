@@ -10,10 +10,6 @@
 #error "usb fs do not support hs"
 #endif
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler OTG_FS_IRQHandler //use actual usb irq name instead
-#endif
-
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS 8
 #endif
@@ -48,8 +44,6 @@ struct ch32_usbfs_udc {
 
 volatile bool ep0_rx_data_toggle;
 volatile bool ep0_tx_data_toggle;
-
-void USBD_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 __WEAK void usb_dc_low_level_init(void)
 {
@@ -262,7 +256,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
-void USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     uint32_t ep_idx = 0, token, write_count, read_count;
     uint8_t intflag = 0;
@@ -406,4 +400,11 @@ void USBD_IRQHandler(void)
     } else {
         USBFS_DEVICE->INT_FG = intflag;
     }
+}
+
+void OTG_FS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void OTG_FS_IRQHandler(void)
+{
+    extern void USBD_IRQHandler(uint8_t busid);
+    USBD_IRQHandler(0);
 }

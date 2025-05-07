@@ -7,10 +7,6 @@
 #define USB_BASE        0x40009000u
 #define CH585_USBHS_DEV ((USBHSD_TypeDef *)USB_BASE)
 
-#ifndef USBD_IRQHandler
-#define USBD_IRQHandler USB2_DEVICE_IRQHandler //use actual usb irq name instead
-#endif
-
 #define R16_PIN_CONFIG (*((PUINT16V)0x4000101A))
 #define R32_PIN_CONFIG (*((PUINT32V)0x40001018)) // RW, I/O pin configuration
 #define RB_PIN_USB2_EN 0x20
@@ -493,9 +489,7 @@ static inline void usb_trans_end_process(void)
  * @param[in]        None
  * @retval           None
  */
-__attribute__((interrupt("WCH-Interrupt-fast")))
-__attribute__((section(".highcode"))) void
-USBD_IRQHandler(void)
+void USBD_IRQHandler(uint8_t busid)
 {
     volatile uint8_t intflag = 0;
     intflag = CH585_USBHS_DEV->INT_FG;
@@ -522,4 +516,11 @@ USBD_IRQHandler(void)
     } else {
         CH585_USBHS_DEV->INT_FG = intflag;
     }
+}
+
+void USB2_DEVICE_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast"))) __attribute__((section(".highcode")));
+void USB2_DEVICE_IRQHandler(void)
+{
+    extern void USBD_IRQHandler(uint8_t busid);
+    USBD_IRQHandler(0);
 }
