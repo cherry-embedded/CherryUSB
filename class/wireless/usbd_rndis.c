@@ -595,10 +595,7 @@ int usbd_rndis_eth_tx(struct pbuf *p)
     hdr->DataOffset = sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t);
     hdr->DataLength = p->tot_len;
 
-    g_rndis_tx_data_length = sizeof(rndis_data_packet_t) + p->tot_len;
-
-    USB_LOG_DBG("txlen:%d\r\n", g_rndis_tx_data_length);
-    return usbd_ep_start_write(0, rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, g_rndis_tx_buffer, g_rndis_tx_data_length);
+    return usbd_rndis_start_write(g_rndis_tx_buffer, sizeof(rndis_data_packet_t) + p->tot_len);
 }
 #endif
 struct usbd_interface *usbd_rndis_init_intf(struct usbd_interface *intf,
