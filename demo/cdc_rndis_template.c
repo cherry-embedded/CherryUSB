@@ -5,6 +5,8 @@
  */
 #include "usbd_core.h"
 #include "usbd_rndis.h"
+#include "dhserver.h"
+#include "dnserver.h"
 
 #ifndef CONFIG_USBDEV_RNDIS_USING_LWIP
 #error "Please enable CONFIG_USBDEV_RNDIS_USING_LWIP for this demo"
@@ -175,10 +177,11 @@ static const uint8_t cdc_rndis_descriptor[] = {
 #endif
 
 const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+
 /*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
 #define IP_ADDR0 (uint8_t)192
 #define IP_ADDR1 (uint8_t)168
-#define IP_ADDR2 (uint8_t)123
+#define IP_ADDR2 (uint8_t)7
 #define IP_ADDR3 (uint8_t)100
 
 /*NETMASK*/
@@ -190,17 +193,44 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 /*Gateway Address*/
 #define GW_ADDR0 (uint8_t)192
 #define GW_ADDR1 (uint8_t)168
-#define GW_ADDR2 (uint8_t)123
+#define GW_ADDR2 (uint8_t)7
 #define GW_ADDR3 (uint8_t)1
+
+const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+
+#define NUM_DHCP_ENTRY   3
+
+static dhcp_entry_t entries[NUM_DHCP_ENTRY] = {
+    /* mac    ip address        subnet mask        lease time */
+    { { 0 }, { 192, 168, 7, 2 }, { 255, 255, 255, 0 }, 24 * 60 * 60 },
+    { { 0 }, { 192, 168, 7, 3 }, { 255, 255, 255, 0 }, 24 * 60 * 60 },
+    { { 0 }, { 192, 168, 7, 4 }, { 255, 255, 255, 0 }, 24 * 60 * 60 }
+};
+
+static dhcp_config_t dhcp_config = {
+    { 192, 168, 7, 1 }, /* server address */
+    67,                 /* port */
+    { 192, 168, 7, 1 }, /* dns server */
+    "cherry",           /* dns suffix */
+    NUM_DHCP_ENTRY,     /* num entry */
+    entries             /* entries */
+};
+
+static bool dns_query_proc(const char *name, ip_addr_t *addr)
+{
+    if (strcmp(name, "rndis.cherry") == 0 || strcmp(name, "www.rndis.cherry") == 0) {
+        addr->addr = *(uint32_t *)ipaddr;
+        return true;
+    }
+    return false;
+}
 
 #ifdef RT_USING_LWIP
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <netif/ethernetif.h>
-
-const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 
 struct eth_device rndis_dev;
 
@@ -243,7 +273,7 @@ void usbd_rndis_data_recv_done(uint32_t len)
     eth_device_ready(&rndis_dev);
 }
 
-void rt_usbd_rndis_init(void)
+void rndis_lwip_init(void)
 {
     rndis_dev.parent.control = rt_usbd_rndis_control;
     rndis_dev.eth_rx = rt_usbd_rndis_eth_rx;
@@ -258,10 +288,6 @@ void rt_usbd_rndis_init(void)
 #include "lwip/init.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
-
-const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 
 static struct netif rndis_netif; //network interface
 
@@ -328,7 +354,7 @@ void rndis_lwip_init(void)
 
     while (dhserv_init(&dhcp_config)) {}
 
-    while (dnserv_init(&ipaddr, PORT_DNS, dns_query_proc)) {}
+    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {}
 }
 
 void usbd_rndis_data_recv_done(uint32_t len)
@@ -374,11 +400,8 @@ struct usbd_interface intf1;
 
 void cdc_rndis_init(uint8_t busid, uintptr_t reg_base)
 {
-#ifdef RT_USING_LWIP
-    rt_usbd_rndis_init();
-#else
     rndis_lwip_init();
-#endif
+
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     usbd_desc_register(busid, &cdc_rndis_descriptor);
 #else
