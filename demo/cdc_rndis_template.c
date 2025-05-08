@@ -5,8 +5,6 @@
  */
 #include "usbd_core.h"
 #include "usbd_rndis.h"
-#include "dhserver.h"
-#include "dnserver.h"
 
 #ifndef CONFIG_USBDEV_RNDIS_USING_LWIP
 #error "Please enable CONFIG_USBDEV_RNDIS_USING_LWIP for this demo"
@@ -178,55 +176,6 @@ static const uint8_t cdc_rndis_descriptor[] = {
 
 const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
-/*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
-#define IP_ADDR0 (uint8_t)192
-#define IP_ADDR1 (uint8_t)168
-#define IP_ADDR2 (uint8_t)7
-#define IP_ADDR3 (uint8_t)1
-
-/*NETMASK*/
-#define NETMASK_ADDR0 (uint8_t)255
-#define NETMASK_ADDR1 (uint8_t)255
-#define NETMASK_ADDR2 (uint8_t)255
-#define NETMASK_ADDR3 (uint8_t)0
-
-/*Gateway Address*/
-#define GW_ADDR0 (uint8_t)0
-#define GW_ADDR1 (uint8_t)0
-#define GW_ADDR2 (uint8_t)0
-#define GW_ADDR3 (uint8_t)0
-
-const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-
-#define NUM_DHCP_ENTRY 3
-
-static dhcp_entry_t entries[NUM_DHCP_ENTRY] = {
-    /* mac    ip address        subnet mask        lease time */
-    { { 0 }, { 192, 168, 7, 2 }, { 255, 255, 255, 0 }, 24 * 60 * 60 },
-    { { 0 }, { 192, 168, 7, 3 }, { 255, 255, 255, 0 }, 24 * 60 * 60 },
-    { { 0 }, { 192, 168, 7, 4 }, { 255, 255, 255, 0 }, 24 * 60 * 60 }
-};
-
-static dhcp_config_t dhcp_config = {
-    { 192, 168, 7, 1 }, /* server address */
-    67,                 /* port */
-    { 192, 168, 7, 1 }, /* dns server */
-    "cherry",           /* dns suffix */
-    NUM_DHCP_ENTRY,     /* num entry */
-    entries             /* entries */
-};
-
-static bool dns_query_proc(const char *name, ip_addr_t *addr)
-{
-    if (strcmp(name, "rndis.cherry") == 0 || strcmp(name, "www.rndis.cherry") == 0) {
-        addr->addr = ipaddr.addr;
-        return true;
-    }
-    return false;
-}
-
 volatile bool rndis_tx_done = false;
 
 void usbd_rndis_data_send_done(uint32_t len)
@@ -235,9 +184,19 @@ void usbd_rndis_data_send_done(uint32_t len)
 }
 
 #ifdef RT_USING_LWIP
+
+#ifndef RT_LWIP_DHCP
+#error rndis must enable RT_LWIP_DHCP
+#endif
+
+#ifndef LWIP_USING_DHCPD
+#error rndis must enable LWIP_USING_DHCPD
+#endif
+
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <netif/ethernetif.h>
+#include <dhcp_server.h>
 
 struct eth_device rndis_dev;
 
@@ -291,15 +250,6 @@ void rndis_lwip_init(void)
     eth_device_init(&rndis_dev, "u0");
 
     eth_device_linkchange(&rndis_dev, RT_FALSE);
-
-    while (!netif_is_up(rndis_dev.netif)) {
-    }
-
-    while (dhserv_init(&dhcp_config)) {
-    }
-
-    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {
-    }
 }
 
 void usbd_rndis_data_recv_done(uint32_t len)
@@ -313,11 +263,63 @@ void usbd_rndis_data_recv_done(uint32_t len)
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
 
+#include "dhserver.h"
+#include "dnserver.h"
+
+/*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
+#define IP_ADDR0      (uint8_t)192
+#define IP_ADDR1      (uint8_t)168
+#define IP_ADDR2      (uint8_t)7
+#define IP_ADDR3      (uint8_t)1
+
+/*NETMASK*/
+#define NETMASK_ADDR0 (uint8_t)255
+#define NETMASK_ADDR1 (uint8_t)255
+#define NETMASK_ADDR2 (uint8_t)255
+#define NETMASK_ADDR3 (uint8_t)0
+
+/*Gateway Address*/
+#define GW_ADDR0      (uint8_t)0
+#define GW_ADDR1      (uint8_t)0
+#define GW_ADDR2      (uint8_t)0
+#define GW_ADDR3      (uint8_t)0
+
+const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+
+#define NUM_DHCP_ENTRY 3
+
+static dhcp_entry_t entries[NUM_DHCP_ENTRY] = {
+    /* mac    ip address        subnet mask        lease time */
+    { { 0 }, { 192, 168, 7, 2 }, { 255, 255, 255, 0 }, 24 * 60 * 60 },
+    { { 0 }, { 192, 168, 7, 3 }, { 255, 255, 255, 0 }, 24 * 60 * 60 },
+    { { 0 }, { 192, 168, 7, 4 }, { 255, 255, 255, 0 }, 24 * 60 * 60 }
+};
+
+static dhcp_config_t dhcp_config = {
+    { 192, 168, 7, 1 }, /* server address */
+    67,                 /* port */
+    { 192, 168, 7, 1 }, /* dns server */
+    "cherry",           /* dns suffix */
+    NUM_DHCP_ENTRY,     /* num entry */
+    entries             /* entries */
+};
+
+static bool dns_query_proc(const char *name, ip_addr_t *addr)
+{
+    if (strcmp(name, "rndis.cherry") == 0 || strcmp(name, "www.rndis.cherry") == 0) {
+        addr->addr = ipaddr.addr;
+        return true;
+    }
+    return false;
+}
+
 static struct netif rndis_netif; //network interface
 
 /* Network interface name */
-#define IFNAME0 'E'
-#define IFNAME1 'X'
+#define IFNAME0        'E'
+#define IFNAME1        'X'
 
 err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
@@ -388,7 +390,6 @@ void rndis_lwip_init(void)
 
 void usbd_rndis_data_recv_done(uint32_t len)
 {
-
 }
 
 void rndis_input_poll(void)
@@ -413,6 +414,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_CONFIGURED:
 #ifdef RT_USING_LWIP
             eth_device_linkchange(&rndis_dev, RT_TRUE);
+            dhcpd_start("u0");
 #endif
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:

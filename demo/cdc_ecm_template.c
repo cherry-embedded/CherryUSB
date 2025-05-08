@@ -5,12 +5,6 @@
  */
 #include "usbd_core.h"
 #include "usbd_cdc_ecm.h"
-#include "dhserver.h"
-#include "dnserver.h"
-#include "netif/etharp.h"
-#include "lwip/init.h"
-#include "lwip/netif.h"
-#include "lwip/pbuf.h"
 
 #ifndef CONFIG_USBDEV_CDC_ECM_USING_LWIP
 #error "Please enable CONFIG_USBDEV_CDC_ECM_USING_LWIP for this demo"
@@ -39,6 +33,9 @@
 
 /* str idx = 4 is for mac address: aa:bb:cc:dd:ee:ff*/
 #define CDC_ECM_MAC_STRING_INDEX 4
+
+/* Ethernet Maximum Segment size, typically 1514 bytes */
+#define CONFIG_CDC_ECM_ETH_MAX_SEGSZE 1514U
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
@@ -206,11 +203,101 @@ static const uint8_t cdc_ecm_descriptor[] = {
 
 const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
+volatile bool cdc_ecm_tx_done = false;
+
+void usbd_cdc_ecm_data_send_done(uint32_t len)
+{
+    cdc_ecm_tx_done = true; // suggest you to use semaphore in os
+}
+
+#ifdef RT_USING_LWIP
+
+#ifndef RT_LWIP_DHCP
+#error cdc_ecm must enable RT_LWIP_DHCP
+#endif
+
+#ifndef LWIP_USING_DHCPD
+#error cdc_ecm must enable LWIP_USING_DHCPD
+#endif
+
+#include <rtthread.h>
+#include <rtdevice.h>
+#include <netif/ethernetif.h>
+#include <dhcp_server.h>
+
+struct eth_device cdc_ecm_dev;
+
+static rt_err_t rt_usbd_cdc_ecm_control(rt_device_t dev, int cmd, void *args)
+{
+    switch (cmd) {
+        case NIOCTL_GADDR:
+
+            /* get mac address */
+            if (args) {
+                uint8_t *mac_dev = (uint8_t *)args;
+                rt_memcpy(mac_dev, mac, 6);
+                mac_dev[5] = ~mac_dev[5]; /* device mac can't same as host. */
+            } else
+                return -RT_ERROR;
+
+            break;
+
+        default:
+            break;
+    }
+
+    return RT_EOK;
+}
+
+struct pbuf *rt_usbd_cdc_ecm_eth_rx(rt_device_t dev)
+{
+    return usbd_cdc_ecm_eth_rx();
+}
+
+rt_err_t rt_usbd_cdc_ecm_eth_tx(rt_device_t dev, struct pbuf *p)
+{
+    int ret;
+
+    cdc_ecm_tx_done = false;
+    ret = usbd_cdc_ecm_eth_tx(p);
+    if (ret == 0) {
+        while (!cdc_ecm_tx_done) {
+        }
+        return RT_EOK;
+    } else
+        return -RT_ERROR;
+}
+
+void cdc_ecm_lwip_init(void)
+{
+    cdc_ecm_dev.parent.control = rt_usbd_cdc_ecm_control;
+    cdc_ecm_dev.eth_rx = rt_usbd_cdc_ecm_eth_rx;
+    cdc_ecm_dev.eth_tx = rt_usbd_cdc_ecm_eth_tx;
+
+    eth_device_init(&cdc_ecm_dev, "u0");
+
+    eth_device_linkchange(&cdc_ecm_dev, RT_FALSE);
+}
+
+void usbd_cdc_ecm_data_recv_done(uint32_t len)
+{
+    eth_device_ready(&cdc_ecm_dev);
+}
+
+#else
+#include "netif/etharp.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
+#include "lwip/pbuf.h"
+
+#include "dhserver.h"
+#include "dnserver.h"
+
 /*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
-#define IP_ADDR0 (uint8_t)192
-#define IP_ADDR1 (uint8_t)168
-#define IP_ADDR2 (uint8_t)7
-#define IP_ADDR3 (uint8_t)1
+#define IP_ADDR0      (uint8_t)192
+#define IP_ADDR1      (uint8_t)168
+#define IP_ADDR2      (uint8_t)7
+#define IP_ADDR3      (uint8_t)1
 
 /*NETMASK*/
 #define NETMASK_ADDR0 (uint8_t)255
@@ -219,10 +306,10 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 #define NETMASK_ADDR3 (uint8_t)0
 
 /*Gateway Address*/
-#define GW_ADDR0 (uint8_t)0
-#define GW_ADDR1 (uint8_t)0
-#define GW_ADDR2 (uint8_t)0
-#define GW_ADDR3 (uint8_t)0
+#define GW_ADDR0      (uint8_t)0
+#define GW_ADDR1      (uint8_t)0
+#define GW_ADDR2      (uint8_t)0
+#define GW_ADDR3      (uint8_t)0
 
 const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
@@ -255,22 +342,11 @@ static bool dns_query_proc(const char *name, ip_addr_t *addr)
     return false;
 }
 
-volatile bool cdc_ecm_tx_done = false;
-
-void usbd_cdc_ecm_data_send_done(uint32_t len)
-{
-    cdc_ecm_tx_done = true; // suggest you to use semaphore in os
-}
-
-void usbd_cdc_ecm_data_recv_done(uint32_t len)
-{
-}
-
 static struct netif cdc_ecm_netif; //network interface
 
 /* Network interface name */
-#define IFNAME0 'E'
-#define IFNAME1 'X'
+#define IFNAME0        'E'
+#define IFNAME1        'X'
 
 err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
@@ -339,10 +415,15 @@ void cdc_ecm_lwip_init(void)
     }
 }
 
+void usbd_cdc_ecm_data_recv_done(uint32_t len)
+{
+}
+
 void cdc_ecm_input_poll(void)
 {
     cdc_ecm_if_input(&cdc_ecm_netif);
 }
+#endif
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -358,6 +439,10 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
+#ifdef RT_USING_LWIP
+            eth_device_linkchange(&cdc_ecm_dev, RT_TRUE);
+            dhcpd_start("u0");
+#endif
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
