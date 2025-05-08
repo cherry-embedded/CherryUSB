@@ -182,7 +182,7 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 #define IP_ADDR0 (uint8_t)192
 #define IP_ADDR1 (uint8_t)168
 #define IP_ADDR2 (uint8_t)7
-#define IP_ADDR3 (uint8_t)100
+#define IP_ADDR3 (uint8_t)1
 
 /*NETMASK*/
 #define NETMASK_ADDR0 (uint8_t)255
@@ -191,16 +191,16 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 #define NETMASK_ADDR3 (uint8_t)0
 
 /*Gateway Address*/
-#define GW_ADDR0 (uint8_t)192
-#define GW_ADDR1 (uint8_t)168
-#define GW_ADDR2 (uint8_t)7
-#define GW_ADDR3 (uint8_t)1
+#define GW_ADDR0 (uint8_t)0
+#define GW_ADDR1 (uint8_t)0
+#define GW_ADDR2 (uint8_t)0
+#define GW_ADDR3 (uint8_t)0
 
 const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 
-#define NUM_DHCP_ENTRY   3
+#define NUM_DHCP_ENTRY 3
 
 static dhcp_entry_t entries[NUM_DHCP_ENTRY] = {
     /* mac    ip address        subnet mask        lease time */
@@ -221,10 +221,17 @@ static dhcp_config_t dhcp_config = {
 static bool dns_query_proc(const char *name, ip_addr_t *addr)
 {
     if (strcmp(name, "rndis.cherry") == 0 || strcmp(name, "www.rndis.cherry") == 0) {
-        addr->addr = *(uint32_t *)ipaddr;
+        addr->addr = ipaddr.addr;
         return true;
     }
     return false;
+}
+
+volatile bool rndis_tx_done = false;
+
+void usbd_rndis_data_send_done(uint32_t len)
+{
+    rndis_tx_done = true; // suggest you to use semaphore in os
 }
 
 #ifdef RT_USING_LWIP
@@ -240,13 +247,11 @@ static rt_err_t rt_usbd_rndis_control(rt_device_t dev, int cmd, void *args)
         case NIOCTL_GADDR:
 
             /* get mac address */
-            if (args)
-            {
+            if (args) {
                 uint8_t *mac_dev = (uint8_t *)args;
                 rt_memcpy(mac_dev, mac, 6);
                 mac_dev[5] = ~mac_dev[5]; /* device mac can't same as host. */
-            }
-            else
+            } else
                 return -RT_ERROR;
 
             break;
@@ -265,12 +270,16 @@ struct pbuf *rt_usbd_rndis_eth_rx(rt_device_t dev)
 
 rt_err_t rt_usbd_rndis_eth_tx(rt_device_t dev, struct pbuf *p)
 {
-    return usbd_rndis_eth_tx(p);
-}
+    int ret;
 
-void usbd_rndis_data_recv_done(uint32_t len)
-{
-    eth_device_ready(&rndis_dev);
+    rndis_tx_done = false;
+    ret = usbd_rndis_eth_tx(p);
+    if (ret == 0) {
+        while (!rndis_tx_done) {
+        }
+        return RT_EOK;
+    } else
+        return -RT_ERROR;
 }
 
 void rndis_lwip_init(void)
@@ -282,7 +291,22 @@ void rndis_lwip_init(void)
     eth_device_init(&rndis_dev, "u0");
 
     eth_device_linkchange(&rndis_dev, RT_FALSE);
+
+    while (!netif_is_up(rndis_dev.netif)) {
+    }
+
+    while (dhserv_init(&dhcp_config)) {
+    }
+
+    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {
+    }
 }
+
+void usbd_rndis_data_recv_done(uint32_t len)
+{
+    eth_device_ready(&rndis_dev);
+}
+
 #else
 #include "netif/etharp.h"
 #include "lwip/init.h"
@@ -297,12 +321,15 @@ static struct netif rndis_netif; //network interface
 
 err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
-    static int ret;
+    int ret;
 
+    rndis_tx_done = false;
     ret = usbd_rndis_eth_tx(p);
-    if (ret == 0)
+    if (ret == 0) {
+        while (!rndis_tx_done) {
+        }
         return ERR_OK;
-    else
+    } else
         return ERR_BUF;
 }
 
@@ -322,8 +349,8 @@ err_t rndisif_init(struct netif *netif)
 
 err_t rndisif_input(struct netif *netif)
 {
-    static err_t err;
-    static struct pbuf *p;
+    err_t err;
+    struct pbuf *p;
 
     p = usbd_rndis_eth_rx();
     if (p != NULL) {
@@ -352,13 +379,16 @@ void rndis_lwip_init(void)
     while (!netif_is_up(netif)) {
     }
 
-    while (dhserv_init(&dhcp_config)) {}
+    while (dhserv_init(&dhcp_config)) {
+    }
 
-    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {}
+    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {
+    }
 }
 
 void usbd_rndis_data_recv_done(uint32_t len)
 {
+
 }
 
 void rndis_input_poll(void)

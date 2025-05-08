@@ -17,9 +17,9 @@
 #endif
 
 /*!< endpoint address */
-#define CDC_IN_EP          0x81
-#define CDC_OUT_EP         0x02
-#define CDC_INT_EP         0x83
+#define CDC_IN_EP  0x81
+#define CDC_OUT_EP 0x02
+#define CDC_INT_EP 0x83
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
@@ -27,7 +27,7 @@
 #define USBD_LANGID_STRING 1033
 
 /*!< config descriptor size */
-#define USB_CONFIG_SIZE    (9 + CDC_ECM_DESCRIPTOR_LEN)
+#define USB_CONFIG_SIZE (9 + CDC_ECM_DESCRIPTOR_LEN)
 
 #ifdef CONFIG_USB_HS
 #define CDC_MAX_MPS 512
@@ -38,7 +38,7 @@
 #define CDC_ECM_ETH_STATISTICS_BITMAP 0x00000000
 
 /* str idx = 4 is for mac address: aa:bb:cc:dd:ee:ff*/
-#define CDC_ECM_MAC_STRING_INDEX      4
+#define CDC_ECM_MAC_STRING_INDEX 4
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
@@ -210,7 +210,7 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 #define IP_ADDR0 (uint8_t)192
 #define IP_ADDR1 (uint8_t)168
 #define IP_ADDR2 (uint8_t)7
-#define IP_ADDR3 (uint8_t)100
+#define IP_ADDR3 (uint8_t)1
 
 /*NETMASK*/
 #define NETMASK_ADDR0 (uint8_t)255
@@ -219,16 +219,16 @@ const uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 #define NETMASK_ADDR3 (uint8_t)0
 
 /*Gateway Address*/
-#define GW_ADDR0 (uint8_t)192
-#define GW_ADDR1 (uint8_t)168
-#define GW_ADDR2 (uint8_t)7
-#define GW_ADDR3 (uint8_t)1
+#define GW_ADDR0 (uint8_t)0
+#define GW_ADDR1 (uint8_t)0
+#define GW_ADDR2 (uint8_t)0
+#define GW_ADDR3 (uint8_t)0
 
 const ip_addr_t ipaddr = IPADDR4_INIT_BYTES(IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 const ip_addr_t netmask = IPADDR4_INIT_BYTES(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 const ip_addr_t gateway = IPADDR4_INIT_BYTES(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 
-#define NUM_DHCP_ENTRY   3
+#define NUM_DHCP_ENTRY 3
 
 static dhcp_entry_t entries[NUM_DHCP_ENTRY] = {
     /* mac    ip address        subnet mask        lease time */
@@ -248,11 +248,22 @@ static dhcp_config_t dhcp_config = {
 
 static bool dns_query_proc(const char *name, ip_addr_t *addr)
 {
-    if (strcmp(name, "rndis.cherry") == 0 || strcmp(name, "www.rndis.cherry") == 0) {
-        addr->addr = *(uint32_t *)ipaddr;
+    if (strcmp(name, "cdc_ecm.cherry") == 0 || strcmp(name, "www.cdc_ecm.cherry") == 0) {
+        addr->addr = ipaddr.addr;
         return true;
     }
     return false;
+}
+
+volatile bool cdc_ecm_tx_done = false;
+
+void usbd_cdc_ecm_data_send_done(uint32_t len)
+{
+    cdc_ecm_tx_done = true; // suggest you to use semaphore in os
+}
+
+void usbd_cdc_ecm_data_recv_done(uint32_t len)
+{
 }
 
 static struct netif cdc_ecm_netif; //network interface
@@ -261,14 +272,17 @@ static struct netif cdc_ecm_netif; //network interface
 #define IFNAME0 'E'
 #define IFNAME1 'X'
 
-static err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
+err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
-    static int ret;
+    int ret;
 
+    cdc_ecm_tx_done = false;
     ret = usbd_cdc_ecm_eth_tx(p);
-    if (ret == 0)
+    if (ret == 0) {
+        while (!cdc_ecm_tx_done) {
+        }
         return ERR_OK;
-    else
+    } else
         return ERR_BUF;
 }
 
@@ -288,8 +302,8 @@ err_t cdc_ecm_if_init(struct netif *netif)
 
 err_t cdc_ecm_if_input(struct netif *netif)
 {
-    static err_t err;
-    static struct pbuf *p;
+    err_t err;
+    struct pbuf *p;
 
     p = usbd_cdc_ecm_eth_rx();
     if (p != NULL) {
@@ -318,13 +332,11 @@ void cdc_ecm_lwip_init(void)
     while (!netif_is_up(netif)) {
     }
 
-    while (dhserv_init(&dhcp_config)) {}
+    while (dhserv_init(&dhcp_config)) {
+    }
 
-    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {}
-}
-
-void usbd_cdc_ecm_data_recv_done(uint32_t len)
-{
+    while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc)) {
+    }
 }
 
 void cdc_ecm_input_poll(void)
