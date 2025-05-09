@@ -388,6 +388,8 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
             HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) = (USB_RXCSRL1_CLRDT | USB_RXCSRL1_FLUSH);
         else
             HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) = USB_RXCSRL1_CLRDT;
+
+        HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) &= ~USB_TXCSRH1_MODE;
     } else {
         g_musb_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_musb_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
@@ -424,7 +426,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
             ui32Register |= USB_TXCSRH1_ISO;
         }
 
-        HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) = ui32Register;
+        HWREGB(USB_BASE + MUSB_IND_TXCSRH_OFFSET) = ui32Register | USB_TXCSRH1_MODE;
 
         // Reset the Data toggle to zero.
         if (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_TXRDY)
@@ -512,13 +514,13 @@ int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
     musb_set_active_ep(ep_idx);
 
     if (USB_EP_DIR_IS_OUT(ep)) {
-        if(HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) & USB_RXCSRL1_STALL) {
+        if (HWREGB(USB_BASE + MUSB_IND_RXCSRL_OFFSET) & USB_RXCSRL1_STALL) {
             *stalled = 1;
         } else {
             *stalled = 0;
         }
     } else {
-        if(HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_STALL) {
+        if (HWREGB(USB_BASE + MUSB_IND_TXCSRL_OFFSET) & USB_TXCSRL1_STALL) {
             *stalled = 1;
         } else {
             *stalled = 0;
