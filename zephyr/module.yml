@@ -1,0 +1,4 @@
+name: CherryUSB
+build:
+  cmake: .
+  kconfig: Kconfig
