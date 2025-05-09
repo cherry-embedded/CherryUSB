@@ -1,0 +1,273 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>性能展示 &mdash; CherryUSB 1.4.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=a68a9277"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="商业支持" href="../support/index.html" />
+    <link rel="prev" title="版本说明" href="../version.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            CherryUSB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/start.html">入门必看</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../opensource.html">官方开源项目分享</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../share.html">开发者经验/开源项目分享</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_desc.html">USB 描述符</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_request.html">USB 设备请求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_host.html">主机协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_port.html">主从驱动</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api_config.html">USB CONFIG 说明</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">usbd_cdc_acm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">usbd_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_msc.html">usbd_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_rndis.html">usbd_rndis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_ecm.html">usbd_cdc_ecm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov1.html">usbd_audiov1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov2.html">usbd_audiov2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_video.html">usbd_video</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_winusb.html">usbd_winusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_webusb.html">usbd_webusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_serial.html">usbh_serial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_hid.html">usbh_hid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_msc.html">usbh_msc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_net.html">usbh_net</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">usbh_bluetooth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">usbh_wifi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_vendor.html">vendor device 驱动编写</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_vendor.html">vendor host 驱动编写</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/xhci.html">XHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/chipidea.html">CHIPIDEA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc2.html">DWC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/musb.html">MUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/fotg210.html">FOTG210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns2.html">CDNS2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">版本说明</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">性能展示</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cdc">CDC 通信</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-device-msc">USB Device MSC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-device-rndis">USB Device RNDIS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-host-msc">USB Host MSC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-host-uvc">USB Host UVC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-host-wifi">USB Host WIFI</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CherryUSB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">性能展示</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/show/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="id1">
+<h1>性能展示<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
+<p>以下演示了 CherryUSB 在不同应用中的性能表现。主要演示高速模式，全速看不出什么性能差异。</p>
+<section id="cdc">
+<h2>CDC 通信<a class="headerlink" href="#cdc" title="Link to this heading"></a></h2>
+<p>可以达到硬件极限性能，当然需要硬件理论支持到这速度，CherryUSB 就支持到这速度,举例如下：</p>
+<ul class="simple">
+<li><p>HPM 系列(从机可以到 42MB/S, 主机 44MB/S, 已经达到硬件极限)</p></li>
+<li><p>BL 系列（从机 32MB/S, 主机 25MB/S, 已经达到硬件极限）</p></li>
+<li><p>STM32F4 全速（从机 900KB/S, 主机 1.12MB/S, 已经达到硬件极限）</p></li>
+</ul>
+<p>从机测速demo: cdc_acm_template.c 并且关闭 log，脚本使用 <cite>tools/test_srcipts/test_cdc_speed.py</cite>
+主机测速demo: usb_host.c 中 TEST_USBH_CDC_SPEED=1</p>
+</section>
+<section id="usb-device-msc">
+<h2>USB Device MSC<a class="headerlink" href="#usb-device-msc" title="Link to this heading"></a></h2>
+<p>演示 USB Device MSC 使用 SDXC3.0 + EMMC 测试。</p>
+<figure class="align-default">
+<img alt="../_images/usbdev_msc.png" src="../_images/usbdev_msc.png" />
+</figure>
+</section>
+<section id="usb-device-rndis">
+<h2>USB Device RNDIS<a class="headerlink" href="#usb-device-rndis" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>默认 rndis 仅支持单包，因此下面速度为最低速度。多包支持需要联系作者。</p>
+</div>
+<p>演示 USB Device RNDIS 局域网下搭配 lwip 的速度。</p>
+<figure class="align-default">
+<img alt="../_images/usbdev_rndis_lwip.png" src="../_images/usbdev_rndis_lwip.png" />
+</figure>
+<figure class="align-default">
+<img alt="../_images/usbdev_rndis_lwip2.png" src="../_images/usbdev_rndis_lwip2.png" />
+</figure>
+<p>演示 USB Device RNDIS + WIFI 透传测试。</p>
+<figure class="align-default">
+<img alt="../_images/usbdev_rndis_wifi.png" src="../_images/usbdev_rndis_wifi.png" />
+</figure>
+<figure class="align-default">
+<img alt="../_images/usbdev_rndis_wifi2.png" src="../_images/usbdev_rndis_wifi2.png" />
+</figure>
+<p>演示 USB Device RNDIS + 百兆以太网透传测试。</p>
+<figure class="align-default">
+<img alt="../_images/usbdev_rndis_win.png" src="../_images/usbdev_rndis_win.png" />
+</figure>
+<figure class="align-default">
+<img alt="../_images/usbdev_rndis_linux.png" src="../_images/usbdev_rndis_linux.png" />
+</figure>
+</section>
+<section id="usb-host-msc">
+<h2>USB Host MSC<a class="headerlink" href="#usb-host-msc" title="Link to this heading"></a></h2>
+<p>演示 USB Host MSC 在 USB2.0 和 USB3.0 下的速度，U盘推荐使用固态测试。</p>
+<figure class="align-default">
+<img alt="../_images/usbhost_msc.png" src="../_images/usbhost_msc.png" />
+</figure>
+<figure class="align-default">
+<img alt="../_images/usbhost_msc_xhci.png" src="../_images/usbhost_msc_xhci.png" />
+</figure>
+</section>
+<section id="usb-host-uvc">
+<h2>USB Host UVC<a class="headerlink" href="#usb-host-uvc" title="Link to this heading"></a></h2>
+<p>演示 USB Host UVC 驱动 648 * 480 YUV 摄像头。FPS 30。</p>
+<figure class="align-default">
+<img alt="../_images/usbhost_uvc.gif" src="../_images/usbhost_uvc.gif" />
+</figure>
+</section>
+<section id="usb-host-wifi">
+<h2>USB Host WIFI<a class="headerlink" href="#usb-host-wifi" title="Link to this heading"></a></h2>
+<p>演示 USB Host UVC 驱动 BL616 USB WIFI。</p>
+<figure class="align-default">
+<img alt="../_images/usbhost_wifi.png" src="../_images/usbhost_wifi.png" />
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../version.html" class="btn btn-neutral float-left" title="版本说明" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../support/index.html" class="btn btn-neutral float-right" title="商业支持" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 ~ 2024, sakumisu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
