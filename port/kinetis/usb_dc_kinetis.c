@@ -156,9 +156,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
     uint8_t regval;
 
     /* Must not exceed max endpoint number */
-    if (ep_idx >= CONFIG_USBDEV_EP_NUM) {
-        return -1;
-    }
+    USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
 
     if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
         g_kinetis_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);

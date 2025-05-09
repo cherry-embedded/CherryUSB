@@ -131,10 +131,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
-    if (ep_idx > (CONFIG_USBDEV_EP_NUM - 1)) {
-        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
-        return -1;
-    }
+    USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
 
     uint16_t wEpRegVal;
 
@@ -169,10 +166,9 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_fsdev_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_fsdev_udc.out_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.out_ep[ep_idx].ep_mps > g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len) {
-            if (g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps > CONFIG_USB_FSDEV_RAM_SIZE) {
-                USB_LOG_ERR("Ep pma %02x overflow\r\n", ep->bEndpointAddress);
-                return -1;
-            }
+            USB_ASSERT_MSG((g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps) <= CONFIG_USB_FSDEV_RAM_SIZE,
+                           "Ep pma %02x overflow", ep->bEndpointAddress);
+
             g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
             g_fsdev_udc.out_ep[ep_idx].ep_pma_addr = g_fsdev_udc.pma_offset;
             /*Set the endpoint Receive buffer address */
@@ -187,10 +183,9 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_fsdev_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_fsdev_udc.in_ep[ep_idx].ep_enable = true;
         if (g_fsdev_udc.in_ep[ep_idx].ep_mps > g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len) {
-            if (g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps > CONFIG_USB_FSDEV_RAM_SIZE) {
-                USB_LOG_ERR("Ep pma %02x overflow\r\n", ep->bEndpointAddress);
-                return -1;
-            }
+            USB_ASSERT_MSG((g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps) <= CONFIG_USB_FSDEV_RAM_SIZE,
+                           "Ep pma %02x overflow", ep->bEndpointAddress);
+
             g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
             g_fsdev_udc.in_ep[ep_idx].ep_pma_addr = g_fsdev_udc.pma_offset;
             /*Set the endpoint Transmit buffer address */
