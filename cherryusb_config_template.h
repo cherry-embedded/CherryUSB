@@ -8,7 +8,13 @@
 
 /* ================ USB common Configuration ================ */
 
+#ifdef __RTTHREAD__
+#include <rtthread.h>
+
+#define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
+#else
 #define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
+#endif
 
 #ifndef CONFIG_USB_DBG_LEVEL
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
@@ -22,10 +28,15 @@
 #define CONFIG_USB_ALIGN_SIZE 4
 #endif
 
-//#define CONFIG_USB_DCACHE_ENABLE
+// #define CONFIG_USB_DCACHE_ENABLE
 
 /* attribute data into no cache ram */
 #define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable")))
+
+/* use usb_memcpy default for high performance but cost more flash memory.
+ * And, arm libc has a bug that memcpy() may cause data misalignment when the size is not a multiple of 4.
+*/
+// #define CONFIG_USB_MEMCPY_DISABLE
 
 /* ================= USB Device Stack Configuration ================ */
 
@@ -114,6 +125,7 @@
 #endif
 
 #define CONFIG_USBDEV_RNDIS_USING_LWIP
+#define CONFIG_USBDEV_CDC_ECM_USING_LWIP
 
 /* ================ USB HOST Stack Configuration ================== */
 
