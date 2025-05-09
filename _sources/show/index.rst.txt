@@ -67,6 +67,6 @@ USB Host UVC
 USB Host WIFI
 -----------------------
 
-演示 USB Host UVC 驱动 BL616 USB WIFI。
+演示 USB Host 驱动 BL616 USB WIFI。
 
 .. figure:: img/usbhost_wifi.png
