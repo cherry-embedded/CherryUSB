@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
+if(CONFIG_CHERRYUSB)
+
 if(BL_SDK_BASE)
     set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM 1)
     set(CONFIG_CHERRYUSB_DEVICE_HID 1)
@@ -171,4 +173,6 @@ elseif(HPM_SDK_BASE)
 
     sdk_inc(${cherryusb_incs})
     sdk_src(${cherryusb_srcs})
+endif()
+
 endif()
