@@ -70,9 +70,6 @@ int usb_dc_init(uint8_t busid)
     USBHS_DEVICE->INT_EN = 0;
     USBHS_DEVICE->INT_EN = USBHS_SETUP_ACT_EN | USBHS_TRANSFER_EN | USBHS_DETECT_EN;
 
-    /* ALL endpoint enable */
-    USBHS_DEVICE->ENDP_CONFIG = 0xffffffff;
-
     USBHS_DEVICE->ENDP_TYPE = 0x00;
     USBHS_DEVICE->BUF_MODE = 0x00;
 
@@ -113,12 +110,22 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_ch32_usbhs_udc.out_ep[ep_idx].ep_enable = true;
+        if(g_ch32_usbhs_udc.out_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+            USBHS_DEVICE->ENDP_TYPE |= (1 << (ep_idx + 16));
+        } else {
+            USBHS_DEVICE->ENDP_TYPE &= ~(1 << (ep_idx + 16));
+        }
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx + 16));
         USB_SET_RX_CTRL(ep_idx, USBHS_EP_R_RES_NAK | USBHS_EP_R_TOG_0 | USBHS_EP_R_AUTOTOG);
     } else {
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_enable = true;
+        if (g_ch32_usbhs_udc.in_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+           USBHS_DEVICE->ENDP_TYPE |= (1 << (ep_idx));
+        } else {
+           USBHS_DEVICE->ENDP_TYPE &= ~(1 << (ep_idx));
+        }
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx));
         USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0 | USBHS_EP_T_AUTOTOG);
     }
@@ -128,6 +135,12 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 
 int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        USBHS_DEVICE->ENDP_CONFIG &= ~(1 << (ep_idx + 16));
+    } else {
+        USBHS_DEVICE->ENDP_CONFIG &= ~(1 << (ep_idx));
+	}
     return 0;
 }
 
@@ -166,6 +179,13 @@ int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
 
 int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
 {
+    uint8_t ep_idx = USB_EP_GET_IDX(ep);
+
+    if (USB_EP_DIR_IS_OUT(ep)) {
+        *stalled = USB_GET_RX_CTRL(ep_idx) & USBHS_EP_R_RES_STALL ? 1 : 0;
+    } else {
+        *stalled = USB_GET_TX_CTRL(ep_idx) & USBHS_EP_T_RES_STALL ? 1 : 0;
+    }
     return 0;
 }
 
@@ -243,7 +263,11 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
         return 0;
     } else {
         USB_SET_RX_DMA(ep_idx, (uint32_t)data);
-        USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBHS_EP_R_RES_MASK) | USBHS_EP_R_RES_ACK);
+        if(g_ch32_usbhs_udc.out_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS ) {
+            USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~(USBHS_EP_R_RES_MASK | USBHS_EP_R_TOG_MASK)) | USBHS_EP_R_RES_ACK | USBHS_EP_R_TOG_0);
+       	} else {
+            USB_SET_RX_CTRL(ep_idx, (USB_GET_RX_CTRL(ep_idx) & ~USBHS_EP_R_RES_MASK) | USBHS_EP_R_RES_ACK );
+        }
     }
 
     return 0;
