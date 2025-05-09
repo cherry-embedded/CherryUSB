@@ -30,7 +30,12 @@ USB Device RNDIS
 
 演示 USB Device RNDIS 局域网下搭配 lwip 的速度。
 
+作为 client
+
 .. figure:: img/usbdev_rndis_lwip.png
+
+作为 server
+
 .. figure:: img/usbdev_rndis_lwip2.png
 
 演示 USB Device RNDIS + WIFI 透传测试。
