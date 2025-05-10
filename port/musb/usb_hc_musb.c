@@ -766,6 +766,16 @@ int usbh_kill_urb(struct usbh_urb *urb)
     urb->errorcode = -USB_ERR_SHUTDOWN;
     pipe->urb = NULL;
 
+    if (urb->ep->bEndpointAddress & 0x80) {
+        HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << (urb->ep->bEndpointAddress & 0x0f));
+        HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << (urb->ep->bEndpointAddress & 0x0f));
+    } else {
+        HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << (urb->ep->bEndpointAddress & 0x0f));
+        HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << (urb->ep->bEndpointAddress & 0x0f));
+    }
+
+    musb_fifo_flush(bus, urb->ep->bEndpointAddress);
+
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
     } else {

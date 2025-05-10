@@ -1090,6 +1090,11 @@ static void usbd_class_event_notify_handler(uint8_t busid, uint8_t event, void *
     }
 }
 
+void usbd_event_sof_handler(uint8_t busid)
+{
+    g_usbd_core[busid].event_handler(busid, USBD_EVENT_SOF);
+}
+
 void usbd_event_connect_handler(uint8_t busid)
 {
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_CONNECTED);

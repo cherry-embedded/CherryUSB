@@ -598,7 +598,7 @@ int usb_dc_init(uint8_t busid)
 #if CONFIG_DWC2_VBUS_SENSING
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_OTGINT | USB_OTG_GINTMSK_SRQIM);
 #endif
-#if 0
+#ifdef CONFIG_USBDEV_SOF_ENABLE
     USB_OTG_GLB->GINTMSK |= USB_OTG_GINTMSK_SOFM;
 #endif
 
@@ -711,10 +711,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
-    if (ep_idx > (CONFIG_USBDEV_EP_NUM - 1)) {
-        USB_LOG_ERR("Ep addr %02x overflow\r\n", ep->bEndpointAddress);
-        return -1;
-    }
+    USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
 
     if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
         g_dwc2_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
@@ -735,10 +732,8 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         } else {
             fifo_size = (USB_OTG_GLB->DIEPTXF[ep_idx - 1U] >> 16);
         }
-        if ((fifo_size * 4) < USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize)) {
-            USB_LOG_ERR("Ep addr %02x fifo overflow\r\n", ep->bEndpointAddress);
-            return -2;
-        }
+
+        USB_ASSERT_MSG((fifo_size * 4) >= USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize), "Ep addr %02x fifo overflow", ep->bEndpointAddress);
 
         g_dwc2_udc[busid].in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_dwc2_udc[busid].in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
@@ -880,7 +875,7 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
     }
 
     if (ep_idx && !(USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_MPSIZ)) {
-        return -3;
+        return -2;
     }
 
     g_dwc2_udc[busid].in_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -948,7 +943,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     }
 
     if (ep_idx && !(USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_MPSIZ)) {
-        return -3;
+        return -2;
     }
 
     g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf = (uint8_t *)data;
@@ -1148,10 +1143,12 @@ void USBD_IRQHandler(uint8_t busid)
         if (gint_status & USB_OTG_GINTSTS_IISOIXFR) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_IISOIXFR;
         }
-
+#ifdef CONFIG_USBDEV_SOF_ENABLE
         if (gint_status & USB_OTG_GINTSTS_SOF) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_SOF;
+            usbd_event_sof_handler(busid);
         }
+#endif
         if (gint_status & USB_OTG_GINTSTS_USBSUSP) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_USBSUSP;
             usbd_event_suspend_handler(busid);

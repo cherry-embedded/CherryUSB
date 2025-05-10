@@ -95,6 +95,10 @@ int usb_dc_init(uint8_t busid)
     int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK | USB_USBINTR_SLE_MASK |
                 USB_USBINTR_PCE_MASK | USB_USBINTR_URE_MASK);
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    int_mask |= USB_USBINTR_SRE_MASK;
+#endif
+
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
 
     intc_m_enable_irq(_dcd_irqnum[busid]);
@@ -274,6 +278,11 @@ void USBD_IRQHandler(uint8_t busid)
         USB_LOG_ERR("usbd intr error!\r\n");
     }
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    if (int_status & intr_sof) {
+        usbd_event_sof_handler(busid);
+    }
+#endif
     if (int_status & intr_reset) {
         g_hpm_udc[busid].is_suspend = false;
         memset(g_hpm_udc[busid].in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);

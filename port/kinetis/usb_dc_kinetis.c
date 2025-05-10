@@ -102,6 +102,10 @@ int usb_dc_init(uint8_t busid)
                          USB_INTEN_SLEEPEN_MASK | USB_INTEN_RESUMEEN_MASK |
                          USB_INTEN_ERROREN_MASK;
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    USB_OTG_DEV->INTEN |= USB_INTEN_SOFTOKEN_MASK;
+#endif
+
     USB_OTG_DEV->CTL |= USB_CTL_USBENSOFEN_MASK;
     return 0;
 }
@@ -156,9 +160,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
     uint8_t regval;
 
     /* Must not exceed max endpoint number */
-    if (ep_idx >= CONFIG_USBDEV_EP_NUM) {
-        return -1;
-    }
+    USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
 
     if (USB_EP_DIR_IS_OUT(ep->bEndpointAddress)) {
         g_kinetis_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
@@ -382,11 +384,12 @@ void USBD_IRQHandler(uint8_t busid)
     if (is & USB_ISTAT_RESUME_MASK) {
         USB_OTG_DEV->ISTAT = USB_ISTAT_RESUME_MASK;
     }
-
+#ifdef CONFIG_USBDEV_SOF_ENABLE
     if (is & USB_ISTAT_SOFTOK_MASK) {
         USB_OTG_DEV->ISTAT = USB_ISTAT_SOFTOK_MASK;
+        usbd_event_sof_handler(busid);
     }
-
+#endif
     if (is & USB_ISTAT_STALL_MASK) {
         USB_OTG_DEV->ISTAT = USB_ISTAT_STALL_MASK;
     }
