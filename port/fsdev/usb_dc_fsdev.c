@@ -79,8 +79,11 @@ int usb_dc_init(uint8_t busid)
     /* Set winterruptmask variable */
     winterruptmask = USB_CNTR_CTRM | USB_CNTR_WKUPM |
                      USB_CNTR_SUSPM | USB_CNTR_ERRM |
-                     USB_CNTR_SOFM | USB_CNTR_ESOFM |
-                     USB_CNTR_RESETM;
+                     USB_CNTR_ESOFM | USB_CNTR_RESETM;
+
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    winterruptmask |= USB_CNTR_SOFM;
+#endif
 
     /* Set interrupt mask */
     USB->CNTR = (uint16_t)winterruptmask;
@@ -482,9 +485,12 @@ void USBD_IRQHandler(uint8_t busid)
 
         USB->CNTR |= (uint16_t)USB_CNTR_LP_MODE;
     }
+#ifdef CONFIG_USBDEV_SOF_ENABLE
     if (wIstr & USB_ISTR_SOF) {
         USB->ISTR &= (uint16_t)(~USB_ISTR_SOF);
+        usbd_event_sof_handler(0);
     }
+#endif
     if (wIstr & USB_ISTR_ESOF) {
         USB->ISTR &= (uint16_t)(~USB_ISTR_ESOF);
     }

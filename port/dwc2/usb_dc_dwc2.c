@@ -598,7 +598,7 @@ int usb_dc_init(uint8_t busid)
 #if CONFIG_DWC2_VBUS_SENSING
     USB_OTG_GLB->GINTMSK |= (USB_OTG_GINTMSK_OTGINT | USB_OTG_GINTMSK_SRQIM);
 #endif
-#if 0
+#ifdef CONFIG_USBDEV_SOF_ENABLE
     USB_OTG_GLB->GINTMSK |= USB_OTG_GINTMSK_SOFM;
 #endif
 
@@ -1143,10 +1143,12 @@ void USBD_IRQHandler(uint8_t busid)
         if (gint_status & USB_OTG_GINTSTS_IISOIXFR) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_IISOIXFR;
         }
-
+#ifdef CONFIG_USBDEV_SOF_ENABLE
         if (gint_status & USB_OTG_GINTSTS_SOF) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_SOF;
+            usbd_event_sof_handler(busid);
         }
+#endif
         if (gint_status & USB_OTG_GINTSTS_USBSUSP) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_USBSUSP;
             usbd_event_suspend_handler(busid);

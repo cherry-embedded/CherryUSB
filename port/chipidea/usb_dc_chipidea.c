@@ -462,6 +462,10 @@ int usb_dc_init(uint8_t busid)
     /* Clear status */
     USB_OTG_DEV->USBSTS = USB_OTG_DEV->USBSTS;
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    int_mask |= USB_USBINTR_SRE_MASK;
+#endif
+
     /* Enable interrupt mask */
     USB_OTG_DEV->USBINTR |= int_mask;
 
@@ -629,6 +633,12 @@ void USBD_IRQHandler(uint8_t busid)
     if (int_status & intr_error) {
         USB_LOG_ERR("usbd intr error!\r\n");
     }
+
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    if (int_status & intr_sof) {
+        usbd_event_sof_handler(busid);
+    }
+#endif
 
     if (int_status & intr_reset) {
         g_chipidea_udc[busid].is_suspend = false;

@@ -102,6 +102,10 @@ int usb_dc_init(uint8_t busid)
                          USB_INTEN_SLEEPEN_MASK | USB_INTEN_RESUMEEN_MASK |
                          USB_INTEN_ERROREN_MASK;
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    USB_OTG_DEV->INTEN |= USB_INTEN_SOFTOKEN_MASK;
+#endif
+
     USB_OTG_DEV->CTL |= USB_CTL_USBENSOFEN_MASK;
     return 0;
 }
@@ -380,11 +384,12 @@ void USBD_IRQHandler(uint8_t busid)
     if (is & USB_ISTAT_RESUME_MASK) {
         USB_OTG_DEV->ISTAT = USB_ISTAT_RESUME_MASK;
     }
-
+#ifdef CONFIG_USBDEV_SOF_ENABLE
     if (is & USB_ISTAT_SOFTOK_MASK) {
         USB_OTG_DEV->ISTAT = USB_ISTAT_SOFTOK_MASK;
+        usbd_event_sof_handler(busid);
     }
-
+#endif
     if (is & USB_ISTAT_STALL_MASK) {
         USB_OTG_DEV->ISTAT = USB_ISTAT_STALL_MASK;
     }

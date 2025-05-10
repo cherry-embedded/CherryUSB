@@ -273,6 +273,10 @@ int usb_dc_init(uint8_t busid)
     HWREGH(USB_BASE + MUSB_TXIE_OFFSET) = USB_TXIE_EP0;
     HWREGH(USB_BASE + MUSB_RXIE_OFFSET) = 0;
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    HWREGB(USB_BASE + MUSB_IE_OFFSET) |= USB_IE_SOF;
+#endif
+
     HWREGB(USB_BASE + MUSB_POWER_OFFSET) |= USB_POWER_SOFTCONN;
     return 0;
 }
@@ -721,8 +725,11 @@ void USBD_IRQHandler(uint8_t busid)
         usb_ep0_state = USB_EP0_STATE_SETUP;
     }
 
+#ifdef CONFIG_USBDEV_SOF_ENABLE
     if (is & USB_IS_SOF) {
+        usbd_event_sof_handler(0);
     }
+#endif
 
     if (is & USB_IS_RESUME) {
         usbd_event_resume_handler(0);
