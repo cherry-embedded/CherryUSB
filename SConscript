@@ -30,7 +30,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     src += Glob('core/usbd_core.c')
     src += Glob('osal/usb_osal_rtthread.c')
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_SPEED_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_ST']):
