@@ -123,11 +123,12 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_ch32_usbhs_udc.in_ep[ep_idx].ep_enable = true;
         if (g_ch32_usbhs_udc.in_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
            USBHS_DEVICE->ENDP_TYPE |= (1 << (ep_idx));
+           USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0);
         } else {
            USBHS_DEVICE->ENDP_TYPE &= ~(1 << (ep_idx));
+           USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0 | USBHS_EP_T_AUTOTOG);
         }
         USBHS_DEVICE->ENDP_CONFIG |= (1 << (ep_idx));
-        USB_SET_TX_CTRL(ep_idx, USBHS_EP_T_RES_NAK | USBHS_EP_T_TOG_0 | USBHS_EP_T_AUTOTOG);
     }
     USB_SET_MAX_LEN(ep_idx, USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
     return 0;
