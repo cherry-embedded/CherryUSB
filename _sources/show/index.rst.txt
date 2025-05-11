@@ -3,7 +3,7 @@
 
 以下演示了 CherryUSB 在不同应用中的性能表现。主要演示高速模式，全速看不出什么性能差异。
 
-CDC 通信
+CDC ACM 通信
 ----------------
 
 可以达到硬件极限性能，当然需要硬件理论支持到这速度，CherryUSB 就支持到这速度,举例如下：
@@ -48,6 +48,13 @@ USB Device RNDIS
 .. figure:: img/usbdev_rndis_win.png
 .. figure:: img/usbdev_rndis_linux.png
 
+USB Host HUB
+-----------------------
+
+多级 hub 支持，演示 1托 7 HUB
+
+.. figure:: img/usbhost_hub.png
+.. figure:: img/usbhost_hub2.png
 
 USB Host MSC
 -----------------------
