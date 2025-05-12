@@ -56,6 +56,7 @@ struct dwc2_hcd {
     volatile bool port_csc;
     volatile bool port_pec;
     volatile bool port_occ;
+    uint32_t GSNPSID;
     struct dwc2_chan chan_pool[CONFIG_USBHOST_PIPE_NUM];
 } g_dwc2_hcd[CONFIG_USBHOST_MAX_BUS];
 
@@ -65,7 +66,7 @@ struct dwc2_hcd {
 #define DWC2_EP0_STATE_INSTATUS  3
 #define DWC2_EP0_STATE_OUTSTATUS 4
 
-static inline int dwc2_reset(struct usbh_bus *bus)
+static inline int dwc2_reset(uint8_t busid)
 {
     volatile uint32_t count = 0U;
 
@@ -80,11 +81,24 @@ static inline int dwc2_reset(struct usbh_bus *bus)
     count = 0U;
     USB_OTG_GLB->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
 
-    do {
-        if (++count > 200000U) {
-            return -1;
-        }
-    } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+    if (g_dwc2_udc[busid].GSNPSID < 0x4F54420AU) {
+        do {
+            if (++count > 200000U) {
+                USB_LOG_ERR("DWC2 reset timeout\r\n");
+                return -1;
+            }
+        } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+    } else {
+        do {
+            if (++count > 200000U) {
+                USB_LOG_ERR("DWC2 reset timeout\r\n");
+                return -1;
+            }
+        } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRSTDONE) != USB_OTG_GRSTCTL_CSRSTDONE);
+
+        USB_OTG_GLB->GRSTCTL &= ~USB_OTG_GRSTCTL_CSRST;
+        USB_OTG_GLB->GRSTCTL |= USB_OTG_GRSTCTL_CSRSTDONE;
+    }
 
     return 0;
 }
@@ -532,6 +546,7 @@ __WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
 int usb_hc_init(struct usbh_bus *bus)
 {
     int ret;
+    uint8_t channels;
 
     memset(&g_dwc2_hcd[bus->hcd.hcd_id], 0, sizeof(struct dwc2_hcd));
 
@@ -541,6 +556,8 @@ int usb_hc_init(struct usbh_bus *bus)
 
     usb_hc_low_level_init(bus);
 
+    channels = ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1;
+
     USB_LOG_INFO("========== dwc2 hcd params ==========\r\n");
     USB_LOG_INFO("CID:%08x\r\n", (unsigned int)USB_OTG_GLB->CID);
     USB_LOG_INFO("GSNPSID:%08x\r\n", (unsigned int)USB_OTG_GLB->GSNPSID);
@@ -549,11 +566,14 @@ int usb_hc_init(struct usbh_bus *bus)
     USB_LOG_INFO("GHWCFG3:%08x\r\n", (unsigned int)USB_OTG_GLB->GHWCFG3);
     USB_LOG_INFO("GHWCFG4:%08x\r\n", (unsigned int)USB_OTG_GLB->GHWCFG4);
 
-    USB_LOG_INFO("dwc2 has %d channels and dfifo depth(32-bit words) is %d\r\n", ((USB_OTG_GLB->GHWCFG2 & (0x0f << 14)) >> 14) + 1, (USB_OTG_GLB->GHWCFG3 >> 16));
+    USB_LOG_INFO("dwc2 has %d channels and dfifo depth(32-bit words) is %d\r\n", channels, (USB_OTG_GLB->GHWCFG3 >> 16));
 
     USB_ASSERT_MSG(((USB_OTG_GLB->GHWCFG2 & (0x3U << 3)) >> 3) == 2, "This dwc2 version does not support dma mode, so stop working");
+    USB_ASSERT_MSG(channels >= CONFIG_USBHOST_PIPE_NUM, "dwc2 has less channels than config, please check");
     USB_ASSERT_MSG((CONFIG_USB_DWC2_RX_FIFO_SIZE + CONFIG_USB_DWC2_NPTX_FIFO_SIZE + CONFIG_USB_DWC2_PTX_FIFO_SIZE) <= (USB_OTG_GLB->GHWCFG3 >> 16),
                    "Your fifo config is overflow, please check");
+
+    g_dwc2_hcd[bus->hcd.hcd_id].GSNPSID = USB_OTG_GLB->GSNPSID;
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 

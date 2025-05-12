@@ -114,6 +114,7 @@ struct dwc2_ep_state {
 
 /* Driver state */
 USB_NOCACHE_RAM_SECTION struct dwc2_udc {
+    uint32_t GSNPSID;
     __attribute__((aligned(32))) struct usb_setup_packet setup;
     struct dwc2_ep_state in_ep[CONFIG_USBDEV_EP_NUM];  /*!< IN endpoint parameters*/
     struct dwc2_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
@@ -134,13 +135,24 @@ static inline int dwc2_reset(uint8_t busid)
     count = 0U;
     USB_OTG_GLB->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
 
-    do {
-        if (++count > 200000U) {
-            break;
-        }
-    } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+    if (g_dwc2_udc[busid].GSNPSID < 0x4F54420AU) {
+        do {
+            if (++count > 200000U) {
+                USB_LOG_ERR("DWC2 reset timeout\r\n");
+                return -1;
+            }
+        } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+    } else {
+        do {
+            if (++count > 200000U) {
+                USB_LOG_ERR("DWC2 reset timeout\r\n");
+                return -1;
+            }
+        } while ((USB_OTG_GLB->GRSTCTL & USB_OTG_GRSTCTL_CSRSTDONE) != USB_OTG_GRSTCTL_CSRSTDONE);
 
-    USB_OTG_GLB->GRSTCTL &= ~USB_OTG_GRSTCTL_CSRST;
+        USB_OTG_GLB->GRSTCTL &= ~USB_OTG_GRSTCTL_CSRST;
+        USB_OTG_GLB->GRSTCTL |= USB_OTG_GRSTCTL_CSRSTDONE;
+    }
 
     return 0;
 }
@@ -539,6 +551,8 @@ int usb_dc_init(uint8_t busid)
     USB_LOG_INFO("=================================\r\n");
 
     USB_ASSERT_MSG(endpoints >= CONFIG_USBDEV_EP_NUM, "dwc2 has less endpoints than config, please check");
+
+    g_dwc2_udc[busid].GSNPSID = USB_OTG_GLB->GSNPSID;
 
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
