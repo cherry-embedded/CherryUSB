@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 HPMicro
+ * Copyright (c) 2022-2025 HPMicro
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -13,13 +13,13 @@
 
 /* USBSTS, USBINTR */
 enum {
-    intr_usb = HPM_BITSMASK(1, 0),
-    intr_error = HPM_BITSMASK(1, 1),
-    intr_port_change = HPM_BITSMASK(1, 2),
-    intr_reset = HPM_BITSMASK(1, 6),
-    intr_sof = HPM_BITSMASK(1, 7),
-    intr_suspend = HPM_BITSMASK(1, 8),
-    intr_nak = HPM_BITSMASK(1, 16)
+    intr_usb = USB_USBINTR_UE_MASK,
+    intr_error = USB_USBINTR_UEE_MASK,
+    intr_port_change = USB_USBINTR_PCE_MASK,
+    intr_reset = USB_USBINTR_URE_MASK,
+    intr_sof = USB_USBINTR_SRE_MASK,
+    intr_suspend = USB_USBINTR_SLE_MASK,
+    intr_nak = USB_USBINTR_NAKE_MASK,
 };
 
 /* Endpoint state */
@@ -44,10 +44,8 @@ struct hpm_udc {
     struct hpm_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_hpm_udc[CONFIG_USBDEV_MAX_BUS];
 
-static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data0;
-#ifdef HPM_USB1_BASE
-static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT) dcd_data_t _dcd_data1;
-#endif
+static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)
+    uint8_t _dcd_data[CONFIG_USBDEV_MAX_BUS][HPM_ALIGN_UP(sizeof(dcd_data_t), USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)];
 static ATTR_PLACE_AT_NONCACHEABLE usb_device_handle_t usb_device_handle[CONFIG_USBDEV_MAX_BUS];
 static uint32_t _dcd_irqnum[CONFIG_USBDEV_MAX_BUS];
 static uint8_t _dcd_busid[CONFIG_USBDEV_MAX_BUS];
@@ -68,6 +66,7 @@ int usb_dc_init(uint8_t busid)
     memset(&g_hpm_udc[busid], 0, sizeof(struct hpm_udc));
     g_hpm_udc[busid].handle = &usb_device_handle[busid];
     g_hpm_udc[busid].handle->regs = (USB_Type *)g_usbdev_bus[busid].reg_base;
+    g_hpm_udc[busid].handle->dcd_data = (dcd_data_t *)&_dcd_data[busid][0];
 
     if (g_usbdev_bus[busid].reg_base == HPM_USB0_BASE) {
         _dcd_irqnum[busid] = IRQn_USB0;
@@ -81,22 +80,11 @@ int usb_dc_init(uint8_t busid)
 #endif
     }
 
-    if (busid == 0) {
-        g_hpm_udc[busid].handle->dcd_data = &_dcd_data0;
-    } else if (busid == 1) {
-#ifdef HPM_USB1_BASE
-        g_hpm_udc[busid].handle->dcd_data = &_dcd_data1;
-#endif
-    } else {
-        ;
-    }
-
     uint32_t int_mask;
-    int_mask = (USB_USBINTR_UE_MASK | USB_USBINTR_UEE_MASK | USB_USBINTR_SLE_MASK |
-                USB_USBINTR_PCE_MASK | USB_USBINTR_URE_MASK);
+    int_mask = (intr_usb | intr_error |intr_port_change | intr_reset | intr_suspend);
 
 #ifdef CONFIG_USBDEV_SOF_ENABLE
-    int_mask |= USB_USBINTR_SRE_MASK;
+    int_mask |= intr_sof;
 #endif
 
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
@@ -283,6 +271,7 @@ void USBD_IRQHandler(uint8_t busid)
         usbd_event_sof_handler(busid);
     }
 #endif
+
     if (int_status & intr_reset) {
         g_hpm_udc[busid].is_suspend = false;
         memset(g_hpm_udc[busid].in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
@@ -326,7 +315,8 @@ void USBD_IRQHandler(uint8_t busid)
                     ep_cb_req = true;
 
                     /* Failed QTD also get ENDPTCOMPLETE set */
-                    dcd_qtd_t *p_qtd = usb_device_qtd_get(handle, ep_idx);
+                    dcd_qhd_t *p_qhd = usb_device_qhd_get(handle, ep_idx);
+                    dcd_qtd_t *p_qtd = p_qhd->attached_qtd;
                     while (1) {
                         if (p_qtd->halted || p_qtd->xact_err || p_qtd->buffer_err) {
                             USB_LOG_ERR("usbd transfer error!\r\n");
@@ -337,6 +327,7 @@ void USBD_IRQHandler(uint8_t busid)
                             break;
                         } else {
                             transfer_len += p_qtd->expected_bytes - p_qtd->total_bytes;
+                            p_qtd->in_use = false;
                         }
 
                         if (p_qtd->next == USB_SOC_DCD_QTD_NEXT_INVALID) {
