@@ -186,6 +186,11 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
     switch (type) {
         case USB_DESCRIPTOR_TYPE_DEVICE:
             g_usbd_core[busid].speed = usbd_get_port_speed(busid); /* before we get device descriptor, we have known steady port speed */
+
+            if (g_usbd_core[busid].descriptors->device_descriptor_callback == NULL) {
+                found = false;
+                break;
+            }
             desc = g_usbd_core[busid].descriptors->device_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
                 found = false;
@@ -194,6 +199,10 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             desc_len = desc[0];
             break;
         case USB_DESCRIPTOR_TYPE_CONFIGURATION:
+            if (g_usbd_core[busid].descriptors->config_descriptor_callback == NULL) {
+                found = false;
+                break;
+            }
             desc = g_usbd_core[busid].descriptors->config_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
                 found = false;
@@ -214,6 +223,10 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
                 desc = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->string;
                 desc_len = g_usbd_core[busid].descriptors->msosv1_descriptor->string[0];
             } else {
+                if (g_usbd_core[busid].descriptors->string_descriptor_callback == NULL) {
+                    found = false;
+                    break;
+                }
                 string = g_usbd_core[busid].descriptors->string_descriptor_callback(g_usbd_core[busid].speed, index);
                 if (string == NULL) {
                     found = false;
@@ -253,6 +266,10 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
 #ifndef CONFIG_USB_HS
             return false;
 #else
+            if (g_usbd_core[busid].descriptors->device_quality_descriptor_callback == NULL) {
+                found = false;
+                break;
+            }
             desc = g_usbd_core[busid].descriptors->device_quality_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
                 found = false;
@@ -262,6 +279,10 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
             break;
 #endif
         case USB_DESCRIPTOR_TYPE_OTHER_SPEED:
+            if (g_usbd_core[busid].descriptors->other_speed_descriptor_callback == NULL) {
+                found = false;
+                break;
+            }
             desc = g_usbd_core[busid].descriptors->other_speed_descriptor_callback(g_usbd_core[busid].speed);
             if (desc == NULL) {
                 found = false;
