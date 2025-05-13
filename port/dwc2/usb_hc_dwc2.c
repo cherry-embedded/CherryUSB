@@ -66,7 +66,7 @@ struct dwc2_hcd {
 #define DWC2_EP0_STATE_INSTATUS  3
 #define DWC2_EP0_STATE_OUTSTATUS 4
 
-static inline int dwc2_reset(uint8_t busid)
+static inline int dwc2_reset(struct usbh_bus *bus)
 {
     volatile uint32_t count = 0U;
 
@@ -81,7 +81,7 @@ static inline int dwc2_reset(uint8_t busid)
     count = 0U;
     USB_OTG_GLB->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
 
-    if (g_dwc2_udc[busid].GSNPSID < 0x4F54420AU) {
+    if (g_dwc2_hcd[bus->hcd.hcd_id].GSNPSID < 0x4F54420AU) {
         do {
             if (++count > 200000U) {
                 USB_LOG_ERR("DWC2 reset timeout\r\n");
@@ -326,11 +326,16 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
 static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
 {
     volatile uint32_t ChannelEna = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_CHENA) >> 31;
+    volatile uint32_t HcEpType = (USB_OTG_HC(ch_num)->HCCHAR & USB_OTG_HCCHAR_EPTYP) >> 18;
+    volatile uint32_t SplitEna = (USB_OTG_HC(ch_num)->HCSPLT & USB_OTG_HCSPLT_SPLITEN) >> 31;
     volatile uint32_t count = 0U;
-    __IO uint32_t value;
+    volatile uint32_t value;
 
-    if (((USB_OTG_GLB->GAHBCFG & USB_OTG_GAHBCFG_DMAEN) == USB_OTG_GAHBCFG_DMAEN) &&
-        (ChannelEna == 0U)) {
+    /* In buffer DMA, Channel disable must not be programmed for non-split periodic channels.
+     At the end of the next uframe/frame (in the worst case), the core generates a channel halted
+     and disables the channel automatically. */
+    if ((((USB_OTG_GLB->GAHBCFG & USB_OTG_GAHBCFG_DMAEN) == USB_OTG_GAHBCFG_DMAEN) && (SplitEna == 0U)) &&
+        ((ChannelEna == 0U) || (((HcEpType == HCCHAR_ISOC) || (HcEpType == HCCHAR_INTR))))) {
         return;
     }
 
@@ -338,7 +343,7 @@ static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
 
     value = USB_OTG_HC(ch_num)->HCCHAR;
     value |= USB_OTG_HCCHAR_CHDIS;
-    value &= ~USB_OTG_HCCHAR_CHENA;
+    value |= USB_OTG_HCCHAR_CHENA;
     value &= ~USB_OTG_HCCHAR_EPDIR;
     USB_OTG_HC(ch_num)->HCCHAR = value;
     do {
@@ -360,7 +365,7 @@ static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
                USB_OTG_HPRT_PENCHNG | USB_OTG_HPRT_POCCHNG);
 
     USB_OTG_HPRT = (USB_OTG_HPRT_PRST | hprt0);
-    usb_osal_msleep(100U); /* See Note #1 */
+    usb_osal_msleep(100U);
     USB_OTG_HPRT = ((~USB_OTG_HPRT_PRST) & hprt0);
     usb_osal_msleep(10U);
 
@@ -388,7 +393,7 @@ static inline uint16_t dwc2_get_full_frame_num(struct usbh_bus *bus)
 {
     uint16_t frame = usbh_get_frame_number(bus);
 
-    /* USB_OTG_HFNUM_FRNUM_Msk is 0xFFFF��but max frame num is 0x3FFF */
+    /* USB_OTG_HFNUM_FRNUM_Msk is 0xFFFF but max frame num is 0x3FFF */
     return ((frame & 0x3FFF) >> 3);
 }
 
