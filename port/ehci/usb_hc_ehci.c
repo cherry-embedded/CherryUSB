@@ -41,6 +41,8 @@ static struct ehci_qtd_hw *ehci_qtd_alloc(struct usbh_bus *bus)
 
             memset(&qtd->hw, 0, sizeof(struct ehci_qtd));
             qtd->hw.next_qtd = QTD_LIST_END;
+            qtd->hw.alt_next_qtd = QTD_LIST_END;
+            qtd->hw.token = QTD_TOKEN_STATUS_HALTED;
             qtd->urb = NULL;
             qtd->bufaddr = 0;
             qtd->length = 0;
