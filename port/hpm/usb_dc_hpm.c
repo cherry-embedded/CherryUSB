@@ -44,9 +44,9 @@ struct hpm_udc {
     struct hpm_ep_state out_ep[USB_NUM_BIDIR_ENDPOINTS]; /*!< OUT endpoint parameters */
 } g_hpm_udc[CONFIG_USBDEV_MAX_BUS];
 
-static ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)
+static USB_NOCACHE_RAM_SECTION ATTR_ALIGN(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)
     uint8_t _dcd_data[CONFIG_USBDEV_MAX_BUS][HPM_ALIGN_UP(sizeof(dcd_data_t), USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)];
-static ATTR_PLACE_AT_NONCACHEABLE usb_device_handle_t usb_device_handle[CONFIG_USBDEV_MAX_BUS];
+static USB_NOCACHE_RAM_SECTION usb_device_handle_t usb_device_handle[CONFIG_USBDEV_MAX_BUS];
 static uint32_t _dcd_irqnum[CONFIG_USBDEV_MAX_BUS];
 static uint8_t _dcd_busid[CONFIG_USBDEV_MAX_BUS];
 
