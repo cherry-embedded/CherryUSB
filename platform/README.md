@@ -31,6 +31,10 @@ lwip support with usb host net class(cdc_ecm/cdc_ncm/cdc_rndis/asix/rtl8152/bl61
 
 - filx support with usb host msc.
 
+## Zephyr
+
+- shell support with lsusb
+
 ## LVGL
 
 - lvgl indev support with usb host mouse and keyboard. support both LVGL8.x.x and LVGL9.x.x
