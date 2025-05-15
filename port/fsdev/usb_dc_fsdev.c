@@ -135,6 +135,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
     USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
+    USB_ASSERT_MSG(USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS, "iso endpoint not support in fsdev");
 
     uint16_t wEpRegVal;
 
@@ -154,11 +155,10 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
             wEpRegVal = USB_EP_ISOCHRONOUS;
-            USB_LOG_ERR("Do not support iso in fsdev\r\n");
-            return -1;
+            break;
 
         default:
-            break;
+            return -1;
     }
 
     PCD_SET_EPTYPE(USB, ep_idx, wEpRegVal);
