@@ -73,9 +73,11 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_dc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_MCX']):
+        path += [cwd + '/port/chipidea']
         src += Glob('port/chipidea/usb_dc_chipidea.c')
-        src += Glob('port/chipidea/usb_glue_mcx.c')
+        src += Glob('port/nxp/usb_glue_mcx.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM']):
+        path += [cwd + '/port/chipidea']
         src += Glob('port/chipidea/usb_dc_chipidea.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_KINETIS_MCX']):
         src += Glob('port/kinetis/usb_dc_kinetis.c')
@@ -181,7 +183,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_MCX']):
         path += [cwd + '/port/chipidea']
         src += Glob('port/ehci/usb_hc_ehci.c')
-        src += Glob('port/ehci/usb_glue_mcx.c')
+        src += Glob('port/nxp/usb_glue_mcx.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_NUC980']):
         src += Glob('port/ehci/usb_hc_ehci.c')
         src += Glob('port/ehci/usb_glue_nuc980.c')
