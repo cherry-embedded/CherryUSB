@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.15)
 if(CONFIG_CHERRYUSB)
 
 if(BL_SDK_BASE)
+    message(STATUS "enable cherryusb in bouffalo_sdk")
+
     set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM 1)
     set(CONFIG_CHERRYUSB_DEVICE_HID 1)
     set(CONFIG_CHERRYUSB_DEVICE_MSC 1)
@@ -30,16 +32,22 @@ if(BL_SDK_BASE)
     set(CONFIG_CHERRYUSB_OSAL "freertos")
 
     include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
+    list(REMOVE_DUPLICATES cherryusb_srcs)
+    list(REMOVE_DUPLICATES cherryusb_incs)
 
     sdk_generate_library(cherryusb)
     sdk_add_include_directories(${cherryusb_incs})
     sdk_library_add_sources(${cherryusb_srcs})
 elseif(ESP_PLATFORM)
+    message(STATUS "enable cherryusb in esp-idf")
+
     set(CONFIG_CHERRYUSB_DEVICE_DWC2_ESP 1)
     set(CONFIG_CHERRYUSB_HOST_DWC2_ESP 1)
     set(CONFIG_CHERRYUSB_OSAL "idf")
 
     include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
+    list(REMOVE_DUPLICATES cherryusb_srcs)
+    list(REMOVE_DUPLICATES cherryusb_incs)
 
     set(ldfragments "osal/idf/linker.lf")
 
@@ -130,8 +138,12 @@ elseif(ESP_PLATFORM)
         set_source_files_properties("class/audio/usbd_audio.c" PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
     endif()
 elseif(ZEPHYR_BASE)
+    message(STATUS "enable cherryusb in zephyr")
+
     set(CONFIG_CHERRYUSB_OSAL "zephyr")
     include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
+    list(REMOVE_DUPLICATES cherryusb_srcs)
+    list(REMOVE_DUPLICATES cherryusb_incs)
 
     if (CONFIG_SHELL)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/platform/zephyr/usb_cmd.c)
@@ -149,6 +161,8 @@ elseif(ZEPHYR_BASE)
         zephyr_linker_sources(SECTIONS zephyr/usbh_class_info.ld)
     endif()
 elseif(HPM_SDK_BASE)
+    message(STATUS "enable cherryusb in hpm_sdk")
+
     set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM 1)
     set(CONFIG_CHERRYUSB_DEVICE_HID 1)
     set(CONFIG_CHERRYUSB_DEVICE_MSC 1)
@@ -177,6 +191,8 @@ elseif(HPM_SDK_BASE)
     set(CONFIG_CHERRYUSB_OSAL "freertos")
 
     include(${CMAKE_CURRENT_LIST_DIR}/cherryusb.cmake)
+    list(REMOVE_DUPLICATES cherryusb_srcs)
+    list(REMOVE_DUPLICATES cherryusb_incs)
 
     sdk_inc(${cherryusb_incs})
     sdk_src(${cherryusb_srcs})

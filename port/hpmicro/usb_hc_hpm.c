@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 HPMicro
+ * Copyright (c) 2022-2025 HPMicro
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -17,8 +17,8 @@
 #error "hpm ehci must config CONFIG_USB_EHCI_HCCR_OFFSET to 0x100"
 #endif
 
-static uint32_t _hcd_irqnum[CONFIG_USBHOST_MAX_BUS];
-static uint8_t _hcd_busid[CONFIG_USBHOST_MAX_BUS];
+extern void (*g_usb_hpm_irq[2])(uint8_t busid);
+extern uint8_t g_usb_hpm_busid[2];
 
 static void usb_host_mode_init(USB_Type *ptr)
 {
@@ -47,24 +47,43 @@ static void usb_host_mode_init(USB_Type *ptr)
 void usb_hc_low_level_init(struct usbh_bus *bus)
 {
     if (bus->hcd.reg_base == HPM_USB0_BASE) {
-        _hcd_irqnum[bus->hcd.hcd_id] = IRQn_USB0;
-        _hcd_busid[0] = bus->hcd.hcd_id;
+        g_usb_hpm_busid[0] = bus->hcd.hcd_id;
+        g_usb_hpm_irq[0] = USBH_IRQHandler;
+
+        intc_m_enable_irq(IRQn_USB0);
     } else {
 #ifdef HPM_USB1_BASE
-        if (bus->hcd.reg_base == HPM_USB1_BASE) {
-            _hcd_irqnum[bus->hcd.hcd_id] = IRQn_USB1;
-            _hcd_busid[1] = bus->hcd.hcd_id;
-        }
+        g_usb_hpm_busid[1] = bus->hcd.hcd_id;
+        g_usb_hpm_irq[1] = USBH_IRQHandler;
+
+        intc_m_enable_irq(IRQn_USB1);
 #endif
     }
-
     usb_phy_init((USB_Type *)(bus->hcd.reg_base), true);
-    intc_m_enable_irq(_hcd_irqnum[bus->hcd.hcd_id]);
 }
 
 void usb_hc_low_level2_init(struct usbh_bus *bus)
 {
     usb_host_mode_init((USB_Type *)(bus->hcd.reg_base));
+}
+
+void usb_hc_low_level_deinit(struct usbh_bus *bus)
+{
+    usb_phy_deinit((USB_Type *)(bus->hcd.reg_base));
+
+    if (bus->hcd.reg_base == HPM_USB0_BASE) {
+        intc_m_disable_irq(IRQn_USB0);
+
+        g_usb_hpm_busid[0] = 0;
+        g_usb_hpm_irq[0] = NULL;
+    } else {
+#ifdef HPM_USB1_BASE
+        intc_m_disable_irq(IRQn_USB1);
+
+        g_usb_hpm_busid[1] = 0;
+        g_usb_hpm_irq[1] = NULL;
+#endif
+    }
 }
 
 uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
@@ -86,23 +105,3 @@ uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
 
     return 0;
 }
-
-#if !defined(USBH_USE_CUSTOM_ISR) || !USBH_USE_CUSTOM_ISR
-
-extern void USBH_IRQHandler(uint8_t busid);
-
-SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usbh0)
-void isr_usbh0(void)
-{
-    USBH_IRQHandler(_hcd_busid[0]);
-}
-
-#ifdef HPM_USB1_BASE
-SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbh1)
-void isr_usbh1(void)
-{
-    USBH_IRQHandler(_hcd_busid[1]);
-}
-#endif
-
-#endif

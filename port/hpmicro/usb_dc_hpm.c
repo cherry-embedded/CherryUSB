@@ -47,8 +47,9 @@ struct hpm_udc {
 static USB_NOCACHE_RAM_SECTION ATTR_ALIGN(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)
     uint8_t _dcd_data[CONFIG_USBDEV_MAX_BUS][HPM_ALIGN_UP(sizeof(dcd_data_t), USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)];
 static USB_NOCACHE_RAM_SECTION usb_device_handle_t usb_device_handle[CONFIG_USBDEV_MAX_BUS];
-static uint32_t _dcd_irqnum[CONFIG_USBDEV_MAX_BUS];
-static uint8_t _dcd_busid[CONFIG_USBDEV_MAX_BUS];
+
+extern void (*g_usb_hpm_irq[2])(uint8_t busid);
+extern uint8_t g_usb_hpm_busid[2];
 
 /* Index to bit position in register */
 static inline uint8_t ep_idx2bit(uint8_t ep_idx)
@@ -61,24 +62,48 @@ void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
     usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
 }
 
+void usb_dc_low_level_init(uint8_t busid)
+{
+    if (g_usbdev_bus[busid].reg_base == HPM_USB0_BASE) {
+        g_usb_hpm_busid[0] = busid;
+        g_usb_hpm_irq[0] = USBD_IRQHandler;
+
+        intc_m_enable_irq(IRQn_USB0);
+    } else {
+#ifdef HPM_USB1_BASE
+        g_usb_hpm_busid[1] = busid;
+        g_usb_hpm_irq[1] = USBD_IRQHandler;
+
+        intc_m_enable_irq(IRQn_USB1);
+#endif
+    }
+}
+
+void usb_dc_low_level_deinit(uint8_t busid)
+{
+    if (g_usbdev_bus[busid].reg_base == HPM_USB0_BASE) {
+        intc_m_disable_irq(IRQn_USB0);
+
+        g_usb_hpm_busid[0] = 0;
+        g_usb_hpm_irq[0] = NULL;
+    } else {
+#ifdef HPM_USB1_BASE
+        intc_m_disable_irq(IRQn_USB1);
+
+        g_usb_hpm_busid[1] = 0;
+        g_usb_hpm_irq[1] = NULL;
+#endif
+    }
+}
+
 int usb_dc_init(uint8_t busid)
 {
+    usb_dc_low_level_init(busid);
+
     memset(&g_hpm_udc[busid], 0, sizeof(struct hpm_udc));
     g_hpm_udc[busid].handle = &usb_device_handle[busid];
     g_hpm_udc[busid].handle->regs = (USB_Type *)g_usbdev_bus[busid].reg_base;
     g_hpm_udc[busid].handle->dcd_data = (dcd_data_t *)&_dcd_data[busid][0];
-
-    if (g_usbdev_bus[busid].reg_base == HPM_USB0_BASE) {
-        _dcd_irqnum[busid] = IRQn_USB0;
-        _dcd_busid[0] = busid;
-    } else {
-#ifdef HPM_USB1_BASE
-        if (g_usbdev_bus[busid].reg_base == HPM_USB1_BASE) {
-            _dcd_irqnum[busid] = IRQn_USB1;
-            _dcd_busid[1] = busid;
-        }
-#endif
-    }
 
     uint32_t int_mask;
     int_mask = (intr_usb | intr_error |intr_port_change | intr_reset | intr_suspend);
@@ -88,16 +113,13 @@ int usb_dc_init(uint8_t busid)
 #endif
 
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
-
-    intc_m_enable_irq(_dcd_irqnum[busid]);
     return 0;
 }
 
 int usb_dc_deinit(uint8_t busid)
 {
-    intc_m_disable_irq(_dcd_irqnum[busid]);
-
     usb_device_deinit(g_hpm_udc[busid].handle);
+    usb_dc_low_level_deinit(busid);
 
     return 0;
 }
@@ -357,21 +379,3 @@ void USBD_IRQHandler(uint8_t busid)
         }
     }
 }
-
-#if !defined(USBD_USE_CUSTOM_ISR) || !USBD_USE_CUSTOM_ISR
-
-SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usbd0)
-void isr_usbd0(void)
-{
-    USBD_IRQHandler(_dcd_busid[0]);
-}
-
-#ifdef HPM_USB1_BASE
-SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbd1)
-void isr_usbd1(void)
-{
-    USBD_IRQHandler(_dcd_busid[1]);
-}
-#endif
-
-#endif
