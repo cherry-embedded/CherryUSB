@@ -15,7 +15,7 @@ Q & A
 - 是否能进 USB 中断
 - 芯片是否带有 cache功能，是否做了 no cache 处理，截图
 - 硬件是否正常，是否使用杜邦线连接，如果正常，请说明正常原因
-- 打开 CONFGI_USBDEV_SETUP_LOG_PRINT，并提供 log
+- 打开 CONFIG_USBDEV_SETUP_LOG_PRINT，并提供 log
 - 是否流片并销售
 
 其余问题提问模板
@@ -26,14 +26,7 @@ Q & A
 CherryUSB 性能能到多少
 ----------------------------------------------------------------
 
-可以达到硬件极限性能，当然需要硬件理论支持到这速度，CherryUSB 就支持到这速度,举例如下：
-
-- HPM 系列(从机可以到 42MB/S, 主机 44MB/S, 已经达到硬件极限)
-- BL 系列（从机 32MB/S, 主机 25MB/S, 已经达到硬件极限）
-- STM32F4 全速（从机 900KB/S, 主机 1.12MB/S, 已经达到硬件极限）
-
-从机测速demo: cdc_acm_template.c 并且关闭 log，脚本使用 `tools/test_srcipts/test_cdc_speed.py`
-主机测速demo: usb_host.c 中 TEST_USBH_CDC_SPEED=1
+参考 :ref:`performace_show`
 
 ST IP 命名问题
 ------------------
@@ -87,3 +80,10 @@ Failed to enable port
 ----------------------------------------------------------------
 
 供电不足或者硬件 USB 电路问题
+
+移植 usb host 出现 urb  返回 -12/-14
+----------------------------------------------------------------
+
+-12 就检查 phy 配置，通信不良
+
+-14 就检查 phy 配置，cache 配置（如果有），fifo配置，寄存器地址， IP 是否真的标准等等
