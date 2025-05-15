@@ -118,3 +118,4 @@ v1.5.0
 - ch32 device iso 更新
 - cmake，kconfig 更新
 - 使用 USB_ASSERT_MSG 对部分代码检查
+- N32H4，mm32f5 支持

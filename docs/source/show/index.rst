@@ -1,3 +1,5 @@
+.. _performace_show:
+
 性能展示
 ==============================
 
@@ -14,7 +16,6 @@ CDC ACM 通信
 
 从机测速demo: cdc_acm_template.c 并且关闭 log，脚本使用 `tools/test_srcipts/test_cdc_speed.py`
 主机测速demo: usb_host.c 中 TEST_USBH_CDC_SPEED=1
-
 
 USB Device MSC
 -----------------
