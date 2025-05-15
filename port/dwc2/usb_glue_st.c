@@ -33,7 +33,7 @@ struct dwc2_instance {
 };
 
 static usb_dwc2_irq g_usb_dwc2_irq[2];
-static volatile uint8_t g_usb_dwc2_busid[2] = { 0, 0 };
+static uint8_t g_usb_dwc2_busid[2] = { 0, 0 };
 static struct dwc2_instance g_dwc2_instance;
 
 #ifdef HAL_PCD_MODULE_ENABLED
