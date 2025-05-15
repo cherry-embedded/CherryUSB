@@ -81,13 +81,13 @@ CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)     |
 |:-------------:|:--------------:|:-------------------------:|:-------------:|:----------------:|
-|usbd_core.c    |  ~6000          | (512(default) + 320) * bus        | 0     | 0               |
-|usbd_cdc_acm.c |  ~400           | 0                         | 0             | 0               |
-|usbd_msc.c     |  ~3800          | (128 + 512(default)) * bus | 16 * bus     | 0               |
-|usbd_hid.c     |  ~360           | 0                         | 0             | 0               |
-|usbd_audio.c   |  ~1500          | 0                         | 0             | 0               |
-|usbd_video.c   |  ~3700          | 0                         | 132 * bus     | 0               |
-|usbd_rndis.c   |  ~4000          | 2 * 1580(default)+156+8   | 80            | 0               |
+|usbd_core.c    |  ~6000          | (512(default) + 320) * bus | 0           | 0                |
+|usbd_cdc_acm.c |  ~400           | 0                         | 0            | 0                |
+|usbd_msc.c     |  ~3800          | (128 + 512(default)) * bus | 16 * bus    | 0                |
+|usbd_hid.c     |  ~360           | 0                         | 0            | 0                |
+|usbd_audio.c   |  ~1500          | 0                         | 0            | 0                |
+|usbd_video.c   |  ~3700          | 0                         | 132 * bus    | 0                |
+|usbd_rndis.c   |  ~4000          | 2 * 1580(default)+156+8   | 80           | 0                |
 
 ## Host 协议栈简介
 
@@ -118,17 +118,17 @@ CherryUSB Host 协议栈资源占用说明（GCC 10.2 with -O2）：
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte) |
 |:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:------------:|
-|usbh_core.c    |  ~10000(enable lsusb)/ ~7500(disable lsusb) | (512(default) + 8 * (1+x) *n) * bus     | sizeof(struct usbh_hub) * bus     | raw_config_desc |
+|usbh_core.c    |  ~10000(enable lsusb)/ ~7500(disable lsusb) | (512(default) + 8 * (1+x) *n) * bus | sizeof(struct usbh_hub) * bus     | raw_config_desc |
 |usbh_hub.c     |  ~6000          | (32 + 4 * (1+x)) * bus    | 12 + sizeof(struct usbh_hub) * x   | 0            |
-|usbh_cdc_acm.c |  ~900           | 7 * x            | 4  + sizeof(struct usbh_cdc_acm) * x          | 0            |
-|usbh_msc.c     |  ~3400          | 128 * x            | 4  + sizeof(struct usbh_msc) * x              | 0            |
-|usbh_hid.c     |  ~1400          | 64 * x           | 4  + sizeof(struct usbh_hid) * x              | 0            |
-|usbh_video.c   |  ~5700          | 128 * x           | 4  + sizeof(struct usbh_video) * x            | 0            |
-|usbh_audio.c   |  ~8400          | 128 * x           | 4  + sizeof(struct usbh_audio) * x            | 0            |
-|usbh_rndis.c   |  ~5200          | 512 + 2 * 2048(default)| sizeof(struct usbh_rndis) * 1       | 0            |
-|usbh_cdc_ecm.c |  ~2200          | 2 * 1514 + 16           | sizeof(struct usbh_cdc_ecm) * 1     | 0            |
-|usbh_cdc_ncm.c |  ~3500          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1  | 0         |
-|usbh_bluetooth.c |  ~1000        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1       | 0            |
+|usbh_cdc_acm.c |  ~900           | 7 * x            | 4  + sizeof(struct usbh_cdc_acm) * x        | 0            |
+|usbh_msc.c     |  ~3400          | 128 * x            | 4  + sizeof(struct usbh_msc) * x          | 0            |
+|usbh_hid.c     |  ~1400          | 64 * x           | 4  + sizeof(struct usbh_hid) * x            | 0            |
+|usbh_video.c   |  ~5700          | 128 * x           | 4  + sizeof(struct usbh_video) * x         | 0            |
+|usbh_audio.c   |  ~8400          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0            |
+|usbh_rndis.c   |  ~5200          | 512 + 2 * 2048(default)| sizeof(struct usbh_rndis) * 1         | 0            |
+|usbh_cdc_ecm.c |  ~2200          | 2 * 1514 + 16           | sizeof(struct usbh_cdc_ecm) * 1      | 0            |
+|usbh_cdc_ncm.c |  ~3500          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1 | 0           |
+|usbh_bluetooth.c |  ~1000        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1        | 0            |
 
 其中，`sizeof(struct usbh_hub)` 和 `sizeof(struct usbh_hubport)` 受以下宏影响：
 
@@ -185,8 +185,7 @@ TODO
 |   Manufacturer       |  CHIP or Series    | USB IP| Repo Url | Support version     | Support status |
 |:--------------------:|:------------------:|:-----:|:--------:|:------------------:|:-------------:|
 |Bouffalolab    |  BL702/BL616/BL808 | bouffalolab/ehci|[bouffalo_sdk](https://github.com/CherryUSB/bouffalo_sdk)|<= latest | Long-term |
-|ST             |  STM32F1x | fsdev |[stm32_repo](https://github.com/CherryUSB/cherryusb_stm32)|<= latest | Long-term |
-|ST             |  STM32F4/STM32H7 | dwc2 |[stm32_repo](https://github.com/CherryUSB/cherryusb_stm32)|<= latest | Long-term |
+|ST             |  STM32F1x/STM32F4/STM32H7 | fsdev/dwc2 |[stm32_repo](https://github.com/CherryUSB/cherryusb_stm32)|<= latest | Long-term |
 |HPMicro        |  HPM6000/HPM5000 | hpm/ehci |[hpm_sdk](https://github.com/CherryUSB/hpm_sdk)|<= latest | Long-term |
 |Essemi         |  ES32F36xx | musb |[es32f369_repo](https://github.com/CherryUSB/cherryusb_es32)|<= latest | Long-term |
 |Phytium        |  e2000 | pusb2/xhci |[phytium_repo](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk)|>=1.4.0  | Long-term |
