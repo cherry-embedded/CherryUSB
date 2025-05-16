@@ -852,10 +852,10 @@ int usb_hc_init(struct usbh_bus *bus)
         }
     }
 
-    usb_hc_low_level2_init(bus);
-
     EHCI_HCOR->usbintr = 0;
     EHCI_HCOR->usbsts = EHCI_HCOR->usbsts;
+
+    usb_hc_low_level2_init(bus);
 
     /* Set the Current Asynchronous List Address. */
     EHCI_HCOR->asynclistaddr = EHCI_PTR2ADDR(&g_async_qh_head[bus->hcd.hcd_id]);

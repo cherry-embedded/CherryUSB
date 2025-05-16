@@ -2,4 +2,4 @@
 
 ## Support Chip List
 
-- HPM all series (hpmicro + EHCI)
+- HPM all series (HPMicro + EHCI)
