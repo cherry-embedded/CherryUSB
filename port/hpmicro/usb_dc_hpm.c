@@ -6,6 +6,7 @@
  */
 #include "usbd_core.h"
 #include "hpm_usb_device.h"
+#include "usb_glue_hpm.h"
 
 #ifndef USB_NUM_BIDIR_ENDPOINTS
 #define USB_NUM_BIDIR_ENDPOINTS CONFIG_USBDEV_EP_NUM
@@ -48,47 +49,39 @@ static USB_NOCACHE_RAM_SECTION ATTR_ALIGN(USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT
     uint8_t _dcd_data[CONFIG_USBDEV_MAX_BUS][HPM_ALIGN_UP(sizeof(dcd_data_t), USB_SOC_DCD_DATA_RAM_ADDRESS_ALIGNMENT)];
 static USB_NOCACHE_RAM_SECTION usb_device_handle_t usb_device_handle[CONFIG_USBDEV_MAX_BUS];
 
-extern void (*g_usb_hpm_irq[2])(uint8_t busid);
-extern uint8_t g_usb_hpm_busid[2];
-
 /* Index to bit position in register */
 static inline uint8_t ep_idx2bit(uint8_t ep_idx)
 {
     return ep_idx / 2 + ((ep_idx % 2) ? 16 : 0);
 }
 
-void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
-{
-    usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
-}
-
-void usb_dc_low_level_init(uint8_t busid)
+static void usb_dc_isr_connect(uint8_t busid)
 {
     if (g_usbdev_bus[busid].reg_base == HPM_USB0_BASE) {
         g_usb_hpm_busid[0] = busid;
         g_usb_hpm_irq[0] = USBD_IRQHandler;
 
-        intc_m_enable_irq(IRQn_USB0);
+        hpm_usb_isr_enable(HPM_USB0_BASE);
     } else {
 #ifdef HPM_USB1_BASE
         g_usb_hpm_busid[1] = busid;
         g_usb_hpm_irq[1] = USBD_IRQHandler;
 
-        intc_m_enable_irq(IRQn_USB1);
+        hpm_usb_isr_enable(HPM_USB1_BASE);
 #endif
     }
 }
 
-void usb_dc_low_level_deinit(uint8_t busid)
+static void usb_dc_isr_disconnect(uint8_t busid)
 {
     if (g_usbdev_bus[busid].reg_base == HPM_USB0_BASE) {
-        intc_m_disable_irq(IRQn_USB0);
+        hpm_usb_isr_disable(HPM_USB0_BASE);
 
         g_usb_hpm_busid[0] = 0;
         g_usb_hpm_irq[0] = NULL;
     } else {
 #ifdef HPM_USB1_BASE
-        intc_m_disable_irq(IRQn_USB1);
+        hpm_usb_isr_disable(HPM_USB1_BASE);
 
         g_usb_hpm_busid[1] = 0;
         g_usb_hpm_irq[1] = NULL;
@@ -98,8 +91,6 @@ void usb_dc_low_level_deinit(uint8_t busid)
 
 int usb_dc_init(uint8_t busid)
 {
-    usb_dc_low_level_init(busid);
-
     memset(&g_hpm_udc[busid], 0, sizeof(struct hpm_udc));
     g_hpm_udc[busid].handle = &usb_device_handle[busid];
     g_hpm_udc[busid].handle->regs = (USB_Type *)g_usbdev_bus[busid].reg_base;
@@ -113,13 +104,17 @@ int usb_dc_init(uint8_t busid)
 #endif
 
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
+
+    usb_dc_isr_connect(busid);
+
     return 0;
 }
 
 int usb_dc_deinit(uint8_t busid)
 {
+    usb_dc_isr_disconnect(busid);
+
     usb_device_deinit(g_hpm_udc[busid].handle);
-    usb_dc_low_level_deinit(busid);
 
     return 0;
 }
@@ -144,6 +139,11 @@ int usbd_set_remote_wakeup(uint8_t busid)
     usb_force_port_resume(ptr);
 
     return 0;
+}
+
+void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
+{
+    usb_set_port_test_mode(g_hpm_udc[busid].handle->regs, test_mode);
 }
 
 uint8_t usbd_get_port_speed(uint8_t busid)

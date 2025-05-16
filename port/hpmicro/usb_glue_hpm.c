@@ -8,17 +8,43 @@
 #include "hpm_soc.h"
 
 void (*g_usb_hpm_irq[2])(uint8_t busid);
-uint8_t g_usb_hpm_busid[2] = { 0, 0 };
+uint8_t g_usb_hpm_busid[2];
 
-SDK_DECLARE_EXT_ISR_M(IRQn_USB0, isr_usbh0)
-void isr_usbh0(void)
+ATTR_WEAK void hpm_usb_isr_enable(uint32_t base)
+{
+    if (base == HPM_USB0_BASE) {
+        intc_m_enable_irq(IRQn_USB0); 
+    } else {
+#ifdef HPM_USB1_BASE
+        intc_m_enable_irq(IRQn_USB1);
+#endif
+    }
+}
+
+ATTR_WEAK void hpm_usb_isr_disable(uint32_t base)
+{
+    if (base == HPM_USB0_BASE) {
+        intc_m_disable_irq(IRQn_USB0); 
+    } else {
+#ifdef HPM_USB1_BASE
+        intc_m_disable_irq(IRQn_USB1);
+#endif
+    }
+}
+
+#ifndef CONFIG_CHERRYUSB_CUSTOM_IRQ_HANDLER
+SDK_DECLARE_EXT_ISR_M(IRQn_USB0, hpm_isr_usb0)
+#endif
+void hpm_isr_usb0(void)
 {
     g_usb_hpm_irq[0](g_usb_hpm_busid[0]);
 }
 
 #ifdef HPM_USB1_BASE
-SDK_DECLARE_EXT_ISR_M(IRQn_USB1, isr_usbh1)
-void isr_usbh1(void)
+#ifndef CONFIG_CHERRYUSB_CUSTOM_IRQ_HANDLER
+SDK_DECLARE_EXT_ISR_M(IRQn_USB1, hpm_isr_usb1)
+#endif
+void hpm_isr_usb1(void)
 {
     g_usb_hpm_irq[1](g_usb_hpm_busid[1]);
 }
