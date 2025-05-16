@@ -46,6 +46,13 @@ static void usb_host_mode_init(USB_Type *ptr)
 
 void usb_hc_low_level_init(struct usbh_bus *bus)
 {
+    usb_phy_init((USB_Type *)(bus->hcd.reg_base), true);
+}
+
+void usb_hc_low_level2_init(struct usbh_bus *bus)
+{
+    usb_host_mode_init((USB_Type *)(bus->hcd.reg_base));
+
     if (bus->hcd.reg_base == HPM_USB0_BASE) {
         g_usb_hpm_busid[0] = bus->hcd.hcd_id;
         g_usb_hpm_irq[0] = USBH_IRQHandler;
@@ -59,12 +66,6 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
         intc_m_enable_irq(IRQn_USB1);
 #endif
     }
-    usb_phy_init((USB_Type *)(bus->hcd.reg_base), true);
-}
-
-void usb_hc_low_level2_init(struct usbh_bus *bus)
-{
-    usb_host_mode_init((USB_Type *)(bus->hcd.reg_base));
 }
 
 void usb_hc_low_level_deinit(struct usbh_bus *bus)
