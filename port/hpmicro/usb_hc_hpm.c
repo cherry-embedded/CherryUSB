@@ -8,6 +8,7 @@
 #include "hpm_common.h"
 #include "hpm_soc.h"
 #include "hpm_usb_drv.h"
+#include "usb_glue_hpm.h"
 
 #if !defined(CONFIG_USB_EHCI_HPMICRO) || !CONFIG_USB_EHCI_HPMICRO
 #error "hpm ehci must set CONFIG_USB_EHCI_HPMICRO=1"
@@ -46,25 +47,26 @@ static void usb_host_mode_init(USB_Type *ptr)
 
 void usb_hc_low_level_init(struct usbh_bus *bus)
 {
-    if (bus->hcd.reg_base == HPM_USB0_BASE) {
-        g_usb_hpm_busid[0] = bus->hcd.hcd_id;
-        g_usb_hpm_irq[0] = USBH_IRQHandler;
-
-        intc_m_enable_irq(IRQn_USB0);
-    } else {
-#ifdef HPM_USB1_BASE
-        g_usb_hpm_busid[1] = bus->hcd.hcd_id;
-        g_usb_hpm_irq[1] = USBH_IRQHandler;
-
-        intc_m_enable_irq(IRQn_USB1);
-#endif
-    }
     usb_phy_init((USB_Type *)(bus->hcd.reg_base), true);
 }
 
 void usb_hc_low_level2_init(struct usbh_bus *bus)
 {
     usb_host_mode_init((USB_Type *)(bus->hcd.reg_base));
+
+    if (bus->hcd.reg_base == HPM_USB0_BASE) {
+        g_usb_hpm_busid[0] = bus->hcd.hcd_id;
+        g_usb_hpm_irq[0] = USBH_IRQHandler;
+
+        hpm_usb_isr_enable(HPM_USB0_BASE);
+    } else {
+#ifdef HPM_USB1_BASE
+        g_usb_hpm_busid[1] = bus->hcd.hcd_id;
+        g_usb_hpm_irq[1] = USBH_IRQHandler;
+
+        hpm_usb_isr_enable(HPM_USB1_BASE);
+#endif
+    }
 }
 
 void usb_hc_low_level_deinit(struct usbh_bus *bus)
@@ -72,13 +74,13 @@ void usb_hc_low_level_deinit(struct usbh_bus *bus)
     usb_phy_deinit((USB_Type *)(bus->hcd.reg_base));
 
     if (bus->hcd.reg_base == HPM_USB0_BASE) {
-        intc_m_disable_irq(IRQn_USB0);
+        hpm_usb_isr_disable(HPM_USB0_BASE);
 
         g_usb_hpm_busid[0] = 0;
         g_usb_hpm_irq[0] = NULL;
     } else {
 #ifdef HPM_USB1_BASE
-        intc_m_disable_irq(IRQn_USB1);
+        hpm_usb_isr_disable(HPM_USB1_BASE);
 
         g_usb_hpm_busid[1] = 0;
         g_usb_hpm_irq[1] = NULL;
