@@ -272,3 +272,5 @@
 #else
 #error "Unsupported SoC"
 #endif
+
+#define CONFIG_USBDEV_ADVANCE_DESC

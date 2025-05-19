@@ -60,7 +60,7 @@
 // #define CONFIG_USBDEV_TEST_MODE
 
 /* enable advance desc register api */
-// CONFIG_USBDEV_ADVANCE_DESC
+#define CONFIG_USBDEV_ADVANCE_DESC
 
 /* move ep0 setup handler from isr to thread */
 // #define CONFIG_USBDEV_EP0_THREAD
