@@ -140,7 +140,7 @@
 
 .. figure:: img/stm32_init2.png
 
-.. note :: 下面步骤从 V1.4.4 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
+.. note :: 下面步骤从 V1.5.0 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
 
 - 将 `stm32xxxx_hal_msp.c` 中的 `HAL_PCD_MspInit` 或者是 `HAL_HCD_MspInit` 中的内容复制到 `usb_dc_low_level_init` 和 `usb_hc_low_level_init` 函数中，举例如下：
 
