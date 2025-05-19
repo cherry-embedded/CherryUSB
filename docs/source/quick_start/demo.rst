@@ -154,7 +154,7 @@ USB Device 移植要点
     #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
     #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
 
-- 如果使用 fsdev ip，（V1.4.4 开始需要增加 **fsdev/usb_glue_st.c**） 在 `usb_config.h` 中实现以下宏：
+- 如果使用 fsdev ip，（V1.5.0 开始需要增加 **fsdev/usb_glue_st.c**） 在 `usb_config.h` 中实现以下宏：
 
 .. code-block:: C
 
@@ -166,7 +166,7 @@ USB Device 移植要点
 .. figure:: img/stm32_10.png
 .. figure:: img/stm32_11.png
 
-.. note :: 以下两个步骤从 V1.4.4 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
+.. note :: 以下两个步骤从 V1.5.0 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
 
 - 拷贝 **xxx_msp.c** 中的 **HAL_PCD_MspInit** 函数中的内容到 **usb_dc_low_level_init** 函数中，屏蔽 st 生成的 usb 初始化
 
@@ -208,7 +208,7 @@ USB Host 移植要点
     #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
     #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
 
-.. note :: 以下两个步骤从 V1.4.4 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
+.. note :: 以下两个步骤从 V1.5.0 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
 
 - 拷贝 **xxx_msp.c** 中的 `HAL_HCD_MspInit` 函数中的内容到 `usb_hc_low_level_init` 函数中，屏蔽 st 生成的 usb 初始化
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
