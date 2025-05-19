@@ -149,7 +149,6 @@ int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 {
     struct k_msgq *msgq;
-    char *buffer;
 
     msgq = k_malloc(sizeof(struct k_msgq));
     if (msgq == NULL) {
