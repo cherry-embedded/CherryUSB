@@ -106,6 +106,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/pusb2']
             LIBS = ['libpusb2_dc_a32_softfp_neon.a']
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_NRF5X']):
+        src += Glob('port/nrf5x/usb_dc_nrf5x.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc_acm.c')
@@ -123,7 +125,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/cdc/usbd_cdc_ecm.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_NCM']):
         src += Glob('class/cdc/usbd_cdc_ncm.c')
-    if GetDepend(['PKG_CHERRYUSB_USING_DFU']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DFU']):
         src += Glob('class/dfu/usbd_dfu.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM']):
