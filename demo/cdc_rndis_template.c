@@ -249,7 +249,8 @@ void rndis_lwip_init(void)
 
     eth_device_init(&rndis_dev, "u0");
 
-    eth_device_linkchange(&rndis_dev, RT_FALSE);
+    eth_device_linkchange(&rndis_dev, RT_TRUE);
+    dhcpd_start("u0");
 }
 
 void usbd_rndis_data_recv_done(uint32_t len)
@@ -412,10 +413,6 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
-#ifdef RT_USING_LWIP
-            eth_device_linkchange(&rndis_dev, RT_TRUE);
-            dhcpd_start("u0");
-#endif
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -439,7 +436,7 @@ void cdc_rndis_init(uint8_t busid, uintptr_t reg_base)
 #else
     usbd_desc_register(busid, cdc_rndis_descriptor);
 #endif
-    usbd_add_interface(busid, usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
-    usbd_add_interface(busid, usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, mac));
+    usbd_add_interface(busid, usbd_rndis_init_intf(&intf0, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, (uint8_t *)mac));
+    usbd_add_interface(busid, usbd_rndis_init_intf(&intf1, CDC_OUT_EP, CDC_IN_EP, CDC_INT_EP, (uint8_t *)mac));
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
