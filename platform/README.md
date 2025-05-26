@@ -5,7 +5,8 @@ This is a platform support for other opensource projects.
 
 ## Fatfs
 
-Fatfs support with usb host msc.
+- Fatfs support with usb host msc.
+- Fatfs support with usb device mtp.
 
 ## lwip
 

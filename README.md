@@ -71,6 +71,7 @@ CherryUSB Device Stack has the following functions:
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
 - Support Remote NDIS (RNDIS)
+- Support Media Transfer Protocol (MTP)
 - Support WINUSB1.0, WINUSB2.0, WEBUSB, BOS
 - Support Vendor class
 - Support UF2
@@ -88,6 +89,7 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2):
 |usbd_audio.c   |  ~1500          | 0                         | 0            | 0                |
 |usbd_video.c   |  ~3700          | 0                         | 132 * bus    | 0                |
 |usbd_rndis.c   |  ~4000          | 2 * 1580(default)+156+8   | 80           | 0                |
+|usbd_mtp.c     |  ~9000          | 2048(default)+128         | sizeof(struct mtp_object) * n| 0 |
 
 ## Host Stack Overview
 

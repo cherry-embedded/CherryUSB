@@ -20,7 +20,10 @@
 
 - 主机 UVC & UAC 类 MUSB IP 中 ISO 驱动和 UAC/UVC 框架, MUSB 需要为 mentor 公司制定的标准 IP
 
-- 主从机 MTP 类驱动
+- 从机 MTP 类驱动, 支持多文件和多文件夹
+
+.. figure:: img/mtpdev.png
+
 - USB 网卡类高性能版本优化,包含 CDC-NCM, CDC-RNDIS, 私有类驱动（支持多包发送和接收），下面举例 RNDIS
 
 .. figure:: img/rndistx.png

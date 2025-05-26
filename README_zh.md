@@ -71,6 +71,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 Device Firmware Upgrade CLASS (DFU)
 - 支持 USB MIDI CLASS (MIDI)
 - 支持 Remote NDIS (RNDIS)
+- 支持 Media Transfer Protocol (MTP)
 - 支持 WINUSB1.0、WINUSB2.0、WEBUSB、BOS
 - 支持 Vendor 类 class
 - 支持 UF2
@@ -88,6 +89,7 @@ CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 |usbd_audio.c   |  ~1500          | 0                         | 0            | 0                |
 |usbd_video.c   |  ~3700          | 0                         | 132 * bus    | 0                |
 |usbd_rndis.c   |  ~4000          | 2 * 1580(default)+156+8   | 80           | 0                |
+|usbd_mtp.c     |  ~9000          | 2048(default)+128         | sizeof(struct mtp_object) * n| 0 |
 
 ## Host 协议栈简介
 

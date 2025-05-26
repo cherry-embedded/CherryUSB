@@ -119,6 +119,11 @@ if PKG_USING_CHERRYUSB
             prompt "Enable usb cdc ncm device"
             default n
 
+        config PKG_CHERRYUSB_DEVICE_MTP
+            bool
+            prompt "Enable usb mtp device, it is commercial charge"
+            default n
+
         config PKG_CHERRYUSB_DEVICE_DFU
             bool
             prompt "Enable usb dfu device"
