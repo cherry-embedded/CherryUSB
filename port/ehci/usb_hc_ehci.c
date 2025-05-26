@@ -58,6 +58,8 @@ static void ehci_qtd_free(struct usbh_bus *bus, struct ehci_qtd_hw *qtd)
 {
     size_t flags;
 
+    (void)bus;
+
     flags = usb_osal_enter_critical_section();
     qtd->inuse = false;
     qtd->urb = NULL;
