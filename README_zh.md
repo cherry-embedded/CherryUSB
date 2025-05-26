@@ -89,6 +89,7 @@ CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 |usbd_audio.c   |  ~1500          | 0                         | 0            | 0                |
 |usbd_video.c   |  ~3700          | 0                         | 132 * bus    | 0                |
 |usbd_rndis.c   |  ~4000          | 2 * 1580(default)+156+8   | 80           | 0                |
+|usbd_cdc_ecm.c |  ~1200          | 2 * 1514(default)+16      | 42           | 0                |
 |usbd_mtp.c     |  ~9000          | 2048(default)+128         | sizeof(struct mtp_object) * n| 0 |
 
 ## Host 协议栈简介

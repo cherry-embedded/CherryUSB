@@ -119,3 +119,4 @@ v1.5.0
 - cmake，kconfig 更新
 - 使用 USB_ASSERT_MSG 对部分代码检查
 - N32H4，mm32f5 支持
+- **重构 device mtp 驱动（收费使用）**
