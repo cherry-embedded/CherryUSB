@@ -1,18 +1,16 @@
 /*
- * Copyright (c) 2025 sakumisu
+ * Copyright (c) 2025, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
-
 #include "ff.h"
 #include "diskio.h"
 #include "usbd_core.h"
+#include "usb_osal.h"
 #include "usbd_mtp.h"
 
 FATFS s_sd_disk;
 FIL s_file;
-DIR s_dir;
 BYTE work[FF_MAX_SS];
 
 const TCHAR driver_num_buf[4] = { '0', ':', '/', '\0' };
@@ -172,13 +170,29 @@ int usbd_mtp_rmdir(const char *path)
 
 MTP_DIR *usbd_mtp_opendir(const char *name)
 {
-    f_opendir(&s_dir, name);
-    return (MTP_DIR *)&s_dir;
+    FRESULT result;
+    DIR *dir;
+
+    dir = usb_osal_malloc(sizeof(DIR));
+    result = f_opendir(dir, name);
+    if (result != FR_OK) {
+        printf("f_opendir failed, cause: %s\n", show_error_string(result));
+        usb_osal_free(dir);
+        return NULL; // Failed to open directory
+    }
+    return (MTP_DIR *)dir;
 }
 
 int usbd_mtp_closedir(MTP_DIR *dir)
 {
-    return f_closedir((DIR *)dir);
+    FRESULT result;
+    result = f_closedir((DIR *)dir);
+    if (result != FR_OK) {
+        printf("f_closedir failed, cause: %s\n", show_error_string(result));
+        return -1; // Failed to close directory
+    }
+    usb_osal_free(dir); // Free the directory structure
+    return result;
 }
 
 struct mtp_dirent *usbd_mtp_readdir(MTP_DIR *dir)
