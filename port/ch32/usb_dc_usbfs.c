@@ -266,6 +266,9 @@ void USBD_IRQHandler(uint8_t busid)
     if (intflag & USBFS_UIF_TRANSFER) {
         token = USBFS_DEVICE->INT_ST & USBFS_UIS_TOKEN_MASK;
         ep_idx = USBFS_DEVICE->INT_ST & USBFS_UIS_ENDP_MASK;
+
+        USBFS_DEVICE->INT_FG = USBFS_UIF_TRANSFER;
+
         switch (token) {
             case USBFS_UIS_TOKEN_SETUP:
                 USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK);
@@ -371,8 +374,9 @@ void USBD_IRQHandler(uint8_t busid)
                 break;
         }
 
-        USBFS_DEVICE->INT_FG = USBFS_UIF_TRANSFER;
     } else if (intflag & USBFS_UIF_BUS_RST) {
+        USBFS_DEVICE->INT_FG = USBFS_UIF_BUS_RST;
+
         USBFS_DEVICE->UEP0_TX_LEN = 0;
         USBFS_DEVICE->UEP0_TX_CTRL = USBFS_UEP_T_RES_NAK;
         USBFS_DEVICE->UEP0_RX_CTRL = USBFS_UEP_R_RES_NAK;
@@ -390,8 +394,6 @@ void USBD_IRQHandler(uint8_t busid)
         usbd_event_reset_handler(0);
         USB_SET_DMA(ep_idx, (uint32_t)&g_ch32_usbfs_udc.setup);
         USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_ACK);
-
-        USBFS_DEVICE->INT_FG |= USBFS_UIF_BUS_RST;
     } else if (intflag & USBFS_UIF_SUSPEND) {
         if (USBFS_DEVICE->MIS_ST & USBFS_UMS_SUSPEND) {
         } else {
