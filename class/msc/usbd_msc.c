@@ -807,7 +807,9 @@ static bool SCSI_CBWDecode(uint8_t busid, uint32_t nbytes)
                 //ret = SCSI_verify10(NULL, 0);
                 ret = false;
                 break;
-
+            case SCSI_CMD_SYNCHCACHE10:
+                ret = true;
+                break;
             default:
                 SCSI_SetSenseData(busid, SCSI_KCQIR_INVALIDCOMMAND);
                 USB_LOG_WRN("unsupported cmd:0x%02x\r\n", g_usbd_msc[busid].cbw.CB[0]);
