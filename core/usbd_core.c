@@ -1123,6 +1123,7 @@ void usbd_event_connect_handler(uint8_t busid)
 
 void usbd_event_disconnect_handler(uint8_t busid)
 {
+    g_usbd_core[busid].configuration = 0;
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_DISCONNECTED);
 }
 
