@@ -45,13 +45,11 @@ demo 包含 **video_static_yuyv_template**, **video_static_mjpeg_template**, **v
     USB_ENDPOINT_DESCRIPTOR_INIT(VIDEO_IN_EP, 0x05, VIDEO_PACKET_SIZE, 0x01),
 
 
-- 使用 `usbd_video_stream_start_write` 传输数据
+- 使用 `usbd_video_stream_start_write` 传输数据, 最后 **do_copy** 选项表示是否将数据 copy 到 packet_buffer,
+如果不选择 copy， 则会直接在原图像数据中填充头部信息，并直接发送，达到 zero copy 功能。
 
-1，传输采用双缓冲的形式， **MAX_PACKETS_IN_ONE_TRANSFER** 表示一次传输可以携带多少个 **MAX_PAYLOAD_SIZE**，通常 IP 只能为 1。
+- 因为提供的是静态数据，不能被修改，因此需要重新给一个 frame_buffer 用于图像传输，在实际对接 camera 场景中是动态数据，直接使用 camera 的数据缓冲区即可。
 
-2，在中断完成中，调用 `usbd_video_stream_split_transfer` 继续下一次传输，直到返回为 true 表示传输完成。这边的分裂传输只是表示将图片数据拆成 **MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE** 份传输。
-
-3，通常 IP 不支持一次传输非常大的数据，比如传输 1MB，因此需要做分裂传输，但是会增加中断次数。并且一次传输非常大数据也是需要足够的 RAM。
 
 .. code-block:: C
 
@@ -63,7 +61,8 @@ demo 包含 **video_static_yuyv_template**, **video_static_mjpeg_template**, **v
         }
     }
 
-    USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[2][MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE];
+    USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t packet_buffer[MAX_PAYLOAD_SIZE];
+    USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t frame_buffer[32 * 1024];
 
     void video_test(uint8_t busid)
     {
@@ -72,7 +71,8 @@ demo 包含 **video_static_yuyv_template**, **video_static_mjpeg_template**, **v
         while (1) {
             if (tx_flag) {
                 iso_tx_busy = true;
-                usbd_video_stream_start_write(busid, VIDEO_IN_EP, &packet_buffer[0][0], &packet_buffer[1][0], MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE, (uint8_t *)cherryusb_mjpeg, sizeof(cherryusb_mjpeg));
+                memcpy(frame_buffer, cherryusb_mjpeg, sizeof(cherryusb_mjpeg)); // cherryusb_mjpeg is a static MJPEG frame buffer, so we need copy it to frame_buffer
+                usbd_video_stream_start_write(busid, VIDEO_IN_EP, packet_buffer, (uint8_t *)frame_buffer, sizeof(cherryusb_mjpeg), false);
                 while (iso_tx_busy) {
                     if (tx_flag == 0) {
                         break;
