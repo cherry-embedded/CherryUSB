@@ -82,14 +82,14 @@ CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)     |
 |:-------------:|:--------------:|:-------------------------:|:-------------:|:----------------:|
-|usbd_core.c    |  ~6000          | (512(default) + 320) * bus | 0           | 0                |
-|usbd_cdc_acm.c |  ~400           | 0                         | 0            | 0                |
-|usbd_msc.c     |  ~3800          | (128 + 512(default)) * bus | 16 * bus    | 0                |
-|usbd_hid.c     |  ~360           | 0                         | 0            | 0                |
-|usbd_audio.c   |  ~1500          | 0                         | 0            | 0                |
-|usbd_video.c   |  ~3700          | 0                         | 132 * bus    | 0                |
-|usbd_rndis.c   |  ~4000          | 2 * 1580(default)+156+8   | 80           | 0                |
-|usbd_cdc_ecm.c |  ~1200          | 2 * 1514(default)+16      | 42           | 0                |
+|usbd_core.c    |  ~4500          | (512(default) + 320) * bus | 0           | 0                |
+|usbd_cdc_acm.c |  ~900           | 0                         | 0            | 0                |
+|usbd_msc.c     |  ~5000          | (128 + 512(default)) * bus | 16 * bus    | 0                |
+|usbd_hid.c     |  ~300           | 0                         | 0            | 0                |
+|usbd_audio.c   |  ~4000          | 0                         | 0            | 0                |
+|usbd_video.c   |  ~7000          | 0                         | 132 * bus    | 0                |
+|usbd_rndis.c   |  ~2500          | 2 * 1580(default)+156+8   | 80           | 0                |
+|usbd_cdc_ecm.c |  ~900           | 2 * 1514(default)+16      | 42           | 0                |
 |usbd_mtp.c     |  ~9000          | 2048(default)+128         | sizeof(struct mtp_object) * n| 0 |
 
 ## Host 协议栈简介
@@ -117,21 +117,23 @@ CherryUSB Host 协议栈当前实现以下功能：
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
-CherryUSB Host 协议栈资源占用说明（GCC 10.2 with -O2）：
+CherryUSB Host 协议栈资源占用说明（GCC 10.2 with -O2，关闭 log）：
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte) |
 |:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:------------:|
-|usbh_core.c    |  ~10000(enable lsusb)/ ~7500(disable lsusb) | (512(default) + 8 * (1+x) *n) * bus | sizeof(struct usbh_hub) * bus     | raw_config_desc |
-|usbh_hub.c     |  ~6000          | (32 + 4 * (1+x)) * bus    | 12 + sizeof(struct usbh_hub) * x   | 0            |
-|usbh_cdc_acm.c |  ~900           | 7 * x            | 4  + sizeof(struct usbh_cdc_acm) * x        | 0            |
-|usbh_msc.c     |  ~3400          | 128 * x            | 4  + sizeof(struct usbh_msc) * x          | 0            |
-|usbh_hid.c     |  ~1400          | 64 * x           | 4  + sizeof(struct usbh_hid) * x            | 0            |
-|usbh_video.c   |  ~5700          | 128 * x           | 4  + sizeof(struct usbh_video) * x         | 0            |
-|usbh_audio.c   |  ~8400          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0            |
-|usbh_rndis.c   |  ~5200          | 512 + 2 * 2048(default)| sizeof(struct usbh_rndis) * 1         | 0            |
-|usbh_cdc_ecm.c |  ~2200          | 2 * 1514 + 16           | sizeof(struct usbh_cdc_ecm) * 1      | 0            |
-|usbh_cdc_ncm.c |  ~3500          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1 | 0           |
-|usbh_bluetooth.c |  ~1000        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1        | 0            |
+|usbh_core.c    |  ~4500 | (512(default) + 8 * (1+x) *n) * bus | sizeof(struct usbh_hub) * bus     | raw_config_desc |
+|usbh_hub.c     |  ~3500          | (32 + 4 * (1+x)) * bus    | 12 + sizeof(struct usbh_hub) * x   | 0          |
+|usbh_cdc_acm.c |  ~600           | 7 * x            | 4  + sizeof(struct usbh_cdc_acm) * x        | 0          |
+|usbh_msc.c     |  ~2000          | 128 * x            | 4  + sizeof(struct usbh_msc) * x          | 0          |
+|usbh_hid.c     |  ~800           | 64 * x           | 4  + sizeof(struct usbh_hid) * x            | 0          |
+|usbh_video.c   |  ~5000          | 128 * x           | 4  + sizeof(struct usbh_video) * x         | 0          |
+|usbh_audio.c   |  ~4000          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0          |
+|usbh_rndis.c   |  ~3000          | 512 + 2 * 2048(default)| sizeof(struct usbh_rndis) * 1         | 0          |
+|usbh_cdc_ecm.c |  ~1500          | 2 * 1514 + 16           | sizeof(struct usbh_cdc_ecm) * 1      | 0          |
+|usbh_cdc_ncm.c |  ~2000          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1| 0          |
+|usbh_bluetooth.c |  ~1000        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1        | 0          |
+|usbh_asix.c    |  ~7000          | 2 * 2048(default) + 16 + 32  | sizeof(struct usbh_asix) * 1    | 0          |
+|usbh_rtl8152.c |  ~9000          | 16K+ 2K(default) + 2 + 32 | sizeof(struct usbh_rtl8152) * 1    | 0          |
 
 其中，`sizeof(struct usbh_hub)` 和 `sizeof(struct usbh_hubport)` 受以下宏影响：
 
