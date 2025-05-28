@@ -304,7 +304,7 @@ static void usb_qtd_init(dcd_qtd_t *p_qtd, void *data_ptr, uint16_t total_bytes)
     if (data_ptr != NULL) {
         p_qtd->buffer[0] = (uint32_t)data_ptr;
         for (uint8_t i = 1; i < 5; i++) {
-            p_qtd->buffer[i] |= ((p_qtd->buffer[i - 1]) & 0xFFFFF000UL) + 4096U;
+            p_qtd->buffer[i] = ((p_qtd->buffer[i - 1]) & 0xFFFFF000UL) + 4096U;
         }
     }
 }
