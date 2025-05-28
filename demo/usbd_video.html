@@ -200,11 +200,12 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>使用 <cite>usbd_video_stream_start_write</cite> 传输数据</p></li>
+<li><p>使用 <cite>usbd_video_stream_start_write</cite> 传输数据, 最后 <strong>do_copy</strong> 选项表示是否将数据 copy 到 packet_buffer,</p></li>
 </ul>
-<p>1，传输采用双缓冲的形式， <strong>MAX_PACKETS_IN_ONE_TRANSFER</strong> 表示一次传输可以携带多少个 <strong>MAX_PAYLOAD_SIZE</strong>，通常 IP 只能为 1。</p>
-<p>2，在中断完成中，调用 <cite>usbd_video_stream_split_transfer</cite> 继续下一次传输，直到返回为 true 表示传输完成。这边的分裂传输只是表示将图片数据拆成 <strong>MAX_PACKETS_IN_ONE_TRANSFER * MAX_PAYLOAD_SIZE</strong> 份传输。</p>
-<p>3，通常 IP 不支持一次传输非常大的数据，比如传输 1MB，因此需要做分裂传输，但是会增加中断次数。并且一次传输非常大数据也是需要足够的 RAM。</p>
+<p>如果不选择 copy， 则会直接在原图像数据中填充头部信息，并直接发送，达到 zero copy 功能。</p>
+<ul class="simple">
+<li><p>因为提供的是静态数据，不能被修改，因此需要重新给一个 frame_buffer 用于图像传输，在实际对接 camera 场景中是动态数据，直接使用 camera 的数据缓冲区即可。</p></li>
+</ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_video_iso_callback</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">nbytes</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">usbd_video_stream_split_transfer</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">ep</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
@@ -213,7 +214,8 @@
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 
-<span class="n">USB_NOCACHE_RAM_SECTION</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">packet_buffer</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">MAX_PACKETS_IN_ONE_TRANSFER</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">MAX_PAYLOAD_SIZE</span><span class="p">];</span>
+<span class="n">USB_NOCACHE_RAM_SECTION</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">packet_buffer</span><span class="p">[</span><span class="n">MAX_PAYLOAD_SIZE</span><span class="p">];</span>
+<span class="n">USB_NOCACHE_RAM_SECTION</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">frame_buffer</span><span class="p">[</span><span class="mi">32</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024</span><span class="p">];</span>
 
 <span class="kt">void</span><span class="w"> </span><span class="nf">video_test</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">)</span>
 <span class="p">{</span>
@@ -222,7 +224,8 @@
 <span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tx_flag</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="n">iso_tx_busy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
-<span class="w">            </span><span class="n">usbd_video_stream_start_write</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">VIDEO_IN_EP</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">packet_buffer</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">packet_buffer</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">MAX_PACKETS_IN_ONE_TRANSFER</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">MAX_PAYLOAD_SIZE</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">cherryusb_mjpeg</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">cherryusb_mjpeg</span><span class="p">));</span>
+<span class="w">            </span><span class="n">memcpy</span><span class="p">(</span><span class="n">frame_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">cherryusb_mjpeg</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">cherryusb_mjpeg</span><span class="p">));</span><span class="w"> </span><span class="c1">// cherryusb_mjpeg is a static MJPEG frame buffer, so we need copy it to frame_buffer</span>
+<span class="w">            </span><span class="n">usbd_video_stream_start_write</span><span class="p">(</span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="n">VIDEO_IN_EP</span><span class="p">,</span><span class="w"> </span><span class="n">packet_buffer</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">frame_buffer</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">cherryusb_mjpeg</span><span class="p">),</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
 <span class="w">            </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">iso_tx_busy</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tx_flag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                    </span><span class="k">break</span><span class="p">;</span>
