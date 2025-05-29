@@ -965,7 +965,7 @@ static int usbh_rtl8152_read_regs(struct usbh_rtl8152 *rtl8152_class,
     if (ret < 8) {
         return ret;
     }
-    memcpy(data, g_rtl8152_buf, ret - 8);
+    memcpy(data, g_rtl8152_buf, MIN(ret - 8, size));
 
     return ret;
 }

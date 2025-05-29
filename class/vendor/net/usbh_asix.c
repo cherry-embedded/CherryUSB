@@ -74,7 +74,7 @@ static int usbh_asix_read_cmd(struct usbh_asix *asix_class,
     if (ret < 8) {
         return ret;
     }
-    memcpy(data, g_asix_buf, ret - 8);
+    memcpy(data, g_asix_buf, MIN(ret - 8, size));
 
     return ret;
 }

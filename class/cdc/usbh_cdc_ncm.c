@@ -52,7 +52,7 @@ static int usbh_cdc_ncm_get_ntb_parameters(struct usbh_cdc_ncm *cdc_ncm_class, s
         return ret;
     }
 
-    memcpy((uint8_t *)param, g_cdc_ncm_buf, ret - 8);
+    memcpy((uint8_t *)param, g_cdc_ncm_buf, MIN(ret - 8, sizeof(struct cdc_ncm_ntb_parameters)));
     return 0;
 }
 
