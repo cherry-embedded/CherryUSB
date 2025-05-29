@@ -1207,7 +1207,7 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             } else if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             } else {
                 if (chan->do_ssplit && urb->transfer_buffer_length > 0) {
-                    dwc2_control_urb_init(bus, ch_num, urb, urb->setup, urb->transfer_buffer + urb->actual_length - 8, urb->transfer_buffer_length);
+                    dwc2_bulk_intr_urb_init(bus, ch_num, urb, urb->transfer_buffer + urb->actual_length, urb->transfer_buffer_length);
                 } else {
                     dwc2_urb_waitup(urb);
                 }
