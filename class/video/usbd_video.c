@@ -747,7 +747,7 @@ static void usbd_video_probe_and_commit_controls_init(uint8_t busid, uint32_t dw
     g_usbd_video[busid].commit.bMaxVersion = 0;
 
     g_usbd_video[busid].stream_frameid = 0;
-    g_usbd_video[busid].stream_headerlen = 2;
+    g_usbd_video[busid].stream_headerlen = 12;
 }
 
 struct usbd_interface *usbd_video_init_intf(uint8_t busid,
@@ -799,6 +799,7 @@ bool usbd_video_stream_split_transfer(uint8_t busid, uint8_t ep)
         header = (struct video_payload_header *)&g_usbd_video[busid].stream_buf[offset - g_usbd_video[busid].stream_headerlen];
     }
 
+    memset(header, 0, g_usbd_video[busid].stream_headerlen);
     header->bHeaderLength = g_usbd_video[busid].stream_headerlen;
     header->headerInfoUnion.bmheaderInfo = 0;
     header->headerInfoUnion.headerInfoBits.endOfHeader = 1;
