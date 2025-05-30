@@ -220,6 +220,7 @@ const uint8_t audio_v1_descriptor[] = {
 
 volatile bool tx_flag = 0;
 volatile bool ep_tx_busy_flag = false;
+volatile uint32_t s_mic_sample_rate;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -258,6 +259,26 @@ void usbd_audio_close(uint8_t busid, uint8_t intf)
     USB_LOG_RAW("CLOSE\r\n");
     ep_tx_busy_flag = false;
     tx_flag = 0;
+}
+
+void usbd_audio_set_sampling_freq(uint8_t busid, uint8_t ep, uint32_t sampling_freq)
+{
+    if (ep == AUDIO_IN_EP) {
+        s_mic_sample_rate = sampling_freq;
+    }
+}
+
+uint32_t usbd_audio_get_sampling_freq(uint8_t busid, uint8_t ep)
+{
+    (void)busid;
+
+    uint32_t freq = 0;
+
+    if (ep == AUDIO_IN_EP) {
+        freq = s_mic_sample_rate;
+    }
+
+    return freq;
 }
 
 void usbd_audio_iso_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
