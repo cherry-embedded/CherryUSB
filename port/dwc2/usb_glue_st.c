@@ -217,9 +217,14 @@ uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
 #endif
 }
 
+extern uint32_t SystemCoreClock;
+
 void usbd_dwc2_delay_ms(uint8_t ms)
 {
-    HAL_Delay(ms);
+    uint32_t count = SystemCoreClock / 1000 * ms;
+    while (count--) {
+        __asm volatile("nop");
+    }
 }
 
 void OTG_FS_IRQHandler(void)
