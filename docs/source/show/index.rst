@@ -49,6 +49,14 @@ USB Device RNDIS
 .. figure:: img/usbdev_rndis_win.png
 .. figure:: img/usbdev_rndis_linux.png
 
+USB Device UVC
+-----------------------
+
+演示 USB Device UVC + 摄像头传输 YUYV/MJPEG 640 * 480 图像。FPS 30。
+
+.. figure:: img/usbdev_uvc_mjpeg.png
+.. figure:: img/usbdev_uvc_yuv.png
+
 USB Host HUB
 -----------------------
 
