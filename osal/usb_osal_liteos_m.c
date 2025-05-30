@@ -15,32 +15,18 @@
 #include "los_memory.h"
 #include "los_swtmr.h"
 
-typedef struct _usb_osal_thread {
-    UINT32 task_id;
-    char name[128];
-} _usb_osal_thread_t;
-
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
-    _usb_osal_thread_t *t;
     UINT32 task_id;
     UINT32 ret;
+
     TSK_INIT_PARAM_S task_init_param = {
         .usTaskPrio = prio,
         .pfnTaskEntry = (TSK_ENTRY_FUNC)entry,
         .uwStackSize = stack_size,
         .uwArg = (UINT32)args,
+        .pcName = name
     };
-
-    t = usb_osal_malloc(sizeof(_usb_osal_thread_t));
-    if (t == NULL) {
-        USB_LOG_ERR("alloc thread %s failed\r\n", name);
-        while (1) {
-        }
-    }
-
-    strncpy(t->name, name, sizeof(t->name));
-    task_init_param.pcName = t->name;
 
     ret = LOS_TaskCreate(&task_id, &task_init_param);
     if (ret != LOS_OK) {
@@ -49,16 +35,17 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
         }
     }
 
-    t->task_id = task_id;
-
-    return (usb_osal_thread_t)t;
+    return (usb_osal_thread_t)task_id;
 }
 
 void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
-    _usb_osal_thread_t *t = (_usb_osal_thread_t *)thread;
-    UINT32 task_id = t->task_id;
+    UINT32 task_id = (UINT32)thread;
     UINT32 ret;
+
+    if (thread == NULL) {
+        task_id = LOS_CurTaskIDGet();
+    }
 
     ret = LOS_TaskDelete(task_id);
     if (ret != LOS_OK) {
@@ -66,8 +53,6 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
         while (1) {
         }
     }
-
-    usb_osal_free(t);
 }
 
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
@@ -91,7 +76,7 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
     ret = LOS_SemDelete(sem_handle);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete sem handle[%u] failed code[%u]\r\n",\
+        USB_LOG_ERR("Delete sem handle[%u] failed code[%u]\r\n",
                     sem_handle, ret);
         while (1) {
         }
@@ -103,9 +88,10 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
     UINT32 sem_handle = (UINT32)sem;
     UINT32 ret;
 
-    ret = LOS_SemPend(sem_handle, \
-                        timeout == USB_OSAL_WAITING_FOREVER ? \
-                        LOS_WAIT_FOREVER : timeout);
+    ret = LOS_SemPend(sem_handle,
+                      timeout == USB_OSAL_WAITING_FOREVER ?
+                          LOS_WAIT_FOREVER :
+                          timeout);
 
     return ret == LOS_OK ? 0 : -USB_ERR_TIMEOUT;
 }
@@ -122,7 +108,6 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
 
 void usb_osal_sem_reset(usb_osal_sem_t sem)
 {
-
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)
@@ -146,8 +131,8 @@ void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
 
     ret = LOS_MuxDelete(mux_handle);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete mux handle[%u] failed code[%u]\r\n",\
-                mux_handle, ret);
+        USB_LOG_ERR("Delete mux handle[%u] failed code[%u]\r\n",
+                    mux_handle, ret);
         while (1) {
         }
     }
@@ -194,7 +179,7 @@ void usb_osal_mq_delete(usb_osal_mq_t mq)
 
     ret = LOS_QueueDelete(queue_id);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete queue id[%u] failed code[%u]\r\n",\
+        USB_LOG_ERR("Delete queue id[%u] failed code[%u]\r\n",
                     queue_id, ret);
         while (1) {
         }
@@ -247,12 +232,13 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     memset(timer_handle, 0x00, sizeof(struct usb_osal_timer));
 
     ret = LOS_SwtmrCreate(timeout_ms,
-                        is_period ? LOS_SWTMR_MODE_PERIOD : LOS_SWTMR_MODE_NO_SELFDELETE,
-                        (SWTMR_PROC_FUNC)handler, &timer_id, (UINT32)argument
+                          is_period ? LOS_SWTMR_MODE_PERIOD : LOS_SWTMR_MODE_NO_SELFDELETE,
+                          (SWTMR_PROC_FUNC)handler, &timer_id, (UINT32)argument
 #if (LOSCFG_BASE_CORE_SWTMR_ALIGN == 1)
-                        ,OS_SWTMR_ROUSES_IGNORE, OS_SWTMR_ALIGN_INSENSITIVE
+                          ,
+                          OS_SWTMR_ROUSES_IGNORE, OS_SWTMR_ALIGN_INSENSITIVE
 #endif
-                        );
+    );
 
     if (ret != LOS_OK) {
         USB_LOG_ERR("Create software timer failed code[%u]\r\n", ret);
@@ -276,7 +262,7 @@ void usb_osal_timer_delete(struct usb_osal_timer *timer)
 
     ret = LOS_SwtmrDelete(timer_id);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete software timer id[%u] failed code[%u]\r\n",\
+        USB_LOG_ERR("Delete software timer id[%u] failed code[%u]\r\n",
                     timer_id, ret);
         while (1) {
         }
@@ -291,7 +277,7 @@ void usb_osal_timer_start(struct usb_osal_timer *timer)
 
     ret = LOS_SwtmrStart(timer_id);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Start software timer id[%u] failed code[%u]\r\n",\
+        USB_LOG_ERR("Start software timer id[%u] failed code[%u]\r\n",
                     timer_id, ret);
         while (1) {
         }
@@ -305,7 +291,7 @@ void usb_osal_timer_stop(struct usb_osal_timer *timer)
 
     ret = LOS_SwtmrStop(timer_id);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Stop software timer id[%u] failed code[%u]\r\n",\
+        USB_LOG_ERR("Stop software timer id[%u] failed code[%u]\r\n",
                     timer_id, ret);
         while (1) {
         }
