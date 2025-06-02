@@ -22,7 +22,9 @@ extern "C" {
 #include "usb_list.h"
 #include "usb_log.h"
 #include "usb_dc.h"
+#include "usb_osal.h"
 #include "usb_memcpy.h"
+#include "usb_dcache.h"
 #include "usb_version.h"
 
 enum usbd_event_type {
