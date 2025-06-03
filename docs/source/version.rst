@@ -97,7 +97,7 @@ v1.4.3
 - **host msc 将 scsi 初始化从枚举线程中移出，在mount阶段调用，并增加了testunity 多次尝试，兼容一部分 U 盘**
 - rp2040 主从支持
 - **nuttx fs，serial，net 组件支持**
-- dwc2、ehci、ohci 主机 dcache功能支持
+- dwc2、ehci、ohci 主机 dcache功能支持（v1.5.0 完善）
 - t113、MCXA156、CH585 、 **stm32h7r 支持**
 - 修复 v1.4.1 中 altsetting 为0时应该关闭所有端点的问题
 
@@ -105,18 +105,21 @@ v1.5.0
 ----------------------
 
 - **协议栈内部全局 buffer 需要使用 USB_ALIGN_UP 对齐, 用于开启 dcache 并且不使能 nocache 时使用**
-- **平台代码更新，平台相关转移到 platform，增加 lvgl 键鼠支持，blackmagic 支持， filex 支持**
-- liteos-m, zephyr os 支持
-- device msc 裸机读写采用变量模式，而不是ringbuffer
 - **完善 ehci/ohci dcache 模式下的处理**， add CONFIG_USB_EHCI_DESC_DCACHE_ENABLE for qh&qtd&itd, add CONFIG_USB_OHCI_DESC_DCACHE_ENABLE for ed&td
-- ehci qtd 使用 qtd alloc & free，节省内存，目前是 qh 携带 qtd
+- **平台代码更新，平台相关转移到 platform，增加 lvgl 键鼠支持，blackmagic 支持，filex 支持**
 - **device sof callback 支持**
 - **dwc2 、fsdev st 下实现底层 API 和中断，直接调用 HAL_PCD_MSP 和 HAL_HCD_MSP，不需要用户复制粘贴**
 - **DWC2 实现 SPLIT 功能，高速模式下支持外部高速 hub 对接 FS/LS 设备**
+- liteos-m, zephyr os 支持
+- device msc 裸机读写采用变量模式，而不是ringbuffer
+- ehci qtd 使用 qtd alloc & free，节省内存，目前是 qh 携带 qtd
 - rndis/ECM device， msc demo 更新，支持 rt-thread 下免修改
 - **memcpy 全部使用 usb_memcpy 替换，arm 库存在非对其访问问题**
+- **重构 device mtp 驱动（收费使用）**
+- **重构device video 传输，直接在图像数据中填充 uvc header，达到zero memcpy**
+- **增加 usb_osal_thread_schedule_other api，用于在释放 class 资源之前，先释放所有 class 线程，避免释放 class 资源以后线程还在使用该 class 资源**
+- **dwc2 device 增加 dcache 功能，可用于 STM32H7/H7R/ESP32P4**
 - ch32 device iso 更新
-- cmake，kconfig 更新
+- cmake，scons，kconfig 更新
 - 使用 USB_ASSERT_MSG 对部分代码检查
 - N32H4，mm32f5 支持
-- **重构 device mtp 驱动（收费使用）**
