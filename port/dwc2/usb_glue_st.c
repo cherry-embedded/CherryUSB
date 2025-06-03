@@ -236,3 +236,20 @@ void OTG_HS_IRQHandler(void)
 {
     g_usb_dwc2_irq[1](g_usb_dwc2_busid[1]);
 }
+
+#ifdef CONFIG_USB_DCACHE_ENABLE
+void usb_dcache_clean(uintptr_t addr, size_t size)
+{
+    SCB_CleanDCache_by_Addr((void *)addr, size);
+}
+
+void usb_dcache_invalidate(uintptr_t addr, size_t size)
+{
+    SCB_InvalidateDCache_by_Addr((void *)addr, size);
+}
+
+void usb_dcache_flush(uintptr_t addr, size_t size)
+{
+    SCB_CleanInvalidateDCache_by_Addr((void *)addr, size);
+}
+#endif

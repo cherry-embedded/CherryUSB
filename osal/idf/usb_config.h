@@ -335,3 +335,14 @@
 #else
 #error "Unsupported SoC"
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32P4
+#define CONFIG_USB_DCACHE_ENABLE
+
+#undef CONFIG_USB_ALIGN_SIZE
+#define CONFIG_USB_ALIGN_SIZE 32
+
+void usb_dcache_clean(uintptr_t addr, uint32_t size);
+void usb_dcache_invalidate(uintptr_t addr, uint32_t size);
+void usb_dcache_flush(uintptr_t addr, uint32_t size);
+#endif
