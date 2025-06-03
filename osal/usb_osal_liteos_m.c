@@ -55,6 +55,18 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
     }
 }
 
+void usb_osal_thread_schedule_other(void)
+{
+    UINT32 task_id = LOS_CurTaskIDGet();
+    const UINT16 old_priority = LOS_TaskPriGet(task_id);
+
+    LOS_TaskPriSet(task_id, OS_TASK_PRIORITY_LOWEST);
+
+    LOS_TaskYield();
+
+    LOS_TaskPriSet(task_id, old_priority);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     UINT32 sem_handle;

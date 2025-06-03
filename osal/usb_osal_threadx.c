@@ -69,6 +69,18 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
     tx_byte_release(thread);
 }
 
+void usb_osal_thread_schedule_other(void)
+{
+    TX_THREAD *current_thread = tx_thread_identify();
+    const UINT old_priority = current_thread->tx_thread_priority;
+
+    tx_thread_priority_change(current_thread, TX_MAX_PRIORITIES - 1, &old_priority);
+
+    tx_thread_relinquish();
+
+    tx_thread_priority_change(current_thread, old_priority, &old_priority);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     TX_SEMAPHORE *sem_ptr = TX_NULL;

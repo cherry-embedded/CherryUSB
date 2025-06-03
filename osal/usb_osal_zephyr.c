@@ -74,6 +74,22 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
     k_free(thread);
 }
 
+void usb_osal_thread_schedule_other(void)
+{
+#if (KERNELVERSION >= 0x3070000)
+    struct k_thread *current_thread = k_sched_current_thread_query();
+#else
+    struct k_thread *current_thread = z_current_get();
+#endif
+    const int old_priority = k_thread_priority_get(current_thread);
+
+    k_thread_priority_set(current_thread, K_LOWEST_APPLICATION_THREAD_PRIO);
+
+    k_yield();
+
+    k_thread_priority_set(current_thread, old_priority);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     struct k_sem *sem;

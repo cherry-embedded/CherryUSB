@@ -299,6 +299,7 @@ int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {
+            usb_osal_thread_schedule_other();
             USB_LOG_INFO("Unregister HID Class:%s\r\n", hport->config.intf[intf].devname);
             usbh_hid_stop(hid_class);
         }

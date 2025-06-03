@@ -30,6 +30,18 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
     vTaskDelete(thread);
 }
 
+void usb_osal_thread_schedule_other(void)
+{
+    TaskHandle_t xCurrentTask = xTaskGetCurrentTaskHandle();
+    const UBaseType_t old_priority = uxTaskPriorityGet(xCurrentTask);
+
+    vTaskPrioritySet(xCurrentTask, tskIDLE_PRIORITY);
+
+    taskYIELD();
+
+    vTaskPrioritySet(xCurrentTask, old_priority);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     usb_osal_sem_t sem = (usb_osal_sem_t)xSemaphoreCreateCounting(1, initial_count);

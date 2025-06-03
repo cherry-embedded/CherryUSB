@@ -594,6 +594,7 @@ static int usbh_audio_ctrl_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {
+            usb_osal_thread_schedule_other();
             USB_LOG_INFO("Unregister Audio Class:%s\r\n", hport->config.intf[intf].devname);
             usbh_audio_stop(audio_class);
         }

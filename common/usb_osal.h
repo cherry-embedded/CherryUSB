@@ -42,6 +42,7 @@ struct usb_osal_timer {
 */
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args);
 void usb_osal_thread_delete(usb_osal_thread_t thread);
+void usb_osal_thread_schedule_other(void);
 
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count);
 void usb_osal_sem_delete(usb_osal_sem_t sem);

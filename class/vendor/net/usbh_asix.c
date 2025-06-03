@@ -638,6 +638,7 @@ static int usbh_asix_disconnect(struct usbh_hubport *hport, uint8_t intf)
         }
 
         if (hport->config.intf[intf].devname[0] != '\0') {
+            usb_osal_thread_schedule_other();
             USB_LOG_INFO("Unregister ASIX Class:%s\r\n", hport->config.intf[intf].devname);
             usbh_asix_stop(asix_class);
         }

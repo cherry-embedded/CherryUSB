@@ -63,6 +63,18 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
     kthread_delete(pid);
 }
 
+void usb_osal_thread_schedule_other(void)
+{
+    struct tcb_s *tcb = nxsched_self();
+    const int old_priority = tcb->sched_priority;
+
+    nxsched_set_priority(tcb, SCHED_PRIORITY_MIN);
+
+    sched_yield();
+
+    nxsched_set_priority(tcb, old_priority);
+}
+
 usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 {
     int ret;
