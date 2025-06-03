@@ -114,8 +114,8 @@ struct dwc2_ep_state {
 
 /* Driver state */
 USB_NOCACHE_RAM_SECTION struct dwc2_udc {
-    uint32_t GSNPSID;
-    __attribute__((aligned(32))) struct usb_setup_packet setup;
+    USB_MEM_ALIGNX struct usb_setup_packet setup;
+    USB_MEM_ALIGNX uint32_t GSNPSID;
     struct dwc2_ep_state in_ep[CONFIG_USBDEV_EP_NUM];  /*!< IN endpoint parameters*/
     struct dwc2_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
 } g_dwc2_udc[CONFIG_USBDEV_MAX_BUS];
@@ -884,6 +884,10 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
 
     USB_ASSERT_MSG(!((uint32_t)data % 0x04), "dwc2 data must be 4-byte aligned");
 
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    USB_ASSERT_MSG(!((uint32_t)data % CONFIG_USB_ALIGN_SIZE), "dwc2 data must be %d-byte aligned", CONFIG_USB_ALIGN_SIZE);
+#endif
+
     if (!data && data_len) {
         return -1;
     }
@@ -932,6 +936,7 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
     }
 
 #ifdef CONFIG_USB_DWC2_DMA_ENABLE
+    usb_dcache_clean((uintptr_t)data, USB_ALIGN_UP(data_len, CONFIG_USB_ALIGN_SIZE));
     USB_OTG_INEP(ep_idx)->DIEPDMA = (uint32_t)data;
 
     USB_OTG_INEP(ep_idx)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
@@ -951,6 +956,10 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     uint32_t pktcnt = 0;
 
     USB_ASSERT_MSG(!((uint32_t)data % 0x04), "dwc2 data must be 4-byte aligned");
+
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    USB_ASSERT_MSG(!((uint32_t)data % CONFIG_USB_ALIGN_SIZE), "dwc2 data must be %d-byte aligned", CONFIG_USB_ALIGN_SIZE);
+#endif
 
     if (!data && data_len) {
         return -1;
@@ -1054,16 +1063,19 @@ void USBD_IRQHandler(uint8_t busid)
                             } else {
                                 g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = g_dwc2_udc[busid].out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
                                 g_dwc2_udc[busid].out_ep[ep_idx].xfer_len = 0;
+                                usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
                                 usbd_event_ep_out_complete_handler(busid, 0x00, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
                             }
                         } else {
                             g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = g_dwc2_udc[busid].out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
                             g_dwc2_udc[busid].out_ep[ep_idx].xfer_len = 0;
+                            usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
                             usbd_event_ep_out_complete_handler(busid, ep_idx, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
                         }
                     }
 
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
+                        usb_dcache_invalidate((uintptr_t)&g_dwc2_udc[busid].setup, USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE));
                         usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
                     }
                 }
