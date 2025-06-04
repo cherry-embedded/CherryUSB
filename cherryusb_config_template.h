@@ -23,12 +23,14 @@
 /* Enable print with color */
 #define CONFIG_USB_PRINTF_COLOR_ENABLE
 
+// #define CONFIG_USB_DCACHE_ENABLE
+
 /* data align size when use dma or use dcache */
-#ifndef CONFIG_USB_ALIGN_SIZE
+#ifdef CONFIG_USB_DCACHE_ENABLE
+#define CONFIG_USB_ALIGN_SIZE 32 // 32 or 64
+#else
 #define CONFIG_USB_ALIGN_SIZE 4
 #endif
-
-// #define CONFIG_USB_DCACHE_ENABLE
 
 /* attribute data into no cache ram */
 #define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable")))
@@ -331,11 +333,6 @@
 
 /* ---------------- MUSB Configuration ---------------- */
 // #define CONFIG_USB_MUSB_SUNXI
-
-/* ================ USB Dcache Configuration ==================*/
-// #define CONFIG_USB_DCACHE_ENABLE
-// #undef CONFIG_USB_ALIGN_SIZE
-// #define CONFIG_USB_ALIGN_SIZE 32
 
 #ifndef usb_phyaddr2ramaddr
 #define usb_phyaddr2ramaddr(addr) (addr)
