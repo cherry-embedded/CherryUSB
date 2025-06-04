@@ -119,6 +119,7 @@ v1.5.0
 - **重构device video 传输，直接在图像数据中填充 uvc header，达到zero memcpy**
 - **增加 usb_osal_thread_schedule_other api，用于在释放 class 资源之前，先释放所有 class 线程，避免释放 class 资源以后线程还在使用该 class 资源**
 - **dwc2 device 增加 dcache 功能，可用于 STM32H7/H7R/ESP32P4**
+- **bouffalo/hpm/esp/st/nxp dcache api 支持**
 - ch32 device iso 更新
 - cmake，scons，kconfig 更新
 - 使用 USB_ASSERT_MSG 对部分代码检查
