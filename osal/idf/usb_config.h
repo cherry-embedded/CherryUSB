@@ -8,6 +8,7 @@
 
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
+#include "esp_attr.h"
 
 /* ================ USB common Configuration ================ */
 
@@ -28,7 +29,7 @@
 // #define CONFIG_USB_DCACHE_ENABLE
 
 /* attribute data into no cache ram */
-#define USB_NOCACHE_RAM_SECTION
+#define USB_NOCACHE_RAM_SECTION DRAM_DMA_ALIGNED_ATTR
 
 /* use usb_memcpy default for high performance but cost more flash memory.
  * And, arm libc has a bug that memcpy() may cause data misalignment when the size is not a multiple of 4.
@@ -340,9 +341,6 @@
 #define CONFIG_USB_DCACHE_ENABLE
 
 #undef CONFIG_USB_ALIGN_SIZE
-#define CONFIG_USB_ALIGN_SIZE 32
+#define CONFIG_USB_ALIGN_SIZE CONFIG_CACHE_L1_CACHE_LINE_SIZE
 
-void usb_dcache_clean(uintptr_t addr, uint32_t size);
-void usb_dcache_invalidate(uintptr_t addr, uint32_t size);
-void usb_dcache_flush(uintptr_t addr, uint32_t size);
 #endif
