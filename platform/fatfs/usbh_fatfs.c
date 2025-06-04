@@ -10,11 +10,6 @@
 
 struct usbh_msc *active_msc_class;
 
-int USB_disk_status(void)
-{
-    return RES_OK;
-}
-
 int USB_disk_initialize(void)
 {
     active_msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
@@ -28,14 +23,69 @@ int USB_disk_initialize(void)
     return RES_OK;
 }
 
+int USB_disk_status(void)
+{
+    return RES_OK;
+}
+
 int USB_disk_read(BYTE *buff, LBA_t sector, UINT count)
 {
-    return usbh_msc_scsi_read10(active_msc_class, sector, buff, count);
+    int ret;
+    uint8_t *align_buf;
+
+    align_buf = (uint8_t *)buff;
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
+        align_buf = (uint8_t *)memalign(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
+        if (!align_buf) {
+            printf("msc get align buf failed\r\n");
+            return -USB_ERR_NOMEM;
+        }
+    }
+#endif
+    ret = usbh_msc_scsi_read10(active_msc_class, sector, align_buf, count);
+    if (ret < 0) {
+        ret = RES_ERROR;
+    } else {
+        ret = RES_OK;
+    }
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
+        usb_memcpy(buff, align_buf, count * active_msc_class->blocksize);
+        free(align_buf);
+    }
+#endif
+    return ret;
 }
 
 int USB_disk_write(const BYTE *buff, LBA_t sector, UINT count)
 {
-    return usbh_msc_scsi_write10(active_msc_class, sector, buff, count);
+    int ret;
+    uint8_t *align_buf;
+
+    align_buf = (uint8_t *)buff;
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
+        align_buf = (uint8_t *)memalign(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
+        if (!align_buf) {
+            printf("msc get align buf failed\r\n");
+            return -USB_ERR_NOMEM;
+        }
+        usb_memcpy(align_buf, buff, count * active_msc_class->blocksize);
+    }
+#endif
+    ret = usbh_msc_scsi_write10(active_msc_class, sector, align_buf, count);
+    if (ret < 0) {
+        ret = RES_ERROR;
+    } else {
+        ret = RES_OK;
+    }
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
+        free(align_buf);
+    }
+#endif
+    return ret;
 }
 
 int USB_disk_ioctl(BYTE cmd, void *buff)
