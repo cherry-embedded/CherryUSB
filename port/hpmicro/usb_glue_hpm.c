@@ -6,6 +6,8 @@
  */
 #include "hpm_common.h"
 #include "hpm_soc.h"
+#include "hpm_l1c_drv.h"
+#include "usb_config.h"
 
 void (*g_usb_hpm_irq[2])(uint8_t busid);
 uint8_t g_usb_hpm_busid[2];
@@ -13,7 +15,7 @@ uint8_t g_usb_hpm_busid[2];
 ATTR_WEAK void hpm_usb_isr_enable(uint32_t base)
 {
     if (base == HPM_USB0_BASE) {
-        intc_m_enable_irq(IRQn_USB0); 
+        intc_m_enable_irq(IRQn_USB0);
     } else {
 #ifdef HPM_USB1_BASE
         intc_m_enable_irq(IRQn_USB1);
@@ -24,7 +26,7 @@ ATTR_WEAK void hpm_usb_isr_enable(uint32_t base)
 ATTR_WEAK void hpm_usb_isr_disable(uint32_t base)
 {
     if (base == HPM_USB0_BASE) {
-        intc_m_disable_irq(IRQn_USB0); 
+        intc_m_disable_irq(IRQn_USB0);
     } else {
 #ifdef HPM_USB1_BASE
         intc_m_disable_irq(IRQn_USB1);
@@ -47,5 +49,22 @@ SDK_DECLARE_EXT_ISR_M(IRQn_USB1, hpm_isr_usb1)
 void hpm_isr_usb1(void)
 {
     g_usb_hpm_irq[1](g_usb_hpm_busid[1]);
+}
+#endif
+
+#ifdef CONFIG_USB_DCACHE_ENABLE
+void usb_dcache_clean(uintptr_t addr, size_t size)
+{
+    l1c_dc_writeback(addr, size);
+}
+
+void usb_dcache_invalidate(uintptr_t addr, size_t size)
+{
+    l1c_dc_invalidate(addr, size);
+}
+
+void usb_dcache_flush(uintptr_t addr, size_t size)
+{
+    l1c_dc_flush(addr, size);
 }
 #endif

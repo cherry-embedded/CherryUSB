@@ -333,18 +333,9 @@
 // #define CONFIG_USB_MUSB_SUNXI
 
 /* ================ USB Dcache Configuration ==================*/
-
-#ifdef CONFIG_USB_DCACHE_ENABLE
-/* style 1*/
-// void usb_dcache_clean(uintptr_t addr, uint32_t size);
-// void usb_dcache_invalidate(uintptr_t addr, uint32_t size);
-// void usb_dcache_flush(uintptr_t addr, uint32_t size);
-
-/* style 2*/
-// #define usb_dcache_clean(addr, size)
-// #define usb_dcache_invalidate(addr, size)
-// #define usb_dcache_flush(addr, size)
-#endif
+// #define CONFIG_USB_DCACHE_ENABLE
+// #undef CONFIG_USB_ALIGN_SIZE
+// #define CONFIG_USB_ALIGN_SIZE 32
 
 #ifndef usb_phyaddr2ramaddr
 #define usb_phyaddr2ramaddr(addr) (addr)

@@ -6,6 +6,7 @@
 #include "usbd_core.h"
 #include "usbh_core.h"
 #include "fsl_common.h"
+#include "fsl_cache.h"
 #include "usb_chipidea_reg.h"
 
 __WEAK void USBD_IRQHandler(uint8_t busid)
@@ -429,3 +430,20 @@ void USB1_HS_IRQHandler(void)
 {
     g_usb_nxp_irq(0);
 }
+
+#ifdef CONFIG_USB_DCACHE_ENABLE
+void usb_dcache_clean(uintptr_t addr, size_t size)
+{
+    DCACHE_CleanByRange(addr, size);
+}
+
+void usb_dcache_invalidate(uintptr_t addr, size_t size)
+{
+    DCACHE_InvalidateByRange(addr, size);
+}
+
+void usb_dcache_flush(uintptr_t addr, size_t size)
+{
+    DCACHE_CleanInvalidateByRange(addr, size);
+}
+#endif
