@@ -35,6 +35,7 @@ lwip support with usb host net class(cdc_ecm/cdc_ncm/cdc_rndis/asix/rtl8152/bl61
 ## Zephyr
 
 - shell support with lsusb
+- disk support with usb host msc
 
 ## LVGL
 
