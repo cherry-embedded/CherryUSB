@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-if(CONFIG_CHERRYUSB)
+if(CONFIG_CHERRYUSB OR ESP_PLATFORM)
 
 if(BL_SDK_BASE)
     message(STATUS "enable cherryusb in bouffalo_sdk")
@@ -71,7 +71,7 @@ elseif(ESP_PLATFORM)
         ${cherryusb_incs}
         ${freertos_include}
         PRIV_REQUIRES
-        usb
+        usb esp_mm
         LDFRAGMENTS
         ${ldfragments}
     )
