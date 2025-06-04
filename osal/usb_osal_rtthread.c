@@ -38,7 +38,7 @@ void usb_osal_thread_schedule_other(void)
 {
     rt_thread_t self = rt_thread_self();
     rt_uint8_t priority;
-#if (RTTHREAD_VERSION >= RT_VERSION_CHECK(5, 0, 0))
+#if (RTTHREAD_VERSION >= RT_VERSION_CHECK(5, 2, 0))
     const rt_uint8_t old_priority = RT_SCHED_PRIV(self).current_priority;
 #else
     const rt_uint8_t old_priority = self->current_priority;
