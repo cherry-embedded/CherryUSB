@@ -706,14 +706,14 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
     struct usbh_hub *hub;
     size_t flags;
 
-    flags = usb_osal_enter_critical_section();
-
     hub = &bus->hcd.roothub;
     for (uint8_t port = 0; port < hub->nports; port++) {
         hport = &hub->child[port];
 
         usbh_hubport_release(hport);
     }
+
+    flags = usb_osal_enter_critical_section();
 
     usb_hc_deinit(bus);
 
