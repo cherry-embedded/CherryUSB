@@ -36,7 +36,7 @@ int USB_disk_read(BYTE *buff, LBA_t sector, UINT count)
     align_buf = (uint8_t *)buff;
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
-        align_buf = (uint8_t *)memalign(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
+        align_buf = (uint8_t *)aligned_alloc(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
         if (!align_buf) {
             printf("msc get align buf failed\r\n");
             return -USB_ERR_NOMEM;
@@ -66,7 +66,7 @@ int USB_disk_write(const BYTE *buff, LBA_t sector, UINT count)
     align_buf = (uint8_t *)buff;
 #ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
-        align_buf = (uint8_t *)memalign(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
+        align_buf = (uint8_t *)aligned_alloc(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
         if (!align_buf) {
             printf("msc get align buf failed\r\n");
             return -USB_ERR_NOMEM;
