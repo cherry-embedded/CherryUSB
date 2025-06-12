@@ -2,4 +2,15 @@
 
 ## Support Chip List
 
-- CH32V30x
+## CH32FS
+
+- CH32V30X/CH32V20X/CH32V10X/CH32X035
+
+## CH32HS
+
+- CH32V30X
+
+## CH58X
+
+- CH57X/CH58X(usbfs)
+- CH585(usbhs)

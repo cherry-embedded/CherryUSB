@@ -1,5 +1,5 @@
 #include "usbd_core.h"
-#include "ch585_usbhs_reg.h"
+#include "usb_ch585_usbhs_reg.h"
 
 /**
  * @brief   Related register macro
@@ -507,7 +507,7 @@ void USBD_IRQHandler(uint8_t busid)
         R8_U2EP0_RX_CTRL = USBHS_UEP_R_RES_ACK;
         CH585_USBHS_DEV->INT_FG = USBHS_UDIF_BUS_RST;
     } else if (intflag & USBHS_UDIF_SUSPEND) {
-        if (CH585_USBHS_DEV->MIS_ST & 0x04) {
+        if (CH585_USBHS_DEV->MIS_ST & USBHS_UDMS_SUSPEND) {
             /* Suspend */
         } else {
             /* Wake up */

@@ -404,8 +404,8 @@ void USBD_IRQHandler(uint8_t busid)
     }
 }
 
-void OTG_FS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-void OTG_FS_IRQHandler(void)
+void USBFS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void USBFS_IRQHandler(void)
 {
     extern void USBD_IRQHandler(uint8_t busid);
     USBD_IRQHandler(0);
