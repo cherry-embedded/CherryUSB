@@ -478,6 +478,11 @@ int usb_dc_init(uint8_t busid)
 
     regval = getreg32(BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
     regval |= USB_SFRST_HOV;
+#ifdef CONFIG_USB_HS
+    regval &= ~USB_FORCE_FS;
+#else
+    regval |= USB_FORCE_FS;
+#endif
     putreg32(regval, BFLB_USB_BASE + USB_DEV_CTL_OFFSET);
 
     while (getreg32(BFLB_USB_BASE + USB_DEV_CTL_OFFSET) & USB_SFRST_HOV) {
