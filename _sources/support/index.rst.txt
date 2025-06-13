@@ -24,6 +24,11 @@
 
 .. figure:: img/mtpdev.png
 
+- 从机 TMC 类驱动
+
+.. figure:: img/tmcdev1.png
+.. figure:: img/tmcdev2.png
+
 - USB 网卡类高性能版本优化,包含 CDC-NCM, CDC-RNDIS, 私有类驱动（支持多包发送和接收），下面举例 RNDIS
 
 .. figure:: img/rndistx.png
