@@ -257,7 +257,11 @@ if(CONFIG_CHERRYUSB_HOST)
     OR CONFIG_CHERRYUSB_HOST_RTL8152
     OR CONFIG_CHERRYUSB_HOST_BL616
     )
-        list(APPEND cherryusb_srcs platform/lwip/usbh_lwip.c)
+        if("${CONFIG_CHERRYUSB_OSAL}" STREQUAL "idf")
+            list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/platform/idf/usbh_net.c)
+        else()
+            list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/platform/lwip/usbh_lwip.c)
+        endif()
     endif()
 
     if(CONFIG_CHERRYUSB_HOST_EHCI_BL)
