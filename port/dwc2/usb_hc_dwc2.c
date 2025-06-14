@@ -273,8 +273,6 @@ static inline void dwc2_chan_splt_init(struct usbh_bus *bus, uint8_t ch_num)
 
 static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
 {
-    uint32_t regval;
-
     /* Clear old interrupt conditions for this host channel. */
     USB_OTG_HC((uint32_t)ch_num)->HCINT = 0xFFFFFFFFU;
 
@@ -1305,6 +1303,8 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
 static void dwc2_port_irq_handler(struct usbh_bus *bus)
 {
     __IO uint32_t hprt0, hprt0_dup, regval;
+
+    (void)regval;
 
     /* Handle Host Port Interrupts */
     hprt0 = USB_OTG_HPRT;
