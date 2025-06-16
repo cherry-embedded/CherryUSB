@@ -19,22 +19,6 @@
 #define CONFIG_USB_DFS_MOUNT_POINT "/"
 #endif
 
-#if defined(SOC_SERIES_STM32H7) || defined(SOC_SERIES_STM32F7) || defined(SOC_SERIES_STM32H7RS) ||\
-    defined(SOC_HPM5000) || defined(SOC_HPM6000) || defined(SOC_HPM6E00) || defined(BSP_USING_BL61X)
-#ifndef RT_USING_CACHE
-#error usbh msc must enable RT_USING_CACHE in this chip
-#endif
-#if RT_ALIGN_SIZE != 32 && RT_ALIGN_SIZE != 64
-#error usbh msc must set cache line to 32 or 64
-#endif
-#endif
-
-#ifdef RT_USING_CACHE
-#ifndef CONFIG_USB_DCACHE_ENABLE
-#error CONFIG_USB_DCACHE_ENABLE must be enabled to use msc disk
-#endif
-#endif
-
 static rt_err_t rt_udisk_init(rt_device_t dev)
 {
     struct usbh_msc *msc_class = (struct usbh_msc *)dev->user_data;
