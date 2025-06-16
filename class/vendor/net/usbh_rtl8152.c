@@ -1138,7 +1138,7 @@ static void ocp_write_dword(struct usbh_rtl8152 *tp, uint16_t type, uint16_t ind
 static uint16_t ocp_read_word(struct usbh_rtl8152 *tp, uint16_t type, uint16_t index)
 {
     uint32_t data;
-    uint32_t tmp;
+    uint32_t tmp = 0;
     uint16_t byen = BYTE_EN_WORD;
     uint8_t shift = index & 2;
 
@@ -1178,7 +1178,7 @@ static void ocp_write_word(struct usbh_rtl8152 *tp, uint16_t type, uint16_t inde
 static uint8_t ocp_read_byte(struct usbh_rtl8152 *tp, uint16_t type, uint16_t index)
 {
     uint32_t data;
-    uint32_t tmp;
+    uint32_t tmp = 0;
     uint8_t shift = index & 3;
 
     index &= ~3;
@@ -1254,7 +1254,7 @@ static inline int r8152_mdio_read(struct usbh_rtl8152 *tp, uint32_t reg_addr)
 static uint8_t usbh_rtl8152_get_version(struct usbh_rtl8152 *rtl8152_class)
 {
     uint8_t version;
-    uint32_t temp;
+    uint32_t temp = 0;
     uint32_t ocp_data;
 
     usbh_rtl8152_read_regs(rtl8152_class, PLA_TCR0, MCU_TYPE_PLA, 4, &temp);

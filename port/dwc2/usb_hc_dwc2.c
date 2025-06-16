@@ -1302,9 +1302,7 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
 
 static void dwc2_port_irq_handler(struct usbh_bus *bus)
 {
-    __IO uint32_t hprt0, hprt0_dup, regval;
-
-    (void)regval;
+    __IO uint32_t hprt0, hprt0_dup;
 
     /* Handle Host Port Interrupts */
     hprt0 = USB_OTG_HPRT;
@@ -1334,7 +1332,7 @@ static void dwc2_port_irq_handler(struct usbh_bus *bus)
             if ((hprt0 & USB_OTG_HPRT_PSPD) == (HPRT0_PRTSPD_LOW_SPEED << 17)) {
                 USB_OTG_HOST->HFIR = 6000U;
                 if ((USB_OTG_HOST->HCFG & USB_OTG_HCFG_FSLSPCS) != USB_OTG_HCFG_FSLSPCS_1) {
-                    regval = USB_OTG_HOST->HCFG;
+                    uint32_t regval = USB_OTG_HOST->HCFG;
                     regval &= ~USB_OTG_HCFG_FSLSPCS;
                     regval |= USB_OTG_HCFG_FSLSPCS_1;
                     USB_OTG_HOST->HCFG = regval;
@@ -1342,7 +1340,7 @@ static void dwc2_port_irq_handler(struct usbh_bus *bus)
             } else {
                 USB_OTG_HOST->HFIR = 48000U;
                 if ((USB_OTG_HOST->HCFG & USB_OTG_HCFG_FSLSPCS) != USB_OTG_HCFG_FSLSPCS_0) {
-                    regval = USB_OTG_HOST->HCFG;
+                    uint32_t regval = USB_OTG_HOST->HCFG;
                     regval &= ~USB_OTG_HCFG_FSLSPCS;
                     regval |= USB_OTG_HCFG_FSLSPCS_0;
                     USB_OTG_HOST->HCFG = regval;

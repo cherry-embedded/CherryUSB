@@ -1,4 +1,5 @@
 #include "rtthread.h"
+#include "usb_config.h"
 
 #if defined(PKG_CHERRYUSB_HOST) || defined(RT_CHERRYUSB_HOST)
 
