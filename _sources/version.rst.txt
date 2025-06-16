@@ -106,7 +106,7 @@ v1.5.0
 
 - **协议栈内部全局 buffer 需要使用 USB_ALIGN_UP 对齐, 用于开启 dcache 并且不使能 nocache 时使用**
 - **完善 ehci/ohci dcache 模式下的处理**， add CONFIG_USB_EHCI_DESC_DCACHE_ENABLE for qh&qtd&itd, add CONFIG_USB_OHCI_DESC_DCACHE_ENABLE for ed&td
-- **平台代码更新，平台相关转移到 platform，增加 lvgl 键鼠支持，blackmagic 支持，filex 支持**
+- **平台代码更新，平台相关转移到 platform，增加 lvgl 键鼠支持，blackmagic 支持，filex 支持, zephyr disk支持，esp-idf netif支持**
 - **device sof callback 支持**
 - **dwc2 、fsdev st 下实现底层 API 和中断，直接调用 HAL_PCD_MSP 和 HAL_HCD_MSP，不需要用户复制粘贴**
 - **DWC2 实现 SPLIT 功能，高速模式下支持外部高速 hub 对接 FS/LS 设备**
@@ -116,11 +116,13 @@ v1.5.0
 - rndis/ECM device， msc demo 更新，支持 rt-thread 下免修改
 - **memcpy 全部使用 usb_memcpy 替换，arm 库存在非对其访问问题**
 - **重构 device mtp 驱动（收费使用）**
+- **device tmc 驱动（收费使用）**
 - **重构device video 传输，直接在图像数据中填充 uvc header，达到zero memcpy**
 - **增加 usb_osal_thread_schedule_other api，用于在释放 class 资源之前，先释放所有 class 线程，避免释放 class 资源以后线程还在使用该 class 资源**
-- **dwc2 device 增加 dcache 功能，可用于 STM32H7/H7R/ESP32P4**
+- **dwc2 device 增加 dcache 功能，可用于 cortex-M7/ESP32P4**
 - **bouffalo/hpm/esp/st/nxp dcache api 支持**
-- ch32 device iso 更新
+- ch32 device iso 更新，IP 目录重新分类
 - cmake，scons，kconfig 更新
-- 使用 USB_ASSERT_MSG 对部分代码检查
-- N32H4，mm32f5 支持
+- 使用 USB_ASSERT_MSG 对部分代码检查，全面性 warning 修复
+- N32H4/MM32F5 device 支持
+- 默认使能 CONFIG_USBDEV_ADVANCE_DESC
