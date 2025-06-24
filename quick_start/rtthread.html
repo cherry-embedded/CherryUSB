@@ -194,26 +194,9 @@
 </div>
 <ul class="simple">
 <li><p>USB IP 相关的 config 需要用户自己根据芯片实际情况修改</p></li>
-<li><p>退出以后不急着编译，需要在代码中实现 <cite>usb_dc_low_level_init</cite> 函数。</p></li>
+<li><p>在代码中实现 <cite>usb_dc_low_level_init</cite> 函数</p></li>
+<li><p>在 USB 中断函数中调用 <cite>USBD_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
 <li><p>调用 <cite>usbd_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite></p></li>
-<li><p>以上内容我们推荐放在 <strong>board.c</strong> 中，如下代码：</p></li>
-</ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">OTG_HS_IRQHandler</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-<span class="k">extern</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">USBD_IRQHandler</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">);</span>
-<span class="n">USBD_IRQHandler</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-<span class="p">}</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="nf">usbd_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-<span class="n">xxx_template_init</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">USB_OTG_HS_PERIPH_BASE</span><span class="p">);</span>
-<span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="n">INIT_APP_EXPORT</span><span class="p">(</span><span class="n">usbd_init</span><span class="p">);</span>
-</pre></div>
-</div>
-<ul class="simple">
 <li><p>使用 <cite>scons –target=mdk5</cite> 或者 <cite>scons</cite> 进行编译，如果是mdk，需要使用 AC6 编译器</p></li>
 </ul>
 </section>
@@ -240,7 +223,7 @@
 <ul class="simple">
 <li><p>USB IP 相关的 config 需要用户自己根据芯片实际情况修改</p></li>
 <li><p>在代码中实现 <cite>usb_hc_low_level_init</cite> 函数</p></li>
-<li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
+<li><p>在 USB 中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>使用 <cite>scons –target=mdk5</cite> 或者 <cite>scons</cite> 进行编译，如果是mdk，需要使用 AC6 编译器</p></li>
 <li><p>如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：</p></li>

@@ -28,26 +28,9 @@
         #define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
 
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
-* 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
+* 在代码中实现 `usb_dc_low_level_init` 函数
+* 在 USB 中断函数中调用 `USBD_IRQHandler`，并传入 `busid`
 * 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
-* 以上内容我们推荐放在 **board.c** 中，如下代码：
-
-.. code-block:: C
-
-        void OTG_HS_IRQHandler(void)
-        {
-        extern void USBD_IRQHandler(uint8_t busid);
-        USBD_IRQHandler(0);
-        }
-
-        int usbd_init(void)
-        {
-        xxx_template_init(0, USB_OTG_HS_PERIPH_BASE);
-        return 0;
-        }
-
-        INIT_APP_EXPORT(usbd_init);
-
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
 
 主机配置
@@ -71,7 +54,7 @@
 
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 在代码中实现 `usb_hc_low_level_init` 函数
-* 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
+* 在 USB 中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
 * 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
 * 如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：
