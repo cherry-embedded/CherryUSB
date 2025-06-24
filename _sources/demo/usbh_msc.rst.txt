@@ -18,7 +18,7 @@ usbh_msc
 
 
 - 不使用 fatfs，则直接使用 usbh_msc_scsi_read10 或者 usbh_msc_scsi_write10 函数进行读写操作。
-- 如果使用 fatfs，则需要在 usbh_msc_thread 中调用 fatfs 的接口进行读写操作。msc读写适配fatfs 参考 `platform/none/usbh_fatfs.c`
+- 如果使用 fatfs，则需要在 usbh_msc_thread 中调用 fatfs 的接口进行读写操作。msc读写适配fatfs 参考 `platform/fatfs/usbh_fatfs.c`
 
 .. code-block:: C
 
