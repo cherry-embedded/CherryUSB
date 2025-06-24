@@ -38,7 +38,7 @@ static ssize_t rt_udisk_read(rt_device_t dev, rt_off_t pos, void *buffer,
     rt_uint8_t *align_buf;
 
     align_buf = (rt_uint8_t *)buffer;
-#ifdef RT_USING_CACHE
+#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = rt_malloc_align(size * msc_class->blocksize, CONFIG_USB_ALIGN_SIZE);
         if (!align_buf) {
@@ -53,7 +53,7 @@ static ssize_t rt_udisk_read(rt_device_t dev, rt_off_t pos, void *buffer,
         rt_kprintf("usb mass_storage read failed\n");
         return 0;
     }
-#ifdef RT_USING_CACHE
+#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         usb_memcpy(buffer, align_buf, size * msc_class->blocksize);
         rt_free_align(align_buf);
@@ -70,7 +70,7 @@ static ssize_t rt_udisk_write(rt_device_t dev, rt_off_t pos, const void *buffer,
     rt_uint8_t *align_buf;
 
     align_buf = (rt_uint8_t *)buffer;
-#ifdef RT_USING_CACHE
+#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = rt_malloc_align(size * msc_class->blocksize, CONFIG_USB_ALIGN_SIZE);
         if (!align_buf) {
@@ -86,7 +86,7 @@ static ssize_t rt_udisk_write(rt_device_t dev, rt_off_t pos, const void *buffer,
         rt_kprintf("usb mass_storage write failed\n");
         return 0;
     }
-#ifdef RT_USING_CACHE
+#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         rt_free_align(align_buf);
     }

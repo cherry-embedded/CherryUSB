@@ -127,6 +127,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/cdc/usbd_cdc_ncm.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DFU']):
         src += Glob('class/dfu/usbd_dfu.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB']):
+        src += Glob('class/adb/usbd_adb.c')
+        src += Glob('platform/rtthread/usbd_adb_shell.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM']):
         src += Glob('demo/cdc_acm_template.c')
@@ -162,6 +165,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/winusb2.0_cdc_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_HID']):
         src += Glob('demo/winusb2.0_hid_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_ADB']):
+        src += Glob('demo/adb/usbd_adb_template.c')
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_HOST']):
@@ -284,6 +289,13 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
         CPPDEFINES+=['TEST_USBH_MSC=0']
         src += Glob('demo/usb_host.c')
+
+    if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM'])    \
+        or GetDepend(['PKG_CHERRYUSB_HOST_FTDI'])   \
+        or GetDepend(['PKG_CHERRYUSB_HOST_CH34X'])  \
+        or GetDepend(['PKG_CHERRYUSB_HOST_CP210X']) \
+        or GetDepend(['PKG_CHERRYUSB_HOST_PL2303']):
+        src += Glob('platform/rtthread/usbh_serial.c')
 
     if GetDepend('RT_USING_DFS') and GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
        src += Glob('platform/rtthread/usbh_dfs.c')
