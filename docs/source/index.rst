@@ -107,6 +107,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    demo/usbd_video
    demo/usbd_winusb
    demo/usbd_webusb
+   demo/usbd_adb
    demo/usbh_serial
    demo/usbh_hid
    demo/usbh_msc

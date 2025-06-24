@@ -15,12 +15,11 @@ CLASS 驱动信息结构体
 .. code-block:: C
 
     struct usbh_class_info {
-        uint8_t match_flags; /* Used for product specific matches; range is inclusive */
-        uint8_t class;       /* Base device class code */
-        uint8_t subclass;    /* Sub-class, depends on base class. Eg. */
-        uint8_t protocol;    /* Protocol, depends on base class. Eg. */
-        uint16_t vid;        /* Vendor ID (for vendor/product specific devices) */
-        uint16_t pid;        /* Product ID (for vendor/product specific devices) */
+        uint8_t match_flags;           /* Used for product specific matches; range is inclusive */
+        uint8_t bInterfaceClass;       /* Base device class code */
+        uint8_t bInterfaceSubClass;    /* Sub-class, depends on base class. Eg. */
+        uint8_t bInterfaceProtocol;    /* Protocol, depends on base class. Eg. */
+        const uint16_t (*id_table)[2]; /* List of Vendor/Product ID pairs */
         const struct usbh_class_driver *class_driver;
     };
 

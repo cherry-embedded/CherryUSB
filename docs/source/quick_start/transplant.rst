@@ -12,6 +12,7 @@ USB Device 移植要点
 - 描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template
 - 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
 - 在中断函数中调用 `USBD_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBD_IRQHandler` ，请更改 USB 协议栈中的名称
+- 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
 - 编译使用。各个 class 如何使用，参考 demo 下的 template
 
 USB Host 移植要点
@@ -22,7 +23,20 @@ USB Host 移植要点
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
-- 如果使用的是 GCC ，需要在链接脚本中添加如下代码（需要放在 flash 位置）：
+- 链接脚本修改参考 :ref:`usbh_link_script` 章节
+- 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
+- 编译使用。基础的 cdc + hid + msc 参考 `usb_host.c` 文件，其余参考 **platform** 目录下适配
+
+.. _usbh_link_script:
+
+主机链接脚本修改
+-----------------------
+
+在使用主机时，如果没有修改链接脚本，会报 `__usbh_class_info_start__` 和 `__usbh_class_info_end__` 未定义的错误。因为主机协议栈需要在链接脚本中添加一个 section 来存储 class 信息。
+
+- 如果使用的是 KEIL 无需修改
+
+- 如果使用的是 GCC ，需要在链接脚本中添加如下代码（需要放在 flash 位置，建议放最后）：
 
 .. code-block:: C
 
@@ -68,15 +82,17 @@ GCC 举例如下：
         place in AXI_SRAM                         { block cherryusb_usbh_class_info };
         keep { section .usbh_class_info};
 
-- 编译使用。各个 class 如何使用，参考 demo 下的 `usb_host.c` 文件
 
-带 cache 功能的芯片使用注意
+.. _usb_cache:
+
+cache 配置修改
 -------------------------------
 
-协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。 `USB_NOCACHE_RAM_SECTION` 宏表示将变量指定到非 cache ram上，
-因此，用户需要在对应的链接脚本中添加 no cache ram 的 section。默认 `USB_NOCACHE_RAM_SECTION` 定义为  `__attribute__((section(".noncacheable")))`。
+对于带 cache 的芯片，协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。
+`USB_NOCACHE_RAM_SECTION` 宏表示将变量指定到非 cache ram上，默认 `USB_NOCACHE_RAM_SECTION` 定义为  `__attribute__((section(".noncacheable")))`。
+因此，用户需要在对应的链接脚本中添加 no cache ram 的 section，并且 section 段包含 `.noncacheable`。
 
-.. note:: 需要注意，光指定 section 是不够的，还需要配置该 section 中的 ram 是真的 nocache，一般需要配置 mpu 属性（arm 的参考 stm32h7 demo）。
+.. note:: 需要注意，光修改链接脚本中的 nocache section 是不够的，还需要配置该 section 中的 ram 是真的 nocache，一般需要配置 mpu 属性（arm 的参考 stm32h7 demo）。
 
 GCC:
 

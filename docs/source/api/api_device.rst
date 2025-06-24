@@ -7,6 +7,10 @@
 - 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_init_intf`, 如果没有支持的，手动创建一个 intf 填入
 - 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
+参考下面这张图：
+
+.. figure:: img/api_device1.png
+
 CORE
 -----------------
 

@@ -28,35 +28,19 @@
         #define CONFIG_USB_PRINTF(...) rt_kprintf(__VA_ARGS__)
 
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
-* 退出以后不急着编译，需要在代码中实现 `usb_dc_low_level_init` 函数。
+* 在代码中实现 `usb_dc_low_level_init` 函数
+* 在 USB 中断函数中调用 `USBD_IRQHandler`，并传入 `busid`
 * 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
-* 以上内容我们推荐放在 **board.c** 中，如下代码：
-
-.. code-block:: C
-
-        void OTG_HS_IRQHandler(void)
-        {
-        extern void USBD_IRQHandler(uint8_t busid);
-        USBD_IRQHandler(0);
-        }
-
-        int usbd_init(void)
-        {
-        xxx_template_init(0, USB_OTG_HS_PERIPH_BASE);
-        return 0;
-        }
-
-        INIT_APP_EXPORT(usbd_init);
-
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
+* 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
 
 主机配置
 --------------------------
 
-* 选择 Enable usb host mode 并敲回车进入。
-* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme。
+* 选择 Enable usb host mode 并敲回车进入
+* 选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 **port** 目录下对应的 readme
 * 根据需要勾选 class 驱动
-* 选择是否开启模板 demo，请注意， msc 禁止使能，因为默认对接到 dfs。
+* 选择是否开启模板 demo，推荐不用
 
 .. figure:: img/env2.png
 
@@ -71,77 +55,8 @@
 
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 在代码中实现 `usb_hc_low_level_init` 函数
+* 在 USB 中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
 * 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
-* 以上内容我们推荐放在 **board.c** 中，如下代码：
-
-.. code-block:: C
-
-        void OTG_HS_IRQHandler(void)
-        {
-        extern void USBH_IRQHandler(uint8_t busid);
-        USBH_IRQHandler(0);
-        }
-
-        int usbh_init(void)
-        {
-        usbh_initialize(0, USB_OTG_HS_PERIPH_BASE);
-        return 0;
-        }
-
-        INIT_APP_EXPORT(usbh_init);
-
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
-* 如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：
-
-.. code-block:: C
-
-        /* section information for usbh class */
-        . = ALIGN(4);
-        __usbh_class_info_start__ = .;
-        KEEP(*(.usbh_class_info))
-        __usbh_class_info_end__ = .;
-
-
-举例如下：
-
-.. code-block:: C
-
-        /* The program code and other data into "FLASH" Rom type memory */
-        .text :
-        {
-        . = ALIGN(4);
-        *(.text)           /* .text sections (code) */
-        *(.text*)          /* .text* sections (code) */
-        *(.glue_7)         /* glue arm to thumb code */
-        *(.glue_7t)        /* glue thumb to arm code */
-        *(.eh_frame)
-
-        KEEP (*(.init))
-        KEEP (*(.fini))
-        . = ALIGN(4);
-        __usbh_class_info_start__ = .;
-        KEEP(*(.usbh_class_info))
-        __usbh_class_info_end__ = .;
-        . = ALIGN(4);
-        _etext = .;        /* define a global symbols at end of code */
-        } > FLASH
-
-借助 STM32CubeMX 生成 USB 初始化
-----------------------------------
-
-使用 STM32CubeMX 主要是用来生成 usb 时钟、引脚、中断的配置。我们需要点击如图所示文件，并配置好 USB 的时钟、中断，点击 `Generate Code`。
-
-.. figure:: img/stm32cubemx0.png
-.. figure:: img/stm32cubemx1.png
-.. figure:: img/stm32cubemx2.png
-.. figure:: img/stm32cubemx_clk.png
-
-- 将 `main.c` 中的 `SystemClock_Config` 替换掉 `board.c` 中的配置
-
-.. figure:: img/stm32_init2.png
-
-.. note :: 下面步骤从 V1.5.0 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
-
-- 将 `stm32xxxx_hal_msp.c` 中的 `HAL_PCD_MspInit` 或者是 `HAL_HCD_MspInit` 中的内容复制到 `usb_dc_low_level_init` 和 `usb_hc_low_level_init` 函数中，举例如下：
-
-.. figure:: img/stm32_init.png
+* 链接脚本修改参考 :ref:`usbh_link_script` 章节
+* 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
