@@ -109,6 +109,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_video.html">usbd_video</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_winusb.html">usbd_winusb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_webusb.html">usbd_webusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_adb.html">usbd_adb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_serial.html">usbh_serial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_hid.html">usbh_hid</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_msc.html">usbh_msc</a></li>
@@ -189,12 +190,11 @@
 <section id="class">
 <h3>CLASS 驱动信息结构体<a class="headerlink" href="#class" title="Link to this heading"></a></h3>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_class_info</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">match_flags</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Used for product specific matches; range is inclusive */</span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">class</span><span class="p">;</span><span class="w">       </span><span class="cm">/* Base device class code */</span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">subclass</span><span class="p">;</span><span class="w">    </span><span class="cm">/* Sub-class, depends on base class. Eg. */</span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">protocol</span><span class="p">;</span><span class="w">    </span><span class="cm">/* Protocol, depends on base class. Eg. */</span>
-<span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">vid</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Vendor ID (for vendor/product specific devices) */</span>
-<span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">pid</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Product ID (for vendor/product specific devices) */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">match_flags</span><span class="p">;</span><span class="w">           </span><span class="cm">/* Used for product specific matches; range is inclusive */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">bInterfaceClass</span><span class="p">;</span><span class="w">       </span><span class="cm">/* Base device class code */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">bInterfaceSubClass</span><span class="p">;</span><span class="w">    </span><span class="cm">/* Sub-class, depends on base class. Eg. */</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">bInterfaceProtocol</span><span class="p">;</span><span class="w">    </span><span class="cm">/* Protocol, depends on base class. Eg. */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">id_table</span><span class="p">)[</span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="cm">/* List of Vendor/Product ID pairs */</span>
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_class_driver</span><span class="w"> </span><span class="o">*</span><span class="n">class_driver</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>

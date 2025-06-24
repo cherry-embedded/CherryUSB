@@ -50,7 +50,6 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">基于 RT-Thread 软件包开发指南</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id1">从机配置</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id2">主机配置</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#stm32cubemx-usb">借助 STM32CubeMX 生成 USB 初始化</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="esp.html">基于 ESP-Registry 开发指南</a></li>
@@ -95,6 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_video.html">usbd_video</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_winusb.html">usbd_winusb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbd_webusb.html">usbd_webusb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_adb.html">usbd_adb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_serial.html">usbh_serial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_hid.html">usbh_hid</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo/usbh_msc.html">usbh_msc</a></li>
@@ -220,10 +220,10 @@
 <section id="id2">
 <h2>主机配置<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>选择 Enable usb host mode 并敲回车进入。</p></li>
-<li><p>选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 <strong>port</strong> 目录下对应的 readme。</p></li>
+<li><p>选择 Enable usb host mode 并敲回车进入</p></li>
+<li><p>选择 USB host ip，不清楚自己芯片是哪个 ip 的可以参考 <strong>port</strong> 目录下对应的 readme</p></li>
 <li><p>根据需要勾选 class 驱动</p></li>
-<li><p>选择是否开启模板 demo，请注意， msc 禁止使能，因为默认对接到 dfs。</p></li>
+<li><p>选择是否开启模板 demo，推荐不用</p></li>
 </ul>
 <figure class="align-default">
 <img alt="../_images/env2.png" src="../_images/env2.png" />
@@ -240,25 +240,8 @@
 <ul class="simple">
 <li><p>USB IP 相关的 config 需要用户自己根据芯片实际情况修改</p></li>
 <li><p>在代码中实现 <cite>usb_hc_low_level_init</cite> 函数</p></li>
+<li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
-<li><p>以上内容我们推荐放在 <strong>board.c</strong> 中，如下代码：</p></li>
-</ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">OTG_HS_IRQHandler</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-<span class="k">extern</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">USBH_IRQHandler</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">);</span>
-<span class="n">USBH_IRQHandler</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-<span class="p">}</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="nf">usbh_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-<span class="n">usbh_initialize</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">USB_OTG_HS_PERIPH_BASE</span><span class="p">);</span>
-<span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="n">INIT_APP_EXPORT</span><span class="p">(</span><span class="n">usbh_init</span><span class="p">);</span>
-</pre></div>
-</div>
-<ul class="simple">
 <li><p>使用 <cite>scons –target=mdk5</cite> 或者 <cite>scons</cite> 进行编译，如果是mdk，需要使用 AC6 编译器</p></li>
 <li><p>如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：</p></li>
 </ul>
@@ -291,38 +274,6 @@
 <span class="p">}</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">FLASH</span>
 </pre></div>
 </div>
-</section>
-<section id="stm32cubemx-usb">
-<h2>借助 STM32CubeMX 生成 USB 初始化<a class="headerlink" href="#stm32cubemx-usb" title="Link to this heading"></a></h2>
-<p>使用 STM32CubeMX 主要是用来生成 usb 时钟、引脚、中断的配置。我们需要点击如图所示文件，并配置好 USB 的时钟、中断，点击 <cite>Generate Code</cite>。</p>
-<figure class="align-default">
-<img alt="../_images/stm32cubemx0.png" src="../_images/stm32cubemx0.png" />
-</figure>
-<figure class="align-default">
-<img alt="../_images/stm32cubemx1.png" src="../_images/stm32cubemx1.png" />
-</figure>
-<figure class="align-default">
-<img alt="../_images/stm32cubemx2.png" src="../_images/stm32cubemx2.png" />
-</figure>
-<figure class="align-default">
-<img alt="../_images/stm32cubemx_clk.png" src="../_images/stm32cubemx_clk.png" />
-</figure>
-<ul class="simple">
-<li><p>将 <cite>main.c</cite> 中的 <cite>SystemClock_Config</cite> 替换掉 <cite>board.c</cite> 中的配置</p></li>
-</ul>
-<figure class="align-default">
-<img alt="../_images/stm32_init2.png" src="../_images/stm32_init2.png" />
-</figure>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>下面步骤从 V1.5.0 开始不再需要，<strong>fsdev/usb_glue_st.c</strong>, <strong>dwc2/usb_glue_st.c</strong> 文件中已经实现</p>
-</div>
-<ul class="simple">
-<li><p>将 <cite>stm32xxxx_hal_msp.c</cite> 中的 <cite>HAL_PCD_MspInit</cite> 或者是 <cite>HAL_HCD_MspInit</cite> 中的内容复制到 <cite>usb_dc_low_level_init</cite> 和 <cite>usb_hc_low_level_init</cite> 函数中，举例如下：</p></li>
-</ul>
-<figure class="align-default">
-<img alt="../_images/stm32_init.png" src="../_images/stm32_init.png" />
-</figure>
 </section>
 </section>
 
