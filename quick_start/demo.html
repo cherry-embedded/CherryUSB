@@ -374,6 +374,7 @@
 <img alt="../_images/stm32_13.png" src="../_images/stm32_13.png" />
 </figure>
 <ul class="simple">
+<li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
 <li><p>调用 template 的内容初始化，并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite></p></li>
 </ul>
 <figure class="align-default">
@@ -417,6 +418,8 @@
 <ul class="simple">
 <li><p>拷贝 <strong>xxx_msp.c</strong> 中的 <cite>HAL_HCD_MspInit</cite> 函数中的内容到 <cite>usb_hc_low_level_init</cite> 函数中，屏蔽 st 生成的 usb 初始化</p></li>
 <li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
+<li><p>链接脚本修改参考 <a class="reference internal" href="transplant.html#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
+<li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>启动线程</p></li>
 </ul>
@@ -425,12 +428,6 @@
 </figure>
 <figure class="align-default">
 <img alt="../_images/stm32_19.png" src="../_images/stm32_19.png" />
-</figure>
-<ul class="simple">
-<li><p>如果使用 <strong>msc</strong>，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 <strong>fatfs_usbh.c</strong> 文件。</p></li>
-</ul>
-<figure class="align-default">
-<img alt="../_images/stm32_21.png" src="../_images/stm32_21.png" />
 </figure>
 </section>
 </section>

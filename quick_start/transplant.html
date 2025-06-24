@@ -49,7 +49,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">芯片通用移植指南</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#usb-device">USB Device 移植要点</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usb-host">USB Host 移植要点</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#cache">带 cache 功能的芯片使用注意</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usbh-link-script">主机链接脚本修改</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cache">cache 配置修改</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
@@ -174,6 +175,7 @@
 <li><p>描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template</p></li>
 <li><p>调用 <cite>usbd_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite></p></li>
 <li><p>在中断函数中调用 <cite>USBD_IRQHandler</cite>，并传入 <cite>busid</cite>, 如果你的 SDK 中中断入口已经存在 <cite>USBD_IRQHandler</cite> ，请更改 USB 协议栈中的名称</p></li>
+<li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
 <li><p>编译使用。各个 class 如何使用，参考 demo 下的 template</p></li>
 </ul>
 </section>
@@ -185,7 +187,17 @@
 <li><p>实现 <cite>usb_hc_low_level_init</cite> 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。</p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite>, 如果你的 SDK 中中断入口已经存在 <cite>USBH_IRQHandler</cite> ，请更改 USB 协议栈中的名称</p></li>
-<li><p>如果使用的是 GCC ，需要在链接脚本中添加如下代码（需要放在 flash 位置）：</p></li>
+<li><p>链接脚本修改参考 <a class="reference internal" href="#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
+<li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
+<li><p>编译使用。基础的 cdc + hid + msc 参考 <cite>usb_host.c</cite> 文件，其余参考 <strong>platform</strong> 目录下适配</p></li>
+</ul>
+</section>
+<section id="usbh-link-script">
+<span id="id2"></span><h2>主机链接脚本修改<a class="headerlink" href="#usbh-link-script" title="Link to this heading"></a></h2>
+<p>在使用主机时，如果没有修改链接脚本，会报 <cite>__usbh_class_info_start__</cite> 和 <cite>__usbh_class_info_end__</cite> 未定义的错误。因为主机协议栈需要在链接脚本中添加一个 section 来存储 class 信息。</p>
+<ul class="simple">
+<li><p>如果使用的是 KEIL 无需修改</p></li>
+<li><p>如果使用的是 GCC ，需要在链接脚本中添加如下代码（需要放在 flash 位置，建议放最后）：</p></li>
 </ul>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="c1">// 在 ld 文件中添加如下代码</span>
 <span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
@@ -228,17 +240,15 @@
 <span class="n">keep</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">section</span><span class="w"> </span><span class="p">.</span><span class="n">usbh_class_info</span><span class="p">};</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><p>编译使用。各个 class 如何使用，参考 demo 下的 <cite>usb_host.c</cite> 文件</p></li>
-</ul>
 </section>
 <section id="cache">
-<h2>带 cache 功能的芯片使用注意<a class="headerlink" href="#cache" title="Link to this heading"></a></h2>
-<p>协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。 <cite>USB_NOCACHE_RAM_SECTION</cite> 宏表示将变量指定到非 cache ram上，
-因此，用户需要在对应的链接脚本中添加 no cache ram 的 section。默认 <cite>USB_NOCACHE_RAM_SECTION</cite> 定义为  <cite>__attribute__((section(“.noncacheable”)))</cite>。</p>
+<span id="usb-cache"></span><h2>cache 配置修改<a class="headerlink" href="#cache" title="Link to this heading"></a></h2>
+<p>对于带 cache 的芯片，协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。
+<cite>USB_NOCACHE_RAM_SECTION</cite> 宏表示将变量指定到非 cache ram上，默认 <cite>USB_NOCACHE_RAM_SECTION</cite> 定义为  <cite>__attribute__((section(“.noncacheable”)))</cite>。
+因此，用户需要在对应的链接脚本中添加 no cache ram 的 section，并且 section 段包含 <cite>.noncacheable</cite>。</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>需要注意，光指定 section 是不够的，还需要配置该 section 中的 ram 是真的 nocache，一般需要配置 mpu 属性（arm 的参考 stm32h7 demo）。</p>
+<p>需要注意，光修改链接脚本中的 nocache section 是不够的，还需要配置该 section 中的 ram 是真的 nocache，一般需要配置 mpu 属性（arm 的参考 stm32h7 demo）。</p>
 </div>
 <p>GCC:</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">MEMORY</span>

@@ -177,6 +177,8 @@ USB Device 移植要点
 
 .. figure:: img/stm32_13.png
 
+- 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
+
 - 调用 template 的内容初始化，并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
 
 .. figure:: img/stm32_15.png
@@ -212,13 +214,10 @@ USB Host 移植要点
 
 - 拷贝 **xxx_msp.c** 中的 `HAL_HCD_MspInit` 函数中的内容到 `usb_hc_low_level_init` 函数中，屏蔽 st 生成的 usb 初始化
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
+- 链接脚本修改参考 :ref:`usbh_link_script` 章节
+- 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 启动线程
 
 .. figure:: img/stm32_18.png
 .. figure:: img/stm32_19.png
-
-- 如果使用 **msc**，并且带文件系统，需要自行添加文件系统文件了，对应的 porting 编写参考 **fatfs_usbh.c** 文件。
-
-.. figure:: img/stm32_21.png
-

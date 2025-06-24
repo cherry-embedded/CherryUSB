@@ -198,6 +198,7 @@
 <li><p>在 USB 中断函数中调用 <cite>USBD_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
 <li><p>调用 <cite>usbd_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite></p></li>
 <li><p>使用 <cite>scons –target=mdk5</cite> 或者 <cite>scons</cite> 进行编译，如果是mdk，需要使用 AC6 编译器</p></li>
+<li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
 </ul>
 </section>
 <section id="id2">
@@ -226,37 +227,9 @@
 <li><p>在 USB 中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>使用 <cite>scons –target=mdk5</cite> 或者 <cite>scons</cite> 进行编译，如果是mdk，需要使用 AC6 编译器</p></li>
-<li><p>如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：</p></li>
+<li><p>链接脚本修改参考 <a class="reference internal" href="transplant.html#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
+<li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cm">/* section information for usbh class */</span>
-<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="n">__usbh_class_info_start__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
-<span class="n">KEEP</span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">usbh_class_info</span><span class="p">))</span>
-<span class="n">__usbh_class_info_end__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
-</pre></div>
-</div>
-<p>举例如下：</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cm">/* The program code and other data into &quot;FLASH&quot; Rom type memory */</span>
-<span class="p">.</span><span class="n">text</span><span class="w"> </span><span class="o">:</span>
-<span class="p">{</span>
-<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="p">)</span><span class="w">           </span><span class="cm">/* .text sections (code) */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="o">*</span><span class="p">)</span><span class="w">          </span><span class="cm">/* .text* sections (code) */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">glue_7</span><span class="p">)</span><span class="w">         </span><span class="cm">/* glue arm to thumb code */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">glue_7t</span><span class="p">)</span><span class="w">        </span><span class="cm">/* glue thumb to arm code */</span>
-<span class="o">*</span><span class="p">(.</span><span class="n">eh_frame</span><span class="p">)</span>
-
-<span class="n">KEEP</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">init</span><span class="p">))</span>
-<span class="n">KEEP</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">fini</span><span class="p">))</span>
-<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="n">__usbh_class_info_start__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
-<span class="n">KEEP</span><span class="p">(</span><span class="o">*</span><span class="p">(.</span><span class="n">usbh_class_info</span><span class="p">))</span>
-<span class="n">__usbh_class_info_end__</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span>
-<span class="p">.</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ALIGN</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="n">_etext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.;</span><span class="w">        </span><span class="cm">/* define a global symbols at end of code */</span>
-<span class="p">}</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">FLASH</span>
-</pre></div>
-</div>
 </section>
 </section>
 
