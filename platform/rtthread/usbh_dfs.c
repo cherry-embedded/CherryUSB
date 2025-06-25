@@ -30,8 +30,8 @@ static rt_err_t rt_udisk_init(rt_device_t dev)
     return RT_EOK;
 }
 
-static ssize_t rt_udisk_read(rt_device_t dev, rt_off_t pos, void *buffer,
-                             rt_size_t size)
+static rt_ssize_t rt_udisk_read(rt_device_t dev, rt_off_t pos, void *buffer,
+                                rt_size_t size)
 {
     struct usbh_msc *msc_class = (struct usbh_msc *)dev->user_data;
     int ret;
@@ -62,8 +62,8 @@ static ssize_t rt_udisk_read(rt_device_t dev, rt_off_t pos, void *buffer,
     return size;
 }
 
-static ssize_t rt_udisk_write(rt_device_t dev, rt_off_t pos, const void *buffer,
-                              rt_size_t size)
+static rt_ssize_t rt_udisk_write(rt_device_t dev, rt_off_t pos, const void *buffer,
+                                 rt_size_t size)
 {
     struct usbh_msc *msc_class = (struct usbh_msc *)dev->user_data;
     int ret;
