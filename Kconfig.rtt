@@ -135,6 +135,11 @@ if RT_USING_CHERRYUSB
             prompt "Enable usb dfu device"
             default n
 
+        config RT_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV
+            bool
+            prompt "Enable chardev for cdc acm device"
+            default n
+
         choice
             prompt "Select usb device template"
             default RT_CHERRYUSB_DEVICE_TEMPLATE_NONE
@@ -176,6 +181,8 @@ if RT_USING_CHERRYUSB
                 bool "winusbv2_hid"
             config RT_CHERRYUSB_DEVICE_TEMPLATE_ADB
                 bool "adb"
+            config RT_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_CHARDEV
+                bool "cdc_acm_chardev"
         endchoice
 
         config CONFIG_USBDEV_MSC_BLOCK_DEV_NAME

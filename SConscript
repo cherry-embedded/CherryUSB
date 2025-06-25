@@ -131,12 +131,13 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/adb/usbd_adb.c')
         src += Glob('platform/rtthread/usbd_adb_shell.c')
 
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV']):
+        src += Glob('platform/rtthread/usbd_serial.c')
+
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM']):
         src += Glob('demo/cdc_acm_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC']) or GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC_BLKDEV']):
         src += Glob('demo/msc_ram_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC_BLKDEV']):
-        src += Glob('platform/rtthread/usbd_msc_blkdev.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_MOUSE']):
         src += Glob('demo/hid_mouse_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_KEYBOARD']):
@@ -167,6 +168,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/winusb2.0_hid_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_ADB']):
         src += Glob('demo/adb/usbd_adb_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_CHARDEV']):
+        src += Glob('demo/cdc_acm_rttchardev_template.c')
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_HOST']):
