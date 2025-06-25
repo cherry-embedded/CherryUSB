@@ -83,8 +83,8 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     uint8_t intf_altsetting[16];
     uint8_t intf_offset;
 
-    struct usbd_tx_rx_msg tx_msg[CONFIG_USBDEV_EP_NUM];
-    struct usbd_tx_rx_msg rx_msg[CONFIG_USBDEV_EP_NUM];
+    struct usbd_tx_rx_msg tx_msg[16];
+    struct usbd_tx_rx_msg rx_msg[16];
 
     void (*event_handler)(uint8_t busid, uint8_t event);
 } g_usbd_core[CONFIG_USBDEV_MAX_BUS];
