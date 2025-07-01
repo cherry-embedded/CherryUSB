@@ -354,10 +354,12 @@
 </ul>
 <p>其中， <cite>urb</cite> 结构体信息如下：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">usb_slist_t</span><span class="w"> </span><span class="n">list</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">hcpriv</span><span class="p">;</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hubport</span><span class="w"> </span><span class="o">*</span><span class="n">hport</span><span class="p">;</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_endpoint_descriptor</span><span class="w"> </span><span class="o">*</span><span class="n">ep</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">data_toggle</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">interval</span><span class="p">;</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_setup_packet</span><span class="w"> </span><span class="o">*</span><span class="n">setup</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">transfer_buffer</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">transfer_buffer_length</span><span class="p">;</span>
@@ -382,6 +384,7 @@
 <li><p><strong>hport</strong> 当前 urb 使用的 hport</p></li>
 <li><p><strong>ep</strong> 当前 urb 使用的 ep</p></li>
 <li><p><strong>data_toggle</strong> 当前 data toggle</p></li>
+<li><p><strong>interval</strong> urb 传输间隔，单位 us，如果 interval 大于 1000us，则需要使用软件定时器来维护</p></li>
 <li><p><strong>setup</strong> setup 请求缓冲区，端点0使用</p></li>
 <li><p><strong>transfer_buffer</strong> 传输的数据缓冲区</p></li>
 <li><p><strong>transfer_buffer_length</strong> 传输长度</p></li>

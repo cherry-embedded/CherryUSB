@@ -186,33 +186,36 @@ usbh_submit_urb
 
 .. code-block:: C
 
-  struct usbh_urb {
-      void *hcpriv;
-      struct usbh_hubport *hport;
-      struct usb_endpoint_descriptor *ep;
-      uint8_t data_toggle;
-      struct usb_setup_packet *setup;
-      uint8_t *transfer_buffer;
-      uint32_t transfer_buffer_length;
-      int transfer_flags;
-      uint32_t actual_length;
-      uint32_t timeout;
-      int errorcode;
-      uint32_t num_of_iso_packets;
-      uint32_t start_frame;
-      usbh_complete_callback_t complete;
-      void *arg;
-  #if defined(__ICCARM__) || defined(__ICCRISCV__) || defined(__ICCRX__)
-      struct usbh_iso_frame_packet *iso_packet;
-  #else
-      struct usbh_iso_frame_packet iso_packet[0];
-  #endif
-  };
+    struct usbh_urb {
+        usb_slist_t list;
+        void *hcpriv;
+        struct usbh_hubport *hport;
+        struct usb_endpoint_descriptor *ep;
+        uint8_t data_toggle;
+        uint8_t interval;
+        struct usb_setup_packet *setup;
+        uint8_t *transfer_buffer;
+        uint32_t transfer_buffer_length;
+        int transfer_flags;
+        uint32_t actual_length;
+        uint32_t timeout;
+        int errorcode;
+        uint32_t num_of_iso_packets;
+        uint32_t start_frame;
+        usbh_complete_callback_t complete;
+        void *arg;
+    #if defined(__ICCARM__) || defined(__ICCRISCV__) || defined(__ICCRX__)
+        struct usbh_iso_frame_packet *iso_packet;
+    #else
+        struct usbh_iso_frame_packet iso_packet[0];
+    #endif
+    };
 
 - **hcpriv** 主机控制器驱动私有成员
 - **hport** 当前 urb 使用的 hport
 - **ep** 当前 urb 使用的 ep
 - **data_toggle** 当前 data toggle
+- **interval** urb 传输间隔，单位 us，如果 interval 大于 1000us，则需要使用软件定时器来维护
 - **setup** setup 请求缓冲区，端点0使用
 - **transfer_buffer** 传输的数据缓冲区
 - **transfer_buffer_length** 传输长度
