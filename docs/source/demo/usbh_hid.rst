@@ -48,4 +48,8 @@ usbh_hid
 
 .. code-block:: C
 
-    hub->int_timer = usb_osal_timer_create("hubint_tim", USBH_GET_URB_INTERVAL(hub->intin->bInterval, hport->speed), hub_int_timeout, hub, 0);
+    hub->int_timer = usb_osal_timer_create("hubint_tim", USBH_GET_URB_INTERVAL(hub->intin->bInterval, hport->speed) / 1000, hub_int_timeout, hub, 0);
+
+.. note::
+
+    这里的 `USBH_GET_URB_INTERVAL` 是一个宏定义，用于根据 binterval 计算 URB 的传输间隔时间, 单位是 us，而定时器最低是 ms ，因此需要除以 1000。对于小于等于 1ms 的不需要使用定时器。
