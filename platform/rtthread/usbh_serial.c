@@ -114,12 +114,10 @@ static void usbh_serial_cdc_acm_free(struct usbh_serial *serial)
 static rt_err_t usbh_serial_open(struct rt_device *dev, rt_uint16_t oflag)
 {
     struct usbh_serial *serial;
-    struct usbh_cdc_acm *cdc_acm_class;
 
     RT_ASSERT(dev != RT_NULL);
 
     serial = (struct usbh_serial *)dev;
-    cdc_acm_class = (struct usbh_cdc_acm *)dev->user_data;
 
     switch (serial->type) {
         case USBH_SERIAL_TYPE_CDC_ACM:
@@ -143,12 +141,10 @@ static rt_err_t usbh_serial_open(struct rt_device *dev, rt_uint16_t oflag)
 static rt_err_t usbh_serial_close(struct rt_device *dev)
 {
     struct usbh_serial *serial;
-    struct usbh_cdc_acm *cdc_acm_class;
 
     RT_ASSERT(dev != RT_NULL);
 
     serial = (struct usbh_serial *)dev;
-    cdc_acm_class = (struct usbh_cdc_acm *)dev->user_data;
 
     switch (serial->type) {
         case USBH_SERIAL_TYPE_CDC_ACM:
@@ -175,7 +171,6 @@ static rt_ssize_t usbh_serial_read(struct rt_device *dev,
                                    rt_size_t size)
 {
     struct usbh_serial *serial;
-    struct usbh_cdc_acm *cdc_acm_class;
 
     RT_ASSERT(dev != RT_NULL);
 
@@ -198,7 +193,7 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
     serial = (struct usbh_serial *)dev;
 
     align_buf = (rt_uint8_t *)buffer;
-#ifdef RT_USING_CACHE
+#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = rt_malloc_align(size, CONFIG_USB_ALIGN_SIZE);
         if (!align_buf) {
@@ -279,7 +274,7 @@ static rt_err_t usbh_serial_control(struct rt_device *dev,
     struct usbh_serial *serial;
     struct serial_configure *config;
     struct cdc_line_coding line_coding;
-    int ret = RT_EINVAL;
+    int ret = -RT_EINVAL;
 
     RT_ASSERT(dev != RT_NULL);
 
@@ -385,7 +380,7 @@ static rt_err_t usbh_serial_control(struct rt_device *dev,
             break;
     }
 
-    return RT_EINVAL;
+    return ret;
 }
 
 #ifdef RT_USING_DEVICE_OPS
