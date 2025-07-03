@@ -13,7 +13,7 @@ FATFS s_sd_disk;
 FIL s_file;
 BYTE work[FF_MAX_SS];
 
-const TCHAR driver_num_buf[4] = { '0', ':', '/', '\0' };
+const TCHAR driver_num_buf[3] = { '0', ':', '\0' };
 
 const char *show_error_string(FRESULT fresult);
 
