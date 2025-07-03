@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 #include "usbd_core.h"
 #include "usbh_core.h"
+#include "usb_dwc2_param.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define DEFAULT_CPU_FREQ_MHZ    CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
@@ -29,6 +30,95 @@
 uint32_t SystemCoreClock = (DEFAULT_CPU_FREQ_MHZ * 1000 * 1000);
 static usb_phy_handle_t s_phy_handle = NULL;
 static intr_handle_t s_interrupt_handle = NULL;
+
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+const struct dwc2_user_params param_fs = {
+    .phy_type = DWC2_PHY_TYPE_PARAM_FS,
+    .device_dma_enable = true,
+    .device_dma_desc_enable = false,
+    .device_rx_fifo_size = (200 - 16 * 7),
+    .device_tx_fifo_size = {
+        [0] = 16, // 64 byte
+        [1] = 16, // 64 byte
+        [2] = 16, // 64 byte
+        [3] = 16, // 64 byte
+        [4] = 16, // 64 byte
+        [5] = 16, // 64 byte
+        [6] = 16, // 64 byte
+        [7] = 0,
+        [8] = 0,
+        [9] = 0,
+        [10] = 0,
+        [11] = 0,
+        [12] = 0,
+        [13] = 0,
+        [14] = 0,
+        [15] = 0 },
+
+    .host_dma_desc_enable = false,
+    .host_rx_fifo_size = 80,
+    .host_nperio_tx_fifo_size = 60, // 240 byte
+    .host_perio_tx_fifo_size = 60,  // 240 byte
+};
+#elif CONFIG_IDF_TARGET_ESP32P4
+const struct dwc2_user_params param_fs = {
+    .phy_type = DWC2_PHY_TYPE_PARAM_FS,
+    .device_dma_enable = true,
+    .device_dma_desc_enable = false,
+    .device_rx_fifo_size = (200 - 16 * 7),
+    .device_tx_fifo_size = {
+        [0] = 16, // 64 byte
+        [1] = 16, // 64 byte
+        [2] = 16, // 64 byte
+        [3] = 16, // 64 byte
+        [4] = 16, // 64 byte
+        [5] = 16, // 64 byte
+        [6] = 16, // 64 byte
+        [7] = 0,
+        [8] = 0,
+        [9] = 0,
+        [10] = 0,
+        [11] = 0,
+        [12] = 0,
+        [13] = 0,
+        [14] = 0,
+        [15] = 0 },
+
+    .host_dma_desc_enable = false,
+    .host_rx_fifo_size = (200 - 60 - 60),
+    .host_nperio_tx_fifo_size = 60, // 240 byte
+    .host_perio_tx_fifo_size = 60,  // 240 byte
+};
+
+const struct dwc2_user_params param_hs = {
+    .phy_type = DWC2_PHY_TYPE_PARAM_UTMI,
+    .device_dma_enable = true,
+    .device_dma_desc_enable = false,
+    .device_rx_fifo_size = (896 - 16 - 128 - 128 - 128 - 128 - 16 - 16),
+    .device_tx_fifo_size = {
+        [0] = 16,  // 64 byte
+        [1] = 128, // 512 byte
+        [2] = 128, // 512 byte
+        [3] = 128, // 512 byte
+        [4] = 128, // 512 byte
+        [5] = 16,  // 64 byte
+        [6] = 16,  // 64 byte
+        [7] = 0,
+        [8] = 0,
+        [9] = 0,
+        [10] = 0,
+        [11] = 0,
+        [12] = 0,
+        [13] = 0,
+        [14] = 0,
+        [15] = 0 },
+
+    .host_dma_desc_enable = false,
+    .host_rx_fifo_size = (896 - 128 - 128),
+    .host_nperio_tx_fifo_size = 128, // 512 byte
+    .host_perio_tx_fifo_size = 128,  // 512 byte
+};
+#endif
 
 static void usb_dc_interrupt_cb(void *arg_pv)
 {
@@ -73,11 +163,6 @@ void usb_dc_low_level_deinit(uint8_t busid)
         usb_del_phy(s_phy_handle);
         s_phy_handle = NULL;
     }
-}
-
-uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
-{
-    return 0;
 }
 
 static void usb_hc_interrupt_cb(void *arg_pv)
@@ -129,9 +214,17 @@ void usb_hc_low_level_deinit(struct usbh_bus *bus)
     }
 }
 
-uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
+void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
 {
-    return 0;
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    memcpy(params, &param_fs, sizeof(struct dwc2_user_params));
+#elif CONFIG_IDF_TARGET_ESP32P4
+    if (reg_base == 0x50000000UL) {
+        memcpy(params, &param_hs, sizeof(struct dwc2_user_params));
+    } else {
+        memcpy(params, &param_fs, sizeof(struct dwc2_user_params));
+    }
+#endif
 }
 
 void usbd_dwc2_delay_ms(uint8_t ms)

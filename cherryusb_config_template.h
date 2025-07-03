@@ -262,28 +262,20 @@
 
 // #define CONFIG_USBDEV_SOF_ENABLE
 
-/* When your chip hardware supports high-speed and wants to initialize it in high-speed mode, the relevant IP will configure the internal or external high-speed PHY according to CONFIG_USB_HS. */
+/* When your chip hardware supports high-speed and wants to initialize it in high-speed mode,
+ * the relevant IP will configure the internal or external high-speed PHY according to CONFIG_USB_HS.
+ *
+ * in xxx32 chips, only pb14/pb15 can support hs mode, pa11/pa12 is not supported(only a few supports, but we ignore them).
+*/
 // #define CONFIG_USB_HS
 
 /* ---------------- FSDEV Configuration ---------------- */
 //#define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2 // maybe 1 or 2, many chips may have a difference
 
 /* ---------------- DWC2 Configuration ---------------- */
-/* (5 * number of control endpoints + 8) + ((largest USB packet used / 4) + 1 for
- * status information) + (2 * number of OUT endpoints) + 1 for Global NAK
- */
-// #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1024 / 4)
-/* IN Endpoints Max packet Size / 4 */
-// #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
-// #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (1024 / 4)
-// #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
-// #define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
-// #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (0 / 4)
-// #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (0 / 4)
-// #define CONFIG_USB_DWC2_TX6_FIFO_SIZE (0 / 4)
-// #define CONFIG_USB_DWC2_TX7_FIFO_SIZE (0 / 4)
-// #define CONFIG_USB_DWC2_TX8_FIFO_SIZE (0 / 4)
-
+/* enable dwc2 buffer dma mode for device
+ * in xxx32 chips, only pb14/pb15 can support dma mode, pa11/pa12 is not supported(only a few supports, but we ignore them)
+*/
 // #define CONFIG_USB_DWC2_DMA_ENABLE
 
 /* ---------------- MUSB Configuration ---------------- */
@@ -319,17 +311,6 @@
 
 /* ---------------- XHCI Configuration ---------------- */
 #define CONFIG_USB_XHCI_HCCR_OFFSET (0x0)
-
-/* ---------------- DWC2 Configuration ---------------- */
-/* largest non-periodic USB packet used / 4 */
-// #define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
-/* largest periodic USB packet used / 4 */
-// #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
-/*
- * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
- * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
- */
-// #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE))
 
 /* ---------------- MUSB Configuration ---------------- */
 // #define CONFIG_USB_MUSB_SUNXI

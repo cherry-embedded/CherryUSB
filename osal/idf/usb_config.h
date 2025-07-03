@@ -246,92 +246,12 @@
 #define CONFIG_USBHOST_BLUETOOTH_RX_SIZE 2048
 #endif
 
-/* ================ USB Device Port Configuration ================*/
-
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define ESP_USBD_BASE           0x60080000
-
 #define CONFIG_USBDEV_MAX_BUS 1
-// esp32s2/s3 has 7 endpoints in device mode (include ep0)
-#define CONFIG_USBDEV_EP_NUM 7
-
-/* ---------------- DWC2 Configuration ---------------- */
-//esp32s2/s3 can support up to 5 IN endpoints(include ep0) at the same time
-#define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (320 / 4)
-#define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX6_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX7_FIFO_SIZE (0 / 4)
-#define CONFIG_USB_DWC2_TX8_FIFO_SIZE (0 / 4)
-
-#define CONFIG_USB_DWC2_DMA_ENABLE
-
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define ESP_USBD_BASE           0x50000000UL
-
-#define CONFIG_USBDEV_MAX_BUS 1
-#define CONFIG_USBDEV_EP_NUM 7 // 16
-
-/* ---------------- DWC2 Configuration ---------------- */
-//esp32s2/s3 can support up to 5 IN endpoints(include ep0) at the same time
-#define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1024 / 4)
-#define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (512 / 4)
-#define CONFIG_USB_DWC2_TX2_FIFO_SIZE (512 / 4)
-#define CONFIG_USB_DWC2_TX3_FIFO_SIZE (512 / 4)
-#define CONFIG_USB_DWC2_TX4_FIFO_SIZE (512 / 4)
-#define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX6_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX7_FIFO_SIZE (0 / 4)
-#define CONFIG_USB_DWC2_TX8_FIFO_SIZE (0 / 4)
-
-#define CONFIG_USB_DWC2_DMA_ENABLE
-#define CONFIG_USB_HS
-#else
-#error "Unsupported SoC"
-#endif
-
-/* ================ USB Host Port Configuration ==================*/
-
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define ESP_USBH_BASE               0x60080000
-
 #define CONFIG_USBHOST_MAX_BUS 1
-// esp32s2/s3 has 8 endpoints in host mode (include ep0)
-#define CONFIG_USBHOST_PIPE_NUM 8
-
-/* ---------------- DWC2 Configuration ---------------- */
-/* largest non-periodic USB packet used / 4 */
-#define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (240 / 4)
-/* largest periodic USB packet used / 4 */
-#define CONFIG_USB_DWC2_PTX_FIFO_SIZE (240 / 4)
-/*
- * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
- * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
- */
-#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((200 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE))
-
 #elif CONFIG_IDF_TARGET_ESP32P4
-#define ESP_USBH_BASE               0x50000000UL
-
-#define CONFIG_USBHOST_MAX_BUS 1
-#define CONFIG_USBHOST_PIPE_NUM 16
-
-/* ---------------- DWC2 Configuration ---------------- */
-/* largest non-periodic USB packet used / 4 */
-#define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
-/* largest periodic USB packet used / 4 */
-#define CONFIG_USB_DWC2_PTX_FIFO_SIZE (512 / 4)
-/*
- * (largest USB packet used / 4) + 1 for status information + 1 transfer complete +
- * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
- */
-#define CONFIG_USB_DWC2_RX_FIFO_SIZE ((896 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE))
-
+#define CONFIG_USBDEV_MAX_BUS 2
+#define CONFIG_USBHOST_MAX_BUS 2
 #define CONFIG_USB_HS
 #else
 #error "Unsupported SoC"
