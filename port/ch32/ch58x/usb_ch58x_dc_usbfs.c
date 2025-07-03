@@ -543,11 +543,10 @@ void USBD_IRQHandler(uint8_t busid)
                     }
                     break;
                 case UIS_TOKEN_OUT:
-                    EPn_SET_RX_NAK(epid);
-
                     if (epid == 0) {
                         /*!< ep0 out */
                         CH58x_USBFS_DEV->UEP0_CTRL ^= RB_UEP_R_TOG;
+                        EPn_SET_RX_NAK(epid);
                         uint32_t read_count = EPn_GET_RX_LEN(0);
                         memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
 
@@ -563,6 +562,7 @@ void USBD_IRQHandler(uint8_t busid)
                             if (epid == 4) {
                                 CH58x_USBFS_DEV->UEP4_CTRL ^= RB_UEP_R_TOG;
                             }
+                            EPn_SET_RX_NAK(epid);
                             uint32_t read_count = EPn_GET_RX_LEN(epid);
                             memcpy(usb_dc_cfg.ep_out[epid].xfer_buf, usb_dc_cfg.ep_out[epid].ep_ram_addr, read_count);
                             usb_dc_cfg.ep_out[epid].xfer_buf += read_count;
