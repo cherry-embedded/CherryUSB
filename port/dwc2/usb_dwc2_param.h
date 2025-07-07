@@ -281,6 +281,15 @@ struct dwc2_user_params {
     uint32_t total_fifo_size;
 };
 
+struct usb_dwc2_user_fifo_config {
+     /* (5 * number of control endpoints + 8) + ((largest USB packet used / 4) + 1 for
+    * status information) + (2 * number of OUT endpoints) + 1 for Global NAK
+    */
+    uint16_t device_rx_fifo_size;
+    /* IN Endpoints Max packet Size / 4 */
+    uint16_t device_tx_fifo_size[MAX_EPS_CHANNELS];
+};
+
 static inline void dwc2_get_hwparams(uint32_t reg_base, struct dwc2_hw_params *hw)
 {
     unsigned int width;
@@ -353,5 +362,6 @@ static inline void dwc2_get_hwparams(uint32_t reg_base, struct dwc2_hw_params *h
 }
 
 void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params);
+void dwc2_get_user_fifo_config(uint32_t reg_base, struct usb_dwc2_user_fifo_config *config);
 
 #endif

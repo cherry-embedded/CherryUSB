@@ -225,6 +225,17 @@ void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
         memcpy(params, &param_fs, sizeof(struct dwc2_user_params));
     }
 #endif
+#ifdef CONFIG_USB_DWC2_CUSTOM_FIFO
+    struct usb_dwc2_user_fifo_config s_dwc2_fifo_config;
+
+    dwc2_get_user_fifo_config(reg_base, &s_dwc2_fifo_config);
+
+    params->device_rx_fifo_size = s_dwc2_fifo_config.device_rx_fifo_size;
+    for (uint8_t i = 0; i < MAX_EPS_CHANNELS; i++)
+    {
+        params->device_tx_fifo_size[i] = s_dwc2_fifo_config.device_tx_fifo_size[i];
+    }
+#endif
 }
 
 void usbd_dwc2_delay_ms(uint8_t ms)

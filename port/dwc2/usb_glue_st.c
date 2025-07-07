@@ -7,6 +7,8 @@
 #include "usbh_core.h"
 #include "usb_dwc2_param.h"
 
+#ifndef CONFIG_USB_DWC2_CUSTOM_PARAM
+
 #if __has_include("stm32f1xx_hal.h")
 #include "stm32f1xx_hal.h"
 
@@ -545,6 +547,8 @@ const struct dwc2_user_params param_pb14_pb15 = { 0 }; // do not support
 #endif
 #endif
 
+#endif // CONFIG_USB_DWC2_CUSTOM_PARAM
+
 #if !defined(HAL_HCD_MODULE_ENABLED) && !defined(HAL_PCD_MODULE_ENABLED)
 #error please define HAL_HCD_MODULE_ENABLED or HAL_PCD_MODULE_ENABLED in stm32xxx_hal_conf.h
 #endif
@@ -686,6 +690,7 @@ void usb_hc_low_level_deinit(struct usbh_bus *bus)
 }
 #endif
 
+#ifndef CONFIG_USB_DWC2_CUSTOM_PARAM
 void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
 {
     if (reg_base == 0x40040000UL) { // USB_OTG_HS_PERIPH_BASE
@@ -693,7 +698,19 @@ void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
     } else {
         memcpy(params, &param_pa11_pa12, sizeof(struct dwc2_user_params));
     }
+#ifdef CONFIG_USB_DWC2_CUSTOM_FIFO
+    struct usb_dwc2_user_fifo_config s_dwc2_fifo_config;
+
+    dwc2_get_user_fifo_config(reg_base, &s_dwc2_fifo_config);
+
+    params->device_rx_fifo_size = s_dwc2_fifo_config.device_rx_fifo_size;
+    for (uint8_t i = 0; i < MAX_EPS_CHANNELS; i++)
+    {
+        params->device_tx_fifo_size[i] = s_dwc2_fifo_config.device_tx_fifo_size[i];
+    }
+#endif
 }
+#endif
 
 extern uint32_t SystemCoreClock;
 
