@@ -123,7 +123,6 @@ if CHERRYUSB
             prompt "Enable usb mtp device, it is commercial charge"
             default n
 
-
         config CHERRYUSB_DEVICE_ADB
             bool
             prompt "Enable usb adb device"
@@ -135,42 +134,57 @@ if CHERRYUSB
             default n
 
         choice
-            prompt "Select usb device template"
+            prompt "Select usb device template, please select classes first"
             default CHERRYUSB_DEVICE_TEMPLATE_NONE
             config CHERRYUSB_DEVICE_TEMPLATE_NONE
                 bool "none (Implement it yourself)"
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM
                 bool "cdc_acm"
+                depends on CHERRYUSB_DEVICE_CDC_ACM
             config CHERRYUSB_DEVICE_TEMPLATE_MSC
                 bool "msc"
+                depends on CHERRYUSB_DEVICE_MSC
             config CHERRYUSB_DEVICE_TEMPLATE_HID_KEYBOARD
                 bool "hid_keyboard"
+                depends on CHERRYUSB_DEVICE_HID
             config CHERRYUSB_DEVICE_TEMPLATE_HID_MOUSE
                 bool "hid_mouse"
+                depends on CHERRYUSB_DEVICE_HID
             config CHERRYUSB_DEVICE_TEMPLATE_HID_CUSTOM
                 bool "hid_custom"
+                depends on CHERRYUSB_DEVICE_HID
             config CHERRYUSB_DEVICE_TEMPLATE_VIDEO
                 bool "video"
+                depends on CHERRYUSB_DEVICE_VIDEO
             config CHERRYUSB_DEVICE_TEMPLATE_AUDIO_V1_MIC_SPEAKER
                 bool "audio_v1_mic_speaker_multichan"
+                depends on CHERRYUSB_DEVICE_AUDIO
             config CHERRYUSB_DEVICE_TEMPLATE_AUDIO_V2_MIC_SPEAKER
                 bool "audio_v2_mic_speaker_multichan"
+                depends on CHERRYUSB_DEVICE_AUDIO
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_RNDIS
                 bool "cdc_rndis"
+                depends on CHERRYUSB_DEVICE_CDC_RNDIS
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_ECM
                 bool "cdc_ecm"
+                depends on CHERRYUSB_DEVICE_CDC_ECM
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_NCM
                 bool "cdc_ncm"
+                depends on CHERRYUSB_DEVICE_CDC_NCM
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC
                 bool "cdc_acm_msc"
+                depends on CHERRYUSB_DEVICE_CDC_ACM && CHERRYUSB_DEVICE_MSC
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC_HID
                 bool "cdc_acm_msc_hid"
+                depends on CHERRYUSB_DEVICE_CDC_ACM && CHERRYUSB_DEVICE_MSC && CHERRYUSB_DEVICE_HID
             config CHERRYUSB_DEVICE_TEMPLATE_WINUSBV1
                 bool "winusbv1"
             config CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_CDC
                 bool "winusbv2_cdc"
+                depends on CHERRYUSB_DEVICE_CDC_ACM
             config CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_HID
                 bool "winusbv2_hid"
+                depends on CHERRYUSB_DEVICE_HID
         endchoice
 
     endif
@@ -335,28 +349,20 @@ if CHERRYUSB
         config USBHOST_PLATFORM_RTL8152
             bool
 
-        config CHERRYUSB_HOST_TEMPLATE
-            bool
-            prompt "Use usb host template"
-            default n
+        menu "Select USB host template, please select drivers first"
 
-        if CHERRYUSB_HOST_TEMPLATE
             config TEST_USBH_CDC_ACM
-                int
-                prompt "demo for test cdc acm"
-                default 0
+                bool "demo for test cdc acm"
                 depends on CHERRYUSB_HOST_CDC_ACM
-            config TEST_USBH_HID
-                int
-                prompt "demo for test hid"
-                default 0
-                depends on CHERRYUSB_HOST_HID
-            config TEST_USBH_MSC
-                int
-                prompt "demo for test msc"
-                default 0
-                depends on CHERRYUSB_HOST_MSC
-        endif
-    endif
 
+            config TEST_USBH_HID
+                bool "demo for test hid"
+                depends on CHERRYUSB_HOST_HID
+
+            config TEST_USBH_MSC
+                bool "demo for test msc"
+                depends on CHERRYUSB_HOST_MSC
+
+        endmenu
+    endif
 endif
