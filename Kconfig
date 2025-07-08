@@ -350,19 +350,25 @@ if CHERRYUSB
             bool
 
         menu "Select USB host template, please select drivers first"
-
             config TEST_USBH_CDC_ACM
-                bool "demo for test cdc acm"
+                int
+                prompt "demo for test cdc acm"
+                default 0
                 depends on CHERRYUSB_HOST_CDC_ACM
-
             config TEST_USBH_HID
-                bool "demo for test hid"
+                int
+                prompt "demo for test hid"
+                default 0
                 depends on CHERRYUSB_HOST_HID
-
             config TEST_USBH_MSC
-                bool "demo for test msc"
+                int
+                prompt "demo for test msc"
+                default 0
                 depends on CHERRYUSB_HOST_MSC
-
+            comment "Audio support is commercial charge"
+                depends on CHERRYUSB_HOST_AUDIO
+            comment "Video support is commercial charge"
+                depends on CHERRYUSB_HOST_VIDEO
         endmenu
     endif
 endif
