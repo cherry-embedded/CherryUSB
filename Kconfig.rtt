@@ -417,17 +417,17 @@ if RT_USING_CHERRYUSB
                 int
                 prompt "demo for test cdc acm"
                 default 0
-                depends on CHERRYUSB_HOST_CDC_ACM
+                depends on RT_CHERRYUSB_HOST_CDC_ACM
             config CONFIG_TEST_USBH_HID
                 int
                 prompt "demo for test hid"
                 default 0
-                depends on CHERRYUSB_HOST_HID
+                depends on RT_CHERRYUSB_HOST_HID
             config CONFIG_TEST_USBH_MSC
                 int
                 prompt "demo for test msc"
                 default 0
-                depends on CHERRYUSB_HOST_MSC
+                depends on RT_CHERRYUSB_HOST_MSC
         endmenu
     endif
 endif
