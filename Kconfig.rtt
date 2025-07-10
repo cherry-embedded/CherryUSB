@@ -141,7 +141,7 @@ if RT_USING_CHERRYUSB
             default n
 
         choice
-            prompt "Select usb device template, please select class first"
+            prompt "Select usb device template, please select class driver first"
             default RT_CHERRYUSB_DEVICE_TEMPLATE_NONE
             config RT_CHERRYUSB_DEVICE_TEMPLATE_NONE
                 bool
@@ -412,7 +412,7 @@ if RT_USING_CHERRYUSB
                 depends on CHERRYUSB_HOST_HID
         endif
 
-        menu "Select USB host template, please select driver first"
+        menu "Select USB host template, please select class driver first"
             config CONFIG_TEST_USBH_CDC_ACM
                 int
                 prompt "demo for test cdc acm"

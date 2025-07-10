@@ -134,7 +134,7 @@ if CHERRYUSB
             default n
 
         choice
-            prompt "Select usb device template, please select class first"
+            prompt "Select usb device template, please select class driver first"
             default CHERRYUSB_DEVICE_TEMPLATE_NONE
             config CHERRYUSB_DEVICE_TEMPLATE_NONE
                 bool
@@ -365,7 +365,7 @@ if CHERRYUSB
         config USBHOST_PLATFORM_RTL8152
             bool
 
-        menu "Select USB host template, please select driver first"
+        menu "Select USB host template, please select class driver first"
             config TEST_USBH_CDC_ACM
                 int
                 prompt "demo for test cdc acm"
