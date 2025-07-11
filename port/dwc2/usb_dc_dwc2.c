@@ -76,7 +76,7 @@ struct dwc2_ep_state {
 /* Driver state */
 USB_NOCACHE_RAM_SECTION struct dwc2_udc {
     USB_MEM_ALIGNX struct usb_setup_packet setup;
-    uint8_t pad[24]; /* Pad to 32 bytes */
+    USB_MEM_ALIGNX uint8_t pad; /* Pad to CONFIG_USB_ALIGN_SIZE bytes */
     struct dwc2_hw_params hw_params;
     struct dwc2_user_params user_params;
     struct dwc2_ep_state in_ep[16];  /*!< IN endpoint parameters*/
