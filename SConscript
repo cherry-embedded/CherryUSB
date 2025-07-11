@@ -289,8 +289,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_PL2303']):
         src += Glob('class/vendor/serial/usbh_pl2303.c')
 
-    if GetDepend(['PKG_CHERRYUSB_HOST_TEMPLATE']):
-        CPPDEFINES+=['TEST_USBH_MSC=0']
+    if GetDepend(['CONFIG_TEST_USBH_HID']):
         src += Glob('demo/usb_host.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM'])    \

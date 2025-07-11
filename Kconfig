@@ -133,6 +133,29 @@ if CHERRYUSB
             prompt "Enable usb dfu device"
             default n
 
+        config USBDEV_REQUEST_BUFFER_LEN
+            int
+            prompt "Set device control transfer max buffer size"
+            default 512
+
+        config USBDEV_MSC_MAX_BUFSIZE
+            int
+            prompt "Set usb msc device max buffer size"
+            default 512
+            help
+                Set the maximum buffer size for usb msc device, it is used to transfer data.
+                you can change it to a larger value if you need larger speed but must be a power of blocksize.
+
+        config USBDEV_RNDIS_USING_LWIP
+            bool
+            prompt "Enable usb rndis device with lwip for lan"
+            default n
+
+        config USBDEV_CDC_ECM_USING_LWIP
+            bool
+            prompt "Enable usb cdc ecm device with lwip for lan"
+            default n
+
         choice
             prompt "Select usb device template, please select class driver first"
             default CHERRYUSB_DEVICE_TEMPLATE_NONE
@@ -364,6 +387,26 @@ if CHERRYUSB
 
         config USBHOST_PLATFORM_RTL8152
             bool
+
+        config USBHOST_PSC_PRIO
+            int
+            prompt "Set hubport change thread priority, 0 is the max priority"
+            default 0
+
+        config USBHOST_PSC_STACKSIZE
+            int
+            prompt "Set hubport change thread stacksize"
+            default 4096
+
+        config USBHOST_REQUEST_BUFFER_LEN
+            int
+            prompt "Set host control transfer max buffer size"
+            default 512
+
+        config USBHOST_CONTROL_TRANSFER_TIMEOUT
+            int
+            prompt "Set host control transfer timeout, unit is ms"
+            default 500
 
         menu "Select USB host template, please select class driver first"
             config TEST_USBH_CDC_ACM

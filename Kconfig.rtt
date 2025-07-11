@@ -140,6 +140,29 @@ if RT_USING_CHERRYUSB
             prompt "Enable chardev for cdc acm device"
             default n
 
+        config CONFIG_USBDEV_REQUEST_BUFFER_LEN
+            int
+            prompt "Set device control transfer max buffer size"
+            default 512
+
+        config CONFIG_USBDEV_MSC_MAX_BUFSIZE
+            int
+            prompt "Set usb msc device max buffer size"
+            default 512
+            help
+                Set the maximum buffer size for usb msc device, it is used to transfer data.
+                you can change it to a larger value if you need larger speed but must be a power of blocksize.
+
+        config CONFIG_USBDEV_RNDIS_USING_LWIP
+            bool
+            prompt "Enable usb rndis device with lwip for lan"
+            default n
+
+        config CONFIG_USBDEV_CDC_ECM_USING_LWIP
+            bool
+            prompt "Enable usb cdc ecm device with lwip for lan"
+            default n
+
         choice
             prompt "Select usb device template, please select class driver first"
             default RT_CHERRYUSB_DEVICE_TEMPLATE_NONE
@@ -384,6 +407,26 @@ if RT_USING_CHERRYUSB
         config CONFIG_USBHOST_PLATFORM_RTL8152
             bool
 
+        config CONFIG_USBHOST_PSC_PRIO
+            int
+            prompt "Set hubport change thread priority, 0 is the max priority"
+            default 0
+
+        config CONFIG_USBHOST_PSC_STACKSIZE
+            int
+            prompt "Set hubport change thread stacksize"
+            default 4096
+
+        config CONFIG_USBHOST_REQUEST_BUFFER_LEN
+            int
+            prompt "Set host control transfer max buffer size"
+            default 512
+
+        config CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT
+            int
+            prompt "Set host control transfer timeout, unit is ms"
+            default 500
+
         config RT_LWIP_PBUF_POOL_BUFSIZE
             int "The size of each pbuf in the pbuf pool"
             range 1500 2000
@@ -394,28 +437,10 @@ if RT_USING_CHERRYUSB
             depends on RT_CHERRYUSB_HOST_MSC
             default "/"
 
-        config RT_CHERRYUSB_HOST_TEMPLATE
-            bool
-            prompt "Use usb host template"
-            default n
-
-        if RT_CHERRYUSB_HOST_TEMPLATE
-            config TEST_USBH_CDC_ACM
-                int
-                prompt "demo for test cdc acm"
-                default 0
-                depends on CHERRYUSB_HOST_CDC_ACM
-            config TEST_USBH_HID
-                int
-                prompt "demo for test hid"
-                default 0
-                depends on CHERRYUSB_HOST_HID
-        endif
-
         menu "Select USB host template, please select class driver first"
             config CONFIG_TEST_USBH_CDC_ACM
                 int
-                prompt "demo for test cdc acm"
+                prompt "demo for test cdc acm, cannot enable this demo, we have used serial framework instead"
                 default 0
                 depends on RT_CHERRYUSB_HOST_CDC_ACM
             config CONFIG_TEST_USBH_HID
@@ -425,7 +450,7 @@ if RT_USING_CHERRYUSB
                 depends on RT_CHERRYUSB_HOST_HID
             config CONFIG_TEST_USBH_MSC
                 int
-                prompt "demo for test msc"
+                prompt "demo for test msc, cannot enable this demo, we have used dfs instead"
                 default 0
                 depends on RT_CHERRYUSB_HOST_MSC
         endmenu

@@ -329,7 +329,7 @@ if(CONFIG_CHERRYUSB_HOST)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/port/rp2040/usb_hc_rp2040.c)
     endif()
 
-    if(CHERRYUSB_HOST_TEMPLATE)
+    if(CONFIG_TEST_USBH_CDC_ACM OR CONFIG_TEST_USBH_HID OR CONFIG_TEST_USBH_MSC)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/demo/usb_host.c)
     endif()
 endif()

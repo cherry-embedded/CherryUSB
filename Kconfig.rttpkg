@@ -139,6 +139,29 @@ if PKG_USING_CHERRYUSB
             prompt "Enable chardev for cdc acm device"
             default n
 
+        config CONFIG_USBDEV_REQUEST_BUFFER_LEN
+            int
+            prompt "Set device control transfer max buffer size"
+            default 512
+
+        config CONFIG_USBDEV_MSC_MAX_BUFSIZE
+            int
+            prompt "Set usb msc device max buffer size"
+            default 512
+            help
+                Set the maximum buffer size for usb msc device, it is used to transfer data.
+                you can change it to a larger value if you need larger speed but must be a power of blocksize.
+
+        config CONFIG_USBDEV_RNDIS_USING_LWIP
+            bool
+            prompt "Enable usb rndis device with lwip for lan"
+            default n
+
+        config CONFIG_USBDEV_CDC_ECM_USING_LWIP
+            bool
+            prompt "Enable usb cdc ecm device with lwip for lan"
+            default n
+
         choice
             prompt "Select usb device template, please select class driver first"
             default PKG_CHERRYUSB_DEVICE_TEMPLATE_NONE
@@ -383,6 +406,26 @@ if PKG_USING_CHERRYUSB
         config CONFIG_USBHOST_PLATFORM_RTL8152
             bool
 
+        config CONFIG_USBHOST_PSC_PRIO
+            int
+            prompt "Set hubport change thread priority, 0 is the max priority"
+            default 0
+
+        config CONFIG_USBHOST_PSC_STACKSIZE
+            int
+            prompt "Set hubport change thread stacksize"
+            default 4096
+
+        config CONFIG_USBHOST_REQUEST_BUFFER_LEN
+            int
+            prompt "Set host control transfer max buffer size"
+            default 512
+
+        config CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT
+            int
+            prompt "Set host control transfer timeout, unit is ms"
+            default 500
+
         config RT_LWIP_PBUF_POOL_BUFSIZE
             int "The size of each pbuf in the pbuf pool"
             range 1500 2000
@@ -396,7 +439,7 @@ if PKG_USING_CHERRYUSB
         menu "Select USB host template, please select class driver first"
             config CONFIG_TEST_USBH_CDC_ACM
                 int
-                prompt "demo for test cdc acm"
+                prompt "demo for test cdc acm, cannot enable this demo, we have used serial framework instead"
                 default 0
                 depends on PKG_CHERRYUSB_HOST_CDC_ACM
             config CONFIG_TEST_USBH_HID
@@ -406,7 +449,7 @@ if PKG_USING_CHERRYUSB
                 depends on PKG_CHERRYUSB_HOST_HID
             config CONFIG_TEST_USBH_MSC
                 int
-                prompt "demo for test msc"
+                prompt "demo for test msc, cannot enable this demo, we have used dfs instead"
                 default 0
                 depends on PKG_CHERRYUSB_HOST_MSC
         endmenu
@@ -424,18 +467,14 @@ if PKG_USING_CHERRYUSB
 
         config PKG_USING_CHERRYUSB_LATEST_VERSION
             bool "latest"
+        config PKG_USING_CHERRYUSB_V010501
+            bool "v1.5.1"
         config PKG_USING_CHERRYUSB_V010500
             bool "v1.5.0"
         config PKG_USING_CHERRYUSB_V010403
             bool "v1.4.3"
-        config PKG_USING_CHERRYUSB_V010402
-            bool "v1.4.2"
-        config PKG_USING_CHERRYUSB_V010400
-            bool "v1.4.0"
         config PKG_USING_CHERRYUSB_V010301
             bool "v1.3.1"
-        config PKG_USING_CHERRYUSB_V010300
-            bool "v1.3.0"
         config PKG_USING_CHERRYUSB_V010200
             bool "v1.2.0"
         config PKG_USING_CHERRYUSB_V001002
@@ -445,12 +484,10 @@ if PKG_USING_CHERRYUSB
     config PKG_CHERRYUSB_VER
        string
        default "latest"    if PKG_USING_CHERRYUSB_LATEST_VERSION
+       default "v1.5.1"   if PKG_USING_CHERRYUSB_V010501
        default "v1.5.0"   if PKG_USING_CHERRYUSB_V010500
        default "v1.4.3"   if PKG_USING_CHERRYUSB_V010403
-       default "v1.4.2"   if PKG_USING_CHERRYUSB_V010402
-       default "v1.4.0"   if PKG_USING_CHERRYUSB_V010400
        default "v1.3.1"   if PKG_USING_CHERRYUSB_V010301
-       default "v1.3.0"   if PKG_USING_CHERRYUSB_V010300
        default "v1.2.0"   if PKG_USING_CHERRYUSB_V010200
        default "v0.10.2"   if PKG_USING_CHERRYUSB_V001002
 endif
