@@ -15,7 +15,7 @@ Q & A
 - 是否能进 USB 中断
 - 芯片是否带有 cache功能，是否做了 no cache 处理，截图
 - 硬件是否正常，是否使用杜邦线连接，如果正常，请说明正常原因
-- 打开 CONFIG_USBDEV_SETUP_LOG_PRINT，并提供 log
+- 配置 **#define CONFIG_USB_DBG_LEVEL USB_DBG_LOG** 并提供 log，仅限商业 IP, 其余 IP 禁止开启 log，否则无法枚举
 - 是否流片并销售
 
 其余问题提问模板

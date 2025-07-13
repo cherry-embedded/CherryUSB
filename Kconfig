@@ -52,6 +52,8 @@ if CHERRYUSB
                 bool "musb_sunxi"
             config CHERRYUSB_DEVICE_MUSB_BK
                 bool "musb_bk"
+            config CHERRYUSB_DEVICE_MUSB_SIFLI
+                bool "musb_sifli"
             config CHERRYUSB_DEVICE_MUSB_CUSTOM
                 bool "musb_custom"
             config CHERRYUSB_DEVICE_CHIPIDEA_MCX
@@ -270,6 +272,8 @@ if CHERRYUSB
                 bool "musb_sunxi"
             config CHERRYUSB_HOST_MUSB_BK
                 bool "musb_bk"
+            config CHERRYUSB_HOST_MUSB_SIFLI
+                bool "musb_sifli"
             config CHERRYUSB_HOST_MUSB_CUSTOM
                 bool "musb_custom"
             config CHERRYUSB_HOST_PUSB2

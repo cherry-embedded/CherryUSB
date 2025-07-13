@@ -70,6 +70,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_BK']):
         src += Glob('port/musb/usb_dc_musb.c')
         src += Glob('port/musb/usb_glue_bk.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_SIFLI']):
+        src += Glob('port/musb/usb_dc_musb.c')
+        src += Glob('port/musb/usb_glue_sifli.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_dc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CHIPIDEA_MCX']):
@@ -230,6 +233,9 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_BK']):
         src += Glob('port/musb/usb_hc_musb.c')
         src += Glob('port/musb/usb_glue_bk.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_SIFLI']):
+        src += Glob('port/musb/usb_hc_musb.c')
+        src += Glob('port/musb/usb_glue_sifli.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_MUSB_CUSTOM']):
         src += Glob('port/musb/usb_hc_musb.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_KINETIS_MCX']):
