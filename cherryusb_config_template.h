@@ -47,9 +47,6 @@
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 512
 #endif
 
-/* Setup packet log for debug */
-// #define CONFIG_USBDEV_SETUP_LOG_PRINT
-
 /* Send ep0 in data from user buffer instead of copying into ep0 reqdata
  * Please note that user buffer must be aligned with CONFIG_USB_ALIGN_SIZE
 */
