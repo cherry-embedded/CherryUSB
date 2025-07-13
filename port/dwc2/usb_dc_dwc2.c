@@ -1004,14 +1004,25 @@ void USBD_IRQHandler(uint8_t busid)
 
                     if ((epint & USB_OTG_DOEPINT_XFRC) == USB_OTG_DOEPINT_XFRC) {
                         if (ep_idx == 0) {
+                            if (usbd_get_ep0_next_state(busid) == USBD_EP0_STATE_SETUP) {
+                                goto process_setup; // goto ep0 setup, xfer_len is not used
+                            }
+
                             if (g_dwc2_udc[busid].out_ep[ep_idx].xfer_len == 0) {
+                                /* If ep0 xfer_len is 0, it means that we are in outstatus phase */
+                                g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = 0;
+                            } else {
+                                /* If ep0 xfer_len is not 0, it means that we are in outdata phase */
+                                g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = g_dwc2_udc[busid].out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
+                            }
+
+                            g_dwc2_udc[busid].out_ep[ep_idx].xfer_len = 0;
+                            usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
+                            usbd_event_ep_out_complete_handler(busid, 0x00, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
+
+                            if (usbd_get_ep0_next_state(busid) == USBD_EP0_STATE_SETUP) {
                                 /* Out status, start reading setup */
                                 dwc2_ep0_start_read_setup(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
-                            } else {
-                                g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = g_dwc2_udc[busid].out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
-                                g_dwc2_udc[busid].out_ep[ep_idx].xfer_len = 0;
-                                usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
-                                usbd_event_ep_out_complete_handler(busid, 0x00, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
                             }
                         } else {
                             g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = g_dwc2_udc[busid].out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
@@ -1020,7 +1031,9 @@ void USBD_IRQHandler(uint8_t busid)
                             usbd_event_ep_out_complete_handler(busid, ep_idx, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
                         }
                     }
-
+                // clang-format off
+process_setup:
+                    // clang-format on
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
                         usb_dcache_invalidate((uintptr_t)&g_dwc2_udc[busid].setup, USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE));
                         usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
@@ -1043,10 +1056,7 @@ void USBD_IRQHandler(uint8_t busid)
                             g_dwc2_udc[busid].in_ep[ep_idx].xfer_len = 0;
                             usbd_event_ep_in_complete_handler(busid, 0x80, g_dwc2_udc[busid].in_ep[ep_idx].actual_xfer_len);
 
-                            if (g_dwc2_udc[busid].setup.wLength && ((g_dwc2_udc[busid].setup.bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_OUT)) {
-                                /* In status, start reading setup */
-                                dwc2_ep0_start_read_setup(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
-                            } else if (g_dwc2_udc[busid].setup.wLength == 0) {
+                            if (usbd_get_ep0_next_state(busid) == USBD_EP0_STATE_SETUP) {
                                 /* In status, start reading setup */
                                 dwc2_ep0_start_read_setup(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
                             }
