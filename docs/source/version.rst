@@ -126,3 +126,12 @@ v1.5.0
 - 使用 USB_ASSERT_MSG 对部分代码检查，全面性 warning 修复
 - N32H4/MM32F5 device 支持
 - 默认使能 CONFIG_USBDEV_ADVANCE_DESC
+
+v1.5.1
+----------------------
+
+- 支持 rt-thread 下使用 adb shell，host serial/device cdc_acm 对接 rtdevice 框架
+- **dwc2 增加多个 usbport 不同参数的配置功能，比如一个全速一个高速，fifo配置和phy配置不同**
+- **ehci 在控制传输中如果没有 nodata 阶段会导致 data qtd 未释放，导致内存泄漏**
+- **dwc2 读取 setup 使用 usbd_get_next_ep0_state 去判断，避免 setup 和 ep0 out 使用在 USB_OTG_DOEPINT_XFRC 状态下冲突**
+- sifli usb device 初步支持
