@@ -1017,7 +1017,9 @@ void USBD_IRQHandler(uint8_t busid)
                             }
 
                             g_dwc2_udc[busid].out_ep[ep_idx].xfer_len = 0;
-                            usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
+                            if (g_dwc2_udc[busid].user_params.device_dma_enable) {
+                                usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
+                            }
                             usbd_event_ep_out_complete_handler(busid, 0x00, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
 
                             if (usbd_get_ep0_next_state(busid) == USBD_EP0_STATE_SETUP) {
@@ -1027,7 +1029,9 @@ void USBD_IRQHandler(uint8_t busid)
                         } else {
                             g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len = g_dwc2_udc[busid].out_ep[ep_idx].xfer_len - ((USB_OTG_OUTEP(ep_idx)->DOEPTSIZ) & USB_OTG_DOEPTSIZ_XFRSIZ);
                             g_dwc2_udc[busid].out_ep[ep_idx].xfer_len = 0;
-                            usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
+                            if (g_dwc2_udc[busid].user_params.device_dma_enable) {
+                                usb_dcache_invalidate((uintptr_t)g_dwc2_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len, CONFIG_USB_ALIGN_SIZE));
+                            }
                             usbd_event_ep_out_complete_handler(busid, ep_idx, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
                         }
                     }
@@ -1035,7 +1039,9 @@ void USBD_IRQHandler(uint8_t busid)
 process_setup:
                     // clang-format on
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
-                        usb_dcache_invalidate((uintptr_t)&g_dwc2_udc[busid].setup, USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE));
+                        if (g_dwc2_udc[busid].user_params.device_dma_enable) {
+                            usb_dcache_invalidate((uintptr_t)&g_dwc2_udc[busid].setup, USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE));
+                        }
                         usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
                     }
                 }
