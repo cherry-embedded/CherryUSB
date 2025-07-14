@@ -76,6 +76,8 @@ GCC 举例如下：
 协议栈以及 port 中不会对 cache 区域的 ram 进行 clean 或者 invalid，所以需要使用一块非 cache 区域的 ram 来维护。 `USB_NOCACHE_RAM_SECTION` 宏表示将变量指定到非 cache ram上，
 因此，用户需要在对应的链接脚本中添加 no cache ram 的 section。默认 `USB_NOCACHE_RAM_SECTION` 定义为  `__attribute__((section(".noncacheable")))`。
 
+.. note:: 需要注意，光指定 section 是不够的，还需要配置该 section 中的 ram 是真的 nocache，一般需要配置 mpu 属性（arm 的参考 stm32h7 demo）。
+
 GCC:
 
 .. code-block:: C

@@ -3,20 +3,30 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <nuttx/config.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <semaphore.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
-
 #include <nuttx/net/ip.h>
 #include <nuttx/net/netdev.h>
 
 #include "usbh_core.h"
+
+#if CONFIG_NET_ETH_PKTSIZE < 1514
+#error "CONFIG_NET_ETH_PKTSIZE must be at least 1514"
+#endif
+
+#if CONFIG_IOB_BUFSIZE < 1514
+#error "CONFIG_IOB_BUFSIZE must be at least 1514"
+#endif
+
+#ifndef CONFIG_NETDEV_LATEINIT
+#error "CONFIG_NETDEV_LATEINIT must be enabled"
+#endif
+
+#ifndef CONFIG_NETUTILS_DHCPC
+#error "CONFIG_NETUTILS_DHCPC must be enabled"
+#endif
+
+#ifndef CONFIG_NETINIT_DHCPC
+#error "CONFIG_NETINIT_DHCPC must be enabled"
+#endif
 
 // #define CONFIG_USBHOST_PLATFORM_CDC_ECM
 #define CONFIG_USBHOST_PLATFORM_CDC_RNDIS
@@ -35,7 +45,7 @@ void usbh_net_eth_output_common(struct net_driver_s *dev, uint8_t *buf)
     usb_memcpy(buf, dev->d_buf, dev->d_len);
 }
 
-void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t len, int (*eth_output)(uint32_t buflen))
+void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t len, uint8_t* (*eth_input)(void), int (*eth_output)(uint32_t buflen))
 {
     FAR struct eth_hdr_s *hdr;
 
@@ -61,7 +71,7 @@ void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t le
         ipv4_input(dev);
         if (dev->d_len > 0) {
             /* And send the packet */
-            usbh_net_eth_output_common(dev, usbh_rndis_get_eth_txbuf());
+            usbh_net_eth_output_common(dev, eth_input());
             eth_output(dev->d_len);
         }
     } else
@@ -76,7 +86,7 @@ void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t le
 
         if (dev->d_len > 0) {
             /* And send the packet */
-            usbh_net_eth_output_common(dev, usbh_rndis_get_eth_txbuf());
+            usbh_net_eth_output_common(dev, eth_input());
             eth_output(dev->d_len);
         }
     } else
@@ -87,7 +97,7 @@ void usbh_net_eth_input_common(struct net_driver_s *dev, uint8_t *buf, size_t le
 
         arp_input(dev);
         if (dev->d_len > 0) {
-            usbh_net_eth_output_common(dev, usbh_rndis_get_eth_txbuf());
+            usbh_net_eth_output_common(dev, eth_input());
             eth_output(dev->d_len);
         }
     } else
@@ -121,7 +131,7 @@ static int rndis_ifdown(struct net_driver_s *dev)
 
 static int rndis_txpoll(struct net_driver_s *dev)
 {
-    usbh_net_eth_output_common(&g_rndis_dev, usbh_rndis_get_eth_txbuf());
+    usbh_net_eth_output_common(&g_rndis_dev.netdev, usbh_rndis_get_eth_txbuf());
     return usbh_rndis_eth_output(g_rndis_dev.netdev.d_len);
 }
 
@@ -150,7 +160,7 @@ static int rndis_txavail(struct net_driver_s *dev)
 
 void usbh_rndis_eth_input(uint8_t *buf, uint32_t buflen)
 {
-    usbh_net_eth_input_common(&g_rndis_dev.netdev, buf, buflen, usbh_rndis_eth_output);
+    usbh_net_eth_input_common(&g_rndis_dev.netdev, buf, buflen, usbh_rndis_get_eth_txbuf, usbh_rndis_eth_output);
 }
 
 void usbh_rndis_run(struct usbh_rndis *rndis_class)
@@ -166,6 +176,8 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
         g_rndis_dev.netdev.d_mac.ether.ether_addr_octet[j] = rndis_class->mac[j];
     }
     netdev_register(&g_rndis_dev.netdev, NET_LL_ETHERNET);
+
+    netinit_bringup();
 }
 
 void usbh_rndis_stop(struct usbh_rndis *rndis_class)

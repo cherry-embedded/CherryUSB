@@ -54,11 +54,11 @@ static const uint8_t device_quality_descriptor[] = {
     USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
     0x00,
     0x02,
-    0x02,
-    0x02,
-    0x01,
+    0x00,
+    0x00,
+    0x00,
     0x40,
-    0x01,
+    0x00,
     0x00,
 };
 
@@ -169,11 +169,11 @@ static const uint8_t cdc_msc_descriptor[] = {
     USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
     0x00,
     0x02,
-    0x02,
-    0x02,
-    0x01,
+    0x00,
+    0x00,
+    0x00,
     0x40,
-    0x01,
+    0x00,
     0x00,
 #endif
     0x00

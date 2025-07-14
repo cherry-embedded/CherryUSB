@@ -64,3 +64,39 @@ v1.4.0
 - esp 组件库支持
 - chipidea 从机驱动支持，nxp mcx 系列主从支持
 - threadx os 支持
+
+v1.4.1
+----------------------
+
+- 修复device 模式下使用多个 altsetting 时重复关闭端点问题，改成 altsetting 为0时关闭
+- 重构主机 audio 解析描述符
+- 增加 kinetis usbip
+- 主机下 usbh_msc_get_maxlun 请求部分 U 盘不支持，不做错误返回
+- 主机下 usbh_hid_get_report_descriptor 导出给用户调用
+- 静态代码检查
+- github action 功能
+
+v1.4.2
+----------------------
+
+- device 实现 USB_REQUEST_GET_INTERFACE 请求
+- device video 传输重构，增加双缓冲功能
+- device ecm 重构
+- device 和 host audio 音量配置功能重构
+- host 增加 AOA 驱动
+- 兼容 C++ 相关修改
+- fsdev 不支持 ISO 和 DWC2 高速 hub 不支持全速低速检查
+- 通用 OHCI 代码更新
+
+v1.4.3
+----------------------
+
+- device ep0 处理增加线程模式
+- device audio feedback 宏和demo
+- device rndis 增加透传功能（无LWIP）
+- host msc 将 scsi 初始化从枚举线程中移出，在mount阶段调用，并增加了testunity 多次尝试，兼容一部分 U 盘
+- rp2040 主从支持
+- nuttx fs，serial，net 组件支持
+- dwc2、ehci、ohci 主机 dcache功能支持
+- t113、MCXA156、CH585 、stm32h7r 支持
+- 修复 v1.4.1 中 altsetting 为0时应该关闭所有端点的问题

@@ -60,7 +60,7 @@ USB_NOCACHE_RAM_SECTION struct usbd_msc_priv {
 } g_usbd_msc[CONFIG_USBDEV_MAX_BUS];
 
 #ifdef CONFIG_USBDEV_MSC_THREAD
-static void usbdev_msc_thread(void *argument);
+static void usbdev_msc_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV);
 #endif
 
 static void usdb_msc_set_max_lun(uint8_t busid)
@@ -109,7 +109,7 @@ void msc_storage_notify_handler(uint8_t busid, uint8_t event, void *arg)
             if (g_usbd_msc[busid].usbd_msc_mq == NULL) {
                 USB_LOG_ERR("No memory to alloc for g_usbd_msc[busid].usbd_msc_mq\r\n");
             }
-            g_usbd_msc[busid].usbd_msc_thread = usb_osal_thread_create("usbd_msc", CONFIG_USBDEV_MSC_STACKSIZE, CONFIG_USBDEV_MSC_PRIO, usbdev_msc_thread, (void *)busid);
+            g_usbd_msc[busid].usbd_msc_thread = usb_osal_thread_create("usbd_msc", CONFIG_USBDEV_MSC_STACKSIZE, CONFIG_USBDEV_MSC_PRIO, usbdev_msc_thread, (void *)(uint32_t)busid);
             if (g_usbd_msc[busid].usbd_msc_thread == NULL) {
                 USB_LOG_ERR("No memory to alloc for g_usbd_msc[busid].usbd_msc_thread\r\n");
             }
@@ -911,11 +911,11 @@ void mass_storage_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 }
 
 #if defined(CONFIG_USBDEV_MSC_THREAD)
-static void usbdev_msc_thread(void *argument)
+static void usbdev_msc_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     uintptr_t event;
     int ret;
-    uint8_t busid = (uint8_t)argument;
+    uint8_t busid = (uint8_t)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     while (1) {
         ret = usb_osal_mq_recv(g_usbd_msc[busid].usbd_msc_mq, (uintptr_t *)&event, USB_OSAL_WAITING_FOREVER);
@@ -977,9 +977,9 @@ struct usbd_interface *usbd_msc_init_intf(uint8_t busid, struct usbd_interface *
     for (uint8_t i = 0u; i <= g_usbd_msc[busid].max_lun; i++) {
         usbd_msc_get_cap(busid, i, &g_usbd_msc[busid].scsi_blk_nbr[i], &g_usbd_msc[busid].scsi_blk_size[i]);
 
-        if (g_usbd_msc[busid].scsi_blk_size[i] > CONFIG_USBDEV_MSC_MAX_BUFSIZE) {
-            USB_LOG_ERR("msc block buffer overflow\r\n");
-            return NULL;
+        if (CONFIG_USBDEV_MSC_MAX_BUFSIZE % g_usbd_msc[busid].scsi_blk_size[i]) {
+            USB_LOG_ERR("CONFIG_USBDEV_MSC_MAX_BUFSIZE must be a multiple of block size\r\n");
+            while(1){}
         }
     }
 

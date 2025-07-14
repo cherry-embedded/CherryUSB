@@ -38,6 +38,8 @@ if CHERRYUSB
                 bool "dwc2_gd"
             config CHERRYUSB_DEVICE_DWC2_HC
                 bool "dwc2_hc"
+            config CHERRYUSB_DEVICE_DWC2_KENDRYTE
+                bool "dwc2_kendryte"
             config CHERRYUSB_DEVICE_DWC2_CUSTOM
                 bool "dwc2_custom"
             config CHERRYUSB_DEVICE_MUSB_ES
@@ -48,6 +50,12 @@ if CHERRYUSB
                 bool "musb_bk"
             config CHERRYUSB_DEVICE_MUSB_CUSTOM
                 bool "musb_custom"
+            config CHERRYUSB_DEVICE_KINETIS_MCX
+                bool "kinetis_mcx"
+            config CHERRYUSB_DEVICE_KINETIS_MM32
+                bool "kinetis_mm32"
+            config CHERRYUSB_DEVICE_KINETIS_CUSTOM
+                bool "kinetis_custom"
             config CHERRYUSB_DEVICE_CHIPIDEA_MCX
                 bool "chipidea_mcx"
             config CHERRYUSB_DEVICE_CHIPIDEA_CUSTOM
@@ -58,6 +66,8 @@ if CHERRYUSB
                 bool "hpm"
             config CHERRYUSB_DEVICE_AIC
                 bool "aic"
+            config CHERRYUSB_DEVICE_RP2040
+                bool "rp2040"
             config CHERRYUSB_DEVICE_CH32
                 bool "ch32"
             config CHERRYUSB_DEVICE_PUSB2
@@ -185,6 +195,8 @@ if CHERRYUSB
                 bool "dwc2_esp"
             config CHERRYUSB_HOST_DWC2_HC
                 bool "dwc2_hc"
+            config CHERRYUSB_HOST_DWC2_KENDRYTE
+                bool "dwc2_kendryte"
             config CHERRYUSB_HOST_DWC2_CUSTOM
                 bool "dwc2_custom"
             config CHERRYUSB_HOST_MUSB_ES
@@ -201,6 +213,14 @@ if CHERRYUSB
                 bool "xhci_phytium"
             config CHERRYUSB_HOST_XHCI_CUSTOM
                 bool "xhci"
+            config CHERRYUSB_HOST_KINETIS_MCX
+                bool "kinetis_mcx"
+            config CHERRYUSB_HOST_KINETIS_MM32
+                bool "kinetis_mm32"
+            config CHERRYUSB_HOST_KINETIS_CUSTOM
+                bool "kinetis_custom"
+            config CHERRYUSB_HOST_RP2040
+                bool "rp2040"
         endchoice
 
         config CHERRYUSB_HOST_CDC_ACM
@@ -281,6 +301,11 @@ if CHERRYUSB
         config CHERRYUSB_HOST_PL2303
             bool
             prompt "Enable usb pl2303 driver"
+            default n
+
+        config CHERRYUSB_HOST_AOA
+            bool
+            prompt "Enable usb aoa driver"
             default n
 
         config USBHOST_PLATFORM_CDC_ECM

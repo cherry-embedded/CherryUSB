@@ -33,8 +33,31 @@
 
 仓库参考：https://gitee.com/phytium_embedded/phytium-free-rtos-sdk
 
-- 飞腾派支持两个 USB3.0 主机， 两个 USB2.0 主从机
+- 飞腾派支持两个 USB3.0 主机（采用 XHCI）， 两个 USB2.0 主从机
 - USB 的相关应用位于 `example/peripheral/usb` ，根据官方环境搭建完成后，即可编译使用。
+
+基于 Essemi 系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_es32
+
+- 支持全速和高速主从机
+
+基于 NXP MCX系列芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/cherryusb_mcx 或者 https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx
+
+- 支持全速 IP 和高速 IP， 高速 IP 支持主机和从机
+
+- 支持全速和高速主从机
+
+基于 Artinchip 系列芯片
+---------------------------
+
+仓库参考：https://gitee.com/artinchip/luban-lite
+
+- 支持全速和高速主从机，主机采用 EHCI + OHCI。
 
 基于 ST 系列芯片
 ---------------------------

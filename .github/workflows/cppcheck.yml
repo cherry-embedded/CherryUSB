@@ -1,0 +1,17 @@
+name: Cppcheck action
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: cppcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: cppcheck
+        shell: bash
+        run: |
+          sudo apt install cppcheck
+          cppcheck --enable=warning,portability,performance --language=c --platform=unix32 --std=c99 --force . -i third_party/ -i class/template -i port/template/

@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.15)
 
 if(BL_SDK_BASE)
 set(CONFIG_CHERRYUSB_DEVICE 1)
-set(CONFIG_CHERRYUSB_DEVICE_CDC 1)
+set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM 1)
 set(CONFIG_CHERRYUSB_DEVICE_HID 1)
 set(CONFIG_CHERRYUSB_DEVICE_MSC 1)
+set(CONFIG_CHERRYUSB_DEVICE_AUDIO 1)
 set(CONFIG_CHERRYUSB_DEVICE_VIDEO 1)
 set(CONFIG_CHERRYUSB_DEVICE_DCD "bl")
 
@@ -76,10 +77,14 @@ set(ldfragments "osal/idf/linker.lf")
 if(CONFIG_CHERRYUSB_HOST_CDC_ECM OR CONFIG_CHERRYUSB_HOST_CDC_RNDIS OR CONFIG_CHERRYUSB_HOST_CDC_NCM
 OR CONFIG_CHERRYUSB_HOST_ASIX OR CONFIG_CHERRYUSB_HOST_RTL8152 OR CONFIG_CHERRYUSB_HOST_BL616)
 list(APPEND cherryusb_srcs platform/none/usbh_lwip.c)
+idf_component_get_property(lwip lwip COMPONENT_LIB)
+target_compile_definitions(${lwip} PRIVATE "-DPBUF_POOL_BUFSIZE=1600")
 endif()
 
+idf_component_get_property(freertos_include freertos ORIG_INCLUDE_PATH)
+
 idf_component_register(SRCS ${cherryusb_srcs}
-    INCLUDE_DIRS ${cherryusb_incs}
+    INCLUDE_DIRS ${cherryusb_incs} ${freertos_include}
     PRIV_REQUIRES usb
     LDFRAGMENTS  ${ldfragments}
 )

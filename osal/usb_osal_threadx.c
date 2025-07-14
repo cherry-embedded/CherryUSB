@@ -114,6 +114,7 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
 
 void usb_osal_sem_reset(usb_osal_sem_t sem)
 {
+    tx_semaphore_get((TX_SEMAPHORE *)sem, 0);
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)

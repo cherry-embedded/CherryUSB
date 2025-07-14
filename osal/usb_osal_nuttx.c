@@ -31,10 +31,6 @@
 #include <nuttx/sched.h>
 #include <nuttx/signal.h>
 
-#if 1
-#error please modfiy all thread param (void *argument) with (int argc, char **argv), and argument = ((uintptr_t)strtoul(argv[1], NULL, 16));
-#endif
-
 struct mq_adpt {
     struct file mq;   /* Message queue handle */
     uint32_t msgsize; /* Message size */
@@ -56,7 +52,7 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     argv[0] = arg1;
     argv[1] = NULL;
 
-    pid = kthread_create(name, prio, stack_size, (void *)entry,
+    pid = kthread_create(name, CONFIG_SCHED_HPWORKPRIORITY - prio, stack_size, (void *)entry,
                          argv);
     if (pid > 0) {
         return (usb_osal_thread_t)pid;
@@ -135,6 +131,7 @@ int usb_osal_sem_give(usb_osal_sem_t sem)
 
 void usb_osal_sem_reset(usb_osal_sem_t sem)
 {
+    nxsem_reset((sem_t *)sem, 0);
 }
 
 usb_osal_mutex_t usb_osal_mutex_create(void)

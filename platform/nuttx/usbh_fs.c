@@ -3,35 +3,73 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <nuttx/config.h>
-
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
-
-#include <nuttx/irq.h>
-#include <nuttx/kmalloc.h>
-#include <nuttx/signal.h>
-#include <nuttx/arch.h>
-#include <nuttx/wqueue.h>
-#include <nuttx/scsi.h>
 #include <nuttx/fs/fs.h>
-#include <nuttx/mutex.h>
 
 #include "usbh_core.h"
 #include "usbh_msc.h"
 
-#ifdef CONFIG_ARCH_CHIP_HPMICRO
-#include "hpm_misc.h"
-#define usbhmsc_phy2sysaddr(a) core_local_mem_to_sys_address(0, a)
-#else
-#define usbhmsc_phy2sysaddr(a) (a)
+#ifndef CONFIG_FS_FAT
+#error "CONFIG_FS_FAT must be enabled"
 #endif
+
+#ifdef CONFIG_ARCH_DCACHE
+#ifndef CONFIG_FAT_DMAMEMORY
+#error "USBH MSC requires CONFIG_FAT_DMAMEMORY"
+#endif
+#endif
+
+#define DEV_FORMAT "/dev/sd%c"
+
+static int nuttx_errorcode(int error)
+{
+    int err = 0;
+
+    switch (error) {
+        case -USB_ERR_NOMEM:
+            err = -EIO;
+            break;
+        case -USB_ERR_INVAL:
+            err = -EINVAL;
+            break;
+        case -USB_ERR_NODEV:
+            err = -ENODEV;
+            break;
+        case -USB_ERR_NOTCONN:
+            err = -ENOTCONN;
+            break;
+        case -USB_ERR_NOTSUPP:
+            err = -EIO;
+            break;
+        case -USB_ERR_BUSY:
+            err = -EBUSY;
+            break;
+        case -USB_ERR_RANGE:
+            err = -ERANGE;
+            break;
+        case -USB_ERR_STALL:
+            err = -EPERM;
+            break;
+        case -USB_ERR_NAK:
+            err = -EAGAIN;
+            break;
+        case -USB_ERR_DT:
+            err = -EIO;
+            break;
+        case -USB_ERR_IO:
+            err = -EIO;
+            break;
+        case -USB_ERR_SHUTDOWN:
+            err = -ESHUTDOWN;
+            break;
+        case -USB_ERR_TIMEOUT:
+            err = -ETIMEDOUT;
+            break;
+
+        default:
+            break;
+    }
+    return err;
+}
 
 static int usbhost_open(FAR struct inode *inode);
 static int usbhost_close(FAR struct inode *inode);
@@ -63,11 +101,11 @@ static int usbhost_open(FAR struct inode *inode)
     DEBUGASSERT(inode->i_private);
     msc_class = (struct usbh_msc *)inode->i_private;
 
-    if (msc_class->hport && msc_class->hport->connected) {
-        return OK;
-    } else {
+    if (usbh_msc_scsi_init(msc_class) < 0) {
         return -ENODEV;
     }
+
+    return OK;
 }
 
 static int usbhost_close(FAR struct inode *inode)
@@ -85,18 +123,14 @@ static ssize_t usbhost_read(FAR struct inode *inode, unsigned char *buffer,
     DEBUGASSERT(inode->i_private);
     msc_class = (struct usbh_msc *)inode->i_private;
 
-    if (msc_class->hport && msc_class->hport->connected) {
-        ret = usbh_msc_scsi_read10(msc_class, startsector, (uint8_t *)usbhmsc_phy2sysaddr((uint32_t)buffer), nsectors);
-        if (ret < 0) {
-            return ret;
-        } else {
-#ifdef CONFIG_USBHOST_MSC_DCACHE
-            up_invalidate_dcache((uintptr_t)buffer, (uintptr_t)(buffer + nsectors * msc_class->blocksize));
-#endif
-            return nsectors;
-        }
+    ret = usbh_msc_scsi_read10(msc_class, startsector, (uint8_t *)buffer, nsectors);
+    if (ret < 0) {
+        return nuttx_errorcode(ret);
     } else {
-        return -ENODEV;
+#if defined(CONFIG_ARCH_DCACHE) && !defined(CONFIG_USB_DCACHE_ENABLE)
+        up_invalidate_dcache((uintptr_t)buffer, (uintptr_t)(buffer + nsectors * msc_class->blocksize));
+#endif
+        return nsectors;
     }
 }
 
@@ -110,18 +144,14 @@ static ssize_t usbhost_write(FAR struct inode *inode,
     DEBUGASSERT(inode->i_private);
     msc_class = (struct usbh_msc *)inode->i_private;
 
-    if (msc_class->hport && msc_class->hport->connected) {
-#ifdef CONFIG_USBHOST_MSC_DCACHE
-        up_flush_dcache((uintptr_t)buffer, (uintptr_t)(buffer + nsectors * msc_class->blocksize));
+#if defined(CONFIG_ARCH_DCACHE) && !defined(CONFIG_USB_DCACHE_ENABLE)
+    up_clean_dcache((uintptr_t)buffer, (uintptr_t)(buffer + nsectors * msc_class->blocksize));
 #endif
-        ret = usbh_msc_scsi_write10(msc_class, startsector, (uint8_t *)usbhmsc_phy2sysaddr((uint32_t)buffer), nsectors);
-        if (ret < 0) {
-            return ret;
-        } else {
-            return nsectors;
-        }
+    ret = usbh_msc_scsi_write10(msc_class, startsector, (uint8_t *)buffer, nsectors);
+    if (ret < 0) {
+        return nuttx_errorcode(ret);
     } else {
-        return -ENODEV;
+        return nsectors;
     }
 }
 
@@ -142,7 +172,7 @@ static int usbhost_geometry(FAR struct inode *inode,
         geometry->geo_nsectors = msc_class->blocknum;
         geometry->geo_sectorsize = msc_class->blocksize;
 
-        uinfo("nsectors: %" PRIdOFF " sectorsize: %" PRIi16 "\n",
+        USB_LOG_DBG("nsectors: %ld, sectorsize: %ld\n",
               geometry->geo_nsectors, geometry->geo_sectorsize);
         return OK;
     } else {
@@ -167,8 +197,6 @@ static int usbhost_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
     return 0;
 }
-
-#define DEV_FORMAT "/dev/sd%c"
 
 void usbh_msc_run(struct usbh_msc *msc_class)
 {

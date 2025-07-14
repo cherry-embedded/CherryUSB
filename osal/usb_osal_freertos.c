@@ -118,9 +118,13 @@ int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     int ret;
 
-    ret = xQueueSendFromISR((usb_osal_mq_t)mq, &addr, &xHigherPriorityTaskWoken);
-    if (ret == pdPASS) {
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if (xPortIsInsideInterrupt()) {
+        ret = xQueueSendFromISR((usb_osal_mq_t)mq, &addr, &xHigherPriorityTaskWoken);
+        if (ret == pdPASS) {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+    } else {
+        ret = xQueueSend((usb_osal_mq_t)mq, &addr, 0xffffffff);
     }
 
     return (ret == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
@@ -128,10 +132,21 @@ int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
 
 int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
 {
-    if (timeout == USB_OSAL_WAITING_FOREVER) {
-        return (xQueueReceive((usb_osal_mq_t)mq, addr, portMAX_DELAY) == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    if (xPortIsInsideInterrupt()) {
+        ret = xQueueReceiveFromISR((usb_osal_mq_t)mq, addr, &xHigherPriorityTaskWoken);
+        if (ret == pdPASS) {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+        return (ret == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
     } else {
-        return (xQueueReceive((usb_osal_mq_t)mq, addr, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
+        if (timeout == USB_OSAL_WAITING_FOREVER) {
+            return (xQueueReceive((usb_osal_mq_t)mq, addr, portMAX_DELAY) == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
+        } else {
+            return (xQueueReceive((usb_osal_mq_t)mq, addr, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
+        }
     }
 }
 

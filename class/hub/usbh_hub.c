@@ -33,11 +33,11 @@ static uint32_t g_devinuse = 0;
 
 static struct usbh_hub *usbh_hub_class_alloc(void)
 {
-    int devno;
+    uint8_t devno;
 
     for (devno = 0; devno < CONFIG_USBHOST_MAX_EXTHUBS; devno++) {
-        if ((g_devinuse & (1 << devno)) == 0) {
-            g_devinuse |= (1 << devno);
+        if ((g_devinuse & (1U << devno)) == 0) {
+            g_devinuse |= (1U << devno);
             memset(&g_hub_class[devno], 0, sizeof(struct usbh_hub));
             g_hub_class[devno].index = EXTHUB_FIRST_INDEX + devno;
             return &g_hub_class[devno];
@@ -48,10 +48,10 @@ static struct usbh_hub *usbh_hub_class_alloc(void)
 
 static void usbh_hub_class_free(struct usbh_hub *hub_class)
 {
-    int devno = hub_class->index - EXTHUB_FIRST_INDEX;
+    uint8_t devno = hub_class->index - EXTHUB_FIRST_INDEX;
 
-    if (devno >= 0 && devno < 32) {
-        g_devinuse &= ~(1 << devno);
+    if (devno < 32) {
+        g_devinuse &= ~(1U << devno);
     }
     memset(hub_class, 0, sizeof(struct usbh_hub));
 }
@@ -648,12 +648,12 @@ static void usbh_hub_events(struct usbh_hub *hub)
     }
 }
 
-static void usbh_hub_thread(void *argument)
+static void usbh_hub_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     struct usbh_hub *hub;
     int ret = 0;
 
-    struct usbh_bus *bus = (struct usbh_bus *)argument;
+    struct usbh_bus *bus = (struct usbh_bus *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     usb_hc_init(bus);
     while (1) {
@@ -734,9 +734,9 @@ const struct usbh_class_driver hub_class_driver = {
 
 CLASS_INFO_DEFINE const struct usbh_class_info hub_class_info = {
     .match_flags = USB_CLASS_MATCH_INTF_CLASS,
-    .class = USB_DEVICE_CLASS_HUB,
-    .subclass = 0,
-    .protocol = 0,
+    .bInterfaceClass = USB_DEVICE_CLASS_HUB,
+    .bInterfaceSubClass = 0,
+    .bInterfaceProtocol = 0,
     .id_table = NULL,
     .class_driver = &hub_class_driver
 };

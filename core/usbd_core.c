@@ -4,6 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "usbd_core.h"
+#ifdef CONFIG_USBDEV_EP0_THREAD
+#include "usb_osal.h"
+
+#define USB_EP0_STATE_SETUP 0
+#define USB_EP0_STATE_IN    1
+#define USB_EP0_STATE_OUT   2
+#endif
+
+#undef USB_DBG_TAG
+#define USB_DBG_TAG "usbd_core"
+#include "usb_log.h"
 
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
@@ -63,7 +74,12 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
 #ifdef CONFIG_USBDEV_TEST_MODE
     bool test_req;
 #endif
+#ifdef CONFIG_USBDEV_EP0_THREAD
+    usb_osal_mq_t usbd_ep0_mq;
+    usb_osal_thread_t usbd_ep0_thread;
+#endif
     struct usbd_interface *intf[16];
+    uint8_t intf_altsetting[16];
     uint8_t intf_offset;
 
     struct usbd_tx_rx_msg tx_msg[CONFIG_USBDEV_EP_NUM];
@@ -98,6 +114,7 @@ static bool is_device_configured(uint8_t busid)
  * This function sets endpoint configuration according to one specified in USB
  * endpoint descriptor and then enables it for data transfers.
  *
+ * @param [in]  busid busid
  * @param [in]  ep Endpoint descriptor byte array
  *
  * @return true if successfully configured and enabled
@@ -125,6 +142,7 @@ static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descripto
  * This function cancels transfers that are associated with endpoint and
  * disabled endpoint itself.
  *
+ * @param [in]  busid busid
  * @param [in]  ep Endpoint descriptor byte array
  *
  * @return true if successfully deconfigured and disabled
@@ -144,6 +162,7 @@ static bool usbd_reset_endpoint(uint8_t busid, const struct usb_endpoint_descrip
  * This function parses the list of installed USB descriptors and attempts
  * to find the specified USB descriptor.
  *
+ * @param [in]  busid busid
  * @param [in]  type_index Type and index of the descriptor
  * @param [out] data       Descriptor data
  * @param [out] len        Descriptor length
@@ -370,6 +389,7 @@ static bool usbd_get_descriptor(uint8_t busid, uint16_t type_index, uint8_t **da
  * index and alternate setting by parsing the installed USB descriptor list.
  * A configuration index of 0 unconfigures the device.
  *
+ * @param [in] busid busid
  * @param [in] config_index Configuration index
  * @param [in] alt_setting  Alternate setting number
  *
@@ -426,8 +446,8 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
         }
 
         /* skip to next descriptor */
-        p += p[DESC_bLength];
         current_desc_len += p[DESC_bLength];
+        p += p[DESC_bLength];
         if (current_desc_len >= desc_len && desc_len) {
             break;
         }
@@ -439,6 +459,7 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
 /**
  * @brief set USB interface
  *
+ * @param [in] busid busid
  * @param [in] iface Interface index
  * @param [in] alt_setting  Alternate setting number
  *
@@ -489,10 +510,11 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                 if (cur_iface == iface) {
                     ep_desc = (struct usb_endpoint_descriptor *)p;
 
-                    if (cur_alt_setting != alt_setting) {
+                    if (alt_setting == 0) {
                         ret = usbd_reset_endpoint(busid, ep_desc);
-                    } else {
+                    } else if (cur_alt_setting == alt_setting) {
                         ret = usbd_set_endpoint(busid, ep_desc);
+                    } else {
                     }
                 }
 
@@ -503,8 +525,8 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
         }
 
         /* skip to next descriptor */
-        p += p[DESC_bLength];
         current_desc_len += p[DESC_bLength];
+        p += p[DESC_bLength];
         if (current_desc_len >= desc_len && desc_len) {
             break;
         }
@@ -518,6 +540,7 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
 /**
  * @brief handle a standard device request
  *
+ * @param [in]     busid    busid
  * @param [in]     setup    The setup packet
  * @param [in,out] data     Data buffer
  * @param [in,out] len      Pointer to data length
@@ -613,6 +636,7 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
 /**
  * @brief handle a standard interface request
  *
+ * @param [in]     busid    busid
  * @param [in]     setup    The setup packet
  * @param [in,out] data     Data buffer
  * @param [in,out] len      Pointer to data length
@@ -674,8 +698,8 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
                     }
 
                     /* skip to next descriptor */
-                    p += p[DESC_bLength];
                     current_desc_len += p[DESC_bLength];
+                    p += p[DESC_bLength];
                     if (current_desc_len >= desc_len && desc_len) {
                         break;
                     }
@@ -699,11 +723,12 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
             ret = false;
             break;
         case USB_REQUEST_GET_INTERFACE:
-            (*data)[0] = 0;
+            (*data)[0] = g_usbd_core[busid].intf_altsetting[intf_num];
             *len = 1;
             break;
 
         case USB_REQUEST_SET_INTERFACE:
+            g_usbd_core[busid].intf_altsetting[intf_num] = LO_BYTE(setup->wValue);
             usbd_set_interface(busid, setup->wIndex, setup->wValue);
             *len = 0;
             break;
@@ -719,6 +744,7 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
 /**
  * @brief handle a standard endpoint request
  *
+ * @param [in]     busid    busid
  * @param [in]     setup    The setup packet
  * @param [in,out] data     Data buffer
  * @param [in,out] len      Pointer to data length
@@ -783,6 +809,7 @@ static bool usbd_std_endpoint_req_handler(uint8_t busid, struct usb_setup_packet
 /**
  * @brief handle standard requests (list in chapter 9)
  *
+ * @param [in]     busid    busid
  * @param [in]     setup    The setup packet
  * @param [in,out] data     Data buffer
  * @param [in,out] len      Pointer to data length
@@ -826,8 +853,7 @@ static int usbd_standard_request_handler(uint8_t busid, struct usb_setup_packet 
 /**
  * @brief handler for class requests
  *
- * If a custom request handler was installed, this handler is called first.
- *
+ * @param [in]     busid    busid
  * @param [in]     setup    The setup packet
  * @param [in,out] data     Data buffer
  * @param [in,out] len      Pointer to data length
@@ -859,8 +885,7 @@ static int usbd_class_request_handler(uint8_t busid, struct usb_setup_packet *se
 /**
  * @brief handler for vendor requests
  *
- * If a custom request handler was installed, this handler is called first.
- *
+ * @param [in]     busid    busid
  * @param [in]     setup    The setup packet
  * @param [in,out] data     Data buffer
  * @param [in,out] len      Pointer to data length
@@ -1002,6 +1027,7 @@ static int usbd_vendor_request_handler(uint8_t busid, struct usb_setup_packet *s
 /**
  * @brief handle setup request( standard/class/vendor/other)
  *
+ * @param [in]     busid busid
  * @param [in]     setup The setup packet
  * @param [in,out] data  Data buffer
  * @param [in,out] len   Pointer to data length
@@ -1112,12 +1138,10 @@ void usbd_event_reset_handler(uint8_t busid)
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_RESET);
 }
 
-void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
+static void __usbd_event_ep0_setup_complete_handler(uint8_t busid, struct usb_setup_packet *setup)
 {
-    struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
     uint8_t *buf;
 
-    memcpy(setup, psetup, 8);
 #ifdef CONFIG_USBDEV_SETUP_LOG_PRINT
     usbd_print_setup(setup);
 #endif
@@ -1163,7 +1187,7 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
 #ifdef CONFIG_USBDEV_EP0_INDATA_NO_COPY
         g_usbd_core[busid].ep0_data_buf = buf;
 #else
-        memcpy(g_usbd_core[busid].ep0_data_buf, buf, g_usbd_core[busid].ep0_data_buf_residue);
+        usb_memcpy(g_usbd_core[busid].ep0_data_buf, buf, g_usbd_core[busid].ep0_data_buf_residue);
 #endif
     } else {
         /* use memcpy(*data, xxx, len); has copied into ep0 buffer, we do nothing */
@@ -1182,7 +1206,20 @@ void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
     }
 }
 
-void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbytes)
+void usbd_event_ep0_setup_complete_handler(uint8_t busid, uint8_t *psetup)
+{
+    struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
+
+    memcpy(setup, psetup, 8);
+
+#ifdef CONFIG_USBDEV_EP0_THREAD
+    usb_osal_mq_send(g_usbd_core[busid].usbd_ep0_mq, USB_EP0_STATE_SETUP);
+#else
+    __usbd_event_ep0_setup_complete_handler(busid, setup);
+#endif
+}
+
+static void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
 
@@ -1223,11 +1260,12 @@ void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbyt
     }
 }
 
-void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbytes)
+static void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
 
     (void)ep;
+    (void)setup;
 
     if (nbytes > 0) {
         g_usbd_core[busid].ep0_data_buf += nbytes;
@@ -1236,6 +1274,9 @@ void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nby
         USB_LOG_DBG("EP0 recv %d bytes, %d remained\r\n", nbytes, g_usbd_core[busid].ep0_data_buf_residue);
 
         if (g_usbd_core[busid].ep0_data_buf_residue == 0) {
+#ifdef CONFIG_USBDEV_EP0_THREAD
+            usb_osal_mq_send(g_usbd_core[busid].usbd_ep0_mq, USB_EP0_STATE_OUT);
+#else
             /* Received all, send data to handler */
             g_usbd_core[busid].ep0_data_buf = g_usbd_core[busid].req_data;
             if (!usbd_setup_request_handler(busid, setup, &g_usbd_core[busid].ep0_data_buf, &g_usbd_core[busid].ep0_data_buf_len)) {
@@ -1245,6 +1286,7 @@ void usbd_event_ep0_out_complete_handler(uint8_t busid, uint8_t ep, uint32_t nby
 
             /*Send status to host*/
             usbd_ep_start_write(busid, USB_CONTROL_IN_EP0, NULL, 0);
+#endif
         } else {
             /* Start reading the remain data */
             usbd_ep_start_read(busid, USB_CONTROL_OUT_EP0, g_usbd_core[busid].ep0_data_buf, g_usbd_core[busid].ep0_data_buf_residue);
@@ -1383,6 +1425,47 @@ int usbd_send_remote_wakeup(uint8_t busid)
     }
 }
 
+#ifdef CONFIG_USBDEV_EP0_THREAD
+static void usbdev_ep0_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
+{
+    uintptr_t event;
+    int ret;
+    uint8_t busid = (uint8_t)CONFIG_USB_OSAL_THREAD_GET_ARGV;
+    struct usb_setup_packet *setup = &g_usbd_core[busid].setup;
+
+    while (1) {
+        ret = usb_osal_mq_recv(g_usbd_core[busid].usbd_ep0_mq, (uintptr_t *)&event, USB_OSAL_WAITING_FOREVER);
+        if (ret < 0) {
+            continue;
+        }
+        USB_LOG_DBG("event:%d\r\n", event);
+
+        switch (event) {
+            case USB_EP0_STATE_SETUP:
+                __usbd_event_ep0_setup_complete_handler(busid, setup);
+                break;
+            case USB_EP0_STATE_IN:
+                // do nothing
+                break;
+            case USB_EP0_STATE_OUT:
+                /* Received all, send data to handler */
+                g_usbd_core[busid].ep0_data_buf = g_usbd_core[busid].req_data;
+                if (!usbd_setup_request_handler(busid, setup, &g_usbd_core[busid].ep0_data_buf, &g_usbd_core[busid].ep0_data_buf_len)) {
+                    usbd_ep_set_stall(busid, USB_CONTROL_IN_EP0);
+                    continue;
+                }
+
+                /*Send status to host*/
+                usbd_ep_start_write(busid, USB_CONTROL_IN_EP0, NULL, 0);
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+#endif
+
 int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event))
 {
     int ret;
@@ -1397,6 +1480,21 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
     bus = &g_usbdev_bus[busid];
     bus->reg_base = reg_base;
 
+#ifdef CONFIG_USBDEV_EP0_THREAD
+    g_usbd_core[busid].usbd_ep0_mq = usb_osal_mq_create(1);
+    if (g_usbd_core[busid].usbd_ep0_mq == NULL) {
+        USB_LOG_ERR("No memory to alloc for g_usbd_core[busid].usbd_ep0_mq\r\n");
+        while (1) {
+        }
+    }
+    g_usbd_core[busid].usbd_ep0_thread = usb_osal_thread_create("usbd_ep0", CONFIG_USBDEV_EP0_STACKSIZE, CONFIG_USBDEV_EP0_PRIO, usbdev_ep0_thread, (void *)(uint32_t)busid);
+    if (g_usbd_core[busid].usbd_ep0_thread == NULL) {
+        USB_LOG_ERR("No memory to alloc for g_usbd_core[busid].usbd_ep0_thread\r\n");
+        while (1) {
+        }
+    }
+#endif
+
     g_usbd_core[busid].event_handler = event_handler;
     ret = usb_dc_init(busid);
     usbd_class_event_notify_handler(busid, USBD_EVENT_INIT, NULL);
@@ -1406,9 +1504,24 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 
 int usbd_deinitialize(uint8_t busid)
 {
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        USB_LOG_ERR("bus overflow\r\n");
+        while (1) {
+        }
+    }
+
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_DEINIT);
     usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
     usb_dc_deinit(busid);
     g_usbd_core[busid].intf_offset = 0;
+#ifdef CONFIG_USBDEV_EP0_THREAD
+    if (g_usbd_core[busid].usbd_ep0_mq) {
+        usb_osal_mq_delete(g_usbd_core[busid].usbd_ep0_mq);
+    }
+    if (g_usbd_core[busid].usbd_ep0_thread) {
+        usb_osal_thread_delete(g_usbd_core[busid].usbd_ep0_thread);
+    }
+#endif
+
     return 0;
 }

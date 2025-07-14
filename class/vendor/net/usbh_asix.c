@@ -70,7 +70,7 @@ static int usbh_asix_read_cmd(struct usbh_asix *asix_class,
     setup->wLength = size;
 
     ret = usbh_control_transfer(asix_class->hport, setup, g_asix_buf);
-    if (ret < 0) {
+    if (ret < 8) {
         return ret;
     }
     memcpy(data, g_asix_buf, ret - 8);
@@ -98,9 +98,12 @@ static int usbh_asix_write_cmd(struct usbh_asix *asix_class,
     setup->wIndex = index;
     setup->wLength = size;
 
-    memcpy(g_asix_buf, data, size);
-
-    return usbh_control_transfer(asix_class->hport, setup, g_asix_buf);
+    if (data && size) {
+        memcpy(g_asix_buf, data, size);
+        return usbh_control_transfer(asix_class->hport, setup, g_asix_buf);
+    } else {
+        return usbh_control_transfer(asix_class->hport, setup, NULL);
+    }
 }
 
 static int usbh_asix_mdio_write(struct usbh_asix *asix_class, int phy_id, int loc, int val)
@@ -667,7 +670,7 @@ int usbh_asix_get_connect_status(struct usbh_asix *asix_class)
     return 0;
 }
 
-void usbh_asix_rx_thread(void *argument)
+void usbh_asix_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     uint32_t g_asix_rx_length;
     int ret;
@@ -680,7 +683,7 @@ void usbh_asix_rx_thread(void *argument)
     uint32_t transfer_size = (16 * 1024);
 #endif
 
-    (void)argument;
+    (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
     USB_LOG_INFO("Create asix rx thread\r\n");
     // clang-format off
 find_class:
@@ -814,9 +817,9 @@ static const struct usbh_class_driver asix_class_driver = {
 
 CLASS_INFO_DEFINE const struct usbh_class_info asix_class_info = {
     .match_flags = USB_CLASS_MATCH_VID_PID | USB_CLASS_MATCH_INTF_CLASS,
-    .class = 0xff,
-    .subclass = 0x00,
-    .protocol = 0x00,
+    .bInterfaceClass = 0xff,
+    .bInterfaceSubClass = 0x00,
+    .bInterfaceProtocol = 0x00,
     .id_table = asix_id_table,
     .class_driver = &asix_class_driver
 };

@@ -3,6 +3,10 @@
 
 以下内容为商业收费类，如需支持，请邮件到 1203593632@qq.com。
 
+- OHCI 驱动
+
+.. figure:: img/ohci.png
+
 - 主机 UVC & UAC 类 EHCI IP 中 ISO 驱动和 UAC/UVC 框架
 
 .. figure:: img/ehci_hostuvc1.png
@@ -12,6 +16,7 @@
 
 .. figure:: img/dwc2_hostuvc1.png
 .. figure:: img/dwc2_hostuvc2.png
+.. figure:: img/dwc2_hostuac.png
 
 - 主机 UVC & UAC 类 MUSB IP 中 ISO 驱动和 UAC/UVC 框架, MUSB 需要为 mentor 公司制定的标准 IP
 

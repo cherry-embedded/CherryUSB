@@ -1,6 +1,8 @@
 基于 RT-Thread 软件包开发指南
 ===============================
 
+.. note:: CherryUSB 已经加入 RT-Thread 主线，可以选择使用主线版本，配置方式相同。
+
 本节主要介绍使用 RT-Thread 提供的软件包管理器来配置工程，以 env 作为演示。本节操作不同芯片都一样，后续不再重复讲解。打开 env 以后使用 menuconfig 进入包管理器，并在如图所示路径中选择 CherryUSB。
 
 .. figure:: img/env0.png
@@ -89,7 +91,7 @@
         INIT_APP_EXPORT(usbh_init);
 
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
-* 如果使用的是 GCC ，需要在链接脚本(ld)中添加如下代码：
+* 如果使用的是 GCC ，需要在链接脚本(需要放在 flash 位置)中添加如下代码：
 
 .. code-block:: C
 
@@ -99,6 +101,30 @@
         KEEP(*(.usbh_class_info))
         __usbh_class_info_end__ = .;
 
+
+举例如下：
+
+.. code-block:: C
+
+        /* The program code and other data into "FLASH" Rom type memory */
+        .text :
+        {
+        . = ALIGN(4);
+        *(.text)           /* .text sections (code) */
+        *(.text*)          /* .text* sections (code) */
+        *(.glue_7)         /* glue arm to thumb code */
+        *(.glue_7t)        /* glue thumb to arm code */
+        *(.eh_frame)
+
+        KEEP (*(.init))
+        KEEP (*(.fini))
+        . = ALIGN(4);
+        __usbh_class_info_start__ = .;
+        KEEP(*(.usbh_class_info))
+        __usbh_class_info_end__ = .;
+        . = ALIGN(4);
+        _etext = .;        /* define a global symbols at end of code */
+        } > FLASH
 
 借助 STM32CubeMX 生成 USB 初始化
 ----------------------------------

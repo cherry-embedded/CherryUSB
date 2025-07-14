@@ -20,7 +20,7 @@
 /* Enable print with color */
 #define CONFIG_USB_PRINTF_COLOR_ENABLE
 
-/* data align size when use dma */
+/* data align size when use dma or use dcache */
 #ifndef CONFIG_USB_ALIGN_SIZE
 #define CONFIG_USB_ALIGN_SIZE 4
 #endif
@@ -29,7 +29,6 @@
 #define USB_NOCACHE_RAM_SECTION
 
 /* ================= USB Device Stack Configuration ================ */
-// NOTE: Below configurations are removed to Kconfig, `idf.py menuconfig` to config them
 
 /* Ep0 in and out transfer buffer */
 #ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
@@ -49,6 +48,17 @@
 
 /* Enable test mode */
 // #define CONFIG_USBDEV_TEST_MODE
+
+/* move ep0 setup handler from isr to thread */
+// #define CONFIG_USBDEV_EP0_THREAD
+
+#ifndef CONFIG_USBDEV_EP0_PRIO
+#define CONFIG_USBDEV_EP0_PRIO 4
+#endif
+
+#ifndef CONFIG_USBDEV_EP0_STACKSIZE
+#define CONFIG_USBDEV_EP0_STACKSIZE 2048
+#endif
 
 #ifndef CONFIG_USBDEV_MSC_MAX_LUN
 #define CONFIG_USBDEV_MSC_MAX_LUN 1
@@ -70,6 +80,10 @@
 #define CONFIG_USBDEV_MSC_VERSION_STRING "0.01"
 #endif
 
+/* move msc read & write from isr to while(1), you should call usbd_msc_polling in while(1) */
+// #define CONFIG_USBDEV_MSC_POLLING
+
+/* move msc read & write from isr to thread */
 // #define CONFIG_USBDEV_MSC_THREAD
 
 #ifndef CONFIG_USBDEV_MSC_PRIO
@@ -209,14 +223,14 @@
 
 /* ---------------- DWC2 Configuration ---------------- */
 //esp32s2/s3 can support up to 5 IN endpoints(include ep0) at the same time
-#define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (208 / 4)
+#define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (320 / 4)
 #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
-#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (136 / 4)
-#define CONFIG_USB_DWC2_TX2_FIFO_SIZE (136 / 4)
-#define CONFIG_USB_DWC2_TX3_FIFO_SIZE (128 / 4)
-#define CONFIG_USB_DWC2_TX4_FIFO_SIZE (128 / 4)
-#define CONFIG_USB_DWC2_TX5_FIFO_SIZE (0 / 4)
-#define CONFIG_USB_DWC2_TX6_FIFO_SIZE (0 / 4)
+#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (64 / 4)
+#define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
+#define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
+#define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
+#define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
+#define CONFIG_USB_DWC2_TX6_FIFO_SIZE (64 / 4)
 #define CONFIG_USB_DWC2_TX7_FIFO_SIZE (0 / 4)
 #define CONFIG_USB_DWC2_TX8_FIFO_SIZE (0 / 4)
 
