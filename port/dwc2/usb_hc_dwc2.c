@@ -222,7 +222,14 @@ static inline uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t po
     }
 }
 
-static inline void dwc2_chan_char_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
+static inline void dwc2_chan_char_init(struct usbh_bus *bus,
+                                       uint8_t ch_num,
+                                       uint8_t dev_addr,
+                                       uint8_t ep_addr,
+                                       uint8_t ep_type,
+                                       uint16_t ep_mps,
+                                       uint8_t ep_mult,
+                                       uint8_t speed)
 {
     uint32_t regval;
 
@@ -230,7 +237,8 @@ static inline void dwc2_chan_char_init(struct usbh_bus *bus, uint8_t ch_num, uin
     regval = (((uint32_t)ep_mps << USB_OTG_HCCHAR_MPSIZ_Pos) & USB_OTG_HCCHAR_MPSIZ) |
              ((((uint32_t)ep_addr & 0x7FU) << USB_OTG_HCCHAR_EPNUM_Pos) & USB_OTG_HCCHAR_EPNUM) |
              (((uint32_t)ep_type << USB_OTG_HCCHAR_EPTYP_Pos) & USB_OTG_HCCHAR_EPTYP) |
-             (((uint32_t)devaddr << USB_OTG_HCCHAR_DAD_Pos) & USB_OTG_HCCHAR_DAD);
+             (((uint32_t)ep_mult << USB_OTG_HCCHAR_MC_Pos) & USB_OTG_HCCHAR_MC) |
+             (((uint32_t)dev_addr << USB_OTG_HCCHAR_DAD_Pos) & USB_OTG_HCCHAR_DAD);
 
     if ((ep_addr & 0x80U) == 0x80U) {
         regval |= USB_OTG_HCCHAR_EPDIR;
@@ -272,7 +280,14 @@ static inline void dwc2_chan_splt_init(struct usbh_bus *bus, uint8_t ch_num)
     }
 }
 
-static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps, uint8_t speed)
+static void dwc2_chan_init(struct usbh_bus *bus,
+                           uint8_t ch_num,
+                           uint8_t dev_addr,
+                           uint8_t ep_addr,
+                           uint8_t ep_type,
+                           uint16_t ep_mps,
+                           uint8_t ep_mult,
+                           uint8_t speed)
 {
     /* Clear old interrupt conditions for this host channel. */
     USB_OTG_HC((uint32_t)ch_num)->HCINT = 0xFFFFFFFFU;
@@ -283,7 +298,7 @@ static void dwc2_chan_init(struct usbh_bus *bus, uint8_t ch_num, uint8_t devaddr
     /* Enable the top level host channel interrupt. */
     USB_OTG_HOST->HAINTMSK |= 1UL << (ch_num & 0xFU);
 
-    dwc2_chan_char_init(bus, ch_num, devaddr, ep_addr, ep_type, ep_mps, speed);
+    dwc2_chan_char_init(bus, ch_num, dev_addr, ep_addr, ep_type, ep_mps, ep_mult, speed);
     dwc2_chan_splt_init(bus, ch_num);
 }
 
@@ -519,27 +534,62 @@ static void dwc2_control_urb_init(struct usbh_bus *bus, uint8_t chidx, struct us
     if (chan->ep0_state == DWC2_EP0_STATE_SETUP) /* fill setup */
     {
         chan->num_packets = dwc2_calculate_packet_num(8, 0x00, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
-        dwc2_chan_init(bus, chidx, urb->hport->dev_addr, 0x00, USB_ENDPOINT_TYPE_CONTROL, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
+        dwc2_chan_init(bus,
+                       chidx,
+                       urb->hport->dev_addr,
+                       0x00,
+                       USB_ENDPOINT_TYPE_CONTROL,
+                       USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize),
+                       1,
+                       urb->hport->speed);
         dwc2_chan_transfer(bus, chidx, 0x00, (uint8_t *)setup, chan->xferlen, chan->num_packets, HC_PID_SETUP);
     } else if (chan->ep0_state == DWC2_EP0_STATE_INDATA) /* fill in data */
     {
         chan->num_packets = dwc2_calculate_packet_num(datalen, 0x80, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
-        dwc2_chan_init(bus, chidx, urb->hport->dev_addr, 0x80, USB_ENDPOINT_TYPE_CONTROL, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
+        dwc2_chan_init(bus,
+                       chidx,
+                       urb->hport->dev_addr,
+                       0x80,
+                       USB_ENDPOINT_TYPE_CONTROL,
+                       USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize),
+                       1,
+                       urb->hport->speed);
         dwc2_chan_transfer(bus, chidx, 0x80, buffer, chan->xferlen, chan->num_packets, data_pid);
     } else if (chan->ep0_state == DWC2_EP0_STATE_OUTDATA) /* fill out data */
     {
         chan->num_packets = dwc2_calculate_packet_num(datalen, 0x00, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
-        dwc2_chan_init(bus, chidx, urb->hport->dev_addr, 0x00, USB_ENDPOINT_TYPE_CONTROL, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
+        dwc2_chan_init(bus,
+                       chidx,
+                       urb->hport->dev_addr,
+                       0x00,
+                       USB_ENDPOINT_TYPE_CONTROL,
+                       USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize),
+                       1,
+                       urb->hport->speed);
         dwc2_chan_transfer(bus, chidx, 0x00, buffer, chan->xferlen, chan->num_packets, data_pid);
     } else if (chan->ep0_state == DWC2_EP0_STATE_INSTATUS) /* fill in status */
     {
         chan->num_packets = dwc2_calculate_packet_num(0, 0x80, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
-        dwc2_chan_init(bus, chidx, urb->hport->dev_addr, 0x80, USB_ENDPOINT_TYPE_CONTROL, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
+        dwc2_chan_init(bus,
+                       chidx,
+                       urb->hport->dev_addr,
+                       0x80,
+                       USB_ENDPOINT_TYPE_CONTROL,
+                       USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize),
+                       1,
+                       urb->hport->speed);
         dwc2_chan_transfer(bus, chidx, 0x80, NULL, chan->xferlen, chan->num_packets, HC_PID_DATA1);
     } else if (chan->ep0_state == DWC2_EP0_STATE_OUTSTATUS) /* fill out status */
     {
         chan->num_packets = dwc2_calculate_packet_num(0, 0x00, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
-        dwc2_chan_init(bus, chidx, urb->hport->dev_addr, 0x00, USB_ENDPOINT_TYPE_CONTROL, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
+        dwc2_chan_init(bus,
+                       chidx,
+                       urb->hport->dev_addr,
+                       0x00,
+                       USB_ENDPOINT_TYPE_CONTROL,
+                       USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize),
+                       1,
+                       urb->hport->speed);
         dwc2_chan_transfer(bus, chidx, 0x00, NULL, chan->xferlen, chan->num_packets, HC_PID_DATA1);
     }
 }
@@ -562,7 +612,14 @@ static void dwc2_bulk_intr_urb_init(struct usbh_bus *bus, uint8_t chidx, struct 
     }
 
     chan->num_packets = dwc2_calculate_packet_num(datalen, urb->ep->bEndpointAddress, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), &chan->xferlen);
-    dwc2_chan_init(bus, chidx, urb->hport->dev_addr, urb->ep->bEndpointAddress, USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes), USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize), urb->hport->speed);
+    dwc2_chan_init(bus,
+                   chidx,
+                   urb->hport->dev_addr,
+                   urb->ep->bEndpointAddress,
+                   USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes),
+                   USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize),
+                   USB_GET_MULT(urb->ep->wMaxPacketSize) + 1,
+                   urb->hport->speed);
     dwc2_chan_transfer(bus, chidx, urb->ep->bEndpointAddress, buffer, chan->xferlen, chan->num_packets, urb->data_toggle == 0 ? HC_PID_DATA0 : HC_PID_DATA1);
 }
 
