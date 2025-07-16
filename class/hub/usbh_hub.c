@@ -179,15 +179,15 @@ static int parse_hub_descriptor(struct usb_hub_descriptor *desc, uint16_t length
         USB_LOG_ERR("unexpected descriptor 0x%02x\r\n", desc->bDescriptorType);
         return -2;
     } else {
-        USB_LOG_RAW("Hub Descriptor:\r\n");
-        USB_LOG_RAW("bLength: 0x%02x             \r\n", desc->bLength);
-        USB_LOG_RAW("bDescriptorType: 0x%02x     \r\n", desc->bDescriptorType);
-        USB_LOG_RAW("bNbrPorts: 0x%02x           \r\n", desc->bNbrPorts);
-        USB_LOG_RAW("wHubCharacteristics: 0x%04x \r\n", desc->wHubCharacteristics);
-        USB_LOG_RAW("bPwrOn2PwrGood: 0x%02x      \r\n", desc->bPwrOn2PwrGood);
-        USB_LOG_RAW("bHubContrCurrent: 0x%02x    \r\n", desc->bHubContrCurrent);
-        USB_LOG_RAW("DeviceRemovable: 0x%02x     \r\n", desc->DeviceRemovable);
-        USB_LOG_RAW("PortPwrCtrlMask: 0x%02x     \r\n", desc->PortPwrCtrlMask);
+        USB_LOG_DBG("Hub Descriptor:\r\n");
+        USB_LOG_DBG("bLength: 0x%02x             \r\n", desc->bLength);
+        USB_LOG_DBG("bDescriptorType: 0x%02x     \r\n", desc->bDescriptorType);
+        USB_LOG_DBG("bNbrPorts: 0x%02x           \r\n", desc->bNbrPorts);
+        USB_LOG_DBG("wHubCharacteristics: 0x%04x \r\n", desc->wHubCharacteristics);
+        USB_LOG_DBG("bPwrOn2PwrGood: 0x%02x      \r\n", desc->bPwrOn2PwrGood);
+        USB_LOG_DBG("bHubContrCurrent: 0x%02x    \r\n", desc->bHubContrCurrent);
+        USB_LOG_DBG("DeviceRemovable: 0x%02x     \r\n", desc->DeviceRemovable);
+        USB_LOG_DBG("PortPwrCtrlMask: 0x%02x     \r\n", desc->PortPwrCtrlMask);
     }
     return 0;
 }
@@ -203,14 +203,14 @@ static int parse_hub_ss_descriptor(struct usb_hub_ss_descriptor *desc, uint16_t 
         USB_LOG_ERR("unexpected descriptor 0x%02x\r\n", desc->bDescriptorType);
         return -2;
     } else {
-        USB_LOG_RAW("SuperSpeed Hub Descriptor:\r\n");
-        USB_LOG_RAW("bLength: 0x%02x             \r\n", desc->bLength);
-        USB_LOG_RAW("bDescriptorType: 0x%02x     \r\n", desc->bDescriptorType);
-        USB_LOG_RAW("bNbrPorts: 0x%02x           \r\n", desc->bNbrPorts);
-        USB_LOG_RAW("wHubCharacteristics: 0x%04x \r\n", desc->wHubCharacteristics);
-        USB_LOG_RAW("bPwrOn2PwrGood: 0x%02x      \r\n", desc->bPwrOn2PwrGood);
-        USB_LOG_RAW("bHubContrCurrent: 0x%02x    \r\n", desc->bHubContrCurrent);
-        USB_LOG_RAW("DeviceRemovable: 0x%02x     \r\n", desc->DeviceRemovable);
+        USB_LOG_DBG("SuperSpeed Hub Descriptor:\r\n");
+        USB_LOG_DBG("bLength: 0x%02x             \r\n", desc->bLength);
+        USB_LOG_DBG("bDescriptorType: 0x%02x     \r\n", desc->bDescriptorType);
+        USB_LOG_DBG("bNbrPorts: 0x%02x           \r\n", desc->bNbrPorts);
+        USB_LOG_DBG("wHubCharacteristics: 0x%04x \r\n", desc->wHubCharacteristics);
+        USB_LOG_DBG("bPwrOn2PwrGood: 0x%02x      \r\n", desc->bPwrOn2PwrGood);
+        USB_LOG_DBG("bHubContrCurrent: 0x%02x    \r\n", desc->bHubContrCurrent);
+        USB_LOG_DBG("DeviceRemovable: 0x%02x     \r\n", desc->DeviceRemovable);
     }
     return 0;
 }
@@ -403,7 +403,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     for (uint8_t port = 0; port < hub->nports; port++) {
         ret = usbh_hub_get_portstatus(hub, port + 1, &port_status);
-        USB_LOG_INFO("port %u, status:0x%02x, change:0x%02x\r\n", port + 1, port_status.wPortStatus, port_status.wPortChange);
+        USB_LOG_DBG("port %u, status:0x%02x, change:0x%02x\r\n", port + 1, port_status.wPortStatus, port_status.wPortChange);
         if (ret < 0) {
             return ret;
         }
