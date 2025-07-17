@@ -7,15 +7,16 @@
 
 .. figure:: img/ohci.png
 
-- 主机 UVC & UAC 类 EHCI IP 中 ISO 驱动和 UAC/UVC 框架
+- 主机 UVC & UAC 类 EHCI IP 中 ISO 驱动和 UAC/UVC 框架，iso 支持最多一个微帧 3 包
 
 .. figure:: img/ehci_hostuvc1.png
 .. figure:: img/ehci_hostuvc2.png
 
-- 主机 UVC & UAC 类 DWC2 IP 中 ISO 驱动和 UAC/UVC 框架
+- 主机 UVC & UAC 类 DWC2 IP 中 ISO 驱动和 UAC/UVC 框架，iso 支持最多一个微帧 3 包
 
 .. figure:: img/dwc2_hostuvc1.png
 .. figure:: img/dwc2_hostuvc2.png
+.. figure:: img/dwc2_hostuvc3.png
 .. figure:: img/dwc2_hostuac.png
 
 - 主机 UVC & UAC 类 MUSB IP 中 ISO 驱动和 UAC/UVC 框架, MUSB 需要为 mentor 公司制定的标准 IP
