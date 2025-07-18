@@ -1139,7 +1139,6 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
             urb->errorcode = 0;
 
             uint32_t count = chan->xferlen - (USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_XFRSIZ); /* how many size has received */
-            //uint32_t has_used_packets = chan->num_packets - ((USB_OTG_HC(ch_num)->HCTSIZ & USB_OTG_HCTSIZ_PKTCNT) >> 19); /* how many packets have used */
 
             urb->actual_length += count;
             urb->transfer_buffer_length -= count;
@@ -1152,7 +1151,7 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
                 urb->data_toggle = 1;
             }
 
-            if (chan->dir_in) {
+            if (chan->dir_in && (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
                 usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(count, CONFIG_USB_ALIGN_SIZE));
             }
 
@@ -1160,7 +1159,7 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
 
             if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
                 if (chan->ep0_state == DWC2_EP0_STATE_INDATA) {
-                    if (chan->do_ssplit && urb->transfer_buffer_length > 0) {
+                    if (chan->do_ssplit && urb->transfer_buffer_length > 0 && (count == USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize))) {
                         dwc2_control_urb_init(bus, ch_num, urb, urb->setup, urb->transfer_buffer + urb->actual_length - 8, urb->transfer_buffer_length);
                     } else {
                         chan->ep0_state = DWC2_EP0_STATE_OUTSTATUS;
@@ -1217,7 +1216,6 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
                         break;
                     case USB_ENDPOINT_TYPE_BULK:
                     case USB_ENDPOINT_TYPE_INTERRUPT:
-                        //printf("intr ack, len:%d\r\n", urb->actual_length);
                         chan->do_csplit = 1;
                         chan->ssplit_frame = dwc2_get_full_frame_num(bus);
                         dwc2_bulk_intr_urb_init(bus, ch_num, urb, urb->transfer_buffer + urb->actual_length, urb->transfer_buffer_length);
