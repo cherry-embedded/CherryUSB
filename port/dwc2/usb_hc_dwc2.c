@@ -1150,10 +1150,6 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
                 urb->data_toggle = 1;
             }
 
-            if (chan->dir_in && (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
-                usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(count, CONFIG_USB_ALIGN_SIZE));
-            }
-
             chan->do_csplit = 0;
 
             if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
@@ -1173,6 +1169,7 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
                 if (chan->do_ssplit && urb->transfer_buffer_length > 0 && (count == USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize))) {
                     dwc2_bulk_intr_urb_init(bus, ch_num, urb, urb->transfer_buffer + urb->actual_length, urb->transfer_buffer_length);
                 } else {
+                    usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->actual_length, CONFIG_USB_ALIGN_SIZE));
                     dwc2_urb_waitup(urb);
                 }
             }
@@ -1326,6 +1323,7 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
                         dwc2_control_urb_init(bus, ch_num, urb, urb->setup, urb->transfer_buffer, urb->transfer_buffer_length);
                     }
                 } else if (chan->ep0_state == DWC2_EP0_STATE_OUTSTATUS) {
+                    usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->actual_length - 8, CONFIG_USB_ALIGN_SIZE));
                     chan->ep0_state = DWC2_EP0_STATE_SETUP;
                     dwc2_urb_waitup(urb);
                 }
