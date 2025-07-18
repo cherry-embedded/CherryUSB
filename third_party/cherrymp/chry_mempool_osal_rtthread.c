@@ -42,13 +42,3 @@ int chry_mempool_osal_sem_give(chry_mempool_osal_sem_t sem)
 {
     return (int)rt_sem_release((rt_sem_t)sem);
 }
-
-void *chry_mempool_osal_malloc(size_t size)
-{
-    return rt_malloc(size);
-}
-
-void chry_mempool_osal_free(void *ptr)
-{
-    rt_free(ptr);
-}

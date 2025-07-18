@@ -10,17 +10,22 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "chry_ringbuffer.h"
-
 typedef void *chry_mempool_osal_sem_t;
 
 #ifndef CONFIG_CHRY_MEMPOOL_MAX_BLOCK_COUNT
 #define CONFIG_CHRY_MEMPOOL_MAX_BLOCK_COUNT 128
 #endif
 
+typedef struct {
+    uint32_t in;   /*!< Define the write pointer.               */
+    uint32_t out;  /*!< Define the read pointer.                */
+    uint32_t mask; /*!< Define the write and read pointer mask. */
+    void *pool;    /*!< Define the memory pointer.              */
+} chry_mempool_ringbuffer_t;
+
 struct chry_mempool {
-    chry_ringbuffer_t in;
-    chry_ringbuffer_t out;
+    chry_mempool_ringbuffer_t in;
+    chry_mempool_ringbuffer_t out;
     chry_mempool_osal_sem_t out_sem;
 
     void *block;

@@ -24,13 +24,3 @@ int chry_mempool_osal_sem_give(chry_mempool_osal_sem_t sem)
 {
     return 0;
 }
-
-void *chry_mempool_osal_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-void chry_mempool_osal_free(void *ptr)
-{
-    free(ptr);
-}
