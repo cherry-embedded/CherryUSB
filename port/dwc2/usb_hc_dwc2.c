@@ -318,7 +318,9 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
 
     if (!(ep_addr & 0x80)) {
         chan->dir_in = false;
-        usb_dcache_clean((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
+        if (buf) {
+            usb_dcache_clean((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
+        }
     } else {
         chan->dir_in = true;
     }
