@@ -427,7 +427,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
 
     /* Wait device set address completely */
-    usb_osal_msleep(2);
+    usb_osal_msleep(10);
 
     /*Reconfigure EP0 with the correct address */
     hport->dev_addr = dev_addr;
