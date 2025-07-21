@@ -250,9 +250,10 @@
 /* ================ USB Device Port Configuration ================*/
 
 #ifndef CONFIG_USBDEV_MAX_BUS
-#define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
+#define CONFIG_USBDEV_MAX_BUS 1
 #endif
 
+/* only useful for musb/ch32/chipidea */
 #ifndef CONFIG_USBDEV_EP_NUM
 #define CONFIG_USBDEV_EP_NUM 8
 #endif
@@ -283,6 +284,7 @@
 #define CONFIG_USBHOST_MAX_BUS 1
 #endif
 
+/* only useful for musb */
 #ifndef CONFIG_USBHOST_PIPE_NUM
 #define CONFIG_USBHOST_PIPE_NUM 10
 #endif
@@ -291,7 +293,7 @@
 
 #define CONFIG_USB_EHCI_HCCR_OFFSET     (0x0)
 #define CONFIG_USB_EHCI_FRAME_LIST_SIZE 1024
-#define CONFIG_USB_EHCI_QH_NUM          CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USB_EHCI_QH_NUM          10
 #define CONFIG_USB_EHCI_QTD_NUM         (CONFIG_USB_EHCI_QH_NUM * 3)
 #define CONFIG_USB_EHCI_ITD_NUM         4
 // #define CONFIG_USB_EHCI_HCOR_RESERVED_DISABLE
@@ -302,7 +304,7 @@
 
 /* ---------------- OHCI Configuration ---------------- */
 #define CONFIG_USB_OHCI_HCOR_OFFSET (0x0)
-#define CONFIG_USB_OHCI_ED_NUM CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USB_OHCI_ED_NUM 10
 #define CONFIG_USB_OHCI_TD_NUM 3
 // #define CONFIG_USB_OHCI_DESC_DCACHE_ENABLE
 

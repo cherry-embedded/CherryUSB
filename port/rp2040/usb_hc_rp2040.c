@@ -9,6 +9,9 @@
 #include "hardware/irq.h"
 #include "hardware/structs/usb.h"
 
+#undef CONFIG_USBHOST_PIPE_NUM
+#define CONFIG_USBHOST_PIPE_NUM USB_HOST_INTERRUPT_ENDPOINTS
+
 #define usb_hw_set   hw_set_alias(usb_hw)
 #define usb_hw_clear hw_clear_alias(usb_hw)
 

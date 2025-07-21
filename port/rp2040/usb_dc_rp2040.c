@@ -12,12 +12,11 @@
 #include "pico/fix/rp2040_usb_device_enumeration.h"
 #endif
 
+#undef CONFIG_USBDEV_EP_NUM
+#define CONFIG_USBDEV_EP_NUM USB_NUM_ENDPOINTS
+
 #define usb_hw_set   hw_set_alias(usb_hw)
 #define usb_hw_clear hw_clear_alias(usb_hw)
-
-#ifndef CONFIG_USBDEV_EP_NUM
-#define CONFIG_USBDEV_EP_NUM 16
-#endif
 
 #ifndef FORCE_VBUS_DETECT
 #define FORCE_VBUS_DETECT 1
