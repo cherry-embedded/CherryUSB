@@ -6,26 +6,24 @@
 USB Device 移植要点
 -----------------------
 
-- 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbd_core.c` 和 `usb_dc_xxx.c` 为必须添加项。而 `usb_dc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
+- 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，头文件路径建议全部添加。其中 `usbd_core.c` 和 `usb_dc_xxx.c` 为必须添加项。而 `usb_dc_xxx.c` 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
 - 实现 `usb_dc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
-- 描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template
-- 调用 `usbd_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`
 - 在中断函数中调用 `USBD_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBD_IRQHandler` ，请更改 USB 协议栈中的名称
 - 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
-- 编译使用。各个 class 如何使用，参考 demo 下的 template
+- 注册描述符并调用 `usbd_initialize`，填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBDEV_MAX_BUS`，可以直接使用 demo 下的 template
 
 USB Host 移植要点
 -----------------------
 
-- 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 `usbh_core.c` 、 `usb_hc_xxx.c` 以及 **osal** 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 `usb_hc_xxx.c` 是芯片所对应的 USB IP hcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
+- 拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，头文件路径建议全部添加。其中 `usbh_core.c` 、 `usb_hc_xxx.c` 以及 **osal** 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 `usb_hc_xxx.c` 是芯片所对应的 USB IP hcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 **port** 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了
 - 拷贝 `cherryusb_config_template.h` 文件到自己工程目录下，命名为 `usb_config.h`，并添加相应的目录头文件路径
 - 实现 `usb_hc_low_level_init` 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`, 如果你的 SDK 中中断入口已经存在 `USBH_IRQHandler` ，请更改 USB 协议栈中的名称
 - 链接脚本修改参考 :ref:`usbh_link_script` 章节
 - 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
-- 编译使用。基础的 cdc + hid + msc 参考 `usb_host.c` 文件，其余参考 **platform** 目录下适配
+- 调用 `usbh_initialize` ，填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS` 。基础的 cdc + hid + msc 参考 `usb_host.c` 文件，其余参考 **platform** 目录下适配
 
 .. _usbh_link_script:
 
