@@ -169,27 +169,25 @@
 <section id="usb-device">
 <h2>USB Device 移植要点<a class="headerlink" href="#usb-device" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 <cite>usbd_core.c</cite> 和 <cite>usb_dc_xxx.c</cite> 为必须添加项。而 <cite>usb_dc_xxx.c</cite> 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 <strong>port</strong> 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了</p></li>
+<li><p>拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，头文件路径建议全部添加。其中 <cite>usbd_core.c</cite> 和 <cite>usb_dc_xxx.c</cite> 为必须添加项。而 <cite>usb_dc_xxx.c</cite> 是芯片所对应的 USB IP dcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 <strong>port</strong> 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了</p></li>
 <li><p>拷贝 <cite>cherryusb_config_template.h</cite> 文件到自己工程目录下，命名为 <cite>usb_config.h</cite>，并添加相应的目录头文件路径</p></li>
 <li><p>实现 <cite>usb_dc_low_level_init</cite> 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。</p></li>
-<li><p>描述符的注册、class的注册、接口的注册、端点中断的注册。不会的参考 demo 下的 template</p></li>
-<li><p>调用 <cite>usbd_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite></p></li>
 <li><p>在中断函数中调用 <cite>USBD_IRQHandler</cite>，并传入 <cite>busid</cite>, 如果你的 SDK 中中断入口已经存在 <cite>USBD_IRQHandler</cite> ，请更改 USB 协议栈中的名称</p></li>
 <li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
-<li><p>编译使用。各个 class 如何使用，参考 demo 下的 template</p></li>
+<li><p>注册描述符并调用 <cite>usbd_initialize</cite>，填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBDEV_MAX_BUS</cite>，可以直接使用 demo 下的 template</p></li>
 </ul>
 </section>
 <section id="usb-host">
 <h2>USB Host 移植要点<a class="headerlink" href="#usb-host" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，其中 <cite>usbh_core.c</cite> 、 <cite>usb_hc_xxx.c</cite> 以及 <strong>osal</strong> 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 <cite>usb_hc_xxx.c</cite> 是芯片所对应的 USB IP hcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 <strong>port</strong> 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了</p></li>
+<li><p>拷贝 CherryUSB 源码到工程目录下，并按需添加源文件和头文件路径，头文件路径建议全部添加。其中 <cite>usbh_core.c</cite> 、 <cite>usb_hc_xxx.c</cite> 以及 <strong>osal</strong> 目录下源文件（根据不同的 os 选择对应的源文件）为必须添加项。而 <cite>usb_hc_xxx.c</cite> 是芯片所对应的 USB IP hcd 部分驱动，如果不知道自己芯片属于那个 USB IP，参考 <strong>port</strong> 目录下的不同 USB IP 的 readme。如果使用的 USB IP 没有支持，只能自己实现了</p></li>
 <li><p>拷贝 <cite>cherryusb_config_template.h</cite> 文件到自己工程目录下，命名为 <cite>usb_config.h</cite>，并添加相应的目录头文件路径</p></li>
 <li><p>实现 <cite>usb_hc_low_level_init</cite> 函数（该函数主要负责 USB 时钟、引脚、中断的初始化）。该函数可以放在你想要放的任何参与编译的 c 文件中。如何进行 USB 的时钟、引脚、中断等初始化，请自行根据你使用的芯片原厂提供的源码中进行添加。</p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite>, 如果你的 SDK 中中断入口已经存在 <cite>USBH_IRQHandler</cite> ，请更改 USB 协议栈中的名称</p></li>
 <li><p>链接脚本修改参考 <a class="reference internal" href="#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
 <li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
-<li><p>编译使用。基础的 cdc + hid + msc 参考 <cite>usb_host.c</cite> 文件，其余参考 <strong>platform</strong> 目录下适配</p></li>
+<li><p>调用 <cite>usbh_initialize</cite> ，填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite> 。基础的 cdc + hid + msc 参考 <cite>usb_host.c</cite> 文件，其余参考 <strong>platform</strong> 目录下适配</p></li>
 </ul>
 </section>
 <section id="usbh-link-script">

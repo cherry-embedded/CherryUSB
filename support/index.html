@@ -166,7 +166,7 @@
 <img alt="../_images/ohci.png" src="../_images/ohci.png" />
 </figure>
 <ul class="simple">
-<li><p>主机 UVC &amp; UAC 类 EHCI IP 中 ISO 驱动和 UAC/UVC 框架，iso 支持最多一个微帧 3 包</p></li>
+<li><p>EHCI IP 中 ISO 驱动和 UAC/UVC 框架，搭配主机 UVC &amp; UAC 类（这部分是开源的）使用。iso 支持一个微帧 1/2/3 包，支持 MJPEG 和 YUV 摄像头</p></li>
 </ul>
 <figure class="align-default">
 <img alt="../_images/ehci_hostuvc1.png" src="../_images/ehci_hostuvc1.png" />
@@ -174,8 +174,12 @@
 <figure class="align-default">
 <img alt="../_images/ehci_hostuvc2.png" src="../_images/ehci_hostuvc2.png" />
 </figure>
+<p>演示 USB Host UVC 驱动 648 * 480 YUV 摄像头。FPS 30。</p>
+<figure class="align-default">
+<img alt="../_images/usbhost_uvc1.gif" src="../_images/usbhost_uvc1.gif" />
+</figure>
 <ul class="simple">
-<li><p>主机 UVC &amp; UAC 类 DWC2 IP 中 ISO 驱动和 UAC/UVC 框架，iso 支持最多一个微帧 3 包</p></li>
+<li><p>DWC2 IP 中 ISO 驱动和 UAC/UVC 框架，搭配主机 UVC &amp; UAC 类（这部分是开源的）使用。iso 支持一个微帧 1/2/3 包，支持 MJPEG 和 YUV 摄像头</p></li>
 </ul>
 <figure class="align-default">
 <img alt="../_images/dwc2_hostuvc1.png" src="../_images/dwc2_hostuvc1.png" />
@@ -190,7 +194,7 @@
 <img alt="../_images/dwc2_hostuac.png" src="../_images/dwc2_hostuac.png" />
 </figure>
 <ul class="simple">
-<li><p>主机 UVC &amp; UAC 类 MUSB IP 中 ISO 驱动和 UAC/UVC 框架, MUSB 需要为 mentor 公司制定的标准 IP</p></li>
+<li><p>MUSB IP 中 ISO 驱动和 UAC/UVC 框架，搭配主机 UVC &amp; UAC 类（这部分是开源的）使用。MUSB 需要为 mentor 公司制定的标准 IP</p></li>
 <li><p>从机 MTP 类驱动, 支持多文件和多文件夹，支持 MCU 端增删文件并与 PC 同步</p></li>
 </ul>
 <figure class="align-default">
@@ -215,7 +219,7 @@
 <img alt="../_images/rndisrx.png" src="../_images/rndisrx.png" />
 </figure>
 <ul class="simple">
-<li><p>定制化 class 驱动或者 IP 驱动</p></li>
+<li><p>定制化 class 驱动或者 IP 驱动适配</p></li>
 <li><p>技术支持相关</p></li>
 </ul>
 </section>

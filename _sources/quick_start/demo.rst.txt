@@ -116,12 +116,12 @@ USB Device 移植要点
 - 如果使用 fsdev ip，勾选 **USB** 。如果使用 dwc2 ip，勾选 **USB_OTG_FS** 或者勾选  **USB_OTG_HS**。开启 USB 中断，其他配置对我们没用，代码中不会使用任何 st 的 usb 库。
 
 .. figure:: img/stm32_3_1.png
-.. figure:: img/stm32_3.png
+.. figure:: img/stm32_3_2.png
 
 - 配置 usb clock 为 48M
 
 .. figure:: img/stm32_4_1.png
-.. figure:: img/stm32_4.png
+.. figure:: img/stm32_4_2.png
 
 - 选择好工程，这里我们选择 keil，设置好 stack 和 heap，如果使用 msc 可以推荐设置大点，然后点击 **Generate Code**。
 
@@ -214,10 +214,12 @@ USB Host 移植要点
 
 - 拷贝 **xxx_msp.c** 中的 `HAL_HCD_MspInit` 函数中的内容到 `usb_hc_low_level_init` 函数中，屏蔽 st 生成的 usb 初始化
 - 在中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
+
+.. figure:: img/stm32_19.png
+
 - 链接脚本修改参考 :ref:`usbh_link_script` 章节
 - 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
 - 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 启动线程
 
 .. figure:: img/stm32_18.png
-.. figure:: img/stm32_19.png

@@ -11,11 +11,11 @@ Q & A
 提问中请包含以下信息：
 
 - 使用的板子，引脚，USB IP
-- USB 中断，时钟，引脚，寄存器地址是否正确，截图
+- 是否配置 USB 中断，USB 时钟，USB 引脚，USB phy 配置，以及 USB 寄存器地址是否正确，截图
 - 是否能进 USB 中断
 - 芯片是否带有 cache功能，是否做了 no cache 处理，截图
 - 硬件是否正常，是否使用杜邦线连接，如果正常，请说明正常原因
-- 配置 **#define CONFIG_USB_DBG_LEVEL USB_DBG_LOG** 并提供 log，仅限商业 IP, 其余 IP 禁止开启 log，否则无法枚举
+- 如果能进中断，配置 **#define CONFIG_USB_DBG_LEVEL USB_DBG_LOG** 并提供 log，仅限商业 IP, 其余 IP 禁止开启 log，否则无法枚举
 - 是否流片并销售
 
 其余问题提问模板

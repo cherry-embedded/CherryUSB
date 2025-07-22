@@ -288,7 +288,7 @@
 <img alt="../_images/stm32_3_1.png" src="../_images/stm32_3_1.png" />
 </figure>
 <figure class="align-default">
-<img alt="../_images/stm32_3.png" src="../_images/stm32_3.png" />
+<img alt="../_images/stm32_3_2.png" src="../_images/stm32_3_2.png" />
 </figure>
 <ul class="simple">
 <li><p>配置 usb clock 为 48M</p></li>
@@ -297,7 +297,7 @@
 <img alt="../_images/stm32_4_1.png" src="../_images/stm32_4_1.png" />
 </figure>
 <figure class="align-default">
-<img alt="../_images/stm32_4.png" src="../_images/stm32_4.png" />
+<img alt="../_images/stm32_4_2.png" src="../_images/stm32_4_2.png" />
 </figure>
 <ul class="simple">
 <li><p>选择好工程，这里我们选择 keil，设置好 stack 和 heap，如果使用 msc 可以推荐设置大点，然后点击 <strong>Generate Code</strong>。</p></li>
@@ -418,6 +418,11 @@
 <ul class="simple">
 <li><p>拷贝 <strong>xxx_msp.c</strong> 中的 <cite>HAL_HCD_MspInit</cite> 函数中的内容到 <cite>usb_hc_low_level_init</cite> 函数中，屏蔽 st 生成的 usb 初始化</p></li>
 <li><p>在中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
+</ul>
+<figure class="align-default">
+<img alt="../_images/stm32_19.png" src="../_images/stm32_19.png" />
+</figure>
+<ul class="simple">
 <li><p>链接脚本修改参考 <a class="reference internal" href="transplant.html#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
 <li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
 <li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
@@ -425,9 +430,6 @@
 </ul>
 <figure class="align-default">
 <img alt="../_images/stm32_18.png" src="../_images/stm32_18.png" />
-</figure>
-<figure class="align-default">
-<img alt="../_images/stm32_19.png" src="../_images/stm32_19.png" />
 </figure>
 </section>
 </section>
