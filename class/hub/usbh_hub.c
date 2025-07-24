@@ -562,7 +562,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
             if (portstatus & HUB_PORT_STATUS_CONNECTION) {
                 ret = usbh_hub_set_feature(hub, port + 1, HUB_PORT_FEATURE_RESET);
                 if (ret < 0) {
-                    USB_LOG_ERR("Failed to reset port %u,errorcode:%d\r\n", port, ret);
+                    USB_LOG_ERR("Failed to reset port %u, errorcode: %d\r\n", port + 1, ret);
                     continue;
                 }
 
@@ -580,7 +580,8 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     if (portchange & HUB_PORT_STATUS_C_RESET) {
                         ret = usbh_hub_clear_feature(hub, port + 1, HUB_PORT_FEATURE_C_RESET);
                         if (ret < 0) {
-                            USB_LOG_ERR("Failed to clear port %u reset change, errorcode: %d\r\n", port, ret);
+                            USB_LOG_ERR("Failed to clear port %u reset change, errorcode: %d\r\n", port + 1, ret);
+                            continue;
                         }
                     }
 
