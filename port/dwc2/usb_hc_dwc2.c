@@ -381,6 +381,9 @@ static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
     usb_osal_msleep(10U);
 
     while (!(USB_OTG_HPRT & USB_OTG_HPRT_PENA)) {
+        if (!(USB_OTG_HPRT & USB_OTG_HPRT_PCSTS)) {
+            return -USB_ERR_NOTCONN; /* Port not connected */
+        }
         usb_osal_msleep(10U);
     }
     return 0;
