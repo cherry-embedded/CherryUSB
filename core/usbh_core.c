@@ -514,7 +514,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     /* Get Manufacturer string */
     memset(string_buffer, 0, 128);
-    ret = usbh_get_string_desc(hport, USB_STRING_MFC_INDEX, string_buffer);
+    ret = usbh_get_string_desc(hport, USB_STRING_MFC_INDEX, string_buffer, 128);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get Manufacturer string,errorcode:%d\r\n", ret);
         goto errout;
@@ -524,7 +524,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     /* Get Product string */
     memset(string_buffer, 0, 128);
-    ret = usbh_get_string_desc(hport, USB_STRING_PRODUCT_INDEX, string_buffer);
+    ret = usbh_get_string_desc(hport, USB_STRING_PRODUCT_INDEX, string_buffer, 128);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get get Product string,errorcode:%d\r\n", ret);
         goto errout;
@@ -534,7 +534,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     /* Get SerialNumber string */
     memset(string_buffer, 0, 128);
-    ret = usbh_get_string_desc(hport, USB_STRING_SERIAL_INDEX, string_buffer);
+    ret = usbh_get_string_desc(hport, USB_STRING_SERIAL_INDEX, string_buffer, 128);
     if (ret < 0) {
         USB_LOG_ERR("Failed to get get SerialNumber string,errorcode:%d\r\n", ret);
         goto errout;
@@ -703,7 +703,7 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
     return ret;
 }
 
-int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output)
+int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output, uint16_t output_len)
 {
     struct usb_setup_packet *setup = hport->setup;
     int ret;
@@ -728,6 +728,10 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
     src = ep0_request_buffer[hport->bus->busid];
     dst = output;
     len = src[0];
+
+    if (((len - 2) / 2) > output_len) {
+        return -USB_ERR_NOMEM;
+    }
 
     while (i < len) {
         dst[j] = src[i];
