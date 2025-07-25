@@ -403,7 +403,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     for (uint8_t port = 0; port < hub->nports; port++) {
         ret = usbh_hub_get_portstatus(hub, port + 1, &port_status);
-        USB_LOG_DBG("port %u, status:0x%02x, change:0x%02x\r\n", port + 1, port_status.wPortStatus, port_status.wPortChange);
+        USB_LOG_DBG("port %u, status:0x%03x, change:0x%02x\r\n", port + 1, port_status.wPortStatus, port_status.wPortChange);
         if (ret < 0) {
             return ret;
         }
@@ -497,7 +497,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
         portstatus = port_status.wPortStatus;
         portchange = port_status.wPortChange;
 
-        USB_LOG_DBG("port %u, status:0x%02x, change:0x%02x\r\n", port + 1, portstatus, portchange);
+        USB_LOG_DBG("port %u, status:0x%03x, change:0x%02x\r\n", port + 1, portstatus, portchange);
 
         /* First, clear all change bits */
         mask = 1;
@@ -532,7 +532,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                 portstatus = port_status.wPortStatus;
                 portchange = port_status.wPortChange;
 
-                USB_LOG_DBG("Port %u, status:0x%02x, change:0x%02x\r\n", port + 1, portstatus, portchange);
+                USB_LOG_DBG("Port %u, status:0x%03x, change:0x%02x\r\n", port + 1, portstatus, portchange);
 
                 if (!(portchange & HUB_PORT_STATUS_C_CONNECTION) &&
                     ((portstatus & HUB_PORT_STATUS_CONNECTION) == connection)) {
@@ -576,6 +576,9 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
                 portstatus = port_status.wPortStatus;
                 portchange = port_status.wPortChange;
+
+                USB_LOG_DBG("Port %u, status:0x%03x, change:0x%02x\r\n", port + 1, portstatus, portchange);
+
                 if (!(portstatus & HUB_PORT_STATUS_RESET) && (portstatus & HUB_PORT_STATUS_ENABLE)) {
                     if (portchange & HUB_PORT_STATUS_C_RESET) {
                         ret = usbh_hub_clear_feature(hub, port + 1, HUB_PORT_FEATURE_C_RESET);
