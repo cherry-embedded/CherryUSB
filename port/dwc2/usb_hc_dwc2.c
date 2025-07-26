@@ -20,7 +20,6 @@ struct dwc2_chan {
     uint32_t xferlen;
     uint8_t chidx;
     bool inuse;
-    bool dir_in;
     bool do_ssplit;
     bool do_csplit;
     uint8_t hub_addr;
@@ -317,12 +316,13 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
                                  (((uint32_t)pid << 29) & USB_OTG_HCTSIZ_DPID);
 
     if (!(ep_addr & 0x80)) {
-        chan->dir_in = false;
         if (buf) {
             usb_dcache_clean((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
         }
     } else {
-        chan->dir_in = true;
+        if (buf) {
+            usb_dcache_invalidate((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
+        }
     }
 
     /* xfer_buff MUST be 32-bits aligned */
