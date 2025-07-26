@@ -925,118 +925,120 @@ static int usbd_class_request_handler(uint8_t busid, struct usb_setup_packet *se
 static int usbd_vendor_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
     uint32_t desclen;
+    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_DEVICE) {
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
-    if (g_usbd_core[busid].descriptors->msosv1_descriptor) {
-        if (setup->bRequest == g_usbd_core[busid].descriptors->msosv1_descriptor->vendor_code) {
-            switch (setup->wIndex) {
-                case 0x04:
-                    desclen = g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[0] +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[1] << 8) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[2] << 16) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[3] << 24);
+        if (g_usbd_core[busid].descriptors->msosv1_descriptor) {
+            if (setup->bRequest == g_usbd_core[busid].descriptors->msosv1_descriptor->vendor_code) {
+                switch (setup->wIndex) {
+                    case 0x04:
+                        desclen = g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[0] +
+                                  (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[1] << 8) +
+                                  (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[2] << 16) +
+                                  (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[3] << 24);
 
-                    *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id;
-                    //memcpy(*data, g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id, desclen);
-                    *len = desclen;
-                    return 0;
-                case 0x05:
-                    desclen = g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][0] +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][1] << 8) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][2] << 16) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][3] << 24);
+                        *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id;
+                        //memcpy(*data, g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id, desclen);
+                        *len = desclen;
+                        return 0;
+                    case 0x05:
+                        desclen = g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][0] +
+                                  (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][1] << 8) +
+                                  (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][2] << 16) +
+                                  (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][3] << 24);
 
-                    *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue];
-                    //memcpy(*data, g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue], desclen);
-                    *len = desclen;
-                    return 0;
-                default:
-                    return -1;
+                        *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue];
+                        //memcpy(*data, g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue], desclen);
+                        *len = desclen;
+                        return 0;
+                    default:
+                        return -1;
+                }
+            }
+        } else if (g_usbd_core[busid].descriptors->msosv2_descriptor) {
+            if (setup->bRequest == g_usbd_core[busid].descriptors->msosv2_descriptor->vendor_code) {
+                switch (setup->wIndex) {
+                    case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
+                        desclen = g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id_len;
+                        *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id;
+                        //memcpy(*data, g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id, desclen);
+                        *len = g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id_len;
+                        return 0;
+                    default:
+                        return -1;
+                }
             }
         }
-    } else if (g_usbd_core[busid].descriptors->msosv2_descriptor) {
-        if (setup->bRequest == g_usbd_core[busid].descriptors->msosv2_descriptor->vendor_code) {
-            switch (setup->wIndex) {
-                case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
-                    desclen = g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id_len;
-                    *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id;
-                    //memcpy(*data, g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id, desclen);
-                    *len = g_usbd_core[busid].descriptors->msosv2_descriptor->compat_id_len;
-                    return 0;
-                default:
-                    return -1;
-            }
-        }
-    }
 
-    if (g_usbd_core[busid].descriptors->webusb_url_descriptor) {
-        if (setup->bRequest == g_usbd_core[busid].descriptors->webusb_url_descriptor->vendor_code) {
-            switch (setup->wIndex) {
-                case WEBUSB_REQUEST_GET_URL:
-                    desclen = g_usbd_core[busid].descriptors->webusb_url_descriptor->string_len;
-                    *data = (uint8_t *)g_usbd_core[busid].descriptors->webusb_url_descriptor->string;
-                    //memcpy(*data, g_usbd_core[busid].descriptors->webusb_url_descriptor->string, desclen);
-                    *len = desclen;
-                    return 0;
-                default:
-                    return -1;
+        if (g_usbd_core[busid].descriptors->webusb_url_descriptor) {
+            if (setup->bRequest == g_usbd_core[busid].descriptors->webusb_url_descriptor->vendor_code) {
+                switch (setup->wIndex) {
+                    case WEBUSB_REQUEST_GET_URL:
+                        desclen = g_usbd_core[busid].descriptors->webusb_url_descriptor->string_len;
+                        *data = (uint8_t *)g_usbd_core[busid].descriptors->webusb_url_descriptor->string;
+                        //memcpy(*data, g_usbd_core[busid].descriptors->webusb_url_descriptor->string, desclen);
+                        *len = desclen;
+                        return 0;
+                    default:
+                        return -1;
+                }
             }
         }
-    }
 #else
-    if (g_usbd_core[busid].msosv1_desc) {
-        if (setup->bRequest == g_usbd_core[busid].msosv1_desc->vendor_code) {
-            switch (setup->wIndex) {
-                case 0x04:
-                    *data = (uint8_t *)g_usbd_core[busid].msosv1_desc->compat_id;
-                    desclen = g_usbd_core[busid].msosv1_desc->compat_id[0] +
-                              (g_usbd_core[busid].msosv1_desc->compat_id[1] << 8) +
-                              (g_usbd_core[busid].msosv1_desc->compat_id[2] << 16) +
-                              (g_usbd_core[busid].msosv1_desc->compat_id[3] << 24);
-                    //memcpy(*data, g_usbd_core[busid].msosv1_desc->compat_id, desclen);
-                    *len = desclen;
-                    return 0;
-                case 0x05:
-                    *data = (uint8_t *)g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue];
-                    desclen = g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][0] +
-                              (g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][1] << 8) +
-                              (g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][2] << 16) +
-                              (g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][3] << 24);
-                    //memcpy(*data, g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue], desclen);
-                    *len = desclen;
-                    return 0;
-                default:
-                    return -1;
+        if (g_usbd_core[busid].msosv1_desc) {
+            if (setup->bRequest == g_usbd_core[busid].msosv1_desc->vendor_code) {
+                switch (setup->wIndex) {
+                    case 0x04:
+                        *data = (uint8_t *)g_usbd_core[busid].msosv1_desc->compat_id;
+                        desclen = g_usbd_core[busid].msosv1_desc->compat_id[0] +
+                                  (g_usbd_core[busid].msosv1_desc->compat_id[1] << 8) +
+                                  (g_usbd_core[busid].msosv1_desc->compat_id[2] << 16) +
+                                  (g_usbd_core[busid].msosv1_desc->compat_id[3] << 24);
+                        //memcpy(*data, g_usbd_core[busid].msosv1_desc->compat_id, desclen);
+                        *len = desclen;
+                        return 0;
+                    case 0x05:
+                        *data = (uint8_t *)g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue];
+                        desclen = g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][0] +
+                                  (g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][1] << 8) +
+                                  (g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][2] << 16) +
+                                  (g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue][3] << 24);
+                        //memcpy(*data, g_usbd_core[busid].msosv1_desc->comp_id_property[setup->wValue], desclen);
+                        *len = desclen;
+                        return 0;
+                    default:
+                        return -1;
+                }
+            }
+        } else if (g_usbd_core[busid].msosv2_desc) {
+            if (setup->bRequest == g_usbd_core[busid].msosv2_desc->vendor_code) {
+                switch (setup->wIndex) {
+                    case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
+                        *data = (uint8_t *)g_usbd_core[busid].msosv2_desc->compat_id;
+                        //memcpy(*data, g_usbd_core[busid].msosv2_desc->compat_id, g_usbd_core[busid].msosv2_desc->compat_id_len);
+                        *len = g_usbd_core[busid].msosv2_desc->compat_id_len;
+                        return 0;
+                    default:
+                        return -1;
+                }
             }
         }
-    } else if (g_usbd_core[busid].msosv2_desc) {
-        if (setup->bRequest == g_usbd_core[busid].msosv2_desc->vendor_code) {
-            switch (setup->wIndex) {
-                case WINUSB_REQUEST_GET_DESCRIPTOR_SET:
-                    *data = (uint8_t *)g_usbd_core[busid].msosv2_desc->compat_id;
-                    //memcpy(*data, g_usbd_core[busid].msosv2_desc->compat_id, g_usbd_core[busid].msosv2_desc->compat_id_len);
-                    *len = g_usbd_core[busid].msosv2_desc->compat_id_len;
-                    return 0;
-                default:
-                    return -1;
-            }
-        }
-    }
 
-    if (g_usbd_core[busid].webusb_url_desc) {
-        if (setup->bRequest == g_usbd_core[busid].webusb_url_desc->vendor_code) {
-            switch (setup->wIndex) {
-                case WEBUSB_REQUEST_GET_URL:
-                    desclen = g_usbd_core[busid].webusb_url_desc->string_len;
-                    *data = (uint8_t *)g_usbd_core[busid].webusb_url_desc->string;
-                    //memcpy(*data, g_usbd_core[busid].webusb_url_desc->string, desclen);
-                    *len = desclen;
-                    return 0;
-                default:
-                    return -1;
+        if (g_usbd_core[busid].webusb_url_desc) {
+            if (setup->bRequest == g_usbd_core[busid].webusb_url_desc->vendor_code) {
+                switch (setup->wIndex) {
+                    case WEBUSB_REQUEST_GET_URL:
+                        desclen = g_usbd_core[busid].webusb_url_desc->string_len;
+                        *data = (uint8_t *)g_usbd_core[busid].webusb_url_desc->string;
+                        //memcpy(*data, g_usbd_core[busid].webusb_url_desc->string, desclen);
+                        *len = desclen;
+                        return 0;
+                    default:
+                        return -1;
+                }
             }
         }
-    }
 #endif
+    }
     for (uint8_t i = 0; i < g_usbd_core[busid].intf_offset; i++) {
         struct usbd_interface *intf = g_usbd_core[busid].intf[i];
 
