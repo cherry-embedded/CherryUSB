@@ -1349,9 +1349,8 @@ int usbh_kill_urb(struct usbh_urb *urb)
         volatile uint32_t timeout = 0;
         EHCI_HCOR->usbcmd |= EHCI_USBCMD_IAAD;
         while (!(EHCI_HCOR->usbsts & EHCI_USBSTS_IAA)) {
-            usb_osal_msleep(1);
             timeout++;
-            if (timeout > 100) {
+            if (timeout > 20000) {
                 usb_osal_leave_critical_section(flags);
                 return -USB_ERR_TIMEOUT;
             }
