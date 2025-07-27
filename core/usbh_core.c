@@ -228,12 +228,21 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                     cur_ep_num = intf_desc->bNumEndpoints;
                     cur_ep = 0;
 
-                    USB_ASSERT_MSG(cur_iface < CONFIG_USBHOST_MAX_INTERFACES,
-                                   "Interface num %d overflow", cur_iface);
-                    USB_ASSERT_MSG(cur_alt_setting < CONFIG_USBHOST_MAX_INTF_ALTSETTINGS,
-                                   "Interface altsetting num %d overflow", cur_alt_setting);
-                    USB_ASSERT_MSG(cur_ep_num <= CONFIG_USBHOST_MAX_ENDPOINTS,
-                                   "Endpoint num %d overflow", cur_ep_num);
+                    if (cur_iface >= CONFIG_USBHOST_MAX_INTERFACES) {
+                        USB_LOG_ERR("Interface num %d overflow\r\n", cur_iface);
+                        return -USB_ERR_NOMEM;
+                    }
+
+                    if (cur_ep_num >= CONFIG_USBHOST_MAX_ENDPOINTS) {
+                        USB_LOG_ERR("Endpoint num %d overflow\r\n", cur_ep_num);
+                        return -USB_ERR_NOMEM;
+                    }
+
+                    if (cur_alt_setting >= CONFIG_USBHOST_MAX_INTF_ALTSETTINGS) {
+                        USB_LOG_ERR("Interface altsetting num %d overflow\r\n", cur_alt_setting);
+                        return -USB_ERR_NOMEM;
+                    }
+
 #if 0
                     USB_LOG_DBG("Interface Descriptor:\r\n");
                     USB_LOG_DBG("bLength: 0x%02x            \r\n", intf_desc->bLength);
@@ -389,7 +398,11 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
-    parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid], 8);
+    ret = parse_device_descriptor(hport, (struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid], 8);
+    if (ret < 0) {
+        USB_LOG_ERR("Parse device descriptor fail\r\n");
+        goto errout;
+    }
 
     /* Extract the correct max packetsize from the device descriptor */
     dev_desc = (struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid];
@@ -469,7 +482,11 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
-    parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid], USB_SIZEOF_CONFIG_DESC);
+    ret = parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid], USB_SIZEOF_CONFIG_DESC);
+    if (ret < 0) {
+        USB_LOG_ERR("Parse config descriptor fail\r\n");
+        goto errout;
+    }
 
     /* Read the full size of the configuration data */
     uint16_t wTotalLength = ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->wTotalLength;
@@ -494,9 +511,10 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     ret = parse_config_descriptor(hport, (struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid], wTotalLength);
     if (ret < 0) {
-        USB_LOG_ERR("Parse config fail\r\n");
+        USB_LOG_ERR("Parse config descriptor fail\r\n");
         goto errout;
     }
+
     USB_LOG_INFO("The device has %d interfaces\r\n", ((struct usb_configuration_descriptor *)ep0_request_buffer[hport->bus->busid])->bNumInterfaces);
     hport->raw_config_desc = usb_osal_malloc(wTotalLength + 1);
     if (hport->raw_config_desc == NULL) {
