@@ -156,7 +156,6 @@ static void usb_timeout(void *arg)
 struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
 {
     struct usb_osal_timer *timer;
-    esp_timer_handle_t timer_handle;
 
     timer = pvPortMalloc(sizeof(struct usb_osal_timer));
 
@@ -178,9 +177,7 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     timer->is_period = is_period;
     timer->timeout_ms = timeout_ms;
 
-    timer_handle = (esp_timer_handle_t)timer->timer;
-
-    if (esp_timer_create(&timer_args, &timer_handle) != ESP_OK) {
+    if (esp_timer_create(&timer_args, (esp_timer_handle_t *)&timer->timer) != ESP_OK) {
         vPortFree(timer);
         return NULL;
     }
