@@ -369,6 +369,7 @@ static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
 static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
 {
     __IO uint32_t hprt0 = 0U;
+    volatile uint32_t timeout = 0;
 
     hprt0 = USB_OTG_HPRT;
 
@@ -383,6 +384,11 @@ static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
     while (!(USB_OTG_HPRT & USB_OTG_HPRT_PENA)) {
         if (!(USB_OTG_HPRT & USB_OTG_HPRT_PCSTS)) {
             return -USB_ERR_NOTCONN; /* Port not connected */
+        }
+        timeout++;
+        if (timeout > 10) {
+            USB_LOG_ERR("Reset port timeout\r\n");
+            return -USB_ERR_TIMEOUT;
         }
         usb_osal_msleep(10U);
     }
@@ -907,7 +913,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                         dwc2_drivebus(bus, 1);
                         break;
                     case HUB_PORT_FEATURE_RESET:
-                        usbh_reset_port(bus, port);
+                        return usbh_reset_port(bus, port);
                         break;
 
                     default:
