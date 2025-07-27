@@ -9,6 +9,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "freertos/event_groups.h"
+#include "esp_timer.h"
 
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -145,9 +146,9 @@ int usb_osal_mq_recv(usb_osal_mq_t mq, uintptr_t *addr, uint32_t timeout)
     }
 }
 
-static void __usb_timeout(TimerHandle_t *handle)
+static void usb_timeout(void *arg)
 {
-    struct usb_osal_timer *timer = (struct usb_osal_timer *)pvTimerGetTimerID((TimerHandle_t)handle);
+    struct usb_osal_timer *timer = (struct usb_osal_timer *)arg;
 
     timer->handler(timer->argument);
 }
@@ -155,50 +156,59 @@ static void __usb_timeout(TimerHandle_t *handle)
 struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_ms, usb_timer_handler_t handler, void *argument, bool is_period)
 {
     struct usb_osal_timer *timer;
-    (void)name;
+    esp_timer_handle_t timer_handle;
 
     timer = pvPortMalloc(sizeof(struct usb_osal_timer));
 
     if (timer == NULL) {
         return NULL;
     }
-    memset(timer, 0, sizeof(struct usb_osal_timer));
+
+    esp_timer_create_args_t timer_args = {
+        .callback = usb_timeout,
+        // argument specified here will be passed to timer callback function
+        .arg = (void *)timer,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = name,
+        .skip_unhandled_events = true
+    };
 
     timer->handler = handler;
     timer->argument = argument;
+    timer->is_period = is_period;
+    timer->timeout_ms = timeout_ms;
 
-    timer->timer = (void *)xTimerCreate("usb_tim", pdMS_TO_TICKS(timeout_ms), is_period, timer, (TimerCallbackFunction_t)__usb_timeout);
-    if (timer->timer == NULL) {
+    timer_handle = (esp_timer_handle_t)timer->timer;
+
+    if (esp_timer_create(&timer_args, &timer_handle) != ESP_OK) {
+        vPortFree(timer);
         return NULL;
     }
+
     return timer;
 }
 
 void usb_osal_timer_delete(struct usb_osal_timer *timer)
 {
-    xTimerStop(timer->timer, 0);
-    xTimerDelete(timer->timer, 0);
+    esp_timer_stop((esp_timer_handle_t)timer->timer);
+    esp_timer_delete((esp_timer_handle_t)timer->timer);
     vPortFree(timer);
 }
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    int ret;
+    esp_timer_stop((esp_timer_handle_t)timer->timer);
 
-    if (xPortInIsrContext()) {
-        ret = xTimerStartFromISR(timer->timer, &xHigherPriorityTaskWoken);
-        if (ret == pdPASS) {
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        }
+    if (timer->is_period) {
+        esp_timer_start_periodic((esp_timer_handle_t)timer->timer, ((uint64_t)timer->timeout_ms) * 1000);
     } else {
-        xTimerStart(timer->timer, 0);
+        esp_timer_start_once((esp_timer_handle_t)timer->timer, ((uint64_t)timer->timeout_ms) * 1000);
     }
 }
 
 void usb_osal_timer_stop(struct usb_osal_timer *timer)
 {
-    xTimerStop(timer->timer, 0);
+    esp_timer_stop((esp_timer_handle_t)timer->timer);
 }
 
 size_t usb_osal_enter_critical_section(void)

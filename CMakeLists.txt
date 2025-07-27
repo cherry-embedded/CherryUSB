@@ -71,7 +71,7 @@ elseif(ESP_PLATFORM)
         ${cherryusb_incs}
         ${freertos_include}
         PRIV_REQUIRES
-        usb esp_mm esp_netif
+        usb esp_mm esp_netif esp_timer
         LDFRAGMENTS
         ${ldfragments}
     )
