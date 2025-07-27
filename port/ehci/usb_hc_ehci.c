@@ -1119,7 +1119,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                         EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_PP;
                         break;
                     case HUB_PORT_FEATURE_RESET:
-                        usbh_reset_port(bus, port);
+                        return usbh_reset_port(bus, port);
 #ifdef CONFIG_USB_EHCI_WITH_OHCI
                         if (!(EHCI_HCOR->portsc[port - 1] & EHCI_PORTSC_PE)) {
                             EHCI_HCOR->portsc[port - 1] |= EHCI_PORTSC_OWNER;
