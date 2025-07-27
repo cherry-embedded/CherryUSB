@@ -306,9 +306,6 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
 {
     __IO uint32_t tmpreg;
     uint8_t is_oddframe;
-    struct dwc2_chan *chan;
-
-    chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[ch_num];
 
     /* Initialize the HCTSIZn register */
     USB_OTG_HC(ch_num)->HCTSIZ = (size & USB_OTG_HCTSIZ_XFRSIZ) |
@@ -489,6 +486,10 @@ static void dwc2_chan_free(struct dwc2_chan *chan)
     size_t flags;
 
     flags = usb_osal_enter_critical_section();
+    if (chan->urb) {
+        chan->urb->hcpriv = NULL;
+        chan->urb = NULL;
+    }
     chan->inuse = false;
     usb_osal_leave_critical_section(flags);
 }
@@ -998,11 +999,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
         return -USB_ERR_BUSY;
     }
 
-    chidx = dwc2_chan_alloc(bus);
-    if (chidx == -1) {
-        return -USB_ERR_NOMEM;
-    }
-
     if (urb->ep->bEndpointAddress & 0x80) {
         /* Check if pipe rx fifo is overflow */
         if (USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize) > (g_dwc2_hcd[bus->hcd.hcd_id].user_params.host_rx_fifo_size * 4)) {
@@ -1020,6 +1016,11 @@ int usbh_submit_urb(struct usbh_urb *urb)
                 return -USB_ERR_RANGE;
             }
         }
+    }
+
+    chidx = dwc2_chan_alloc(bus);
+    if (chidx == -1) {
+        return -USB_ERR_NOMEM;
     }
 
     flags = usb_osal_enter_critical_section();
@@ -1094,8 +1095,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     dwc2_halt(bus, chan->chidx);
 
-    chan->urb = NULL;
-    urb->hcpriv = NULL;
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
     if (urb->timeout) {
@@ -1114,8 +1113,6 @@ static inline void dwc2_urb_waitup(struct usbh_urb *urb)
     struct dwc2_chan *chan;
 
     chan = (struct dwc2_chan *)urb->hcpriv;
-    chan->urb = NULL;
-    urb->hcpriv = NULL;
 
     if (urb->timeout) {
         usb_osal_sem_give(chan->waitsem);
