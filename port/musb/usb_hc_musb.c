@@ -477,6 +477,10 @@ static int musb_pipe_alloc(void)
 
 static void musb_pipe_free(struct musb_pipe *pipe)
 {
+    if (pipe->urb) {
+        pipe->urb->hcpriv = NULL;
+        pipe->urb = NULL;
+    }
 #if 0
     pipe->inuse = false;
 #endif
@@ -771,9 +775,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     flags = usb_osal_enter_critical_section();
 
     pipe = (struct musb_pipe *)urb->hcpriv;
-    urb->hcpriv = NULL;
     urb->errorcode = -USB_ERR_SHUTDOWN;
-    pipe->urb = NULL;
 
     if (urb->ep->bEndpointAddress & 0x80) {
         HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << (urb->ep->bEndpointAddress & 0x0f));
@@ -800,8 +802,6 @@ static void musb_urb_waitup(struct usbh_urb *urb)
     struct musb_pipe *pipe;
 
     pipe = (struct musb_pipe *)urb->hcpriv;
-    pipe->urb = NULL;
-    urb->hcpriv = NULL;
 
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
