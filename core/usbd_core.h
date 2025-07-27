@@ -78,6 +78,7 @@ struct usb_descriptor {
     const uint8_t *(*device_quality_descriptor_callback)(uint8_t speed);
     const uint8_t *(*other_speed_descriptor_callback)(uint8_t speed);
     const char *(*string_descriptor_callback)(uint8_t speed, uint8_t index);
+    void (*ep0_vendor_in_cmp_callback)(uint8_t busid);
     const struct usb_msosv1_descriptor *msosv1_descriptor;
     const struct usb_msosv2_descriptor *msosv2_descriptor;
     const struct usb_webusb_descriptor *webusb_url_descriptor;

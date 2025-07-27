@@ -48,6 +48,8 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     uint32_t ep0_data_buf_len;
     /** Zero length packet flag of control transfer */
     bool zlp_flag;
+    /** Vendor request IN complete pending */
+    bool vendor_in_cmp_pending;
     /** Pointer to registered descriptors */
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
     const struct usb_descriptor *descriptors;
@@ -1043,6 +1045,8 @@ static int usbd_vendor_request_handler(uint8_t busid, struct usb_setup_packet *s
         struct usbd_interface *intf = g_usbd_core[busid].intf[i];
 
         if (intf && intf->vendor_handler && (intf->vendor_handler(busid, setup, data, len) == 0)) {
+            if (*len > 0)
+                g_usbd_core[busid].vendor_in_cmp_pending = true;
             return 0;
         }
     }
@@ -1195,6 +1199,7 @@ static void __usbd_event_ep0_setup_complete_handler(uint8_t busid, struct usb_se
     g_usbd_core[busid].ep0_data_buf_residue = setup->wLength;
     g_usbd_core[busid].ep0_data_buf_len = setup->wLength;
     g_usbd_core[busid].zlp_flag = false;
+    g_usbd_core[busid].vendor_in_cmp_pending = false;
     buf = g_usbd_core[busid].ep0_data_buf;
 
     /* handle class request when all the data is received */
@@ -1294,6 +1299,13 @@ static void usbd_event_ep0_in_complete_handler(uint8_t busid, uint8_t ep, uint32
                 * 2. send zlp completely
                 * 3. send last data completely.
                 */
+
+            /* If this is a Vendor IN complete event, call callback function. */
+            if (g_usbd_core[busid].vendor_in_cmp_pending == true && g_usbd_core[busid].descriptors->ep0_vendor_in_cmp_callback) {
+                g_usbd_core[busid].vendor_in_cmp_pending = false;
+                g_usbd_core[busid].descriptors->ep0_vendor_in_cmp_callback(busid);
+            }
+
             if (setup->wLength && ((setup->bmRequestType & USB_REQUEST_DIR_MASK) == USB_REQUEST_DIR_IN)) {
                 /* if all data has sent completely, start reading out status */
                 g_usbd_core[busid].ep0_next_state = USBD_EP0_STATE_OUT_STATUS;
