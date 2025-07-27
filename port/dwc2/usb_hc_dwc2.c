@@ -352,7 +352,6 @@ static void dwc2_halt(struct usbh_bus *bus, uint8_t ch_num)
     value = USB_OTG_HC(ch_num)->HCCHAR;
     value |= USB_OTG_HCCHAR_CHDIS;
     value |= USB_OTG_HCCHAR_CHENA;
-    value &= ~USB_OTG_HCCHAR_EPDIR;
     USB_OTG_HC(ch_num)->HCCHAR = value;
     do {
         if (++count > 200000U) {
