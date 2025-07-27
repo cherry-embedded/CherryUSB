@@ -484,6 +484,8 @@ static void dwc2_chan_free(struct dwc2_chan *chan)
 {
     size_t flags;
 
+    usb_osal_sem_reset(chan->waitsem);
+
     flags = usb_osal_enter_critical_section();
     if (chan->urb) {
         chan->urb->hcpriv = NULL;
