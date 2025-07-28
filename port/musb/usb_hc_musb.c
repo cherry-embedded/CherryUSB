@@ -122,7 +122,7 @@
 #define MUSB_RXHUBADDRx_OFFSET  0x8E
 #define MUSB_RXHUBPORTx_OFFSET  0x8F
 
-#define MUSB_TXMAP0_OFFSET 0x100
+#define MUSB_TXMAP0_OFFSET          0x100
 
 // do not use EPIDX
 #define USB_TXMAP_BASE(ep_idx)      (USB_BASE + MUSB_TXMAP0_OFFSET + 0x10 * ep_idx)
@@ -1052,23 +1052,25 @@ void USBH_IRQHandler(uint8_t busid)
                 urb->errorcode = -USB_ERR_STALL;
                 musb_urb_waitup(urb);
             } else {
-                uint32_t size = urb->transfer_buffer_length;
+                if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                    uint32_t size = urb->transfer_buffer_length;
 
-                if (size > USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)) {
-                    size = USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize);
-                }
+                    if (size > USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)) {
+                        size = USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize);
+                    }
 
-                urb->transfer_buffer += size;
-                urb->transfer_buffer_length -= size;
-                urb->actual_length += size;
+                    urb->transfer_buffer += size;
+                    urb->transfer_buffer_length -= size;
+                    urb->actual_length += size;
 
-                if (urb->transfer_buffer_length == 0) {
-                    //HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << ep_idx);
-                    urb->errorcode = 0;
-                    musb_urb_waitup(urb);
-                } else {
-                    musb_write_packet(bus, ep_idx, urb->transfer_buffer, MIN(urb->transfer_buffer_length, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)));
-                    HWREGB(USB_TXCSRL_BASE(ep_idx)) = USB_TXCSRL1_TXRDY;
+                    if (urb->transfer_buffer_length == 0) {
+                        //HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << ep_idx);
+                        urb->errorcode = 0;
+                        musb_urb_waitup(urb);
+                    } else {
+                        musb_write_packet(bus, ep_idx, urb->transfer_buffer, MIN(urb->transfer_buffer_length, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)));
+                        HWREGB(USB_TXCSRL_BASE(ep_idx)) = USB_TXCSRL1_TXRDY;
+                    }
                 }
             }
         }
@@ -1099,22 +1101,24 @@ void USBH_IRQHandler(uint8_t busid)
                 urb->errorcode = -USB_ERR_STALL;
                 musb_urb_waitup(urb);
             } else if (ep_csrl_status & USB_RXCSRL1_RXRDY) {
-                size = HWREGH(USB_RXCOUNT_BASE(ep_idx));
+                if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                    size = HWREGH(USB_RXCOUNT_BASE(ep_idx));
 
-                musb_read_packet(bus, ep_idx, urb->transfer_buffer, size);
+                    musb_read_packet(bus, ep_idx, urb->transfer_buffer, size);
 
-                HWREGB(USB_RXCSRL_BASE(ep_idx)) &= ~USB_RXCSRL1_RXRDY;
+                    HWREGB(USB_RXCSRL_BASE(ep_idx)) &= ~USB_RXCSRL1_RXRDY;
 
-                urb->transfer_buffer += size;
-                urb->transfer_buffer_length -= size;
-                urb->actual_length += size;
+                    urb->transfer_buffer += size;
+                    urb->transfer_buffer_length -= size;
+                    urb->actual_length += size;
 
-                if ((size < USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)) || (urb->transfer_buffer_length == 0)) {
-                    //HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << ep_idx);
-                    urb->errorcode = 0;
-                    musb_urb_waitup(urb);
-                } else {
-                    HWREGB(USB_RXCSRL_BASE(ep_idx)) = USB_RXCSRL1_REQPKT;
+                    if ((size < USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize)) || (urb->transfer_buffer_length == 0)) {
+                        //HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << ep_idx);
+                        urb->errorcode = 0;
+                        musb_urb_waitup(urb);
+                    } else {
+                        HWREGB(USB_RXCSRL_BASE(ep_idx)) = USB_RXCSRL1_REQPKT;
+                    }
                 }
             }
         }
