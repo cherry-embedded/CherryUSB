@@ -9,7 +9,7 @@
 
 仓库参考：https://github.com/CherryUSB/cherryusb_bouffalolab
 
-- BL616/BL808 是一个 USB2.0 并且内置高速 PHY 芯片，共 5个端点（包含端点0）。支持主从机。
+- BL616/BL808：USB2.0 内置 HS phy 芯片，支持主从机。device 支持 5 个端点（包括端点0），不支持双向同时使用。
 - USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，根据官方环境搭建完成后，即可编译使用。
 
 基于 HPMicro 系列芯片
@@ -17,7 +17,7 @@
 
 仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
 
-- HPM 系列芯片均 USB 2.0 并且内置高速 PHY，支持主从机，端点共 8/16 个，并且可以同时使用双向，不同芯片个数有差异
+- HPM 系列: USB2.0 内置 HS phy 芯片，支持主从机。device 支持 8/16 端点（包括端点0），并且可以同时使用双向，不同芯片个数有差异。
 - USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。
 
 基于 esp32s2/s3/p4 系列芯片
@@ -25,8 +25,9 @@
 
 仓库参考：https://github.com/CherryUSB/cherryusb_esp32
 
-- esp32s2/s3 支持全速主从机，esp32p4 支持高速主从机
-- 默认提供主机 demo，并且使用 esp 组件库进行开发， 在 https://components.espressif.com/ 中搜索 cherryusb 即可
+- esp32s2/s3：USB2.0 内置全速 PHY 芯片，支持主从机，device 支持 7 个端点（包括端点0），并且可以同时使用双向。
+- esp32p4：一个 USB2.0 内置全速 PHY 芯片，一个 USB2.0 内置高速 PHY 芯片，支持主从机。
+- 默认 demo 采用组件库安装的形式，在 https://components.espressif.com/ 中搜索 cherryusb 即可
 
 基于飞腾派系列芯片
 ---------------------------
@@ -41,23 +42,28 @@
 
 仓库参考：https://github.com/CherryUSB/cherryusb_es32
 
-- 支持全速和高速主从机
+- 支持全速和高速主从机。device 支持 6 个端点（包括端点0），并且可以同时使用双向。
 
 基于 NXP MCX系列芯片
 ---------------------------
 
 仓库参考：https://github.com/CherryUSB/cherryusb_mcx 或者 https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx
 
-- 支持全速 IP 和高速 IP， 高速 IP 支持主机和从机
-
-- 支持全速和高速主从机
+- 支持全速 IP 和高速 IP， 高速 IP 支持主机和从机。device 支持 8 个端点（包括端点0），并且可以同时使用双向。
 
 基于 Artinchip 系列芯片
 ---------------------------
 
 仓库参考：https://gitee.com/artinchip/luban-lite
 
-- 支持全速和高速主从机，主机采用 EHCI + OHCI。
+- 支持全速和高速主从机，主机采用 EHCI + OHCI。device 支持 8 个端点（包括端点0），并且可以同时使用双向。
+
+基于 canmv-k230 芯片
+---------------------------
+
+仓库参考：https://github.com/CherryUSB/k230_sdk
+
+- K230: 两个 USB2.0 内置 HS PHY 芯片，支持主从机。device 支持 16 个端点（包括端点0），并且可以同时使用双向。
 
 基于 ST 系列芯片
 ---------------------------
@@ -67,8 +73,8 @@
 默认提供以下 demo 工程：
 
 - F103 使用 fsdev ip
-- F429 主从使用 USB1, 引脚 pb14/pb15, 并且都使用 dma 模式
-- H7 设备使用 USB0, 引脚 pa11/pa12，没有开DMA 模式。主机使用 USB1 ,引脚 pb14/pb15，并且需要做 nocache 处理
+- F429 主从使用 USB1, 引脚 pb14/pb15, 默认从机没有开启 DMA 模式
+- H7 设备使用 USB0, 引脚 pa11/pa12，没有开 DMA 模式。主机使用 USB1 ,引脚 pb14/pb15，并且需要做 nocache 处理
 
 demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate Code** 即可。
 
@@ -78,7 +84,7 @@ demo 底下提供了 **stm32xxx.ioc** 文件，双击打开，点击 **Generate 
 
 - usb ip 区别：F1使用 fsdev，F4/H7使用 dwc2
 - dwc2 ip 区别： USB0 (引脚是 PA11/PA12) 和 USB1 (引脚是 PB14/PB15), 其中 USB1 默认全速，可以接外部PHY 形成高速主机，并且带 dma 功能
-- F4 无cache，H7 有 cache
+- F4 无 cache，H7 有 cache
 
 如果是 STM32F7/STM32H7 这种带 cache 功能，需要将 usb 使用到的 ram 定位到 no cache ram 区域。举例如下
 
@@ -154,11 +160,10 @@ USB Device 移植要点
     #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
     #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
 
-- 如果使用 fsdev ip，（V1.5.0 开始需要增加 **fsdev/usb_glue_st.c**） 在 `usb_config.h` 中实现以下宏：
+- 如果使用 fsdev ip，（V1.5.0 开始需要增加 **fsdev/usb_glue_st.c**） 在 `usb_config.h` 中实现以下宏,具体数值不同芯片不一样：
 
 .. code-block:: C
 
-    #define CONFIG_USBDEV_EP_NUM 8
     #define CONFIG_USBDEV_FSDEV_PMA_ACCESS 2
 
 - 编译器推荐使用 **AC6**。勾选 **Microlib**，并实现 **printf** ，方便后续查看 log。
@@ -188,7 +193,7 @@ USB Host 移植要点
 
 前面 6 步与 Device 一样。需要注意，host 驱动只支持带 dma 的 hs port (引脚是 PB14/PB15)，所以 fs port (引脚是 PA11/PA12)不做支持（没有 dma 你玩什么主机）。
 
-- 添加 CherryUSB 必须要的源码（ **usbh_core.c** 、 **usbh_hub.c** 、 **usb_hc_dwc2.c** 、以及 **osal** 目录下的适配层文件）,以及想要使用的 class 驱动，并且可以将对应的 **usb host.c** 添加方便测试。
+- 添加 CherryUSB 必须要的源码（ **usbh_core.c** 、 **usbh_hub.c** 、 **usb_hc_dwc2.c** 、 **usb_glue_st.c** 以及 **osal** 目录下的适配层文件）,以及想要使用的 class 驱动，并且可以将对应的 **usb host.c** 添加方便测试。
 
 .. figure:: img/stm32_16.png
 
@@ -198,17 +203,6 @@ USB Host 移植要点
 .. figure:: img/stm32_11.png
 
 - 复制一份 **cherryusb_config_template.h**，放到 `Core/Inc` 目录下，并命名为 `usb_config.h`
-
-- 增加 **usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
-
-.. code-block:: C
-
-    // 以下细节如有出入，请对照 stm32xxx.h 文件修改
-    // 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置
-    #define CONFIG_USBHOST_PIPE_NUM 12
-    #define CONFIG_USB_DWC2_NPTX_FIFO_SIZE (512 / 4)
-    #define CONFIG_USB_DWC2_PTX_FIFO_SIZE (1024 / 4)
-    #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE) / 4)
 
 .. note :: 以下两个步骤从 V1.5.0 开始不再需要，**fsdev/usb_glue_st.c**, **dwc2/usb_glue_st.c** 文件中已经实现
 
