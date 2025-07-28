@@ -916,7 +916,6 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                         break;
                     case HUB_PORT_FEATURE_RESET:
                         return usbh_reset_port(bus, port);
-                        break;
 
                     default:
                         return -USB_ERR_NOTSUPP;
