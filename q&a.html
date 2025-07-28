@@ -55,7 +55,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#cherryusb">CherryUSB 性能能到多少</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st-ip">ST IP 命名问题</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gd-ip">GD IP 问题</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dwc2-has-less-endpoints-than-config-please-check">dwc2 has less endpoints than config, please check</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ep-addr-xxx-overflow">Ep addr XXX overflow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#this-dwc2-version-does-not-support-dma-mode-so-stop-working">This dwc2 version does not support dma mode, so stop working</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#has-include">__has_include 报错</a></li>
@@ -203,21 +202,12 @@
 </section>
 <section id="gd-ip">
 <h2>GD IP 问题<a class="headerlink" href="#gd-ip" title="Link to this heading"></a></h2>
-<p>GD IP 采用 DWC2，但是读取的硬件参数都是 0（我也不懂为什么不给人知道），因此需要用户自行知道硬件信息，以下列举 GD32F4 的信息：</p>
-<p>CONFIG_USBDEV_EP_NUM pa11/pa12 引脚必须为 4，PB14/PB15 引脚必须为 6，并删除 usb_dc_dwc2.c 中 while(1){}</p>
-<ul class="simple">
-<li><p>当 CONFIG_USBDEV_EP_NUM 为4 时，fifo_num 不得大于 320 字</p></li>
-<li><p>当 CONFIG_USBDEV_EP_NUM 为6 时，fifo_num 不得大于 1280 字</p></li>
-</ul>
+<p>GD IP 采用 DWC2，但是读取的硬件参数都是 0（我也不懂为什么不给人知道），因此需要用户自行知道硬件信息，从 1.5.0 开始由于需要读取硬件信息，因此无法直接使用。</p>
 <p>其次 GD 复位以后无法使用 EPDIS 功能关闭端点，需要用户删除 reset 中断中的以下代码：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB_OTG_INEP</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">DIEPCTL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">USB_OTG_DIEPCTL_EPDIS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USB_OTG_DIEPCTL_SNAK</span><span class="p">);</span>
 <span class="n">USB_OTG_OUTEP</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">DOEPCTL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">USB_OTG_DOEPCTL_EPDIS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USB_OTG_DOEPCTL_SNAK</span><span class="p">);</span>
 </pre></div>
 </div>
-</section>
-<section id="dwc2-has-less-endpoints-than-config-please-check">
-<h2>dwc2 has less endpoints than config, please check<a class="headerlink" href="#dwc2-has-less-endpoints-than-config-please-check" title="Link to this heading"></a></h2>
-<p>该 IP 硬件上没有这么多端点，请修改 <cite>CONFIG_USBDEV_EP_NUM</cite></p>
 </section>
 <section id="ep-addr-xxx-overflow">
 <h2>Ep addr XXX overflow<a class="headerlink" href="#ep-addr-xxx-overflow" title="Link to this heading"></a></h2>
@@ -242,8 +232,7 @@
 </section>
 <section id="usb-host-urb-12-14">
 <h2>移植 usb host 出现 urb  返回 -12/-14<a class="headerlink" href="#usb-host-urb-12-14" title="Link to this heading"></a></h2>
-<p>-12 就检查 phy 配置，通信不良</p>
-<p>-14 就检查 phy 配置，cache 配置（如果有），fifo配置，寄存器地址， IP 是否真的标准等等</p>
+<p>检查 phy 配置，cache 配置（如果有），电源供电（建议自供电）</p>
 </section>
 </section>
 
