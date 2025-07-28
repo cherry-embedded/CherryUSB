@@ -123,7 +123,7 @@ static rt_ssize_t usbd_serial_write(struct rt_device *dev,
     }
     align_buf = (rt_uint8_t *)buffer;
 
-#ifdef RT_USING_CACHE
+#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = rt_malloc_align(size, CONFIG_USB_ALIGN_SIZE);
         if (!align_buf) {
@@ -215,7 +215,7 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
             if (serial->parent.rx_indicate) {
                 serial->parent.rx_indicate(&serial->parent, nbytes);
-            }            
+            }
             break;
         }
     }
