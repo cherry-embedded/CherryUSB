@@ -9,9 +9,6 @@
 #include "hardware/irq.h"
 #include "hardware/structs/usb.h"
 
-#undef CONFIG_USBHOST_PIPE_NUM
-#define CONFIG_USBHOST_PIPE_NUM USB_HOST_INTERRUPT_ENDPOINTS
-
 #define usb_hw_set   hw_set_alias(usb_hw)
 #define usb_hw_clear hw_clear_alias(usb_hw)
 
@@ -45,7 +42,7 @@ struct rp2040_hcd {
     volatile bool port_pec;
     volatile bool port_pe;
     usb_osal_mutex_t ep0_mutex;
-    struct rp2040_pipe pipe_pool[1 + CONFIG_USBHOST_PIPE_NUM];
+    struct rp2040_pipe pipe_pool[1 + USB_HOST_INTERRUPT_ENDPOINTS];
 } g_rp2040_hcd[CONFIG_USBHOST_MAX_BUS];
 
 void rp2040_usbh_irq(void);
@@ -56,7 +53,7 @@ static int rp2040_pipe_alloc(struct usbh_bus *bus)
     int chidx;
 
     flags = usb_osal_enter_critical_section();
-    for (chidx = 1; chidx <= CONFIG_USBHOST_PIPE_NUM; chidx++) {
+    for (chidx = 1; chidx <= USB_HOST_INTERRUPT_ENDPOINTS; chidx++) {
         if (!g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[chidx].inuse) {
             g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[chidx].inuse = true;
             usb_osal_leave_critical_section(flags);
@@ -295,7 +292,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     memset(&g_rp2040_hcd[bus->hcd.hcd_id], 0, sizeof(struct rp2040_hcd));
 
-    for (uint8_t i = 0; i <= CONFIG_USBHOST_PIPE_NUM; i++) {
+    for (uint8_t i = 0; i <= USB_HOST_INTERRUPT_ENDPOINTS; i++) {
         g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem = usb_osal_sem_create(0);
         if (g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem == NULL) {
             USB_LOG_ERR("Failed to create waitsem\r\n");
@@ -316,7 +313,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     next_buffer_ptr = &usb_dpram->epx_data[64 * 2];
 
-    for (uint8_t i = 1; i <= CONFIG_USBHOST_PIPE_NUM; i++) {
+    for (uint8_t i = 1; i <= USB_HOST_INTERRUPT_ENDPOINTS; i++) {
         g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].chidx = i;
         g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].endpoint_control = &usbh_dpram->int_ep_ctrl[i - 1].ctrl;
         g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].buffer_control = &usbh_dpram->int_ep_buffer_ctrl[i - 1].ctrl;
@@ -368,7 +365,7 @@ int usb_hc_deinit(struct usbh_bus *bus)
     // Remove shared irq if it was previously added so as not to fill up shared irq slots
     irq_remove_handler(USBCTRL_IRQ, rp2040_usbh_irq);
 
-    for (uint8_t i = 0; i <= CONFIG_USBHOST_PIPE_NUM; i++) {
+    for (uint8_t i = 0; i <= USB_HOST_INTERRUPT_ENDPOINTS; i++) {
         usb_osal_sem_delete(g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem);
     }
 
@@ -703,7 +700,7 @@ static void rp2040_handle_buffer_status(struct usbh_bus *bus)
         }
     }
 
-    for (uint8_t i = 1; remaining_buffers && i <= CONFIG_USBHOST_PIPE_NUM; i++) {
+    for (uint8_t i = 1; remaining_buffers && i <= USB_HOST_INTERRUPT_ENDPOINTS; i++) {
         for (uint8_t j = 0; j < 2; j++) {
             bit = 1 << (i * 2 + j);
             if (remaining_buffers & bit) {

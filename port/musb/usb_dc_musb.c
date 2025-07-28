@@ -103,8 +103,8 @@ struct musb_ep_state {
 struct musb_udc {
     volatile uint8_t dev_addr;
     __attribute__((aligned(32))) struct usb_setup_packet setup;
-    struct musb_ep_state in_ep[CONFIG_USBDEV_EP_NUM];  /*!< IN endpoint parameters*/
-    struct musb_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
+    struct musb_ep_state in_ep[CONFIG_USB_MUSB_EP_NUM];  /*!< IN endpoint parameters*/
+    struct musb_ep_state out_ep[CONFIG_USB_MUSB_EP_NUM]; /*!< OUT endpoint parameters */
 } g_musb_udc;
 
 static volatile uint8_t usb_ep0_state = USB_EP0_STATE_SETUP;
@@ -342,7 +342,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         return 0;
     }
 
-    USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
+    USB_ASSERT_MSG(ep_idx < CONFIG_USB_MUSB_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
 
     old_ep_idx = musb_get_active_ep();
     musb_set_active_ep(ep_idx);

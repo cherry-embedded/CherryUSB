@@ -141,7 +141,7 @@ struct musb_hcd {
     volatile bool port_csc;
     volatile bool port_pec;
     volatile bool port_pe;
-    struct musb_pipe pipe_pool[CONFIG_USBHOST_PIPE_NUM];
+    struct musb_pipe pipe_pool[CONFIG_USB_MUSB_PIPE_NUM];
 } g_musb_hcd[CONFIG_USBHOST_MAX_BUS];
 
 /* get current active ep */
@@ -464,7 +464,7 @@ static int musb_pipe_alloc(void)
 {
     int chidx;
 
-    for (chidx = 1; chidx < CONFIG_USBHOST_PIPE_NUM; chidx++) {
+    for (chidx = 1; chidx < CONFIG_USB_MUSB_PIPE_NUM; chidx++) {
         if (!g_musb_hcd[bus->hcd.hcd_id].pipe_pool[chidx].inuse) {
             g_musb_hcd[bus->hcd.hcd_id].pipe_pool[chidx].inuse = true;
             return chidx;
@@ -507,7 +507,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     memset(&g_musb_hcd[bus->hcd.hcd_id], 0, sizeof(struct musb_hcd));
 
-    for (uint8_t i = 0; i < CONFIG_USBHOST_PIPE_NUM; i++) {
+    for (uint8_t i = 0; i < CONFIG_USB_MUSB_PIPE_NUM; i++) {
         g_musb_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem = usb_osal_sem_create(0);
     }
 
@@ -550,7 +550,7 @@ int usb_hc_deinit(struct usbh_bus *bus)
     HWREGB(USB_BASE + MUSB_POWER_OFFSET) &= ~USB_POWER_HSENAB;
     HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) &= ~USB_DEVCTL_SESSION;
 
-    for (uint8_t i = 0; i < CONFIG_USBHOST_PIPE_NUM; i++) {
+    for (uint8_t i = 0; i < CONFIG_USB_MUSB_PIPE_NUM; i++) {
         usb_osal_sem_delete(g_musb_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem);
     }
 
@@ -703,7 +703,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     } else {
         chidx = (urb->ep->bEndpointAddress & 0x0f);
 
-        if (chidx > (CONFIG_USBHOST_PIPE_NUM - 1)) {
+        if (chidx > (CONFIG_USB_MUSB_PIPE_NUM - 1)) {
             return -USB_ERR_RANGE;
         }
     }
@@ -999,7 +999,7 @@ void USBH_IRQHandler(uint8_t busid)
         handle_ep0(bus);
     }
 
-    for (ep_idx = 1; ep_idx < CONFIG_USBHOST_PIPE_NUM; ep_idx++) {
+    for (ep_idx = 1; ep_idx < CONFIG_USB_MUSB_PIPE_NUM; ep_idx++) {
         if (txis & (1 << ep_idx)) {
             HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << ep_idx);
 
@@ -1045,7 +1045,7 @@ void USBH_IRQHandler(uint8_t busid)
     }
 
     rxis &= HWREGH(USB_BASE + MUSB_RXIE_OFFSET);
-    for (ep_idx = 1; ep_idx < CONFIG_USBHOST_PIPE_NUM; ep_idx++) {
+    for (ep_idx = 1; ep_idx < CONFIG_USB_MUSB_PIPE_NUM; ep_idx++) {
         if (rxis & (1 << ep_idx)) {
             HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << ep_idx); // clear isr flag
 
