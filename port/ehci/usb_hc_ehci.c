@@ -98,8 +98,6 @@ static void ehci_qh_free(struct usbh_bus *bus, struct ehci_qh_hw *qh)
     struct ehci_qtd_hw *qtd;
     size_t flags;
 
-    usb_osal_sem_reset(qh->waitsem);
-
     flags = usb_osal_enter_critical_section();
     if (qh->urb) {
         qh->urb->hcpriv = NULL;

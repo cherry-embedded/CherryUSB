@@ -504,8 +504,6 @@ static int musb_pipe_alloc(void)
 
 static void musb_pipe_free(struct musb_pipe *pipe)
 {
-    usb_osal_sem_reset(pipe->waitsem);
-
     if (pipe->urb) {
         pipe->urb->hcpriv = NULL;
         pipe->urb = NULL;

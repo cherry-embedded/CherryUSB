@@ -68,8 +68,6 @@ static void rp2040_pipe_free(struct rp2040_pipe *pipe)
 {
     size_t flags;
 
-    usb_osal_sem_reset(pipe->waitsem);
-
     flags = usb_osal_enter_critical_section();
     if (pipe->urb) {
         pipe->urb->hcpriv = NULL;
