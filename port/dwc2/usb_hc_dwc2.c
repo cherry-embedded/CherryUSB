@@ -1215,9 +1215,22 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
         } else if (chan_intstatus & USB_OTG_HCINT_NAK) {
             if (chan->do_ssplit) {
                 /* restart ssplit transfer */
-                chan->do_csplit = 0;
-                dwc2_chan_enable_csplit(bus, ch_num, false);
-                dwc2_chan_reenable(bus, ch_num);
+                switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
+                    case USB_ENDPOINT_TYPE_CONTROL:
+                    case USB_ENDPOINT_TYPE_BULK:
+                        chan->do_csplit = 0;
+                        dwc2_chan_enable_csplit(bus, ch_num, false);
+                        dwc2_chan_reenable(bus, ch_num);
+                        break;
+                    case USB_ENDPOINT_TYPE_INTERRUPT:
+                        dwc2_chan_enable_csplit(bus, ch_num, false);
+                        urb->errorcode = -USB_ERR_NAK;
+                        dwc2_urb_waitup(urb);
+                        break;
+
+                    default:
+                        break;
+                }
             } else {
                 urb->errorcode = -USB_ERR_NAK;
                 dwc2_urb_waitup(urb);
@@ -1339,9 +1352,22 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
         } else if (chan_intstatus & USB_OTG_HCINT_NAK) {
             if (chan->do_ssplit) {
                 /* restart ssplit transfer */
-                chan->do_csplit = 0;
-                dwc2_chan_enable_csplit(bus, ch_num, false);
-                dwc2_chan_reenable(bus, ch_num);
+                switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
+                    case USB_ENDPOINT_TYPE_CONTROL:
+                    case USB_ENDPOINT_TYPE_BULK:
+                        chan->do_csplit = 0;
+                        dwc2_chan_enable_csplit(bus, ch_num, false);
+                        dwc2_chan_reenable(bus, ch_num);
+                        break;
+                    case USB_ENDPOINT_TYPE_INTERRUPT:
+                        dwc2_chan_enable_csplit(bus, ch_num, false);
+                        urb->errorcode = -USB_ERR_NAK;
+                        dwc2_urb_waitup(urb);
+                        break;
+
+                    default:
+                        break;
+                }
             } else {
                 urb->errorcode = -USB_ERR_NAK;
                 dwc2_urb_waitup(urb);
