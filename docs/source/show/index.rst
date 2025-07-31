@@ -80,6 +80,14 @@ USB Host UVC
 
 .. figure:: img/usbhost_uvc.gif
 
+USB Host ASIX 网卡
+-----------------------
+
+演示 USB Host 驱动 AX88772 USB 以太网模块。
+
+.. figure:: img/usbhost_ax88772_1.png
+.. figure:: img/usbhost_ax88772_2.png
+
 USB Host WIFI
 -----------------------
 
