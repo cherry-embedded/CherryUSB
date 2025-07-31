@@ -80,6 +80,15 @@ USB Host UVC
 
 .. figure:: img/usbhost_uvc.gif
 
+USB Host RTL8152
+-----------------------
+
+演示 USB Host 驱动 RTL8152 USB 以太网模块。
+
+.. figure:: img/usbhost_rtl8152_1.png
+.. figure:: img/usbhost_rtl8152_2.png
+
+
 USB Host WIFI
 -----------------------
 
