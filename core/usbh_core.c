@@ -530,35 +530,47 @@ int usbh_enumerate(struct usbh_hubport *hport)
 #ifdef CONFIG_USBHOST_GET_STRING_DESC
     uint8_t string_buffer[128];
 
-    /* Get Manufacturer string */
-    memset(string_buffer, 0, 128);
-    ret = usbh_get_string_desc(hport, USB_STRING_MFC_INDEX, string_buffer, 128);
-    if (ret < 0) {
-        USB_LOG_ERR("Failed to get Manufacturer string,errorcode:%d\r\n", ret);
-        goto errout;
+    if (hport->device_desc.iManufacturer > 0) {
+        /* Get Manufacturer string */
+        memset(string_buffer, 0, 128);
+        ret = usbh_get_string_desc(hport, USB_STRING_MFC_INDEX, string_buffer, 128);
+        if (ret < 0) {
+            USB_LOG_ERR("Failed to get Manufacturer string,errorcode:%d\r\n", ret);
+            goto errout;
+        }
+
+        USB_LOG_INFO("Manufacturer: %s\r\n", string_buffer);
+    } else {
+        USB_LOG_WRN("Do not support Manufacturer string\r\n");
     }
 
-    USB_LOG_INFO("Manufacturer: %s\r\n", string_buffer);
+    if (hport->device_desc.iProduct > 0) {
+        /* Get Product string */
+        memset(string_buffer, 0, 128);
+        ret = usbh_get_string_desc(hport, USB_STRING_PRODUCT_INDEX, string_buffer, 128);
+        if (ret < 0) {
+            USB_LOG_ERR("Failed to get Product string,errorcode:%d\r\n", ret);
+            goto errout;
+        }
 
-    /* Get Product string */
-    memset(string_buffer, 0, 128);
-    ret = usbh_get_string_desc(hport, USB_STRING_PRODUCT_INDEX, string_buffer, 128);
-    if (ret < 0) {
-        USB_LOG_ERR("Failed to get get Product string,errorcode:%d\r\n", ret);
-        goto errout;
+        USB_LOG_INFO("Product: %s\r\n", string_buffer);
+    } else {
+        USB_LOG_WRN("Do not support Product string\r\n");
     }
 
-    USB_LOG_INFO("Product: %s\r\n", string_buffer);
+    if (hport->device_desc.iSerialNumber > 0) {
+        /* Get SerialNumber string */
+        memset(string_buffer, 0, 128);
+        ret = usbh_get_string_desc(hport, USB_STRING_SERIAL_INDEX, string_buffer, 128);
+        if (ret < 0) {
+            USB_LOG_ERR("Failed to get SerialNumber string,errorcode:%d\r\n", ret);
+            goto errout;
+        }
 
-    /* Get SerialNumber string */
-    memset(string_buffer, 0, 128);
-    ret = usbh_get_string_desc(hport, USB_STRING_SERIAL_INDEX, string_buffer, 128);
-    if (ret < 0) {
-        USB_LOG_ERR("Failed to get get SerialNumber string,errorcode:%d\r\n", ret);
-        goto errout;
+        USB_LOG_INFO("SerialNumber: %s\r\n", string_buffer);
+    } else {
+        USB_LOG_WRN("Do not support SerialNumber string\r\n");
     }
-
-    USB_LOG_INFO("SerialNumber: %s\r\n", string_buffer);
 #endif
     /* Select device configuration 1 */
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
