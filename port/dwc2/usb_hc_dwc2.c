@@ -311,16 +311,6 @@ static inline void dwc2_chan_transfer(struct usbh_bus *bus, uint8_t ch_num, uint
                                  (((uint32_t)num_packets << 19) & USB_OTG_HCTSIZ_PKTCNT) |
                                  (((uint32_t)pid << 29) & USB_OTG_HCTSIZ_DPID);
 
-    if (!(ep_addr & 0x80)) {
-        if (buf) {
-            usb_dcache_clean((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
-        }
-    } else {
-        if (buf) {
-            usb_dcache_invalidate((uintptr_t)buf, USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE));
-        }
-    }
-
     /* xfer_buff MUST be 32-bits aligned */
     USB_OTG_HC(ch_num)->HCDMA = (uint32_t)buf;
 
@@ -1065,6 +1055,25 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->actual_length = 0;
 
     usb_osal_leave_critical_section(flags);
+
+    if (urb->setup) {
+        usb_dcache_clean((uintptr_t)urb->setup, USB_ALIGN_UP(sizeof(struct usb_setup_packet), CONFIG_USB_ALIGN_SIZE));
+
+        if (urb->transfer_buffer) {
+            if (urb->setup->bmRequestType & 0x80) {
+                usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
+            } else {
+                usb_dcache_clean((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
+            }
+        }
+    } else if (urb->transfer_buffer && (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
+        if (urb->ep->bEndpointAddress & 0x80) {
+            usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
+        } else {
+            usb_dcache_clean((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
+        }
+    } else {
+    }
 
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:
