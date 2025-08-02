@@ -40,6 +40,8 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统（�
 - 长度无限制，方便对接硬件 DMA 并且发挥 DMA 的优势
 - 分包过程在中断中执行
 
+性能展示：https://cherryusb.cherry-embedded.org/show/
+
 ## 目录结构
 
 |   目录名       |  描述                          |

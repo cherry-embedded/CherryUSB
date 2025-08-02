@@ -40,6 +40,8 @@ Taking into account USB performance issues and trying to achieve the theoretical
 - Unlimited length make it easier to interface with hardware DMA and take advantage of DMA
 - Packetization is handled in interrupt
 
+Performance show：https://cherryusb.cherry-embedded.org/show/
+
 ## Directory Structure
 
 |   Directory       |  Description            |
