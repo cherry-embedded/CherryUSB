@@ -61,6 +61,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#config-usb-hs">CONFIG_USB_HS 何时使用</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#failed-to-enable-port">Failed to enable port</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usb-host-urb-12-14">移植 usb host 出现 urb  返回 -12/-14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-err-nak">USB_ERR_NAK 说明</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-host-usb">USB host 连接 USB 网卡问题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pc-com">PC 识别的 COM 口如何更改名称</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connect-disconnect-event">connect 和 disconnect event 不触发</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="opensource.html">官方开源项目分享</a></li>
@@ -179,11 +183,12 @@
 - Github issue: <a class="reference external" href="https://github.com/cherry-embedded/CherryUSB/issues/new/choose">https://github.com/cherry-embedded/CherryUSB/issues/new/choose</a></p>
 <p>提问中请包含以下信息：</p>
 <ul class="simple">
+<li><p>使用的版本</p></li>
 <li><p>使用的板子，引脚，USB IP</p></li>
 <li><p>是否配置 USB 中断，USB 时钟，USB 引脚，USB phy 配置，以及 USB 寄存器地址是否正确，截图</p></li>
 <li><p>是否能进 USB 中断</p></li>
 <li><p>芯片是否带有 cache功能，是否做了 no cache 处理，截图</p></li>
-<li><p>硬件是否正常，是否使用杜邦线连接，如果正常，请说明正常原因</p></li>
+<li><p>USB 电路是否画正确，是否使用杜邦线连接，是否直连，如果正常，请说明正常原因</p></li>
 <li><p>如果能进中断，配置 <strong>#define CONFIG_USB_DBG_LEVEL USB_DBG_LOG</strong> 并提供 log，仅限商业 IP, 其余 IP 禁止开启 log，否则无法枚举</p></li>
 <li><p>是否流片并销售</p></li>
 </ul>
@@ -233,6 +238,24 @@
 <section id="usb-host-urb-12-14">
 <h2>移植 usb host 出现 urb  返回 -12/-14<a class="headerlink" href="#usb-host-urb-12-14" title="Link to this heading"></a></h2>
 <p>检查 phy 配置，cache 配置（如果有），电源供电（建议自供电）</p>
+</section>
+<section id="usb-err-nak">
+<h2>USB_ERR_NAK 说明<a class="headerlink" href="#usb-err-nak" title="Link to this heading"></a></h2>
+<p>USB_ERR_NAK 只存在于 DWC2 buffer dma 模式，DWC2 在 buffer dma模式下对于中断传输不支持硬件处理 NAK 中断，因此需要软件处理，导致 NAK 中断非常多，建议搭配定时器使用。
+DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split 传输。总结， <strong>半斤 IP</strong>。</p>
+</section>
+<section id="usb-host-usb">
+<h2>USB host 连接 USB 网卡问题<a class="headerlink" href="#usb-host-usb" title="Link to this heading"></a></h2>
+<p>表现为能识别网卡并且分配到 IP 地址，但是无法 ping 通，这是因为网卡自身需要开启自动拨号，通常需要使用 AT 口设置。具体为 EC20/ML307 等模块。</p>
+</section>
+<section id="pc-com">
+<h2>PC 识别的 COM 口如何更改名称<a class="headerlink" href="#pc-com" title="Link to this heading"></a></h2>
+<p>这是微软对 CDC ACM 的驱动问题，无法修改，如需修改，请联系微软并缴纳费用即可更改。</p>
+</section>
+<section id="connect-disconnect-event">
+<h2>connect 和 disconnect event 不触发<a class="headerlink" href="#connect-disconnect-event" title="Link to this heading"></a></h2>
+<p>当前仅 hpm 芯片支持 connect 和 disconnect 事件，其他芯片请使用 USB 检测 vbus 电路。DWC2 IP 支持，但是由于需要占用引脚，并且大多是log 口，
+然后不同使能的配置也不一样，因此不做支持。</p>
 </section>
 </section>
 
