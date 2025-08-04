@@ -17,7 +17,7 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 {
     TaskHandle_t htask = NULL;
     stack_size /= sizeof(StackType_t);
-    xTaskCreate(entry, name, stack_size, args, configMAX_PRIORITIES - 1 - prio, &htask);
+    xTaskCreatePinnedToCore(entry, name, stack_size, args, configMAX_PRIORITIES - 1 - prio, &htask, CONFIG_ESP_TIMER_TASK_AFFINITY);
     return (usb_osal_thread_t)htask;
 }
 
