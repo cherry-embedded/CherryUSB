@@ -121,7 +121,7 @@
 #define MUSB_RXHUBADDRx_OFFSET  0x8E
 #define MUSB_RXHUBPORTx_OFFSET  0x8F
 
-#define MUSB_TXMAP0_OFFSET 0x100
+#define MUSB_TXMAP0_OFFSET          0x100
 
 // do not use EPIDX
 #define USB_TXMAP_BASE(ep_idx)      (USB_BASE + MUSB_TXMAP0_OFFSET + 0x10 * ep_idx)
@@ -786,6 +786,10 @@ void USBD_IRQHandler(uint8_t busid)
     uint8_t old_ep_idx;
     uint8_t ep_idx;
     uint16_t write_count, read_count;
+
+    if (HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) & USB_DEVCTL_HOST) {
+        return;
+    }
 
     is = HWREGB(USB_BASE + MUSB_IS_OFFSET);
     txis = HWREGH(USB_BASE + MUSB_TXIS_OFFSET);
