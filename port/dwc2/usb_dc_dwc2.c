@@ -172,7 +172,12 @@ static inline void dwc2_set_mode(uint8_t busid, uint8_t mode)
         USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_FDMOD;
     }
 
-    usbd_dwc2_delay_ms(50);
+    while (1) {
+        if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_DEVICE) {
+            break;
+        }
+        usbd_dwc2_delay_ms(10);
+    }
 }
 
 static inline int dwc2_flush_rxfifo(uint8_t busid)

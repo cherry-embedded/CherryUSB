@@ -135,7 +135,12 @@ static inline void dwc2_set_mode(struct usbh_bus *bus, uint8_t mode)
         USB_OTG_GLB->GUSBCFG |= USB_OTG_GUSBCFG_FDMOD;
     }
 
-    usb_osal_msleep(50);
+    while (1) {
+        if ((USB_OTG_GLB->GINTSTS & 0x1U) == USB_OTG_MODE_HOST) {
+            break;
+        }
+        usb_osal_msleep(10);
+    }
 }
 
 static inline int dwc2_flush_rxfifo(struct usbh_bus *bus)
