@@ -820,6 +820,10 @@ int usbh_kill_urb(struct usbh_urb *urb)
         musb_pipe_free(pipe);
     }
 
+    if (urb->complete) {
+        urb->complete(urb->arg, urb->errorcode);
+    }
+
     usb_osal_leave_critical_section(flags);
     return 0;
 }

@@ -1139,6 +1139,10 @@ int usbh_kill_urb(struct usbh_urb *urb)
         dwc2_chan_free(chan);
     }
 
+    if (urb->complete) {
+        urb->complete(urb->arg, urb->errorcode);
+    }
+
     usb_osal_leave_critical_section(flags);
 
     return 0;

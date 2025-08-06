@@ -1350,12 +1350,17 @@ int usbh_kill_urb(struct usbh_urb *urb)
         EHCI_HCOR->usbcmd |= EHCI_USBCMD_IAAD;
         while (!(EHCI_HCOR->usbsts & EHCI_USBSTS_IAA)) {
             timeout++;
-            if (timeout > 20000) {
+            if (timeout > 200000) {
+                USB_LOG_ERR("iaad timeout\r\n");
                 usb_osal_leave_critical_section(flags);
                 return -USB_ERR_TIMEOUT;
             }
         }
         EHCI_HCOR->usbsts = EHCI_USBSTS_IAA;
+    }
+
+    if (urb->complete) {
+        urb->complete(urb->arg, urb->errorcode);
     }
 
     usb_osal_leave_critical_section(flags);

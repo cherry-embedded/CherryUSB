@@ -605,6 +605,10 @@ int usbh_kill_urb(struct usbh_urb *urb)
         rp2040_pipe_free(pipe);
     }
 
+    if (urb->complete) {
+        urb->complete(urb->arg, urb->errorcode);
+    }
+
     usb_osal_leave_critical_section(flags);
 
     return 0;
