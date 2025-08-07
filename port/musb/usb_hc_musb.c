@@ -362,6 +362,7 @@ int musb_bulk_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *urb
 
         HWREGB(USB_RXADDR_BASE(chidx)) = urb->hport->dev_addr;
         HWREGB(USB_RXTYPE_BASE(chidx)) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_BULK;
+        HWREGH(USB_RXMAP_BASE(chidx)) = USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize);
         HWREGB(USB_RXINTERVAL_BASE(chidx)) = 0;
         HWREGB(USB_RXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_RXHUBPORT_BASE(chidx)) = 0;
@@ -377,6 +378,7 @@ int musb_bulk_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *urb
 
         HWREGB(USB_TXADDR_BASE(chidx)) = urb->hport->dev_addr;
         HWREGB(USB_TXTYPE_BASE(chidx)) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_BULK;
+        HWREGH(USB_TXMAP_BASE(chidx)) = USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize);
         HWREGB(USB_TXINTERVAL_BASE(chidx)) = 0;
         HWREGB(USB_TXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_TXHUBPORT_BASE(chidx)) = 0;
@@ -419,6 +421,7 @@ int musb_intr_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *urb
 
         HWREGB(USB_RXADDR_BASE(chidx)) = urb->hport->dev_addr;
         HWREGB(USB_RXTYPE_BASE(chidx)) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_INT;
+        HWREGH(USB_RXMAP_BASE(chidx)) = USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize);
         HWREGB(USB_RXINTERVAL_BASE(chidx)) = urb->ep->bInterval;
         HWREGB(USB_RXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_RXHUBPORT_BASE(chidx)) = 0;
@@ -434,6 +437,7 @@ int musb_intr_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb *urb
 
         HWREGB(USB_TXADDR_BASE(chidx)) = urb->hport->dev_addr;
         HWREGB(USB_TXTYPE_BASE(chidx)) = (urb->ep->bEndpointAddress & 0x0f) | speed | USB_TXTYPE1_PROTO_INT;
+        HWREGH(USB_TXMAP_BASE(chidx)) = USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize);
         HWREGB(USB_TXINTERVAL_BASE(chidx)) = urb->ep->bInterval;
         HWREGB(USB_TXHUBADDR_BASE(chidx)) = 0;
         HWREGB(USB_TXHUBPORT_BASE(chidx)) = 0;
@@ -751,12 +755,14 @@ int usbh_submit_urb(struct usbh_urb *urb)
         case USB_ENDPOINT_TYPE_BULK:
             ret = musb_bulk_urb_init(bus, chidx, urb, urb->transfer_buffer, urb->transfer_buffer_length);
             if (ret < 0) {
+                usb_osal_leave_critical_section(flags);
                 return ret;
             }
             break;
         case USB_ENDPOINT_TYPE_INTERRUPT:
             ret = musb_intr_urb_init(bus, chidx, urb, urb->transfer_buffer, urb->transfer_buffer_length);
             if (ret < 0) {
+                usb_osal_leave_critical_section(flags);
                 return ret;
             }
             break;
