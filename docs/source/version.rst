@@ -135,3 +135,17 @@ v1.5.1
 - **ehci 在控制传输中如果没有 nodata 阶段会导致 data qtd 未释放，导致内存泄漏**
 - **dwc2 读取 setup 使用 usbd_get_next_ep0_state 去判断，避免 setup 和 ep0 out 使用在 USB_OTG_DOEPINT_XFRC 状态下冲突**
 - sifli usb device 初步支持
+
+v1.5.2
+----------------------
+
+- 对 1.5.1 下 rt-thread 组件的一些 bugfix
+- idf timer osal 替换为 esp timer，freertos timer会有启动失败的可能性；xTaskCreate 使用 xTaskCreatePinnedToCore 替换，方便多核使用
+- 主机枚举中，删除描述符溢出相关的 ASSERT 操作，改成返回错误。获取字符串描述符改成支持才获取。2 ms 延时改成 10ms，因为一些 os 使用的是 100hz，会造成延时失效
+- **dwc2 ep mult 支持，split 传输代码优化，对 split 相关的 cache 处理修改**
+- **dwc2 halt 中不能清除 USB_OTG_HCCHAR_EPDIR，reset port 中使用超时机制，防止在枚举时由于拔出而造成死等**
+- 更新 DWC2 中 at32，stm32，kendryte，espressif glue 代码
+- musb 对于标准的 IP 结构采用独立 EP 控制寄存器组，不使用 EPIDX 寄存器去控制
+- 删除所有 CONFIG_USBDEV_EP_NUM & CONFIG_USBHOST_PIPE_NUM，不再使用，因为 IP 本身会携带这些信息，或者厂家 SDK 提供了对应的宏
+- CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 默认使用 2 减少内存，只有 UVC 和UAC 使用（商业收费），所以不需要开很大
+- urb interval 从 u8 改 u32，最大支持 2^15 * 125us
