@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>版本说明 &mdash; CherryUSB 1.5.1 documentation</title>
+  <title>版本说明 &mdash; CherryUSB 1.5.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=44dfd65d"></script>
+      <script src="_static/documentation_options.js?v=73275c37"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -135,6 +135,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#v1-4-3">v1.4.3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-0">v1.5.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-1">v1.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-2">v1.5.2</a></li>
 </ul>
 </li>
 </ul>
@@ -317,6 +318,21 @@
 <li><p><strong>ehci 在控制传输中如果没有 nodata 阶段会导致 data qtd 未释放，导致内存泄漏</strong></p></li>
 <li><p><strong>dwc2 读取 setup 使用 usbd_get_next_ep0_state 去判断，避免 setup 和 ep0 out 使用在 USB_OTG_DOEPINT_XFRC 状态下冲突</strong></p></li>
 <li><p>sifli usb device 初步支持</p></li>
+</ul>
+</section>
+<section id="v1-5-2">
+<h2>v1.5.2<a class="headerlink" href="#v1-5-2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>对 1.5.1 下 rt-thread 组件的一些 bugfix</p></li>
+<li><p>idf timer osal 替换为 esp timer，freertos timer会有启动失败的可能性；xTaskCreate 使用 xTaskCreatePinnedToCore 替换，方便多核使用</p></li>
+<li><p>主机枚举中，删除描述符溢出相关的 ASSERT 操作，改成返回错误。获取字符串描述符改成支持才获取。2 ms 延时改成 10ms，因为一些 os 使用的是 100hz，会造成延时失效</p></li>
+<li><p><strong>dwc2 ep mult 支持，split 传输代码优化，对 split 相关的 cache 处理修改</strong></p></li>
+<li><p><strong>dwc2 halt 中不能清除 USB_OTG_HCCHAR_EPDIR，reset port 中使用超时机制，防止在枚举时由于拔出而造成死等</strong></p></li>
+<li><p>更新 DWC2 中 at32，stm32，kendryte，espressif glue 代码</p></li>
+<li><p>musb 对于标准的 IP 结构采用独立 EP 控制寄存器组，不使用 EPIDX 寄存器去控制</p></li>
+<li><p>删除所有 CONFIG_USBDEV_EP_NUM &amp; CONFIG_USBHOST_PIPE_NUM，不再使用，因为 IP 本身会携带这些信息，或者厂家 SDK 提供了对应的宏</p></li>
+<li><p>CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 默认使用 2 减少内存，只有 UVC 和UAC 使用（商业收费），所以不需要开很大</p></li>
+<li><p>urb interval 从 u8 改 u32，最大支持 2^15 * 125us</p></li>
 </ul>
 </section>
 </section>

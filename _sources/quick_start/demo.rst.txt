@@ -4,24 +4,24 @@
 在学习 USB 或者是学习 CherryUSB 代码之前，我们需要先基于现有的 demo 进行快速验证，为什么？是为了提升对 USB 的兴趣，能有信心进行下一步的动作，如果 demo 都跑不起来，或者自己摸索写代码，或者先看 USB 基本概念，结果看到最后，
 发现一点都看不懂，概念好多，根本记不住，从而丧失对 USB 的兴趣。因此，先跑 demo 非常重要。下面我将给大家罗列目前支持的 demo 仓库。
 
-基于 bouffalolab 系列芯片
----------------------------
+基于 bouffalolab 系列芯片（官方 SDK 支持）
+------------------------------------------
 
 仓库参考：https://github.com/CherryUSB/cherryusb_bouffalolab
 
 - BL616/BL808：USB2.0 内置 HS phy 芯片，支持主从机。device 支持 5 个端点（包括端点0），不支持双向同时使用。
 - USB 的相关应用位于 `examples/usbdev` 和 `examples/usbhost` 目录下，根据官方环境搭建完成后，即可编译使用。
 
-基于 HPMicro 系列芯片
----------------------------
+基于 HPMicro 系列芯片（官方 SDK 支持）
+-----------------------------------------------------
 
 仓库参考：https://github.com/CherryUSB/cherryusb_hpmicro
 
 - HPM 系列: USB2.0 内置 HS phy 芯片，支持主从机。device 支持 8/16 端点（包括端点0），并且可以同时使用双向，不同芯片个数有差异。
 - USB 的相关应用位于 `samples/cherryusb` ，根据官方环境搭建完成后，即可编译使用。
 
-基于 esp32s2/s3/p4 系列芯片
----------------------------
+基于 esp32s2/s3/p4 系列芯片（官方 SDK 即将支持）
+-------------------------------------------------
 
 仓库参考：https://github.com/CherryUSB/cherryusb_esp32
 
@@ -29,20 +29,34 @@
 - esp32p4：一个 USB2.0 内置全速 PHY 芯片，一个 USB2.0 内置高速 PHY 芯片，支持主从机。
 - 默认 demo 采用组件库安装的形式，在 https://components.espressif.com/ 中搜索 cherryusb 即可
 
-基于飞腾派系列芯片
----------------------------
+基于飞腾派系列芯片（官方 SDK 支持）
+-----------------------------------
 
 仓库参考：https://gitee.com/phytium_embedded/phytium-free-rtos-sdk
 
 - 飞腾派支持两个 USB3.0 主机（采用 XHCI）， 两个 USB2.0 主从机
 - USB 的相关应用位于 `example/peripheral/usb` ，根据官方环境搭建完成后，即可编译使用。
 
-基于 Essemi 系列芯片
----------------------------
+基于 Essemi 系列芯片（官方 SDK 支持）
+-----------------------------------------
 
 仓库参考：https://github.com/CherryUSB/cherryusb_es32
 
 - 支持全速和高速主从机。device 支持 6 个端点（包括端点0），并且可以同时使用双向。
+
+基于 Artinchip 系列芯片（官方 SDK 支持）
+-----------------------------------------------
+
+仓库参考：https://gitee.com/artinchip/luban-lite
+
+- 支持全速和高速主从机，主机采用 EHCI + OHCI。device 支持 8 个端点（包括端点0），并且可以同时使用双向。
+
+基于 canmv-k230 芯片（官方 SDK 支持）
+---------------------------------------------
+
+仓库参考：https://github.com/CherryUSB/k230_sdk
+
+- K230: 两个 USB2.0 内置 HS PHY 芯片，支持主从机。device 支持 16 个端点（包括端点0），并且可以同时使用双向。
 
 基于 NXP MCX系列芯片
 ---------------------------
@@ -51,19 +65,10 @@
 
 - 支持全速 IP 和高速 IP， 高速 IP 支持主机和从机。device 支持 8 个端点（包括端点0），并且可以同时使用双向。
 
-基于 Artinchip 系列芯片
----------------------------
+基于 RP2040/RP2035 芯片（官方 SDK 即将支持）
+--------------------------------------------
 
-仓库参考：https://gitee.com/artinchip/luban-lite
-
-- 支持全速和高速主从机，主机采用 EHCI + OHCI。device 支持 8 个端点（包括端点0），并且可以同时使用双向。
-
-基于 canmv-k230 芯片
----------------------------
-
-仓库参考：https://github.com/CherryUSB/k230_sdk
-
-- K230: 两个 USB2.0 内置 HS PHY 芯片，支持主从机。device 支持 16 个端点（包括端点0），并且可以同时使用双向。
+仓库参考： https://github.com/CherryUSB/pico-examples 和 https://github.com/CherryUSB/pico-sdk
 
 基于 ST 系列芯片
 ---------------------------
