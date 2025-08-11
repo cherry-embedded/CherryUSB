@@ -301,6 +301,7 @@
 /* ---------------- MUSB Configuration ---------------- */
 #define CONFIG_USB_MUSB_PIPE_NUM 8
 // #define CONFIG_USB_MUSB_SUNXI
+// #define CONFIG_USB_MUSB_WITHOUT_MULTIPOINT
 
 /* When your chip hardware supports high-speed and wants to initialize it in high-speed mode,
  * the relevant IP will configure the internal or external high-speed PHY according to CONFIG_USB_HS.
