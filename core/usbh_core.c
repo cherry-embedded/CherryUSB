@@ -33,28 +33,26 @@ struct usbh_bus g_usbhost_bus[CONFIG_USBHOST_MAX_BUS];
 
 static int usbh_allocate_devaddr(struct usbh_devaddr_map *devgen)
 {
-    uint8_t startaddr = devgen->next;
-    uint8_t devaddr;
+    uint8_t lastaddr = devgen->last;
+    uint8_t devaddr = lastaddr;
     int index;
     int bitno;
 
     for (;;) {
-        devaddr = devgen->next;
-        if (devgen->next >= 0x7f) {
-            devgen->next = 2;
-        } else {
-            devgen->next++;
+        devaddr++;
+        if (devaddr > 0x7f) {
+            devaddr = 2;
+        }
+        if (devaddr == lastaddr) {
+            return -USB_ERR_NOMEM;
         }
 
         index = devaddr >> 5;
         bitno = devaddr & 0x1f;
-        if ((devgen->alloctab[index] & (1 << bitno)) == 0) {
-            devgen->alloctab[index] |= (1 << bitno);
+        if ((devgen->alloctab[index] & (1ul << bitno)) == 0) {
+            devgen->alloctab[index] |= (1ul << bitno);
+            devgen->last = devaddr;
             return (int)devaddr;
-        }
-
-        if (startaddr == devaddr) {
-            return -USB_ERR_NOMEM;
         }
     }
 }
@@ -69,14 +67,10 @@ static int __usbh_free_devaddr(struct usbh_devaddr_map *devgen, uint8_t devaddr)
         bitno = devaddr & USB_DEV_ADDR_MARK_MASK;
 
         /* Free the address  */
-        if ((devgen->alloctab[index] |= (1 << bitno)) != 0) {
-            devgen->alloctab[index] &= ~(1 << bitno);
+        if ((devgen->alloctab[index] & (1ul << bitno)) != 0) {
+            devgen->alloctab[index] &= ~(1ul << bitno);
         } else {
             return -1;
-        }
-
-        if (devaddr < devgen->next) {
-            devgen->next = devaddr;
         }
     }
 
@@ -652,7 +646,7 @@ static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uintptr_t reg_bas
     bus->hcd.reg_base = reg_base;
 
     /* devaddr 1 is for roothub */
-    bus->devgen.next = 2;
+    bus->devgen.last = 0x7f;
 
     usb_slist_add_tail(&g_bus_head, &bus->list);
 }

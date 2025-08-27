@@ -150,7 +150,7 @@ struct usbh_devaddr_map {
      * alloctab[3]:addr from 96~127
      *
      */
-    uint8_t next;         /* Next device address */
+    uint8_t last;         /* Last device address */
     uint32_t alloctab[4]; /* Bit allocation table */
 };
 
