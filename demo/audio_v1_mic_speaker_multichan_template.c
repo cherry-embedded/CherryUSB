@@ -297,11 +297,11 @@ void usbd_audio_open(uint8_t busid, uint8_t intf)
         AUDIO_FEEDBACK_TO_BUF_FS(s_speaker_feedback_buffer, feedback_value); /* uac1 can only use 10.14 */
         usbd_ep_start_write(busid, AUDIO_OUT_FEEDBACK_EP, s_speaker_feedback_buffer, FEEDBACK_ENDP_PACKET_SIZE);
 #endif
-        printf("OPEN1\r\n");
+        USB_LOG_INFO("OPEN1\r\n");
     } else {
         tx_flag = 1;
         ep_tx_busy_flag = false;
-        printf("OPEN2\r\n");
+        USB_LOG_INFO("OPEN2\r\n");
     }
 }
 
@@ -309,11 +309,11 @@ void usbd_audio_close(uint8_t busid, uint8_t intf)
 {
     if (intf == 1) {
         rx_flag = 0;
-        printf("CLOSE1\r\n");
+        USB_LOG_INFO("CLOSE1\r\n");
     } else {
         tx_flag = 0;
         ep_tx_busy_flag = false;
-        printf("CLOSE2\r\n");
+        USB_LOG_INFO("CLOSE2\r\n");
     }
 }
 

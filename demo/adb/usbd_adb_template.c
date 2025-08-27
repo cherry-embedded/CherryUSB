@@ -288,7 +288,7 @@ void cherryadb_init(uint8_t busid, uint32_t reg_base)
     /* shell_init() must be called in-task */
     if (0 != shell_init(false)) {
         /* shell failed to be initialized */
-        printf("Failed to initialize shell\r\n");
+        USB_LOG_RAW("Failed to initialize shell\r\n");
         for (;;) {
             ;
         }
