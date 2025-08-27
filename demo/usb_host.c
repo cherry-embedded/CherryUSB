@@ -236,7 +236,7 @@ int usb_msc_fatfs_test()
         while (write_size > 0) {
             res_sd = f_write(&fnew, read_write_buffer, BUF_SIZE, (UINT*)&fnum);
             if (res_sd != FR_OK) {
-                printf("Write file failed, cause: %s\n", res_sd);
+                USB_LOG_RAW("Write file failed, cause: %s\n", res_sd);
                 goto unmount;
             }
             write_size -= BUF_SIZE;
@@ -262,7 +262,7 @@ int usb_msc_fatfs_test()
         while (write_size > 0) {
             res_sd = f_read(&fnew, read_write_buffer, BUF_SIZE, (UINT*)&fnum);
             if (res_sd != FR_OK) {
-                printf("Read file failed, cause: %s\n", res_sd);
+                USB_LOG_RAW("Read file failed, cause: %s\n", res_sd);
                 goto unmount;
             }
             write_size -= BUF_SIZE;

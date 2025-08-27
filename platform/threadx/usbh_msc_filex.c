@@ -202,7 +202,6 @@ VOID _fx_usbh_msc_driver(FX_MEDIA *media_ptr)
             media_ptr->fx_media_driver_status = FX_IO_ERROR;
             return;
         }
-        printf("read success\r\n");
         /* Successful driver request.  */
         media_ptr->fx_media_driver_status = FX_SUCCESS;
         break;
