@@ -68,6 +68,7 @@ static const char *string_descriptors[] = {
     "CherryUSB",                  /* Manufacturer */
     "CherryUSB CDC ECM DEMO",     /* Product */
     "2022123456",                 /* Serial Number */
+    "aabbccddeeff",               /* ecm mac address */
 };
 
 static const uint8_t *device_descriptor_callback(uint8_t speed)
