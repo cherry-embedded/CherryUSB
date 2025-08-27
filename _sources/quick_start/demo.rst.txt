@@ -150,21 +150,6 @@ USB Device 移植要点
 
 .. figure:: img/stm32_8.png
 
-- 如果使用 dwc2 ip，需要增加 **dwc2/usb_glue_st.c** 文件，并在 `usb_config.h` 中实现以下宏：
-
-.. code-block:: C
-
-    // 以下细节如有出入，请对照 stm32xxx.h 文件修改
-    // 需要根据硬件实际的 fifo 深度进行修改，默认是最基础的配置
-    #define CONFIG_USBDEV_EP_NUM 6
-    #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (1012 - 16 * 6)
-    #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
-    #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (64 / 4)
-    #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
-    #define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
-    #define CONFIG_USB_DWC2_TX4_FIFO_SIZE (64 / 4)
-    #define CONFIG_USB_DWC2_TX5_FIFO_SIZE (64 / 4)
-
 - 如果使用 fsdev ip，（V1.5.0 开始需要增加 **fsdev/usb_glue_st.c**） 在 `usb_config.h` 中实现以下宏,具体数值不同芯片不一样：
 
 .. code-block:: C
