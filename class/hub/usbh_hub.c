@@ -470,6 +470,8 @@ static void usbh_hub_events(struct usbh_hub *hub)
     int ret;
     size_t flags;
 
+    (void)speed_table;
+
     if (!hub->connected) {
         return;
     }
