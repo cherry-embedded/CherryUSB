@@ -745,8 +745,10 @@ int usb_hc_init(struct usbh_bus *bus)
 
     USB_OTG_HOST->HCFG &= ~USB_OTG_HCFG_FSLSPCS;
     if (g_dwc2_hcd[bus->hcd.hcd_id].user_params.phy_type == DWC2_PHY_TYPE_PARAM_FS) {
+        bus->hcd.roothub.speed = USB_SPEED_FULL;
         USB_OTG_HOST->HCFG |= USB_OTG_HCFG_FSLSPCLKSEL_48_MHZ;
     } else {
+        bus->hcd.roothub.speed = USB_SPEED_HIGH;
         USB_OTG_HOST->HCFG |= USB_OTG_HCFG_FSLSPCLKSEL_30_60_MHZ;
     }
 
