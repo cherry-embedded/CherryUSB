@@ -238,6 +238,7 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
 {
     struct usb_setup_packet roothub_setup;
     struct usb_setup_packet *setup;
+    int ret;
 
     if (hub->is_roothub) {
         setup = &roothub_setup;
@@ -246,9 +247,22 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
         setup->wValue = feature;
         setup->wIndex = port;
         setup->wLength = 0;
-        return usbh_roothub_control(hub->bus, setup, NULL);
+
+        ret = usbh_roothub_control(hub->bus, setup, NULL);
+
+        if (feature == HUB_PORT_FEATURE_RESET) {
+            hub->bus->event_handler(hub->bus->busid, hub->index, port + 1, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_RESET);
+        }
+
+        return ret;
     } else {
-        return _usbh_hub_set_feature(hub, port, feature);
+        ret = _usbh_hub_set_feature(hub, port, feature);
+
+        if (feature == HUB_PORT_FEATURE_RESET) {
+            hub->bus->event_handler(hub->bus->busid, hub->index, port + 1, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_RESET);
+        }
+
+        return ret;
     }
 }
 
@@ -562,6 +576,8 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
             /* Last, check connect status */
             if (portstatus & HUB_PORT_STATUS_CONNECTION) {
+                hub->bus->event_handler(hub->bus->busid, hub->index, port + 1, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_CONNECTED);
+
                 ret = usbh_hub_set_feature(hub, port + 1, HUB_PORT_FEATURE_RESET);
                 if (ret < 0) {
                     USB_LOG_ERR("Failed to reset port %u, errorcode: %d\r\n", port + 1, ret);
@@ -643,7 +659,6 @@ static void usbh_hub_events(struct usbh_hub *hub)
                 child = &hub->child[port];
                 /** release child sources */
                 usbh_hubport_release(child);
-                USB_LOG_INFO("Device on Bus %u, Hub %u, Port %u disconnected\r\n", hub->bus->busid, hub->index, port + 1);
             }
         }
     }
@@ -662,6 +677,7 @@ static void usbh_hub_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     struct usbh_bus *bus = (struct usbh_bus *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     usb_hc_init(bus);
+    bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_INIT);
     while (1) {
         ret = usb_osal_mq_recv(bus->hub_mq, (uintptr_t *)&hub, USB_OSAL_WAITING_FOREVER);
         if (ret < 0) {
@@ -693,6 +709,7 @@ int usbh_hub_initialize(struct usbh_bus *bus)
 
     bus->hub_mq = usb_osal_mq_create(7);
     if (bus->hub_mq == NULL) {
+        bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_INIT);
         USB_LOG_ERR("Failed to create hub mq\r\n");
         return -1;
     }
@@ -700,6 +717,7 @@ int usbh_hub_initialize(struct usbh_bus *bus)
     snprintf(thread_name, 32, "usbh_hub%u", bus->busid);
     bus->hub_thread = usb_osal_thread_create(thread_name, CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO, usbh_hub_thread, bus);
     if (bus->hub_thread == NULL) {
+        bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_INIT);
         USB_LOG_ERR("Failed to create hub thread\r\n");
         return -1;
     }
