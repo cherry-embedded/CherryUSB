@@ -160,12 +160,12 @@ int __usbh_init(void)
 #endif
 
 #ifdef AIC_USING_USB0_HOST
-    usbh_initialize(bus_id, USB_HOST0_BASE);
+    usbh_initialize(bus_id, USB_HOST0_BASE, NULL);
     bus_id++;
 #endif
 
 #ifdef AIC_USING_USB1_HOST
-    usbh_initialize(bus_id, USB_HOST1_BASE);
+    usbh_initialize(bus_id, USB_HOST1_BASE, NULL);
     bus_id++;
 #endif
     return 0;
