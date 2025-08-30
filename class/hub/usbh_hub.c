@@ -251,7 +251,7 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
         ret = usbh_roothub_control(hub->bus, setup, NULL);
 
         if (feature == HUB_PORT_FEATURE_RESET) {
-            hub->bus->event_handler(hub->bus->busid, hub->index, port + 1, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_RESET);
+            hub->bus->event_handler(hub->bus->busid, hub->index, port, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_RESET);
         }
 
         return ret;
@@ -259,7 +259,7 @@ int usbh_hub_set_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature)
         ret = _usbh_hub_set_feature(hub, port, feature);
 
         if (feature == HUB_PORT_FEATURE_RESET) {
-            hub->bus->event_handler(hub->bus->busid, hub->index, port + 1, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_RESET);
+            hub->bus->event_handler(hub->bus->busid, hub->index, port, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_RESET);
         }
 
         return ret;
