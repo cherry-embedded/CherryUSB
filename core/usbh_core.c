@@ -31,6 +31,15 @@ struct usbh_bus g_usbhost_bus[CONFIG_USBHOST_MAX_BUS];
 #define USB_DEV_ADDR_MARK_OFFSET 5
 #define USB_DEV_ADDR_MARK_MASK   0x1f
 
+static void dummy_event_handler(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event)
+{
+    (void)busid;
+    (void)hub_index;
+    (void)hub_port;
+    (void)intf;
+    (void)event;
+}
+
 static int usbh_allocate_devaddr(struct usbh_devaddr_map *devgen)
 {
     uint8_t lastaddr = devgen->last;
@@ -670,7 +679,11 @@ int usbh_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 
     usbh_bus_init(bus, busid, reg_base);
 
-    bus->event_handler = event_handler;
+    if (event_handler) {
+        bus->event_handler = event_handler;
+    } else {
+        bus->event_handler = dummy_event_handler;
+    }
 
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
