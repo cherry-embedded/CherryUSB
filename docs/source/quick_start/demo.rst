@@ -203,7 +203,7 @@ USB Host 移植要点
 
 - 链接脚本修改参考 :ref:`usbh_link_script` 章节
 - 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
-- 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
+- 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base` 还有 `event_handler` 可缺省为NULL， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 - 启动线程
 
 .. figure:: img/stm32_18.png

@@ -31,6 +31,15 @@ struct usbh_bus g_usbhost_bus[CONFIG_USBHOST_MAX_BUS];
 #define USB_DEV_ADDR_MARK_OFFSET 5
 #define USB_DEV_ADDR_MARK_MASK   0x1f
 
+static void dummy_event_handler(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event)
+{
+    (void)busid;
+    (void)hub_index;
+    (void)hub_port;
+    (void)intf;
+    (void)event;
+}
+
 static int usbh_allocate_devaddr(struct usbh_devaddr_map *devgen)
 {
     uint8_t lastaddr = devgen->last;
@@ -593,6 +602,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
 #endif
     USB_LOG_INFO("Enumeration success, start loading class driver\r\n");
+    hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_CONFIGURED);
     /*search supported class driver*/
     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
         intf_desc = &hport->config.intf[i].altsetting[0].intf_desc;
@@ -604,12 +614,15 @@ int usbh_enumerate(struct usbh_hubport *hport)
                         intf_desc->bInterfaceClass,
                         intf_desc->bInterfaceSubClass,
                         intf_desc->bInterfaceProtocol);
-
+            hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_UNSUPPORTED);
             continue;
         }
         hport->config.intf[i].class_driver = class_driver;
         USB_LOG_INFO("Loading %s class driver\r\n", class_driver->driver_name);
         ret = CLASS_CONNECT(hport, i);
+        if (ret >= 0) {
+            hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_START);
+        }
     }
 
 errout:
@@ -629,12 +642,15 @@ void usbh_hubport_release(struct usbh_hubport *hport)
             if (hport->config.intf[i].class_driver && hport->config.intf[i].class_driver->disconnect) {
                 CLASS_DISCONNECT(hport, i);
             }
+            hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_STOP);
         }
         hport->config.config_desc.bNumInterfaces = 0;
         usbh_kill_urb(&hport->ep0_urb);
         if (hport->mutex) {
             usb_osal_mutex_delete(hport->mutex);
         }
+        USB_LOG_INFO("Device on Bus %u, Hub %u, Port %u disconnected\r\n", hport->bus->busid, hport->parent->index, hport->port);
+        hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_DISCONNECTED);
     }
 }
 
@@ -651,7 +667,7 @@ static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uintptr_t reg_bas
     usb_slist_add_tail(&g_bus_head, &bus->list);
 }
 
-int usbh_initialize(uint8_t busid, uintptr_t reg_base)
+int usbh_initialize(uint8_t busid, uintptr_t reg_base, usbh_event_handler_t event_handler)
 {
     struct usbh_bus *bus;
 
@@ -664,6 +680,12 @@ int usbh_initialize(uint8_t busid, uintptr_t reg_base)
     bus = &g_usbhost_bus[busid];
 
     usbh_bus_init(bus, busid, reg_base);
+
+    if (event_handler) {
+        bus->event_handler = event_handler;
+    } else {
+        bus->event_handler = dummy_event_handler;
+    }
 
 #ifdef __ARMCC_VERSION /* ARM C Compiler */
     extern const int usbh_class_info$$Base;
@@ -694,6 +716,8 @@ int usbh_deinitialize(uint8_t busid)
     }
 
     bus = &g_usbhost_bus[busid];
+
+    bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_DEINIT);
 
     usbh_hub_deinitialize(bus);
 

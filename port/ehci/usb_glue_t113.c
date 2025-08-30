@@ -183,12 +183,12 @@ int __usbh_init(void)
 {
 #ifdef T113_USING_USB0_HOST
     /* USB0 MSC test OK */
-    usbh_initialize(0, USB0_BASE_ADDR);
+    usbh_initialize(0, USB0_BASE_ADDR, NULL);
 #endif
 
 #ifdef T113_USING_USB1_HOST
     /* USB1 MSC test OK */
-    usbh_initialize(1, USB1_BASE_ADDR);
+    usbh_initialize(1, USB1_BASE_ADDR, NULL);
 #endif
     return 0;
 }
