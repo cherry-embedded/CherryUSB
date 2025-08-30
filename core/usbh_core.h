@@ -53,7 +53,7 @@ enum usbh_event_type {
     USBH_EVENT_UNKNOWN,
 };
 
-#define USB_HUB_PORT_ANY 0
+#define USB_HUB_PORT_ANY  0
 #define USB_HUB_INDEX_ANY 0
 #define USB_INTERFACE_ANY 0xff
 
