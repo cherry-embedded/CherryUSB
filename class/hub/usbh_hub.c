@@ -709,7 +709,6 @@ int usbh_hub_initialize(struct usbh_bus *bus)
 
     bus->hub_mq = usb_osal_mq_create(7);
     if (bus->hub_mq == NULL) {
-        bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_INIT);
         USB_LOG_ERR("Failed to create hub mq\r\n");
         return -1;
     }
@@ -717,7 +716,6 @@ int usbh_hub_initialize(struct usbh_bus *bus)
     snprintf(thread_name, 32, "usbh_hub%u", bus->busid);
     bus->hub_thread = usb_osal_thread_create(thread_name, CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO, usbh_hub_thread, bus);
     if (bus->hub_thread == NULL) {
-        bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_INIT);
         USB_LOG_ERR("Failed to create hub thread\r\n");
         return -1;
     }
