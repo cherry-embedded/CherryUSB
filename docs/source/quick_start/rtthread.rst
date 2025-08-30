@@ -56,7 +56,7 @@
 * USB IP 相关的 config 需要用户自己根据芯片实际情况修改
 * 在代码中实现 `usb_hc_low_level_init` 函数
 * 在 USB 中断函数中调用 `USBH_IRQHandler`，并传入 `busid`
-* 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base`， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
+* 调用 `usbh_initialize` 并填入 `busid` 和 USB IP 的 `reg base` 还有 `event_handler` 可缺省为NULL， `busid` 从 0 开始，不能超过 `CONFIG_USBHOST_MAX_BUS`
 * 使用 `scons --target=mdk5` 或者 `scons` 进行编译，如果是mdk，需要使用 AC6 编译器
 * 链接脚本修改参考 :ref:`usbh_link_script` 章节
 * 如果芯片带 cache，cache 修改参考 :ref:`usb_cache` 章节
