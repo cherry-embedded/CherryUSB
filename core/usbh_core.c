@@ -667,7 +667,7 @@ static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uintptr_t reg_bas
     usb_slist_add_tail(&g_bus_head, &bus->list);
 }
 
-int usbh_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event))
+int usbh_initialize(uint8_t busid, uintptr_t reg_base, usbh_event_handler_t event_handler)
 {
     struct usbh_bus *bus;
 

@@ -89,6 +89,8 @@ enum usbh_event_type {
                      USB_GET_MULT(ep_desc->wMaxPacketSize));                 \
     } while (0)
 
+typedef void (*usbh_event_handler_t)(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event);
+
 struct usbh_class_info {
     uint8_t match_flags;           /* Used for product specific matches; range is inclusive */
     uint8_t bInterfaceClass;       /* Base device class code */
@@ -305,7 +307,7 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
  */
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
 
-int usbh_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event));
+int usbh_initialize(uint8_t busid, uintptr_t reg_base, usbh_event_handler_t event_handler);
 int usbh_deinitialize(uint8_t busid);
 void *usbh_find_class_instance(const char *devname);
 struct usbh_hubport *usbh_find_hubport(uint8_t busid, uint8_t hub_index, uint8_t hub_port);
