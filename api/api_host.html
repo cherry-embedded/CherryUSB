@@ -293,12 +293,13 @@
 <section id="usbh-initialize">
 <h3>usbh_initialize<a class="headerlink" href="#usbh-initialize" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code> 用来初始化 usb 主机协议栈，包括：初始化 usb 主机控制器，创建 roothub 设备，创建 hub 检测线程。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_initialize</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">reg_base</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_initialize</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">reg_base</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_event_handler_t</span><span class="w"> </span><span class="n">event_handler</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>busid</strong>  bus id，从 0开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p><strong>reg_base</strong>  hcd 寄存器基地址</p></li>
+<li><p><strong>event_handler</strong>  host 事件回调函数，可以为NULL</p></li>
 <li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
 </ul>
 </section>

@@ -225,7 +225,7 @@
 <li><p>USB IP 相关的 config 需要用户自己根据芯片实际情况修改</p></li>
 <li><p>在代码中实现 <cite>usb_hc_low_level_init</cite> 函数</p></li>
 <li><p>在 USB 中断函数中调用 <cite>USBH_IRQHandler</cite>，并传入 <cite>busid</cite></p></li>
-<li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
+<li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite> 还有 <cite>event_handler</cite> 可缺省为NULL， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>使用 <cite>scons –target=mdk5</cite> 或者 <cite>scons</cite> 进行编译，如果是mdk，需要使用 AC6 编译器</p></li>
 <li><p>链接脚本修改参考 <a class="reference internal" href="transplant.html#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
 <li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>

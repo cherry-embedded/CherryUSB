@@ -413,7 +413,7 @@
 <ul class="simple">
 <li><p>链接脚本修改参考 <a class="reference internal" href="transplant.html#usbh-link-script"><span class="std std-ref">主机链接脚本修改</span></a> 章节</p></li>
 <li><p>如果芯片带 cache，cache 修改参考 <a class="reference internal" href="transplant.html#usb-cache"><span class="std std-ref">cache 配置修改</span></a> 章节</p></li>
-<li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite>， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
+<li><p>调用 <cite>usbh_initialize</cite> 并填入 <cite>busid</cite> 和 USB IP 的 <cite>reg base</cite> 还有 <cite>event_handler</cite> 可缺省为NULL， <cite>busid</cite> 从 0 开始，不能超过 <cite>CONFIG_USBHOST_MAX_BUS</cite></p></li>
 <li><p>启动线程</p></li>
 </ul>
 <figure class="align-default">
