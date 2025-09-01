@@ -144,9 +144,6 @@
 #define CONFIG_USBDEV_RNDIS_VENDOR_DESC "CherryUSB"
 #endif
 
-#define CONFIG_USBDEV_RNDIS_USING_LWIP
-#define CONFIG_USBDEV_CDC_ECM_USING_LWIP
-
 /* ================ USB HOST Stack Configuration ================== */
 
 #define CONFIG_USBHOST_MAX_RHPORTS          1
