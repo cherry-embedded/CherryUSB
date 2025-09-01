@@ -28,7 +28,12 @@
 
 // #define CONFIG_USB_DCACHE_ENABLE
 
-/* attribute data into no cache ram */
+/* attribute data into no cache ram 
+* DRAM_DMA_ALIGNED_ATTR was introduced in IDF 5.3. If not defined, it falls back to DMA_ATTR
+*/
+#ifndef DRAM_DMA_ALIGNED_ATTR
+#define DRAM_DMA_ALIGNED_ATTR DMA_ATTR
+#endif
 #define USB_NOCACHE_RAM_SECTION DRAM_DMA_ALIGNED_ATTR
 
 /* use usb_memcpy default for high performance but cost more flash memory.
