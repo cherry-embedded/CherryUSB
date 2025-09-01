@@ -118,6 +118,7 @@ if CHERRYUSB
         config CHERRYUSB_DEVICE_CDC_NCM
             bool
             prompt "Enable usb cdc ncm device"
+            depends on !IDF_CMAKE
             default n
 
         config CHERRYUSB_DEVICE_MTP
@@ -338,6 +339,7 @@ if CHERRYUSB
         config CHERRYUSB_HOST_BLUETOOTH
             bool
             prompt "Enable usb bluetooth driver"
+            depends on !IDF_CMAKE
             default n
 
         config CHERRYUSB_HOST_ASIX

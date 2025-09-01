@@ -1034,17 +1034,17 @@ static int generic_ocp_read(struct usbh_rtl8152 *tp, uint16_t index, uint16_t si
 static int generic_ocp_write(struct usbh_rtl8152 *tp, uint16_t index, uint16_t byteen,
                              uint16_t size, void *data, uint16_t type)
 {
-    int ret;
+    int ret = -USB_ERR_INVAL;
     uint16_t byteen_start, byteen_end, byen;
     uint16_t limit = 512;
     uint8_t *buf = data;
 
     /* both size and indix must be 4 bytes align */
     if ((size & 3) || !size || (index & 3) || !buf)
-        return -USB_ERR_INVAL;
+        return ret;
 
     if ((uint32_t)index + (uint32_t)size > 0xffff)
-        return -USB_ERR_INVAL;
+        return ret;
 
     byteen_start = byteen & BYTE_EN_START_MASK;
     byteen_end = byteen & BYTE_EN_END_MASK;
