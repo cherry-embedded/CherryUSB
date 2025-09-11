@@ -64,6 +64,10 @@ elseif(ESP_PLATFORM)
 
     idf_component_get_property(freertos_include freertos ORIG_INCLUDE_PATH)
 
+    set(priv_req esp_mm esp_netif esp_timer)
+    if(${IDF_VERSION_MAJOR} LESS 6)
+        list(APPEND priv_req usb)
+    endif()
     idf_component_register(
         SRCS
         ${cherryusb_srcs}
@@ -71,7 +75,7 @@ elseif(ESP_PLATFORM)
         ${cherryusb_incs}
         ${freertos_include}
         PRIV_REQUIRES
-        usb esp_mm esp_netif esp_timer
+        ${priv_req}
         LDFRAGMENTS
         ${ldfragments}
     )
