@@ -1337,6 +1337,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     EHCI_HCOR->usbcmd |= (EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN);
 
     qh = (struct ehci_qh_hw *)urb->hcpriv;
+    qh->remove_in_iaad = 0;
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
     if (urb->timeout) {
@@ -1347,6 +1348,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     if (remove_in_iaad) {
         volatile uint32_t timeout = 0;
+        EHCI_HCOR->usbsts = EHCI_USBSTS_IAA;
         EHCI_HCOR->usbcmd |= EHCI_USBCMD_IAAD;
         while (!(EHCI_HCOR->usbsts & EHCI_USBSTS_IAA)) {
             timeout++;
