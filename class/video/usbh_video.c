@@ -153,7 +153,7 @@ int usbh_video_open(struct usbh_video *video_class,
     bool found = false;
     uint8_t formatidx = 0;
     uint8_t frameidx = 0;
-    uint32_t dwDefaultFrameInterval;
+    uint32_t dwDefaultFrameInterval = 0;
     uint8_t step;
 
     if (!video_class || !video_class->hport) {
