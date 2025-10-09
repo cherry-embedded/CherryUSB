@@ -387,6 +387,11 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         hub->tt_think = ((hub->hub_desc.wHubCharacteristics & HUB_CHAR_TTTT_MASK) >> 5);
     }
 
+    if (hub->nports > CONFIG_USBHOST_MAX_EHPORTS) {
+        USB_LOG_ERR("Hub nports %u overflow\r\n", hub->nports);
+        return -USB_ERR_NOMEM;
+    }
+
     for (uint8_t port = 0; port < hub->nports; port++) {
         hub->child[port].port = port + 1;
         hub->child[port].parent = hub;
