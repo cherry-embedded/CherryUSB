@@ -206,3 +206,27 @@ void cdc_acm_chardev_init(uint8_t busid, uintptr_t reg_base)
     usbd_cdc_acm_serial_init(busid, CDC_IN_EP, CDC_OUT_EP);
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
+
+static int cdc_acm_enter(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    finsh_set_device("usb-acm0");
+    rt_console_set_device("usb-acm0");
+
+    return 0;
+}
+MSH_CMD_EXPORT(cdc_acm_enter, cdc_acm_enter);
+
+static int cdc_acm_exit(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    finsh_set_device(RT_CONSOLE_DEVICE_NAME);
+    rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
+
+    return 0;
+}
+MSH_CMD_EXPORT(cdc_acm_exit, cdc_acm_exit);
