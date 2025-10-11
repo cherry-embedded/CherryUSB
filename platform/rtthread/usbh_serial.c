@@ -193,9 +193,9 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
     serial = (struct usbh_serial *)dev;
 
     align_buf = (rt_uint8_t *)buffer;
-#ifdef CONFIG_USB_DCACHE_ENABLE
+
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
-        align_buf = rt_malloc_align(size, CONFIG_USB_ALIGN_SIZE);
+        align_buf = rt_malloc_align(USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE), CONFIG_USB_ALIGN_SIZE);
         if (!align_buf) {
             USB_LOG_ERR("serial get align buf failed\n");
             return 0;
@@ -203,7 +203,6 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
 
         usb_memcpy(align_buf, buffer, size);
     }
-#endif
 
     switch (serial->type) {
 #if defined(PKG_CHERRYUSB_HOST_CDC_ACM) || defined(RT_CHERRYUSB_HOST_CDC_ACM)
@@ -211,10 +210,7 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
             ret = usbh_cdc_acm_bulk_out_transfer((struct usbh_cdc_acm *)dev->user_data, (uint8_t *)align_buf, size, RT_WAITING_FOREVER);
             if (ret < 0) {
                 USB_LOG_ERR("usbh_cdc_acm_bulk_out_transfer failed: %d\n", ret);
-#ifdef CONFIG_USB_DCACHE_ENABLE
-                rt_free_align(align_buf);
-#endif
-                return 0;
+                ret = 0;
             }
             break;
 #endif
@@ -223,10 +219,7 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
             ret = usbh_ftdi_bulk_out_transfer((struct usbh_ftdi *)dev->user_data, (uint8_t *)align_buf, size, RT_WAITING_FOREVER);
             if (ret < 0) {
                 USB_LOG_ERR("usbh_ftdi_bulk_out_transfer failed: %d\n", ret);
-#ifdef CONFIG_USB_DCACHE_ENABLE
-                rt_free_align(align_buf);
-#endif
-                return 0;
+                ret = 0;
             }
             break;
 #endif
@@ -235,10 +228,7 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
             ret = usbh_ch34x_bulk_out_transfer((struct usbh_ch34x *)dev->user_data, (uint8_t *)align_buf, size, RT_WAITING_FOREVER);
             if (ret < 0) {
                 USB_LOG_ERR("usbh_ch34x_bulk_out_transfer failed: %d\n", ret);
-#ifdef CONFIG_USB_DCACHE_ENABLE
-                rt_free_align(align_buf);
-#endif
-                return 0;
+                ret = 0;
             }
             break;
 #endif
@@ -247,10 +237,7 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
             ret = usbh_pl2303_bulk_out_transfer((struct usbh_pl2303 *)dev->user_data, (uint8_t *)align_buf, size, RT_WAITING_FOREVER);
             if (ret < 0) {
                 USB_LOG_ERR("usbh_pl2303_bulk_out_transfer failed: %d\n", ret);
-#ifdef CONFIG_USB_DCACHE_ENABLE
-                rt_free_align(align_buf);
-#endif
-                return 0;
+                ret = 0;
             }
             break;
 #endif
@@ -258,11 +245,9 @@ static rt_ssize_t usbh_serial_write(struct rt_device *dev,
             break;
     }
 
-#ifdef CONFIG_USB_DCACHE_ENABLE
     if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
         rt_free_align(align_buf);
     }
-#endif
 
     return ret;
 }
