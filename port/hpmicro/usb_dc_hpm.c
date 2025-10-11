@@ -240,10 +240,15 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
         return -2;
     }
 
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    USB_ASSERT_MSG(!((uintptr_t)data % CONFIG_USB_ALIGN_SIZE), "data is not aligned %d", CONFIG_USB_ALIGN_SIZE);
+#endif
+
     g_hpm_udc[busid].in_ep[ep_idx].xfer_buf = (uint8_t *)data;
     g_hpm_udc[busid].in_ep[ep_idx].xfer_len = data_len;
     g_hpm_udc[busid].in_ep[ep_idx].actual_xfer_len = 0;
 
+    usb_dcache_clean((uintptr_t)data, USB_ALIGN_UP(data_len, CONFIG_USB_ALIGN_SIZE));
     usb_device_edpt_xfer(handle, ep, (uint8_t *)data, data_len);
 
     return 0;
@@ -261,10 +266,15 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
         return -2;
     }
 
+#ifdef CONFIG_USB_DCACHE_ENABLE
+    USB_ASSERT_MSG(!((uintptr_t)data % CONFIG_USB_ALIGN_SIZE), "data is not aligned %d", CONFIG_USB_ALIGN_SIZE);
+#endif
+
     g_hpm_udc[busid].out_ep[ep_idx].xfer_buf = (uint8_t *)data;
     g_hpm_udc[busid].out_ep[ep_idx].xfer_len = data_len;
     g_hpm_udc[busid].out_ep[ep_idx].actual_xfer_len = 0;
 
+    usb_dcache_invalidate((uintptr_t)data, USB_ALIGN_UP(data_len, CONFIG_USB_ALIGN_SIZE));
     usb_device_edpt_xfer(handle, ep, data, data_len);
 
     return 0;
@@ -362,6 +372,7 @@ void USBD_IRQHandler(uint8_t busid)
                         if (ep_addr & 0x80) {
                             usbd_event_ep_in_complete_handler(busid, ep_addr, transfer_len);
                         } else {
+                            usb_dcache_invalidate((uintptr_t)g_hpm_udc[busid].out_ep[ep_idx].xfer_buf, USB_ALIGN_UP(transfer_len, CONFIG_USB_ALIGN_SIZE));
                             usbd_event_ep_out_complete_handler(busid, ep_addr, transfer_len);
                         }
                     }
