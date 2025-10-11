@@ -34,7 +34,7 @@ int USB_disk_read(BYTE *buff, LBA_t sector, UINT count)
     uint8_t *align_buf;
 
     align_buf = (uint8_t *)buff;
-#ifdef CONFIG_USB_DCACHE_ENABLE
+
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = (uint8_t *)aligned_alloc(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
         if (!align_buf) {
@@ -42,19 +42,19 @@ int USB_disk_read(BYTE *buff, LBA_t sector, UINT count)
             return -USB_ERR_NOMEM;
         }
     }
-#endif
+
     ret = usbh_msc_scsi_read10(active_msc_class, sector, align_buf, count);
     if (ret < 0) {
         ret = RES_ERROR;
     } else {
         ret = RES_OK;
     }
-#ifdef CONFIG_USB_DCACHE_ENABLE
+
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
         usb_memcpy(buff, align_buf, count * active_msc_class->blocksize);
         free(align_buf);
     }
-#endif
+
     return ret;
 }
 
@@ -64,7 +64,7 @@ int USB_disk_write(const BYTE *buff, LBA_t sector, UINT count)
     uint8_t *align_buf;
 
     align_buf = (uint8_t *)buff;
-#ifdef CONFIG_USB_DCACHE_ENABLE
+
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = (uint8_t *)aligned_alloc(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
         if (!align_buf) {
@@ -73,18 +73,18 @@ int USB_disk_write(const BYTE *buff, LBA_t sector, UINT count)
         }
         usb_memcpy(align_buf, buff, count * active_msc_class->blocksize);
     }
-#endif
+
     ret = usbh_msc_scsi_write10(active_msc_class, sector, align_buf, count);
     if (ret < 0) {
         ret = RES_ERROR;
     } else {
         ret = RES_OK;
     }
-#ifdef CONFIG_USB_DCACHE_ENABLE
+
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
         free(align_buf);
     }
-#endif
+
     return ret;
 }
 
