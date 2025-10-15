@@ -24,49 +24,51 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&thread_ptr, sizeof(TX_THREAD), TX_NO_WAIT);
 
     if (thread_ptr == TX_NULL) {
-        USB_LOG_ERR("Create thread %s failed\r\n", name);
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate thread %s failed\r\n", name);
+        return NULL;
     }
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, stack_size, TX_NO_WAIT);
     if (pointer == TX_NULL) {
-        USB_LOG_ERR("Create thread %s failed\r\n", name);
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate thread %s failed\r\n", name);
+        tx_byte_release(thread_ptr);
+        return NULL;
     }
 
-    tx_thread_create(thread_ptr, (CHAR *)name, (VOID(*)(ULONG))entry, (uintptr_t)args,
-                     pointer, stack_size,
-                     prio, prio, TX_NO_TIME_SLICE, TX_AUTO_START);
+    if (tx_thread_create(thread_ptr, (CHAR *)name, (VOID (*)(ULONG))entry, (uintptr_t)args,
+                         pointer, stack_size,
+                         prio, prio, TX_NO_TIME_SLICE, TX_AUTO_START) != TX_SUCCESS) {
+        USB_LOG_ERR("Create thread %s failed\r\n", name);
+        tx_byte_release(pointer);
+        tx_byte_release(thread_ptr);
+        return NULL;
+    }
 
     return (usb_osal_thread_t)thread_ptr;
 }
 
 void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
-    TX_THREAD *thread_ptr = NULL;
+    TX_THREAD *thread_ptr = (TX_THREAD *)thread;
 
-    if (thread == NULL) {
+    if (thread_ptr == NULL) {
         /* Call the tx_thread_identify to get the control block pointer of the
-        currently executing thread. */
+       currently executing thread. */
         thread_ptr = tx_thread_identify();
 
-        /* Check if the current running thread pointer is not NULL */
-        if (thread_ptr != NULL) {
-            /* Call the tx_thread_terminate to terminates the specified application
-            thread regardless of whether the thread is suspended or not. A thread
-            may call this service to terminate itself. */
-            tx_thread_terminate(thread_ptr);
-            tx_byte_release(thread_ptr->tx_thread_stack_start);
-            tx_byte_release(thread_ptr);
+        /* Check if the current running thread pointer is NULL */
+        if (thread_ptr == NULL) {
+            return;
         }
-        return;
     }
 
-    tx_thread_terminate(thread);
-    tx_byte_release(thread_ptr->tx_thread_stack_start);
-    tx_byte_release(thread);
+    /* Call the tx_thread_terminate to terminates the specified application
+        thread regardless of whether the thread is suspended or not. A thread
+        may call this service to terminate itself. */
+    if (tx_thread_terminate(thread_ptr) == TX_SUCCESS) {
+        tx_byte_release(thread_ptr->tx_thread_stack_start);
+        tx_byte_release(thread_ptr);
+    }
 }
 
 void usb_osal_thread_schedule_other(void)
@@ -88,12 +90,16 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     tx_byte_allocate(&usb_byte_pool, (VOID **)&sem_ptr, sizeof(TX_SEMAPHORE), TX_NO_WAIT);
 
     if (sem_ptr == TX_NULL) {
-        USB_LOG_ERR("Create semaphore failed\r\n");
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate semaphore failed\r\n");
+        return NULL;
     }
 
-    tx_semaphore_create(sem_ptr, "usbh_sem", initial_count);
+    if (tx_semaphore_create(sem_ptr, "usbh_sem", initial_count) != TX_SUCCESS) {
+        USB_LOG_ERR("Create semaphore failed\r\n");
+        tx_byte_release(sem_ptr);
+        return NULL;
+    }
+
     return (usb_osal_sem_t)sem_ptr;
 }
 
@@ -121,7 +127,7 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
 {
-    return (int)tx_semaphore_put((TX_SEMAPHORE *)sem);
+    return (tx_semaphore_put((TX_SEMAPHORE *)sem) == TX_SUCCESS) ? 0 : -USB_ERR_INVAL;
 }
 
 void usb_osal_sem_reset(usb_osal_sem_t sem)
@@ -136,12 +142,16 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
     tx_byte_allocate(&usb_byte_pool, (VOID **)&mutex_ptr, sizeof(TX_MUTEX), TX_NO_WAIT);
 
     if (mutex_ptr == TX_NULL) {
-        USB_LOG_ERR("Create mutex failed\r\n");
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate mutex failed\r\n");
+        return NULL;
     }
 
-    tx_mutex_create(mutex_ptr, "usbh_mutx", TX_INHERIT);
+    if (tx_mutex_create(mutex_ptr, "usbh_mutx", TX_INHERIT) != TX_SUCCESS) {
+        USB_LOG_ERR("Create mutex failed\r\n");
+        tx_byte_release(mutex_ptr);
+        return NULL;
+    }
+
     return (usb_osal_mutex_t)mutex_ptr;
 }
 
@@ -180,20 +190,25 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
     tx_byte_allocate(&usb_byte_pool, (VOID **)&queue_ptr, sizeof(TX_QUEUE), TX_NO_WAIT);
 
     if (queue_ptr == TX_NULL) {
-        USB_LOG_ERR("Create TX_QUEUE failed\r\n");
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate TX_QUEUE failed\r\n");
+        return NULL;
     }
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, sizeof(uintptr_t) * max_msgs, TX_NO_WAIT);
 
     if (pointer == TX_NULL) {
-        USB_LOG_ERR("Create mq failed\r\n");
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate mq failed\r\n");
+        tx_byte_release(queue_ptr);
+        return NULL;
     }
 
-    tx_queue_create(queue_ptr, "usbh_mq", sizeof(uintptr_t) / 4, pointer, sizeof(uintptr_t) * max_msgs);
+    if (tx_queue_create(queue_ptr, "usbh_mq", sizeof(uintptr_t) / 4, pointer, sizeof(uintptr_t) * max_msgs) != TX_SUCCESS) {
+        USB_LOG_ERR("Create TX_QUEUE failed\r\n");
+        tx_byte_release(queue_ptr);
+        tx_byte_release(pointer);
+        return NULL;
+    }
+
     return (usb_osal_mq_t)queue_ptr;
 }
 
@@ -233,18 +248,17 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer, sizeof(struct usb_osal_timer), TX_NO_WAIT);
 
     if (timer == TX_NULL) {
-        USB_LOG_ERR("Create usb_osal_timer failed\r\n");
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate usb_osal_timer failed\r\n");
+        return NULL;
     }
     memset(timer, 0, sizeof(struct usb_osal_timer));
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer_ptr, sizeof(TX_TIMER), TX_NO_WAIT);
 
     if (timer_ptr == TX_NULL) {
-        USB_LOG_ERR("Create TX_TIMER failed\r\n");
-        while (1) {
-        }
+        USB_LOG_ERR("Allocate TX_TIMER failed\r\n");
+        tx_byte_release(timer);
+        return NULL;
     }
 
     timer->timer = timer_ptr;
@@ -252,8 +266,12 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     timer->is_period = is_period;
     if (tx_timer_create(timer_ptr, (CHAR *)name, (void (*)(ULONG))handler, (uintptr_t)argument, 1, is_period ? 1 : 0,
                         TX_NO_ACTIVATE) != TX_SUCCESS) {
+        USB_LOG_ERR("Create timer failed\r\n");
+        tx_byte_release(timer_ptr);
+        tx_byte_release(timer);
         return NULL;
     }
+
     return timer;
 }
 
