@@ -18,26 +18,17 @@ extern TX_BYTE_POOL usb_byte_pool;
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
-    CHAR *pointer = TX_NULL;
     TX_THREAD *thread_ptr = TX_NULL;
 
-    tx_byte_allocate(&usb_byte_pool, (VOID **)&thread_ptr, sizeof(TX_THREAD), TX_NO_WAIT);
-
+    tx_byte_allocate(&usb_byte_pool, (VOID **)&thread_ptr, USB_ALIGN_UP(sizeof(TX_THREAD), 4) + stack_size, TX_NO_WAIT);
     if (thread_ptr == TX_NULL) {
         USB_LOG_ERR("Create thread %s failed\r\n", name);
         while (1) {
         }
     }
 
-    tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, stack_size, TX_NO_WAIT);
-    if (pointer == TX_NULL) {
-        USB_LOG_ERR("Create thread %s failed\r\n", name);
-        while (1) {
-        }
-    }
-
-    tx_thread_create(thread_ptr, (CHAR *)name, (VOID(*)(ULONG))entry, (uintptr_t)args,
-                     pointer, stack_size,
+    tx_thread_create(thread_ptr, (CHAR *)name, (VOID (*)(ULONG))entry, (uintptr_t)args,
+                     ((CHAR *)thread_ptr + USB_ALIGN_UP(sizeof(TX_THREAD), 4)), stack_size,
                      prio, prio, TX_NO_TIME_SLICE, TX_AUTO_START);
 
     return (usb_osal_thread_t)thread_ptr;
@@ -49,23 +40,21 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
 
     if (thread == NULL) {
         /* Call the tx_thread_identify to get the control block pointer of the
-        currently executing thread. */
+            executing thread. */
         thread_ptr = tx_thread_identify();
 
         /* Check if the current running thread pointer is not NULL */
         if (thread_ptr != NULL) {
             /* Call the tx_thread_terminate to terminates the specified application
-            thread regardless of whether the thread is suspended or not. A thread
-            may call this service to terminate itself. */
+                thread regardless of whether the thread is suspended or not. A thread
+                may call this service to terminate itself. */
             tx_thread_terminate(thread_ptr);
-            tx_byte_release(thread_ptr->tx_thread_stack_start);
             tx_byte_release(thread_ptr);
         }
         return;
     }
 
     tx_thread_terminate(thread);
-    tx_byte_release(thread_ptr->tx_thread_stack_start);
     tx_byte_release(thread);
 }
 
@@ -86,7 +75,6 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     TX_SEMAPHORE *sem_ptr = TX_NULL;
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&sem_ptr, sizeof(TX_SEMAPHORE), TX_NO_WAIT);
-
     if (sem_ptr == TX_NULL) {
         USB_LOG_ERR("Create semaphore failed\r\n");
         while (1) {
@@ -121,7 +109,7 @@ int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
 {
-    return (int)tx_semaphore_put((TX_SEMAPHORE *)sem);
+    return (tx_semaphore_put((TX_SEMAPHORE *)sem) == TX_SUCCESS) ? 0 : -USB_ERR_INVAL;
 }
 
 void usb_osal_sem_reset(usb_osal_sem_t sem)
@@ -134,14 +122,13 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
     TX_MUTEX *mutex_ptr = TX_NULL;
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&mutex_ptr, sizeof(TX_MUTEX), TX_NO_WAIT);
-
     if (mutex_ptr == TX_NULL) {
         USB_LOG_ERR("Create mutex failed\r\n");
         while (1) {
         }
     }
 
-    tx_mutex_create(mutex_ptr, "usbh_mutx", TX_INHERIT);
+    tx_mutex_create(mutex_ptr, "usbh_mutex", TX_INHERIT);
     return (usb_osal_mutex_t)mutex_ptr;
 }
 
@@ -169,38 +156,27 @@ int usb_osal_mutex_take(usb_osal_mutex_t mutex)
 
 int usb_osal_mutex_give(usb_osal_mutex_t mutex)
 {
-    return (int)(tx_mutex_put((TX_MUTEX *)mutex) == TX_SUCCESS) ? 0 : -USB_ERR_INVAL;
+    return (tx_mutex_put((TX_MUTEX *)mutex) == TX_SUCCESS) ? 0 : -USB_ERR_INVAL;
 }
 
 usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 {
-    CHAR *pointer = TX_NULL;
     TX_QUEUE *queue_ptr = TX_NULL;
 
-    tx_byte_allocate(&usb_byte_pool, (VOID **)&queue_ptr, sizeof(TX_QUEUE), TX_NO_WAIT);
-
+    tx_byte_allocate(&usb_byte_pool, (VOID **)&queue_ptr, USB_ALIGN_UP(sizeof(TX_QUEUE), 4) + sizeof(uintptr_t) * max_msgs, TX_NO_WAIT);
     if (queue_ptr == TX_NULL) {
         USB_LOG_ERR("Create TX_QUEUE failed\r\n");
         while (1) {
         }
     }
 
-    tx_byte_allocate(&usb_byte_pool, (VOID **)&pointer, sizeof(uintptr_t) * max_msgs, TX_NO_WAIT);
-
-    if (pointer == TX_NULL) {
-        USB_LOG_ERR("Create mq failed\r\n");
-        while (1) {
-        }
-    }
-
-    tx_queue_create(queue_ptr, "usbh_mq", sizeof(uintptr_t) / 4, pointer, sizeof(uintptr_t) * max_msgs);
+    tx_queue_create(queue_ptr, "usbh_mq", sizeof(uintptr_t) / 4, (CHAR *)queue_ptr + USB_ALIGN_UP(sizeof(TX_QUEUE), 4), sizeof(uintptr_t) * max_msgs);
     return (usb_osal_mq_t)queue_ptr;
 }
 
 void usb_osal_mq_delete(usb_osal_mq_t mq)
 {
     tx_queue_delete((TX_QUEUE *)mq);
-    tx_byte_release(((TX_QUEUE *)mq)->tx_queue_start);
     tx_byte_release(mq);
 }
 
@@ -231,7 +207,6 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     struct usb_osal_timer *timer;
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer, sizeof(struct usb_osal_timer), TX_NO_WAIT);
-
     if (timer == TX_NULL) {
         USB_LOG_ERR("Create usb_osal_timer failed\r\n");
         while (1) {
@@ -240,7 +215,6 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     memset(timer, 0, sizeof(struct usb_osal_timer));
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer_ptr, sizeof(TX_TIMER), TX_NO_WAIT);
-
     if (timer_ptr == TX_NULL) {
         USB_LOG_ERR("Create TX_TIMER failed\r\n");
         while (1) {
@@ -269,8 +243,8 @@ void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
     if (tx_timer_change((TX_TIMER *)timer->timer, timer->timeout_ms, timer->is_period ? timer->timeout_ms : 0) == TX_SUCCESS) {
         /* Call the tx_timer_activate to activates the specified application
-             timer. The expiration routines of timers that expire at the same
-             time are executed in the order they were activated. */
+            timer. The expiration routines of timers that expire at the same
+            time are executed in the order they were activated. */
         if (tx_timer_activate((TX_TIMER *)timer->timer) == TX_SUCCESS) {
             /* Return osOK for success */
         } else {
@@ -296,7 +270,7 @@ size_t usb_osal_enter_critical_section(void)
 
 void usb_osal_leave_critical_section(size_t flag)
 {
-    int interrupt_save;
+    TX_INTERRUPT_SAVE_AREA
 
     interrupt_save = flag;
     TX_RESTORE
