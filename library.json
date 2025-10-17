@@ -1,0 +1,42 @@
+{
+  "name": "CherryUSB",
+  "version": "1.5.2",
+  "description": "CherryUSB is a tiny and beautiful, high performace and portable USB host and device stack for embedded system with USB IP",
+  "keywords": "usb, host, device",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cherry-embedded/CherryUSB.git"
+  },
+  "authors": [
+    {
+      "name": "sakumisu",
+      "maintainer": true
+    }
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://cherryusb.readthedocs.io/",
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "flags": [
+      "-I common",
+      "-I core",
+      "-I class/hub",
+      "-I class/cdc",
+      "-I class/hid",
+      "-I class/msc",
+      "-I class/audio",
+      "-I class/video",
+      "-I class/wireless",
+      "-I class/midi",
+      "-I class/adb",
+      "-I class/dfu",
+      "-I class/vendor/net",
+      "-I class/vendor/serial",
+      "-I class/vendor/wifi",
+      "-I class/aoa"
+    ],
+    "srcDir": ".",
+    "srcFilter": "+<*> -<demo> -<docs> -<tools>"
+  }
+}
