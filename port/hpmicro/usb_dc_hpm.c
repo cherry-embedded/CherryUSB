@@ -307,7 +307,7 @@ void USBD_IRQHandler(uint8_t busid)
         memset(g_hpm_udc[busid].in_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
         memset(g_hpm_udc[busid].out_ep, 0, sizeof(struct hpm_ep_state) * USB_NUM_BIDIR_ENDPOINTS);
         usbd_event_reset_handler(busid);
-        usb_device_bus_reset(handle, 64);
+        usb_device_bus_reset(handle, g_hpm_udc[busid].in_ep[0].ep_mps);
     }
 
     if (int_status & intr_suspend) {

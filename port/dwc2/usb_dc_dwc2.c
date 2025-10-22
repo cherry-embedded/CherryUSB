@@ -675,6 +675,7 @@ uint8_t usbd_get_port_speed(uint8_t busid)
 int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
+    uint16_t ep_mps;
 
     USB_ASSERT_MSG(ep_idx < (g_dwc2_udc[busid].hw_params.num_dev_ep + 1), "Ep addr %02x overflow", ep->bEndpointAddress);
 
@@ -682,14 +683,34 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_dwc2_udc[busid].out_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_dwc2_udc[busid].out_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
 
+        ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        if (ep_idx == 0) {
+            switch (ep_mps) {
+                case 64:
+                    ep_mps = EP_MPS_64;
+                    break;
+                case 32:
+                    ep_mps = EP_MPS_32;
+                    break;
+                case 16:
+                    ep_mps = EP_MPS_16;
+                    break;
+                case 8:
+                    ep_mps = EP_MPS_8;
+                    break;
+
+                default:
+                    ep_mps = EP_MPS_64;
+                    break;
+            }
+        }
+
         USB_OTG_DEV->DAINTMSK |= USB_OTG_DAINTMSK_OEPM & (uint32_t)(1UL << (16 + ep_idx));
 
-        if ((USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_USBAEP) == 0) {
-            USB_OTG_OUTEP(ep_idx)->DOEPCTL |= (USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize) & USB_OTG_DOEPCTL_MPSIZ) |
-                                              ((uint32_t)USB_GET_ENDPOINT_TYPE(ep->bmAttributes) << 18) |
-                                              USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
-                                              USB_OTG_DOEPCTL_USBAEP;
-        }
+        USB_OTG_OUTEP(ep_idx)->DOEPCTL |= (ep_mps & USB_OTG_DOEPCTL_MPSIZ) |
+                                          ((uint32_t)USB_GET_ENDPOINT_TYPE(ep->bmAttributes) << 18) |
+                                          USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                          USB_OTG_DOEPCTL_USBAEP;
     } else {
         uint16_t fifo_size;
         if (ep_idx == 0) {
@@ -703,14 +724,34 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_dwc2_udc[busid].in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_dwc2_udc[busid].in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
 
+        ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+        if (ep_idx == 0) {
+            switch (ep_mps) {
+                case 64:
+                    ep_mps = EP_MPS_64;
+                    break;
+                case 32:
+                    ep_mps = EP_MPS_32;
+                    break;
+                case 16:
+                    ep_mps = EP_MPS_16;
+                    break;
+                case 8:
+                    ep_mps = EP_MPS_8;
+                    break;
+
+                default:
+                    ep_mps = EP_MPS_64;
+                    break;
+            }
+        }
+
         USB_OTG_DEV->DAINTMSK |= USB_OTG_DAINTMSK_IEPM & (uint32_t)(1UL << ep_idx);
 
-        if ((USB_OTG_INEP(ep_idx)->DIEPCTL & USB_OTG_DIEPCTL_USBAEP) == 0) {
-            USB_OTG_INEP(ep_idx)->DIEPCTL |= (USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize) & USB_OTG_DIEPCTL_MPSIZ) |
-                                             ((uint32_t)USB_GET_ENDPOINT_TYPE(ep->bmAttributes) << 18) | (ep_idx << 22) |
-                                             USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
-                                             USB_OTG_DIEPCTL_USBAEP;
-        }
+        USB_OTG_INEP(ep_idx)->DIEPCTL |= (ep_mps & USB_OTG_DIEPCTL_MPSIZ) |
+                                         ((uint32_t)USB_GET_ENDPOINT_TYPE(ep->bmAttributes) << 18) | (ep_idx << 22) |
+                                         USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+                                         USB_OTG_DIEPCTL_USBAEP;
         dwc2_flush_txfifo(busid, ep_idx);
     }
     return 0;
@@ -1046,7 +1087,7 @@ void USBD_IRQHandler(uint8_t busid)
                             usbd_event_ep_out_complete_handler(busid, ep_idx, g_dwc2_udc[busid].out_ep[ep_idx].actual_xfer_len);
                         }
                     }
-                // clang-format off
+                    // clang-format off
 process_setup:
                     // clang-format on
                     if ((epint & USB_OTG_DOEPINT_STUP) == USB_OTG_DOEPINT_STUP) {
