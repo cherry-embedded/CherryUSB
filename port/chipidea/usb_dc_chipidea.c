@@ -659,7 +659,7 @@ void USBD_IRQHandler(uint8_t busid)
         memset(g_chipidea_udc[busid].in_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
         memset(g_chipidea_udc[busid].out_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
         usbd_event_reset_handler(busid);
-        chipidea_bus_reset(busid, 64);
+        chipidea_bus_reset(busid, g_chipidea_udc[busid].in_ep[0].ep_mps);
     }
 
     if (int_status & intr_suspend) {
