@@ -138,7 +138,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
     uint8_t ep_idx = USB_EP_GET_IDX(ep->bEndpointAddress);
 
     USB_ASSERT_MSG(ep_idx < CONFIG_USBDEV_EP_NUM, "Ep addr %02x overflow", ep->bEndpointAddress);
-    USB_ASSERT_MSG(USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS, "iso endpoint not support in fsdev");
+    // USB_ASSERT_MSG(USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS, "iso endpoint not support in fsdev");
 
     uint16_t wEpRegVal;
 
@@ -177,13 +177,35 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 
             g_fsdev_udc.out_ep[ep_idx].ep_pma_buf_len = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
             g_fsdev_udc.out_ep[ep_idx].ep_pma_addr = g_fsdev_udc.pma_offset;
-            /*Set the endpoint Receive buffer address */
-            PCD_SET_EP_RX_ADDRESS(USB, ep_idx, g_fsdev_udc.pma_offset);
-            g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+
+            if (wEpRegVal == USB_EP_ISOCHRONOUS) {
+                USB_ASSERT_MSG((g_fsdev_udc.pma_offset + g_fsdev_udc.out_ep[ep_idx].ep_mps * 2) <= CONFIG_USB_FSDEV_RAM_SIZE,
+                               "Ep pma %02x overflow", ep->bEndpointAddress);
+                PCD_CLEAR_EP_KIND(USB, ep_idx);
+                /* Set buffer address for double buffered mode */
+                PCD_SET_EP_DBUF_ADDR(USB, ep_idx, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr,
+                                     g_fsdev_udc.out_ep[ep_idx].ep_pma_addr + g_fsdev_udc.out_ep[ep_idx].ep_mps);
+
+                /* Clear the data toggle bits for the endpoint IN/OUT */
+                PCD_CLEAR_RX_DTOG(USB, ep_idx);
+                PCD_CLEAR_TX_DTOG(USB, ep_idx);
+
+                /* Set endpoint RX count */
+                PCD_SET_EP_DBUF_CNT(USB, ep_idx, 0, ep->wMaxPacketSize);
+
+                /* Set endpoint RX to valid state */
+                PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_VALID);
+                PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+                g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize * 2);
+            } else {
+                /*Set the endpoint Receive buffer address */
+                PCD_SET_EP_RX_ADDRESS(USB, ep_idx, g_fsdev_udc.pma_offset);
+                g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+                /*Set the endpoint Receive buffer counter*/
+                PCD_SET_EP_RX_CNT(USB, ep_idx, USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
+                PCD_CLEAR_RX_DTOG(USB, ep_idx);
+            }
         }
-        /*Set the endpoint Receive buffer counter*/
-        PCD_SET_EP_RX_CNT(USB, ep_idx, USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize));
-        PCD_CLEAR_RX_DTOG(USB, ep_idx);
     } else {
         g_fsdev_udc.in_ep[ep_idx].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_fsdev_udc.in_ep[ep_idx].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
@@ -194,18 +216,34 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 
             g_fsdev_udc.in_ep[ep_idx].ep_pma_buf_len = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
             g_fsdev_udc.in_ep[ep_idx].ep_pma_addr = g_fsdev_udc.pma_offset;
-            /*Set the endpoint Transmit buffer address */
-            PCD_SET_EP_TX_ADDRESS(USB, ep_idx, g_fsdev_udc.pma_offset);
-            g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-        }
+            if (wEpRegVal == USB_EP_ISOCHRONOUS) {
+                USB_ASSERT_MSG((g_fsdev_udc.pma_offset + g_fsdev_udc.in_ep[ep_idx].ep_mps * 2) <= CONFIG_USB_FSDEV_RAM_SIZE,
+                               "Ep pma %02x overflow", ep->bEndpointAddress);
+                /* Set the ISOC endpoint in double buffer mode */
+                PCD_CLEAR_EP_KIND(USB, ep_idx);
+                /* Set buffer address for double buffered mode */
+                PCD_SET_EP_DBUF_ADDR(USB, ep_idx,
+                                     g_fsdev_udc.in_ep[ep_idx].ep_pma_addr,
+                                     g_fsdev_udc.in_ep[ep_idx].ep_pma_addr +
+                                         g_fsdev_udc.in_ep[ep_idx].ep_mps);
 
-        PCD_CLEAR_TX_DTOG(USB, ep_idx);
-        if (USB_GET_ENDPOINT_TYPE(ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
-            /* Configure NAK status for the Endpoint */
-            PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
-        } else {
-            /* Configure TX Endpoint to disabled state */
-            PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+                /* Clear the data toggle bits for the endpoint IN/OUT */
+                PCD_CLEAR_RX_DTOG(USB, ep_idx);
+                PCD_CLEAR_TX_DTOG(USB, ep_idx);
+
+                /* Set endpoint TX to valid state */
+                PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+                PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_DIS);
+                g_fsdev_udc.pma_offset +=
+                    USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize * 2);
+            } else {
+                /*Set the endpoint Transmit buffer address */
+                PCD_SET_EP_TX_ADDRESS(USB, ep_idx, g_fsdev_udc.pma_offset);
+                g_fsdev_udc.pma_offset += USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+                PCD_CLEAR_TX_DTOG(USB, ep_idx);
+                /* Configure NAK status for the Endpoint */
+                PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_NAK);
+            }
         }
     }
     return 0;
@@ -214,17 +252,40 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
 int usbd_ep_close(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
+    uint16_t wEpRegVal;
 
     if (USB_EP_DIR_IS_OUT(ep)) {
-        PCD_CLEAR_RX_DTOG(USB, ep_idx);
-
-        /* Configure DISABLE status for the Endpoint*/
-        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_DIS);
+        wEpRegVal = g_fsdev_udc.out_ep[ep_idx].ep_type;
     } else {
+        wEpRegVal = g_fsdev_udc.in_ep[ep_idx].ep_type;
+    }
+
+    if (wEpRegVal == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+        /* Clear the data toggle bits for the endpoint IN/OUT*/
+        PCD_CLEAR_RX_DTOG(USB, ep_idx);
         PCD_CLEAR_TX_DTOG(USB, ep_idx);
 
-        /* Configure DISABLE status for the Endpoint*/
+        /* Reset value of the data toggle bits for the endpoint out*/
+        if (USB_EP_DIR_IS_OUT(ep)) {
+            PCD_RX_DTOG(USB, ep_idx);
+        } else {
+            PCD_TX_DTOG(USB, ep_idx);
+        }
+
+        PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_DIS);
         PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+    } else {
+        if (USB_EP_DIR_IS_OUT(ep)) {
+            PCD_CLEAR_RX_DTOG(USB, ep_idx);
+
+            /* Configure DISABLE status for the Endpoint*/
+            PCD_SET_EP_RX_STATUS(USB, ep_idx, USB_EP_RX_DIS);
+        } else {
+            PCD_CLEAR_TX_DTOG(USB, ep_idx);
+
+            /* Configure DISABLE status for the Endpoint*/
+            PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_DIS);
+        }
     }
     return 0;
 }
@@ -282,6 +343,8 @@ int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
 
 int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
+    uint8_t is_in = 1;
+    uint16_t pmabuffer;
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
     if (!data && data_len) {
@@ -298,8 +361,28 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
 
     data_len = MIN(data_len, g_fsdev_udc.in_ep[ep_idx].ep_mps);
 
-    fsdev_write_pma(USB, (uint8_t *)data, g_fsdev_udc.in_ep[ep_idx].ep_pma_addr, (uint16_t)data_len);
-    PCD_SET_EP_TX_CNT(USB, ep_idx, (uint16_t)data_len);
+    if (g_fsdev_udc.in_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+        /* Each Time to write in PMA xfer_len_db will */
+
+        /* Fill the data buffer */
+        if ((PCD_GET_ENDPOINT(USB, ep_idx) & USB_EP_DTOG_TX) != 0U) {
+            /* Set the Double buffer counter for pmabuffer0 */
+            PCD_SET_EP_DBUF0_CNT(USB, ep_idx, is_in, (uint16_t)data_len);
+            pmabuffer = g_fsdev_udc.in_ep[ep_idx].ep_pma_addr;
+        } else {
+            /* Set the Double buffer counter for pmabuffer1 */
+            PCD_SET_EP_DBUF1_CNT(USB, ep_idx, is_in, (uint16_t)data_len);
+            pmabuffer = g_fsdev_udc.in_ep[ep_idx].ep_pma_addr +
+                        g_fsdev_udc.in_ep[ep_idx].ep_mps;
+        }
+        fsdev_write_pma(USB, (uint8_t *)data, pmabuffer, (uint16_t)data_len);
+
+    } else {
+        fsdev_write_pma(USB, (uint8_t *)data,
+                        g_fsdev_udc.in_ep[ep_idx].ep_pma_addr,
+                        (uint16_t)data_len);
+        PCD_SET_EP_TX_CNT(USB, ep_idx, (uint16_t)data_len);
+    }
     PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_VALID);
 
     return 0;
@@ -401,8 +484,24 @@ void USBD_IRQHandler(uint8_t busid)
 
                 if ((wEPVal & USB_EP_CTR_RX) != 0U) {
                     PCD_CLEAR_RX_EP_CTR(USB, ep_idx);
-                    read_count = PCD_GET_EP_RX_CNT(USB, ep_idx);
-                    fsdev_read_pma(USB, g_fsdev_udc.out_ep[ep_idx].xfer_buf, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
+                    if (g_fsdev_udc.out_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                        /* manage double buffer bulk out */
+                        /* free EP OUT Buffer */
+                        PCD_FREE_USER_BUFFER(USB, ep_idx, 0U);
+
+                        if ((PCD_GET_ENDPOINT(USB, ep_idx) & USB_EP_DTOG_RX) != 0U) {
+                            /* read from endpoint BUF0Addr buffer */
+                            read_count = (uint16_t)PCD_GET_EP_DBUF0_CNT(USB, ep_idx);
+                            fsdev_read_pma(USB, g_fsdev_udc.out_ep[ep_idx].xfer_buf, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
+                        } else {
+                            /* read from endpoint BUF1Addr buffer */
+                            read_count = (uint16_t)PCD_GET_EP_DBUF1_CNT(USB, ep_idx);
+                            fsdev_read_pma(USB, g_fsdev_udc.out_ep[ep_idx].xfer_buf, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr + g_fsdev_udc.out_ep[ep_idx].ep_mps, (uint16_t)read_count);
+                        }
+                    } else {
+                        read_count = PCD_GET_EP_RX_CNT(USB, ep_idx);
+                        fsdev_read_pma(USB, g_fsdev_udc.out_ep[ep_idx].xfer_buf, g_fsdev_udc.out_ep[ep_idx].ep_pma_addr, (uint16_t)read_count);
+                    }
                     g_fsdev_udc.out_ep[ep_idx].xfer_buf += read_count;
                     g_fsdev_udc.out_ep[ep_idx].xfer_len -= read_count;
                     g_fsdev_udc.out_ep[ep_idx].actual_xfer_len += read_count;
@@ -417,7 +516,17 @@ void USBD_IRQHandler(uint8_t busid)
 
                 if ((wEPVal & USB_EP_CTR_TX) != 0U) {
                     PCD_CLEAR_TX_EP_CTR(USB, ep_idx);
-                    write_count = PCD_GET_EP_TX_CNT(USB, ep_idx);
+
+                    if (g_fsdev_udc.in_ep[ep_idx].ep_type ==
+                        USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                        if ((PCD_GET_ENDPOINT(USB, ep_idx) & USB_EP_DTOG_TX) != 0U) {
+                            write_count = PCD_GET_EP_DBUF1_CNT(USB, ep_idx);
+                        } else {
+                            write_count = PCD_GET_EP_DBUF0_CNT(USB, ep_idx);
+                        }
+                    } else {
+                        write_count = PCD_GET_EP_TX_CNT(USB, ep_idx);
+                    }
 
                     g_fsdev_udc.in_ep[ep_idx].xfer_buf += write_count;
                     g_fsdev_udc.in_ep[ep_idx].xfer_len -= write_count;
@@ -427,8 +536,29 @@ void USBD_IRQHandler(uint8_t busid)
                         usbd_event_ep_in_complete_handler(0, ep_idx | 0x80, g_fsdev_udc.in_ep[ep_idx].actual_xfer_len);
                     } else {
                         write_count = MIN(g_fsdev_udc.in_ep[ep_idx].xfer_len, g_fsdev_udc.in_ep[ep_idx].ep_mps);
-                        fsdev_write_pma(USB, g_fsdev_udc.in_ep[ep_idx].xfer_buf, g_fsdev_udc.in_ep[ep_idx].ep_pma_addr, (uint16_t)write_count);
-                        PCD_SET_EP_TX_CNT(USB, ep_idx, write_count);
+                        if (g_fsdev_udc.in_ep[ep_idx].ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                            if ((PCD_GET_ENDPOINT(USB, ep_idx) & USB_EP_DTOG_TX) != 0U) {
+                                /* Set the Double buffer counter for pmabuffer0 */
+                                PCD_SET_EP_DBUF0_CNT(USB, ep_idx, 1, (uint16_t)write_count);
+                                fsdev_write_pma(USB,
+                                                g_fsdev_udc.in_ep[ep_idx].xfer_buf,
+                                                g_fsdev_udc.in_ep[ep_idx].ep_pma_addr,
+                                                (uint16_t)write_count);
+                            } else {
+                                /* Set the Double buffer counter for pmabuffer1 */
+                                PCD_SET_EP_DBUF1_CNT(USB, ep_idx, 1, (uint16_t)write_count);
+                                fsdev_write_pma(USB,
+                                                g_fsdev_udc.in_ep[ep_idx].xfer_buf,
+                                                g_fsdev_udc.in_ep[ep_idx].ep_pma_addr + g_fsdev_udc.in_ep[ep_idx].ep_mps,
+                                                (uint16_t)write_count);
+                            }
+                        } else {
+                            fsdev_write_pma(USB,
+                                            g_fsdev_udc.in_ep[ep_idx].xfer_buf,
+                                            g_fsdev_udc.in_ep[ep_idx].ep_pma_addr,
+                                            (uint16_t)write_count);
+                            PCD_SET_EP_TX_CNT(USB, ep_idx, write_count);
+                        }
                         PCD_SET_EP_TX_STATUS(USB, ep_idx, USB_EP_TX_VALID);
                     }
                 }
