@@ -1,0 +1,7 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+#
+CONFIG_CHERRYUSB=y
+CONFIG_CHERRYUSB_DEVICE=y
+CONFIG_CHERRYUSB_DEVICE_CDC_ACM=y
+CONFIG_CHERRYUSB_DEVICE_HID=y
+CONFIG_CHERRYUSB_DEVICE_MSC=y
