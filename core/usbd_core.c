@@ -1157,7 +1157,7 @@ void usbd_event_reset_handler(uint8_t busid)
     USB_ASSERT_MSG(g_usbd_core[busid].descriptors->device_descriptor_callback != NULL,
                    "device_descriptor_callback is NULL\r\n");
 
-    struct usb_device_descriptor *device_desc = g_usbd_core[busid].descriptors->device_descriptor_callback(g_usbd_core[busid].speed);
+    struct usb_device_descriptor *device_desc = (struct usb_device_descriptor *)g_usbd_core[busid].descriptors->device_descriptor_callback(g_usbd_core[busid].speed);
     ep0.wMaxPacketSize = device_desc->bMaxPacketSize0;
 #else
     ep0.wMaxPacketSize = USB_CTRL_EP_MPS;
