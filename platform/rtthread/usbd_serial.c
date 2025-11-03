@@ -76,9 +76,12 @@ static rt_err_t usbd_serial_open(struct rt_device *dev, rt_uint16_t oflag)
 
     serial = (struct usbd_serial *)dev;
 
-    while(!usb_device_is_configured(serial->busid)) {
+    while (!usb_device_is_configured(serial->busid)) {
         rt_thread_mdelay(10);
     }
+    /* set stream flag */
+    if ((oflag & RT_DEVICE_FLAG_STREAM) || (dev->open_flag & RT_DEVICE_FLAG_STREAM))
+        dev->open_flag |= RT_DEVICE_FLAG_STREAM;
 
     usbd_ep_start_read(serial->busid, serial->out_ep,
                        g_usbd_serial_cdc_acm_rx_buf[serial->minor],
@@ -122,30 +125,52 @@ static rt_ssize_t usbd_serial_write(struct rt_device *dev,
     }
     align_buf = (rt_uint8_t *)buffer;
 
-    if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
-        align_buf = rt_malloc_align(USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE), CONFIG_USB_ALIGN_SIZE);
-        if (!align_buf) {
-            USB_LOG_ERR("serial get align buf failed\n");
-            return 0;
+    if (serial->parent.open_flag & RT_DEVICE_FLAG_STREAM) {
+        align_buf = rt_malloc_align(2, CONFIG_USB_ALIGN_SIZE);
+        ret = size;
+        for (rt_size_t i = 0; i < size; i++) {
+            uint32_t buffer_size;
+            if (((rt_uint8_t *)buffer)[i] == '\n') {
+                align_buf[0] = '\r';
+                align_buf[1] = '\n';
+                buffer_size = 2;
+            } else {
+                align_buf[0] = ((rt_uint8_t *)buffer)[i];
+                buffer_size = 1;
+            }
+            usb_osal_sem_reset(serial->tx_done);
+            usbd_ep_start_write(serial->busid, serial->in_ep, align_buf, buffer_size);
+            ret = usb_osal_sem_take(serial->tx_done, 3000);
+            if (ret < 0) {
+                USB_LOG_ERR("serial write timeout\n");
+                ret = -RT_ETIMEOUT;
+            }
+        }
+        rt_free_align(align_buf);
+    } else {
+        if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
+            align_buf = rt_malloc_align(USB_ALIGN_UP(size, CONFIG_USB_ALIGN_SIZE), CONFIG_USB_ALIGN_SIZE);
+            if (!align_buf) {
+                USB_LOG_ERR("serial get align buf failed\n");
+                return 0;
+            }
+
+            usb_memcpy(align_buf, buffer, size);
+        }
+        usb_osal_sem_reset(serial->tx_done);
+        usbd_ep_start_write(serial->busid, serial->in_ep, align_buf, size);
+        ret = usb_osal_sem_take(serial->tx_done, 3000);
+        if (ret < 0) {
+            USB_LOG_ERR("serial write timeout\n");
+            ret = -RT_ETIMEOUT;
+        } else {
+            ret = size;
         }
 
-        usb_memcpy(align_buf, buffer, size);
+        if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
+            rt_free_align(align_buf);
+        }
     }
-
-    usb_osal_sem_reset(serial->tx_done);
-    usbd_ep_start_write(serial->busid, serial->in_ep, align_buf, size);
-    ret = usb_osal_sem_take(serial->tx_done, 3000);
-    if (ret < 0) {
-        USB_LOG_ERR("serial write timeout\n");
-        ret = -RT_ETIMEOUT;
-    } else {
-        ret = size;
-    }
-
-    if ((uint32_t)buffer & (CONFIG_USB_ALIGN_SIZE - 1)) {
-        rt_free_align(align_buf);
-    }
-
     return ret;
 }
 
@@ -206,8 +231,8 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
         if (serial->out_ep == ep) {
             rt_ringbuffer_put(&serial->rx_rb, g_usbd_serial_cdc_acm_rx_buf[serial->minor], nbytes);
             usbd_ep_start_read(serial->busid, serial->out_ep,
-                g_usbd_serial_cdc_acm_rx_buf[serial->minor],
-                usbd_get_ep_mps(serial->busid, serial->out_ep));
+                               g_usbd_serial_cdc_acm_rx_buf[serial->minor],
+                               usbd_get_ep_mps(serial->busid, serial->out_ep));
 
             if (serial->parent.rx_indicate) {
                 serial->parent.rx_indicate(&serial->parent, nbytes);
