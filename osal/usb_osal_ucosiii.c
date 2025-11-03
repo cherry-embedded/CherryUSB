@@ -62,6 +62,7 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
         }
     }
 
+    memset(tcb, 0, USB_ALIGN_UP(sizeof(OS_TCB), 4) + stack_size);
     OSTaskCreate((OS_TCB *)tcb,
                  (CPU_CHAR *)name,
                  (OS_TASK_PTR)entry,
@@ -121,6 +122,7 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
         }
     }
 
+    memset(sem, 0, sizeof(OS_SEM));
     OSSemCreate(sem, "usbh_sem", initial_count, &err);
 
     return sem;
@@ -186,6 +188,7 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
         }
     }
 
+    memset(mutex, 0, sizeof(OS_MUTEX));
     OSMutexCreate(mutex, "usbh_mutex", &err);
 
     return mutex;
@@ -239,6 +242,7 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
         }
     }
 
+    memset(mq, 0, sizeof(OS_Q));
     OSQCreate((OS_Q *)mq, "usbh_mq", (OS_MSG_QTY)max_msgs, &err);
 
     return mq;
@@ -319,12 +323,15 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
         }
     }
 
+    memset(timer, 0, sizeof(struct usb_osal_timer));
     tmr = (OS_TMR *)usb_osal_malloc(sizeof(OS_TMR));
     if (tmr == NULL) {
         USB_LOG_ERR("Create timer %s failed\r\n", name);
         while (1) {
         }
     }
+
+    memset(tmr, 0, sizeof(OS_TMR));
 
     timer->timeout_ms = timeout_ms;
     timer->handler = handler;

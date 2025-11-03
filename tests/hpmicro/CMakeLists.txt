@@ -17,7 +17,7 @@ set(CONFIG_LWIP_SOCKET_API 1)
 set(CONFIG_HPM_PANEL 1)
 
 find_package(hpm-sdk REQUIRED HINTS $ENV{HPM_SDK_BASE})
-project(cherryshell)
+project(cherryusb)
 
 sdk_compile_definitions(-D__freertos_irq_stack_top=_stack)
 sdk_compile_definitions(-DCONFIG_FREERTOS=1)

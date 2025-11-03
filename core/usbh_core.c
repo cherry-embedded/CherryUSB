@@ -729,6 +729,7 @@ int usbh_deinitialize(uint8_t busid)
 int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *setup, uint8_t *buffer)
 {
     struct usbh_urb *urb;
+    volatile uint8_t retry = 3;
     int ret;
 
     if (!hport || !setup) {
@@ -741,10 +742,19 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
 
     usbh_print_setup(setup);
 
+resubmit:
     usbh_control_urb_fill(urb, hport, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
+    }
+
+    if (ret < 0 && (ret != -USB_ERR_TIMEOUT)) {
+        retry--;
+        if (retry > 0) {
+            USB_LOG_WRN("Control transfer failed, errorcode %d, retrying...\r\n", ret);
+            goto resubmit;
+        }
     }
 
     usb_osal_mutex_give(hport->mutex);

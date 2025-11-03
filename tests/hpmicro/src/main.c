@@ -23,8 +23,6 @@ SDK_DECLARE_EXT_ISR_M(BOARD_CONSOLE_UART_IRQ, shell_uart_isr)
 
 static void task_start(void *param);
 
-extern void uvc2lcd_init(void);
-
 int main(void)
 {
     board_init();
