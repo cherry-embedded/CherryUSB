@@ -713,7 +713,6 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
 {
     struct usbh_hubport *hport;
     struct usbh_hub *hub;
-    size_t flags;
 
     hub = &bus->hcd.roothub;
     for (uint8_t port = 0; port < hub->nports; port++) {
@@ -722,14 +721,10 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
         usbh_hubport_release(hport);
     }
 
-    flags = usb_osal_enter_critical_section();
-
     usb_hc_deinit(bus);
 
-    usb_osal_leave_critical_section(flags);
-
-    usb_osal_mq_delete(bus->hub_mq);
     usb_osal_thread_delete(bus->hub_thread);
+    usb_osal_mq_delete(bus->hub_mq);
 
     return 0;
 }
