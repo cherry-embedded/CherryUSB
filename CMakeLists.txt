@@ -64,7 +64,11 @@ elseif(ESP_PLATFORM)
 
     idf_component_get_property(freertos_include freertos ORIG_INCLUDE_PATH)
 
-    set(priv_req esp_mm esp_netif esp_timer)
+    if(CONFIG_CHERRYUSB_HOST_MSC)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/platform/idf/usbh_fatfs.c)
+    endif()
+
+    set(priv_req esp_mm esp_netif esp_timer fatfs)
     if(${IDF_VERSION_MAJOR} LESS 6)
         list(APPEND priv_req usb)
     endif()
