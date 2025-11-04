@@ -84,7 +84,9 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
     OS_ERR err;
     OS_TCB *tcb;
+    CPU_SR_ALLOC();
 
+    CPU_CRITICAL_ENTER();
     if (thread == NULL) {
         tcb = OSTCBCurPtr;
     } else {
@@ -93,6 +95,7 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
 
     OSTaskDel(tcb, &err);
     usb_osal_free(tcb);
+    CPU_CRITICAL_EXIT();
 }
 
 void usb_osal_thread_schedule_other(void)
@@ -131,9 +134,12 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 void usb_osal_sem_delete(usb_osal_sem_t sem)
 {
     OS_ERR err;
+    CPU_SR_ALLOC();
 
+    CPU_CRITICAL_ENTER();
     OSSemDel((OS_SEM *)sem, OS_OPT_DEL_ALWAYS, &err);
     usb_osal_free(sem);
+    CPU_CRITICAL_EXIT();
 }
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
@@ -197,9 +203,12 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
 void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
 {
     OS_ERR err;
+    CPU_SR_ALLOC();
 
+    CPU_CRITICAL_ENTER();
     OSMutexDel((OS_MUTEX *)mutex, OS_OPT_DEL_ALWAYS, &err);
     usb_osal_free(mutex);
+    CPU_CRITICAL_EXIT();
 }
 
 int usb_osal_mutex_take(usb_osal_mutex_t mutex)
@@ -251,9 +260,12 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 void usb_osal_mq_delete(usb_osal_mq_t mq)
 {
     OS_ERR err;
+    CPU_SR_ALLOC();
 
+    CPU_CRITICAL_ENTER();
     OSQDel((OS_Q *)mq, OS_OPT_DEL_ALWAYS, &err);
     usb_osal_free(mq);
+    CPU_CRITICAL_EXIT();
 }
 
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
@@ -354,11 +366,14 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
 void usb_osal_timer_delete(struct usb_osal_timer *timer)
 {
     OS_ERR err;
+    CPU_SR_ALLOC();
 
+    CPU_CRITICAL_ENTER();
     OSTmrStop((OS_TMR *)timer->timer, OS_OPT_TMR_NONE, NULL, &err);
     OSTmrDel((OS_TMR *)timer->timer, &err);
     usb_osal_free(timer->timer);
     usb_osal_free(timer);
+    CPU_CRITICAL_EXIT();
 }
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
