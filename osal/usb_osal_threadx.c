@@ -9,12 +9,9 @@
 #include "usb_log.h"
 #include "tx_api.h"
 
-/* create bytepool in tx_application_define
- *
- * tx_byte_pool_create(&usb_byte_pool, "usb byte pool", memory_area, 65536);
- */
+extern TX_BYTE_POOL usb_byte_pool; // define usb_byte_pool and call usb_osal_init first
 
-extern TX_BYTE_POOL usb_byte_pool;
+usb_osal_mq_t usb_osal_mq;
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
@@ -27,7 +24,7 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
         }
     }
 
-    tx_thread_create(thread_ptr, (CHAR *)name, (VOID (*)(ULONG))entry, (uintptr_t)args,
+    tx_thread_create(thread_ptr, (CHAR *)name, (VOID(*)(ULONG))entry, (uintptr_t)args,
                      ((CHAR *)thread_ptr + USB_ALIGN_UP(sizeof(TX_THREAD), 4)), stack_size,
                      prio, prio, TX_NO_TIME_SLICE, TX_AUTO_START);
 
@@ -36,25 +33,17 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 
 void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
-    TX_THREAD *thread_ptr = NULL;
-
     if (thread == NULL) {
-        /* Call the tx_thread_identify to get the control block pointer of the
-            executing thread. */
-        thread_ptr = tx_thread_identify();
+        thread = tx_thread_identify();
 
-        /* Check if the current running thread pointer is not NULL */
-        if (thread_ptr != NULL) {
-            /* Call the tx_thread_terminate to terminates the specified application
-                thread regardless of whether the thread is suspended or not. A thread
-                may call this service to terminate itself. */
-            tx_thread_terminate(thread_ptr);
-            tx_byte_release(thread_ptr);
-        }
+        usb_osal_mq_send(usb_osal_mq, (uintptr_t)thread);
+
+        tx_thread_terminate(thread);
         return;
     }
 
     tx_thread_terminate(thread);
+    tx_thread_delete(thread);
     tx_byte_release(thread);
 }
 
@@ -296,4 +285,40 @@ void *usb_osal_malloc(size_t size)
 void usb_osal_free(void *ptr)
 {
     tx_byte_release(ptr);
+}
+
+static void usb_osal_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
+{
+    int ret;
+    usb_osal_thread_t thread;
+
+    while (1) {
+        ret = usb_osal_mq_recv(usb_osal_mq, (uintptr_t *)&thread, TX_WAIT_FOREVER);
+        if (ret < 0) {
+            continue;
+        }
+        tx_thread_delete(thread);
+        tx_byte_release(thread);
+    }
+}
+
+void usb_osal_init(uint8_t *mem, uint32_t mem_size)
+{
+    usb_osal_thread_t thread;
+
+    tx_byte_pool_create(&usb_byte_pool, "usb byte pool", mem, mem_size);
+
+    thread = usb_osal_thread_create("usb_osal", 2048, 10, usb_osal_thread, NULL);
+    if (thread == NULL) {
+        USB_LOG_ERR("Create usb_osal_thread failed\r\n");
+        while (1) {
+        }
+    }
+
+    usb_osal_mq = usb_osal_mq_create(32);
+    if (usb_osal_mq == NULL) {
+        USB_LOG_ERR("Create usb_osal_mq failed\r\n");
+        while (1) {
+        }
+    }
 }
