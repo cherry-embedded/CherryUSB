@@ -15,6 +15,13 @@
 #ifndef   __UNALIGNED_UINT32_READ
   #define __UNALIGNED_UINT32_READ(addr)          (*((const __packed uint32_t *)(addr)))
 #endif
+#elif defined (__ICCARM__)
+#ifndef   __UNALIGNED_UINT32_WRITE
+  #define __UNALIGNED_UINT32_WRITE(addr, val)    ((*((__packed uint32_t *)(addr))) = (val))
+#endif
+#ifndef   __UNALIGNED_UINT32_READ
+  #define __UNALIGNED_UINT32_READ(addr)          (*((const __packed uint32_t *)(addr)))
+#endif
 #elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
 #ifndef   __UNALIGNED_UINT32_WRITE
   #pragma clang diagnostic push
