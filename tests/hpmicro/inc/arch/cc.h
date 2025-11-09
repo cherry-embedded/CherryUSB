@@ -31,7 +31,7 @@
  */
 
 /*
- * Copyright (c) 2021-2022 HPMicro
+ * Copyright (c) 2021-2024 HPMicro
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -68,10 +68,22 @@
 
 #elif defined (__GNUC__)
 
+#include <sys/time.h>
+#include <time.h>
+
 #define PACK_STRUCT_BEGIN
 #define PACK_STRUCT_STRUCT __attribute__ ((__packed__))
 #define PACK_STRUCT_END
 #define PACK_STRUCT_FIELD(x) x
+
+#elif defined(__ICCRISCV__)
+
+#include <time.h>
+#define PACK_STRUCT_BEGIN
+#define PACK_STRUCT_STRUCT __attribute__ ((__packed__))
+#define PACK_STRUCT_END
+#define PACK_STRUCT_FIELD(x) x
+typedef unsigned long clockid_t;
 
 #elif defined (__TASKING__)
 
@@ -83,9 +95,5 @@
 #endif
 
 #define LWIP_PLATFORM_ASSERT(x) printf(x)
-
-#ifndef LWIP_MEM_SECTION
-#define LWIP_MEM_SECTION ".framebuffer"
-#endif
 
 #endif /* __CC_H__ */

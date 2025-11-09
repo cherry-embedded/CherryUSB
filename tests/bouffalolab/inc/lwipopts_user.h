@@ -433,4 +433,10 @@ a lot of data that needs to be copied, this should be set high. */
 #define LWIP_MEM_SECTION ".bss"
 #endif
 
+// bouffalo patch
+#define LWIP_DNS_SERVER          0
+#define LWIP_SUPPORT_CUSTOM_PBUF 1
+
+#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)] __attribute__((section(LWIP_MEM_SECTION)))
+
 #endif /* __LWIPOPTS_H__ */

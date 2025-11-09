@@ -23,6 +23,7 @@ sdk_compile_definitions(-D__freertos_irq_stack_top=_stack)
 sdk_compile_definitions(-DCONFIG_FREERTOS=1)
 sdk_compile_definitions(-DUSE_NONVECTOR_MODE=1)
 sdk_compile_definitions(-DDISABLE_IRQ_PREEMPTIVE=1)
+sdk_compile_definitions(-DLWIP_TIMEVAL_PRIVATE=0)
 
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_CDC_ECM)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_CDC_NCM)
@@ -30,23 +31,23 @@ sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_CDC_RNDIS)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_ASIX)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_RTL8152)
 
+sdk_compile_options("-O2")
+
 sdk_inc(inc)
 sdk_app_src(inc/arch/sys_arch.c)
 sdk_app_src(src/main.c)
 sdk_app_src(../../demo/usb_host.c)
-# sdk_app_src(src/uvc2lcd.c)
-# sdk_app_src(src/font24x48.c)
 
-# sdk_inc(src/iperf)
-# sdk_app_src(src/iperf/iperf.c src/iperf/iperf_cli.c src/iperf/utils_getopt.c src/ping.c)
-
-# sdk_app_src(src/usbh_uvc_port.c)
+sdk_inc(src/iperf)
+sdk_app_src(src/iperf/iperf.c src/iperf/iperf_cli.c src/iperf/utils_getopt.c src/ping.c)
 
 set(CONFIG_CHERRYMP 1)
 set(CONFIG_CHERRYUSB 1)
 set(CONFIG_CHERRYUSB_DEVICE 1)
 set(CONFIG_CHERRYUSB_HOST 1)
 
+# sdk_app_src(src/uvc2lcd.c)
+# sdk_app_src(src/font24x48.c)
 # add_subdirectory(src/cherryusb_hostuvcuac)
 add_subdirectory(../.. cherryusb)
 
