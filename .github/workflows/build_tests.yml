@@ -37,7 +37,33 @@ jobs:
           export HPM_SDK_BASE=~/hpm_sdk
           export GNURISCV_TOOLCHAIN_PATH=~/rv32imac_zicsr_zifencei_multilib_b_ext-linux
           export HPM_SDK_TOOLCHAIN_VARIANT=
-          cmake -S . -B build -GNinja -DBOARD=hpm6750evk2 -DCMAKE_BUILD_TYPE=flash_sdram_xip -DEXTRA_C_FLAGS="-Werror";cmake --build build
+          cmake -S . -B build -GNinja -DBOARD=hpm6800evk -DHPM_BUILD_TYPE=flash_sdram_xip -DCMAKE_BUILD_TYPE=debug -DEXTRA_C_FLAGS="-Werror";cmake --build build
+
+  build_bouffalolab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+
+      - name: Download bouffalo_sdk
+        run: |
+          cd ~
+          git clone https://github.com/bouffalolab/bouffalo_sdk.git
+
+      - name: Download RISC-V toolchain
+        run: |
+          cd ~
+          git clone https://github.com/bouffalolab/toolchain_gcc_t-head_linux.git
+
+      - name: Build bouffalo demo
+        run: |
+          cd tests/bouffalolab
+          export BL_SDK_BASE=~/bouffalo_sdk
+          export PATH=~/toolchain_gcc_t-head_linux/bin:$PATH
+          make CHIP=bl616 BOARD=bl616dk -j12
 
   build_espressif:
     strategy:
