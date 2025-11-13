@@ -88,6 +88,13 @@ USB Host ASIX 网卡
 .. figure:: img/usbhost_ax88772_1.png
 .. figure:: img/usbhost_ax88772_2.png
 
+USB Host RNDIS 网卡
+-----------------------
+
+演示 USB Host 驱动手机，手机开启 USB 共享网络即可使用 RNDIS 。
+
+.. figure:: img/usbhost_rndis.png
+
 USB Host WIFI
 -----------------------
 
