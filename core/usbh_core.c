@@ -556,15 +556,16 @@ int usbh_enumerate(struct usbh_hubport *hport)
         struct usbh_class_driver *class_driver = (struct usbh_class_driver *)usbh_find_class_driver(intf_desc->bInterfaceClass, intf_desc->bInterfaceSubClass, intf_desc->bInterfaceProtocol, hport->device_desc.idVendor, hport->device_desc.idProduct);
 
         if (class_driver == NULL) {
-            USB_LOG_ERR("do not support Class:0x%02x,Subclass:0x%02x,Protocl:0x%02x\r\n",
+            USB_LOG_ERR("Do not support Class:0x%02x, Subclass:0x%02x, Protocl:0x%02x on interface %u\r\n",
                         intf_desc->bInterfaceClass,
                         intf_desc->bInterfaceSubClass,
-                        intf_desc->bInterfaceProtocol);
+                        intf_desc->bInterfaceProtocol,
+                        i);
             hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_UNSUPPORTED);
             continue;
         }
         hport->config.intf[i].class_driver = class_driver;
-        USB_LOG_INFO("Loading %s class driver\r\n", class_driver->driver_name);
+        USB_LOG_INFO("Loading %s class driver on interface %u\r\n", class_driver->driver_name, i);
         ret = CLASS_CONNECT(hport, i);
         if (ret >= 0) {
             hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_START);
@@ -583,6 +584,7 @@ void usbh_hubport_release(struct usbh_hubport *hport)
 {
     if (hport->connected) {
         hport->connected = false;
+        usbh_kill_urb(&hport->ep0_urb);
         usbh_free_devaddr(hport);
         for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
             if (hport->config.intf[i].class_driver && hport->config.intf[i].class_driver->disconnect) {
@@ -591,7 +593,6 @@ void usbh_hubport_release(struct usbh_hubport *hport)
             hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_STOP);
         }
         hport->config.config_desc.bNumInterfaces = 0;
-        usbh_kill_urb(&hport->ep0_urb);
         if (hport->mutex) {
             usb_osal_mutex_delete(hport->mutex);
         }
