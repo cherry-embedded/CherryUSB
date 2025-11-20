@@ -94,7 +94,7 @@ static int usbh_free_devaddr(struct usbh_hubport *hport)
     return 0;
 }
 
-static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subclass, uint8_t protocol,
+static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uint8_t subclass, uint8_t protocol, uint8_t intf,
                                                               uint16_t vid, uint16_t pid)
 {
     struct usbh_class_info *index = NULL;
@@ -107,6 +107,9 @@ static const struct usbh_class_driver *usbh_find_class_driver(uint8_t class, uin
             continue;
         }
         if ((index->match_flags & USB_CLASS_MATCH_INTF_PROTOCOL) && !(index->bInterfaceProtocol == protocol)) {
+            continue;
+        }
+        if ((index->match_flags & USB_CLASS_MATCH_INTF_NUM) && !(index->bInterfaceNumber == intf)) {
             continue;
         }
         if (index->match_flags & USB_CLASS_MATCH_VID_PID && index->id_table) {
@@ -553,7 +556,14 @@ int usbh_enumerate(struct usbh_hubport *hport)
     for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
         intf_desc = &hport->config.intf[i].altsetting[0].intf_desc;
 
-        struct usbh_class_driver *class_driver = (struct usbh_class_driver *)usbh_find_class_driver(intf_desc->bInterfaceClass, intf_desc->bInterfaceSubClass, intf_desc->bInterfaceProtocol, hport->device_desc.idVendor, hport->device_desc.idProduct);
+        USB_ASSERT_MSG(intf_desc->bInterfaceNumber == i, "Interface number mismatch, do not support non-standard device\r\n");
+
+        struct usbh_class_driver *class_driver = (struct usbh_class_driver *)usbh_find_class_driver(intf_desc->bInterfaceClass,
+                                                                                                    intf_desc->bInterfaceSubClass,
+                                                                                                    intf_desc->bInterfaceProtocol,
+                                                                                                    intf_desc->bInterfaceNumber,
+                                                                                                    hport->device_desc.idVendor,
+                                                                                                    hport->device_desc.idProduct);
 
         if (class_driver == NULL) {
             USB_LOG_ERR("Do not support Class:0x%02x, Subclass:0x%02x, Protocl:0x%02x on interface %u\r\n",
