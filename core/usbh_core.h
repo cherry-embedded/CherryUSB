@@ -33,6 +33,7 @@ extern "C" {
 #define USB_CLASS_MATCH_INTF_CLASS    0x0004
 #define USB_CLASS_MATCH_INTF_SUBCLASS 0x0008
 #define USB_CLASS_MATCH_INTF_PROTOCOL 0x0010
+#define USB_CLASS_MATCH_INTF_NUM      0x0020
 #define USB_CLASS_MATCH_VID_PID       (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT)
 
 #define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
@@ -65,6 +66,7 @@ struct usbh_class_info {
     uint8_t bInterfaceClass;       /* Base device class code */
     uint8_t bInterfaceSubClass;    /* Sub-class, depends on base class. Eg. */
     uint8_t bInterfaceProtocol;    /* Protocol, depends on base class. Eg. */
+    uint8_t bInterfaceNumber;      /* Interface number */
     const uint16_t (*id_table)[2]; /* List of Vendor/Product ID pairs */
     const struct usbh_class_driver *class_driver;
 };
