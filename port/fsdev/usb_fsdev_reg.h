@@ -1681,4 +1681,19 @@ typedef struct
 #define PCD_GET_EP_DBUF0_CNT(USBx, bEpNum)     (PCD_GET_EP_TX_CNT((USBx), (bEpNum)))
 #define PCD_GET_EP_DBUF1_CNT(USBx, bEpNum)     (PCD_GET_EP_RX_CNT((USBx), (bEpNum)))
 
+#define PCD_FREE_USER_BUFFER(USBx, bEpNum, bDir) \
+  do { \
+    if ((bDir) == 0U) \
+    { \
+      /* OUT double buffered endpoint */ \
+      PCD_TX_DTOG((USBx), (bEpNum)); \
+    } \
+    else if ((bDir) == 1U) \
+    { \
+      /* IN double buffered endpoint */ \
+      PCD_RX_DTOG((USBx), (bEpNum)); \
+    } \
+  } while(0)
+
+  
 #endif
