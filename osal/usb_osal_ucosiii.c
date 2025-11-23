@@ -263,6 +263,7 @@ void usb_osal_mq_delete(usb_osal_mq_t mq)
     CPU_SR_ALLOC();
 
     CPU_CRITICAL_ENTER();
+    OSQFlush((OS_Q *)mq, &err);
     OSQDel((OS_Q *)mq, OS_OPT_DEL_ALWAYS, &err);
     usb_osal_free(mq);
     CPU_CRITICAL_EXIT();
@@ -404,7 +405,7 @@ void usb_osal_msleep(uint32_t delay)
 {
     OS_ERR err;
 
-    OSTimeDlyHMSM(0, 0, 0, delay, OS_OPT_TIME_HMSM_STRICT, &err);
+    OSTimeDlyHMSM(0, 0, 0, delay, OS_OPT_TIME_HMSM_NON_STRICT, &err);
 }
 
 void *usb_osal_malloc(size_t size)
