@@ -318,4 +318,7 @@
 #define usb_ramaddr2phyaddr(addr) (addr)
 #endif
 
+/* Enable OTG support, only support hpmicro now */
+// #define CONFIG_USB_OTG_ENABLE
+
 #endif

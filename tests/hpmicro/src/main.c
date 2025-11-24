@@ -14,6 +14,7 @@
 #include "board.h"
 #include "hpm_clock_drv.h"
 #include "hpm_l1c_drv.h"
+#include "hpm_gpio_drv.h"
 #include "shell.h"
 #include "usbh_core.h"
 #include "lwip/tcpip.h"
@@ -46,8 +47,13 @@ int main(void)
 
     uvc2lcd_init();
 #endif
-    usbh_initialize(0, CONFIG_HPM_USBH_BASE, NULL);
 
+#ifndef CONFIG_USB_OTG_ENABLE
+    usbh_initialize(0, CONFIG_HPM_USBH_BASE, NULL);
+#else
+    extern void cdc_acm_otg_init(uint8_t busid, uintptr_t reg_base);
+    cdc_acm_otg_init(0, CONFIG_HPM_USBH_BASE);
+#endif
     if (pdPASS != xTaskCreate(task_start, "task_start", 1024U, NULL, task_start_PRIORITY, NULL)) {
         printf("Task start creation failed!\r\n");
         for (;;) {

@@ -12,6 +12,10 @@
 extern "C" {
 #endif
 
+#define USBOTG_MODE_HOST   0
+#define USBOTG_MODE_DEVICE 1
+#define USBOTG_MODE_OTG    2
+
 /**
  * @brief usb otg controller hardware or gpio id simulator init.
  *
@@ -24,12 +28,6 @@ int usb_otg_init(uint8_t busid);
  * @return On success will return 0, and others indicate fail.
  */
 int usb_otg_deinit(uint8_t busid);
-/**
- * @brief get current role mode.
- *
- * @return return USBOTG_MODE_HOST or USBOTG_MODE_DEVICE.
- */
-uint8_t usbotg_get_current_mode(uint8_t busid);
 
 /* called by user */
 void USBOTG_IRQHandler(uint8_t busid);
