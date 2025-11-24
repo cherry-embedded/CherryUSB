@@ -1544,11 +1544,7 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
     int ret;
     struct usbd_bus *bus;
 
-    if (busid >= CONFIG_USBDEV_MAX_BUS) {
-        USB_LOG_ERR("bus overflow\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(busid < CONFIG_USBDEV_MAX_BUS, "bus overflow\r\n");
 
     bus = &g_usbdev_bus[busid];
     bus->reg_base = reg_base;
@@ -1577,22 +1573,17 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 
 int usbd_deinitialize(uint8_t busid)
 {
-    if (busid >= CONFIG_USBDEV_MAX_BUS) {
-        USB_LOG_ERR("bus overflow\r\n");
-        while (1) {
-        }
-    }
+    USB_ASSERT_MSG(busid < CONFIG_USBDEV_MAX_BUS, "bus overflow\r\n");
 
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_DEINIT);
     usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
     usb_dc_deinit(busid);
-    g_usbd_core[busid].intf_offset = 0;
 #ifdef CONFIG_USBDEV_EP0_THREAD
-    if (g_usbd_core[busid].usbd_ep0_mq) {
-        usb_osal_mq_delete(g_usbd_core[busid].usbd_ep0_mq);
-    }
     if (g_usbd_core[busid].usbd_ep0_thread) {
         usb_osal_thread_delete(g_usbd_core[busid].usbd_ep0_thread);
+    }
+    if (g_usbd_core[busid].usbd_ep0_mq) {
+        usb_osal_mq_delete(g_usbd_core[busid].usbd_ep0_mq);
     }
 #endif
 
