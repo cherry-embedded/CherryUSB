@@ -10,22 +10,17 @@
 extern "C" {
 #endif
 
-#define USBOTG_MODE_UNKNOWN 0
-#define USBOTG_MODE_OTG     1
-#define USBOTG_MODE_HOST    2
-#define USBOTG_MODE_DEVICE  3
-
 #include "usbd_core.h"
 #include "usbh_core.h"
 #include "usb_otg.h"
 
-int usbotg_initialize(uint8_t otg_mode, uint8_t busid, uint32_t reg_base,
-                      int (*usbh_initialize)(uint8_t busid, uint32_t reg_base),
-                      int (*usbd_initialize)(uint8_t busid, uint32_t reg_base));
-int usbotg_deinitialize(uint8_t busid, uint32_t reg_base);
+int usbotg_initialize(uint8_t busid, uint32_t reg_base, void *device_event_callback, void *host_event_callback);
+int usbotg_deinitialize(uint8_t busid);
 
 /* called by user */
-void usbotg_trigger_role_change(uint8_t busid);
+void usbotg_trigger_role_change(uint8_t busid, uint8_t mode);
+
+void USBOTG_IRQHandler(uint8_t busid);
 
 #ifdef __cplusplus
 }

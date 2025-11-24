@@ -46,7 +46,9 @@ int main(void)
 
     uvc2lcd_init();
 #endif
-    usbh_initialize(0, CONFIG_HPM_USBH_BASE);
+    //usbh_initialize(0, CONFIG_HPM_USBH_BASE);
+    extern void cdc_acm_otg_init(uint8_t busid, uintptr_t reg_base);
+    cdc_acm_otg_init(0, CONFIG_HPM_USBH_BASE);
 
     if (pdPASS != xTaskCreate(task_start, "task_start", 1024U, NULL, task_start_PRIORITY, NULL)) {
         printf("Task start creation failed!\r\n");
