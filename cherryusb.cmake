@@ -340,6 +340,10 @@ if(CONFIG_CHERRYUSB_HOST)
     endif()
 endif()
 
+if(CONFIG_CHERRYUSB_DEVICE AND CONFIG_CHERRYUSB_HOST)
+list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/core/usbotg_core.c)
+endif()
+
 if(DEFINED CONFIG_CHERRYUSB_OSAL)
     if("${CONFIG_CHERRYUSB_OSAL}" STREQUAL "freertos")
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/osal/usb_osal_freertos.c)

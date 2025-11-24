@@ -31,6 +31,8 @@ sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_CDC_RNDIS)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_ASIX)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_RTL8152)
 
+# sdk_compile_definitions(-DCONFIG_USB_OTG_ENABLE)
+
 sdk_compile_options("-O2")
 
 sdk_inc(inc)
@@ -40,6 +42,7 @@ sdk_app_src(../../demo/usb_host.c)
 
 sdk_inc(src/iperf)
 sdk_app_src(src/iperf/iperf.c src/iperf/iperf_cli.c src/iperf/utils_getopt.c src/ping.c)
+sdk_app_src(src/cdc_acm_otg_template.c)
 
 set(CONFIG_CHERRYMP 1)
 set(CONFIG_CHERRYUSB 1)
