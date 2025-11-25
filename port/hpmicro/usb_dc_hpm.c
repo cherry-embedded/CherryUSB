@@ -103,7 +103,7 @@ int usb_dc_init(uint8_t busid)
 
     usb_device_init(g_hpm_udc[busid].handle, int_mask);
 #ifdef CONFIG_USB_OTG_ENABLE
-    g_hpm_udc[busid].handle->regs->OTGSC |= USB_OTGSC_IDIE_MASK;
+    usb_otgsc_enable_id_chg_int(g_hpm_udc[busid].handle->regs);
 #endif
     usb_dc_isr_connect(busid);
 
