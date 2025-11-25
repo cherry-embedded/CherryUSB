@@ -29,6 +29,21 @@
 - esp32p4：一个 USB2.0 内置全速 PHY 芯片，一个 USB2.0 内置高速 PHY 芯片，支持主从机。
 - 默认 demo 采用组件库安装的形式，在 https://components.espressif.com/ 中搜索 cherryusb 即可
 
+ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发环境。
+
+- ctrl + shift + p 选择 ESP-IDF 欢迎界面，然后选择 Component mananger
+
+.. figure:: img/esp1.png
+
+- 找到 cherryusb 并安装
+
+.. figure:: img/esp2.png
+
+- 打开 menuconfig，并打开 cherryusb 的配置，根据实际情况选择主机或者从机模式
+
+.. figure:: img/esp3.png
+.. figure:: img/esp4.png
+
 基于飞腾派系列芯片（官方 SDK 支持）
 -----------------------------------
 
