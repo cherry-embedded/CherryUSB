@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>usbd_adb &mdash; CherryUSB 1.5.3 documentation</title>
+  <title>OTG 功能的使用 &mdash; CherryUSB 1.5.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
@@ -19,8 +19,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="usbh_serial" href="usbh_serial.html" />
-    <link rel="prev" title="usbd_webusb" href="usbd_webusb.html" /> 
+    <link rel="next" title="OHCI" href="../usbip/ohci.html" />
+    <link rel="prev" title="vendor host 驱动编写" href="usbh_vendor.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -90,11 +90,7 @@
 <li class="toctree-l1"><a class="reference internal" href="usbd_video.html">usbd_video</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_winusb.html">usbd_winusb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_webusb.html">usbd_webusb</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">usbd_adb</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#adb">进入 adb</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">退出 adb</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_adb.html">usbd_adb</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_serial.html">usbh_serial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_hid.html">usbh_hid</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_msc.html">usbh_msc</a></li>
@@ -103,7 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="usbh_wifi.html">usbh_wifi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_vendor.html">vendor device 驱动编写</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_vendor.html">vendor host 驱动编写</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usb_otg.html">OTG 功能的使用</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">OTG 功能的使用</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
@@ -152,9 +148,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">usbd_adb</li>
+      <li class="breadcrumb-item active">OTG 功能的使用</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/demo/usbd_adb.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/demo/usb_otg.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -162,44 +158,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="usbd-adb">
-<h1>usbd_adb<a class="headerlink" href="#usbd-adb" title="Link to this heading"></a></h1>
-<p>本节主要介绍如何使用 adb device。支持 <strong>cherrysh</strong> 和 rt-thread <strong>msh</strong>，只需要在 main 中添加以下初始化即可。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">cherryadb_init</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">xxxxx</span><span class="p">);</span>
-</pre></div>
+  <section id="otg">
+<h1>OTG 功能的使用<a class="headerlink" href="#otg" title="Link to this heading"></a></h1>
+<p>如果需要使用 OTG 功能，首先使用的芯片需要支持 ID 检测功能，然后使能 <code class="docutils literal notranslate"><span class="pre">CONFIG_USB_OTG_ENABLE</span></code> 宏，将之前的例程中 <code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code>
+替换成 <code class="docutils literal notranslate"><span class="pre">usbotg_initialize</span></code> 即可。</p>
+<p>ID 检测电路根据不同的 USB 接口类型有所不同，常见的有 micro-USB 和 USB-C 两种接口类型。
+- 如果是 micro-USB 接口，则将 ID 线连接到芯片的 ID GPIO 引脚，并使能 ID 功能即可。
+- 如果是 USB-C 接口，由于没有 ID 引脚，则需要借助 CC 电路进行检测，常见电路图如下所示（DNP 表示不焊接）：</p>
+<figure class="align-default">
+<img alt="../_images/otg.png" src="../_images/otg.png" />
+</figure>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>使用此功能需要保证芯片硬件支持 ID 检测 和 PWR 功能</p>
 </div>
-<p>如果使用 rt-thread，还需要在 menuconfig 中使能 adb device。</p>
-<figure class="align-default">
-<img alt="../_images/rtt_adb_shell1.png" src="../_images/rtt_adb_shell1.png" />
-</figure>
-<section id="adb">
-<h2>进入 adb<a class="headerlink" href="#adb" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>使用 <strong>cherrysh</strong> 时枚举完成以后自动进入 adb 模式</p></li>
-<li><p>使用 <strong>msh</strong> 需要在 <strong>msh</strong> 中输入 <code class="docutils literal notranslate"><span class="pre">adb_enter</span></code> 进入 adb 模式</p></li>
-</ul>
-</section>
-<section id="id1">
-<h2>退出 adb<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>使用 <strong>cherrysh</strong> 时输入 <code class="docutils literal notranslate"><span class="pre">exit</span></code> 退出 adb 模式</p></li>
-<li><p>使用 <strong>msh</strong> 需要在 <strong>msh</strong> 中输入 <code class="docutils literal notranslate"><span class="pre">adb_exit</span></code> 退出 adb 模式</p></li>
-</ul>
-<figure class="align-default">
-<img alt="../_images/cherryadb.png" src="../_images/cherryadb.png" />
-</figure>
-<figure class="align-default">
-<img alt="../_images/rtt_adb_shell2.png" src="../_images/rtt_adb_shell2.png" />
-</figure>
-</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="usbd_webusb.html" class="btn btn-neutral float-left" title="usbd_webusb" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="usbh_serial.html" class="btn btn-neutral float-right" title="usbh_serial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="usbh_vendor.html" class="btn btn-neutral float-left" title="vendor host 驱动编写" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../usbip/ohci.html" class="btn btn-neutral float-right" title="OHCI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
