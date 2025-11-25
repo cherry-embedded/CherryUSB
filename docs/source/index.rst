@@ -44,10 +44,9 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
 
 **其他相关链接**
 
-- **CherryUSB 大纲** https://www.bilibili.com/video/BV1st4y1H7K2
-- **CherryUSB 从机协议栈视频教程** https://www.bilibili.com/video/BV1Ef4y1t73d
-- **CherryUSB 腾讯会议** https://www.bilibili.com/video/BV16x421y7mM
-- **github** https://github.com/sakumisu/CherryUSB
+- **视频教程**：  https://www.bilibili.com/cheese/play/ss707687201
+- **github** ： https://github.com/sakumisu/CherryUSB
+- **CherryUSB原理性分析和应用实践-汉斯期刊**： https://www.hanspub.org/journal/paperinformation?paperid=126903
 
 .. toctree::
    :maxdepth: 1
@@ -116,6 +115,7 @@ CherryUSB 是一个小而美的、可移植性高的、用于嵌入式系统的 
    demo/usbh_wifi
    demo/usbd_vendor
    demo/usbh_vendor
+   demo/usb_otg
 
 .. toctree::
    :maxdepth: 1
