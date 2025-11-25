@@ -149,3 +149,17 @@ v1.5.2
 - 删除所有 CONFIG_USBDEV_EP_NUM & CONFIG_USBHOST_PIPE_NUM，不再使用，因为 IP 本身会携带这些信息，或者厂家 SDK 提供了对应的宏
 - CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 默认使用 2 减少内存，只有 UVC 和UAC 使用（商业收费），所以不需要开很大
 - urb interval 从 u8 改 u32，最大支持 2^15 * 125us
+
+v1.5.3
+----------------------
+
+- 增加 mongoose demo
+- **从机支持自定义 ep0 mps，仅支持商业性 IP**
+- 主机增加 UVC bulk支持， **接口号匹配驱动功能**， **主机分配地址功能改成循环自增模式** ，重构 lsusb 命令
+- 主机控制传输增加 retry 机制，部分 device 通信不稳定，retry 次数参考 linux
+- **主机 rndis 驱动增加非标 02/02/ff 接口驱动匹配**
+- musb IP 关闭 multipoint feature 支持
+- hpmicro、chipidea dcache 支持
+- idf host msc 支持
+- otg 框架重构，当前 port 仅支持 hpmicro
+- CI 编译功能，支持 hpmicro/espressif/bouffalolab

@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>版本说明 &mdash; CherryUSB 1.5.2 documentation</title>
+  <title>版本说明 &mdash; CherryUSB 1.5.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=73275c37"></script>
+      <script src="_static/documentation_options.js?v=d75fd82e"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -136,6 +136,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-0">v1.5.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-1">v1.5.1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-2">v1.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-3">v1.5.3</a></li>
 </ul>
 </li>
 </ul>
@@ -333,6 +334,21 @@
 <li><p>删除所有 CONFIG_USBDEV_EP_NUM &amp; CONFIG_USBHOST_PIPE_NUM，不再使用，因为 IP 本身会携带这些信息，或者厂家 SDK 提供了对应的宏</p></li>
 <li><p>CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 默认使用 2 减少内存，只有 UVC 和UAC 使用（商业收费），所以不需要开很大</p></li>
 <li><p>urb interval 从 u8 改 u32，最大支持 2^15 * 125us</p></li>
+</ul>
+</section>
+<section id="v1-5-3">
+<h2>v1.5.3<a class="headerlink" href="#v1-5-3" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>增加 mongoose demo</p></li>
+<li><p><strong>从机支持自定义 ep0 mps，仅支持商业性 IP</strong></p></li>
+<li><p>主机增加 UVC bulk支持， <strong>接口号匹配驱动功能</strong>， <strong>主机分配地址功能改成循环自增模式</strong> ，重构 lsusb 命令</p></li>
+<li><p>主机控制传输增加 retry 机制，部分 device 通信不稳定，retry 次数参考 linux</p></li>
+<li><p><strong>主机 rndis 驱动增加非标 02/02/ff 接口驱动匹配</strong></p></li>
+<li><p>musb IP 关闭 multipoint feature 支持</p></li>
+<li><p>hpmicro、chipidea dcache 支持</p></li>
+<li><p>idf host msc 支持</p></li>
+<li><p>otg 框架重构，当前 port 仅支持 hpmicro</p></li>
+<li><p>CI 编译功能，支持 hpmicro/espressif/bouffalolab</p></li>
 </ul>
 </section>
 </section>
