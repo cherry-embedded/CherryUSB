@@ -524,31 +524,36 @@ static uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
     return speed;
 }
 
-#if 0
 static int musb_pipe_alloc(void)
 {
     int chidx;
+    uintptr_t flags;
 
+    flags = usb_osal_enter_critical_section();
     for (chidx = 1; chidx < CONFIG_USB_MUSB_PIPE_NUM; chidx++) {
         if (!g_musb_hcd[bus->hcd.hcd_id].pipe_pool[chidx].inuse) {
             g_musb_hcd[bus->hcd.hcd_id].pipe_pool[chidx].inuse = true;
+            usb_osal_leave_critical_section(flags);
             return chidx;
         }
     }
+    usb_osal_leave_critical_section(flags);
 
     return -1;
 }
-#endif
 
 static void musb_pipe_free(struct musb_pipe *pipe)
 {
+    uintptr_t flags;
+
+    flags = usb_osal_enter_critical_section();
     if (pipe->urb) {
         pipe->urb->hcpriv = NULL;
         pipe->urb = NULL;
     }
-#if 0
+
     pipe->inuse = false;
-#endif
+    usb_osal_leave_critical_section(flags);
 }
 
 __WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
@@ -764,10 +769,9 @@ int usbh_submit_urb(struct usbh_urb *urb)
     if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
         chidx = 0;
     } else {
-        chidx = (urb->ep->bEndpointAddress & 0x0f);
-
-        if (chidx > (CONFIG_USB_MUSB_PIPE_NUM - 1)) {
-            return -USB_ERR_RANGE;
+        chidx = musb_pipe_alloc();
+        if (chidx == -1) {
+            return -USB_ERR_NOMEM;
         }
     }
 
@@ -873,8 +877,6 @@ static void musb_urb_waitup(struct usbh_urb *urb)
     struct musb_pipe *pipe;
 
     pipe = (struct musb_pipe *)urb->hcpriv;
-    pipe->urb = NULL;
-    urb->hcpriv = NULL;
 
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
