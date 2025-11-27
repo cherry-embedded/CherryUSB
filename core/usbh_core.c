@@ -418,7 +418,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
 
     USB_LOG_INFO("The device has %d bNumConfigurations\r\n", ((struct usb_device_descriptor *)ep0_request_buffer[hport->bus->busid])->bNumConfigurations);
 
-    config_index = 0;
+    config_index = usbh_get_hport_active_config_index(hport);
     USB_LOG_DBG("The device selects config %d\r\n", config_index);
 
     /* Read the first 9 bytes of the config descriptor */
@@ -1207,4 +1207,9 @@ int lsusb(int argc, char **argv)
     }
 
     return 0;
+}
+
+__WEAK uint8_t usbh_get_hport_active_config_index(struct usbh_hubport *hport)
+{
+    return 0; // Default to configuration index 0
 }

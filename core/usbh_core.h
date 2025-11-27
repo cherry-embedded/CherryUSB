@@ -313,6 +313,7 @@ int usbh_initialize(uint8_t busid, uintptr_t reg_base, usbh_event_handler_t even
 int usbh_deinitialize(uint8_t busid);
 void *usbh_find_class_instance(const char *devname);
 struct usbh_hubport *usbh_find_hubport(uint8_t busid, uint8_t hub_index, uint8_t hub_port);
+uint8_t usbh_get_hport_active_config_index(struct usbh_hubport *hport);
 
 int lsusb(int argc, char **argv);
 
