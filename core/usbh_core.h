@@ -170,6 +170,7 @@ struct usbh_bus {
     struct usbh_devaddr_map devgen;
     usb_osal_thread_t hub_thread;
     usb_osal_mq_t hub_mq;
+    usb_osal_mutex_t mutex;
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,
