@@ -688,7 +688,9 @@ static void usbh_hub_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
         if (ret < 0) {
             continue;
         }
+        usb_osal_mutex_take(bus->mutex);
         usbh_hub_events(hub);
+        usb_osal_mutex_give(bus->mutex);
     }
 }
 
@@ -718,6 +720,12 @@ int usbh_hub_initialize(struct usbh_bus *bus)
         return -1;
     }
 
+    bus->mutex = usb_osal_mutex_create();
+    if (bus->mutex == NULL) {
+        USB_LOG_ERR("Failed to create bus mutex\r\n");
+        return -1;
+    }
+
     snprintf(thread_name, 32, "usbh_hub%u", bus->busid);
     bus->hub_thread = usb_osal_thread_create(thread_name, CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO, usbh_hub_thread, bus);
     if (bus->hub_thread == NULL) {
@@ -732,6 +740,7 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
     struct usbh_hubport *hport;
     struct usbh_hub *hub;
 
+    usb_osal_mutex_take(bus->mutex);
     hub = &bus->hcd.roothub;
     for (uint8_t port = 0; port < hub->nports; port++) {
         hport = &hub->child[port];
@@ -744,6 +753,8 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
     usb_osal_thread_delete(bus->hub_thread);
     usb_osal_mq_delete(bus->hub_mq);
 
+    usb_osal_mutex_give(bus->mutex);
+    usb_osal_mutex_delete(bus->mutex);
     return 0;
 }
 
