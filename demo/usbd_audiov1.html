@@ -48,10 +48,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/demo.html">基于现有 demo 快速验证</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quick_start/esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../opensource.html">官方开源项目分享</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../share.html">开发者经验/开源项目分享</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/share.html">开发者经验/开源项目分享</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/opensource.html">官方开源项目分享</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
@@ -160,10 +159,11 @@
              
   <section id="usbd-audiov1">
 <h1>usbd_audiov1<a class="headerlink" href="#usbd-audiov1" title="Link to this heading"></a></h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>在使用windows 时，当修改描述符任意参数时，必须同步修改字符串描述符，并且卸载驱动，否则windows会认为设备未更改，继续使用旧的驱动，导致无法识别设备。Linux 不受此限制。</p>
-</div>
+<p>在使用 UAC1.0 时，需要注意以下几点：</p>
+<ul class="simple">
+<li><p>在使用windows 时，当修改描述符任意参数时，必须同步修改字符串描述符，并且卸载驱动，否则windows会认为设备未更改，继续使用旧的驱动，导致无法识别设备。Linux 不受此限制。</p></li>
+<li><p>QQ 群文件中下载 RemoveGhostDev64.exe 可以自动删除所有 USB 注册的驱动信息，无需第一步</p></li>
+</ul>
 </section>
 
 

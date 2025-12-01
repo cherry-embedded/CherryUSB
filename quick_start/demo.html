@@ -64,10 +64,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="esp.html">基于 ESP-Registry 开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../q%26a.html">Q &amp; A</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../opensource.html">官方开源项目分享</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../share.html">开发者经验/开源项目分享</a></li>
+<li class="toctree-l1"><a class="reference internal" href="q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="share.html">开发者经验/开源项目分享</a></li>
+<li class="toctree-l1"><a class="reference internal" href="opensource.html">官方开源项目分享</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
@@ -202,6 +201,28 @@
 <li><p>esp32p4：一个 USB2.0 内置全速 PHY 芯片，一个 USB2.0 内置高速 PHY 芯片，支持主从机。</p></li>
 <li><p>默认 demo 采用组件库安装的形式，在 <a class="reference external" href="https://components.espressif.com/">https://components.espressif.com/</a> 中搜索 cherryusb 即可</p></li>
 </ul>
+<p>ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发环境。</p>
+<ul class="simple">
+<li><p>ctrl + shift + p 选择 ESP-IDF 欢迎界面，然后选择 Component mananger</p></li>
+</ul>
+<figure class="align-default">
+<img alt="../_images/esp1.png" src="../_images/esp1.png" />
+</figure>
+<ul class="simple">
+<li><p>找到 cherryusb 并安装</p></li>
+</ul>
+<figure class="align-default">
+<img alt="../_images/esp2.png" src="../_images/esp2.png" />
+</figure>
+<ul class="simple">
+<li><p>打开 menuconfig，并打开 cherryusb 的配置，根据实际情况选择主机或者从机模式</p></li>
+</ul>
+<figure class="align-default">
+<img alt="../_images/esp3.png" src="../_images/esp3.png" />
+</figure>
+<figure class="align-default">
+<img alt="../_images/esp4.png" src="../_images/esp4.png" />
+</figure>
 </section>
 <section id="sdk">
 <h2>基于飞腾派系列芯片（官方 SDK 支持）<a class="headerlink" href="#sdk" title="Link to this heading"></a></h2>
