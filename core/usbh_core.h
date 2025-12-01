@@ -61,6 +61,8 @@ extern "C" {
                      USB_GET_MULT(ep_desc->wMaxPacketSize));                 \
     } while (0)
 
+typedef void (*usbh_event_handler_t)(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event);
+
 struct usbh_class_info {
     uint8_t match_flags;           /* Used for product specific matches; range is inclusive */
     uint8_t bInterfaceClass;       /* Base device class code */
@@ -171,6 +173,7 @@ struct usbh_bus {
     usb_osal_thread_t hub_thread;
     usb_osal_mq_t hub_mq;
     usb_osal_mutex_t mutex;
+    usbh_event_handler_t event_handler;
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,

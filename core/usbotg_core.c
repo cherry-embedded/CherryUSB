@@ -17,8 +17,8 @@ struct usbotg_core_priv {
     uint32_t reg_base;
     bool usbh_initialized;
     bool usbd_initialized;
-    void *device_event_callback;
-    void *host_event_callback;
+    usbd_event_handler_t device_event_callback;
+    usbh_event_handler_t host_event_callback;
     uint8_t current_mode;
     usb_osal_sem_t change_sem;
     usb_osal_thread_t change_thread;
@@ -75,7 +75,7 @@ static void usbotg_rolechange_thread(void *argument)
     }
 }
 
-int usbotg_initialize(uint8_t busid, uint32_t reg_base, void *device_event_callback, void *host_event_callback, uint8_t default_role)
+int usbotg_initialize(uint8_t busid, uint32_t reg_base, usbd_event_handler_t device_event_callback, usbd_event_handler_t host_event_callback, uint8_t default_role);
 {
     char thread_name[32] = { 0 };
 

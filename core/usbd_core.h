@@ -56,6 +56,7 @@ enum usbd_event_type {
 typedef int (*usbd_request_handler)(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len);
 typedef void (*usbd_endpoint_callback)(uint8_t busid, uint8_t ep, uint32_t nbytes);
 typedef void (*usbd_notify_handler)(uint8_t busid, uint8_t event, void *arg);
+typedef void (*usbd_event_handler_t)(uint8_t busid, uint8_t event);
 
 struct usbd_endpoint {
     uint8_t ep_addr;
@@ -115,7 +116,7 @@ bool usb_device_is_suspend(uint8_t busid);
 int usbd_send_remote_wakeup(uint8_t busid);
 uint8_t usbd_get_ep0_next_state(uint8_t busid);
 
-int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uint8_t busid, uint8_t event));
+int usbd_initialize(uint8_t busid, uintptr_t reg_base, usbd_event_handler_t event_handler);
 int usbd_deinitialize(uint8_t busid);
 
 #ifdef __cplusplus
