@@ -31,14 +31,14 @@ static void usbotg_host_initialize(uint8_t busid)
     }
 
     if (g_usbotg_core[busid].usbd_initialized) {
-        g_usbotg_core[busid].usbd_initialized = false;
         usbd_deinitialize(busid);
+        g_usbotg_core[busid].usbd_initialized = false;
     }
 
     USB_LOG_INFO("Switch to HOST mode\r\n");
 
-    usbh_initialize(busid, g_usbotg_core[busid].reg_base);
     g_usbotg_core[busid].usbh_initialized = true;
+    usbh_initialize(busid, g_usbotg_core[busid].reg_base);
 }
 
 static void usbotg_device_initialize(uint8_t busid)
@@ -48,14 +48,14 @@ static void usbotg_device_initialize(uint8_t busid)
     }
 
     if (g_usbotg_core[busid].usbh_initialized) {
-        g_usbotg_core[busid].usbh_initialized = false;
         usbh_deinitialize(busid);
+        g_usbotg_core[busid].usbh_initialized = false;
     }
 
     USB_LOG_INFO("Switch to DEVICE mode\r\n");
 
-    usbd_initialize(g_usbotg_core[busid].busid, g_usbotg_core[busid].reg_base, g_usbotg_core[busid].device_event_callback);
     g_usbotg_core[busid].usbd_initialized = true;
+    usbd_initialize(g_usbotg_core[busid].busid, g_usbotg_core[busid].reg_base, g_usbotg_core[busid].device_event_callback);
 }
 
 static void usbotg_rolechange_thread(void *argument)
@@ -75,7 +75,7 @@ static void usbotg_rolechange_thread(void *argument)
     }
 }
 
-int usbotg_initialize(uint8_t busid, uint32_t reg_base, usbd_event_handler_t device_event_callback, usbd_event_handler_t host_event_callback, uint8_t default_role);
+int usbotg_initialize(uint8_t busid, uint32_t reg_base, usbd_event_handler_t device_event_callback, usbh_event_handler_t host_event_callback, uint8_t default_role)
 {
     char thread_name[32] = { 0 };
 

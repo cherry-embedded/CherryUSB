@@ -1186,5 +1186,7 @@ int lsusb(int argc, char **argv)
 
 __WEAK uint8_t usbh_get_hport_active_config_index(struct usbh_hubport *hport)
 {
+    ARG_UNUSED(hport);
+
     return 0; // Default to configuration index 0
 }
