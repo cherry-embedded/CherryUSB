@@ -301,6 +301,8 @@ struct audio_entity_info audio_entity_table[] = {
       .ep = AUDIO_IN_EP },
 };
 
+// In windows, audio driver cannot remove auto, so when you modify any descriptor information, please modify string descriptors too.
+
 void audio_v1_init(uint8_t busid, uintptr_t reg_base)
 {
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
