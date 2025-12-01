@@ -202,7 +202,7 @@ struct usbh_bus {
     usb_osal_thread_t hub_thread;
     usb_osal_mq_t hub_mq;
     usb_osal_mutex_t mutex;
-    void (*event_handler)(uint8_t busid, uint8_t hub_index, uint8_t hub_port, uint8_t intf, uint8_t event);
+    usbh_event_handler_t event_handler;
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,

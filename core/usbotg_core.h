@@ -14,7 +14,7 @@ extern "C" {
 #include "usbh_core.h"
 #include "usb_otg.h"
 
-int usbotg_initialize(uint8_t busid, uint32_t reg_base, void *device_event_callback, void *host_event_callback, uint8_t default_role);
+int usbotg_initialize(uint8_t busid, uint32_t reg_base, usbd_event_handler_t device_event_callback, usbh_event_handler_t host_event_callback, uint8_t default_role);
 int usbotg_deinitialize(uint8_t busid);
 
 /* called by user */
