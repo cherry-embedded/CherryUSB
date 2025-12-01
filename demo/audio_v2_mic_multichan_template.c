@@ -22,7 +22,7 @@
 #define AUDIO_IN_CLOCK_ID 0x01
 #define AUDIO_IN_FU_ID    0x03
 
-#define AUDIO_IN_MAX_FREQ 16000
+#define AUDIO_IN_MAX_FREQ 96000
 #define HALF_WORD_BYTES   2  //2 half word (one channel)
 #define SAMPLE_BITS       16 //16 bit per channel
 
@@ -225,10 +225,22 @@ const uint8_t audio_v2_descriptor[] = {
 #endif
 
 static const uint8_t mic_default_sampling_freq_table[] = {
-    AUDIO_SAMPLE_FREQ_NUM(1),
+    AUDIO_SAMPLE_FREQ_NUM(5),
+    AUDIO_SAMPLE_FREQ_4B(8000),
+    AUDIO_SAMPLE_FREQ_4B(8000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
     AUDIO_SAMPLE_FREQ_4B(16000),
     AUDIO_SAMPLE_FREQ_4B(16000),
-    AUDIO_SAMPLE_FREQ_4B(0x00)
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(32000),
+    AUDIO_SAMPLE_FREQ_4B(32000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(48000),
+    AUDIO_SAMPLE_FREQ_4B(48000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
+    AUDIO_SAMPLE_FREQ_4B(96000),
+    AUDIO_SAMPLE_FREQ_4B(96000),
+    AUDIO_SAMPLE_FREQ_4B(0x00),
 };
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[AUDIO_IN_PACKET];
@@ -322,6 +334,8 @@ struct audio_entity_info audio_entity_table[] = {
       .bDescriptorSubtype = AUDIO_CONTROL_FEATURE_UNIT,
       .ep = AUDIO_IN_EP },
 };
+
+// In windows, audio driver cannot remove auto, so when you modify any descriptor information, please modify string descriptors too.
 
 void audio_v2_init(uint8_t busid, uintptr_t reg_base)
 {
