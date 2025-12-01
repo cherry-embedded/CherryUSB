@@ -797,7 +797,6 @@ int usb_hc_init(struct usbh_bus *bus)
 int usb_hc_deinit(struct usbh_bus *bus)
 {
     volatile uint32_t count = 0U;
-    uint32_t value;
 
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
@@ -805,27 +804,8 @@ int usb_hc_deinit(struct usbh_bus *bus)
     dwc2_flush_rxfifo(bus);
 
     /* Flush out any leftover queued requests. */
-    for (uint32_t i = 0U; i < g_dwc2_hcd[bus->hcd.hcd_id].hw_params.host_channels; i++) {
-        value = USB_OTG_HC(i)->HCCHAR;
-        value |= USB_OTG_HCCHAR_CHDIS;
-        value &= ~USB_OTG_HCCHAR_CHENA;
-        value &= ~USB_OTG_HCCHAR_EPDIR;
-        USB_OTG_HC(i)->HCCHAR = value;
-    }
-
-    /* Halt all channels to put them into a known state. */
-    for (uint32_t i = 0U; i < g_dwc2_hcd[bus->hcd.hcd_id].hw_params.host_channels; i++) {
-        value = USB_OTG_HC(i)->HCCHAR;
-        value |= USB_OTG_HCCHAR_CHDIS;
-        value |= USB_OTG_HCCHAR_CHENA;
-        value &= ~USB_OTG_HCCHAR_EPDIR;
-        USB_OTG_HC(i)->HCCHAR = value;
-
-        do {
-            if (++count > 1000U) {
-                return -USB_ERR_TIMEOUT;
-            }
-        } while ((USB_OTG_HC(i)->HCCHAR & USB_OTG_HCCHAR_CHENA) == USB_OTG_HCCHAR_CHENA);
+    for (uint8_t chidx = 0; chidx < g_dwc2_hcd[bus->hcd.hcd_id].hw_params.host_channels; chidx++) {
+        dwc2_halt(bus, chidx);
     }
 
     /* Disable all interrupts. */
