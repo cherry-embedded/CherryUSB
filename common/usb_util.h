@@ -185,8 +185,8 @@
         (field)[3] = (uint8_t)((value) >> 0);  \
     } while (0)
 
-#define WBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF)
-#define DBVAL(x) (x & 0xFF), ((x >> 8) & 0xFF), ((x >> 16) & 0xFF), ((x >> 24) & 0xFF)
+#define WBVAL(x) ((x) & 0xFF), (((x) >> 8) & 0xFF)
+#define DBVAL(x) ((x) & 0xFF), (((x) >> 8) & 0xFF), (((x) >> 16) & 0xFF), (((x) >> 24) & 0xFF)
 
 #define PP_NARG(...) \
     PP_NARG_(__VA_ARGS__, PP_RSEQ_N())

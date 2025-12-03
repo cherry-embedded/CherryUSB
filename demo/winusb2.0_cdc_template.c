@@ -6,6 +6,29 @@
 #include "usbd_core.h"
 #include "usbd_cdc_acm.h"
 
+#define WINUSB_VENDOR_CODE 0x17
+
+const uint8_t WINUSB_WCIDDescriptor[] = {
+    USB_MSOSV2_COMP_ID_SET_HEADER_DESCRIPTOR_INIT(10 + USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_MULTI_DESCRIPTOR_LEN),
+    USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_MULTI_DESCRIPTOR_INIT(0x00),
+};
+
+__ALIGN_BEGIN const uint8_t USBD_BinaryObjectStoreDescriptor[] = {
+    USB_BOS_HEADER_DESCRIPTOR_INIT(5 + USB_BOS_CAP_PLATFORM_WINUSB_DESCRIPTOR_LEN, 1),
+    USB_BOS_CAP_PLATFORM_WINUSB_DESCRIPTOR_INIT(WINUSB_VENDOR_CODE, sizeof(WINUSB_WCIDDescriptor)),
+};
+
+const struct usb_msosv2_descriptor msosv2_desc = {
+    .vendor_code = WINUSB_VENDOR_CODE,
+    .compat_id = WINUSB_WCIDDescriptor,
+    .compat_id_len = sizeof(WINUSB_WCIDDescriptor),
+};
+
+const struct usb_bos_descriptor bos_desc = {
+    .string = USBD_BinaryObjectStoreDescriptor,
+    .string_len = sizeof(USBD_BinaryObjectStoreDescriptor),
+};
+
 #define WINUSB_IN_EP  0x81
 #define WINUSB_OUT_EP 0x02
 
@@ -26,135 +49,6 @@
 #else
 #define WINUSB_EP_MPS 64
 #endif
-
-#define USBD_WINUSB_VENDOR_CODE 0x20
-
-#define USBD_WEBUSB_ENABLE 0
-#define USBD_BULK_ENABLE   1
-#define USBD_WINUSB_ENABLE 1
-
-/* WinUSB Microsoft OS 2.0 descriptor sizes */
-#define WINUSB_DESCRIPTOR_SET_HEADER_SIZE  10
-#define WINUSB_FUNCTION_SUBSET_HEADER_SIZE 8
-#define WINUSB_FEATURE_COMPATIBLE_ID_SIZE  20
-
-#define FUNCTION_SUBSET_LEN                160
-#define DEVICE_INTERFACE_GUIDS_FEATURE_LEN 132
-
-#define USBD_WINUSB_DESC_SET_LEN (WINUSB_DESCRIPTOR_SET_HEADER_SIZE + USBD_WEBUSB_ENABLE * FUNCTION_SUBSET_LEN + USBD_BULK_ENABLE * FUNCTION_SUBSET_LEN)
-
-__ALIGN_BEGIN const uint8_t USBD_WinUSBDescriptorSetDescriptor[] = {
-    WBVAL(WINUSB_DESCRIPTOR_SET_HEADER_SIZE), /* wLength */
-    WBVAL(WINUSB_SET_HEADER_DESCRIPTOR_TYPE), /* wDescriptorType */
-    0x00, 0x00, 0x03, 0x06, /* >= Win 8.1 */  /* dwWindowsVersion*/
-    WBVAL(USBD_WINUSB_DESC_SET_LEN),          /* wDescriptorSetTotalLength */
-#if (USBD_WEBUSB_ENABLE)
-    WBVAL(WINUSB_FUNCTION_SUBSET_HEADER_SIZE), // wLength
-    WBVAL(WINUSB_SUBSET_HEADER_FUNCTION_TYPE), // wDescriptorType
-    0,                                         // bFirstInterface USBD_WINUSB_IF_NUM
-    0,                                         // bReserved
-    WBVAL(FUNCTION_SUBSET_LEN),                // wSubsetLength
-    WBVAL(WINUSB_FEATURE_COMPATIBLE_ID_SIZE),  // wLength
-    WBVAL(WINUSB_FEATURE_COMPATIBLE_ID_TYPE),  // wDescriptorType
-    'W', 'I', 'N', 'U', 'S', 'B', 0, 0,        // CompatibleId
-    0, 0, 0, 0, 0, 0, 0, 0,                    // SubCompatibleId
-    WBVAL(DEVICE_INTERFACE_GUIDS_FEATURE_LEN), // wLength
-    WBVAL(WINUSB_FEATURE_REG_PROPERTY_TYPE),   // wDescriptorType
-    WBVAL(WINUSB_PROP_DATA_TYPE_REG_MULTI_SZ), // wPropertyDataType
-    WBVAL(42),                                 // wPropertyNameLength
-    'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0,
-    'I', 0, 'n', 0, 't', 0, 'e', 0, 'r', 0, 'f', 0, 'a', 0, 'c', 0, 'e', 0,
-    'G', 0, 'U', 0, 'I', 0, 'D', 0, 's', 0, 0, 0,
-    WBVAL(80), // wPropertyDataLength
-    '{', 0,
-    '9', 0, '2', 0, 'C', 0, 'E', 0, '6', 0, '4', 0, '6', 0, '2', 0, '-', 0,
-    '9', 0, 'C', 0, '7', 0, '7', 0, '-', 0,
-    '4', 0, '6', 0, 'F', 0, 'E', 0, '-', 0,
-    '9', 0, '3', 0, '3', 0, 'B', 0, '-',
-    0, '3', 0, '1', 0, 'C', 0, 'B', 0, '9', 0, 'C', 0, '5', 0, 'A', 0, 'A', 0, '3', 0, 'B', 0, '9', 0,
-    '}', 0, 0, 0, 0, 0
-#endif
-#if USBD_BULK_ENABLE
-    WBVAL(WINUSB_FUNCTION_SUBSET_HEADER_SIZE), /* wLength */
-    WBVAL(WINUSB_SUBSET_HEADER_FUNCTION_TYPE), /* wDescriptorType */
-    0,                                         /* bFirstInterface USBD_BULK_IF_NUM*/
-    0,                                         /* bReserved */
-    WBVAL(FUNCTION_SUBSET_LEN),                /* wSubsetLength */
-    WBVAL(WINUSB_FEATURE_COMPATIBLE_ID_SIZE),  /* wLength */
-    WBVAL(WINUSB_FEATURE_COMPATIBLE_ID_TYPE),  /* wDescriptorType */
-    'W', 'I', 'N', 'U', 'S', 'B', 0, 0,        /* CompatibleId*/
-    0, 0, 0, 0, 0, 0, 0, 0,                    /* SubCompatibleId*/
-    WBVAL(DEVICE_INTERFACE_GUIDS_FEATURE_LEN), /* wLength */
-    WBVAL(WINUSB_FEATURE_REG_PROPERTY_TYPE),   /* wDescriptorType */
-    WBVAL(WINUSB_PROP_DATA_TYPE_REG_MULTI_SZ), /* wPropertyDataType */
-    WBVAL(42),                                 /* wPropertyNameLength */
-    'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0,
-    'I', 0, 'n', 0, 't', 0, 'e', 0, 'r', 0, 'f', 0, 'a', 0, 'c', 0, 'e', 0,
-    'G', 0, 'U', 0, 'I', 0, 'D', 0, 's', 0, 0, 0,
-    WBVAL(80), /* wPropertyDataLength */
-    '{', 0,
-    'C', 0, 'D', 0, 'B', 0, '3', 0, 'B', 0, '5', 0, 'A', 0, 'D', 0, '-', 0,
-    '2', 0, '9', 0, '3', 0, 'B', 0, '-', 0,
-    '4', 0, '6', 0, '6', 0, '3', 0, '-', 0,
-    'A', 0, 'A', 0, '3', 0, '6', 0, '-',
-    0, '1', 0, 'A', 0, 'A', 0, 'E', 0, '4', 0, '6', 0, '4', 0, '6', 0, '3', 0, '7', 0, '7', 0, '6', 0,
-    '}', 0, 0, 0, 0, 0
-#endif
-};
-
-#define USBD_NUM_DEV_CAPABILITIES (USBD_WEBUSB_ENABLE + USBD_WINUSB_ENABLE)
-
-#define USBD_WEBUSB_DESC_LEN 24
-#define USBD_WINUSB_DESC_LEN 28
-
-#define USBD_BOS_WTOTALLENGTH (0x05 +                                      \
-                               USBD_WEBUSB_DESC_LEN * USBD_WEBUSB_ENABLE + \
-                               USBD_WINUSB_DESC_LEN * USBD_WINUSB_ENABLE)
-
-__ALIGN_BEGIN const uint8_t USBD_BinaryObjectStoreDescriptor[] = {
-    0x05,                         /* bLength */
-    0x0f,                         /* bDescriptorType */
-    WBVAL(USBD_BOS_WTOTALLENGTH), /* wTotalLength */
-    USBD_NUM_DEV_CAPABILITIES,    /* bNumDeviceCaps */
-#if (USBD_WEBUSB_ENABLE)
-    USBD_WEBUSB_DESC_LEN,           /* bLength */
-    0x10,                           /* bDescriptorType */
-    USB_DEVICE_CAPABILITY_PLATFORM, /* bDevCapabilityType */
-    0x00,                           /* bReserved */
-    0x38, 0xB6, 0x08, 0x34,         /* PlatformCapabilityUUID */
-    0xA9, 0x09, 0xA0, 0x47,
-    0x8B, 0xFD, 0xA0, 0x76,
-    0x88, 0x15, 0xB6, 0x65,
-    WBVAL(0x0100), /* 1.00 */ /* bcdVersion */
-    USBD_WINUSB_VENDOR_CODE,  /* bVendorCode */
-    0,                        /* iLandingPage */
-#endif
-#if (USBD_WINUSB_ENABLE)
-    USBD_WINUSB_DESC_LEN,           /* bLength */
-    0x10,                           /* bDescriptorType */
-    USB_DEVICE_CAPABILITY_PLATFORM, /* bDevCapabilityType */
-    0x00,                           /* bReserved */
-    0xDF, 0x60, 0xDD, 0xD8,         /* PlatformCapabilityUUID */
-    0x89, 0x45, 0xC7, 0x4C,
-    0x9C, 0xD2, 0x65, 0x9D,
-    0x9E, 0x64, 0x8A, 0x9F,
-    0x00, 0x00, 0x03, 0x06, /* >= Win 8.1 */ /* dwWindowsVersion*/
-    WBVAL(USBD_WINUSB_DESC_SET_LEN),         /* wDescriptorSetTotalLength */
-    USBD_WINUSB_VENDOR_CODE,                 /* bVendorCode */
-    0,                                       /* bAltEnumCode */
-#endif
-};
-
-struct usb_msosv2_descriptor msosv2_desc = {
-    .vendor_code = USBD_WINUSB_VENDOR_CODE,
-    .compat_id = USBD_WinUSBDescriptorSetDescriptor,
-    .compat_id_len = USBD_WINUSB_DESC_SET_LEN,
-};
-
-struct usb_bos_descriptor bos_desc = {
-    .string = USBD_BinaryObjectStoreDescriptor,
-    .string_len = USBD_BOS_WTOTALLENGTH
-};
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
@@ -219,7 +113,7 @@ static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
     return string_descriptors[index];
 }
 
-const struct usb_descriptor winusbv2_descriptor = {
+const struct usb_descriptor winusbv2_cdc_descriptor = {
     .device_descriptor_callback = device_descriptor_callback,
     .config_descriptor_callback = config_descriptor_callback,
     .device_quality_descriptor_callback = device_quality_descriptor_callback,
@@ -228,7 +122,7 @@ const struct usb_descriptor winusbv2_descriptor = {
     .bos_descriptor = &bos_desc
 };
 #else
-const uint8_t winusbv2_descriptor[] = {
+const uint8_t winusbv2_cdc_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
     /* Configuration 0 */
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTF_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
@@ -418,12 +312,12 @@ struct usbd_interface winusb_intf;
 struct usbd_interface intf1;
 struct usbd_interface intf2;
 
-void winusbv2_init(uint8_t busid, uintptr_t reg_base)
+void winusbv2_cdc_init(uint8_t busid, uintptr_t reg_base)
 {
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
-    usbd_desc_register(busid, &winusbv2_descriptor);
+    usbd_desc_register(busid, &winusbv2_cdc_descriptor);
 #else
-    usbd_desc_register(busid, winusbv2_descriptor);
+    usbd_desc_register(busid, winusbv2_cdc_descriptor);
 #endif
 #ifndef CONFIG_USBDEV_ADVANCE_DESC
     usbd_bos_desc_register(busid, &bos_desc);

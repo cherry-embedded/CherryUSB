@@ -9,103 +9,32 @@
 
 #define WINUSB_NUM 1
 
-const uint8_t WCID_StringDescriptor_MSOS[18] = {
-    USB_MSOSV1_STRING_DESCRIPTOR_INIT(WINUSB_VENDOR_CODE)
-};
-
+// note that if device is composite device, you should use USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_MULTI_DESCRIPTOR_INIT
 const uint8_t WINUSB_WCIDDescriptor[] = {
-    USB_MSOSV1_COMP_ID_HEADER_DESCRIPTOR_INIT(WINUSB_NUM),
-    USB_MSOSV1_COMP_ID_FUNCTION_WINUSB_DESCRIPTOR_INIT(0),
-#if WINUSB_NUM == 2
-    USB_MSOSV1_COMP_ID_FUNCTION_WINUSB_DESCRIPTOR_INIT(1),
+#if WINUSB_NUM == 1
+    USB_MSOSV2_COMP_ID_SET_HEADER_DESCRIPTOR_INIT(10 + USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_SINGLE_DESCRIPTOR_LEN),
+    USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_SINGLE_DESCRIPTOR_INIT(),
+#else
+    USB_MSOSV2_COMP_ID_SET_HEADER_DESCRIPTOR_INIT(10 + WINUSB_NUM * USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_MULTI_DESCRIPTOR_LEN),
+    USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_MULTI_DESCRIPTOR_INIT(0x00),
+    USB_MSOSV2_COMP_ID_FUNCTION_WINUSB_MULTI_DESCRIPTOR_INIT(0x01),
 #endif
 };
 
-const uint8_t WINUSB_IF0_WCIDProperties[142] = {
-    ///////////////////////////////////////
-    /// WCID property descriptor
-    ///////////////////////////////////////
-    0x8e, 0x00, 0x00, 0x00, /* dwLength */
-    0x00, 0x01,             /* bcdVersion */
-    0x05, 0x00,             /* wIndex */
-    0x01, 0x00,             /* wCount */
-
-    ///////////////////////////////////////
-    /// registry propter descriptor
-    ///////////////////////////////////////
-    0x84, 0x00, 0x00, 0x00, /* dwSize */
-    0x01, 0x00, 0x00, 0x00, /* dwPropertyDataType */
-    0x28, 0x00,             /* wPropertyNameLength */
-    /* DeviceInterfaceGUID */
-    'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00,  /* wcName_20 */
-    'c', 0x00, 'e', 0x00, 'I', 0x00, 'n', 0x00,  /* wcName_20 */
-    't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00,  /* wcName_20 */
-    'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00,  /* wcName_20 */
-    'U', 0x00, 'I', 0x00, 'D', 0x00, 0x00, 0x00, /* wcName_20 */
-    0x4e, 0x00, 0x00, 0x00,                      /* dwPropertyDataLength */
-    /* {1D4B2365-4749-48EA-B38A-7C6FDDDD7E26} */
-    '{', 0x00, '1', 0x00, 'D', 0x00, '4', 0x00, /* wcData_39 */
-    'B', 0x00, '2', 0x00, '3', 0x00, '6', 0x00, /* wcData_39 */
-    '5', 0x00, '-', 0x00, '4', 0x00, '7', 0x00, /* wcData_39 */
-    '4', 0x00, '9', 0x00, '-', 0x00, '4', 0x00, /* wcData_39 */
-    '8', 0x00, 'E', 0x00, 'A', 0x00, '-', 0x00, /* wcData_39 */
-    'B', 0x00, '3', 0x00, '8', 0x00, 'A', 0x00, /* wcData_39 */
-    '-', 0x00, '7', 0x00, 'C', 0x00, '6', 0x00, /* wcData_39 */
-    'F', 0x00, 'D', 0x00, 'D', 0x00, 'D', 0x00, /* wcData_39 */
-    'D', 0x00, '7', 0x00, 'E', 0x00, '2', 0x00, /* wcData_39 */
-    '6', 0x00, '}', 0x00, 0x00, 0x00,           /* wcData_39 */
+const uint8_t USBD_BinaryObjectStoreDescriptor[] = {
+    USB_BOS_HEADER_DESCRIPTOR_INIT(5 + USB_BOS_CAP_PLATFORM_WINUSB_DESCRIPTOR_LEN, 1),
+    USB_BOS_CAP_PLATFORM_WINUSB_DESCRIPTOR_INIT(WINUSB_VENDOR_CODE, sizeof(WINUSB_WCIDDescriptor)),
 };
 
-#if WINUSB_NUM == 2
-#define WINUSB_IF1_WCID_PROPERTIES_SIZE (142)
-const uint8_t WINUSB_IF1_WCIDProperties[142] = {
-    ///////////////////////////////////////
-    /// WCID property descriptor
-    ///////////////////////////////////////
-    0x8e, 0x00, 0x00, 0x00, /* dwLength */
-    0x00, 0x01,             /* bcdVersion */
-    0x05, 0x00,             /* wIndex */
-    0x01, 0x00,             /* wCount */
-
-    ///////////////////////////////////////
-    /// registry propter descriptor
-    ///////////////////////////////////////
-    0x84, 0x00, 0x00, 0x00, /* dwSize */
-    0x01, 0x00, 0x00, 0x00, /* dwPropertyDataType */
-    0x28, 0x00,             /* wPropertyNameLength */
-    /* DeviceInterfaceGUID */
-    'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00,  /* wcName_20 */
-    'c', 0x00, 'e', 0x00, 'I', 0x00, 'n', 0x00,  /* wcName_20 */
-    't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00,  /* wcName_20 */
-    'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00,  /* wcName_20 */
-    'U', 0x00, 'I', 0x00, 'D', 0x00, 0x00, 0x00, /* wcName_20 */
-    0x4e, 0x00, 0x00, 0x00,                      /* dwPropertyDataLength */
-    /* {1D4B2365-4749-48EA-B38A-7C6FDDDD7E26} */
-    '{', 0x00, '1', 0x00, 'D', 0x00, '4', 0x00, /* wcData_39 */
-    'B', 0x00, '2', 0x00, '3', 0x00, '6', 0x00, /* wcData_39 */
-    '5', 0x00, '-', 0x00, '4', 0x00, '7', 0x00, /* wcData_39 */
-    '4', 0x00, '9', 0x00, '-', 0x00, '4', 0x00, /* wcData_39 */
-    '8', 0x00, 'E', 0x00, 'A', 0x00, '-', 0x00, /* wcData_39 */
-    'B', 0x00, '3', 0x00, '8', 0x00, 'A', 0x00, /* wcData_39 */
-    '-', 0x00, '7', 0x00, 'C', 0x00, '6', 0x00, /* wcData_39 */
-    'F', 0x00, 'D', 0x00, 'D', 0x00, 'D', 0x00, /* wcData_39 */
-    'D', 0x00, '7', 0x00, 'E', 0x00, '2', 0x00, /* wcData_39 */
-    '6', 0x00, '}', 0x00, 0x00, 0x00,           /* wcData_39 */
-};
-#endif
-
-const uint8_t *WINUSB_IFx_WCIDProperties[] = {
-    WINUSB_IF0_WCIDProperties,
-#if WINUSB_NUM == 2
-    WINUSB_IF1_WCIDProperties,
-#endif
-};
-
-struct usb_msosv1_descriptor msosv1_desc = {
-    .string = WCID_StringDescriptor_MSOS,
+const struct usb_msosv2_descriptor msosv2_desc = {
     .vendor_code = WINUSB_VENDOR_CODE,
     .compat_id = WINUSB_WCIDDescriptor,
-    .comp_id_property = WINUSB_IFx_WCIDProperties,
+    .compat_id_len = sizeof(WINUSB_WCIDDescriptor),
+};
+
+const struct usb_bos_descriptor bos_desc = {
+    .string = USBD_BinaryObjectStoreDescriptor,
+    .string_len = sizeof(USBD_BinaryObjectStoreDescriptor),
 };
 
 #define WINUSB_IN_EP  0x81
@@ -135,7 +64,7 @@ struct usb_msosv1_descriptor msosv1_desc = {
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01)
+    USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01)
 };
 
 static const uint8_t config_descriptor[] = {
@@ -198,16 +127,17 @@ static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
     return string_descriptors[index];
 }
 
-const struct usb_descriptor winusbv1_descriptor = {
+const struct usb_descriptor winusbv2_descriptor = {
     .device_descriptor_callback = device_descriptor_callback,
     .config_descriptor_callback = config_descriptor_callback,
     .device_quality_descriptor_callback = device_quality_descriptor_callback,
     .string_descriptor_callback = string_descriptor_callback,
-    .msosv1_descriptor = &msosv1_desc
+    .msosv2_descriptor = &msosv2_desc,
+    .bos_descriptor = &bos_desc,
 };
 #else
-const uint8_t winusbv1_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
+const uint8_t winusbv2_descriptor[] = {
+    USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0001, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTF_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     USB_INTERFACE_DESCRIPTOR_INIT(0x00, 0x00, 0x02, 0xff, 0xff, 0x00, 0x04),
     USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_IN_EP, 0x02, WINUSB_EP_MPS, 0x00),
@@ -463,15 +393,16 @@ struct usbd_interface intf1;
 
 #endif
 
-void winusbv1_init(uint8_t busid, uintptr_t reg_base)
+void winusbv2_init(uint8_t busid, uintptr_t reg_base)
 {
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
-    usbd_desc_register(busid, &winusbv1_descriptor);
+    usbd_desc_register(busid, &winusbv2_descriptor);
 #else
-    usbd_desc_register(busid, winusbv1_descriptor);
+    usbd_desc_register(busid, winusbv2_descriptor);
 #endif
 #ifndef CONFIG_USBDEV_ADVANCE_DESC
-    usbd_msosv1_desc_register(busid, &msosv1_desc);
+    usbd_bos_desc_register(busid, &bos_desc);
+    usbd_msosv2_desc_register(busid, &msosv2_desc);
 #endif
     usbd_add_interface(busid, &intf0);
     usbd_add_endpoint(busid, &winusb_out_ep1);

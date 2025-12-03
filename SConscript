@@ -166,10 +166,12 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/cdc_acm_hid_msc_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV1']):
         src += Glob('demo/winusb1.0_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2']):
+        src += Glob('demo/winusb2.0_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_CDC']):
         src += Glob('demo/winusb2.0_cdc_template.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_HID']):
-        src += Glob('demo/winusb2.0_hid_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WEBUSB_HID']):
+        src += Glob('demo/webusb_hid_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_ADB']):
         src += Glob('demo/adb/usbd_adb_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_CHARDEV']):
