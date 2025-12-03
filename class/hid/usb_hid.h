@@ -634,7 +634,7 @@ struct usb_hid_js_report {
 
 #define HID_CUSTOM_INOUT_DESCRIPTOR_LEN (9 + 9 + 7 + 7)
 
-#define HID_CUSTOM_INOUT_DESCRIPTOR_INIT(bInterfaceNumber, bInterfaceSubClass, wItemLength, in_ep, out_ep,wMaxPacketSize, bInterval) \
+#define HID_CUSTOM_INOUT_DESCRIPTOR_INIT(bInterfaceNumber, bInterfaceSubClass, wItemLength, out_ep, in_ep, wMaxPacketSize, bInterval) \
     0x09,                          /* bLength: Interface Descriptor size */                                         \
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: Interface descriptor type */                                 \
     bInterfaceNumber,              /* bInterfaceNumber: Number of Interface */                                      \
@@ -654,13 +654,13 @@ struct usb_hid_js_report {
     WBVAL(wItemLength),           /* wItemLength: Total length of Report descriptor */                              \
     0x07,                         /* bLength: Endpoint Descriptor size */                                           \
     USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: */                                                            \
-    in_ep,                        /* bEndpointAddress: Endpoint Address (IN) */                                     \
+    out_ep,                       /* bEndpointAddress: Endpoint Address (OUT) */                                    \
     0x03,                         /* bmAttributes: Interrupt endpoint */                                            \
     WBVAL(wMaxPacketSize),        /* wMaxPacketSize: x Byte max */                                                  \
     bInterval,                    /* bInterval: Polling Interval */                                                 \
     0x07,                         /* bLength: Endpoint Descriptor size */                                           \
     USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: */                                                            \
-    out_ep,                       /* bEndpointAddress: Endpoint Address (IN) */                                     \
+    in_ep,                        /* bEndpointAddress: Endpoint Address (IN) */                                     \
     0x03,                         /* bmAttributes: Interrupt endpoint */                                            \
     WBVAL(wMaxPacketSize),        /* wMaxPacketSize: x Byte max */                                                  \
     bInterval                     /* bInterval: Polling Interval */
