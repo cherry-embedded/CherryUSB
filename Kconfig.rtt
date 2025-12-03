@@ -230,13 +230,16 @@ if RT_USING_CHERRYUSB
             config RT_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV1
                 bool
                 prompt "winusbv1"
+            config RT_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2
+                bool
+                prompt "winusbv2"
             config RT_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_CDC
                 bool
                 prompt "winusbv2_cdc"
                 depends on RT_CHERRYUSB_DEVICE_CDC_ACM
-            config RT_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_HID
+            config RT_CHERRYUSB_DEVICE_TEMPLATE_WEBUSB_HID
                 bool
-                prompt "winusbv2_hid"
+                prompt "webusb_hid"
                 depends on RT_CHERRYUSB_DEVICE_HID
             config RT_CHERRYUSB_DEVICE_TEMPLATE_ADB
                 bool

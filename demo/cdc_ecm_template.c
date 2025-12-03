@@ -29,13 +29,8 @@
 #define CDC_MAX_MPS 64
 #endif
 
-#define CDC_ECM_ETH_STATISTICS_BITMAP 0x00000000
-
 /* str idx = 4 is for mac address: aa:bb:cc:dd:ee:ff*/
 #define CDC_ECM_MAC_STRING_INDEX 4
-
-/* Ethernet Maximum Segment size, typically 1514 bytes */
-#define CONFIG_CDC_ECM_ETH_MAX_SEGSZE 1514U
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
@@ -44,7 +39,7 @@ static const uint8_t device_descriptor[] = {
 
 static const uint8_t config_descriptor[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ECM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, CDC_ECM_ETH_STATISTICS_BITMAP, CONFIG_CDC_ECM_ETH_MAX_SEGSZE, 0, 0, CDC_ECM_MAC_STRING_INDEX)
+    CDC_ECM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, CDC_ECM_MAC_STRING_INDEX)
 };
 
 static const uint8_t device_quality_descriptor[] = {
@@ -105,7 +100,7 @@ const struct usb_descriptor cdc_ecm_descriptor = {
 static const uint8_t cdc_ecm_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ECM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, CDC_ECM_ETH_STATISTICS_BITMAP, CONFIG_CDC_ECM_ETH_MAX_SEGSZE, 0, 0, CDC_ECM_MAC_STRING_INDEX),
+    CDC_ECM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, CDC_ECM_MAC_STRING_INDEX),
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
