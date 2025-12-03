@@ -56,7 +56,6 @@ elseif(ESP_PLATFORM)
        OR CONFIG_CHERRYUSB_HOST_CDC_NCM
        OR CONFIG_CHERRYUSB_HOST_ASIX
        OR CONFIG_CHERRYUSB_HOST_RTL8152
-       OR CONFIG_CHERRYUSB_HOST_BL616
     )
         idf_component_get_property(lwip lwip COMPONENT_LIB)
         target_compile_definitions(${lwip} PRIVATE "-DPBUF_POOL_BUFSIZE=1600")

@@ -21,7 +21,6 @@
 // #define CONFIG_USBHOST_PLATFORM_CDC_NCM
 // #define CONFIG_USBHOST_PLATFORM_ASIX
 // #define CONFIG_USBHOST_PLATFORM_RTL8152
-// #define CONFIG_USBHOST_PLATFORM_BL616
 
 struct usbh_net_netif_glue {
     esp_netif_driver_base_t base;
