@@ -246,9 +246,6 @@ if(CONFIG_CHERRYUSB_HOST)
     if(CONFIG_CHERRYUSB_HOST_PL2303)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/serial/usbh_pl2303.c)
     endif()
-    if(CONFIG_CHERRYUSB_HOST_BL616)
-        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi/usbh_bl616.c)
-    endif()
     if(CONFIG_CHERRYUSB_HOST_AOA)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/aoa/usbh_aoa.c)
     endif()
@@ -258,7 +255,6 @@ if(CONFIG_CHERRYUSB_HOST)
     OR CONFIG_CHERRYUSB_HOST_CDC_NCM
     OR CONFIG_CHERRYUSB_HOST_ASIX
     OR CONFIG_CHERRYUSB_HOST_RTL8152
-    OR CONFIG_CHERRYUSB_HOST_BL616
     )
         if("${CONFIG_CHERRYUSB_OSAL}" STREQUAL "idf")
             list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/platform/idf/usbh_net.c)
