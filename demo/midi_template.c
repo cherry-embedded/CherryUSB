@@ -14,7 +14,13 @@
 #define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
-#define USB_CONFIG_SIZE (9 + 9 + 9 + 9 + 7 + MIDI_SIZEOF_JACK_DESC + 9 + 5 + 9 + 5)
+#define AUDIO_AC_SIZ AUDIO_SIZEOF_AC_HEADER_DESC(1)
+#define AUDIO_MS_SIZ (7 + MIDI_SIZEOF_JACK_DESC + 9 + 5 + 9 + 5)
+
+#define USB_CONFIG_SIZE (unsigned long)(9 +                            \
+                                        AUDIO_AC_DESCRIPTOR_LEN(1) +   \
+                                        MIDI_STANDARD_DESCRIPTOR_LEN + \
+                                        AUDIO_MS_SIZ)
 
 #ifdef CONFIG_USB_HS
 #define MIDI_EP_MPS 512
@@ -29,48 +35,9 @@ static const uint8_t device_descriptor[] = {
 
 static const uint8_t config_descriptor[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    // Standard AC Interface Descriptor
-    0x09,
-    0x04,
-    0x00,
-    0x00,
-    0x00,
-    0x01,
-    0x01,
-    0x00,
-    0x00,
-    // Class-specific AC Interface Descriptor
-    0x09,
-    0x24,
-    0x01,
-    0x00,
-    0x01,
-    0x09,
-    0x00,
-    0x01,
-    0x01,
-    // MIDIStreaming Interface Descriptors
-    0x09,
-    0x04,
-    0x01,
-    0x00,
-    0x02,
-    0x01,
-    0x03,
-    0x00,
-    0x00,
-    // Class-Specific MS Interface Header Descriptor
-    0x07,
-    0x24,
-    0x01,
-    0x00,
-    0x01,
-    WBVAL(65),
-
-    // MIDI_IN_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EMBEDDED, 0x01),
-    // MIDI_IN_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, 0x02),
-    // MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EMBEDDED, 0x03, 0x02),
-    // MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, 0x04, 0x01),
+    AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, 0x00, 0x01),
+    MIDI_STANDARD_DESCRIPTOR_INIT(0x01, 0x02),
+    MIDI_CS_HEADER_DESCRIPTOR_INIT(AUDIO_MS_SIZ),
     MIDI_JACK_DESCRIPTOR_INIT(0x01),
     // OUT endpoint descriptor
     0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
@@ -137,48 +104,9 @@ const struct usb_descriptor midi_descriptor = {
 const uint8_t midi_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0100, 0x01),
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    // Standard AC Interface Descriptor
-    0x09,
-    0x04,
-    0x00,
-    0x00,
-    0x00,
-    0x01,
-    0x01,
-    0x00,
-    0x00,
-    // Class-specific AC Interface Descriptor
-    0x09,
-    0x24,
-    0x01,
-    0x00,
-    0x01,
-    0x09,
-    0x00,
-    0x01,
-    0x01,
-    // MIDIStreaming Interface Descriptors
-    0x09,
-    0x04,
-    0x01,
-    0x00,
-    0x02,
-    0x01,
-    0x03,
-    0x00,
-    0x00,
-    // Class-Specific MS Interface Header Descriptor
-    0x07,
-    0x24,
-    0x01,
-    0x00,
-    0x01,
-    WBVAL(65),
-
-    // MIDI_IN_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EMBEDDED, 0x01),
-    // MIDI_IN_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, 0x02),
-    // MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EMBEDDED, 0x03, 0x02),
-    // MIDI_OUT_JACK_DESCRIPTOR_INIT(MIDI_JACK_TYPE_EXTERNAL, 0x04, 0x01),
+    AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, 0x00, 0x01),
+    MIDI_STANDARD_DESCRIPTOR_INIT(0x01, 0x02),
+    MIDI_CS_HEADER_DESCRIPTOR_INIT(AUDIO_MS_SIZ),
     MIDI_JACK_DESCRIPTOR_INIT(0x01),
     // OUT endpoint descriptor
     0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
@@ -186,8 +114,7 @@ const uint8_t midi_descriptor[] = {
 
     // IN endpoint descriptor
     0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
-    0x05, 0x25, 0x01, 0x01, 0x03,
-
+    0x05, 0x25, 0x01, 0x01, 0x03
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
