@@ -46,15 +46,15 @@
                                            VS_HEADER_SIZ +                           \
                                            9 +                                       \
                                            7 +                                       \
-                                           AUDIO_AC_DESCRIPTOR_INIT_LEN(2) +         \
+                                           AUDIO_AC_DESCRIPTOR_LEN(2) +         \
                                            AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +     \
                                            AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2, 1) + \
                                            AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC +    \
                                            AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +     \
                                            AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2, 1) + \
                                            AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC +    \
-                                           AUDIO_AS_DESCRIPTOR_INIT_LEN(1) +         \
-                                           AUDIO_AS_DESCRIPTOR_INIT_LEN(1) +         \
+                                           AUDIO_AS_DESCRIPTOR_LEN(1) +         \
+                                           AUDIO_AS_DESCRIPTOR_LEN(1) +         \
                                            25)
 
 #define USBD_VID           0xffff
@@ -130,38 +130,7 @@ static const uint8_t config_descriptor[] = {
                              EP_INTERVAL, AUDIO_SAMPLE_FREQ_3B(AUDIO_SPEAKER_FREQ)),
     AUDIO_AS_DESCRIPTOR_INIT(0x04, 0x03, 0x02, AUDIO_MIC_FRAME_SIZE_BYTE, AUDIO_MIC_RESOLUTION_BIT, AUDIO_IN_EP, 0x05, AUDIO_IN_PACKET,
                              EP_INTERVAL, AUDIO_SAMPLE_FREQ_3B(AUDIO_MIC_FREQ)),
-    /************** Descriptor of Joystick Mouse interface ****************/
-    /* 09 */
-    0x09,                          /* bLength: Interface Descriptor size */
-    USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: Interface descriptor type */
-    0x05,                          /* bInterfaceNumber: Number of Interface */
-    0x00,                          /* bAlternateSetting: Alternate setting */
-    0x01,                          /* bNumEndpoints */
-    0x03,                          /* bInterfaceClass: HID */
-    0x01,                          /* bInterfaceSubClass : 1=BOOT, 0=no boot */
-    0x01,                          /* nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse */
-    0,                             /* iInterface: Index of string descriptor */
-    /******************** Descriptor of Joystick Mouse HID ********************/
-    /* 18 */
-    0x09,                    /* bLength: HID Descriptor size */
-    HID_DESCRIPTOR_TYPE_HID, /* bDescriptorType: HID */
-    0x11,                    /* bcdHID: HID Class Spec release number */
-    0x01,
-    0x00,                          /* bCountryCode: Hardware target country */
-    0x01,                          /* bNumDescriptors: Number of HID class descriptors to follow */
-    0x22,                          /* bDescriptorType */
-    HID_KEYBOARD_REPORT_DESC_SIZE, /* wItemLength: Total length of Report descriptor */
-    0x00,
-    /******************** Descriptor of Mouse endpoint ********************/
-    /* 27 */
-    0x07,                         /* bLength: Endpoint Descriptor size */
-    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: */
-    HID_INT_EP,                   /* bEndpointAddress: Endpoint Address (IN) */
-    0x03,                         /* bmAttributes: Interrupt endpoint */
-    HID_INT_EP_SIZE,              /* wMaxPacketSize: 4 Byte max */
-    0x00,
-    HID_INT_EP_INTERVAL, /* bInterval: Polling Interval */
-    /* 34 */
+    HID_KEYBOARD_DESCRIPTOR_INIT(0x05, 0x01, HID_KEYBOARD_REPORT_DESC_SIZE, HID_INT_EP, HID_INT_EP_SIZE, HID_INT_EP_INTERVAL),
 };
 
 static const uint8_t device_quality_descriptor[] = {
