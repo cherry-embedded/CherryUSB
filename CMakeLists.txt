@@ -88,7 +88,7 @@ elseif(ESP_PLATFORM)
 
         # 强制链接器不删除符号
         if(CONFIG_CHERRYUSB_HOST_CDC_ACM)
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-u cdc_acm_class_info")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-u cdc_acm_none_class_info")
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-u cdc_data_class_info")
         endif()
         if(CONFIG_CHERRYUSB_HOST_HID)
