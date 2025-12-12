@@ -159,7 +159,94 @@
              
   <section id="usbh-serial">
 <h1>usbh_serial<a class="headerlink" href="#usbh-serial" title="Link to this heading"></a></h1>
-<p>当前仅支持 rt-thread device 框架，包括 cdc acm, ftdi, cp210x, ch34x, pl2303, 具体使用方式参考 rt-thread device api 即可。</p>
+<p>Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。当前支持两种使用方式，
+一种是使用源生 CherryUSB usbhost serial API 进行操作，另一种是基于平台封装的 API 操作，比如 rt-thread device API。，nuttx posix API。</p>
+<p>下面演示的是使用 CherryUSB usbhost serial API 进行串口回环测试，并且使用阻塞发送，异步读取的方式：</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">;</span>
+
+<span class="n">serial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_open</span><span class="p">(</span><span class="s">&quot;/dev/ttyACM0&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">USBH_SERIAL_O_RDWR</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USBH_SERIAL_O_NONBLOCK</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">serial</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">serial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_open</span><span class="p">(</span><span class="s">&quot;/dev/ttyUSB0&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">USBH_SERIAL_O_RDWR</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USBH_SERIAL_O_NONBLOCK</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">serial</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;no serial device found</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial_termios</span><span class="w"> </span><span class="n">termios</span><span class="p">;</span>
+
+<span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">termios</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">termios</span><span class="p">));</span>
+<span class="n">termios</span><span class="p">.</span><span class="n">baudrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">115200</span><span class="p">;</span>
+<span class="n">termios</span><span class="p">.</span><span class="n">stopbits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="n">termios</span><span class="p">.</span><span class="n">parity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="n">termios</span><span class="p">.</span><span class="n">databits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span>
+<span class="n">termios</span><span class="p">.</span><span class="n">rtscts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="n">termios</span><span class="p">.</span><span class="n">rx_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_control</span><span class="p">(</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="n">USBH_SERIAL_CMD_SET_ATTR</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">termios</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;set serial attr error, ret:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ret</span><span class="p">);</span>
+<span class="w">    </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">serial_tx_bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* for common, we use timeout with 0xffffffff, this is just a test */</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_write</span><span class="p">(</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="n">serial_tx_buffer</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">serial_tx_buffer</span><span class="p">));</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;serial write error, ret:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ret</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">serial_tx_bytes</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="w">        </span><span class="n">usb_osal_msleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span><span class="w"> </span><span class="c1">// 11.52 Byte/ms at 115200bps --&gt; 64Byte/5.5ms</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">serial_tx_bytes</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;send over</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">volatile</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">wait_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="n">serial_rx_bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_read</span><span class="p">(</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">serial_rx_data</span><span class="p">[</span><span class="n">serial_rx_bytes</span><span class="p">],</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;serial read error, ret:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ret</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">serial_rx_bytes</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">serial_rx_bytes</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;receive over</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">serial_rx_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0xa5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;serial loopback data error at index %d, data: 0x%02x</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">serial_rx_data</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">                    </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;serial loopback test success</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">wait_timeout</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">wait_timeout</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">500</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// 5s</span>
+<span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;serial read timeout</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">usb_osal_msleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">usbh_serial_close</span><span class="p">(</span><span class="n">serial</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>用户需要考虑以下三种场景：</p>
+<ul class="simple">
+<li><p>USB2TTL 设备 + 启用了波特率，这种情况下需要使用 <cite>usbh_serial_write</cite> 和 <cite>usbh_serial_read</cite> 进行收发数据， <strong>并且需要根据波特率控制发送频率，防止对端丢包</strong>；</p></li>
+<li><p>纯 USB 设备 + 未启动波特率，这种情况下可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite> 进行异步收发数据，阻塞则用 <cite>usbh_serial_write</cite> 并且不需要控制发送频率。不可以使用 <cite>usbh_serial_read</cite>。</p></li>
+<li><p>纯 USB 设备 + 启动波特率，同 1，但是速率打折扣。不可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite>。如果是 GSM 设备需要使用第一种。</p></li>
+</ul>
 </section>
 
 

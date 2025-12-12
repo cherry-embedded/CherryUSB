@@ -78,10 +78,19 @@
 <li class="toctree-l3"><a class="reference internal" href="#lsusb">lsusb</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#cdc-acm">CDC ACM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#serial">SERIAL</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-open">usbh_serial_open</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-close">usbh_serial_close</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-control">usbh_serial_control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-write">usbh_serial_write</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-read">usbh_serial_read</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-cdc-write-async">usbh_serial_cdc_write_async</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-serial-cdc-read-async">usbh_serial_cdc_read_async</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#hid">HID</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#msc">MSC</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#rndis">RNDIS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#network">NETWORK</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api_port.html">主从驱动</a></li>
@@ -322,8 +331,103 @@
 </div>
 </section>
 </section>
-<section id="cdc-acm">
-<h2>CDC ACM<a class="headerlink" href="#cdc-acm" title="Link to this heading"></a></h2>
+<section id="serial">
+<h2>SERIAL<a class="headerlink" href="#serial" title="Link to this heading"></a></h2>
+<section id="usbh-serial-open">
+<h3>usbh_serial_open<a class="headerlink" href="#usbh-serial-open" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_open</span></code> 根据路径打开一个串口设备。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">usbh_serial_open</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">devname</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">open_flags</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>devname</strong>  串口路径</p></li>
+<li><p><strong>open_flags</strong>  打开标志，参考 <cite>USBH_SERIAL_OFLAG_*</cite> 定义</p></li>
+<li><p><strong>return</strong>  serial 结构体句柄</p></li>
+</ul>
+</section>
+<section id="usbh-serial-close">
+<h3>usbh_serial_close<a class="headerlink" href="#usbh-serial-close" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_close</span></code> 关闭串口设备。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_serial_close</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>serial</strong>  serial 结构体句柄</p></li>
+</ul>
+</section>
+<section id="usbh-serial-control">
+<h3>usbh_serial_control<a class="headerlink" href="#usbh-serial-control" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_control</span></code> 对串口进行配置。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_control</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cmd</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>serial</strong>  serial 结构体句柄</p></li>
+<li><p><strong>cmd</strong>  控制命令，参考 <cite>USBH_SERIAL_CMD_*</cite> 定义</p></li>
+<li><p><strong>arg</strong>  控制参数指针</p></li>
+<li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
+</ul>
+</section>
+<section id="usbh-serial-write">
+<h3>usbh_serial_write<a class="headerlink" href="#usbh-serial-write" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_write</span></code> 向串口写数据。 <strong>串口设备如果是 USB2TTL 类型，必须按照波特率发送，否则会丢包</strong></p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_write</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>serial</strong>  serial 结构体句柄</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>buflen</strong>  要写入的数据长度，如果是 USB2TTL 设备，一次最高 wMaxPacketSize</p></li>
+<li><p><strong>return</strong>  实际写入的数据长度或者错误码</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>有无设置波特率都可以使用该 API，当未设置波特率时，长度无限制，如果设置了波特率则为 wMaxPacketSize。</p>
+</div>
+</section>
+<section id="usbh-serial-read">
+<h3>usbh_serial_read<a class="headerlink" href="#usbh-serial-read" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_read</span></code> 从串口读数据。 <strong>如果没有设置波特率，不允许使用该 API</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_read</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>serial</strong>  serial 结构体句柄</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>buflen</strong>  要读取的最大数据长度</p></li>
+<li><p><strong>return</strong>  实际读取的数据长度或者错误码</p></li>
+</ul>
+</section>
+<section id="usbh-serial-cdc-write-async">
+<h3>usbh_serial_cdc_write_async<a class="headerlink" href="#usbh-serial-cdc-write-async" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_cdc_write_async</span></code> 异步从串口读数据。 <strong>如果设置了波特率，不允许使用该 API</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_cdc_write_async</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_complete_callback_t</span><span class="w"> </span><span class="n">complete</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>serial</strong>  serial 结构体句柄</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>buflen</strong>  要发送的数据长度</p></li>
+<li><p><strong>complete</strong>  读数据完成回调函数</p></li>
+<li><p><strong>arg</strong>  回调函数参数</p></li>
+<li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
+</ul>
+</section>
+<section id="usbh-serial-cdc-read-async">
+<h3>usbh_serial_cdc_read_async<a class="headerlink" href="#usbh-serial-cdc-read-async" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_cdc_read_async</span></code> 异步从串口读数据。 <strong>如果设置了波特率，不允许使用该 API</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_cdc_read_async</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_complete_callback_t</span><span class="w"> </span><span class="n">complete</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>serial</strong>  serial 结构体句柄</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>buflen</strong>  要读取的最大数据长度，一次最高 16K。并且需要是 wMaxPacketSize 的整数倍</p></li>
+<li><p><strong>complete</strong>  读数据完成回调函数</p></li>
+<li><p><strong>arg</strong>  回调函数参数</p></li>
+<li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
+</ul>
+</section>
 </section>
 <section id="hid">
 <h2>HID<a class="headerlink" href="#hid" title="Link to this heading"></a></h2>
@@ -331,8 +435,8 @@
 <section id="msc">
 <h2>MSC<a class="headerlink" href="#msc" title="Link to this heading"></a></h2>
 </section>
-<section id="rndis">
-<h2>RNDIS<a class="headerlink" href="#rndis" title="Link to this heading"></a></h2>
+<section id="network">
+<h2>NETWORK<a class="headerlink" href="#network" title="Link to this heading"></a></h2>
 </section>
 </section>
 
