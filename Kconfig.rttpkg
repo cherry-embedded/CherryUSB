@@ -381,22 +381,35 @@ if PKG_USING_CHERRYUSB
         config PKG_CHERRYUSB_HOST_FTDI
             bool
             prompt "Enable usb ftdi driver"
+            select CONFIG_USBHOST_SERIAL
             default n
 
         config PKG_CHERRYUSB_HOST_CH34X
             bool
             prompt "Enable usb ch34x driver"
+            select CONFIG_USBHOST_SERIAL
             default n
 
         config PKG_CHERRYUSB_HOST_CP210X
             bool
             prompt "Enable usb cp210x driver"
+            select CONFIG_USBHOST_SERIAL
             default n
 
         config PKG_CHERRYUSB_HOST_PL2303
             bool
             prompt "Enable usb pl2303 driver"
+            select CONFIG_USBHOST_SERIAL
             default n
+
+        config PKG_CHERRYUSB_HOST_GSM
+            bool
+            prompt "Enable usb gsm driver for 4g module"
+            select CONFIG_USBHOST_SERIAL
+            default n
+
+        config CONFIG_USBHOST_SERIAL
+            bool
 
         config CONFIG_USBHOST_PLATFORM_CDC_ECM
             bool
@@ -433,6 +446,11 @@ if PKG_USING_CHERRYUSB
             prompt "Set host control transfer timeout, unit is ms"
             default 500
 
+        config CONFIG_USBHOST_SERIAL_RX_SIZE
+            int
+            prompt "Set host serial rx max buffer size"
+            default 2048
+
         config RT_LWIP_PBUF_POOL_BUFSIZE
             int "The size of each pbuf in the pbuf pool"
             range 1500 2000
@@ -444,11 +462,11 @@ if PKG_USING_CHERRYUSB
             default "/"
 
         menu "Select USB host template, please select class driver first"
-            config CONFIG_TEST_USBH_CDC_ACM
+            config CONFIG_TEST_USBH_SERIAL
                 int
-                prompt "demo for test cdc acm, cannot enable this demo, we have used serial framework instead"
+                prompt "demo for test usb serial, cannot enable this demo, we have used serial framework instead"
                 default 0
-                depends on PKG_CHERRYUSB_HOST_CDC_ACM
+                depends on PKG_CHERRYUSB_HOST_CDC_ACM || PKG_CHERRYUSB_HOST_FTDI || PKG_CHERRYUSB_HOST_CH34X || PKG_CHERRYUSB_HOST_CP210X || PKG_CHERRYUSB_HOST_PL2303
             config CONFIG_TEST_USBH_HID
                 int
                 prompt "demo for test hid"

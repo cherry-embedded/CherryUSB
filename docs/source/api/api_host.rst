@@ -154,8 +154,109 @@ lsusb
 
     int lsusb(int argc, char **argv);
 
-CDC ACM
+SERIAL
 -----------------
+
+usbh_serial_open
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_open`` 根据路径打开一个串口设备。
+
+.. code-block:: C
+
+    struct usbh_serial *usbh_serial_open(const char *devname, uint32_t open_flags);
+
+- **devname**  串口路径
+- **open_flags**  打开标志，参考 `USBH_SERIAL_OFLAG_*` 定义
+- **return**  serial 结构体句柄
+
+usbh_serial_close
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_close`` 关闭串口设备。
+
+.. code-block:: C
+
+    void usbh_serial_close(struct usbh_serial *serial);
+
+- **serial**  serial 结构体句柄
+
+usbh_serial_control
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_control`` 对串口进行配置。
+
+.. code-block:: C
+
+    int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg);
+
+- **serial**  serial 结构体句柄
+- **cmd**  控制命令，参考 `USBH_SERIAL_CMD_*` 定义
+- **arg**  控制参数指针
+- **return**  0 表示正常其他表示错误
+
+usbh_serial_write
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_write`` 向串口写数据。 **串口设备如果是 USB2TTL 类型，必须按照波特率发送，否则会丢包**
+
+.. code-block:: C
+
+    int usbh_serial_write(struct usbh_serial *serial, const void *buffer, uint32_t buflen);
+
+- **serial**  serial 结构体句柄
+- **buffer**  数据缓冲区指针
+- **buflen**  要写入的数据长度，如果是 USB2TTL 设备，一次最高 wMaxPacketSize
+- **return**  实际写入的数据长度或者错误码
+
+.. note:: 有无设置波特率都可以使用该 API，当未设置波特率时，长度无限制，如果设置了波特率则为 wMaxPacketSize。
+
+usbh_serial_read
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_read`` 从串口读数据。 **如果没有设置波特率，不允许使用该 API**。
+
+.. code-block:: C
+
+    int usbh_serial_read(struct usbh_serial *serial, void *buffer, uint32_t buflen);
+
+- **serial**  serial 结构体句柄
+- **buffer**  数据缓冲区指针
+- **buflen**  要读取的最大数据长度
+- **return**  实际读取的数据长度或者错误码
+
+usbh_serial_cdc_write_async
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_cdc_write_async`` 异步从串口读数据。 **如果设置了波特率，不允许使用该 API**。
+
+.. code-block:: C
+
+    int usbh_serial_cdc_write_async(struct usbh_serial *serial, uint8_t *buffer, uint32_t buflen, usbh_complete_callback_t complete, void *arg);
+
+- **serial**  serial 结构体句柄
+- **buffer**  数据缓冲区指针
+- **buflen**  要发送的数据长度
+- **complete**  读数据完成回调函数
+- **arg**  回调函数参数
+- **return**  0 表示正常其他表示错误
+
+usbh_serial_cdc_read_async
+""""""""""""""""""""""""""""""""""""
+
+``usbh_serial_cdc_read_async`` 异步从串口读数据。 **如果设置了波特率，不允许使用该 API**。
+
+.. code-block:: C
+
+    int usbh_serial_cdc_read_async(struct usbh_serial *serial, uint8_t *buffer, uint32_t buflen, usbh_complete_callback_t complete, void *arg);
+
+- **serial**  serial 结构体句柄
+- **buffer**  数据缓冲区指针
+- **buflen**  要读取的最大数据长度，一次最高 16K。并且需要是 wMaxPacketSize 的整数倍
+- **complete**  读数据完成回调函数
+- **arg**  回调函数参数
+- **return**  0 表示正常其他表示错误
+
 
 HID
 -----------------
@@ -163,5 +264,5 @@ HID
 MSC
 -----------------
 
-RNDIS
+NETWORK
 -----------------

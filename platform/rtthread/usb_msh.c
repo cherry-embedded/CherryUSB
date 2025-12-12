@@ -44,4 +44,10 @@ int usbh_deinit(int argc, char **argv)
 MSH_CMD_EXPORT(usbh_init, init usb host);
 MSH_CMD_EXPORT(usbh_deinit, deinit usb host);
 MSH_CMD_EXPORT(lsusb, ls usb devices);
+
+#ifdef CONFIG_USBHOST_SERIAL
+#include "usbh_serial.h"
+MSH_CMD_EXPORT(usbh_serial, usbh_serial test);
+#endif
+
 #endif

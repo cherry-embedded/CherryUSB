@@ -299,6 +299,7 @@ if CHERRYUSB
         config CHERRYUSB_HOST_CDC_ACM
             bool
             prompt "Enable usb cdc acm driver"
+            select USBHOST_SERIAL
             default n
 
         config CHERRYUSB_HOST_HID
@@ -360,27 +361,40 @@ if CHERRYUSB
         config CHERRYUSB_HOST_FTDI
             bool
             prompt "Enable usb ftdi driver"
+            select USBHOST_SERIAL
             default n
 
         config CHERRYUSB_HOST_CH34X
             bool
             prompt "Enable usb ch34x driver"
+            select USBHOST_SERIAL
             default n
 
         config CHERRYUSB_HOST_CP210X
             bool
             prompt "Enable usb cp210x driver"
+            select USBHOST_SERIAL
             default n
 
         config CHERRYUSB_HOST_PL2303
             bool
             prompt "Enable usb pl2303 driver"
+            select USBHOST_SERIAL
+            default n
+
+        config CHERRYUSB_HOST_GSM
+            bool
+            prompt "Enable usb gsm driver for 4g module"
+            select USBHOST_SERIAL
             default n
 
         config CHERRYUSB_HOST_AOA
             bool
             prompt "Enable usb aoa driver"
             default n
+
+        config USBHOST_SERIAL
+            bool
 
         config USBHOST_PLATFORM_CDC_ECM
             bool
@@ -417,12 +431,17 @@ if CHERRYUSB
             prompt "Set host control transfer timeout, unit is ms"
             default 500
 
+        config USBHOST_SERIAL_RX_SIZE
+            int
+            prompt "Set host serial rx max buffer size"
+            default 2048
+
         menu "Select USB host template, please select class driver first"
-            config TEST_USBH_CDC_ACM
+            config TEST_USBH_SERIAL
                 int
-                prompt "demo for test cdc acm"
+                prompt "demo for test serial"
                 default 0
-                depends on CHERRYUSB_HOST_CDC_ACM
+                depends on CHERRYUSB_HOST_CDC_ACM || CHERRYUSB_HOST_FTDI || CHERRYUSB_HOST_CH34X || CHERRYUSB_HOST_CP210X || CHERRYUSB_HOST_PL2303
             config TEST_USBH_HID
                 int
                 prompt "demo for test hid"

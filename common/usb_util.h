@@ -209,6 +209,23 @@
         19, 18, 17, 16, 15, 14, 13, 12, 11, 10, \
         9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
+/*
+ * Divide positive or negative dividend by positive or negative divisor
+ * and round to closest integer. Result is undefined for negative
+ * divisors if the dividend variable type is unsigned and for negative
+ * dividends if the divisor variable type is unsigned.
+ */
+#define DIV_ROUND_CLOSEST(x, divisor) (       \
+    {                                         \
+        typeof(x) __x = x;                    \
+        typeof(divisor) __d = divisor;        \
+        (((typeof(x))-1) > 0 ||               \
+         ((typeof(divisor))-1) > 0 ||         \
+         (((__x) > 0) == ((__d) > 0))) ?      \
+            (((__x) + ((__d) / 2)) / (__d)) : \
+            (((__x) - ((__d) / 2)) / (__d));  \
+    })
+
 #define USB_MEM_ALIGNX __attribute__((aligned(CONFIG_USB_ALIGN_SIZE)))
 
 #define USB_ALIGN_UP(size, align) (((size) + (align)-1) & ~((align)-1))

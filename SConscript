@@ -14,7 +14,7 @@ path += [cwd + '/class/wireless']
 path += [cwd + '/class/midi']
 path += [cwd + '/class/adb']
 path += [cwd + '/class/dfu']
-path += [cwd + '/class/midi']
+path += [cwd + '/class/serial']
 path += [cwd + '/class/vendor/net']
 path += [cwd + '/class/vendor/serial']
 path += [cwd + '/class/vendor/wifi']
@@ -306,8 +306,10 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         or GetDepend(['PKG_CHERRYUSB_HOST_FTDI'])   \
         or GetDepend(['PKG_CHERRYUSB_HOST_CH34X'])  \
         or GetDepend(['PKG_CHERRYUSB_HOST_CP210X']) \
-        or GetDepend(['PKG_CHERRYUSB_HOST_PL2303']):
-        src += Glob('platform/rtthread/usbh_serial.c')
+        or GetDepend(['PKG_CHERRYUSB_HOST_PL2303']) \
+        or GetDepend(['PKG_CHERRYUSB_HOST_GSM']):
+        src += Glob('class/serial/usbh_serial.c')
+        src += Glob('platform/rtthread/usbh_rtserial.c')
 
     if GetDepend('RT_USING_DFS') and GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
        src += Glob('platform/rtthread/usbh_dfs.c')

@@ -47,7 +47,7 @@
 #define USBD_MAX_POWER     200
 
 /* attribute data into no cache ram */
-#define USB_NOCACHE_RAM_SECTION __attribute__((section(".fast_ram.non_init")))
+#define USB_NOCACHE_RAM_SECTION __attribute__((section(".noncacheable.non_init")))
 
 /* use usb_memcpy default for high performance but cost more flash memory.
  * And, arm libc has a bug that memcpy() may cause data misalignment when the size is not a multiple of 4.
@@ -174,7 +174,7 @@
 #define CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 2
 #define CONFIG_USBHOST_MAX_ENDPOINTS        4
 
-#define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4
+#define CONFIG_USBHOST_MAX_SERIAL_CLASS  4
 #define CONFIG_USBHOST_MAX_HID_CLASS     4
 #define CONFIG_USBHOST_MAX_MSC_CLASS     2
 #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
@@ -207,6 +207,10 @@
 
 #ifndef CONFIG_USBHOST_MSC_TIMEOUT
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
+#endif
+
+#ifndef CONFIG_USBHOST_SERIAL_RX_SIZE
+#define CONFIG_USBHOST_SERIAL_RX_SIZE 2048
 #endif
 
 /* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,

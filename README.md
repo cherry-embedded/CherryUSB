@@ -112,7 +112,8 @@ CherryUSB Host Stack has the following functions:
 - Support USB Audio CLASS (UAC1.0)
 - Support Remote NDIS (RNDIS)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
-- Support Vendor class (serial, net, wifi)
+- Support Vendor Serial Class(CH34X、CP210X、PL2303、FTDI、GSM)
+- Support Vendor network Class(RTL8152、AX88772)
 - Support USB modeswitch
 - Support Android Open Accessory
 - Support multi host with the same USB IP
@@ -150,7 +151,7 @@ Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affe
 x is affected by the following macros:
 
 ```
-#define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4
+#define CONFIG_USBHOST_MAX_SERIAL_CLASS  4
 #define CONFIG_USBHOST_MAX_HID_CLASS     4
 #define CONFIG_USBHOST_MAX_MSC_CLASS     2
 #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1

@@ -28,7 +28,7 @@
 
 // #define CONFIG_USB_DCACHE_ENABLE
 
-/* attribute data into no cache ram 
+/* attribute data into no cache ram
 * DRAM_DMA_ALIGNED_ATTR was introduced in IDF 5.3. If not defined, it falls back to DMA_ATTR
 */
 #ifndef DRAM_DMA_ALIGNED_ATTR
@@ -158,7 +158,7 @@
 #define CONFIG_USBHOST_MAX_INTF_ALTSETTINGS 2
 #define CONFIG_USBHOST_MAX_ENDPOINTS        4
 
-#define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4
+#define CONFIG_USBHOST_MAX_SERIAL_CLASS  4
 #define CONFIG_USBHOST_MAX_HID_CLASS     4
 #define CONFIG_USBHOST_MAX_MSC_CLASS     2
 #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
@@ -191,6 +191,10 @@
 
 #ifndef CONFIG_USBHOST_MSC_TIMEOUT
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
+#endif
+
+#ifndef CONFIG_USBHOST_SERIAL_RX_SIZE
+#define CONFIG_USBHOST_SERIAL_RX_SIZE 2048
 #endif
 
 /* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,
