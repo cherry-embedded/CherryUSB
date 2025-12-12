@@ -796,8 +796,6 @@ int usb_hc_init(struct usbh_bus *bus)
 
 int usb_hc_deinit(struct usbh_bus *bus)
 {
-    volatile uint32_t count = 0U;
-
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
 
     dwc2_flush_txfifo(bus, 0x10U);
