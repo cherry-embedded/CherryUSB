@@ -43,7 +43,6 @@ Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。�
             goto delete_with_close;
         } else {
             serial_tx_bytes += ret;
-            usb_osal_msleep(10); // 11.52 Byte/ms at 115200bps --> 64Byte/5.5ms
 
             if (serial_tx_bytes == SERIAL_TEST_LEN) {
                 USB_LOG_RAW("send over\r\n");
@@ -55,7 +54,7 @@ Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。�
     volatile uint32_t wait_timeout = 0;
     serial_rx_bytes = 0;
     while (1) {
-        ret = usbh_serial_read(serial, &serial_rx_data[serial_rx_bytes], SERIAL_TEST_LEN);
+        ret = usbh_serial_read(serial, &serial_rx_data[serial_rx_bytes], SERIAL_TEST_LEN - serial_rx_bytes);
         if (ret < 0) {
             USB_LOG_RAW("serial read error, ret:%d\r\n", ret);
             goto delete_with_close;
@@ -86,11 +85,12 @@ Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。�
 
     usbh_serial_close(serial);
 
+.. note:: 需要注意，例程中使用的是比较简单的先发送后读取的方式，因此发送的总长度不可以超过 CONFIG_USBHOST_SERIAL_RX_SIZE，正常使用 TX/RX 请分开进行。
 
 用户需要考虑以下三种场景：
 
-- USB2TTL 设备 + 启用了波特率，这种情况下需要使用 `usbh_serial_write` 和 `usbh_serial_read` 进行收发数据， **并且需要根据波特率控制发送频率，防止对端丢包**；
+- USB2TTL 设备 + 启用了波特率，这种情况下需要使用 `usbh_serial_write` 和 `usbh_serial_read` 进行收发数据， **并且 read 操作需要及时，防止 ringbuf 数据溢出而丢包**；
 
-- 纯 USB 设备 + 未启动波特率，这种情况下可以使用 `usbh_serial_cdc_write_async` 和 `usbh_serial_cdc_read_async` 进行异步收发数据，阻塞则用 `usbh_serial_write` 并且不需要控制发送频率。不可以使用 `usbh_serial_read`。
+- 纯 USB 设备 + 未启动波特率，这种情况下可以使用 `usbh_serial_cdc_write_async` 和 `usbh_serial_cdc_read_async` 进行异步收发数据。阻塞则可以用 `usbh_serial_write` ，不可以使用 `usbh_serial_read`。
 
-- 纯 USB 设备 + 启动波特率，同 1，但是速率打折扣。不可以使用 `usbh_serial_cdc_write_async` 和 `usbh_serial_cdc_read_async`。如果是 GSM 设备需要使用第一种。
+- 纯 USB 设备 + 启动波特率，同 1，但是速率打折扣（因为多了一层 ringbuf）。此时也不可以使用 `usbh_serial_cdc_write_async` 和 `usbh_serial_cdc_read_async`。 **如果是 GSM 设备请使用第一种场景**。

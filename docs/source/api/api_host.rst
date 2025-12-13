@@ -198,7 +198,7 @@ usbh_serial_control
 usbh_serial_write
 """"""""""""""""""""""""""""""""""""
 
-``usbh_serial_write`` 向串口写数据。 **串口设备如果是 USB2TTL 类型，必须按照波特率发送，否则会丢包**
+``usbh_serial_write`` 向串口写数据。
 
 .. code-block:: C
 
@@ -214,7 +214,7 @@ usbh_serial_write
 usbh_serial_read
 """"""""""""""""""""""""""""""""""""
 
-``usbh_serial_read`` 从串口读数据。 **如果没有设置波特率，不允许使用该 API**。
+``usbh_serial_read`` 从串口读数据。 **如果没有设置波特率，不允许使用该 API，设置波特率后，内部会开启 rx 接收并将数据写入 ringbuf **。
 
 .. code-block:: C
 
@@ -244,7 +244,7 @@ usbh_serial_cdc_write_async
 usbh_serial_cdc_read_async
 """"""""""""""""""""""""""""""""""""
 
-``usbh_serial_cdc_read_async`` 异步从串口读数据。 **如果设置了波特率，不允许使用该 API**。
+``usbh_serial_cdc_read_async`` 异步从串口读数据。 **如果设置了波特率，不允许使用该 API，设置波特率后，内部会开启 rx 接收并将数据写入 ringbuf **。
 
 .. code-block:: C
 

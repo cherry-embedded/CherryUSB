@@ -40,7 +40,11 @@
 #endif
 
 #if CONFIG_TEST_USBH_SERIAL
-#define SERIAL_TEST_LEN (2 * 1024)
+#define SERIAL_TEST_LEN (1 * 1024)
+
+#if SERIAL_TEST_LEN >= CONFIG_USBHOST_SERIAL_RX_SIZE
+#error SERIAL_TEST_LEN is larger than CONFIG_USBHOST_SERIAL_RX_SIZE, please reduce SERIAL_TEST_LEN or increase CONFIG_USBHOST_SERIAL_RX_SIZE
+#endif
 
 volatile uint32_t serial_tx_bytes = 0;
 volatile uint32_t serial_rx_bytes = 0;
@@ -94,7 +98,7 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     for (uint8_t j = 0; j < 6; j++) {
         uint32_t start_time = (uint32_t)xTaskGetTickCount();
         for (uint32_t i = 0; i < TEST_COUNT; i++) {
-            usbh_serial_write(serialize, serial_speed_buffer, test_len[j]);
+            usbh_serial_write(serial, serial_speed_buffer, test_len[j]);
             if (ret < 0) {
                 USB_LOG_RAW("bulk out error,ret:%d\r\n", ret);
                 while (1) {
@@ -105,6 +109,7 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
         uint32_t time_ms = xTaskGetTickCount() - start_time;
         USB_LOG_RAW("per packet len:%d, out speed:%f MB/S\r\n", (unsigned int)test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((float)time_ms));
     }
+    goto delete_with_close;
 #endif
     memset(serial_tx_buffer, 0xA5, sizeof(serial_tx_buffer));
     USB_LOG_RAW("start serial loopback test, len: %d\r\n", SERIAL_TEST_LEN);
@@ -118,7 +123,6 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
             goto delete_with_close;
         } else {
             serial_tx_bytes += ret;
-            usb_osal_msleep(10); // 11.52 Byte/ms at 115200bps --> 64Byte/5.5ms
 
             if (serial_tx_bytes == SERIAL_TEST_LEN) {
                 USB_LOG_RAW("send over\r\n");
@@ -130,7 +134,7 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     volatile uint32_t wait_timeout = 0;
     serial_rx_bytes = 0;
     while (1) {
-        ret = usbh_serial_read(serial, &serial_rx_data[serial_rx_bytes], SERIAL_TEST_LEN);
+        ret = usbh_serial_read(serial, &serial_rx_data[serial_rx_bytes], SERIAL_TEST_LEN - serial_rx_bytes);
         if (ret < 0) {
             USB_LOG_RAW("serial read error, ret:%d\r\n", ret);
             goto delete_with_close;
