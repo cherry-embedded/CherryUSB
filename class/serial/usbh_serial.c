@@ -174,6 +174,13 @@ static void usbh_serial_callback(void *arg, int nbytes)
         return;
     }
 
+    if (nbytes < serial->driver->ignore_rx_header) {
+        USB_LOG_ERR("serial rx short packet: %d\n", nbytes);
+        serial->rx_errorcode = -USB_ERR_IO;
+        usb_osal_sem_give(serial->rx_complete_sem);
+        return;
+    }
+
     if (nbytes >= serial->driver->ignore_rx_header) {
         /* resubmit the read urb */
         usbh_bulk_urb_fill(&serial->bulkin_urb, serial->hport, serial->bulkin, &serial->iobuffer[serial->rx_buf_index ? USBH_SERIAL_RX_NOCACHE_OFFSET : USBH_SERIAL_RX2_NOCACHE_OFFSET], serial->bulkin->wMaxPacketSize,
@@ -181,6 +188,9 @@ static void usbh_serial_callback(void *arg, int nbytes)
         ret = usbh_submit_urb(&serial->bulkin_urb);
         if (ret < 0) {
             USB_LOG_ERR("serial submit failed: %d\n", ret);
+            serial->rx_errorcode = ret;
+            usb_osal_sem_give(serial->rx_complete_sem);
+            return;
         }
 
         usbh_serial_ringbuffer_write(&serial->rx_rb,
@@ -193,15 +203,6 @@ static void usbh_serial_callback(void *arg, int nbytes)
         serial->rx_buf_index ^= 1;
         serial->rx_errorcode = 0;
         usb_osal_sem_give(serial->rx_complete_sem);
-    } else {
-        serial->rx_errorcode = nbytes;
-        usb_osal_sem_give(serial->rx_complete_sem);
-        usbh_bulk_urb_fill(&serial->bulkin_urb, serial->hport, serial->bulkin, &serial->iobuffer[serial->rx_buf_index ? USBH_SERIAL_RX2_NOCACHE_OFFSET : USBH_SERIAL_RX_NOCACHE_OFFSET], serial->bulkin->wMaxPacketSize,
-                           0, usbh_serial_callback, serial);
-        ret = usbh_submit_urb(&serial->bulkin_urb);
-        if (ret < 0) {
-            USB_LOG_ERR("serial resubmit short packet failed: %d\n", ret);
-        }
     }
 }
 
