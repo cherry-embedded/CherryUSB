@@ -15,6 +15,8 @@
 #define USBH_SERIAL_INT_NOCACHE_OFFSET  USB_ALIGN_UP(USBH_SERIAL_CTRL_NOCACHE_SIZE, CONFIG_USB_ALIGN_SIZE)
 #define USBH_SERIAL_RX_NOCACHE_OFFSET   USB_ALIGN_UP((USBH_SERIAL_INT_NOCACHE_OFFSET + USBH_SERIAL_INT_NOCACHE_SIZE), CONFIG_USB_ALIGN_SIZE)
 #define USBH_SERIAL_RX_NOCACHE_SIZE     512
+#define USBH_SERIAL_RX2_NOCACHE_OFFSET  USB_ALIGN_UP((USBH_SERIAL_RX_NOCACHE_OFFSET + USBH_SERIAL_RX_NOCACHE_SIZE), CONFIG_USB_ALIGN_SIZE)
+#define USBH_SERIAL_RX2_NOCACHE_SIZE    512
 
 #define USBH_SERIAL_DATABITS_5 5
 #define USBH_SERIAL_DATABITS_6 6
@@ -52,7 +54,7 @@
 #define USBH_SERIAL_O_RDWR   0x0002 /* open for reading and writing */
 
 #define USBH_SERIAL_O_ACCMODE  0x0003 /* mask for above modes, from 4.4BSD https://minnie.tuhs.org/cgi-bin/utree.pl?file=4.4BSD/usr/include/sys/fcntl.h */
-#define USBH_SERIAL_O_NONBLOCK 0x0004 /* non blocking I/O, from BSD apple https://opensource.apple.com/source/xnu/xnu-1228.0.2/bsd/sys/fcntl.h */
+#define USBH_SERIAL_O_NONBLOCK 0x0004 /* non-blocking I/O, from BSD apple https://opensource.apple.com/source/xnu/xnu-1228.0.2/bsd/sys/fcntl.h */
 
 #define USBH_SERIAL_CMD_SET_ATTR 0
 #define USBH_SERIAL_CMD_GET_ATTR 1
@@ -144,6 +146,7 @@ struct usbh_serial {
     usbh_serial_ringbuf_t rx_rb;
     uint8_t rx_rb_pool[CONFIG_USBHOST_SERIAL_RX_SIZE];
     usb_osal_sem_t rx_complete_sem;
+    uint8_t rx_buf_index;
     int rx_errorcode;
     usbh_serial_rx_complete_callback_t rx_complete_callback;
 
