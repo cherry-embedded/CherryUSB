@@ -240,14 +240,13 @@ static int usbh_ch34x_set_line_coding(struct usbh_serial *serial, struct cdc_lin
         reg_value |= CH341_L_SB;
     }
 
-    reg_value |= 0xC0;
+    usbh_ch34x_get_baudrate_div(line_coding->dwDTERate, &factor, &divisor);
 
+    reg_value |= 0xC0;
     value |= 0x9c;
     value |= reg_value << 8;
     index |= 0x80 | divisor;
     index |= (uint16_t)factor << 8;
-
-    usbh_ch34x_get_baudrate_div(line_coding->dwDTERate, &factor, &divisor);
 
     return usbh_ch34x_control_out(serial, CH34X_SERIAL_INIT, value, index);
 }
