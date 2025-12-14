@@ -176,8 +176,14 @@ rt_err_t usbh_serial_register(struct usbh_serial *serial)
     device->user_data = serial;
     serial->user_data = device;
 
+    /* skip /dev/ to avoid BAD file */
+    const char *dev_name = serial->hport->config.intf[serial->intf].devname;
+    if (strncmp(dev_name, "/dev/", 5) == 0) {
+        dev_name += 5;
+    }
+
     /* register a character device */
-    ret = rt_device_register(device, serial->hport->config.intf[serial->intf].devname, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX | RT_DEVICE_FLAG_REMOVABLE);
+    ret = rt_device_register(device, dev_name, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX | RT_DEVICE_FLAG_REMOVABLE);
 
 #ifdef RT_USING_POSIX_DEVIO
     /* set fops */
