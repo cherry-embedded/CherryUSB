@@ -197,7 +197,6 @@
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">serial_tx_bytes</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
-<span class="w">        </span><span class="n">usb_osal_msleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span><span class="w"> </span><span class="c1">// 11.52 Byte/ms at 115200bps --&gt; 64Byte/5.5ms</span>
 
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">serial_tx_bytes</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;send over</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
@@ -209,7 +208,7 @@
 <span class="k">volatile</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">wait_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="n">serial_rx_bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_read</span><span class="p">(</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">serial_rx_data</span><span class="p">[</span><span class="n">serial_rx_bytes</span><span class="p">],</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_serial_read</span><span class="p">(</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">serial_rx_data</span><span class="p">[</span><span class="n">serial_rx_bytes</span><span class="p">],</span><span class="w"> </span><span class="n">SERIAL_TEST_LEN</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">serial_rx_bytes</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;serial read error, ret:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ret</span><span class="p">);</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">delete_with_close</span><span class="p">;</span>
@@ -241,11 +240,15 @@
 <span class="n">usbh_serial_close</span><span class="p">(</span><span class="n">serial</span><span class="p">);</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>需要注意，例程中使用的是比较简单的先发送后读取的方式，因此发送的总长度不可以超过 CONFIG_USBHOST_SERIAL_RX_SIZE，正常使用 TX/RX 请分开进行。</p>
+</div>
 <p>用户需要考虑以下三种场景：</p>
 <ul class="simple">
-<li><p>USB2TTL 设备 + 启用了波特率，这种情况下需要使用 <cite>usbh_serial_write</cite> 和 <cite>usbh_serial_read</cite> 进行收发数据， <strong>并且需要根据波特率控制发送频率，防止对端丢包</strong>；</p></li>
-<li><p>纯 USB 设备 + 未启动波特率，这种情况下可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite> 进行异步收发数据，阻塞则用 <cite>usbh_serial_write</cite> 并且不需要控制发送频率。不可以使用 <cite>usbh_serial_read</cite>。</p></li>
-<li><p>纯 USB 设备 + 启动波特率，同 1，但是速率打折扣。不可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite>。如果是 GSM 设备需要使用第一种。</p></li>
+<li><p>USB2TTL 设备 + 启用了波特率，这种情况下需要使用 <cite>usbh_serial_write</cite> 和 <cite>usbh_serial_read</cite> 进行收发数据， <strong>并且 read 操作需要及时，防止 ringbuf 数据溢出而丢包</strong>；</p></li>
+<li><p>纯 USB 设备 + 未启动波特率，这种情况下可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite> 进行异步收发数据。阻塞则可以用 <cite>usbh_serial_write</cite> ，不可以使用 <cite>usbh_serial_read</cite>。</p></li>
+<li><p>纯 USB 设备 + 启动波特率，同 1，但是速率打折扣（因为多了一层 ringbuf）。此时也不可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite>。 <strong>如果是 GSM 设备请使用第一种场景</strong>。</p></li>
 </ul>
 </section>
 

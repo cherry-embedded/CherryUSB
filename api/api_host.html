@@ -370,7 +370,7 @@
 </section>
 <section id="usbh-serial-write">
 <h3>usbh_serial_write<a class="headerlink" href="#usbh-serial-write" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_write</span></code> 向串口写数据。 <strong>串口设备如果是 USB2TTL 类型，必须按照波特率发送，否则会丢包</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_write</span></code> 向串口写数据。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_write</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -387,7 +387,7 @@
 </section>
 <section id="usbh-serial-read">
 <h3>usbh_serial_read<a class="headerlink" href="#usbh-serial-read" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_read</span></code> 从串口读数据。 <strong>如果没有设置波特率，不允许使用该 API</strong>。</p>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_read</span></code> 从串口读数据。 <a href="#id6"><span class="problematic" id="id7">**</span></a>如果没有设置波特率，不允许使用该 API，设置波特率后，内部会开启 rx 接收并将数据写入 ringbuf <a href="#id8"><span class="problematic" id="id9">**</span></a>。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_read</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -415,7 +415,7 @@
 </section>
 <section id="usbh-serial-cdc-read-async">
 <h3>usbh_serial_cdc_read_async<a class="headerlink" href="#usbh-serial-cdc-read-async" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_cdc_read_async</span></code> 异步从串口读数据。 <strong>如果设置了波特率，不允许使用该 API</strong>。</p>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_cdc_read_async</span></code> 异步从串口读数据。 <a href="#id10"><span class="problematic" id="id11">**</span></a>如果设置了波特率，不允许使用该 API，设置波特率后，内部会开启 rx 接收并将数据写入 ringbuf <a href="#id12"><span class="problematic" id="id13">**</span></a>。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_serial_cdc_read_async</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">buflen</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_complete_callback_t</span><span class="w"> </span><span class="n">complete</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="p">);</span>
 </pre></div>
 </div>
