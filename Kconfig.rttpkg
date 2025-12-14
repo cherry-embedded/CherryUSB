@@ -314,6 +314,7 @@ if PKG_USING_CHERRYUSB
         config PKG_CHERRYUSB_HOST_CDC_ACM
             bool
             prompt "Enable usb cdc acm driver"
+            select CONFIG_USBHOST_SERIAL
             default n
 
         config PKG_CHERRYUSB_HOST_HID
@@ -464,7 +465,7 @@ if PKG_USING_CHERRYUSB
         menu "Select USB host template, please select class driver first"
             config CONFIG_TEST_USBH_SERIAL
                 int
-                prompt "demo for test usb serial, cannot enable this demo, we have used serial framework instead"
+                prompt "demo for test serial, cannot enable this demo, we have used serial framework instead"
                 default 0
                 depends on PKG_CHERRYUSB_HOST_CDC_ACM || PKG_CHERRYUSB_HOST_FTDI || PKG_CHERRYUSB_HOST_CH34X || PKG_CHERRYUSB_HOST_CP210X || PKG_CHERRYUSB_HOST_PL2303
             config CONFIG_TEST_USBH_HID

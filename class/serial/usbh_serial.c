@@ -389,7 +389,7 @@ static int usbh_serial_tiocmset(struct usbh_serial *serial, uint32_t set, uint32
         line_state &= ~USBH_SERIAL_TIOCM_RTS;
     }
 
-    dtr = (line_state & USBH_SERIAL_TIOCM_RTS) ? true : false;
+    dtr = (line_state & USBH_SERIAL_TIOCM_DTR) ? true : false;
     rts = (line_state & USBH_SERIAL_TIOCM_RTS) ? true : false;
 
     if (serial && serial->driver && serial->driver->set_line_state) {
@@ -641,6 +641,12 @@ int usbh_serial(int argc, char **argv)
     if (argc < 3) {
         usbh_serial_help();
         return 0;
+    }
+
+    if (serial) {
+        if (!serial->hport || !serial->hport->connected) {
+            serial = NULL;
+        }
     }
 
     if (!serial) {
