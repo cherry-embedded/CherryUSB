@@ -39,7 +39,6 @@ Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。
 
     serial_tx_bytes = 0;
     while (1) {
-        /* for common, we use timeout with 0xffffffff, this is just a test */
         ret = usbh_serial_write(serial, serial_tx_buffer, sizeof(serial_tx_buffer));
         if (ret < 0) {
             USB_LOG_RAW("serial write error, ret:%d\r\n", ret);
