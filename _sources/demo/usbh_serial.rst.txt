@@ -3,7 +3,7 @@ usbh_serial
 
 Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。
 
-.. figure:: usbh_serial.png
+.. figure:: img/usbh_serial.png
 
 当前支持两种使用方式，一种是使用源生 CherryUSB usbhost serial API 进行操作，另一种是基于平台封装的 API 操作，比如 rt-thread device API，nuttx posix API。
 
