@@ -24,6 +24,12 @@
 #include "usbh_uac_stream.h"
 #endif
 
+#define CONFIG_TEST_USBH_SERIAL
+#define CONFIG_TEST_USBH_HID
+#define CONFIG_TEST_USBH_MSC
+
+#include "demo/usb_host.c"
+
 SDK_DECLARE_EXT_ISR_M(BOARD_CONSOLE_UART_IRQ, shell_uart_isr)
 
 #define task_start_PRIORITY (configMAX_PRIORITIES - 2U)

@@ -38,7 +38,6 @@ sdk_compile_options("-O2")
 sdk_inc(inc)
 sdk_app_src(inc/arch/sys_arch.c)
 sdk_app_src(src/main.c)
-sdk_app_src(../../demo/usb_host.c)
 
 sdk_inc(src/iperf)
 sdk_app_src(src/iperf/iperf.c src/iperf/iperf_cli.c src/iperf/utils_getopt.c src/ping.c)

@@ -14,6 +14,10 @@
 #include "esp_log.h"
 #include "usbd_core.h"
 #include "usbh_core.h"
+
+#define CONFIG_TEST_USBH_SERIAL
+#define CONFIG_TEST_USBH_HID
+
 #include "demo/usb_host.c"
 
 void app_main(void)

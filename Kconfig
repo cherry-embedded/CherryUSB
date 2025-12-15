@@ -438,19 +438,19 @@ if CHERRYUSB
 
         menu "Select USB host template, please select class driver first"
             config TEST_USBH_SERIAL
-                int
+                bool
                 prompt "demo for test serial"
-                default 0
+                default n
                 depends on CHERRYUSB_HOST_CDC_ACM || CHERRYUSB_HOST_FTDI || CHERRYUSB_HOST_CH34X || CHERRYUSB_HOST_CP210X || CHERRYUSB_HOST_PL2303
             config TEST_USBH_HID
-                int
+                bool
                 prompt "demo for test hid"
-                default 0
+                default n
                 depends on CHERRYUSB_HOST_HID
             config TEST_USBH_MSC
-                int
+                bool
                 prompt "demo for test msc"
-                default 0
+                default n
                 depends on CHERRYUSB_HOST_MSC
         endmenu
     endif

@@ -7,39 +7,10 @@
 #include "usbh_serial.h"
 #include "usbh_hid.h"
 #include "usbh_msc.h"
-#include "usbh_video.h"
-#include "usbh_audio.h"
 
-#ifndef CONFIG_TEST_USBH_SERIAL
-#define CONFIG_TEST_USBH_SERIAL 1
-#endif
-#ifndef TEST_USBH_CDC_SPEED
-#define TEST_USBH_CDC_SPEED 0
-#endif
-#ifndef CONFIG_TEST_USBH_HID
-#define CONFIG_TEST_USBH_HID 0
-#endif
-#ifndef CONFIG_TEST_USBH_MSC
-#define CONFIG_TEST_USBH_MSC 1
-#endif
-#ifndef TEST_USBH_MSC_FATFS
-#define TEST_USBH_MSC_FATFS 0
-#endif
-#ifndef TEST_USBH_MSC_FATFS_SPEED
-#define TEST_USBH_MSC_FATFS_SPEED 0
-#endif
-#ifndef CONFIG_TEST_USBH_AUDIO
-#define CONFIG_TEST_USBH_AUDIO 0
-#endif
-#ifndef CONFIG_TEST_USBH_VIDEO
-#define CONFIG_TEST_USBH_VIDEO 0
-#endif
+// net class demos use socket api
 
-#if defined(TEST_USBH_CDC_ECM) || defined(TEST_USBH_CDC_RNDIS) || defined(TEST_USBH_ASIX) || defined(TEST_USBH_RTL8152)
-#error we have move those class implements into platform/none/usbh_lwip.c, and you should call tcpip_init(NULL, NULL) in your app
-#endif
-
-#if CONFIG_TEST_USBH_SERIAL
+#ifdef CONFIG_TEST_USBH_SERIAL
 #define SERIAL_TEST_LEN (1 * 1024)
 
 #if SERIAL_TEST_LEN >= CONFIG_USBHOST_SERIAL_RX_SIZE
@@ -53,7 +24,7 @@ volatile bool serial_is_opened = false;
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t serial_tx_buffer[64];
 uint8_t serial_rx_data[SERIAL_TEST_LEN];
 
-#if TEST_USBH_CDC_SPEED
+#ifdef CONFIG_TEST_USBH_CDC_SPEED
 #define TEST_LEN   (16 * 1024)
 #define TEST_COUNT (10240)
 
@@ -64,6 +35,7 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
     int ret;
     struct usbh_serial *serial;
+    bool serial_test_success = false;
 
     serial = usbh_serial_open("/dev/ttyACM0", USBH_SERIAL_O_RDWR | USBH_SERIAL_O_NONBLOCK);
     if (serial == NULL) {
@@ -90,7 +62,7 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     }
 
     /* test with only one buffer, if you have more cdc acm class, modify by yourself */
-#if TEST_USBH_CDC_SPEED
+#ifdef CONFIG_TEST_USBH_CDC_SPEED
     const uint32_t test_len[] = { 512, 1 * 1024, 2 * 1024, 4 * 1024, 8 * 1024, 16 * 1024 };
 
     memset(serial_speed_buffer, 0xAA, TEST_LEN);
@@ -109,14 +81,14 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
         uint32_t time_ms = xTaskGetTickCount() - start_time;
         USB_LOG_RAW("per packet len:%d, out speed:%f MB/S\r\n", (unsigned int)test_len[j], (test_len[j] * TEST_COUNT / 1024 / 1024) * 1000 / ((float)time_ms));
     }
-    goto delete_with_close;
+    usbh_serial_close(serial);
+    goto delete;
 #endif
     memset(serial_tx_buffer, 0xA5, sizeof(serial_tx_buffer));
     USB_LOG_RAW("start serial loopback test, len: %d\r\n", SERIAL_TEST_LEN);
 
     serial_tx_bytes = 0;
     while (1) {
-        /* for common, we use timeout with 0xffffffff, this is just a test */
         ret = usbh_serial_write(serial, serial_tx_buffer, sizeof(serial_tx_buffer));
         if (ret < 0) {
             USB_LOG_RAW("serial write error, ret:%d\r\n", ret);
@@ -149,7 +121,7 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
                         goto delete_with_close;
                     }
                 }
-                USB_LOG_RAW("serial loopback test success\r\n");
+                serial_test_success = true;
                 break;
             }
         }
@@ -165,6 +137,11 @@ static void usbh_serial_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     // clang-format off
 delete_with_close:
+    if (serial_test_success) {
+        USB_LOG_RAW("serial loopback test success\r\n");
+    } else {
+        USB_LOG_RAW("serial loopback test failed\r\n");
+    }
     usbh_serial_close(serial);
 delete:
     usb_osal_thread_delete(NULL);
@@ -172,7 +149,7 @@ delete:
 }
 #endif
 
-#if CONFIG_TEST_USBH_HID
+#ifdef CONFIG_TEST_USBH_HID
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t hid_buffer[128];
 
 void usbh_hid_callback(void *arg, int nbytes)
@@ -213,12 +190,12 @@ delete:
 }
 #endif
 
-#if CONFIG_TEST_USBH_MSC
+#ifdef CONFIG_TEST_USBH_MSC
 
-#if TEST_USBH_MSC_FATFS
+#ifdef CONFIG_TEST_USBH_MSC_FATFS
 #include "ff.h"
 
-#if TEST_USBH_MSC_FATFS_SPEED
+#ifdef CONFIG_TEST_USBH_MSC_FATFS_SPEED
 #define WRITE_SIZE_MB (128UL)
 #define WRITE_SIZE    (1024UL * 1024UL * WRITE_SIZE_MB)
 #define BUF_SIZE      (1024UL * 128UL)
@@ -279,7 +256,7 @@ int usb_msc_fatfs_test()
         goto unmount;
     }
 
-#if TEST_USBH_MSC_FATFS_SPEED
+#ifdef CONFIG_TEST_USBH_MSC_FATFS_SPEED
     for (uint32_t i = 0; i < BUF_SIZE; i++) {
         read_write_buffer[i] = i % 256;
     }
@@ -351,8 +328,10 @@ static void usbh_msc_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     int ret;
     struct usbh_msc *msc_class = (struct usbh_msc *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
+    (void)msc_class;
+
     /* test with only one buffer, if you have more msc class, modify by yourself */
-#if TEST_USBH_MSC_FATFS == 0
+#ifndef TEST_USBH_MSC_FATFS
     ret = usbh_msc_scsi_init(msc_class);
     if (ret < 0) {
         USB_LOG_RAW("scsi_init error,ret:%d\r\n", ret);
@@ -382,7 +361,7 @@ delete:
 }
 #endif
 
-#if CONFIG_TEST_USBH_SERIAL
+#ifdef CONFIG_TEST_USBH_SERIAL
 void usbh_serial_run(struct usbh_serial *serial)
 {
     if (serial_is_opened) {
@@ -398,7 +377,7 @@ void usbh_serial_stop(struct usbh_serial *serial)
 }
 #endif
 
-#if CONFIG_TEST_USBH_HID
+#ifdef CONFIG_TEST_USBH_HID
 void usbh_hid_run(struct usbh_hid *hid_class)
 {
     usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, hid_class);
@@ -409,7 +388,7 @@ void usbh_hid_stop(struct usbh_hid *hid_class)
 }
 #endif
 
-#if CONFIG_TEST_USBH_MSC
+#ifdef CONFIG_TEST_USBH_MSC
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
     usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, msc_class);
@@ -418,14 +397,6 @@ void usbh_msc_run(struct usbh_msc *msc_class)
 void usbh_msc_stop(struct usbh_msc *msc_class)
 {
 }
-#endif
-
-#if CONFIG_TEST_USBH_AUDIO
-#error "commercial charge"
-#endif
-
-#if CONFIG_TEST_USBH_VIDEO
-#error "commercial charge"
 #endif
 
 #if 0

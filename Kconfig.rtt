@@ -465,19 +465,19 @@ if RT_USING_CHERRYUSB
 
         menu "Select USB host template, please select class driver first"
             config CONFIG_TEST_USBH_SERIAL
-                int
-                prompt "demo for test serial, cannot enable this demo, we have used serial framework instead"
-                default 0
+                bool
+                prompt "demo for test serial, cannot enable this demo, we have used rt-device framework instead"
+                default n
                 depends on RT_CHERRYUSB_HOST_CDC_ACM || RT_CHERRYUSB_HOST_FTDI || RT_CHERRYUSB_HOST_CH34X || RT_CHERRYUSB_HOST_CP210X || RT_CHERRYUSB_HOST_PL2303
             config CONFIG_TEST_USBH_HID
-                int
+                bool
                 prompt "demo for test hid"
-                default 0
+                default n
                 depends on RT_CHERRYUSB_HOST_HID
             config CONFIG_TEST_USBH_MSC
-                int
+                bool
                 prompt "demo for test msc, cannot enable this demo, we have used dfs instead"
-                default 0
+                default n
                 depends on RT_CHERRYUSB_HOST_MSC
         endmenu
     endif
