@@ -302,7 +302,6 @@ static int usbh_cp210x_set_data_format(struct usbh_serial *serial, uint8_t datab
 
 static int usbh_cp210x_attach(struct usbh_serial *serial)
 {
-    struct cp210x_comm_status status = { 0 };
     int ret;
 
     struct usbh_cp210x *cp210x_class = usb_osal_malloc(sizeof(struct usbh_cp210x));
@@ -319,8 +318,6 @@ static int usbh_cp210x_attach(struct usbh_serial *serial)
     if (ret < 0) {
         goto errout;
     }
-
-    USB_LOG_INFO("ulAmountInInQueue: %u, ulAmountInOutQueue: %u\r\n", (unsigned int)status.ulAmountInInQueue, (unsigned int)status.ulAmountInOutQueue);
     return 0;
 errout:
     serial->priv = NULL;
