@@ -15,7 +15,7 @@ usbd_webusb
 
 .. code-block:: C
 
-USB_INTERFACE_DESCRIPTOR_INIT(USBD_WEBUSB_INTF_NUM, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)
+    USB_INTERFACE_DESCRIPTOR_INIT(USBD_WEBUSB_INTF_NUM, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)
 
 - 其余使用 hid 描述符，不再赘述
 - 枚举完成后，电脑右下角会弹出网页信息，点击即可打开网页

@@ -71,7 +71,7 @@ Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。
                         goto delete_with_close;
                     }
                 }
-                USB_LOG_RAW("serial loopback test success\r\n");
+                serial_test_success = true;
                 break;
             }
         }

@@ -14,8 +14,6 @@
 CORE
 -----------------
 
-.. note:: 请注意，v1.1 版本开始增加 busid 形参，其余保持不变，所以 API 说明不做更新
-
 端点结构体
 """"""""""""""""""""""""""""""""""""
 
@@ -28,7 +26,6 @@ CORE
         usbd_endpoint_callback ep_cb;
     };
 
-- **list** 端点的链表节点
 - **ep_addr** 端点地址（带方向）
 - **ep_cb** 端点完成中断回调函数。
 
@@ -58,64 +55,39 @@ CORE
 - **hid_report_descriptor** hid 报告描述符
 - **hid_report_descriptor_len** hid 报告描述符长度
 - **intf_num** 当前接口偏移
-- **ep_list** 端点的链表节点
 
 usbd_desc_register
 """"""""""""""""""""""""""""""""""""
 
-``usbd_desc_register`` 用来注册 USB 描述符，描述符种类包括：设备描述符、配置描述符（包含配置描述符、接口描述符、class 类描述符、端点描述符）、字符串描述符、设备限定描述符。
+``usbd_desc_register`` 用来注册 USB 描述符，描述符种类包括：设备描述符、配置描述符（包含配置描述符、接口描述符、class 类描述符、端点描述符）、字符串描述符、设备限定描述符，其他速度描述符，
+bos描述符，winusb 描述符。
 
 .. code-block:: C
 
-    void usbd_desc_register(const uint8_t *desc);
+    // 开启 CONFIG_USBDEV_ADVANCE_DESC
+    void usbd_desc_register(uint8_t busid, const struct usb_descriptor *desc);
+
+    // 关闭 CONFIG_USBDEV_ADVANCE_DESC
+    void usbd_desc_register(uint8_t busid, const uint8_t *desc);
+    void usbd_msosv1_desc_register(uint8_t busid, struct usb_msosv1_descriptor *desc);
+    void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc);
+    void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
+    void usbd_webusb_desc_register(uint8_t busid, struct usb_webusb_descriptor *desc);
 
 - **desc**  描述符的句柄
 
-.. note:: 当前 API 仅支持一种速度，如果需要更高级的速度切换功能，请开启 CONFIG_USBDEV_ADVANCE_DESC，并且包含了下面所有描述符注册功能
-
-
-usbd_msosv1_desc_register
-""""""""""""""""""""""""""""""""""""
-
-``usbd_msosv1_desc_register`` 用来注册一个 WINUSB 1.0 描述符。
-
-.. code-block:: C
-
-    void usbd_msosv1_desc_register(struct usb_msosv1_descriptor *desc);
-
-- **desc**  描述符句柄
-
-usbd_msosv2_desc_register
-""""""""""""""""""""""""""""""""""""
-
-``usbd_msosv2_desc_register`` 用来注册一个 WINUSB 2.0 描述符。
-
-.. code-block:: C
-
-    void usbd_msosv2_desc_register(struct usb_msosv2_descriptor *desc);
-
-- **desc**  描述符句柄
-
-usbd_bos_desc_register
-""""""""""""""""""""""""""""""""""""
-
-``usbd_bos_desc_register`` 用来注册一个 BOS 描述符， USB 2.1 版本以上必须注册。
-
-.. code-block:: C
-
-    void usbd_bos_desc_register(struct usb_bos_descriptor *desc);
-
-- **desc**  描述符句柄
+.. note:: 当前默认开启 CONFIG_USBDEV_ADVANCE_DESC，如果需要使用旧版本 API 请关闭该宏
 
 usbd_add_interface
 """"""""""""""""""""""""""""""""""""
 
-``usbd_add_interface`` 添加一个接口驱动。 **添加顺序必须按照描述符顺序**。
+``usbd_add_interface`` 添加一个接口驱动。 **添加顺序必须按照描述符中接口顺序**。
 
 .. code-block:: C
 
-    void usbd_add_interface(struct usbd_interface *intf);
+    void usbd_add_interface(uint8_t busid, struct usbd_interface *intf);
 
+- **busid** USB 总线 id
 - **intf**  接口驱动句柄，通常从不同 class 的 `xxx_init_intf` 函数获取
 
 usbd_add_endpoint
@@ -125,27 +97,59 @@ usbd_add_endpoint
 
 .. code-block:: C
 
-    void usbd_add_endpoint(struct usbd_endpoint *ep);;
+    void usbd_add_endpoint(uint8_t busid, struct usbd_endpoint *ep);
 
+- **busid** USB 总线 id
 - **ep**    端点句柄
 
 usbd_initialize
 """"""""""""""""""""""""""""""""""""
 
-``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在所有列出的 API 最后。 **如果使用 os，必须放在线程中执行**。
+``usbd_initialize`` 用来初始化 usb device 寄存器配置、usb 时钟、中断等，需要注意，此函数必须在注册描述符 API 最后。 **如果使用 os，必须放在线程中执行**。
 
 .. code-block:: C
 
-    int usbd_initialize(void);
+    int usbd_initialize(uint8_t busid, uintptr_t reg_base, usbd_event_handler_t event_handler);
 
-usbd_event_handler
+- **busid** USB 总线 id
+- **reg_base** USB 设备寄存器基地址
+- **event_handler** 协议栈中断或者状态回调函数，event 事件
+- **return** 返回 0 表示成功，其他值表示失败
+
+event 事件包括：
+
+.. code-block:: C
+
+    USBD_EVENT_ERROR,        /** USB error reported by the controller */
+    USBD_EVENT_RESET,        /** USB reset */
+    USBD_EVENT_SOF,          /** Start of Frame received */
+    USBD_EVENT_CONNECTED,    /** USB connected*/
+    USBD_EVENT_DISCONNECTED, /** USB disconnected */
+    USBD_EVENT_SUSPEND,      /** USB connection suspended by the HOST */
+    USBD_EVENT_RESUME,       /** USB connection resumed by the HOST */
+
+    /* USB DEVICE STATUS */
+    USBD_EVENT_CONFIGURED,        /** USB configuration done */
+    USBD_EVENT_SET_INTERFACE,     /** USB interface selected */
+    USBD_EVENT_SET_REMOTE_WAKEUP, /** USB set remote wakeup */
+    USBD_EVENT_CLR_REMOTE_WAKEUP, /** USB clear remote wakeup */
+    USBD_EVENT_INIT,              /** USB init done when call usbd_initialize */
+    USBD_EVENT_DEINIT,            /** USB deinit done when call usbd_deinitialize */
+    USBD_EVENT_UNKNOWN
+
+.. note:: 大部分 IP USBD_EVENT_CONNECTED 和 USBD_EVENT_DISCONNECTED 都支持，当前仅 HPM 芯片支持
+
+usbd_deinitialize
 """"""""""""""""""""""""""""""""""""
 
-``usbd_event_handler`` 是协议栈中中断或者协议栈一些状态的回调函数。大部分 IP 仅支持 USBD_EVENT_RESET 和 USBD_EVENT_CONFIGURED
+``usbd_deinitialize`` 用来反初始化 usb device，关闭 usb 设备时钟、中断等。
 
 .. code-block:: C
 
-    void usbd_event_handler(uint8_t event);
+    int usbd_deinitialize(uint8_t busid);
+
+- **busid** USB 总线 id
+- **return** 返回 0 表示成功，其他值表示失败
 
 CDC ACM
 -----------------
@@ -160,8 +164,9 @@ usbd_cdc_acm_init_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_cdc_acm_init_intf(struct usbd_interface *intf);
+    struct usbd_interface *usbd_cdc_acm_init_intf(uint8_t busid, struct usbd_interface *intf);
 
+- **busid** USB 总线 id
 - **return**  接口句柄
 
 usbd_cdc_acm_set_line_coding
@@ -171,8 +176,9 @@ usbd_cdc_acm_set_line_coding
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_line_coding(uint8_t intf, struct cdc_line_coding *line_coding);
+    void usbd_cdc_acm_set_line_coding(uint8_t busid, uint8_t intf, struct cdc_line_coding *line_coding);
 
+- **busid** USB 总线 id
 - **intf** 控制接口号
 - **line_coding** 串口配置
 
@@ -183,8 +189,9 @@ usbd_cdc_acm_get_line_coding
 
 .. code-block:: C
 
-    void usbd_cdc_acm_get_line_coding(uint8_t intf, struct cdc_line_coding *line_coding);
+    void usbd_cdc_acm_get_line_coding(uint8_t busid, uint8_t intf, struct cdc_line_coding *line_coding);
 
+- **busid** USB 总线 id
 - **intf** 控制接口号
 - **line_coding** 串口配置
 
@@ -195,8 +202,9 @@ usbd_cdc_acm_set_dtr
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_dtr(uint8_t intf, bool dtr);
+    void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr);
 
+- **busid** USB 总线 id
 - **intf** 控制接口号
 - **dtr** dtr 为1表示拉低电平，为0表示拉高电平
 
@@ -207,8 +215,9 @@ usbd_cdc_acm_set_rts
 
 .. code-block:: C
 
-    void usbd_cdc_acm_set_rts(uint8_t intf, bool rts);
+    void usbd_cdc_acm_set_rts(uint8_t busid, uint8_t intf, bool rts);
 
+- **busid** USB 总线 id
 - **intf** 控制接口号
 - **rts** rts 为1表示拉低电平，为0表示拉高电平
 
@@ -240,8 +249,9 @@ usbd_hid_init_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_hid_init_intf(struct usbd_interface *intf, const uint8_t *desc, uint32_t desc_len);
+    struct usbd_interface *usbd_hid_init_intf(uint8_t busid, struct usbd_interface *intf, const uint8_t *desc, uint32_t desc_len);
 
+- **busid** USB 总线 id
 - **desc** 报告描述符
 - **desc_len** 报告描述符长度
 
@@ -260,8 +270,9 @@ usbd_msc_init_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_msc_init_intf(struct usbd_interface *intf, const uint8_t out_ep, const uint8_t in_ep);
+    struct usbd_interface *usbd_msc_init_intf(uint8_t busid, struct usbd_interface *intf, const uint8_t out_ep, const uint8_t in_ep);
 
+- **busid** USB 总线 id
 - **out_ep**     out 端点地址
 - **in_ep**      in 端点地址
 
@@ -272,8 +283,9 @@ usbd_msc_get_cap
 
 .. code-block:: C
 
-    void usbd_msc_get_cap(uint8_t lun, uint32_t *block_num, uint16_t *block_size);
+    void usbd_msc_get_cap(uint8_t busid, uint8_t lun, uint32_t *block_num, uint16_t *block_size);
 
+- **busid** USB 总线 id
 - **lun** 存储逻辑单元，暂时无用，默认支持一个
 - **block_num**  存储扇区个数
 - **block_size**  存储扇区大小
@@ -285,8 +297,10 @@ usbd_msc_sector_read
 
 .. code-block:: C
 
-    int usbd_msc_sector_read(uint32_t sector, uint8_t *buffer, uint32_t length);
+    int usbd_msc_sector_read(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length);
 
+- **busid** USB 总线 id
+- **lun** 存储逻辑单元，暂时无用，默认支持一个
 - **sector** 扇区偏移
 - **buffer** 存储读取的数据的指针
 - **length** 读取长度
@@ -299,8 +313,10 @@ usbd_msc_sector_write
 
 .. code-block:: C
 
-    int usbd_msc_sector_write(uint32_t sector, uint8_t *buffer, uint32_t length);
+    int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length);
 
+- **busid** USB 总线 id
+- **lun** 存储逻辑单元，暂时无用，默认支持一个
 - **sector** 扇区偏移
 - **buffer** 写入数据指针
 - **length** 写入长度
@@ -318,15 +334,21 @@ usbd_audio_init_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_audio_init_intf(struct usbd_interface *intf);
+    struct usbd_interface *usbd_audio_init_intf(uint8_t busid, struct usbd_interface *intf,
+                                                uint16_t uac_version,
+                                                struct audio_entity_info *table,
+                                                uint8_t num);
 
-- **class** 类的句柄
+- **busid** USB 总线 id
 - **intf**  接口句柄
+- **uac_version**  音频类版本，UAC1.0 或 UAC2.0
+- **table** 音频实体信息表
+- **num** 音频实体信息表长度
 
 usbd_audio_open
 """"""""""""""""""""""""""""""""""""
 
-``usbd_audio_open``  用来开启音频数据传输。
+``usbd_audio_open``  用来开启音频数据传输。主机发送开启命令的回调函数。
 
 .. code-block:: C
 
@@ -337,25 +359,13 @@ usbd_audio_open
 usbd_audio_close
 """"""""""""""""""""""""""""""""""""
 
-``usbd_audio_close``  用来关闭音频数据传输。
+``usbd_audio_close``  用来关闭音频数据传输。主机发送关闭命令的回调函数。
 
 .. code-block:: C
 
     void usbd_audio_close(uint8_t intf);
 
 - **intf** 关闭的接口号
-
-usbd_audio_add_entity
-""""""""""""""""""""""""""""""""""""
-
-``usbd_audio_add_entity``  用来添加 unit 相关控制，例如 feature unit、clock source。
-
-.. code-block:: C
-
-    void usbd_audio_add_entity(uint8_t entity_id, uint16_t bDescriptorSubtype);
-
-- **entity_id** 要添加的 unit id
-- **bDescriptorSubtype** entity_id 的描述符子类型
 
 usbd_audio_set_mute
 """"""""""""""""""""""""""""""""""""
@@ -364,10 +374,12 @@ usbd_audio_set_mute
 
 .. code-block:: C
 
-    void usbd_audio_set_mute(uint8_t ch, uint8_t enable);
+    void usbd_audio_set_mute(uint8_t busid, uint8_t ep, uint8_t ch, bool mute);
 
+- **busid** USB 总线 id
+- **ep** 要设置静音的端点
 - **ch** 要设置静音的通道
-- **enable** 为1 表示静音，0相反
+- **mute** 为1 表示静音，0相反
 
 usbd_audio_set_volume
 """"""""""""""""""""""""""""""""""""
@@ -376,10 +388,12 @@ usbd_audio_set_volume
 
 .. code-block:: C
 
-    void usbd_audio_set_volume(uint8_t ch, float dB);
+    void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int volume_db);
 
+- **busid** USB 总线 id
+- **ep** 要设置音量的端点
 - **ch** 要设置音量的通道
-- **dB** 要设置音量的分贝，其中 UAC1.0范围从 -127 ~ +127dB，UAC2.0 从 0 ~ 256dB
+- **volume_db** 要设置音量的分贝，单位 -100dB ~ 0dB
 
 usbd_audio_set_sampling_freq
 """"""""""""""""""""""""""""""""""""
@@ -388,33 +402,22 @@ usbd_audio_set_sampling_freq
 
 .. code-block:: C
 
-    void usbd_audio_set_sampling_freq(uint8_t ep_ch, uint32_t sampling_freq);
+    void usbd_audio_set_sampling_freq(uint8_t busid, uint8_t ep, uint32_t sampling_freq);
 
-- **ch** 要设置采样率的端点或者通道，UAC1.0为端点，UAC2.0 为通道
-- **dB** 要设置的采样率
+- **ep** 要设置采样率的端点
+- **sampling_freq** 要设置的采样率
 
 usbd_audio_get_sampling_freq_table
 """"""""""""""""""""""""""""""""""""
 
-``usbd_audio_get_sampling_freq_table``  用来获取支持的采样率列表，如果函数没有实现，则使用默认采样率列表。
+``usbd_audio_get_sampling_freq_table``  用来获取支持的采样率列表，如果函数没有实现，则使用默认采样率列表。 UAC2 only。
 
 .. code-block:: C
 
-    void usbd_audio_get_sampling_freq_table(uint8_t **sampling_freq_table);
+    void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sampling_freq_table);
 
+- **ep** 要获取采样率的端点
 - **sampling_freq_table** 采样率列表地址，格式参考默认采样率列表
-
-usbd_audio_set_pitch
-""""""""""""""""""""""""""""""""""""
-
-``usbd_audio_set_pitch``  用来设置音频音调，仅 UAC1.0 有这功能。
-
-.. code-block:: C
-
-    void usbd_audio_set_pitch(uint8_t ep, bool enable);
-
-- **ep** 要设置音调的端点
-- **enable** 开启或关闭音调
 
 UVC
 -----------------
@@ -428,13 +431,15 @@ usbd_video_init_intf
 
 .. code-block:: C
 
-    struct usbd_interface *usbd_video_init_intf(struct usbd_interface *intf,
-                                             uint32_t dwFrameInterval,
-                                             uint32_t dwMaxVideoFrameSize,
-                                             uint32_t dwMaxPayloadTransferSize);
-
-- **class** 类的句柄
+    struct usbd_interface *usbd_video_init_intf(uint8_t busid, struct usbd_interface *intf,
+                                                uint32_t dwFrameInterval,
+                                                uint32_t dwMaxVideoFrameSize,
+                                                uint32_t dwMaxPayloadTransferSize);
+- **busid** USB 总线 id
 - **intf**  接口句柄
+- **dwFrameInterval** 视频帧间隔，单位 100ns
+- **dwMaxVideoFrameSize** 最大视频帧大小
+- **dwMaxPayloadTransferSize** 最大负载传输大小
 
 usbd_video_open
 """"""""""""""""""""""""""""""""""""
@@ -458,25 +463,39 @@ usbd_video_close
 
 - **intf** 关闭的接口号
 
-usbd_video_payload_fill
+usbd_video_stream_start_write
 """"""""""""""""""""""""""""""""""""
 
-``usbd_video_payload_fill``  用来填充 mjpeg 到新的 buffer中，其中会对 mjpeg 数据按帧进行切分，切分大小由 ``dwMaxPayloadTransferSize`` 控制，并添加头部信息，当前头部字节数为 2。头部信息见 ``struct video_mjpeg_payload_header``
+``usbd_video_stream_start_write``  用来启动一帧视频数据流发送。需要搭配 `usbd_video_stream_split_transfer` 使用。
 
 .. code-block:: C
 
-    uint32_t usbd_video_payload_fill(uint8_t *input, uint32_t input_len, uint8_t *output, uint32_t *out_len);
+    int usbd_video_stream_start_write(uint8_t busid, uint8_t ep, uint8_t *ep_buf, uint8_t *stream_buf, uint32_t stream_len, bool do_copy);
 
-- **input** mjpeg 格式的数据包，从 FFD8~FFD9结束
-- **input_len** mjpeg数据包大小
-- **output** 输出缓冲区
-- **out_len** 输出实际要发送的长度大小
-- **return** 返回 usb 按照 ``dwMaxPayloadTransferSize`` 大小要发多少帧
+- **busid** USB 总线 id
+- **ep** 视频数据端点地址
+- **ep_buf** 视频数据端点传输缓冲区
+- **stream_buf** 一帧视频数据源缓冲区
+- **stream_len** 一帧视频数据源缓冲区大小
+- **do_copy** 是否需要将 stream_buf 数据复制到 ep_buf 中，当前仅当 stream_buf 在 nocache 区域并且未开启 DCACHE_ENABLE 时该参数才为 false
 
-DFU
+usbd_video_stream_split_transfer
+""""""""""""""""""""""""""""""""""""
+
+``usbd_video_stream_split_transfer``  用来分割视频数据流发送。需要搭配 `usbd_video_stream_start_write` 使用。
+
+.. code-block:: C
+
+    int usbd_video_stream_split_transfer(uint8_t busid, uint8_t ep);
+
+- **busid** USB 总线 id
+- **ep** 视频数据端点地址
+- **return** 返回 true 表示一帧数据发送完成，false 表示数据未发送完成
+
+RNDIS
 -----------------
 
-PRINTER
+CDC ECM
 -----------------
 
 MTP
