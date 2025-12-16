@@ -105,4 +105,4 @@ TCPIP_THREAD_STACKSIZE 推荐大于 1K，防止栈溢出。
     #error TCPIP_THREAD_STACKSIZE must be >= 1024
     #endif
 
-- 具体移植文章可以参考 https://club.rt-thread.org/ask/article/5cf3e9e0b2d95800.html
+- 具体移植文章可以参考开发者的一些笔记 https://club.rt-thread.org/ask/article/5cf3e9e0b2d95800.html

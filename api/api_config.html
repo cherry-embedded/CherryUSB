@@ -71,6 +71,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#config-usb-printf">CONFIG_USB_PRINTF</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usb-dbg-level">CONFIG_USB_DBG_LEVEL</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usb-printf-color-enable">CONFIG_USB_PRINTF_COLOR_ENABLE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-usb-dcache-enable">CONFIG_USB_DCACHE_ENABLE</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usb-align-size">CONFIG_USB_ALIGN_SIZE</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usb-nocache-ram-section">USB_NOCACHE_RAM_SECTION</a></li>
 </ul>
@@ -211,6 +212,10 @@
 <h3>CONFIG_USB_PRINTF_COLOR_ENABLE<a class="headerlink" href="#config-usb-printf-color-enable" title="Link to this heading"></a></h3>
 <p>控制 log 颜色打印，默认开启</p>
 </section>
+<section id="config-usb-dcache-enable">
+<h3>CONFIG_USB_DCACHE_ENABLE<a class="headerlink" href="#config-usb-dcache-enable" title="Link to this heading"></a></h3>
+<p>不使用 nocache ram 时，开启此宏以保证数据一致性。 <strong>使用 EHCI 时，内部依旧需要使用 nocache ram</strong>。</p>
+</section>
 <section id="config-usb-align-size">
 <h3>CONFIG_USB_ALIGN_SIZE<a class="headerlink" href="#config-usb-align-size" title="Link to this heading"></a></h3>
 <p>USB buffer 的对齐大小，默认是 4。IP 在 dma 模式下可能对输入的 buffer有对齐要求，一般是4，如果是其他对齐方式，请修改此值。</p>
@@ -300,7 +305,7 @@ usbd_msc_sector_read 和 usbd_msc_sector_write 就会在线程中执行。</p>
 </pre></div>
 </div>
 <p>以下参数决定了支持的 class 数目，更改此值会影响 ram 的大小，建议根据实际情况更改。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define CONFIG_USBHOST_MAX_SERIAL_CLASS  4</span>
 <span class="cp">#define CONFIG_USBHOST_MAX_HID_CLASS     4</span>
 <span class="cp">#define CONFIG_USBHOST_MAX_MSC_CLASS     2</span>
 <span class="cp">#define CONFIG_USBHOST_MAX_AUDIO_CLASS   1</span>
@@ -321,7 +326,7 @@ usbd_msc_sector_read 和 usbd_msc_sector_write 就会在线程中执行。</p>
 </section>
 <section id="config-usbhost-control-transfer-timeout">
 <h3>CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT<a class="headerlink" href="#config-usbhost-control-transfer-timeout" title="Link to this heading"></a></h3>
-<p>控制传输发送或者接收的超时时间，默认 1s</p>
+<p>控制传输发送或者接收的超时时间，默认 500 ms</p>
 </section>
 <section id="config-usbhost-msc-timeout">
 <h3>CONFIG_USBHOST_MSC_TIMEOUT<a class="headerlink" href="#config-usbhost-msc-timeout" title="Link to this heading"></a></h3>

@@ -264,5 +264,49 @@ HID
 MSC
 -----------------
 
+usbh_msc_scsi_init
+""""""""""""""""""""""""""""""""""""
+
+``usbh_msc_scsi_init`` 初始化 msc scsi 设备。获取 MSC 状态和容量信息。
+
+.. code-block:: C
+
+    int usbh_msc_scsi_init(struct usbh_msc *msc_class);
+
+- **msc_class**  msc 结构体句柄
+- **return**  0 表示正常其他表示错误
+
+usbh_msc_scsi_write10
+""""""""""""""""""""""""""""""""""""
+
+``usbh_msc_scsi_write10`` 向 msc 设备写数据。
+
+.. code-block:: C
+
+    int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors);
+
+- **msc_class**  msc 结构体句柄
+- **start_sector**  起始扇区
+- **buffer**  数据缓冲区指针
+- **nsectors**  要写入的扇区数
+- **return**  返回 0 表示正常其他表示错误
+
+usbh_msc_scsi_read10
+""""""""""""""""""""""""""""""""""""
+
+``usbh_msc_scsi_read10`` 从 msc 设备读数据。
+
+.. code-block:: C
+
+    int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, uint8_t *buffer, uint32_t nsectors);
+
+- **msc_class**  msc 结构体句柄
+- **start_sector**  起始扇区
+- **buffer**  数据缓冲区指针
+- **nsectors**  要读取的扇区数
+- **return**  返回 0 表示正常其他表示错误
+
 NETWORK
 -----------------
+
+已对接 lwIP 协议栈或者其他网络协议栈，使用 socket API 即可。

@@ -171,10 +171,9 @@
 <ul class="simple">
 <li><p>增加一个接口描述符用于 webusb</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB_INTERFACE_DESCRIPTOR_INIT</span><span class="p">(</span><span class="n">USBD_WEBUSB_INTF_NUM</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0xff</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>USB_INTERFACE_DESCRIPTOR_INIT(USBD_WEBUSB_INTF_NUM, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)</p>
 <ul class="simple">
 <li><p>其余使用 hid 描述符，不再赘述</p></li>
 <li><p>枚举完成后，电脑右下角会弹出网页信息，点击即可打开网页</p></li>

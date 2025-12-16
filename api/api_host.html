@@ -89,7 +89,12 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#hid">HID</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#msc">MSC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#msc">MSC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-msc-scsi-init">usbh_msc_scsi_init</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-msc-scsi-write10">usbh_msc_scsi_write10</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-msc-scsi-read10">usbh_msc_scsi_read10</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#network">NETWORK</a></li>
 </ul>
 </li>
@@ -434,9 +439,49 @@
 </section>
 <section id="msc">
 <h2>MSC<a class="headerlink" href="#msc" title="Link to this heading"></a></h2>
+<section id="usbh-msc-scsi-init">
+<h3>usbh_msc_scsi_init<a class="headerlink" href="#usbh-msc-scsi-init" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_msc_scsi_init</span></code> 初始化 msc scsi 设备。获取 MSC 状态和容量信息。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_msc_scsi_init</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_msc</span><span class="w"> </span><span class="o">*</span><span class="n">msc_class</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>msc_class</strong>  msc 结构体句柄</p></li>
+<li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
+</ul>
+</section>
+<section id="usbh-msc-scsi-write10">
+<h3>usbh_msc_scsi_write10<a class="headerlink" href="#usbh-msc-scsi-write10" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_msc_scsi_write10</span></code> 向 msc 设备写数据。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_msc_scsi_write10</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_msc</span><span class="w"> </span><span class="o">*</span><span class="n">msc_class</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">start_sector</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">nsectors</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>msc_class</strong>  msc 结构体句柄</p></li>
+<li><p><strong>start_sector</strong>  起始扇区</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>nsectors</strong>  要写入的扇区数</p></li>
+<li><p><strong>return</strong>  返回 0 表示正常其他表示错误</p></li>
+</ul>
+</section>
+<section id="usbh-msc-scsi-read10">
+<h3>usbh_msc_scsi_read10<a class="headerlink" href="#usbh-msc-scsi-read10" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_msc_scsi_read10</span></code> 从 msc 设备读数据。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_msc_scsi_read10</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_msc</span><span class="w"> </span><span class="o">*</span><span class="n">msc_class</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">start_sector</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">nsectors</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>msc_class</strong>  msc 结构体句柄</p></li>
+<li><p><strong>start_sector</strong>  起始扇区</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>nsectors</strong>  要读取的扇区数</p></li>
+<li><p><strong>return</strong>  返回 0 表示正常其他表示错误</p></li>
+</ul>
+</section>
 </section>
 <section id="network">
 <h2>NETWORK<a class="headerlink" href="#network" title="Link to this heading"></a></h2>
+<p>已对接 lwIP 协议栈或者其他网络协议栈，使用 socket API 即可。</p>
 </section>
 </section>
 

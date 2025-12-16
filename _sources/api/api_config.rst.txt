@@ -19,6 +19,11 @@ CONFIG_USB_PRINTF_COLOR_ENABLE
 
 控制 log 颜色打印，默认开启
 
+CONFIG_USB_DCACHE_ENABLE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+不使用 nocache ram 时，开启此宏以保证数据一致性。 **使用 EHCI 时，内部依旧需要使用 nocache ram**。
+
 CONFIG_USB_ALIGN_SIZE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -126,7 +131,7 @@ rndis 与 lwip 接口的对接
 
 .. code-block:: C
 
-    #define CONFIG_USBHOST_MAX_CDC_ACM_CLASS 4
+    #define CONFIG_USBHOST_MAX_SERIAL_CLASS  4
     #define CONFIG_USBHOST_MAX_HID_CLASS     4
     #define CONFIG_USBHOST_MAX_MSC_CLASS     2
     #define CONFIG_USBHOST_MAX_AUDIO_CLASS   1
@@ -150,7 +155,7 @@ CONFIG_USBHOST_REQUEST_BUFFER_LEN
 CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-控制传输发送或者接收的超时时间，默认 1s
+控制传输发送或者接收的超时时间，默认 500 ms
 
 CONFIG_USBHOST_MSC_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

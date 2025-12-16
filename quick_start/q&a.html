@@ -68,6 +68,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#usb-host-urb-12-14">移植 usb host 出现 urb  返回 -12/-14</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usb-err-nak">USB_ERR_NAK 说明</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usb-host-usb">USB host 连接 USB 网卡问题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#config-usb-dcache-enable">什么时候需要开启 CONFIG_USB_DCACHE_ENABLE</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="share.html">开发者经验/开源项目分享</a></li>
@@ -282,6 +283,11 @@ DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split �
 <section id="usb-host-usb">
 <h2>USB host 连接 USB 网卡问题<a class="headerlink" href="#usb-host-usb" title="Link to this heading"></a></h2>
 <p>表现为能识别网卡并且分配到 IP 地址，但是无法 ping 通，这是因为网卡自身需要开启自动拨号，通常需要使用 AT 口设置。具体为 EC20/ML307 等模块。</p>
+</section>
+<section id="config-usb-dcache-enable">
+<h2>什么时候需要开启 CONFIG_USB_DCACHE_ENABLE<a class="headerlink" href="#config-usb-dcache-enable" title="Link to this heading"></a></h2>
+<p>当芯片带有 cache 功能，并且没有使用 no cache ram 时需要开启此宏以保证数据一致性。 <strong>使用 EHCI 时，内部依旧需要使用 nocache ram</strong>。通常，对于第三方平台或者组件，没有使用 no cache ram 宏修饰，都是使用全局变量或者 malloc 等
+操作，这部分 RAM 通常是走 cache 的，因此需要开启此宏。建议第三方平台使用时，必须开启。</p>
 </section>
 </section>
 
