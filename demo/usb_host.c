@@ -21,7 +21,7 @@ volatile uint32_t serial_tx_bytes = 0;
 volatile uint32_t serial_rx_bytes = 0;
 volatile bool serial_is_opened = false;
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t serial_tx_buffer[64];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t serial_tx_buffer[SERIAL_TEST_LEN];
 uint8_t serial_rx_data[SERIAL_TEST_LEN];
 
 #ifdef CONFIG_TEST_USBH_CDC_SPEED

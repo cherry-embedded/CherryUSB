@@ -206,10 +206,10 @@ usbh_serial_write
 
 - **serial**  serial 结构体句柄
 - **buffer**  数据缓冲区指针
-- **buflen**  要写入的数据长度，如果是 USB2TTL 设备，一次最高 wMaxPacketSize
+- **buflen**  要写入的数据长度
 - **return**  实际写入的数据长度或者错误码
 
-.. note:: 有无设置波特率都可以使用该 API，当未设置波特率时，长度无限制，如果设置了波特率则为 wMaxPacketSize。
+.. note:: 如果没有开启 CONFIG_USB_DCACHE_ENABLE，则 buffer 需要是 nocache区域，否则需要是对齐到 CONFIG_USB_ALIGN_SIZE 的区域。
 
 usbh_serial_read
 """"""""""""""""""""""""""""""""""""
@@ -224,6 +224,8 @@ usbh_serial_read
 - **buffer**  数据缓冲区指针
 - **buflen**  要读取的最大数据长度
 - **return**  实际读取的数据长度或者错误码
+
+.. note::  由于内部使用了 ringbuffer，对于用户的 buffer 属性没有限制。
 
 usbh_serial_cdc_write_async
 """"""""""""""""""""""""""""""""""""
@@ -241,6 +243,8 @@ usbh_serial_cdc_write_async
 - **arg**  回调函数参数
 - **return**  0 表示正常其他表示错误
 
+.. note:: 如果没有开启 CONFIG_USB_DCACHE_ENABLE，则 buffer 需要是 nocache区域，否则需要是对齐到 CONFIG_USB_ALIGN_SIZE 的区域。
+
 usbh_serial_cdc_read_async
 """"""""""""""""""""""""""""""""""""
 
@@ -257,6 +261,7 @@ usbh_serial_cdc_read_async
 - **arg**  回调函数参数
 - **return**  0 表示正常其他表示错误
 
+.. note:: 如果没有开启 CONFIG_USB_DCACHE_ENABLE，则 buffer 需要是 nocache区域，否则需要是对齐到 CONFIG_USB_ALIGN_SIZE 的区域。
 
 HID
 -----------------

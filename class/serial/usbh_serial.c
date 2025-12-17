@@ -21,7 +21,7 @@ static struct usbh_serial g_serial_class[CONFIG_USBHOST_MAX_SERIAL_CLASS];
 static uint32_t g_devinuse = 0;
 static uint32_t g_cdcacm_devinuse = 0;
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_serial_iobuffer[CONFIG_USBHOST_MAX_SERIAL_CLASS][USB_ALIGN_UP((USBH_SERIAL_INT_NOCACHE_OFFSET + USBH_SERIAL_INT_NOCACHE_SIZE), CONFIG_USB_ALIGN_SIZE)];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_serial_iobuffer[CONFIG_USBHOST_MAX_SERIAL_CLASS][USB_ALIGN_UP((USBH_SERIAL_RX2_NOCACHE_OFFSET + USBH_SERIAL_RX2_NOCACHE_SIZE), CONFIG_USB_ALIGN_SIZE)];
 
 /* refer to cherryrb */
 static int usbh_serial_ringbuffer_init(usbh_serial_ringbuf_t *rb, void *pool, uint32_t size)
@@ -540,7 +540,7 @@ int usbh_serial_write(struct usbh_serial *serial, const void *buffer, uint32_t b
 
     urb = &serial->bulkout_urb;
 
-    usbh_bulk_urb_fill(urb, serial->hport, serial->bulkout, (uint8_t *)buffer, serial->line_coding.dwDTERate ? MIN(buflen, serial->bulkout->wMaxPacketSize) : buflen, 0xffffffff, NULL, NULL);
+    usbh_bulk_urb_fill(urb, serial->hport, serial->bulkout, (uint8_t *)buffer, buflen, 0xffffffff, NULL, NULL);
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
