@@ -382,12 +382,12 @@
 <ul class="simple">
 <li><p><strong>serial</strong>  serial 结构体句柄</p></li>
 <li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
-<li><p><strong>buflen</strong>  要写入的数据长度，如果是 USB2TTL 设备，一次最高 wMaxPacketSize</p></li>
+<li><p><strong>buflen</strong>  要写入的数据长度</p></li>
 <li><p><strong>return</strong>  实际写入的数据长度或者错误码</p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>有无设置波特率都可以使用该 API，当未设置波特率时，长度无限制，如果设置了波特率则为 wMaxPacketSize。</p>
+<p>如果没有开启 CONFIG_USB_DCACHE_ENABLE，则 buffer 需要是 nocache区域，否则需要是对齐到 CONFIG_USB_ALIGN_SIZE 的区域。</p>
 </div>
 </section>
 <section id="usbh-serial-read">
@@ -402,6 +402,10 @@
 <li><p><strong>buflen</strong>  要读取的最大数据长度</p></li>
 <li><p><strong>return</strong>  实际读取的数据长度或者错误码</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>由于内部使用了 ringbuffer，对于用户的 buffer 属性没有限制。</p>
+</div>
 </section>
 <section id="usbh-serial-cdc-write-async">
 <h3>usbh_serial_cdc_write_async<a class="headerlink" href="#usbh-serial-cdc-write-async" title="Link to this heading"></a></h3>
@@ -417,6 +421,10 @@
 <li><p><strong>arg</strong>  回调函数参数</p></li>
 <li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>如果没有开启 CONFIG_USB_DCACHE_ENABLE，则 buffer 需要是 nocache区域，否则需要是对齐到 CONFIG_USB_ALIGN_SIZE 的区域。</p>
+</div>
 </section>
 <section id="usbh-serial-cdc-read-async">
 <h3>usbh_serial_cdc_read_async<a class="headerlink" href="#usbh-serial-cdc-read-async" title="Link to this heading"></a></h3>
@@ -432,6 +440,10 @@
 <li><p><strong>arg</strong>  回调函数参数</p></li>
 <li><p><strong>return</strong>  0 表示正常其他表示错误</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>如果没有开启 CONFIG_USB_DCACHE_ENABLE，则 buffer 需要是 nocache区域，否则需要是对齐到 CONFIG_USB_ALIGN_SIZE 的区域。</p>
+</div>
 </section>
 </section>
 <section id="hid">
