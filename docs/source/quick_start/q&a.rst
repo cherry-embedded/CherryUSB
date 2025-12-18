@@ -115,8 +115,8 @@ Failed to enable port
 USB_ERR_NAK 说明
 ----------------------------------------------------------------
 
-USB_ERR_NAK 只存在于 DWC2 buffer dma 模式，DWC2 在 buffer dma模式下对于中断传输不支持硬件处理 NAK 中断，因此需要软件处理，导致 NAK 中断非常多，建议搭配定时器使用。
-DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split 传输。总结， **半斤 IP**。
+USB_ERR_NAK 只存在于 DWC2 buffer dma/slave 模式(我们不使用 slave 模式)，DWC2 在 buffer dma模式下对于中断传输不支持硬件处理 NAK 中断，因此需要软件处理，导致 NAK 中断非常多，建议搭配定时器使用。
+DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split 传输。总结， **食之无味，弃之可惜**。
 
 USB host 连接 USB 网卡问题
 ----------------------------------------------------------------
@@ -129,3 +129,9 @@ USB host 连接 USB 网卡问题
 
 当芯片带有 cache 功能，并且没有使用 no cache ram 时需要开启此宏以保证数据一致性。 **使用 EHCI 时，内部依旧需要使用 nocache ram**。通常，对于第三方平台或者组件，没有使用 no cache ram 宏修饰，都是使用全局变量或者 malloc 等
 操作，这部分 RAM 通常是走 cache 的，因此需要开启此宏。建议第三方平台使用时，必须开启。
+
+哪些 IP 对数据有对齐要求
+-------------------------------------------------
+
+- 在未开启 CONFIG_USB_DCACHE_ENABLE 时，仅 DWC2/WCH/AIC IP 需要 4字节对齐，其余 1字节对齐即可。
+- 在开启 CONFIG_USB_DCACHE_ENABLE 时，所有 IP 都需要对齐到 CONFIG_USB_ALIGN_SIZE 字节
