@@ -20,7 +20,6 @@ struct usbh_gsm {
 static int usbh_gsm_attach(struct usbh_serial *serial)
 {
     struct usb_endpoint_descriptor *ep_desc;
-    int ret;
 
     struct usbh_gsm *gsm_class = usb_osal_malloc(sizeof(struct usbh_gsm));
     if (!gsm_class) {
@@ -43,15 +42,9 @@ static int usbh_gsm_attach(struct usbh_serial *serial)
     }
 
     if (!gsm_class->intin) {
-        USB_LOG_ERR("Failed to find interrupt endpoint\r\n");
-        ret = -USB_ERR_NODEV;
-        goto errout;
+        USB_LOG_WRN("Do not find interrupt endpoint, so disable modem status monitor\r\n");
     }
     return 0;
-errout:
-    serial->priv = NULL;
-    usb_osal_free(gsm_class);
-    return ret;
 }
 
 static void usbh_gsm_detach(struct usbh_serial *serial)
@@ -114,6 +107,7 @@ static const uint16_t gsm_id_table[][2] = {
     { 0x2C7C, 0x0195 }, /* Quectel EG95 */
     { 0x2C7C, 0x6002 }, /* Quectel EC200/EC600/EC800/EG91x */
     { 0x1E0E, 0x9001 }, /* SIMCOM SIM7600 */
+    { 0x2ECC, 0x3012 }, /* Chinamobile ML307R */
     { 0, 0 },
 };
 
