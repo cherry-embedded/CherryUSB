@@ -18,6 +18,7 @@
 #include "shell.h"
 #include "usbh_core.h"
 #include "usbh_serial.h"
+#include "usbh_hid.h"
 #include "lwip/tcpip.h"
 #ifdef CONFIG_USB_EHCI_ISO
 #include "usbh_uvc_stream.h"
@@ -123,6 +124,7 @@ static void task_start(void *param)
 }
 
 CSH_CMD_EXPORT(lsusb, );
+CSH_CMD_EXPORT(lshid, );
 CSH_CMD_EXPORT(usbh_serial, );
 
 #ifdef CONFIG_USB_EHCI_ISO
