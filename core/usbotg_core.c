@@ -19,7 +19,7 @@ struct usbotg_core_priv {
     bool usbd_initialized;
     usbd_event_handler_t device_event_callback;
     usbh_event_handler_t host_event_callback;
-    uint8_t current_mode;
+    uint8_t request_mode;
     usb_osal_sem_t change_sem;
     usb_osal_thread_t change_thread;
 } g_usbotg_core[CONFIG_USB_OTG_MAX_BUS];
@@ -66,9 +66,9 @@ static void usbotg_rolechange_thread(void *argument)
 
     while (1) {
         if (usb_osal_sem_take(g_usbotg_core[busid].change_sem, USB_OSAL_WAITING_FOREVER) == 0) {
-            if (g_usbotg_core[busid].current_mode == USBOTG_MODE_HOST) {
+            if (g_usbotg_core[busid].request_mode == USBOTG_MODE_HOST) {
                 usbotg_host_initialize(busid);
-            } else if (g_usbotg_core[busid].current_mode == USBOTG_MODE_DEVICE) {
+            } else if (g_usbotg_core[busid].request_mode == USBOTG_MODE_DEVICE) {
                 usbotg_device_initialize(busid);
             }
         }
@@ -110,13 +110,13 @@ int usbotg_deinitialize(uint8_t busid)
     USB_ASSERT_MSG(busid < CONFIG_USB_OTG_MAX_BUS, "bus overflow\r\n");
 
     if (g_usbotg_core[busid].usbd_initialized) {
-        g_usbotg_core[busid].usbd_initialized = false;
         usbd_deinitialize(busid);
+        g_usbotg_core[busid].usbd_initialized = false;
     }
 
     if (g_usbotg_core[busid].usbh_initialized) {
-        g_usbotg_core[busid].usbh_initialized = false;
         usbh_deinitialize(busid);
+        g_usbotg_core[busid].usbh_initialized = false;
     }
 
     if (g_usbotg_core[busid].change_thread) {
@@ -135,7 +135,7 @@ void usbotg_trigger_role_change(uint8_t busid, uint8_t mode)
 {
     USB_ASSERT_MSG(busid < CONFIG_USB_OTG_MAX_BUS, "bus overflow\r\n");
 
-    g_usbotg_core[busid].current_mode = mode;
+    g_usbotg_core[busid].request_mode = mode;
 
     if (g_usbotg_core[busid].change_sem) {
         usb_osal_sem_give(g_usbotg_core[busid].change_sem);
@@ -146,9 +146,9 @@ void USBOTG_IRQHandler(uint8_t busid)
 {
     USB_ASSERT_MSG(busid < CONFIG_USB_OTG_MAX_BUS, "bus overflow\r\n");
 
-    if (g_usbotg_core[busid].current_mode == USBOTG_MODE_HOST && g_usbotg_core[busid].usbh_initialized) {
+    if (g_usbotg_core[busid].usbh_initialized) {
         USBH_IRQHandler(busid);
-    } else if (g_usbotg_core[busid].current_mode == USBOTG_MODE_DEVICE && g_usbotg_core[busid].usbd_initialized) {
+    } else if (g_usbotg_core[busid].usbd_initialized) {
         USBD_IRQHandler(busid);
     }
 }
