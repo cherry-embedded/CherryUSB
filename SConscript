@@ -111,6 +111,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             LIBS = ['libpusb2_dc_a32_softfp_neon.a']
     if GetDepend(['PKG_CHERRYUSB_DEVICE_NRF5X']):
         src += Glob('port/nrf5x/usb_dc_nrf5x.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_RP2040']):
+        path += [cwd + '/port/rp2040']
+        src += Glob('port/rp2040/usb_dc_rp2040.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc_acm.c')
@@ -266,6 +269,10 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/xhci/phytium']
             LIBS = ['libxhci_a32_softfp_neon.a']
+
+    if GetDepend(['PKG_CHERRYUSB_HOST_RP2040']):
+    	path += [cwd + '/port/rp2040']
+        src += Glob('port/rp2040/usb_hc_rp2040.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM']):
         src += Glob('class/serial/usbh_cdc_acm.c')
