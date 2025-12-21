@@ -63,6 +63,16 @@ static void usbh_gsm_detach(struct usbh_serial *serial)
     usb_osal_free(gsm_class);
 }
 
+static int usbh_gsm_set_line_coding(struct usbh_serial *serial, struct cdc_line_coding *line_coding)
+{
+    return 0;
+}
+
+static int usbh_gsm_set_line_state(struct usbh_serial *serial, bool dtr, bool rts)
+{
+    return 0;
+}
+
 static const struct usbh_serial_driver gsm_driver = {
     .driver_name = "gsm",
 
@@ -72,9 +82,9 @@ static const struct usbh_serial_driver gsm_driver = {
     .attach = usbh_gsm_attach,
     .detach = usbh_gsm_detach,
     .set_flow_control = NULL,
-    .set_line_coding = NULL,
+    .set_line_coding = usbh_gsm_set_line_coding,
     .get_line_coding = NULL,
-    .set_line_state = NULL,
+    .set_line_state = usbh_gsm_set_line_state,
     .get_modem_status = NULL,
 };
 

@@ -584,7 +584,7 @@ int usbh_serial_cdc_write_async(struct usbh_serial *serial, uint8_t *buffer, uin
         return -USB_ERR_INVAL;
     }
 
-    if (serial->ref_count > 0) {
+    if (serial->ref_count == 0) {
         return -USB_ERR_NODEV;
     }
 
@@ -603,7 +603,7 @@ int usbh_serial_cdc_read_async(struct usbh_serial *serial, uint8_t *buffer, uint
         return -USB_ERR_INVAL;
     }
 
-    if (serial->ref_count > 0) {
+    if (serial->ref_count == 0) {
         return -USB_ERR_NODEV;
     }
 
