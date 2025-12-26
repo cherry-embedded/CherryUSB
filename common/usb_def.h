@@ -737,14 +737,15 @@ struct usb_desc_header {
 #define USB_BOS_CAP_PLATFORM_WINUSB_DESCRIPTOR_LEN 28
 
 #define USB_MSOSV1_STRING_DESCRIPTOR_INIT(vendor_code) \
-    0x12,                       /* bLength */                              \
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */                      \
+    0x12,                       /* bLength */                             \
+    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */                     \
     'M', 0,                     /* bString[0] */                          \
     'S', 0,                     /* bString[1] */                          \
     'F', 0,                     /* bString[2] */                          \
     'T', 0,                     /* bString[3] */                          \
     '1', 0,                     /* bString[4] */                          \
     '0', 0,                     /* bString[5] */                          \
+    '0', 0,                     /* bString[6] */                          \
     vendor_code,                /* bMS_VendorCode */                      \
     0x00                        /* bPad */
 

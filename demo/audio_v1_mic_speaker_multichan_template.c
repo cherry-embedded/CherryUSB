@@ -123,12 +123,12 @@
                                         AUDIO_AS_FEEDBACK_DESCRIPTOR_LEN(1))
 #endif
 
-#define AUDIO_AC_SIZ (AUDIO_SIZEOF_AC_HEADER_DESC(2) +          \
-                      AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +     \
-                      AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2, 1) + \
-                      AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC +    \
-                      AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +     \
-                      AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(2, 1) + \
+#define AUDIO_AC_SIZ (AUDIO_SIZEOF_AC_HEADER_DESC(2) +                        \
+                      AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +                   \
+                      AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(IN_CHANNEL_NUM, 1) +  \
+                      AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC +                  \
+                      AUDIO_SIZEOF_AC_INPUT_TERMINAL_DESC +                   \
+                      AUDIO_SIZEOF_AC_FEATURE_UNIT_DESC(OUT_CHANNEL_NUM, 1) + \
                       AUDIO_SIZEOF_AC_OUTPUT_TERMINAL_DESC)
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
