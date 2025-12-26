@@ -753,7 +753,7 @@ int usb_hc_init(struct usbh_bus *bus)
     }
 
     if (g_dwc2_hcd[bus->hcd.hcd_id].hw_params.snpsid > 0x4F54292AU) {
-        USB_OTG_HOST->HCFG |= USB_OTG_HFIR_RELOAD_CTRL;
+        USB_OTG_HOST->HFIR |= USB_OTG_HFIR_RELOAD_CTRL;
     }
 
     /* Clear all pending HC Interrupts */
