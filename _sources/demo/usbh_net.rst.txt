@@ -1,11 +1,14 @@
 usbh_net
 ===============
 
-本节主要介绍 USB 网卡的使用，USB 网卡推荐采用 AIR780(RNDIS)，EC20(ECM/RNDIS), 手机（RNDIS）,RTL8152 USB 网卡，AX88772 USB 网卡。
+本节主要介绍 USB 网卡的使用，当前已经支持和测试以下 USB 网卡:
 
-.. note:: 看完下面内容，你将感受到什么是全自动化的 USB 网卡驱动对接，无需手动调用任何函数。
+- 4G 网卡：EC20(ECM/RNDIS)、手机（RNDIS）、SIMCOM7600(RNDIS)、ML307R(RNDIS)、AIR780(RNDIS)
 
 .. caution:: 请注意，部分 4G 网卡默认不带自动拨号功能，请更换固件或者使用 AT 配置成自动拨号，否则无法获取 IP。
+
+- USB 以太网卡：ASIX AX88772，REALTEK RTL8152
+- USB WIFI 网卡： 博流 BL616（RNDIS/ECM）
 
 USB 网卡相关的宏和文件
 ------------------------
@@ -20,14 +23,14 @@ USB 网卡相关的宏和文件
     // #define CONFIG_USBHOST_PLATFORM_ASIX
     // #define CONFIG_USBHOST_PLATFORM_RTL8152
 
-.. note:: 如果使用 Kconfig 系统，上述宏自定生成，其他平台请手动定义。
+.. note:: 如果使用了 Kconfig 系统，上述宏自定生成，其他平台请手动定义。
 
 USB 网卡传输层面已经对接好了相关网络组件，列举如下：
 
-- 自定义 OS + LWIP 请使用 **platform/lwip/usbh_lwip.c**，需要自行包含该文件，并使能上述相关的宏
-- RT-THREAD + LWIP 请使用 **platform/rtthread/usbh_lwip.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件
-- ESP-IDF + LWIP 请使用 **platform/freertos/usbh_net.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件
-- NUTTX + NUTTX 网络组件 请使用 **platform/nuttx/usbh_net.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件
+- 自定义 OS + LWIP 请使用 **platform/lwip/usbh_lwip.c**，需要自行包含该文件，并使能上述相关的宏。并在初始化 USB 之前调用 `tcpip_init(NULL, NULL)`
+- RT-THREAD + LWIP 请使用 **platform/rtthread/usbh_lwip.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件，勾选 rt-thread lwip以后自动调用 `tcpip_init(NULL, NULL)`
+- ESP-IDF + LWIP 请使用 **platform/freertos/usbh_net.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件，并且在初始化 USB 之前调用 `esp_netif_init()` + `esp_event_loop_create_default()`
+- NUTTX + NUTTX 网络组件 请使用 **platform/nuttx/usbh_net.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件，勾选网络组件以后自动调用
 
 .. note:: 如果是自行添加代码，别忘了添加  USB 网卡驱动相关的源文件，例如 **class/usbh_cdc_ecm.c**。所以我们推荐搭配对应平台使用哦，省去自己添加文件的麻烦
 
@@ -144,4 +147,10 @@ USB 网卡 LWIP 配置宏相关注意事项
     #error TCPIP_THREAD_STACKSIZE must be >= 1024
     #endif
 
-- 具体移植文章可以参考开发者的一些笔记 https://club.rt-thread.org/ask/article/5cf3e9e0b2d95800.html
+
+总结
+--------------
+
+.. note:: 通过以上内容，我们可以看到 CherryUSB 对 USB 网卡的支持是非常完善的，用户只需要使能对应的宏或者勾选，就可以实现 USB 网卡的自动识别和驱动注册，无需手动初始化网卡相关配置，用户只需关注应用层，极大地方便了用户的使用。
+
+具体移植文章可以参考开发者的一些笔记 https://club.rt-thread.org/ask/article/5cf3e9e0b2d95800.html
