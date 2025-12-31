@@ -182,11 +182,11 @@ CherryUSB 快速入门、USB 基本概念、API 手册、Class 基本概念和�
 
 ## 视频教程
 
-CherryUSB 课程（基于 V1.4.3）：https://www.bilibili.com/cheese/play/ss707687201 。
+CherryUSB 课程（>= V1.4.3）：https://www.bilibili.com/cheese/play/ss707687201 。
 
 ## 描述符生成工具
 
-TODO
+Cherry Descriptor: https://desc.cherry-embedded.org/zh
 
 ## 示例仓库
 

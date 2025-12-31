@@ -1,11 +1,19 @@
 usbh_net
 ===============
 
-本节主要介绍 USB 网卡的使用，USB 网卡推荐采用 AIR780(RNDIS)，EC20(ECM/RNDIS), 手机（RNDIS）,RTL8152 USB 网卡，AX88772 USB 网卡。
+本节主要介绍 USB 网卡的使用，当前已经支持和测试以下 USB 网卡:
 
-USB 网卡传输层面已经对接好了 LWIP 的收发接口，因此，用户只需要包含 **platform/XXX/usbh_lwip.c** 并根据需要开启对应的网卡类的宏即可。
+- 4G 网卡：EC20(ECM/RNDIS)、手机（RNDIS）、SIMCOM7600(RNDIS)、ML307R(RNDIS)、AIR780(RNDIS)
 
-- 当前支持以下网卡类：
+.. caution:: 请注意，部分 4G 网卡默认不带自动拨号功能，请更换固件或者使用 AT 配置成自动拨号，否则无法获取 IP。
+
+- USB 以太网卡：ASIX AX88772，REALTEK RTL8152
+- USB WIFI 网卡： 博流 BL616（RNDIS/ECM）
+
+USB 网卡相关的宏和文件
+------------------------
+
+网卡相关的宏如下，主要用于根据不同的网络组件注册网卡驱动：
 
 .. code-block:: C
 
@@ -14,34 +22,24 @@ USB 网卡传输层面已经对接好了 LWIP 的收发接口，因此，用户�
     // #define CONFIG_USBHOST_PLATFORM_CDC_NCM
     // #define CONFIG_USBHOST_PLATFORM_ASIX
     // #define CONFIG_USBHOST_PLATFORM_RTL8152
-    // #define CONFIG_USBHOST_PLATFORM_BL616
 
-- 包含了对接 LWIP 的输入输出接口，举例如下
+.. note:: 如果使用了 Kconfig 系统，上述宏自定生成，其他平台请手动定义。
 
-.. code-block:: C
+USB 网卡传输层面已经对接好了相关网络组件，列举如下：
 
-    static err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
-    {
-        int ret;
-        (void)netif;
+- 自定义 OS + LWIP 请使用 **platform/lwip/usbh_lwip.c**，需要自行包含该文件，并使能上述相关的宏。并在初始化 USB 之前调用 `tcpip_init(NULL, NULL)`
+- RT-THREAD + LWIP 请使用 **platform/rtthread/usbh_lwip.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件，勾选 rt-thread lwip以后自动调用 `tcpip_init(NULL, NULL)`
+- ESP-IDF + LWIP 请使用 **platform/freertos/usbh_net.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件，并且在初始化 USB 之前调用 `esp_netif_init()` + `esp_event_loop_create_default()`
+- NUTTX + NUTTX 网络组件 请使用 **platform/nuttx/usbh_net.c**，在 Kconfig 中使能对应的网卡驱动后自动勾选该文件，勾选网络组件以后自动调用
 
-        usbh_lwip_eth_output_common(p, usbh_cdc_ecm_get_eth_txbuf());
-        ret = usbh_cdc_ecm_eth_output(p->tot_len);
-        if (ret < 0) {
-            return ERR_BUF;
-        } else {
-            return ERR_OK;
-        }
-    }
+.. note:: 如果是自行添加代码，别忘了添加  USB 网卡驱动相关的源文件，例如 **class/usbh_cdc_ecm.c**。所以我们推荐搭配对应平台使用哦，省去自己添加文件的麻烦
 
-    void usbh_cdc_ecm_eth_input(uint8_t *buf, uint32_t buflen)
-    {
-        usbh_lwip_eth_input_common(&g_cdc_ecm_netif, buf, buflen);
-    }
+USB 网卡对接过程
+-------------------
 
+下面举例对接 LWIP 的对接过程。
 
-- 网卡类枚举完成后，注册 netif，并且创建网卡接收线程（因此使用 RTTHREAD 时不需要使用 RTT 的接收线程模块）。
-- 必须开启 DHCP client 服务，用于从 USB 网卡获取 IP 地址。
+- 在 USB 网卡枚举完成以后，会 **自动** 调用 `usbh_xxx_run` 函数，此时注册 netif 驱动，并且开启 DHCP 客户端和获取 IP 的定时器。
 
 .. code-block:: C
 
@@ -75,17 +73,61 @@ USB 网卡传输层面已经对接好了 LWIP 的收发接口，因此，用户�
     #endif
     }
 
-- 获取到 IP 以后，就与 USB 没有关系了，直接使用 LWIP 的接口即可。
+- `usbh_lwip_eth_output_common` 用于将发送 pbuf 组装成 USB 网卡数据包
+- `usbh_lwip_eth_input_common` 用于将 USB 网卡数据组装成 pbuf
+- 实际网卡发送和接收处理
 
-- 需要注意以下参数
+.. code-block:: C
 
-LWIP_TCPIP_CORE_LOCKING_INPUT 用于不使用 lwip 内置的 tcpip 线程，而使用 USB 自己的处理线程。
+    static err_t usbh_cdc_ecm_linkoutput(struct netif *netif, struct pbuf *p)
+    {
+        int ret;
+        (void)netif;
 
-LWIP_TCPIP_CORE_LOCKING 在现在 lwip 版本中默认是打开的，也推荐必须打开。
+        usbh_lwip_eth_output_common(p, usbh_cdc_ecm_get_eth_txbuf());
+        ret = usbh_cdc_ecm_eth_output(p->tot_len);
+        if (ret < 0) {
+            return ERR_BUF;
+        } else {
+            return ERR_OK;
+        }
+    }
 
-PBUF_POOL_BUFSIZE 推荐大于1600，搭配 LWIP_TCPIP_CORE_LOCKING_INPUT 使用，因为我们提供了使用 zero mempy 的方式，使用静态 pbuf，而不是把数据 copy 到 pbuf 中。
+    void usbh_cdc_ecm_eth_input(uint8_t *buf, uint32_t buflen)
+    {
+        usbh_lwip_eth_input_common(&g_cdc_ecm_netif, buf, buflen);
+    }
 
-TCPIP_THREAD_STACKSIZE 推荐大于 1K，防止栈溢出。
+- USB 网卡 拔出以后会 **自动** 调用 `usbh_xxx_stop` 函数，此时需要停止 DHCP 客户端，删除定时器，并且移除 netif。
+
+.. code-block:: C
+
+    void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
+    {
+        struct netif *netif = &g_cdc_ecm_netif;
+        (void)cdc_ecm_class;
+
+    #if LWIP_DHCP
+        dhcp_stop(netif);
+        dhcp_cleanup(netif);
+        usb_osal_timer_delete(dhcp_handle);
+    #endif
+        netif_set_down(netif);
+        netif_remove(netif);
+    }
+
+- 因为 USB 网卡内部已经对接了LWIP，因此用户可以直接使用 LWIP 的 API，无需关心 USB 的实现。
+
+USB 网卡 LWIP 配置宏相关注意事项
+------------------------------------
+
+**LWIP_TCPIP_CORE_LOCKING_INPUT** 用于不使用 lwip 内置的 tcpip 线程，而使用 USB 自己的接收处理线程。
+
+**LWIP_TCPIP_CORE_LOCKING** 在现在 lwip 版本中默认是打开的，也推荐必须打开。
+
+**PBUF_POOL_BUFSIZE** 推荐大于1600，搭配 LWIP_TCPIP_CORE_LOCKING_INPUT 使用，因为我们提供了使用 zero mempy 的方式，使用静态 pbuf，而不是把数据 copy 到 pbuf 中。
+
+**TCPIP_THREAD_STACKSIZE** 推荐大于 1K，防止栈溢出。
 
 .. code-block:: C
 
@@ -105,4 +147,10 @@ TCPIP_THREAD_STACKSIZE 推荐大于 1K，防止栈溢出。
     #error TCPIP_THREAD_STACKSIZE must be >= 1024
     #endif
 
-- 具体移植文章可以参考开发者的一些笔记 https://club.rt-thread.org/ask/article/5cf3e9e0b2d95800.html
+
+总结
+--------------
+
+.. note:: 通过以上内容，我们可以看到 CherryUSB 对 USB 网卡的支持是非常完善的，用户只需要使能对应的宏或者勾选，就可以实现 USB 网卡的自动识别和驱动注册，无需手动初始化网卡相关配置，用户只需关注应用层，极大地方便了用户的使用。
+
+具体移植文章可以参考开发者的一些笔记 https://club.rt-thread.org/ask/article/5cf3e9e0b2d95800.html

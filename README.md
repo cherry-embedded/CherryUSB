@@ -182,11 +182,11 @@ Quickly start, USB basic concepts, API manual, Class basic concepts and examples
 
 ## Video Tutorial
 
-CherryUSB Cheese (based V1.4.3): https://www.bilibili.com/cheese/play/ss707687201 .
+CherryUSB Cheese (>= V1.4.3): https://www.bilibili.com/cheese/play/ss707687201 .
 
 ## Descriptor Generator Tool
 
-TODO
+Cherry Descriptor: https://desc.cherry-embedded.org/en
 
 ## Demo Repo
 
