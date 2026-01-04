@@ -83,7 +83,7 @@ static const uint8_t *device_quality_descriptor_callback(uint8_t speed)
 
 static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
 {
-    if (index > 3) {
+    if (index > 4) {
         return NULL;
     }
     return string_descriptors[index];
