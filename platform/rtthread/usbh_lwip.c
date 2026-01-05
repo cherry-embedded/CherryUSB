@@ -48,6 +48,14 @@
 #error RT_LWIP_TCPTHREAD_STACKSIZE must be >= 2048
 #endif
 
+#if !defined(CONFIG_USBHOST_PLATFORM_CDC_ECM) &&   \
+    !defined(CONFIG_USBHOST_PLATFORM_CDC_RNDIS) && \
+    !defined(CONFIG_USBHOST_PLATFORM_CDC_NCM) &&   \
+    !defined(CONFIG_USBHOST_PLATFORM_ASIX) &&      \
+    !defined(CONFIG_USBHOST_PLATFORM_RTL8152)
+#error "Please enable at least one USB Ethernet platform in usb_config.h or Kconfig"
+#endif
+
 // #define CONFIG_USBHOST_PLATFORM_CDC_ECM
 // #define CONFIG_USBHOST_PLATFORM_CDC_RNDIS
 // #define CONFIG_USBHOST_PLATFORM_CDC_NCM
