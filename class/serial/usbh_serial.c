@@ -618,6 +618,7 @@ int usbh_serial_cdc_read_async(struct usbh_serial *serial, uint8_t *buffer, uint
     return usbh_submit_urb(urb);
 }
 
+#ifdef CONFIG_USBHOST_SERIAL_CMD
 void usbh_serial_help(void)
 {
     USB_LOG_RAW("USB host serial test\r\n"
@@ -702,6 +703,7 @@ int usbh_serial(int argc, char **argv)
 
     return 0;
 }
+#endif
 
 __WEAK void usbh_serial_run(struct usbh_serial *serial)
 {

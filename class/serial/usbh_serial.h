@@ -173,7 +173,9 @@ int usbh_serial_cdc_read_async(struct usbh_serial *serial, uint8_t *buffer, uint
 void usbh_serial_run(struct usbh_serial *serial);
 void usbh_serial_stop(struct usbh_serial *serial);
 
+#ifdef CONFIG_USBHOST_SERIAL_CMD
 int usbh_serial(int argc, char **argv);
+#endif
 
 #ifdef __cplusplus
 }

@@ -452,6 +452,12 @@ if PKG_USING_CHERRYUSB
             prompt "Set host serial rx max buffer size"
             default 2048
 
+        config CONFIG_USBHOST_SERIAL_CMD
+            bool
+            prompt "Enable usbh_serial command for shell"
+            default n
+            depends on CONFIG_USBHOST_SERIAL
+
         config RT_LWIP_PBUF_POOL_BUFSIZE
             int "The size of each pbuf in the pbuf pool"
             range 1500 2000

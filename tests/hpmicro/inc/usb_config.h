@@ -268,6 +268,11 @@
 #define CONFIG_USBHOST_BLUETOOTH_RX_SIZE 2048
 #endif
 
+/* For CI/CD tests */
+#ifndef CONFIG_USBHOST_SERIAL_CMD
+#define CONFIG_USBHOST_SERIAL_CMD 1
+#endif
+
 /* ================ USB Device Port Configuration ================*/
 
 #define CONFIG_USBDEV_MAX_BUS USB_SOC_MAX_COUNT

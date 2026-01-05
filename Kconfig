@@ -436,6 +436,12 @@ if CHERRYUSB
             prompt "Set host serial rx max buffer size"
             default 2048
 
+        config USBHOST_SERIAL_CMD
+            bool
+            prompt "Enable usbh_serial command for shell"
+            default n
+            depends on USBHOST_SERIAL
+
         menu "Select USB host template, please select class driver first"
             config TEST_USBH_SERIAL
                 bool

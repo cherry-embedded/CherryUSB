@@ -45,7 +45,7 @@ MSH_CMD_EXPORT(usbh_init, init usb host);
 MSH_CMD_EXPORT(usbh_deinit, deinit usb host);
 MSH_CMD_EXPORT(lsusb, ls usb devices);
 
-#ifdef CONFIG_USBHOST_SERIAL
+#if defined(CONFIG_USBHOST_SERIAL) && defined(CONFIG_USBHOST_SERIAL_CMD)
 #include "usbh_serial.h"
 MSH_CMD_EXPORT(usbh_serial, usbh_serial test);
 #endif
