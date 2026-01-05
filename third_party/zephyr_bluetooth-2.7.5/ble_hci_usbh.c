@@ -217,10 +217,9 @@ static int usbh_hci_host_rcv_pkt(uint8_t *data, uint32_t len)
             buf = usbh_bt_acl_recv(data, remaining);
             break;
 
-        case USB_BLUETOOTH_HCI_SCO:
+        case USB_BLUETOOTH_HCI_ISO:
             buf = usbh_bt_iso_recv(data, remaining);
             break;
-
         default:
             USB_LOG_ERR("Unknown HCI type %u\r\n", pkt_indicator);
             return -1;
