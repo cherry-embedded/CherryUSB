@@ -578,16 +578,6 @@ int usbh_rndis_eth_output(uint32_t buflen)
     return usbh_submit_urb(&g_rndis_class.bulkout_urb);
 }
 
-__WEAK void usbh_rndis_run(struct usbh_rndis *rndis_class)
-{
-    (void)rndis_class;
-}
-
-__WEAK void usbh_rndis_stop(struct usbh_rndis *rndis_class)
-{
-    (void)rndis_class;
-}
-
 static const struct usbh_class_driver rndis_class_driver = {
     .driver_name = "rndis",
     .connect = usbh_rndis_connect,
