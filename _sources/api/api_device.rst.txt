@@ -137,7 +137,7 @@ event 事件包括：
     USBD_EVENT_DEINIT,            /** USB deinit done when call usbd_deinitialize */
     USBD_EVENT_UNKNOWN
 
-.. note:: 大部分 IP USBD_EVENT_CONNECTED 和 USBD_EVENT_DISCONNECTED 都支持，当前仅 HPM 芯片支持
+.. note:: 大部分 IP USBD_EVENT_CONNECTED 和 USBD_EVENT_DISCONNECTED 事件都不支持，当前仅 HPM 芯片支持，其余芯片自行设计vbus检测电路替代
 
 usbd_deinitialize
 """"""""""""""""""""""""""""""""""""
