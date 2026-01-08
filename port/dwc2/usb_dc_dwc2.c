@@ -7,58 +7,6 @@
 #include "usb_dwc2_reg.h"
 #include "usb_dwc2_param.h"
 
-// clang-format off
-#if   defined ( __CC_ARM )
-#ifndef   __UNALIGNED_UINT32_WRITE
-  #define __UNALIGNED_UINT32_WRITE(addr, val)    ((*((__packed uint32_t *)(addr))) = (val))
-#endif
-#ifndef   __UNALIGNED_UINT32_READ
-  #define __UNALIGNED_UINT32_READ(addr)          (*((const __packed uint32_t *)(addr)))
-#endif
-#elif defined (__ICCARM__)
-#ifndef   __UNALIGNED_UINT32_WRITE
-  #define __UNALIGNED_UINT32_WRITE(addr, val)    ((*((__packed uint32_t *)(addr))) = (val))
-#endif
-#ifndef   __UNALIGNED_UINT32_READ
-  #define __UNALIGNED_UINT32_READ(addr)          (*((const __packed uint32_t *)(addr)))
-#endif
-#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-#ifndef   __UNALIGNED_UINT32_WRITE
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wpacked"
-/*lint -esym(9058, T_UINT32_WRITE)*/ /* disable MISRA 2012 Rule 2.4 for T_UINT32_WRITE */
-  __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
-  #pragma clang diagnostic pop
-  #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))->v) = (val))
-#endif
-#ifndef   __UNALIGNED_UINT32_READ
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wpacked"
-/*lint -esym(9058, T_UINT32_READ)*/ /* disable MISRA 2012 Rule 2.4 for T_UINT32_READ */
-  __PACKED_STRUCT T_UINT32_READ { uint32_t v; };
-  #pragma clang diagnostic pop
-  #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(addr))->v)
-#endif
-#elif defined ( __GNUC__ )
-#ifndef   __UNALIGNED_UINT32_WRITE
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wpacked"
-  #pragma GCC diagnostic ignored "-Wattributes"
-  __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
-  #pragma GCC diagnostic pop
-  #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))->v) = (val))
-#endif
-#ifndef   __UNALIGNED_UINT32_READ
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wpacked"
-  #pragma GCC diagnostic ignored "-Wattributes"
-  __PACKED_STRUCT T_UINT32_READ { uint32_t v; };
-  #pragma GCC diagnostic pop
-  #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(addr))->v)
-#endif
-#endif
-// clang-format on
-
 #define USBD_BASE (g_usbdev_bus[busid].reg_base)
 
 #define USB_OTG_GLB      ((DWC2_GlobalTypeDef *)(USBD_BASE))
@@ -335,10 +283,7 @@ static uint8_t dwc2_get_devspeed(uint8_t busid)
 
 static void dwc2_ep0_start_read_setup(uint8_t busid, uint8_t *psetup)
 {
-    USB_OTG_OUTEP(0U)->DOEPTSIZ = 0U;
-    USB_OTG_OUTEP(0U)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19));
-    USB_OTG_OUTEP(0U)->DOEPTSIZ |= (3U * 8U);
-    USB_OTG_OUTEP(0U)->DOEPTSIZ |= USB_OTG_DOEPTSIZ_STUPCNT;
+    USB_OTG_OUTEP(0U)->DOEPTSIZ = (1U * 8U) | (1U << 19) | (1U << 29);
 
     if (g_dwc2_udc[busid].user_params.device_dma_enable) {
         usb_dcache_invalidate((uintptr_t)&g_dwc2_udc[busid].setup, USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE));
@@ -351,25 +296,61 @@ static void dwc2_ep0_start_read_setup(uint8_t busid, uint8_t *psetup)
 
 void dwc2_ep_write(uint8_t busid, uint8_t ep_idx, uint8_t *src, uint16_t len)
 {
-    uint32_t *pSrc = (uint32_t *)src;
-    uint32_t count32b, i;
+    uint32_t *p32;
+    uint8_t *p8;
+    uint32_t val;
+    uint8_t remain;
 
-    count32b = ((uint32_t)len + 3U) / 4U;
-    for (i = 0U; i < count32b; i++) {
-        USB_OTG_FIFO((uint32_t)ep_idx) = __UNALIGNED_UINT32_READ(pSrc);
-        pSrc++;
+    p32 = (uint32_t *)src;
+    for (uint32_t i = 0U; i < (len / 4); i++) {
+        USB_OTG_FIFO((uint32_t)ep_idx) = *p32++;
+    }
+
+    remain = len % 4;
+
+    if (remain) {
+        p8 = (uint8_t *)p32;
+        val = (uint32_t)(*p8++);
+
+        if (remain > 1) {
+            val |= (uint32_t)((*p8++) << 8);
+        }
+
+        if (remain > 2) {
+            val |= (uint32_t)((*p8++) << 16);
+        }
+
+        USB_OTG_FIFO((uint32_t)ep_idx) = val;
     }
 }
 
 void dwc2_ep_read(uint8_t busid, uint8_t *dest, uint16_t len)
 {
-    uint32_t *pDest = (uint32_t *)dest;
-    uint32_t i;
-    uint32_t count32b = ((uint32_t)len + 3U) / 4U;
+    uint32_t *p32;
+    uint8_t *p8;
+    uint32_t val;
+    uint8_t remain;
 
-    for (i = 0U; i < count32b; i++) {
-        __UNALIGNED_UINT32_WRITE(pDest, USB_OTG_FIFO(0U));
-        pDest++;
+    p32 = (uint32_t *)dest;
+    for (uint32_t i = 0U; i < (len / 4); i++) {
+        *p32++ = USB_OTG_FIFO(0U);
+    }
+
+    remain = len % 4;
+
+    if (remain) {
+        p8 = (uint8_t *)p32;
+        val = USB_OTG_FIFO(0U);
+
+        *p8++ = (uint8_t)(val & 0xFFU);
+
+        if (remain > 1) {
+            *p8++ = (uint8_t)((val >> 8) & 0xFFU);
+        }
+
+        if (remain > 2) {
+            *p8++ = (uint8_t)((val >> 16) & 0xFFU);
+        }
     }
 }
 
