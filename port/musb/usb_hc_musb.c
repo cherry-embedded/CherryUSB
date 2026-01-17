@@ -524,7 +524,7 @@ static uint8_t usbh_get_port_speed(struct usbh_bus *bus, const uint8_t port)
     return speed;
 }
 
-static int musb_pipe_alloc(void)
+static int musb_pipe_alloc(struct usbh_bus *bus)
 {
     int chidx;
     uintptr_t flags;
@@ -769,7 +769,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     if (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) == USB_ENDPOINT_TYPE_CONTROL) {
         chidx = 0;
     } else {
-        chidx = musb_pipe_alloc();
+        chidx = musb_pipe_alloc(bus);
         if (chidx == -1) {
             return -USB_ERR_NOMEM;
         }
@@ -1023,9 +1023,11 @@ void USBH_IRQHandler(uint8_t busid)
 
     bus = &g_usbhost_bus[busid];
 
+#if 0
     if (!(HWREGB(USB_BASE + MUSB_DEVCTL_OFFSET) & USB_DEVCTL_HOST)) {
         return;
     }
+#endif
 
     is = HWREGB(USB_BASE + MUSB_IS_OFFSET);
     txis = HWREGH(USB_BASE + MUSB_TXIS_OFFSET);
