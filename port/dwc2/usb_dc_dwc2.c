@@ -520,6 +520,19 @@ int usb_dc_init(uint8_t busid)
     /* Force Device Mode*/
     dwc2_set_mode(busid, USB_OTG_MODE_DEVICE);
 
+    USB_ASSERT_MSG((USB_OTG_GLB->GRXFSIZ & 0xffff) >= g_dwc2_udc[busid].user_params.device_rx_fifo_size,
+                   "device_rx_fifo_size cannot be larger than power_on_value %u", (unsigned int)(USB_OTG_GLB->GRXFSIZ & 0xffff));
+    for (uint8_t i = 0; i < (g_dwc2_udc[busid].hw_params.num_dev_ep + 1); i++) {
+        uint16_t reset_txfifo_size;
+        if (i == 0) {
+            reset_txfifo_size = USB_OTG_GLB->DIEPTXF0_HNPTXFSIZ >> 16 & 0xffff;
+        } else {
+            reset_txfifo_size = USB_OTG_GLB->DIEPTXF[i - 1] >> 16 & 0xffff;
+        }
+        USB_ASSERT_MSG(reset_txfifo_size >= g_dwc2_udc[busid].user_params.device_tx_fifo_size[i],
+                       "device_tx_fifo_size[%u] cannot be larger than power_on_value %u", i, reset_txfifo_size);
+    }
+
     if (g_dwc2_udc[busid].user_params.b_session_valid_override) {
         /* B-peripheral session valid override enable */
         USB_OTG_GLB->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
