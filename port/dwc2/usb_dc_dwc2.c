@@ -1173,14 +1173,15 @@ process_setup:
             memset(g_dwc2_udc[busid].in_ep, 0, sizeof(struct dwc2_ep_state) * 16);
             memset(g_dwc2_udc[busid].out_ep, 0, sizeof(struct dwc2_ep_state) * 16);
             usbd_event_reset_handler(busid);
-            /* Start reading setup */
-            dwc2_ep0_start_read_setup(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
         }
         if (gint_status & USB_OTG_GINTSTS_ENUMDNE) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_ENUMDNE;
             dwc2_set_turnaroundtime(busid, usbd_dwc2_get_system_clock(), dwc2_get_devspeed(busid));
 
             USB_OTG_DEV->DCTL |= USB_OTG_DCTL_CGINAK;
+
+            /* Start reading setup */
+            dwc2_ep0_start_read_setup(busid, (uint8_t *)&g_dwc2_udc[busid].setup);
         }
         if (gint_status & USB_OTG_GINTSTS_PXFR_INCOMPISOOUT) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_PXFR_INCOMPISOOUT;
