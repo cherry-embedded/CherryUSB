@@ -10,7 +10,7 @@ if CHERRYUSB
         default n
 
     if CHERRYUSB_DEVICE
-        choice
+        choice CHERRYUSB_DEVICE_SPEED
             prompt "Select usb device speed"
             default CHERRYUSB_DEVICE_SPEED_FS
             config CHERRYUSB_DEVICE_SPEED_FS
@@ -21,7 +21,7 @@ if CHERRYUSB
                 bool "AUTO"
         endchoice
 
-        choice
+        choice CHERRYUSB_DEVICE_IP
             prompt "Select usb device ip, and some ip need config in usb_config.h, please check"
             default CHERRYUSB_DEVICE_CUSTOM
             config CHERRYUSB_DEVICE_CUSTOM
@@ -36,6 +36,8 @@ if CHERRYUSB
                 bool "dwc2_esp"
             config CHERRYUSB_DEVICE_DWC2_KENDRYTE
                 bool "dwc2_kendryte"
+            config CHERRYUSB_DEVICE_DWC2_INFINEON
+                bool "dwc2_infineon"
             config CHERRYUSB_DEVICE_DWC2_AT
                 bool "dwc2_at"
             config CHERRYUSB_DEVICE_DWC2_HC
@@ -159,7 +161,7 @@ if CHERRYUSB
             prompt "Enable usb cdc ecm device with lwip for lan"
             default n
 
-        choice
+        choice CHERRYUSB_DEVICE_TEMPLATE
             prompt "Select usb device template, please select class driver first"
             default CHERRYUSB_DEVICE_TEMPLATE_NONE
             config CHERRYUSB_DEVICE_TEMPLATE_NONE
@@ -239,7 +241,7 @@ if CHERRYUSB
         default n
 
     if CHERRYUSB_HOST
-        choice
+        choice CHERRYUSB_HOST_IP
             prompt "Select usb host ip, and some ip need config in usb_config.h, please check"
             default CHERRYUSB_HOST_CUSTOM
             config CHERRYUSB_HOST_CUSTOM
@@ -264,6 +266,10 @@ if CHERRYUSB
                 bool "dwc2_esp"
             config CHERRYUSB_HOST_DWC2_KENDRYTE
                 bool "dwc2_kendryte"
+            config CHERRYUSB_HOST_DWC2_INFINEON
+                bool "dwc2_infineon"
+            config CHERRYUSB_HOST_DWC2_AT
+                bool "dwc2_at, f405 only"
             config CHERRYUSB_HOST_DWC2_HC
                 bool "dwc2_hc"
             config CHERRYUSB_HOST_DWC2_NATION
@@ -452,6 +458,11 @@ if CHERRYUSB
                 prompt "demo for test msc"
                 default n
                 depends on CHERRYUSB_HOST_MSC
+            config TEST_USBH_NET
+                bool
+                prompt "demo for test net, no demo for this, you can use lwip api to test"
+                default n
+                depends on CHERRYUSB_HOST_CDC_ECM || CHERRYUSB_HOST_CDC_RNDIS || CHERRYUSB_HOST_CDC_NCM || CHERRYUSB_HOST_ASIX || CHERRYUSB_HOST_RTL8152
         endmenu
     endif
 endif
