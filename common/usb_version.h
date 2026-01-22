@@ -16,6 +16,6 @@
 #endif
 
 #define CHERRYUSB_VERSION     0x010503
-#define CHERRYUSB_VERSION_STR "v1.5.3"
+#define CHERRYUSB_VERSION_STR "v1.5.3.99"
 
 #endif

@@ -474,7 +474,7 @@ if PKG_USING_CHERRYUSB
 
         config PKG_USING_CHERRYUSB_LATEST_VERSION
             bool "latest"
-        config PKG_USING_CHERRYUSB_V010502
+        config PKG_USING_CHERRYUSB_V010503
             bool "v1.5.3"
         config PKG_USING_CHERRYUSB_V010502
             bool "v1.5.2"
