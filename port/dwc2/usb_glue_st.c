@@ -722,6 +722,11 @@ void usbd_dwc2_delay_ms(uint8_t ms)
     }
 }
 
+uint32_t usbd_dwc2_get_system_clock(void)
+{
+    return SystemCoreClock;
+}
+
 void OTG_FS_IRQHandler(void)
 {
     g_usb_dwc2_irq[0](g_usb_dwc2_busid[0]);

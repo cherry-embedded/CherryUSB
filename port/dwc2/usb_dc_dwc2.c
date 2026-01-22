@@ -16,8 +16,6 @@
 #define USB_OTG_OUTEP(i) ((DWC2_OUTEndpointTypeDef *)(USBD_BASE + USB_OTG_OUT_ENDPOINT_BASE + ((i)*USB_OTG_EP_REG_SIZE)))
 #define USB_OTG_FIFO(i)  *(__IO uint32_t *)(USBD_BASE + USB_OTG_FIFO_BASE + ((i)*USB_OTG_FIFO_SIZE))
 
-extern uint32_t SystemCoreClock;
-
 /* Endpoint state */
 struct dwc2_ep_state {
     uint16_t ep_mps;    /* Endpoint max packet size */
@@ -1180,7 +1178,7 @@ process_setup:
         }
         if (gint_status & USB_OTG_GINTSTS_ENUMDNE) {
             USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_ENUMDNE;
-            dwc2_set_turnaroundtime(busid, SystemCoreClock, dwc2_get_devspeed(busid));
+            dwc2_set_turnaroundtime(busid, usbd_dwc2_get_system_clock(), dwc2_get_devspeed(busid));
 
             USB_OTG_DEV->DCTL |= USB_OTG_DCTL_CGINAK;
         }

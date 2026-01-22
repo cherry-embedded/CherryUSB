@@ -301,3 +301,8 @@ void usbd_dwc2_delay_ms(uint8_t ms)
         __asm volatile("nop");
     }
 }
+
+uint32_t usbd_dwc2_get_system_clock(void)
+{
+    return SystemCoreClock;
+}
