@@ -76,7 +76,7 @@ bos描述符，winusb 描述符。
 
 - **desc**  描述符的句柄
 
-.. note:: 当前默认开启 CONFIG_USBDEV_ADVANCE_DESC，如果需要使用旧版本 API 请关闭该宏
+.. note:: 当前默认开启 CONFIG_USBDEV_ADVANCE_DESC，如果需要使用旧版本 API 请关闭该宏，从 v1.6.0 开始只有开启了 CONFIG_USBDEV_ADVANCE_DESC 的 API
 
 usbd_add_interface
 """"""""""""""""""""""""""""""""""""

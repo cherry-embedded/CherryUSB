@@ -64,7 +64,6 @@ struct usb_bos_descriptor bos_desc = {
 #define USB_CONFIG_SIZE       (34 + 9)
 #define HID_KEYBOARD_REPORT_DESC_SIZE 63
 
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0002, 0x01)
 };
@@ -130,89 +129,6 @@ const struct usb_descriptor webusb_hid_descriptor = {
     .webusb_url_descriptor = &webusb_url_desc,
     .bos_descriptor = &bos_desc
 };
-#else
-static const uint8_t webusb_hid_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0002, 0x01),
-    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    HID_KEYBOARD_DESCRIPTOR_INIT(0x00, 0x01, HID_KEYBOARD_REPORT_DESC_SIZE, HID_INT_EP, HID_INT_EP_SIZE, HID_INT_EP_INTERVAL),
-    USB_INTERFACE_DESCRIPTOR_INIT(WEBUSB_INTF_NUM, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00),
-    ///////////////////////////////////////
-    /// string0 descriptor
-    ///////////////////////////////////////
-    USB_LANGID_INIT(USBD_LANGID_STRING),
-    ///////////////////////////////////////
-    /// string1 descriptor
-    ///////////////////////////////////////
-    0x14,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
-    'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ///////////////////////////////////////
-    /// string2 descriptor
-    ///////////////////////////////////////
-    0x2C,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
-    'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ' ', 0x00,                  /* wcChar9 */
-    'W', 0x00,                  /* wcChar10 */
-    'E', 0x00,                  /* wcChar11 */
-    'B', 0x00,                  /* wcChar12 */
-    'U', 0x00,                  /* wcChar13 */
-    'S', 0x00,                  /* wcChar14 */
-    'B', 0x00,                  /* wcChar15 */
-    ' ', 0x00,                  /* wcChar16 */
-    'D', 0x00,                  /* wcChar17 */
-    'E', 0x00,                  /* wcChar18 */
-    'M', 0x00,                  /* wcChar19 */
-    'O', 0x00,                  /* wcChar20 */
-    ///////////////////////////////////////
-    /// string3 descriptor
-    ///////////////////////////////////////
-    0x16,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    '2', 0x00,                  /* wcChar0 */
-    '0', 0x00,                  /* wcChar1 */
-    '2', 0x00,                  /* wcChar2 */
-    '2', 0x00,                  /* wcChar3 */
-    '1', 0x00,                  /* wcChar4 */
-    '2', 0x00,                  /* wcChar5 */
-    '3', 0x00,                  /* wcChar6 */
-    '4', 0x00,                  /* wcChar7 */
-    '5', 0x00,                  /* wcChar8 */
-    '6', 0x00,                  /* wcChar9 */
-#ifdef CONFIG_USB_HS
-    ///////////////////////////////////////
-    /// device qualifier descriptor
-    ///////////////////////////////////////
-    0x0a,
-    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
-    0x00,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x40,
-    0x00,
-    0x00,
-#endif
-    0x00
-};
-#endif
 
 /* USB HID device Configuration Descriptor */
 static uint8_t hid_desc[9] __ALIGN_END = {
@@ -309,16 +225,8 @@ static struct usbd_interface intf0;
 
 void webusb_hid_keyboard_init(uint8_t busid, uintptr_t reg_base)
 {
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
     usbd_desc_register(busid, &webusb_hid_descriptor);
-#else
-    usbd_desc_register(busid, webusb_hid_descriptor);
-#endif
-#ifndef CONFIG_USBDEV_ADVANCE_DESC
-    usbd_bos_desc_register(busid, &bos_desc);
-    usbd_msosv2_desc_register(busid, &msosv2_desc);
-    usbd_webusb_desc_register(busid, &webusb_url_desc);
-#endif
+
     usbd_add_interface(busid, usbd_hid_init_intf(busid, &intf0, hid_keyboard_report_desc, HID_KEYBOARD_REPORT_DESC_SIZE));
     usbd_add_endpoint(busid, &hid_in_ep);
 

@@ -50,7 +50,6 @@ const struct usb_bos_descriptor bos_desc = {
 #define WINUSB_EP_MPS 64
 #endif
 
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01)
 };
@@ -121,90 +120,6 @@ const struct usb_descriptor winusbv2_cdc_descriptor = {
     .msosv2_descriptor = &msosv2_desc,
     .bos_descriptor = &bos_desc
 };
-#else
-const uint8_t winusbv2_cdc_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_2_1, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
-    /* Configuration 0 */
-    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTF_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    /* Interface 0 */
-    USB_INTERFACE_DESCRIPTOR_INIT(0x00, 0x00, 0x02, 0xFF, 0x00, 0x00, 0x02),
-    /* Endpoint OUT 2 */
-    USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_OUT_EP, USB_ENDPOINT_TYPE_BULK, WINUSB_EP_MPS, 0x00),
-    /* Endpoint IN 1 */
-    USB_ENDPOINT_DESCRIPTOR_INIT(WINUSB_IN_EP, USB_ENDPOINT_TYPE_BULK, WINUSB_EP_MPS, 0x00),
-    CDC_ACM_DESCRIPTOR_INIT(0x01, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, WINUSB_EP_MPS, 0x00),
-    /* String 0 (LANGID) */
-    USB_LANGID_INIT(USBD_LANGID_STRING),
-    /* String 1 (Manufacturer) */
-    0x14,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
-    'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ///////////////////////////////////////
-    /// string2 descriptor
-    ///////////////////////////////////////
-    0x2C,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
-    'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ' ', 0x00,                  /* wcChar9 */
-    'W', 0x00,                  /* wcChar10 */
-    'I', 0x00,                  /* wcChar11 */
-    'N', 0x00,                  /* wcChar12 */
-    'U', 0x00,                  /* wcChar13 */
-    'S', 0x00,                  /* wcChar14 */
-    'B', 0x00,                  /* wcChar15 */
-    ' ', 0x00,                  /* wcChar16 */
-    'D', 0x00,                  /* wcChar17 */
-    'E', 0x00,                  /* wcChar18 */
-    'M', 0x00,                  /* wcChar19 */
-    'O', 0x00,                  /* wcChar20 */
-    ///////////////////////////////////////
-    /// string3 descriptor
-    ///////////////////////////////////////
-    0x16,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    '2', 0x00,                  /* wcChar0 */
-    '0', 0x00,                  /* wcChar1 */
-    '2', 0x00,                  /* wcChar2 */
-    '2', 0x00,                  /* wcChar3 */
-    '1', 0x00,                  /* wcChar4 */
-    '2', 0x00,                  /* wcChar5 */
-    '3', 0x00,                  /* wcChar6 */
-    '4', 0x00,                  /* wcChar7 */
-    '5', 0x00,                  /* wcChar8 */
-    '6', 0x00,                  /* wcChar9 */
-#ifdef CONFIG_USB_HS
-    /* Device Qualifier */
-    0x0a,
-    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
-    0x10,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x40,
-    0x00,
-    0x00,
-#endif
-    /* End */
-    0x00
-};
-#endif
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
@@ -314,15 +229,8 @@ struct usbd_interface intf2;
 
 void winusbv2_cdc_init(uint8_t busid, uintptr_t reg_base)
 {
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
     usbd_desc_register(busid, &winusbv2_cdc_descriptor);
-#else
-    usbd_desc_register(busid, winusbv2_cdc_descriptor);
-#endif
-#ifndef CONFIG_USBDEV_ADVANCE_DESC
-    usbd_bos_desc_register(busid, &bos_desc);
-    usbd_msosv2_desc_register(busid, &msosv2_desc);
-#endif
+
     /*!< winusb */
     usbd_add_interface(busid, &winusb_intf);
     usbd_add_endpoint(busid, &winusb_out_ep1);

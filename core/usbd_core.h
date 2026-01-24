@@ -96,15 +96,7 @@ extern struct usbd_bus g_usbdev_bus[];
 #error USBD_IRQHandler is obsolete, please call USBD_IRQHandler(xxx) in your irq
 #endif
 
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
 void usbd_desc_register(uint8_t busid, const struct usb_descriptor *desc);
-#else
-void usbd_desc_register(uint8_t busid, const uint8_t *desc);
-void usbd_msosv1_desc_register(uint8_t busid, struct usb_msosv1_descriptor *desc);
-void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc);
-void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
-void usbd_webusb_desc_register(uint8_t busid, struct usb_webusb_descriptor *desc);
-#endif
 
 void usbd_add_interface(uint8_t busid, struct usbd_interface *intf);
 void usbd_add_endpoint(uint8_t busid, struct usbd_endpoint *ep);
