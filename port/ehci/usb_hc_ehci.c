@@ -774,6 +774,8 @@ int usb_hc_init(struct usbh_bus *bus)
     volatile uint32_t timeout = 0;
     uint32_t regval;
 
+    bus->hcd.roothub.speed = USB_SPEED_HIGH;
+
     memset(&g_ehci_hcd[bus->hcd.hcd_id], 0, sizeof(struct ehci_hcd));
     memset(ehci_qh_pool[bus->hcd.hcd_id], 0, sizeof(struct ehci_qh_hw) * CONFIG_USB_EHCI_QH_NUM);
     memset(ehci_qtd_pool[bus->hcd.hcd_id], 0, sizeof(struct ehci_qtd_hw) * CONFIG_USB_EHCI_QTD_NUM);
