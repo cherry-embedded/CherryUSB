@@ -469,22 +469,22 @@ if PKG_USING_CHERRYUSB
             default "/"
 
         menu "Select USB host template, please select class driver first"
-            config CONFIG_TEST_USBH_SERIAL
+            config PKG_TEST_USBH_SERIAL
                 bool
                 prompt "demo for test seial, cannot enable this demo, you can use rt-thread device api to test"
                 default n
                 depends on CONFIG_USBHOST_SERIAL
-            config CONFIG_TEST_USBH_HID
+            config PKG_TEST_USBH_HID
                 int
                 prompt "demo for test hid"
                 default 0
                 depends on PKG_CHERRYUSB_HOST_HID
-            config CONFIG_TEST_USBH_MSC
+            config PKG_TEST_USBH_MSC
                 bool
                 prompt "demo for test msc, cannot enable this demo, you can use rt-thread dfs api to test"
                 default n
                 depends on PKG_CHERRYUSB_HOST_MSC
-            config CONFIG_TEST_USBH_NET
+            config PKG_TEST_USBH_NET
                 bool
                 prompt "demo for test net, cannot enable this demo, you can use lwip api to test"
                 default n
@@ -498,14 +498,14 @@ if PKG_USING_CHERRYUSB
 
     choice
         prompt "Version"
-        default PKG_USING_CHERRYUSB_V010504
+        default PKG_USING_CHERRYUSB_V010503
         help
             Select the package version
 
         config PKG_USING_CHERRYUSB_LATEST_VERSION
             bool "latest"
-        config PKG_USING_CHERRYUSB_V010504
-            bool "v1.5.4"
+        config PKG_USING_CHERRYUSB_V010503
+            bool "v1.5.3.99"
         config PKG_USING_CHERRYUSB_V010502
             bool "v1.5.2"
         config PKG_USING_CHERRYUSB_V010500
@@ -523,7 +523,7 @@ if PKG_USING_CHERRYUSB
     config PKG_CHERRYUSB_VER
        string
        default "latest"    if PKG_USING_CHERRYUSB_LATEST_VERSION
-       default "v1.5.4"   if PKG_USING_CHERRYUSB_V010504
+       default "v1.5.3.99"   if PKG_USING_CHERRYUSB_V010503
        default "v1.5.2"   if PKG_USING_CHERRYUSB_V010502
        default "v1.5.0"   if PKG_USING_CHERRYUSB_V010500
        default "v1.4.3"   if PKG_USING_CHERRYUSB_V010403

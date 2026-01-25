@@ -470,22 +470,22 @@ if RT_USING_CHERRYUSB
             default "/"
 
         menu "Select USB host template, please select class driver first"
-            config CONFIG_TEST_USBH_SERIAL
+            config RT_TEST_USBH_SERIAL
                 bool
                 prompt "demo for test seial, cannot enable this demo, you can use rt-thread device api to test"
                 default n
                 depends on CONFIG_USBHOST_SERIAL
-            config CONFIG_TEST_USBH_HID
+            config RT_TEST_USBH_HID
                 int
                 prompt "demo for test hid"
                 default 0
                 depends on RT_CHERRYUSB_HOST_HID
-            config CONFIG_TEST_USBH_MSC
+            config RT_TEST_USBH_MSC
                 bool
                 prompt "demo for test msc, cannot enable this demo, you can use rt-thread dfs api to test"
                 default n
                 depends on RT_CHERRYUSB_HOST_MSC
-            config CONFIG_TEST_USBH_NET
+            config RT_TEST_USBH_NET
                 bool
                 prompt "demo for test net, cannot enable this demo, you can use lwip api to test"
                 default n
