@@ -351,11 +351,11 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     }
 
     /*
-	 * Super-Speed hubs need to know their depth to be able to
-	 * parse the bits of the route-string that correspond to
-	 * their downstream port number.
-	 *
-	 */
+     * Super-Speed hubs need to know their depth to be able to
+     * parse the bits of the route-string that correspond to
+     * their downstream port number.
+     *
+     */
     if ((hport->depth != 0) && (hport->speed == USB_SPEED_SUPER)) {
         ret = usbh_hub_set_depth(hub, hport->depth - 1);
         if (ret < 0) {

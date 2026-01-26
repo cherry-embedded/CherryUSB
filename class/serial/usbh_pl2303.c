@@ -131,12 +131,12 @@ static uint32_t pl2303_encode_baud_rate_divisor_alt(unsigned char buf[4],
     unsigned int baseline, mantissa, exponent;
 
     /*
-	 * Apparently, for the TA version the formula is:
-	 *   baudrate = 12M * 32 / (mantissa * 2^exponent)
-	 * where
-	 *   mantissa = buf[10:0]
-	 *   exponent = buf[15:13 16]
-	 */
+     * Apparently, for the TA version the formula is:
+     *   baudrate = 12M * 32 / (mantissa * 2^exponent)
+     * where
+     *   mantissa = buf[10:0]
+     *   exponent = buf[15:13 16]
+     */
     baseline = 12000000 * 32;
     mantissa = baseline / baud;
     if (mantissa == 0)
@@ -170,12 +170,12 @@ static uint32_t pl2303_encode_baud_rate_divisor(unsigned char buf[4],
     unsigned int baseline, mantissa, exponent;
 
     /*
-	 * Apparently the formula is:
-	 *   baudrate = 12M * 32 / (mantissa * 4^exponent)
-	 * where
-	 *   mantissa = buf[8:0]
-	 *   exponent = buf[11:9]
-	 */
+    * Apparently the formula is:
+    *   baudrate = 12M * 32 / (mantissa * 4^exponent)
+    * where
+    *   mantissa = buf[8:0]
+    *   exponent = buf[11:9]
+    */
     baseline = 12000000 * 32;
     mantissa = baseline / baud;
     if (mantissa == 0)
@@ -347,7 +347,7 @@ static int usbh_pl2303_get_chiptype(struct usbh_serial *serial)
                 case 0x300: /* GT / TA */
                     if (pl2303_supports_hx_status(serial))
                         return TYPE_TA;
-                __attribute__((fallthrough));
+                    __attribute__((fallthrough));
                 case 0x305:
                 case 0x400: /* GL */
                 case 0x405:
@@ -355,7 +355,7 @@ static int usbh_pl2303_get_chiptype(struct usbh_serial *serial)
                 case 0x500: /* GE / TB */
                     if (pl2303_supports_hx_status(serial))
                         return TYPE_TB;
-                __attribute__((fallthrough));
+                    __attribute__((fallthrough));
                 case 0x505:
                 case 0x600: /* GS */
                 case 0x605:
@@ -525,9 +525,9 @@ static int usbh_pl2303_set_line_coding(struct usbh_serial *serial, struct cdc_li
         baud = MIN(baud, pl2303_type_data[pl2303_class->chip_type].max_baud_rate);
     }
     /*
-	 * Use direct method for supported baud rates, otherwise use divisors.
-	 * Newer chip types do not support divisor encoding.
-	 */
+     * Use direct method for supported baud rates, otherwise use divisors.
+     * Newer chip types do not support divisor encoding.
+     */
     if (pl2303_type_data[pl2303_class->chip_type].no_divisors)
         baud_sup = baud;
     else

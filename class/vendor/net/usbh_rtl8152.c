@@ -1596,8 +1596,8 @@ static void r8153_teredo_off(struct usbh_rtl8152 *tp)
         case RTL_VER_15:
         default:
             /* The bit 0 ~ 7 are relative with teredo settings. They are
-		 * W1C (write 1 to clear), so set all 1 to disable it.
-		 */
+             * W1C (write 1 to clear), so set all 1 to disable it.
+             */
             ocp_write_byte(tp, MCU_TYPE_PLA, PLA_TEREDO_CFG, 0xff);
             break;
     }

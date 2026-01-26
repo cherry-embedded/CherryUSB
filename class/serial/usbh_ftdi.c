@@ -91,10 +91,10 @@ static uint32_t ftdi_2232h_baud_base_to_divisor(uint32_t baud, int base)
     else if (divisor == 0x4001) /* 1.5 */
         divisor = 1;
     /*
-	 * Set this bit to turn off a divide by 2.5 on baud rate generator
-	 * This enables baud rates up to 12Mbaud but cannot reach below 1200
-	 * baud with this bit set
-	 */
+     * Set this bit to turn off a divide by 2.5 on baud rate generator
+     * This enables baud rates up to 12Mbaud but cannot reach below 1200
+     * baud with this bit set
+     */
     divisor |= 0x00020000;
     return divisor;
 }
@@ -345,11 +345,11 @@ static int usbh_ftdi_get_modem_status(struct usbh_serial *serial)
     }
 
     status = (serial->iobuffer[0] & FTDI_SIO_DSR_MASK ? USBH_SERIAL_TIOCM_DSR : 0) |
-              (serial->iobuffer[0] & FTDI_SIO_CTS_MASK ? USBH_SERIAL_TIOCM_CTS : 0) |
-              (serial->iobuffer[0] & FTDI_SIO_RI_MASK ? USBH_SERIAL_TIOCM_RI : 0) |
-              (serial->iobuffer[0] & FTDI_SIO_RLSD_MASK ? USBH_SERIAL_TIOCM_CD : 0) |
-              (serial->line_state & USBH_SERIAL_TIOCM_DTR ? USBH_SERIAL_TIOCM_DTR : 0) |
-              (serial->line_state & USBH_SERIAL_TIOCM_RTS ? USBH_SERIAL_TIOCM_RTS : 0);
+             (serial->iobuffer[0] & FTDI_SIO_CTS_MASK ? USBH_SERIAL_TIOCM_CTS : 0) |
+             (serial->iobuffer[0] & FTDI_SIO_RI_MASK ? USBH_SERIAL_TIOCM_RI : 0) |
+             (serial->iobuffer[0] & FTDI_SIO_RLSD_MASK ? USBH_SERIAL_TIOCM_CD : 0) |
+             (serial->line_state & USBH_SERIAL_TIOCM_DTR ? USBH_SERIAL_TIOCM_DTR : 0) |
+             (serial->line_state & USBH_SERIAL_TIOCM_RTS ? USBH_SERIAL_TIOCM_RTS : 0);
 
     return status;
 }
