@@ -7,8 +7,6 @@
 #include "usbd_hid.h"
 #include "usbd_gamepad.h"
 
-extern int hid_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len);
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t gamepad_report_buffer[64];
 
 static int xinput_vendor_class_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
@@ -207,12 +205,5 @@ static const uint8_t hid_switch_report_desc[HID_SWITCH_REPORT_DESC_SIZE] = {
 
 struct usbd_interface *usbd_gamepad_switch_init_intf(struct usbd_interface *intf)
 {
-    intf->class_interface_handler = hid_class_interface_request_handler;
-    intf->class_endpoint_handler = NULL;
-    intf->vendor_handler = NULL;
-    intf->notify_handler = NULL;
-
-    intf->hid_report_descriptor = hid_switch_report_desc;
-    intf->hid_report_descriptor_len = HID_SWITCH_REPORT_DESC_SIZE;
-    return intf;
+    return usbd_hid_init_intf(0, intf, hid_switch_report_desc, HID_SWITCH_REPORT_DESC_SIZE);
 }
