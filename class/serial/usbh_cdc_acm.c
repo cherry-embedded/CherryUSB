@@ -147,9 +147,9 @@ static int usbh_cdc_acm_get_modem_status(struct usbh_serial *serial)
 
     cdc_acm_class = (struct usbh_cdc_acm *)serial->priv;
 
-    status = (cdc_acm_class->modem_status & CDC_SERIAL_STATE_TX_CARRIER ? USBH_SERIAL_TIOCM_DSR : 0) |
+    status = (cdc_acm_class->modem_status & CDC_SERIAL_STATE_DSR ? USBH_SERIAL_TIOCM_DSR : 0) |
              (cdc_acm_class->modem_status & CDC_SERIAL_STATE_RING ? USBH_SERIAL_TIOCM_RI : 0) |
-             (cdc_acm_class->modem_status & CDC_SERIAL_STATE_RX_CARRIER ? USBH_SERIAL_TIOCM_CD : 0) |
+             (cdc_acm_class->modem_status & CDC_SERIAL_STATE_DCD ? USBH_SERIAL_TIOCM_CD : 0) |
              (serial->line_state & USBH_SERIAL_TIOCM_DTR ? USBH_SERIAL_TIOCM_DTR : 0) |
              (serial->line_state & USBH_SERIAL_TIOCM_RTS ? USBH_SERIAL_TIOCM_RTS : 0);
 
@@ -192,10 +192,10 @@ static int __usbh_cdc_acm_get_modem_status(struct usbh_serial *serial)
     difference = cdc_acm_class->modem_status ^ notification->data;
     cdc_acm_class->modem_status = notification->data;
 
-    if (difference & CDC_SERIAL_STATE_TX_CARRIER)
+    if (difference & CDC_SERIAL_STATE_DSR)
         serial->iocount.dsr++;
-    if (difference & CDC_SERIAL_STATE_RX_CARRIER)
-        serial->iocount.dsr++;
+    if (difference & CDC_SERIAL_STATE_DCD)
+        serial->iocount.dcd++;
     if (notification->data & CDC_SERIAL_STATE_BREAK)
         serial->iocount.brk++;
     if (notification->data & CDC_SERIAL_STATE_FRAMING)
