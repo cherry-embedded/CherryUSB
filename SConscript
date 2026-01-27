@@ -280,7 +280,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
             LIBS = ['libxhci_a32_softfp_neon.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_RP2040']):
-    	path += [cwd + '/port/rp2040']
+        path += [cwd + '/port/rp2040']
         src += Glob('port/rp2040/usb_hc_rp2040.c')
 
     if GetDepend(['PKG_CHERRYUSB_HOST_CDC_ACM']):

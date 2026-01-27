@@ -504,6 +504,8 @@ if PKG_USING_CHERRYUSB
 
         config PKG_USING_CHERRYUSB_LATEST_VERSION
             bool "latest"
+        config PKG_USING_CHERRYUSB_V010600
+            bool "v1.6.0"
         config PKG_USING_CHERRYUSB_V010503
             bool "v1.5.3.99"
         config PKG_USING_CHERRYUSB_V010502
@@ -523,6 +525,7 @@ if PKG_USING_CHERRYUSB
     config PKG_CHERRYUSB_VER
        string
        default "latest"    if PKG_USING_CHERRYUSB_LATEST_VERSION
+       default "v1.6.0"   if PKG_USING_CHERRYUSB_V010600
        default "v1.5.3.99"   if PKG_USING_CHERRYUSB_V010503
        default "v1.5.2"   if PKG_USING_CHERRYUSB_V010502
        default "v1.5.0"   if PKG_USING_CHERRYUSB_V010500
