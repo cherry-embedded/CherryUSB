@@ -163,3 +163,20 @@ v1.5.3
 - idf host msc 支持
 - otg 框架重构，当前 port 仅支持 hpmicro
 - CI 编译功能，支持 hpmicro/espressif/bouffalolab
+
+v1.5.3.99
+----------------------
+
+bugfix for v1.5.3
+
+
+v1.6.0
+----------------------
+
+- **host 增加 serial 框架，统一所有类串口驱动**
+- **host hid 增加报告描述符解析功能**
+- usbh_initialize 增加 event callback，用于通知用户主机事件变化，通常不需要使用，设置为 NULL 即可
+- 支持 gamepad device
+- 增加 ti xmc，infineon edge e8x port 支持
+- dwc2 增加 usbd_dwc2_get_system_clock 替换 SystemCoreClock；删除 __UNALIGNED_UINT32_READ 和 __UNALIGNED_UINT32_WRITE 宏；读取 setup 个数设置为 1个；第一次读取 setup 移动到 USB_OTG_GINTSTS_ENUMDNE 中断中
+- dwc2/ehci 增加 roothub 速度设置

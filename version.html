@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>版本说明 &mdash; CherryUSB 1.5.3 documentation</title>
+  <title>版本说明 &mdash; CherryUSB 1.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=d75fd82e"></script>
+      <script src="_static/documentation_options.js?v=72d88caf"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/share.html">开发者经验/开源项目分享</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/opensource.html">官方开源项目分享</a></li>
 </ul>
@@ -137,6 +138,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-1">v1.5.1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-2">v1.5.2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#v1-5-3">v1.5.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-3-99">v1.5.3.99</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-0">v1.6.0</a></li>
 </ul>
 </li>
 </ul>
@@ -349,6 +352,22 @@
 <li><p>idf host msc 支持</p></li>
 <li><p>otg 框架重构，当前 port 仅支持 hpmicro</p></li>
 <li><p>CI 编译功能，支持 hpmicro/espressif/bouffalolab</p></li>
+</ul>
+</section>
+<section id="v1-5-3-99">
+<h2>v1.5.3.99<a class="headerlink" href="#v1-5-3-99" title="Link to this heading"></a></h2>
+<p>bugfix for v1.5.3</p>
+</section>
+<section id="v1-6-0">
+<h2>v1.6.0<a class="headerlink" href="#v1-6-0" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>host 增加 serial 框架，统一所有类串口驱动</strong></p></li>
+<li><p><strong>host hid 增加报告描述符解析功能</strong></p></li>
+<li><p>usbh_initialize 增加 event callback，用于通知用户主机事件变化，通常不需要使用，设置为 NULL 即可</p></li>
+<li><p>支持 gamepad device</p></li>
+<li><p>增加 ti xmc，infineon edge e8x port 支持</p></li>
+<li><p>dwc2 增加 usbd_dwc2_get_system_clock 替换 SystemCoreClock；删除 __UNALIGNED_UINT32_READ 和 __UNALIGNED_UINT32_WRITE 宏；读取 setup 个数设置为 1个；第一次读取 setup 移动到 USB_OTG_GINTSTS_ENUMDNE 中断中</p></li>
+<li><p>dwc2/ehci 增加 roothub 速度设置</p></li>
 </ul>
 </section>
 </section>

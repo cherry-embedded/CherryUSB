@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>usbh_serial &mdash; CherryUSB 1.5.3 documentation</title>
+  <title>usbh_serial &mdash; CherryUSB 1.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=d75fd82e"></script>
+      <script src="../_static/documentation_options.js?v=72d88caf"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/share.html">开发者经验/开源项目分享</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/opensource.html">官方开源项目分享</a></li>
 </ul>
@@ -242,16 +243,20 @@
 <span class="n">usbh_serial_close</span><span class="p">(</span><span class="n">serial</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
 <p>需要注意，例程中使用的是比较简单的先发送后读取的方式，因此发送的总长度不可以超过 CONFIG_USBHOST_SERIAL_RX_SIZE，正常使用 TX/RX 请分开进行。</p>
 </div>
 <p>用户需要考虑以下三种场景：</p>
 <ul class="simple">
-<li><p>USB2TTL 设备 + 启用了波特率，这种情况下需要使用 <cite>usbh_serial_write</cite> 和 <cite>usbh_serial_read</cite> 进行收发数据， <strong>并且 read 操作需要及时，防止 ringbuf 数据溢出而丢包</strong>；</p></li>
+<li><p>USB2TTL 设备 + 启用了波特率（USB2TTL设备必须启用波特率），这种情况下需要使用 <cite>usbh_serial_write</cite> 和 <cite>usbh_serial_read</cite> 进行收发数据， <strong>并且 read 操作需要及时，防止 ringbuf 数据溢出而丢包</strong>。不可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite></p></li>
 <li><p>纯 USB 设备 + 未启动波特率，这种情况下可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite> 进行异步收发数据。阻塞则可以用 <cite>usbh_serial_write</cite> ，不可以使用 <cite>usbh_serial_read</cite>。</p></li>
-<li><p>纯 USB 设备 + 启动波特率，同 1，但是速率打折扣（因为多了一层 ringbuf）。此时也不可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite>。 <strong>如果是 GSM 设备请使用第一种场景</strong>。</p></li>
+<li><p>纯 USB 设备 + 启动波特率，同 1，但是接收速率会打折扣（因为多了一层 ringbuf）。此时也不可以使用 <cite>usbh_serial_cdc_write_async</cite> 和 <cite>usbh_serial_cdc_read_async</cite>。 <strong>如果是 GSM 设备请使用第一种场景</strong>。</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>简单来说就是，如果接收数据需要用到ringbuf转一层的，请使用第一种场景。</p>
+</div>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">I</span><span class="o">/</span><span class="n">usbh_hub</span><span class="p">]</span><span class="w"> </span><span class="n">New</span><span class="w"> </span><span class="n">full</span><span class="o">-</span><span class="n">speed</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">Bus</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Hub</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">Port</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="n">connected</span>
 <span class="p">[</span><span class="n">I</span><span class="o">/</span><span class="n">usbh_core</span><span class="p">]</span><span class="w"> </span><span class="n">New</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="n">found</span><span class="p">,</span><span class="n">idVendor</span><span class="o">:</span><span class="mi">10</span><span class="n">c4</span><span class="p">,</span><span class="n">idProduct</span><span class="o">:</span><span class="n">ea60</span><span class="p">,</span><span class="n">bcdDevice</span><span class="o">:</span><span class="mo">0100</span>
 <span class="p">[</span><span class="n">I</span><span class="o">/</span><span class="n">usbh_core</span><span class="p">]</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="n">has</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="n">bNumConfigurations</span>
