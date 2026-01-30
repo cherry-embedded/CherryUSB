@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>usbd_msc &mdash; CherryUSB 1.6.0 documentation</title>
+  <title>MSC Device &mdash; CherryUSB 1.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
@@ -19,8 +19,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="usbd_rndis" href="usbd_rndis.html" />
-    <link rel="prev" title="usbd_hid" href="usbd_hid.html" /> 
+    <link rel="next" title="AudioV1 Device" href="usbd_audiov1.html" />
+    <link rel="prev" title="HID Device" href="usbd_hid.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -78,28 +78,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">例程说明</span></p>
+<p class="caption" role="heading"><span class="caption-text">例程</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="usbd_cdc_acm.html">usbd_cdc_acm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_hid.html">usbd_hid</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">usbd_msc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_rndis.html">usbd_rndis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_ecm.html">usbd_cdc_ecm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_audiov1.html">usbd_audiov1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_audiov2.html">usbd_audiov2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_video.html">usbd_video</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_winusb.html">usbd_winusb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_webusb.html">usbd_webusb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_adb.html">usbd_adb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_serial.html">usbh_serial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_hid.html">usbh_hid</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_msc.html">usbh_msc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_net.html">usbh_net</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_bluetooth.html">usbh_bluetooth</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_wifi.html">usbh_wifi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbd_vendor.html">vendor device 驱动编写</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usbh_vendor.html">vendor host 驱动编写</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usb_otg.html">OTG 功能的使用</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_cdc_acm.html">CDC ACM Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_hid.html">HID Device</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MSC Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_audiov1.html">AudioV1 Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_audiov2.html">AudioV2 Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_video.html">USB Video Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_winusb.html">WinUSB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_webusb.html">WebUSB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_rndis.html">CDC RNDIS Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_ecm.html">CDC ECM Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_adb.html">ADB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_mtp.html">MTP Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_serial.html">Serial Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_hid.html">HID Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_msc.html">MSC Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_net.html">Network Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_bluetooth.html">BTBLE Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_wifi.html">WIFI Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_audio.html">Audio Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_video.html">Video Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_otg.html">USB OTG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbd_vendor.html">Vendor Device 驱动编写</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbh_vendor.html">Vendor Host 驱动编写</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
@@ -148,7 +151,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">usbd_msc</li>
+      <li class="breadcrumb-item active">MSC Device</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/demo/usbd_msc.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -158,8 +161,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="usbd-msc">
-<h1>usbd_msc<a class="headerlink" href="#usbd-msc" title="Link to this heading"></a></h1>
+  <section id="msc-device">
+<h1>MSC Device<a class="headerlink" href="#msc-device" title="Link to this heading"></a></h1>
 <p>本节主要演示 USB 模拟 U 盘功能。默认使用RAM 作为存储介质模拟 U 盘。</p>
 <ul class="simple">
 <li><p>实现 U 盘的读写和获取容量接口，注意，容量 block_num 为虚拟的，实际没有这么多 block，读写的数据超过 BLOCK_COUNT 会丢弃。</p></li>
@@ -200,14 +203,14 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="usbd_hid.html" class="btn btn-neutral float-left" title="usbd_hid" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="usbd_rndis.html" class="btn btn-neutral float-right" title="usbd_rndis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="usbd_hid.html" class="btn btn-neutral float-left" title="HID Device" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="usbd_audiov1.html" class="btn btn-neutral float-right" title="AudioV1 Device" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022 ~ 2025, sakumisu.</p>
+    <p>&#169; Copyright 2022 ~ 2026, sakumisu.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

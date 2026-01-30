@@ -1,5 +1,5 @@
-usbd_webusb
-===============
+WebUSB Device
+=================
 
 本 demo 主要演示 webusb 功能，webusb 主要用于弹出网页并对 USB 设备进行访问。示例使用 webusb_hid_template.c。
 

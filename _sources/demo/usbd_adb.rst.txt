@@ -1,7 +1,7 @@
-usbd_adb
-===============
+ADB Device
+=================
 
-本节主要介绍如何使用 adb device。支持 **cherrysh** 和 rt-thread **msh**，只需要在 main 中添加以下初始化即可。
+adb device demo 参考 `demo/adb/usbd_adb_template.c` 模板。默认适配 **cherrysh** (`platform/demo/adb/cherrysh_port.c`) 和 **rt-thread msh** (`platform/rtthread/usbd_adb_shell.c`)，只需要在 main 中添加以下初始化即可。
 
 .. code-block:: C
 

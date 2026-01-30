@@ -1,7 +1,7 @@
-usbd_cdc_acm
-===============
+CDC ACM Device
+=================
 
-本 demo 主要用于演示 cdc acm 功能，包含收发测试，DTR 控制，ZLP 测试，性能测试。
+本 demo 主要用于演示 cdc acm 功能，参考 `demo/cdc_acm_template.c` 模板。包含收发测试，DTR 控制，ZLP 测试，性能测试。
 
 - 开辟读写 buffer，用于收发数据，并且buffer需要用 nocache 修饰，这里我们读写都是用 2048字节，是为了后面的 ZLP 测试和性能测试使用。
 

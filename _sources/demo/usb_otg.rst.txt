@@ -1,5 +1,5 @@
-OTG 功能的使用
-=========================
+USB OTG
+=================
 
 如果需要使用 OTG 功能，首先使用的芯片需要支持 ID 检测功能，然后使能 ``CONFIG_USB_OTG_ENABLE`` 宏，将之前的例程中 ``usbh_initialize`` 或者 ``usbh_initialize``
 替换成 ``usbotg_initialize`` 即可。

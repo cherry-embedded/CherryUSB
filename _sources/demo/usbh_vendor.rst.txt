@@ -1,4 +1,4 @@
-vendor host 驱动编写
+Vendor Host 驱动编写
 ===========================
 
 本节主要介绍如何编写一个 vendor host 驱动。

@@ -1,5 +1,5 @@
-usbd_video
-===============
+USB Video Device
+=================
 
 本节主要演示 USB UAC 功能，支持 YUYV, MJPEG, H264 格式。为了方便演示，都采用的静态图。
 

@@ -1,4 +1,4 @@
-vendor device 驱动编写
+Vendor Device 驱动编写
 ===========================
 
 本节主要介绍如何编写一个 vendor device 驱动。

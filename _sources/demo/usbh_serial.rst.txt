@@ -1,7 +1,7 @@
-usbh_serial
-===============
+Serial Host
+=================
 
-Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。
+本节主要介绍 Host serial 框架的使用。Serial 框架当前支持 cdc acm, ftdi, cp210x, ch34x, pl2303，gsm 驱动。
 
 .. figure:: img/usbh_serial.png
 

@@ -1,7 +1,7 @@
-usbh_net
-===============
+Network Host
+=================
 
-本节主要介绍 USB 网卡的使用，当前已经支持和测试以下 USB 网卡:
+本节主要介绍 Host USB 网卡的使用，当前已经支持和测试以下 USB 网卡:
 
 - 4G 网卡：EC20(ECM/RNDIS)、手机（RNDIS）、SIMCOM7600(RNDIS)、ML307R(RNDIS)、AIR780(RNDIS)
 
