@@ -8,7 +8,7 @@
 ------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -22,7 +22,7 @@
 -----------------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -36,7 +36,7 @@
 -------------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -67,7 +67,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 -----------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -81,7 +81,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 -----------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -95,7 +95,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 -----------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -109,7 +109,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 ---------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -123,7 +123,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 ---------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -137,7 +137,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 --------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -151,7 +151,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
 --------------------------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
@@ -170,7 +170,7 @@ Not opensource
 ---------------------------
 
 .. list-table::
-    :widths: 10 10
+    :widths: 100 100
     :header-rows: 1
 
     * - Repo url
