@@ -48,13 +48,15 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">基于现有 demo 快速验证</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#bouffalolab-sdk">基于 bouffalolab 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#hpmicro-sdk">基于 HPMicro 系列芯片（官方 SDK 支持）</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#esp32s2-s3-p4-sdk">基于 esp32s2/s3/p4 系列芯片（官方 SDK 即将支持）</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sdk">基于飞腾派系列芯片（官方 SDK 支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#esp32s2-s3-p4-sdk">基于 esp32s2/s3/p4 系列芯片（官方 SDK 支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#phytium-sdk">基于 Phytium 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#essemi-sdk">基于 Essemi 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#artinchip-sdk">基于 Artinchip 系列芯片（官方 SDK 支持）</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#canmv-k230-sdk">基于 canmv-k230 芯片（官方 SDK 支持）</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#nxp-mcx">基于 NXP MCX系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#kendryte-canmv-k230-sdk">基于 Kendryte canmv-k230 系列（官方 SDK 支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nxp-mcx">基于 NXP MCX 系列芯片</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sifli-sf32-sdk">基于 SiFli SF32 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#rp2040-rp2035-sdk">基于 RP2040/RP2035 芯片（官方 SDK 即将支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#actionstech">基于 Actionstech 系列芯片</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st">基于 ST 系列芯片</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#usb-device">USB Device 移植要点</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usb-host">USB Host 移植要点</a></li>
@@ -183,28 +185,13 @@
 发现一点都看不懂，概念好多，根本记不住，从而丧失对 USB 的兴趣。因此，先跑 demo 非常重要。下面我将给大家罗列目前支持的 demo 仓库。</p>
 <section id="bouffalolab-sdk">
 <h2>基于 bouffalolab 系列芯片（官方 SDK 支持）<a class="headerlink" href="#bouffalolab-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_bouffalolab">https://github.com/CherryUSB/cherryusb_bouffalolab</a></p>
-<ul class="simple">
-<li><p>BL616/BL808：USB2.0 内置 HS phy 芯片，支持主从机。device 支持 5 个端点（包括端点0），不支持双向同时使用。</p></li>
-<li><p>USB 的相关应用位于 <cite>examples/usbdev</cite> 和 <cite>examples/usbhost</cite> 目录下，根据官方环境搭建完成后，即可编译使用。</p></li>
-</ul>
 </section>
 <section id="hpmicro-sdk">
 <h2>基于 HPMicro 系列芯片（官方 SDK 支持）<a class="headerlink" href="#hpmicro-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_hpmicro">https://github.com/CherryUSB/cherryusb_hpmicro</a></p>
-<ul class="simple">
-<li><p>HPM 系列: USB2.0 内置 HS phy 芯片，支持主从机。device 支持 8/16 端点（包括端点0），并且可以同时使用双向，不同芯片个数有差异。</p></li>
-<li><p>USB 的相关应用位于 <cite>samples/cherryusb</cite> ，根据官方环境搭建完成后，即可编译使用。</p></li>
-</ul>
 </section>
 <section id="esp32s2-s3-p4-sdk">
-<h2>基于 esp32s2/s3/p4 系列芯片（官方 SDK 即将支持）<a class="headerlink" href="#esp32s2-s3-p4-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_esp32">https://github.com/CherryUSB/cherryusb_esp32</a></p>
-<ul class="simple">
-<li><p>esp32s2/s3：USB2.0 内置全速 PHY 芯片，支持主从机，device 支持 7 个端点（包括端点0），并且可以同时使用双向。</p></li>
-<li><p>esp32p4：一个 USB2.0 内置全速 PHY 芯片，一个 USB2.0 内置高速 PHY 芯片，支持主从机。</p></li>
-<li><p>默认 demo 采用组件库安装的形式，在 <a class="reference external" href="https://components.espressif.com/">https://components.espressif.com/</a> 中搜索 cherryusb 即可</p></li>
-</ul>
+<h2>基于 esp32s2/s3/p4 系列芯片（官方 SDK 支持）<a class="headerlink" href="#esp32s2-s3-p4-sdk" title="Link to this heading"></a></h2>
+<p>默认 demo 采用组件库安装的形式，在 <a class="reference external" href="https://components.espressif.com/">https://components.espressif.com/</a> 中搜索 cherryusb 即可。也可使用官方 idf 仓库下的 cherryusb demo。</p>
 <p>ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发环境。</p>
 <ul class="simple">
 <li><p>ctrl + shift + p 选择 ESP-IDF 欢迎界面，然后选择 Component mananger</p></li>
@@ -228,49 +215,33 @@
 <img alt="../_images/esp4.png" src="../_images/esp4.png" />
 </figure>
 </section>
-<section id="sdk">
-<h2>基于飞腾派系列芯片（官方 SDK 支持）<a class="headerlink" href="#sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://gitee.com/phytium_embedded/phytium-free-rtos-sdk">https://gitee.com/phytium_embedded/phytium-free-rtos-sdk</a></p>
-<ul class="simple">
-<li><p>飞腾派支持两个 USB3.0 主机（采用 XHCI）， 两个 USB2.0 主从机</p></li>
-<li><p>USB 的相关应用位于 <cite>example/peripheral/usb</cite> ，根据官方环境搭建完成后，即可编译使用。</p></li>
-</ul>
+<section id="phytium-sdk">
+<h2>基于 Phytium 系列芯片（官方 SDK 支持）<a class="headerlink" href="#phytium-sdk" title="Link to this heading"></a></h2>
 </section>
 <section id="essemi-sdk">
 <h2>基于 Essemi 系列芯片（官方 SDK 支持）<a class="headerlink" href="#essemi-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_es32">https://github.com/CherryUSB/cherryusb_es32</a></p>
-<ul class="simple">
-<li><p>支持全速和高速主从机。device 支持 6 个端点（包括端点0），并且可以同时使用双向。</p></li>
-</ul>
 </section>
 <section id="artinchip-sdk">
 <h2>基于 Artinchip 系列芯片（官方 SDK 支持）<a class="headerlink" href="#artinchip-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://gitee.com/artinchip/luban-lite">https://gitee.com/artinchip/luban-lite</a></p>
-<ul class="simple">
-<li><p>支持全速和高速主从机，主机采用 EHCI + OHCI。device 支持 8 个端点（包括端点0），并且可以同时使用双向。</p></li>
-</ul>
 </section>
-<section id="canmv-k230-sdk">
-<h2>基于 canmv-k230 芯片（官方 SDK 支持）<a class="headerlink" href="#canmv-k230-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/k230_sdk">https://github.com/CherryUSB/k230_sdk</a></p>
-<ul class="simple">
-<li><p>K230: 两个 USB2.0 内置 HS PHY 芯片，支持主从机。device 支持 16 个端点（包括端点0），并且可以同时使用双向。</p></li>
-</ul>
+<section id="kendryte-canmv-k230-sdk">
+<h2>基于 Kendryte canmv-k230 系列（官方 SDK 支持）<a class="headerlink" href="#kendryte-canmv-k230-sdk" title="Link to this heading"></a></h2>
 </section>
 <section id="nxp-mcx">
-<h2>基于 NXP MCX系列芯片<a class="headerlink" href="#nxp-mcx" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_mcx">https://github.com/CherryUSB/cherryusb_mcx</a> 或者 <a class="reference external" href="https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx">https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx</a></p>
-<ul class="simple">
-<li><p>支持全速 IP 和高速 IP， 高速 IP 支持主机和从机。device 支持 8 个端点（包括端点0），并且可以同时使用双向。</p></li>
-</ul>
+<h2>基于 NXP MCX 系列芯片<a class="headerlink" href="#nxp-mcx" title="Link to this heading"></a></h2>
+</section>
+<section id="sifli-sf32-sdk">
+<h2>基于 SiFli SF32 系列芯片（官方 SDK 支持）<a class="headerlink" href="#sifli-sf32-sdk" title="Link to this heading"></a></h2>
 </section>
 <section id="rp2040-rp2035-sdk">
 <h2>基于 RP2040/RP2035 芯片（官方 SDK 即将支持）<a class="headerlink" href="#rp2040-rp2035-sdk" title="Link to this heading"></a></h2>
-<p>仓库参考： <a class="reference external" href="https://github.com/CherryUSB/pico-examples">https://github.com/CherryUSB/pico-examples</a> 和 <a class="reference external" href="https://github.com/CherryUSB/pico-sdk">https://github.com/CherryUSB/pico-sdk</a></p>
+</section>
+<section id="actionstech">
+<h2>基于 Actionstech 系列芯片<a class="headerlink" href="#actionstech" title="Link to this heading"></a></h2>
+<p>Not opensource</p>
 </section>
 <section id="st">
 <h2>基于 ST 系列芯片<a class="headerlink" href="#st" title="Link to this heading"></a></h2>
-<p>仓库参考：<a class="reference external" href="https://github.com/CherryUSB/cherryusb_stm32">https://github.com/CherryUSB/cherryusb_stm32</a></p>
 <p>默认提供以下 demo 工程：</p>
 <ul class="simple">
 <li><p>F103 使用 fsdev ip</p></li>
