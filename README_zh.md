@@ -176,57 +176,33 @@ x 受以下宏影响：
 |  CDNS3(cadence)  |  CDNS3     | XHCI     |  ×   |
 |  DWC3(synopsys)  |  DWC3      | XHCI     |  ×   |
 
-## 文档教程
+## Resources
 
-CherryUSB 快速入门、USB 基本概念、API 手册、Class 基本概念和例程，参考 [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/)。
+### 快速开始
 
-## 视频教程
+- 📖 [CherryUSB Documentation](https://cherryusb.readthedocs.io/zh-cn/latest/)
+- 💻 [CherryUSB Demo Repo](https://cherryusb.readthedocs.io/zh-cn/latest/quick_start/demo.html)
+- 📺 [CherryUSB Cheese(>= V1.4.3)](https://www.bilibili.com/cheese/play/ss707687201)
 
-CherryUSB 课程（>= V1.4.3）：https://www.bilibili.com/cheese/play/ss707687201 。
-
-## 描述符生成工具
-
-Cherry Descriptor: https://desc.cherry-embedded.org/zh
-
-## 示例仓库
-
-|   Manufacturer       |  CHIP or Series    | USB IP| Repo Url | Support version     | Note |
-|:--------------------:|:------------------:|:-----:|:--------:|:------------------:|:-------------:|
-|Bouffalolab    |  BL702/BL616/BL808 | bouffalolab/ehci|[bouffalo_sdk](https://github.com/CherryUSB/bouffalo_sdk)|<= latest | Official |
-|ST             |  STM32F1x/STM32F4/STM32H7 | fsdev/dwc2 |[stm32_repo](https://github.com/CherryUSB/cherryusb_stm32)|<= latest | Community |
-|HPMicro        |  HPM6000/HPM5000 | hpm/ehci |[hpm_sdk](https://github.com/CherryUSB/hpm_sdk)|<= latest | Official |
-|Essemi         |  ES32F36xx | musb |[es32f369_repo](https://github.com/CherryUSB/cherryusb_es32)|<= latest | Official |
-|Phytium        |  e2000 | pusb2/xhci |[phytium_repo](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk)|>=1.4.0  | Official |
-|Artinchip      |  d12x/d13x/d21x | aic/ehci/ohci |[luban-lite](https://gitee.com/artinchip/luban-lite)|<= latest  | Official |
-|Espressif      |  esp32s2/esp32s3/esp32p4 | dwc2 |[esp32_repo](https://github.com/CherryUSB/cherryusb_esp32)/[espressif](https://github.com/espressif/esp-idf/tree/master/examples/peripherals/usb)|<= latest | Official |
-|Kendryte       |  k230 | dwc2 |[k230_repo](https://github.com/CherryUSB/k230_sdk)|v1.2.0 | Official |
-|Actionstech    |  ATS30xx | dwc2 |[action_zephyr_repo](https://github.com/CherryUSB/lv_port_actions_technology/tree/master/action_technology_sdk)|>=1.4.0 | Official |
-|SiFli          |  SF32LB5x | musb |[SiFli_sdk](https://github.com/OpenSiFli/SiFli-SDK)|>=1.5.0 | Official |
-|NXP            |  mcx | kinetis/chipidea/ehci |[nxp_mcx_repo](https://github.com/CherryUSB/cherryusb_mcx)|<= latest | Community |
-|Nationstech    |  n32h4x | dwc2 |[nation_repo](https://github.com/CherryUSB/cherryusb_nation)|>=1.5.0 | Official ongoing |
-|Raspberry pi   |  rp2040/rp2350 | rp2040 |[pico-sdk](https://github.com/CherryUSB/pico-sdk)|<= latest | Official ongoing |
-|AllwinnerTech  |  F1C100S/F1C200S | musb |[cherryusb_rtt_f1c100s](https://github.com/CherryUSB/cherryusb_rtt_f1c100s)|<= latest | no more update |
-|Bekencorp      |  bk7256/bk7258 | musb |[bk_idk](https://github.com/CherryUSB/bk_idk)| v0.7.0 | Official |
-|Sophgo         |  cv18xx | dwc2 |[cvi_alios_open](https://github.com/CherryUSB/cvi_alios_open)| v0.7.0 | Official |
-|WCH            |  CH32V307/ch58x | ch32_usbfs/ch32_usbhs/ch58x |[wch_repo](https://github.com/CherryUSB/cherryusb_wch)|<= v0.10.2/>=v1.5.0 | no more update |
-
-## 软件包支持
-
-CherryUSB 软件包可以通过以下方式获取：
+### 软件包支持
 
 - [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
 - [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
 - [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
 
-## 商业支持
+### 描述符生成工具
 
-参考 https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html 。
+Cherry Descriptor: https://desc.cherry-embedded.org/zh
 
-## 联系
+### Contact
 
 CherryUSB QQ群：642693751
 
 CherryUSB 微信群：与我联系后邀请加入
+
+## 商业支持
+
+参考 https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html
 
 ## 支持企业
 

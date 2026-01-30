@@ -14,31 +14,31 @@ CherryUSB is a tiny and beautiful, high performance and portable USB host and de
 
 ## Why choose CherryUSB
 
-### Easy to study USB
+### Easy to Learn USB
 
-In order to make it easier for users to learn USB basics, enumeration, driver loading and IP drivers, the code has been written with the following advantages:
+To facilitate user learning of USB fundamentals, enumeration, driver loading, and IP drivers, the written code has the following advantages:
 
-- Lean code, simple logic, no complex C syntax
-- Tree-based programming with cascading code
-- Class-drivers and porting-drivers are templating and simplification
-- Clear API classification (slave: initialisation, registration api, command callback api, data sending and receiving api; host: initialisation, lookup api, data sending and receiving api)
+- Streamlined code with simple logic and no complex C language syntax
+- Tree-structured programming with progressive code layers
+- Templated and simplified Class drivers and porting drivers
+- Clear API categorization (Device: initialization, class registration, command callbacks, data transmission; Host: initialization, class discovery, data transmission)
 
-### Easy to use USB
+### Easy to Use USB
 
-In order to facilitate the use of the USB interface and to take into account the fact that users have learned about uart and dma, the following advantages have been designed for the data sending and receiving class of interface:
+To facilitate user interaction with USB interfaces, considering users’ familiarity with UART and DMA, the designed data transmission interface has the following advantages:
 
-- Equivalent to using uart tx dma/uart rx dma
-- There is no limit to the length of send and receive, the user does not need to care about the USB packetization process (the porting driver does it)
+- Equivalent to using UART TX DMA/UART RX DMA
+- No length restrictions on transmission/reception; users don’t need to worry about USB packetization (porting drivers handle packetization)
 
-### Easy to bring out USB performance
+### Easy to Achieve USB Performance
 
-Taking into account USB performance issues and trying to achieve the theoretical bandwidth of the USB hardware, the design of the data transceiver class interface has the following advantages:
+Considering USB performance requirements to reach theoretical USB hardware bandwidth, the designed data transmission interface has the following advantages:
 
-- Porting drivers directly to registers, no abstraction layer encapsulation
+- Porting drivers directly interface with registers without abstraction layer encapsulation
 - Memory zero copy
-- If IP has DMA then uses DMA mode (DMA with hardware packetization)
-- Unlimited length make it easier to interface with hardware DMA and take advantage of DMA
-- Packetization is handled in interrupt
+- DMA mode used when IP supports DMA (DMA provides hardware packetization functionality)
+- No length restrictions, facilitating hardware DMA interfacing and maximizing DMA advantages
+- Packetization handled in interrupt context
 
 Performance show：https://cherryusb.cherry-embedded.org/show/
 
@@ -176,55 +176,31 @@ Only standard and commercial USB IP are listed.
 |  CDNS3(cadence)  |  CDNS3     | XHCI     |  ×   |
 |  DWC3(synopsys)  |  DWC3      | XHCI     |  ×   |
 
-## Documentation Tutorial
+## Resources
 
-Quickly start, USB basic concepts, API manual, Class basic concepts and examples, see [CherryUSB Documentation Tutorial](https://cherryusb.readthedocs.io/).
+### Getting Started
 
-## Video Tutorial
+- 📖 [CherryUSB Documentation](https://cherryusb.readthedocs.io/en/latest/)
+- 💻 [CherryUSB Demo Repo](https://cherryusb.readthedocs.io/en/latest/quick_start/demo.html)
+- 📺 [CherryUSB Cheese(>= V1.4.3)](https://www.bilibili.com/cheese/play/ss707687201)
 
-CherryUSB Cheese (>= V1.4.3): https://www.bilibili.com/cheese/play/ss707687201 .
-
-## Descriptor Generator Tool
-
-Cherry Descriptor: https://desc.cherry-embedded.org/en
-
-## Demo Repo
-
-|   Manufacturer       |  CHIP or Series    | USB IP| Repo Url | Support version     | Note |
-|:--------------------:|:------------------:|:-----:|:--------:|:------------------:|:-------------:|
-|Bouffalolab    |  BL702/BL616/BL808 | bouffalolab/ehci|[bouffalo_sdk](https://github.com/CherryUSB/bouffalo_sdk)|<= latest | Official |
-|ST             |  STM32F1x/STM32F4/STM32H7 | fsdev/dwc2 |[stm32_repo](https://github.com/CherryUSB/cherryusb_stm32)|<= latest | Community |
-|HPMicro        |  HPM6000/HPM5000 | hpm/ehci |[hpm_sdk](https://github.com/CherryUSB/hpm_sdk)|<= latest | Official |
-|Essemi         |  ES32F36xx | musb |[es32f369_repo](https://github.com/CherryUSB/cherryusb_es32)|<= latest | Official |
-|Phytium        |  e2000 | pusb2/xhci |[phytium_repo](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk)|>=1.4.0  | Official |
-|Artinchip      |  d12x/d13x/d21x | aic/ehci/ohci |[luban-lite](https://gitee.com/artinchip/luban-lite)|<= latest  | Official |
-|Espressif      |  esp32s2/esp32s3/esp32p4 | dwc2 |[esp32_repo](https://github.com/CherryUSB/cherryusb_esp32)/[espressif](https://github.com/espressif/esp-idf/tree/master/examples/peripherals/usb)|<= latest | Official |
-|Kendryte       |  k230 | dwc2 |[k230_repo](https://github.com/CherryUSB/k230_sdk)|v1.2.0 | Official |
-|Actionstech    |  ATS30xx | dwc2 |[action_zephyr_repo](https://github.com/CherryUSB/lv_port_actions_technology/tree/master/action_technology_sdk)|>=1.4.0 | Official |
-|SiFli          |  SF32LB5x | musb |[SiFli_sdk](https://github.com/OpenSiFli/SiFli-SDK)|>=1.5.0 | Official |
-|NXP            |  mcx | kinetis/chipidea/ehci |[nxp_mcx_repo](https://github.com/CherryUSB/cherryusb_mcx)|<= latest | Community |
-|Nationstech    |  n32h4x | dwc2 |[nation_repo](https://github.com/CherryUSB/cherryusb_nation)|>=1.5.0 | Official ongoing |
-|Raspberry pi   |  rp2040/rp2350 | rp2040 |[pico-sdk](https://github.com/CherryUSB/pico-sdk)|<= latest | Official ongoing |
-|AllwinnerTech  |  F1C100S/F1C200S | musb |[cherryusb_rtt_f1c100s](https://github.com/CherryUSB/cherryusb_rtt_f1c100s)|<= latest | no more update |
-|Bekencorp      |  bk7256/bk7258 | musb |[bk_idk](https://github.com/CherryUSB/bk_idk)| v0.7.0 | Official |
-|Sophgo         |  cv18xx | dwc2 |[cvi_alios_open](https://github.com/CherryUSB/cvi_alios_open)| v0.7.0 | Official |
-|WCH            |  CH32V307/ch58x | ch32_usbfs/ch32_usbhs/ch58x |[wch_repo](https://github.com/CherryUSB/cherryusb_wch)|<= v0.10.2/>=v1.5.0 | no more update |
-
-## Package Support
-
-CherryUSB package is available as follows:
+### Package Support
 
 - [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
 - [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
 - [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
 
+### Descriptor Generator Tool
+
+Cherry Descriptor: https://desc.cherry-embedded.org/en
+
+### Contact
+
+CherryUSB discord: https://discord.com/invite/wFfvrSAey8
+
 ## Commercial Support
 
-Refer to https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html.
-
-## Contact
-
-CherryUSB discord: https://discord.com/invite/wFfvrSAey8.
+Refer to https://cherryusb.readthedocs.io/en/latest/support/index.html
 
 ## Company Support
 
