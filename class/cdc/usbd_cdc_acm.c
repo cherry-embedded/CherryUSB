@@ -76,7 +76,6 @@ static int cdc_acm_class_interface_request_handler(uint8_t busid, struct usb_set
             usbd_cdc_acm_send_break(busid, intf_num);
             break;
         default:
-            USB_LOG_WRN("Unhandled CDC Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 

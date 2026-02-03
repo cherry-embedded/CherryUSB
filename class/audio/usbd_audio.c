@@ -49,7 +49,6 @@ static int audio_class_endpoint_request_handler(uint8_t busid, struct usb_setup_
 
             break;
         default:
-            USB_LOG_WRN("Unhandled Audio Class control selector 0x%02x\r\n", control_selector);
             return -1;
     }
     return 0;
@@ -109,7 +108,6 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 *len = 1;
                                 break;
                             default:
-                                USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x in cs 0x%02x\r\n", setup->bRequest, control_selector);
                                 return -1;
                         }
                     } else {
@@ -124,7 +122,6 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 }
                                 break;
                             default:
-                                //USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x in cs 0x%02x\r\n", setup->bRequest, control_selector);
                                 return -1;
                         }
                     }
@@ -169,7 +166,6 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 *len = 2;
                                 break;
                             default:
-                                USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x in cs 0x%02x\r\n", setup->bRequest, control_selector);
                                 return -1;
                         }
                     } else {
@@ -207,14 +203,12 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 }
                                 break;
                             default:
-                                //USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x in cs 0x%02x\r\n", setup->bRequest, control_selector);
                                 return -1;
                         }
                     }
                     break;
 
                 default:
-                    USB_LOG_WRN("Unhandled Audio Class cs 0x%02x \r\n", control_selector);
                     return -1;
             }
             break;
@@ -247,7 +241,6 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                             }
                             break;
                         default:
-                            //USB_LOG_WRN("Unhandled Audio Class bRequest 0x%02x in cs 0x%02x\r\n", setup->bRequest, control_selector);
                             return -1;
                     }
                     break;
@@ -261,7 +254,6 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                     break;
 
                 default:
-                    //USB_LOG_WRN("Unhandled Audio Class cs 0x%02x \r\n", control_selector);
                     return -1;
             }
             break;

@@ -89,7 +89,6 @@ static int msc_storage_class_interface_request_handler(uint8_t busid, struct usb
             break;
 
         default:
-            USB_LOG_WRN("Unhandled MSC Class bRequest 0x%02x\r\n", setup->bRequest);
             return -1;
     }
 
