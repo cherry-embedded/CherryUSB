@@ -616,7 +616,7 @@ int usb_dc_init(uint8_t busid)
 
 int usb_dc_deinit(uint8_t busid)
 {
-    USB_OTG_GLB->GAHBCFG |= USB_OTG_GAHBCFG_GINT;
+    USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
     /* Clear Pending interrupt */
@@ -629,6 +629,11 @@ int usb_dc_deinit(uint8_t busid)
     USB_OTG_DEV->DIEPMSK = 0U;
     USB_OTG_DEV->DOEPMSK = 0U;
     USB_OTG_DEV->DAINTMSK = 0U;
+
+    /* Disable all interrupts. */
+    USB_OTG_GLB->GINTMSK = 0U;
+    /* Clear any pending interrupts */
+    USB_OTG_GLB->GINTSTS = 0xBFFFFFFFU;
 
     /* Flush the FIFO */
     dwc2_flush_txfifo(busid, 0x10U);
