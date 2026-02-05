@@ -145,7 +145,7 @@ int chry_mempool_create(struct chry_mempool *pool, void *block, uint32_t block_s
         return -1;
     }
 
-    if (pool->block_size % 4) {
+    if (block_size % 4) {
         return -1;
     }
 
@@ -176,9 +176,9 @@ int chry_mempool_create(struct chry_mempool *pool, void *block, uint32_t block_s
 
 void chry_mempool_delete(struct chry_mempool *pool)
 {
-    chry_mempool_osal_sem_delete(pool->out_sem);
     __chry_ringbuffer_reset(&pool->in);
     __chry_ringbuffer_reset(&pool->out);
+    chry_mempool_osal_sem_delete(pool->out_sem);
 }
 
 uintptr_t *chry_mempool_alloc(struct chry_mempool *pool)
