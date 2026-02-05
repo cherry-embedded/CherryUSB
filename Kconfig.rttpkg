@@ -138,6 +138,11 @@ if PKG_USING_CHERRYUSB
             prompt "Enable usb dfu device"
             default n
 
+        config PKG_CHERRYUSB_DEVICE_DISPLAY
+            bool
+            prompt "Enable usb display device"
+            default n
+
         config PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV
             bool
             prompt "Enable chardev for cdc acm device"
@@ -246,6 +251,10 @@ if PKG_USING_CHERRYUSB
                 bool
                 prompt "webusb_hid"
                 depends on PKG_CHERRYUSB_DEVICE_HID
+            config PKG_CHERRYUSB_DEVICE_TEMPLATE_DISPLAY
+                bool
+                prompt "display"
+                depends on PKG_CHERRYUSB_DEVICE_DISPLAY
             config PKG_CHERRYUSB_DEVICE_TEMPLATE_ADB
                 bool
                 prompt "adb"

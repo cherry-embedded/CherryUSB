@@ -50,6 +50,7 @@ list(
     ${CMAKE_CURRENT_LIST_DIR}/class/serial
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi
+    ${CMAKE_CURRENT_LIST_DIR}/class/vendor/display
     ${CMAKE_CURRENT_LIST_DIR}/class/aoa
     ${CMAKE_CURRENT_LIST_DIR}/class/gamepad
 )
@@ -88,6 +89,9 @@ if(CONFIG_CHERRYUSB_DEVICE)
     endif()
     if(CONFIG_CHERRYUSB_DEVICE_GAMEPAD)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/gamepad/usbd_gamepad.c)
+    endif()
+    if(CONFIG_CHERRYUSB_DEVICE_DISPLAY)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/display/usbd_display.c)
     endif()
 
     if(CONFIG_CHERRYUSB_DEVICE_FSDEV_ST)

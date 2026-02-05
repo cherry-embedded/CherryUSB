@@ -17,6 +17,7 @@ path += [cwd + '/class/dfu']
 path += [cwd + '/class/serial']
 path += [cwd + '/class/vendor/net']
 path += [cwd + '/class/vendor/wifi']
+path += [cwd + '/class/vendor/display']
 src = []
 
 LIBS    = []
@@ -136,6 +137,11 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/cdc/usbd_cdc_ncm.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DFU']):
         src += Glob('class/dfu/usbd_dfu.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_DISPLAY']):
+        src += Glob('class/vendor/display/usbd_display.c')
+        src += Glob('third_party/cherrymp/chry_mempool.c')
+        src += Glob('third_party/cherrymp/chry_mempool_osal_rtthread.c')
+        path += [cwd + '/third_party/cherrymp']
     if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB']):
         src += Glob('class/adb/usbd_adb.c')
         src += Glob('platform/rtthread/usbd_adb_shell.c')
@@ -179,6 +185,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/winusb2.0_cdc_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WEBUSB_HID']):
         src += Glob('demo/webusb_hid_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_DISPLAY']):
+        src += Glob('demo/display/usbdisplay_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_ADB']):
         src += Glob('demo/adb/usbd_adb_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_CHARDEV']):

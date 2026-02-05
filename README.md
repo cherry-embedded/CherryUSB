@@ -75,6 +75,7 @@ CherryUSB Device Stack has the following functions:
 - Support Remote NDIS (RNDIS)
 - Support Media Transfer Protocol (MTP)
 - Support WINUSB1.0, WINUSB2.0, WEBUSB, BOS
+- Support Vendor display ([xfz1986_usb_graphic_driver](https://github.com/chuanjinpang/win10_idd_xfz1986_usb_graphic_driver_display))
 - Support Vendor class
 - Support UF2
 - Support Android Debug Bridge (Only support shell)

@@ -138,6 +138,11 @@ if CHERRYUSB
             prompt "Enable usb dfu device"
             default n
 
+        config CHERRYUSB_DEVICE_DISPLAY
+            bool
+            prompt "Enable usb display device"
+            default n
+
         config USBDEV_REQUEST_BUFFER_LEN
             int
             prompt "Set device control transfer max buffer size"
@@ -237,6 +242,10 @@ if CHERRYUSB
                 bool
                 prompt "webusb_hid"
                 depends on CHERRYUSB_DEVICE_HID
+            config CHERRYUSB_DEVICE_TEMPLATE_DISPLAY
+                bool
+                prompt "display"
+                depends on CHERRYUSB_DEVICE_DISPLAY
         endchoice
     endif
 
