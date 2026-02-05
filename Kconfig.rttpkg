@@ -220,6 +220,10 @@ if PKG_USING_CHERRYUSB
                 bool
                 prompt "cdc_ncm"
                 depends on PKG_CHERRYUSB_DEVICE_CDC_NCM
+            config PKG_CHERRYUSB_DEVICE_TEMPLATE_DFU
+                bool
+                prompt "dfu"
+                depends on PKG_CHERRYUSB_DEVICE_DFU
             config PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC
                 bool
                 prompt "cdc_acm_msc"

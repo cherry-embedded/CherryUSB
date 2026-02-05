@@ -211,6 +211,10 @@ if CHERRYUSB
                 bool
                 prompt "cdc_ncm"
                 depends on CHERRYUSB_DEVICE_CDC_NCM
+            config CHERRYUSB_DEVICE_TEMPLATE_DFU
+                bool
+                prompt "dfu"
+                depends on CHERRYUSB_DEVICE_DFU
             config CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC
                 bool
                 prompt "cdc_acm_msc"

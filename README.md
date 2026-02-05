@@ -93,6 +93,7 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2, disable log):
 |usbd_rndis.c   |  ~2500          | 2 * 1580(default)+156+8   | 80           | 0                |
 |usbd_cdc_ecm.c |  ~900           | 2 * 1514(default)+16      | 42           | 0                |
 |usbd_mtp.c     |  ~9000          | 2048(default)+128         | sizeof(struct mtp_object) * n| 0 |
+|usbd_dfu.c     |  ~2200          | 0                         | 45                           | 0 |
 
 ## Host Stack Overview
 

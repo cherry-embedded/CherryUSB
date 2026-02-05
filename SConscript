@@ -165,6 +165,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/cdc_ecm_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_NCM']):
         src += Glob('demo/cdc_ncm_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_DFU']):
+        src += Glob('demo/dfu_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC']):
         src += Glob('demo/cdc_acm_msc_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC_HID']):
