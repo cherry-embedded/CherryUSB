@@ -27,6 +27,7 @@
 # set(CONFIG_CHERRYUSB_HOST_ASIX 1)
 # set(CONFIG_CHERRYUSB_HOST_RTL8152 1)
 # set(CONFIG_CHERRYUSB_HOST_DWC2_ST 1)
+# set(CONFIG_CHERRYUSB_HOST_XBOX 1)
 
 # set(CONFIG_CHERRYUSB_OSAL "freertos")
 # cmake-format: on
@@ -51,6 +52,7 @@ list(
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/display
+    ${CMAKE_CURRENT_LIST_DIR}/class/vendor/xbox
     ${CMAKE_CURRENT_LIST_DIR}/class/aoa
     ${CMAKE_CURRENT_LIST_DIR}/class/gamepad
 )
@@ -259,6 +261,9 @@ if(CONFIG_CHERRYUSB_HOST)
     endif()
     if(CONFIG_CHERRYUSB_HOST_AOA)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/aoa/usbh_aoa.c)
+    endif()
+    if(CONFIG_CHERRYUSB_HOST_XBOX)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/xbox/usbh_xbox.c)
     endif()
 
     if(CONFIG_CHERRYUSB_HOST_CDC_ACM
