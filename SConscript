@@ -18,6 +18,7 @@ path += [cwd + '/class/serial']
 path += [cwd + '/class/vendor/net']
 path += [cwd + '/class/vendor/wifi']
 path += [cwd + '/class/vendor/display']
+path += [cwd + '/class/vendor/xbox']
 src = []
 
 LIBS    = []
@@ -323,6 +324,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/serial/usbh_cp210x.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_PL2303']):
         src += Glob('class/serial/usbh_pl2303.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_XBOX']):
+        src += Glob('class/vendor/xbox/usbh_xbox.c')
 
     if GetDepend(['PKG_TEST_USBH_HID']):
         CPPDEFINES+=['CONFIG_TEST_USBH_HID']
