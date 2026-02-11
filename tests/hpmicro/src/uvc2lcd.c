@@ -13,8 +13,40 @@ static ATTR_PLACE_AT_WITH_ALIGNMENT(".framebuffer", 64) uint8_t frame_buffer1[IM
 static ATTR_PLACE_AT_WITH_ALIGNMENT(".framebuffer", 64) uint8_t frame_buffer2[IMAGE_WIDTH * IMAGE_HEIGHT * 2];
 static struct usbh_videoframe frame_pool[2];
 
+void init_lcd(void)
+{
+    uint8_t layer_index = 0;
+    lcdc_config_t config = { 0 };
+    lcdc_layer_config_t layer = { 0 };
+
+    lcdc_get_default_config(LCD, &config);
+    board_panel_para_to_lcdc(&config);
+    lcdc_init(LCD, &config);
+
+    lcdc_get_default_layer_config(LCD, &layer, PIXEL_FORMAT, layer_index);
+
+    layer.position_x = (BOARD_LCD_WIDTH - IMAGE_WIDTH) / 2;
+    layer.position_y = (BOARD_LCD_HEIGHT - IMAGE_HEIGHT) / 2;
+    layer.width = IMAGE_WIDTH;
+    layer.height = IMAGE_HEIGHT;
+
+    layer.buffer = core_local_mem_to_sys_address(HPM_CORE0, (uint32_t)frame_buffer1);
+    layer.alphablend.src_alpha = 0xF4; /* src */
+    layer.alphablend.dst_alpha = 0xF0; /* dst */
+    layer.alphablend.src_alpha_op = display_alpha_op_override;
+    layer.alphablend.dst_alpha_op = display_alpha_op_override;
+    layer.background.u = 0xffff0000;
+    layer.alphablend.mode = display_alphablend_mode_xor;
+
+    if (status_success != lcdc_config_layer(LCD, layer_index, &layer, true)) {
+        printf("failed to configure layer\n");
+        while (1)
+            ;
+    }
+}
+
 void writefont2screen(uint16_t or_x, uint16_t or_y, uint16_t x_end, uint16_t y_end, uint8_t assic_id, uint16_t colour,
-                       uint8_t clearflag, uint8_t *str_font, uint32_t screen_addr, uint16_t font_size)
+                      uint8_t clearflag, uint8_t *str_font, uint32_t screen_addr, uint16_t font_size)
 {
     uint8_t *strdisp;
     uint16_t x, y;
@@ -48,7 +80,7 @@ void writefont2screen(uint16_t or_x, uint16_t or_y, uint16_t x_end, uint16_t y_e
 }
 
 char string2font(uint16_t line, uint16_t column, uint8_t *string, uint8_t string_num, uint16_t colour,
-                  uint8_t *str_font, uint32_t screen_addr, uint8_t font_width, uint8_t font_height)
+                 uint8_t *str_font, uint32_t screen_addr, uint8_t font_width, uint8_t font_height)
 {
     uint8_t i = 0, j = 0, numtemp = 0;
     uint16_t or_x, or_y, x_end, y_end;
@@ -62,10 +94,10 @@ char string2font(uint16_t line, uint16_t column, uint8_t *string, uint8_t string
         if ((*(string + numtemp) != 10) && (*(string + numtemp) != 0)) { /*enter or end*/
             if (*(string + numtemp) != 8) {                              /*delete*/
                 writefont2screen(or_x + font_width * i, or_y + font_height * j, x_end + font_width * i, y_end + font_height * j,
-                                  *(string + numtemp), colour, false, str_font, screen_addr, font_stroage_size);
+                                 *(string + numtemp), colour, false, str_font, screen_addr, font_stroage_size);
             } else {
                 writefont2screen(or_x + font_width * i, or_y + font_height * j, x_end + font_width * i, y_end + font_height * j,
-                                  *(string + numtemp), colour, true, str_font, screen_addr, font_stroage_size);
+                                 *(string + numtemp), colour, true, str_font, screen_addr, font_stroage_size);
             }
         } else if (*(string + numtemp) == 10) {
             i = 19; /* jump next line */
@@ -96,47 +128,26 @@ void usbh_video_stop(struct usbh_video *video_class)
     lcdc_turn_off_display(LCD);
 }
 
-void usbh_video_frame_callback(struct usbh_videoframe *frame)
+static void usbh_video_frame_thread(void *argument)
 {
-    char font_display_buf[50];
+    int ret;
+    struct usbh_videoframe *frame;
 
-    //USB_LOG_RAW("frame buf:%p,frame len:%d\r\n", frame->frame_buf, frame->frame_size);
-    l1c_dc_invalidate((uint32_t)frame->frame_buf, IMAGE_WIDTH * IMAGE_HEIGHT * 2);
-    sprintf(font_display_buf, "fps:%d", g_uvc_fps);
-    string2font(1, 1, (uint8_t *)font_display_buf, sizeof(font_display_buf), 0x001f, (uint8_t *)nAsciiDot24x48, (uint32_t)frame->frame_buf, 24, 48);
-    l1c_dc_writeback((uint32_t)frame->frame_buf, IMAGE_WIDTH * IMAGE_HEIGHT * 2);
-    lcdc_layer_set_next_buffer(LCD, 0, (uint32_t)frame->frame_buf);
-}
+    while (1) {
+        ret = usbh_video_stream_dequeue(&frame, 0xfffffff);
+        if (ret < 0) {
+            continue;
+        }
+        char font_display_buf[50];
 
-void init_lcd(void)
-{
-    uint8_t layer_index = 0;
-    lcdc_config_t config = { 0 };
-    lcdc_layer_config_t layer = { 0 };
+        //USB_LOG_RAW("frame buf:%p,frame len:%d\r\n", frame->frame_buf, frame->frame_size);
+        l1c_dc_invalidate((uint32_t)frame->frame_buf, IMAGE_WIDTH * IMAGE_HEIGHT * 2);
+        sprintf(font_display_buf, "fps:%d", g_uvc_fps);
+        string2font(1, 1, (uint8_t *)font_display_buf, sizeof(font_display_buf), 0x001f, (uint8_t *)nAsciiDot24x48, (uint32_t)frame->frame_buf, 24, 48);
+        l1c_dc_writeback((uint32_t)frame->frame_buf, IMAGE_WIDTH * IMAGE_HEIGHT * 2);
+        lcdc_layer_set_next_buffer(LCD, 0, (uint32_t)frame->frame_buf);
 
-    lcdc_get_default_config(LCD, &config);
-    board_panel_para_to_lcdc(&config);
-    lcdc_init(LCD, &config);
-
-    lcdc_get_default_layer_config(LCD, &layer, PIXEL_FORMAT, layer_index);
-
-    layer.position_x = (BOARD_LCD_WIDTH - IMAGE_WIDTH) / 2;
-    layer.position_y = (BOARD_LCD_HEIGHT - IMAGE_HEIGHT) / 2;
-    layer.width = IMAGE_WIDTH;
-    layer.height = IMAGE_HEIGHT;
-
-    layer.buffer = core_local_mem_to_sys_address(HPM_CORE0, (uint32_t)frame_buffer1);
-    layer.alphablend.src_alpha = 0xF4; /* src */
-    layer.alphablend.dst_alpha = 0xF0; /* dst */
-    layer.alphablend.src_alpha_op = display_alpha_op_override;
-    layer.alphablend.dst_alpha_op = display_alpha_op_override;
-    layer.background.u = 0xffff0000;
-    layer.alphablend.mode = display_alphablend_mode_xor;
-
-    if (status_success != lcdc_config_layer(LCD, layer_index, &layer, true)) {
-        printf("failed to configure layer\n");
-        while (1)
-            ;
+        usbh_video_stream_enqueue(frame);
     }
 }
 
@@ -150,8 +161,9 @@ void uvc2lcd_init(void)
     frame_pool[1].frame_buf = frame_buffer2;
     frame_pool[1].frame_bufsize = IMAGE_WIDTH * IMAGE_HEIGHT * 2;
 
-    usbh_video_stream_init(5, frame_pool, 2);
+    usbh_video_stream_create(frame_pool, 2);
 
+    usb_osal_thread_create("uvc_frame", 3072, 5, usbh_video_frame_thread, NULL);
     extern void usbh_video_fps_init(void);
     usbh_video_fps_init();
 }

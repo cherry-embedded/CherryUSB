@@ -32,9 +32,38 @@ void usbh_video_stop(struct usbh_video *video_class)
     usbh_video_stream_stop();
 }
 
-void usbh_video_frame_callback(struct usbh_videoframe *frame)
+static void usbh_video_frame_thread(void *argument)
 {
-    USB_LOG_RAW("frame buf:%p,frame len:%d\r\n", frame->frame_buf, frame->frame_size);
+    int ret;
+    struct usbh_videoframe *frame;
+
+    while (1) {
+        ret = usbh_video_stream_dequeue(&frame, 0xfffffff);
+        if (ret < 0) {
+            continue;
+        }
+
+        USB_LOG_RAW("frame buf:%p,frame len:%d\r\n", frame->frame_buf, frame->frame_size);
+
+        usbh_video_stream_enqueue(frame);
+    }
+}
+
+static void usbh_audio_mic_frame_thread(void *argument)
+{
+    int ret;
+    struct usbh_audioframe *frame;
+
+    while (1) {
+        ret = usbh_audio_mic_stream_dequeue(&frame, 0xfffffff);
+        if (ret < 0) {
+            continue;
+        }
+
+        USB_LOG_RAW("frame buf:%p,frame len:%d\r\n", frame->frame_buf, frame->frame_size);
+
+        usbh_audio_mic_stream_enqueue(frame);
+    }
 }
 #endif
 
@@ -50,21 +79,24 @@ int main(void)
 
     printf("Starting usb host task...\r\n");
 #ifdef CONFIG_USB_EHCI_ISO
-    extern void usbh_video_fps_init(void);
-    usbh_video_fps_init();
     frame_pool[0].frame_buf = frame_buffer1;
     frame_pool[0].frame_bufsize = 640 * 480 * 2;
     frame_pool[1].frame_buf = frame_buffer2;
     frame_pool[1].frame_bufsize = 640 * 480 * 2;
 
-    usbh_video_stream_init(5, frame_pool, 2);
+    usbh_video_stream_create(frame_pool, 2);
+
+    usb_osal_thread_create("uvc_frame", 3072, 5, usbh_video_frame_thread, NULL);
+    extern void usbh_video_fps_init(void);
+    usbh_video_fps_init();
 
     for (uint8_t i = 0; i < 8; i++) {
         frame_pool2[i].frame_buf = frame_buffer + i * AUDIO_MIC_EP_MPS;
         frame_pool2[i].frame_bufsize = AUDIO_MIC_EP_MPS;
     }
 
-    usbh_audio_mic_stream_init(5, frame_pool2, 8);
+    usbh_audio_mic_stream_create(frame_pool2, 8);
+    usb_osal_thread_create("uac_mic", 3072, 5, usbh_audio_mic_frame_thread, NULL);
 #endif
     vTaskStartScheduler();
 
