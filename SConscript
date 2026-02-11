@@ -140,9 +140,6 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/dfu/usbd_dfu.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_DISPLAY']):
         src += Glob('class/vendor/display/usbd_display.c')
-        src += Glob('third_party/cherrymp/chry_mempool.c')
-        src += Glob('third_party/cherrymp/chry_mempool_osal_rtthread.c')
-        path += [cwd + '/third_party/cherrymp']
     if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB']):
         src += Glob('class/adb/usbd_adb.c')
         src += Glob('platform/rtthread/usbd_adb_shell.c')

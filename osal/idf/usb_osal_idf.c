@@ -43,6 +43,11 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     return (usb_osal_sem_t)xSemaphoreCreateCounting(1, initial_count);
 }
 
+usb_osal_sem_t usb_osal_sem_create_counting(uint32_t max_count)
+{
+    return (usb_osal_sem_t)xSemaphoreCreateCounting(0, max_count);
+}
+
 void usb_osal_sem_delete(usb_osal_sem_t sem)
 {
     vSemaphoreDelete((SemaphoreHandle_t)sem);

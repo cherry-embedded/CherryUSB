@@ -11,6 +11,18 @@
 #define USBD_DISPLAY_TYPE_YUV420 2
 #define USBD_DISPLAY_TYPE_JPG    3
 
+struct usbd_disp_frame_header {
+    uint16_t crc16; //payload crc16
+    uint8_t type;   //raw rgb,yuv,jpg,other
+    uint8_t cmd;
+    uint16_t x; //32bit
+    uint16_t y;
+    uint16_t width; //32bit
+    uint16_t height;
+    uint32_t frame_id      : 10;
+    uint32_t payload_total : 22; //payload max 4MB
+} __PACKED;
+
 struct usbd_display_frame {
     uint8_t *frame_buf;
     uint32_t frame_bufsize;

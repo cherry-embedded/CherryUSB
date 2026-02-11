@@ -53,6 +53,17 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     return sem;
 }
 
+usb_osal_sem_t usb_osal_sem_create_counting(uint32_t max_count)
+{
+    usb_osal_sem_t sem = (usb_osal_sem_t)xSemaphoreCreateCounting(max_count, 0);
+    if (sem == NULL) {
+        USB_LOG_ERR("Create semaphore failed\r\n");
+        while (1) {
+        }
+    }
+    return sem;
+}
+
 void usb_osal_sem_delete(usb_osal_sem_t sem)
 {
     vSemaphoreDelete((SemaphoreHandle_t)sem);

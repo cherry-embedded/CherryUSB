@@ -3,21 +3,35 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef USB_RINGBUFFER_H
+#define USB_RINGBUFFER_H
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
-#include "chry_ringbuffer.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    uint32_t in;   /*!< Define the write pointer.               */
+    uint32_t out;  /*!< Define the read pointer.                */
+    uint32_t mask; /*!< Define the write and read pointer mask. */
+    void *pool;    /*!< Define the memory pointer.              */
+} usb_ringbuffer_t;
 
 /*****************************************************************************
 * @brief        init ringbuffer
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    pool        memory pool address
 * @param[in]    size        memory size in byte,
 *                           must be power of 2 !!!
-* 
+*
 * @retval int               0:Success -1:Error
 *****************************************************************************/
-int chry_ringbuffer_init(chry_ringbuffer_t *rb, void *pool, uint32_t size)
+static inline int usb_ringbuffer_init(usb_ringbuffer_t *rb, void *pool, uint32_t size)
 {
     if (NULL == rb) {
         return -1;
@@ -40,13 +54,13 @@ int chry_ringbuffer_init(chry_ringbuffer_t *rb, void *pool, uint32_t size)
 }
 
 /*****************************************************************************
-* @brief        reset ringbuffer, clean all data, 
+* @brief        reset ringbuffer, clean all data,
 *               should be add lock in multithread
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 *****************************************************************************/
-void chry_ringbuffer_reset(chry_ringbuffer_t *rb)
+static inline void usb_ringbuffer_reset(usb_ringbuffer_t *rb)
 {
     rb->in = 0;
     rb->out = 0;
@@ -56,73 +70,73 @@ void chry_ringbuffer_reset(chry_ringbuffer_t *rb)
 * @brief        reset ringbuffer, clean all data,
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 *****************************************************************************/
-void chry_ringbuffer_reset_read(chry_ringbuffer_t *rb)
+static inline void usb_ringbuffer_reset_read(usb_ringbuffer_t *rb)
 {
     rb->out = rb->in;
 }
 
 /*****************************************************************************
 * @brief        get ringbuffer total size in byte
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 * @retval uint32_t          total size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_get_size(chry_ringbuffer_t *rb)
+static inline uint32_t usb_ringbuffer_get_size(usb_ringbuffer_t *rb)
 {
     return rb->mask + 1;
 }
 
 /*****************************************************************************
 * @brief        get ringbuffer used size in byte
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 * @retval uint32_t          used size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_get_used(chry_ringbuffer_t *rb)
+static inline uint32_t usb_ringbuffer_get_used(usb_ringbuffer_t *rb)
 {
     return rb->in - rb->out;
 }
 
 /*****************************************************************************
 * @brief        get ringbuffer free size in byte
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 * @retval uint32_t          free size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_get_free(chry_ringbuffer_t *rb)
+static inline uint32_t usb_ringbuffer_get_free(usb_ringbuffer_t *rb)
 {
     return (rb->mask + 1) - (rb->in - rb->out);
 }
 
 /*****************************************************************************
 * @brief        check if ringbuffer is full
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 * @retval true              full
 * @retval false             not full
 *****************************************************************************/
-bool chry_ringbuffer_check_full(chry_ringbuffer_t *rb)
+static inline bool usb_ringbuffer_check_full(usb_ringbuffer_t *rb)
 {
-    return chry_ringbuffer_get_used(rb) > rb->mask;
+    return usb_ringbuffer_get_used(rb) > rb->mask;
 }
 
 /*****************************************************************************
 * @brief        check if ringbuffer is empty
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 * @retval true              empty
 * @retval false             not empty
 *****************************************************************************/
-bool chry_ringbuffer_check_empty(chry_ringbuffer_t *rb)
+static inline bool usb_ringbuffer_check_empty(usb_ringbuffer_t *rb)
 {
     return rb->in == rb->out;
 }
@@ -131,16 +145,16 @@ bool chry_ringbuffer_check_empty(chry_ringbuffer_t *rb)
 * @brief        write one byte to ringbuffer,
 *               should be add lock in multithread,
 *               in single write thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    byte        data
-* 
+*
 * @retval true              Success
 * @retval false             ringbuffer is full
 *****************************************************************************/
-bool chry_ringbuffer_write_byte(chry_ringbuffer_t *rb, uint8_t byte)
+static inline bool usb_ringbuffer_write_byte(usb_ringbuffer_t *rb, uint8_t byte)
 {
-    if (chry_ringbuffer_check_full(rb)) {
+    if (usb_ringbuffer_check_full(rb)) {
         return false;
     }
 
@@ -155,13 +169,13 @@ bool chry_ringbuffer_write_byte(chry_ringbuffer_t *rb, uint8_t byte)
 *
 * @param[in]    rb          ringbuffer instance
 * @param[in]    byte        data
-* 
+*
 * @retval true              Success
 * @retval false             always return true
 *****************************************************************************/
-bool chry_ringbuffer_overwrite_byte(chry_ringbuffer_t *rb, uint8_t byte)
+static inline bool usb_ringbuffer_overwrite_byte(usb_ringbuffer_t *rb, uint8_t byte)
 {
-    if (chry_ringbuffer_check_full(rb)) {
+    if (usb_ringbuffer_check_full(rb)) {
         rb->out++;
     }
 
@@ -174,16 +188,16 @@ bool chry_ringbuffer_overwrite_byte(chry_ringbuffer_t *rb, uint8_t byte)
 * @brief        peek one byte from ringbuffer,
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    byte        pointer to save data
-* 
+*
 * @retval true              Success
 * @retval false             ringbuffer is empty
 *****************************************************************************/
-bool chry_ringbuffer_peek_byte(chry_ringbuffer_t *rb, uint8_t *byte)
+static inline bool usb_ringbuffer_peek_byte(usb_ringbuffer_t *rb, uint8_t *byte)
 {
-    if (chry_ringbuffer_check_empty(rb)) {
+    if (usb_ringbuffer_check_empty(rb)) {
         return false;
     }
 
@@ -195,17 +209,17 @@ bool chry_ringbuffer_peek_byte(chry_ringbuffer_t *rb, uint8_t *byte)
 * @brief        read one byte from ringbuffer,
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    byte        pointer to save data
-* 
+*
 * @retval true              Success
 * @retval false             ringbuffer is empty
 *****************************************************************************/
-bool chry_ringbuffer_read_byte(chry_ringbuffer_t *rb, uint8_t *byte)
+static inline bool usb_ringbuffer_read_byte(usb_ringbuffer_t *rb, uint8_t *byte)
 {
     bool ret;
-    ret = chry_ringbuffer_peek_byte(rb, byte);
+    ret = usb_ringbuffer_peek_byte(rb, byte);
     rb->out += ret;
     return ret;
 }
@@ -214,15 +228,15 @@ bool chry_ringbuffer_read_byte(chry_ringbuffer_t *rb, uint8_t *byte)
 * @brief        drop one byte from ringbuffer,
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
-* 
+*
 * @retval true              Success
 * @retval false             ringbuffer is empty
 *****************************************************************************/
-bool chry_ringbuffer_drop_byte(chry_ringbuffer_t *rb)
+static inline bool usb_ringbuffer_drop_byte(usb_ringbuffer_t *rb)
 {
-    if (chry_ringbuffer_check_empty(rb)) {
+    if (usb_ringbuffer_check_empty(rb)) {
         return false;
     }
 
@@ -234,14 +248,14 @@ bool chry_ringbuffer_drop_byte(chry_ringbuffer_t *rb)
 * @brief        write data to ringbuffer,
 *               should be add lock in multithread,
 *               in single write thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    data        data pointer
 * @param[in]    size        size in byte
-* 
+*
 * @retval uint32_t          actual write size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_write(chry_ringbuffer_t *rb, void *data, uint32_t size)
+static inline uint32_t usb_ringbuffer_write(usb_ringbuffer_t *rb, void *data, uint32_t size)
 {
     uint32_t unused;
     uint32_t offset;
@@ -269,14 +283,14 @@ uint32_t chry_ringbuffer_write(chry_ringbuffer_t *rb, void *data, uint32_t size)
 /*****************************************************************************
 * @brief        write data to ringbuffer,
 *               should be add lock always
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    data        data pointer
 * @param[in]    size        size in byte
-* 
+*
 * @retval uint32_t          actual write size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_overwrite(chry_ringbuffer_t *rb, void *data, uint32_t size)
+static inline uint32_t usb_ringbuffer_overwrite(usb_ringbuffer_t *rb, void *data, uint32_t size)
 {
     uint32_t unused;
     uint32_t offset;
@@ -309,14 +323,14 @@ uint32_t chry_ringbuffer_overwrite(chry_ringbuffer_t *rb, void *data, uint32_t s
 * @brief        peek data from ringbuffer
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    data        data pointer
 * @param[in]    size        size in byte
-* 
+*
 * @retval uint32_t          actual peek size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_peek(chry_ringbuffer_t *rb, void *data, uint32_t size)
+static inline uint32_t usb_ringbuffer_peek(usb_ringbuffer_t *rb, void *data, uint32_t size)
 {
     uint32_t used;
     uint32_t offset;
@@ -342,16 +356,16 @@ uint32_t chry_ringbuffer_peek(chry_ringbuffer_t *rb, void *data, uint32_t size)
 * @brief        read data from ringbuffer
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    data        data pointer
 * @param[in]    size        size in byte
-* 
+*
 * @retval uint32_t          actual read size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_read(chry_ringbuffer_t *rb, void *data, uint32_t size)
+static inline uint32_t usb_ringbuffer_read(usb_ringbuffer_t *rb, void *data, uint32_t size)
 {
-    size = chry_ringbuffer_peek(rb, data, size);
+    size = usb_ringbuffer_peek(rb, data, size);
     rb->out += size;
     return size;
 }
@@ -360,13 +374,13 @@ uint32_t chry_ringbuffer_read(chry_ringbuffer_t *rb, void *data, uint32_t size)
 * @brief        drop data from ringbuffer
 *               should be add lock in multithread,
 *               in single read thread not need lock
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    size        size in byte
-* 
+*
 * @retval uint32_t          actual drop size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_drop(chry_ringbuffer_t *rb, uint32_t size)
+static inline uint32_t usb_ringbuffer_drop(usb_ringbuffer_t *rb, uint32_t size)
 {
     uint32_t used;
 
@@ -381,13 +395,13 @@ uint32_t chry_ringbuffer_drop(chry_ringbuffer_t *rb, uint32_t size)
 
 /*****************************************************************************
 * @brief        linear write setup, get write pointer and max linear size.
-*               
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    size        pointer to store max linear size in byte
-* 
+*
 * @retval void*             write memory pointer
 *****************************************************************************/
-void *chry_ringbuffer_linear_write_setup(chry_ringbuffer_t *rb, uint32_t *size)
+static inline void *usb_ringbuffer_linear_write_setup(usb_ringbuffer_t *rb, uint32_t *size)
 {
     uint32_t unused;
     uint32_t offset;
@@ -411,13 +425,13 @@ void *chry_ringbuffer_linear_write_setup(chry_ringbuffer_t *rb, uint32_t *size)
 
 /*****************************************************************************
 * @brief        linear read setup, get read pointer and max linear size.
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    size        pointer to store max linear size in byte
-* 
-* @retval void*             
+*
+* @retval void*
 *****************************************************************************/
-void *chry_ringbuffer_linear_read_setup(chry_ringbuffer_t *rb, uint32_t *size)
+static inline void *usb_ringbuffer_linear_read_setup(usb_ringbuffer_t *rb, uint32_t *size)
 {
     uint32_t used;
     uint32_t offset;
@@ -441,13 +455,13 @@ void *chry_ringbuffer_linear_read_setup(chry_ringbuffer_t *rb, uint32_t *size)
 
 /*****************************************************************************
 * @brief        linear write done, add write pointer only
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    size        write size in byte
-* 
+*
 * @retval uint32_t          actual write size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_linear_write_done(chry_ringbuffer_t *rb, uint32_t size)
+static inline uint32_t usb_ringbuffer_linear_write_done(usb_ringbuffer_t *rb, uint32_t size)
 {
     uint32_t unused;
 
@@ -462,13 +476,19 @@ uint32_t chry_ringbuffer_linear_write_done(chry_ringbuffer_t *rb, uint32_t size)
 
 /*****************************************************************************
 * @brief        linear read done, add read pointer only
-* 
+*
 * @param[in]    rb          ringbuffer instance
 * @param[in]    size        read size in byte
-* 
+*
 * @retval uint32_t          actual read size in byte
 *****************************************************************************/
-uint32_t chry_ringbuffer_linear_read_done(chry_ringbuffer_t *rb, uint32_t size)
+static inline uint32_t usb_ringbuffer_linear_read_done(usb_ringbuffer_t *rb, uint32_t size)
 {
-    return chry_ringbuffer_drop(rb, size);
+    return usb_ringbuffer_drop(rb, size);
 }
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

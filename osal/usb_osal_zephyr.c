@@ -104,6 +104,20 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     return (usb_osal_sem_t)sem;
 }
 
+usb_osal_sem_t usb_osal_sem_create_counting(uint32_t max_count)
+{
+    struct k_sem *sem;
+
+    sem = k_malloc(sizeof(struct k_sem));
+    if (sem == NULL) {
+        USB_LOG_ERR("Create semaphore faild\r\n");
+        return NULL;
+    }
+    k_sem_init(sem, 0, max_count);
+
+    return (usb_osal_sem_t)sem;
+}
+
 void usb_osal_sem_delete(usb_osal_sem_t sem)
 {
     while (k_sem_take((struct k_sem *)sem, K_NO_WAIT) != 0) {

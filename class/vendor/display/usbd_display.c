@@ -6,22 +6,9 @@
 
 #include "usbd_core.h"
 #include "usbd_display.h"
-#include "chry_mempool.h"
-
-struct usbd_disp_frame_header {
-    uint16_t crc16; //payload crc16
-    uint8_t type;   //raw rgb,yuv,jpg,other
-    uint8_t cmd;
-    uint16_t x; //32bit
-    uint16_t y;
-    uint16_t width; //32bit
-    uint16_t height;
-    uint32_t frame_id      : 10;
-    uint32_t payload_total : 22; //payload max 4MB
-} __PACKED;
 
 struct usbd_display_priv {
-    struct chry_mempool pool;
+    struct usb_mempool pool;
     struct usbd_endpoint out_ep;
     struct usbd_endpoint in_ep;
     struct usbd_display_frame *current_frame;
@@ -29,27 +16,27 @@ struct usbd_display_priv {
 
 int usbd_display_frame_create(struct usbd_display_frame *frame, uint32_t count)
 {
-    return chry_mempool_create(&g_usbd_display.pool, frame, sizeof(struct usbd_display_frame), count);
+    return usb_mempool_create(&g_usbd_display.pool, frame, sizeof(struct usbd_display_frame), count);
 }
 
 struct usbd_display_frame *usbd_display_frame_alloc(void)
 {
-    return (struct usbd_display_frame *)chry_mempool_alloc(&g_usbd_display.pool);
+    return (struct usbd_display_frame *)usb_mempool_alloc(&g_usbd_display.pool);
 }
 
 int usbd_display_frame_free(struct usbd_display_frame *frame)
 {
-    return chry_mempool_free(&g_usbd_display.pool, (uintptr_t *)frame);
+    return usb_mempool_free(&g_usbd_display.pool, (uintptr_t *)frame);
 }
 
 int usbd_display_frame_send(struct usbd_display_frame *frame)
 {
-    return chry_mempool_send(&g_usbd_display.pool, (uintptr_t *)frame);
+    return usb_mempool_send(&g_usbd_display.pool, (uintptr_t *)frame);
 }
 
 int usbd_display_frame_recv(struct usbd_display_frame **frame, uint32_t timeout)
 {
-    return chry_mempool_recv(&g_usbd_display.pool, (uintptr_t **)frame, timeout);
+    return usb_mempool_recv(&g_usbd_display.pool, (uintptr_t **)frame, timeout);
 }
 
 uint8_t usb_dispay_dummy[512];
@@ -65,6 +52,7 @@ static void display_notify_handler(uint8_t busid, uint8_t event, void *arg)
             usb_display_buf_offset = 0;
             usb_display_ignore_frame = true;
             g_usbd_display.current_frame = NULL;
+            usb_mempool_reset(&g_usbd_display.pool);
             usbd_ep_start_read(busid, g_usbd_display.out_ep.ep_addr, usb_dispay_dummy, usbd_get_ep_mps(0, g_usbd_display.out_ep.ep_addr));
             break;
         default:

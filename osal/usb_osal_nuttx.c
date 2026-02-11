@@ -106,6 +106,11 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
     return (usb_osal_sem_t)sem;
 }
 
+usb_osal_sem_t usb_osal_sem_create_counting(uint32_t max_count)
+{
+    return usb_osal_sem_create(0);
+}
+
 void usb_osal_sem_delete(usb_osal_sem_t sem)
 {
     sem_t *__sem = (sem_t *)sem;
