@@ -58,7 +58,6 @@ Considering USB performance requirements to reach theoretical USB hardware bandw
    quick_start/rtthread
    quick_start/q&a
    quick_start/migration
-   quick_start/share
    quick_start/opensource
 
 .. toctree::
@@ -143,7 +142,7 @@ Considering USB performance requirements to reach theoretical USB hardware bandw
 
 .. toctree::
    :maxdepth: 1
-   :caption: Version Information
+   :caption: Release Notes
 
    version
 

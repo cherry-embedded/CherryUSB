@@ -1,62 +1,73 @@
-官方开源项目分享
-====================
+基于 CherryUSB 的开源项目
+==================================
 
-除了基本的厂家 SDK 支持以外，我们还对一些火热的开源项目进行了支持，以便于开发者更好的使用这些项目。下面列举适配的 demo 工程链接，具体适配层参考 https://github.com/cherry-embedded/CherryUSB/tree/master/platform 。
+.. list-table::
+    :widths: 10 10 10
+    :header-rows: 1
 
-DAPLINK
---------------
-
-适配链接：https://github.com/cherry-embedded/CherryDAP
-
-Blackmagic
---------------
-
-适配链接：https://github.com/zhangjiance/bmp-hpm-port
-
-RT-Thread
---------------
-
-适配链接：https://github.com/RT-Thread/rt-thread
-
-NUTTX/VELA
---------------
-
-适配链接：https://github.com/CherryUSB/cherryusb_nuttx
-
-Zephyr
---------------
-
-适配链接：https://github.com/hpmicro/zephyr_sdk_glue
-
-Cangaroo
---------------
-
-Cangaroo is an open source can bus analyzer software. We provide four-channel CANFD analyzer based on hpmicro hpm5361
-
-适配上位机链接：https://github.com/RCSN/cangaroo_hpmicro_canfd_analyzer
-适配下位机链接：https://github.com/RCSN/hpm_sdk_extra/tree/main/demos/cangaroo_hpmicro
-
-LVGL
---------------
-
-适配链接：https://github.com/cherry-embedded/CherryUSB/tree/master/platform/lvgl
-
-QMK
---------------
-
-QMK is an open-source keyboard firmware for Atmel AVR and Arm USB families.
-
-适配链接：待开放
-
-Klipper
---------------
-
-Klipper is a 3d-printer firmware.
-
-适配链接：待开放
-
-
-MAKCU/KMBOX
---------------
-
-懂的都懂，不开放
+    * - Repo name
+      - Author
+      - Repo url
+    * - RT-Thread
+      - RT-Thread/cherry-embedded
+      - https://github.com/RT-Thread/rt-thread
+    * - DAPLINK/HSLINK-PRO
+      - cherry-embedded
+      - https://github.com/cherry-embedded/CherryDAP https://github.com/cherry-embedded/HSLink-hardware
+    * - HSCANT
+      - cherry-embedded
+      - https://github.com/cherry-embedded/HSCanT-hardware https://github.com/RCSN/cangaroo_hpmicro_canfd_analyzer
+    * - Zephyr
+      - hpmicro
+      - https://github.com/hpmicro/zephyr_sdk_glue
+    * - Blackmagic
+      - zhangjiance
+      - https://github.com/zhangjiance/bmp-hpm-port
+    * - MicroLink
+      - Aladdin-Wang
+      - https://github.com/Aladdin-Wang/MicroLink
+    * - NUTTX
+      - cherry-embedded
+      - https://github.com/CherryUSB/cherryusb_nuttx
+    * - QMK
+      - cherry-embedded
+      - not open
+    * - Klipper
+      - cherry-embedded
+      - not open
+    * - MAKCU/MAKXD
+      - ihack/cherry-embedded
+      - https://discord.gg/makcu https://www.makcu.com
+    * - KMBOX 8K
+      - kmbox team
+      - https://www.kmbox.top
+    * - printalyzer-timer
+      - dkonigsberg
+      - https://github.com/dektronics/printalyzer-timer
+    * - MiSTeryNano
+      - harbaum
+      - https://github.com/harbaum/MiSTeryNano
+    * - PicoPiFi
+      - sidd-kishan
+      - https://github.com/sidd-kishan/PicoPiFi
+    * - Cherryuf2
+      - zhaqian12
+      - https://github.com/zhaqian12/Cherryuf2
+    * - phobia
+      - rombrew
+      - https://github.com/rombrew/phobia
+    * - FMT-Firmware
+      - Firmament-Autopilot
+      - https://github.com/Firmament-Autopilot/FMT-Firmware
+    * - sdk-bsp-stm32h7r-realthread-artpi2
+      - RT-Thread
+      - https://github.com/RT-Thread-Studio/sdk-bsp-stm32h7r-realthread-artpi2
+    * - sdk-bsp-psoc_e84-edgi-talk
+      - RT-Thread
+      - https://github.com/RT-Thread-Studio/sdk-bsp-psoc_e84-edgi-talk
+    * - sdk-bsp-rk3506-realthread-ruichingpi
+      - RT-Thread
+      - https://github.com/RT-Thread-Studio/sdk-bsp-rk3506-realthread-ruichingpi
+    * - f1c200s_library
+      - lhdjply
+      - https://gitee.com/lhdjply/f1c200s_library
