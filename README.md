@@ -186,23 +186,27 @@ Only standard and commercial USB IP are listed.
 - 💻 [CherryUSB Demo Repo](https://cherryusb.readthedocs.io/en/latest/quick_start/demo.html)
 - 📺 [CherryUSB Cheese(>= V1.4.3)](https://www.bilibili.com/cheese/play/ss707687201)
 
+### Tools
+
+- 🌐 [Cherry Descriptor Generator](https://desc.cherry-embedded.org/en)
+- 🔧 [CDC Speed Test](https://github.com/cherry-embedded/CherryUSB/blob/master/tools/test_srcipts/test_cdc_speed.py)
+- 🔧 [HID Custom Test](https://github.com/cherry-embedded/CherryUSB/blob/master/tools/test_srcipts/test_hid_inout.py)
+
+### Community Or Commercial Support
+
+- 💬 [CherryUSB QQ Group](https://qm.qq.com/q/w3GnM4bkfA)
+- 💬 [CherryUSB discord](https://discord.com/invite/wFfvrSAey8)
+- 🙋🏽 [Commercial Support](https://cherryusb.readthedocs.io/en/latest/support/index.html)
+
 ### Package Support
 
-- [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
-- [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
-- [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
+- 🌐 [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
+- 🌐 [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
+- 🌐 [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
 
-### Descriptor Generator Tool
+### Mirror URL
 
-Cherry Descriptor: https://desc.cherry-embedded.org/en
-
-### Contact
-
-CherryUSB discord: https://discord.com/invite/wFfvrSAey8
-
-## Commercial Support
-
-Refer to https://cherryusb.readthedocs.io/en/latest/support/index.html
+- [AtomGit](https://atomgit.com/cherry-embedded/CherryUSB)
 
 ## Company Support
 

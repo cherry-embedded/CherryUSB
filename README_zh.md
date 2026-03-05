@@ -186,25 +186,27 @@ x 受以下宏影响：
 - 💻 [CherryUSB Demo Repo](https://cherryusb.readthedocs.io/zh-cn/latest/quick_start/demo.html)
 - 📺 [CherryUSB Cheese(>= V1.4.3)](https://www.bilibili.com/cheese/play/ss707687201)
 
-### 软件包支持
+### 工具
 
-- [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
-- [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
-- [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
+- 🌐 [Cherry Descriptor Generator](https://desc.cherry-embedded.org/zh)
+- 🔧 [CDC Speed Test](https://github.com/cherry-embedded/CherryUSB/blob/master/tools/test_srcipts/test_cdc_speed.py)
+- 🔧 [HID Custom Test](https://github.com/cherry-embedded/CherryUSB/blob/master/tools/test_srcipts/test_hid_inout.py)
 
-### 描述符生成工具
+### 社区 Or 商业支持
 
-Cherry Descriptor: https://desc.cherry-embedded.org/zh
+- 💬 [CherryUSB QQ Group](https://qm.qq.com/q/w3GnM4bkfA)
+- 💬 [CherryUSB discord](https://discord.com/invite/wFfvrSAey8)
+- 🙋🏽 [Commercial Support](https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html)
 
-### Contact
+### 软件包
 
-CherryUSB QQ群：642693751
+- 🌐 [RT-Thread](https://packages.rt-thread.org/detail.html?package=CherryUSB)
+- 🌐 [YOC](https://www.xrvm.cn/document?temp=usb-host-protocol-stack-device-driver-adaptation-instructions&slug=yocbook)
+- 🌐 [ESP-Registry](https://components.espressif.com/components/cherry-embedded/cherryusb)
 
-CherryUSB 微信群：与我联系后邀请加入
+### 镜像仓库
 
-## 商业支持
-
-参考 https://cherryusb.readthedocs.io/zh-cn/latest/support/index.html
+- [AtomGit](https://atomgit.com/cherry-embedded/CherryUSB)
 
 ## 支持企业
 
