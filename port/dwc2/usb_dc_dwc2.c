@@ -95,13 +95,14 @@ static inline int dwc2_core_init(uint8_t busid)
                 regval &= ~USB_OTG_GUSBCFG_PHYIF16;
                 regval &= ~USB_OTG_GUSBCFG_DDR_SEL;
 
-                if (g_dwc2_udc[busid].user_params.phy_utmi_width == 16) {
-                    regval |= USB_OTG_GUSBCFG_PHYIF16;
-                }
                 break;
             case DWC2_PHY_TYPE_PARAM_UTMI:
                 regval &= ~USB_OTG_GUSBCFG_ULPI_UTMI_SEL;
                 regval &= ~USB_OTG_GUSBCFG_PHYIF16;
+
+                if (g_dwc2_udc[busid].user_params.phy_utmi_width == 16) {
+                    regval |= USB_OTG_GUSBCFG_PHYIF16;
+                }
                 break;
 
             default:
