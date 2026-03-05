@@ -337,15 +337,15 @@ int usbh_hid_parse_report_descriptor(const uint8_t *report_data, uint32_t report
                         current_item->report_flags = itemval;
 
                         if (itemtag == HID_MAINITEM_TAG_INPUT) {
-                            current_item->report_type = USBH_HID_REPORTITEM_TYPE_INPUT;
+                            current_item->report_type = HID_REPORT_INPUT;
                         } else if (itemtag == HID_MAINITEM_TAG_OUTPUT) {
-                            current_item->report_type = USBH_HID_REPORTITEM_TYPE_OUTPUT;
+                            current_item->report_type = HID_REPORT_OUTPUT;
                         } else {
-                            current_item->report_type = USBH_HID_REPORTITEM_TYPE_FEATURE;
+                            current_item->report_type = HID_REPORT_FEATURE;
                         }
 
-                        current_item->report_bit_offset = total_report_size[current_item->report_type];
-                        total_report_size[current_item->report_type] += current_item_attr.report_size * current_item_attr.report_count;
+                        current_item->report_bit_offset = total_report_size[current_item->report_type - 1];
+                        total_report_size[current_item->report_type - 1] += current_item_attr.report_size * current_item_attr.report_count;
 
                         memcpy(&current_item->attribute, &current_item_attr, sizeof(struct usbh_hid_report_item_attribute));
                         report_info->report_item_count++;
@@ -437,8 +437,8 @@ err:
 
 static void usbh_hid_item_info_print(struct usbh_hid_report_item *item)
 {
-    USB_LOG_RAW("Item Type: %s\r\n", (unsigned int)item->report_type == USBH_HID_REPORTITEM_TYPE_INPUT  ? "Input" :
-                                     (unsigned int)item->report_type == USBH_HID_REPORTITEM_TYPE_OUTPUT ? "Output" :
+    USB_LOG_RAW("Item Type: %s\r\n", (unsigned int)item->report_type == HID_REPORT_INPUT  ? "Input" :
+                                     (unsigned int)item->report_type == HID_REPORT_OUTPUT ? "Output" :
                                                                                                           "Feature");
     USB_LOG_RAW("Usage Page: 0x%04x\r\n", (unsigned int)item->attribute.usage_page);
     USB_LOG_RAW("Report ID: 0x%04x\r\n", (unsigned int)item->attribute.report_id);

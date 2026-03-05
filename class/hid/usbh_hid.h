@@ -12,10 +12,6 @@
 #define CONFIG_USB_HID_MAX_REPORT_ITEMS       16
 #endif
 
-#define USBH_HID_REPORTITEM_TYPE_INPUT   0
-#define USBH_HID_REPORTITEM_TYPE_OUTPUT  1
-#define USBH_HID_REPORTITEM_TYPE_FEATURE 2
-
 struct usbh_hid_report_item_attribute {
     uint16_t usage_page;
     uint16_t usage_min;
