@@ -435,11 +435,58 @@ err:
     return -1;
 }
 
+int usbh_hid_report_convert(struct usbh_hid_report_item *item, const uint8_t *report_buf, uint32_t *output1, uint8_t **output2, uint32_t *output_len)
+{
+    const uint8_t *src;
+    uint32_t bits_len = item->attribute.report_size * item->attribute.report_count;
+
+    if(bits_len == 0) {
+        return -1;
+    }
+
+    if (item->report_flags & HID_MAINITEM_CONSTANT) {
+        return -1;
+    }
+
+    if (item->attribute.report_id > 0) {
+        if (report_buf[0] != item->attribute.report_id) {
+            return -2; /* report id mismatch */
+        }
+
+        src = report_buf + 1; /* skip report id */
+    } else {
+        src = report_buf;
+    }
+
+    if ((bits_len < 32) && (bits_len % 8 != 0)) {
+        *output1 = 0;
+
+        for (uint32_t i = 0; i < bits_len; i++) {
+            *output1 |= ((src[item->report_bit_offset / 8] >> ((item->report_bit_offset % 8) + i)) & 0x01) << i;
+        }
+
+        *output2 = NULL;
+        *output_len = (bits_len + 7) / 8;
+        return 0;
+    } else if (bits_len % 8 == 0) {
+        if (item->report_bit_offset % 8 != 0) {
+            /* currently do not support item that is not byte aligned */
+            return -3;
+        }
+
+        uint32_t byte_len = bits_len / 8;
+        *output2 = (uint8_t *)src + item->report_bit_offset / 8;
+        *output_len = byte_len;
+        return 0;
+    }
+    return -4;
+}
+
 static void usbh_hid_item_info_print(struct usbh_hid_report_item *item)
 {
     USB_LOG_RAW("Item Type: %s\r\n", (unsigned int)item->report_type == HID_REPORT_INPUT  ? "Input" :
                                      (unsigned int)item->report_type == HID_REPORT_OUTPUT ? "Output" :
-                                                                                                          "Feature");
+                                                                                            "Feature");
     USB_LOG_RAW("Usage Page: 0x%04x\r\n", (unsigned int)item->attribute.usage_page);
     USB_LOG_RAW("Report ID: 0x%04x\r\n", (unsigned int)item->attribute.report_id);
     USB_LOG_RAW("Report Size: %ubit\r\n", (unsigned int)item->attribute.report_size);
@@ -452,7 +499,7 @@ static void usbh_hid_item_info_print(struct usbh_hid_report_item *item)
     USB_LOG_RAW("\r\n");
 }
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_report_buf[2048];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_hid_report_desc_buf[2048];
 
 int lshid(int argc, char **argv)
 {
@@ -471,18 +518,18 @@ int lshid(int argc, char **argv)
         return -1;
     }
 
-    if (hid_class->report_size > sizeof(g_hid_report_buf)) {
+    if (hid_class->report_size > sizeof(g_hid_report_desc_buf)) {
         USB_LOG_ERR("hid report buffer is too small\r\n");
         return -1;
     }
 
-    ret = usbh_hid_get_report_descriptor(hid_class, g_hid_report_buf, hid_class->report_size);
+    ret = usbh_hid_get_report_descriptor(hid_class, g_hid_report_desc_buf, hid_class->report_size);
     if (ret < 0) {
         USB_LOG_ERR("get hid report descriptor failed, errcode: %d\r\n", ret);
         return -1;
     }
 
-    ret = usbh_hid_parse_report_descriptor(g_hid_report_buf, hid_class->report_size, &report_info);
+    ret = usbh_hid_parse_report_descriptor(g_hid_report_desc_buf, hid_class->report_size, &report_info);
     if (ret < 0) {
         USB_LOG_ERR("parse hid report descriptor failed\r\n");
         return -1;

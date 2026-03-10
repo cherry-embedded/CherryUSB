@@ -70,6 +70,7 @@ int usbh_hid_set_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
 int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t report_id, uint8_t *buffer, uint32_t buflen);
 
 int usbh_hid_parse_report_descriptor(const uint8_t *report_data, uint32_t report_size, struct usbh_hid_report_info *report_info);
+int usbh_hid_report_convert(struct usbh_hid_report_item *item, const uint8_t *report_buf, uint32_t *output1, uint8_t **output2, uint32_t *output_len);
 
 void usbh_hid_run(struct usbh_hid *hid_class);
 void usbh_hid_stop(struct usbh_hid *hid_class);
