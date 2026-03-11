@@ -70,10 +70,11 @@ CherryUSB Device Stack has the following functions:
 - Support Mass Storage Class (MSC)
 - Support USB VIDEO CLASS (UVC1.0, UVC1.5)
 - Support USB AUDIO CLASS (UAC1.0, UAC2.0)
+- Support Remote NDIS (RNDIS)
 - Support Device Firmware Upgrade CLASS (DFU)
 - Support USB MIDI CLASS (MIDI)
-- Support Remote NDIS (RNDIS)
 - Support Media Transfer Protocol (MTP)
+- Support Test and Measurement Class (TMC)
 - Support WINUSB1.0, WINUSB2.0, WEBUSB, BOS
 - Support Vendor display ([xfz1986_usb_graphic_driver](https://github.com/chuanjinpang/win10_idd_xfz1986_usb_graphic_driver_display))
 - Support Vendor class
@@ -113,6 +114,7 @@ CherryUSB Host Stack has the following functions:
 - Support USB Video CLASS (UVC1.0, UVC1.5)
 - Support USB Audio CLASS (UAC1.0)
 - Support Remote NDIS (RNDIS)
+- Support Device Firmware Upgrade CLASS (DFU)
 - Support USB Bluetooth class (support nimble and zephyr bluetooth stack, support **CLASS:0xE0** or vendor class like cdc acm)
 - Support Vendor Serial Class(CH34X、CP210X、PL2303、FTDI、GSM)
 - Support Vendor network Class(RTL8152、AX88772)
