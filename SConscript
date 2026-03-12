@@ -142,10 +142,10 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/vendor/display/usbd_display.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB']):
         src += Glob('class/adb/usbd_adb.c')
-        src += Glob('platform/rtthread/usbd_adb_shell.c')
+        src += Glob('platform/rtthread/rt_usbd_adb.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV']):
-        src += Glob('platform/rtthread/usbd_serial.c')
+        src += Glob('platform/rtthread/rt_usbd_serial.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM']):
         src += Glob('demo/cdc_acm_template.c')
@@ -335,20 +335,20 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         or GetDepend(['PKG_CHERRYUSB_HOST_PL2303']) \
         or GetDepend(['PKG_CHERRYUSB_HOST_GSM']):
         src += Glob('class/serial/usbh_serial.c')
-        src += Glob('platform/rtthread/usbh_rtserial.c')
+        src += Glob('platform/rtthread/rt_usbh_serial.c')
 
     if GetDepend('RT_USING_DFS') and GetDepend(['PKG_CHERRYUSB_HOST_MSC']):
-       src += Glob('platform/rtthread/usbh_dfs.c')
+       src += Glob('platform/rtthread/rt_usbh_msc.c')
 
     if GetDepend('PKG_CHERRYUSB_HOST_CDC_ECM') \
         or GetDepend('PKG_CHERRYUSB_HOST_CDC_RNDIS') \
         or GetDepend('PKG_CHERRYUSB_HOST_CDC_NCM') \
         or GetDepend('PKG_CHERRYUSB_HOST_ASIX') \
         or GetDepend('PKG_CHERRYUSB_HOST_RTL8152'):
-       src += Glob('platform/rtthread/usbh_lwip.c')
+       src += Glob('platform/rtthread/rt_usbh_lwip.c')
 
-src += Glob('platform/rtthread/usb_msh.c')
-src += Glob('platform/rtthread/usb_check.c')
+src += Glob('platform/rtthread/rt_usb_msh.c')
+src += Glob('platform/rtthread/rt_usb_check.c')
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], LIBS = LIBS, LIBPATH=LIBPATH, CPPPATH = path, CPPDEFINES = CPPDEFINES)
 
