@@ -147,6 +147,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV']):
         src += Glob('platform/rtthread/rt_usbd_serial.c')
 
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC_BLKDEV']):
+        src += Glob('platform/rtthread/rt_usbd_msc.c')
+
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM']):
         src += Glob('demo/cdc_acm_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC']) or GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC_BLKDEV']):

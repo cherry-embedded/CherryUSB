@@ -148,6 +148,16 @@ if PKG_USING_CHERRYUSB
             prompt "Enable chardev for cdc acm device"
             default n
 
+        config PKG_CHERRYUSB_DEVICE_MSC_BLKDEV
+            bool
+            prompt "Enable blkdev for msc device"
+            default n
+
+        config CONFIG_USBDEV_MSC_BLOCK_DEV_NAME
+            string "usb device msc block device name"
+            depends on PKG_CHERRYUSB_DEVICE_MSC_BLKDEV
+            default "sd0"
+
         config CONFIG_USBDEV_REQUEST_BUFFER_LEN
             int
             prompt "Set device control transfer max buffer size"
@@ -188,7 +198,7 @@ if PKG_USING_CHERRYUSB
             config PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC_BLKDEV
                 bool
                 prompt "msc_blkdev"
-                depends on PKG_CHERRYUSB_DEVICE_MSC
+                depends on PKG_CHERRYUSB_DEVICE_MSC && PKG_CHERRYUSB_DEVICE_MSC_BLKDEV
             config PKG_CHERRYUSB_DEVICE_TEMPLATE_HID_KEYBOARD
                 bool
                 prompt "hid_keyboard"
@@ -264,11 +274,6 @@ if PKG_USING_CHERRYUSB
                 prompt "cdc_acm_chardev"
                 depends on PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV
         endchoice
-
-        config CONFIG_USBDEV_MSC_BLOCK_DEV_NAME
-            string "usb device msc block device name"
-            depends on PKG_CHERRYUSB_DEVICE_TEMPLATE_MSC_BLKDEV
-            default "sd0"
 
     endif
 
