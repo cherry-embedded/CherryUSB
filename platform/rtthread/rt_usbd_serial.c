@@ -31,6 +31,7 @@ struct usbd_serial {
     char name[32];
     usb_ringbuffer_t rx_rb;
     uint8_t rx_rb_buffer[CONFIG_USBDEV_SERIAL_RX_BUFSIZE];
+    bool read_pending;
 };
 
 static uint32_t g_devinuse = 0;
@@ -68,6 +69,26 @@ static void usbd_serial_free(struct usbd_serial *serial)
     memset(serial, 0, sizeof(struct usbd_serial));
 }
 
+static void usbd_serial_next_read(struct usbd_serial *serial)
+{
+    uint32_t mps = usbd_get_ep_mps(serial->busid, serial->out_ep);
+
+    if (!usb_device_is_configured(serial->busid)) {
+        USB_LOG_ERR("USB device is not configured\n");
+        return;
+    }
+
+    if (!serial->read_pending &&
+        usb_ringbuffer_get_free(&serial->rx_rb) >= mps) {
+        serial->read_pending = true;
+
+        usbd_ep_start_read(serial->busid,
+                           serial->out_ep,
+                           g_usbd_serial_cdc_acm_rx_buf[serial->minor],
+                           mps);
+    }
+}
+
 static rt_err_t usbd_serial_open(struct rt_device *dev, rt_uint16_t oflag)
 {
     struct usbd_serial *serial;
@@ -76,13 +97,14 @@ static rt_err_t usbd_serial_open(struct rt_device *dev, rt_uint16_t oflag)
 
     serial = (struct usbd_serial *)dev;
 
-    while(!usb_device_is_configured(serial->busid)) {
+    while (!usb_device_is_configured(serial->busid)) {
         rt_thread_mdelay(10);
     }
 
-    usbd_ep_start_read(serial->busid, serial->out_ep,
-                       g_usbd_serial_cdc_acm_rx_buf[serial->minor],
-                       usbd_get_ep_mps(serial->busid, serial->out_ep));
+    serial->read_pending = false;
+
+    usbd_serial_next_read(serial);
+
     return RT_EOK;
 }
 
@@ -101,7 +123,11 @@ static rt_ssize_t usbd_serial_read(struct rt_device *dev,
         return -RT_EPERM;
     }
 
-    return usb_ringbuffer_read(&serial->rx_rb, (uint8_t *)buffer, size);
+    uint32_t retval = usb_ringbuffer_read(&serial->rx_rb, (uint8_t *)buffer, size);
+
+    usbd_serial_next_read(serial);
+
+    return retval;
 }
 
 static rt_ssize_t usbd_serial_write(struct rt_device *dev,
@@ -155,14 +181,13 @@ static void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
     for (uint8_t devno = 0; devno < CONFIG_USBDEV_MAX_CDC_ACM_CLASS; devno++) {
         serial = &g_usbd_serial_cdc_acm[devno];
-        if (serial->out_ep == ep) {
-            usb_ringbuffer_write(&serial->rx_rb, g_usbd_serial_cdc_acm_rx_buf[serial->minor], nbytes);
-            usbd_ep_start_read(serial->busid, serial->out_ep,
-                g_usbd_serial_cdc_acm_rx_buf[serial->minor],
-                usbd_get_ep_mps(serial->busid, serial->out_ep));
+        if (serial->busid == busid && serial->out_ep == ep) {
+            serial->read_pending = false;
+            uint32_t written = usb_ringbuffer_write(&serial->rx_rb, g_usbd_serial_cdc_acm_rx_buf[serial->minor], nbytes);
+            usbd_serial_next_read(serial);
 
             if (serial->parent.rx_indicate) {
-                serial->parent.rx_indicate(&serial->parent, nbytes);
+                serial->parent.rx_indicate(&serial->parent, written);
             }
             break;
         }
@@ -199,7 +224,7 @@ const static struct rt_device_ops usbd_serial_ops = {
 #endif
 
 static rt_err_t usbd_serial_register(struct usbd_serial *serial,
-                              void *data)
+                                     void *data)
 {
     rt_err_t ret;
     struct rt_device *device;
