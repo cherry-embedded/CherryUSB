@@ -274,8 +274,8 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                     break;
             }
             /* skip to next descriptor */
-            p += p[DESC_bLength];
             desc_len += p[DESC_bLength];
+            p += p[DESC_bLength];
         }
     }
     return 0;
