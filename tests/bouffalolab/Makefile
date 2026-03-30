@@ -1,4 +1,4 @@
-SDK_DEMO_PATH ?= .
+SDK_DEMO_PATH ?= $(abspath .)
 BL_SDK_BASE ?= /home/sakumisu/repo/bouffalolab/bouffalo_sdk_github
 
 export BL_SDK_BASE
