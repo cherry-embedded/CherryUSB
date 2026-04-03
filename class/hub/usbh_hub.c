@@ -681,8 +681,9 @@ static void usbh_hub_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     struct usbh_bus *bus = (struct usbh_bus *)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
-    usb_hc_init(bus);
     bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_INIT);
+    usb_hc_init(bus);
+
     while (1) {
         ret = usb_osal_mq_recv(bus->hub_mq, (uintptr_t *)&hub, USB_OSAL_WAITING_FOREVER);
         if (ret < 0) {

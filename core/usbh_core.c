@@ -666,9 +666,8 @@ int usbh_deinitialize(uint8_t busid)
 
     bus = &g_usbhost_bus[busid];
 
-    bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_DEINIT);
-
     usbh_hub_deinitialize(bus);
+    bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_DEINIT);
 
     usb_slist_remove(&g_bus_head, &bus->list);
 
