@@ -103,6 +103,7 @@ static int dfu_class_interface_request_handler(uint8_t busid, struct usb_setup_p
                     } else {
                         g_usbd_dfu.dfu_state = DFU_STATE_DFU_UPLOAD_IDLE;
                     }
+                    *len = actual_length;
                     break;
                 case DFU_REQUEST_ABORT:
                     g_usbd_dfu.dfu_state = DFU_STATE_DFU_IDLE;
