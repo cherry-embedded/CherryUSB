@@ -7,6 +7,11 @@
 #include "usbd_core.h"
 #include "hpm_usb_device.h"
 #include "usb_glue_hpm.h"
+#include "hpm_sdk_version.h"
+
+#if SDK_VERSION_NUMBER < 0x10C00
+#error "Please use SDK version 1.12.0 or later because of USB api modification"
+#endif
 
 #define USB_NUM_BIDIR_ENDPOINTS USB_SOC_DCD_MAX_ENDPOINT_COUNT
 
