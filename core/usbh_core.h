@@ -203,7 +203,7 @@ struct usbh_bus {
     struct usbh_devaddr_map devgen;
     usb_osal_thread_t hub_thread;
     usb_osal_mq_t hub_mq;
-    usb_osal_mutex_t mutex;
+    usb_osal_sem_t hub_sem;
     usbh_event_handler_t event_handler;
 };
 
