@@ -174,12 +174,13 @@ int usbh_video_open(struct usbh_video *video_class,
                     frameidx = j + 1;
                     dwDefaultFrameInterval = video_class->format[i].frame[j].dwDefaultFrameInterval;
                     found = true;
-                    break;
+                    goto dev_found;
                 }
             }
         }
     }
 
+dev_found:
     if (found == false) {
         return -USB_ERR_NODEV;
     }
