@@ -28,7 +28,6 @@ static inline uint8_t __bt_hci_evt_get_flags(uint8_t evt)
     switch (evt) {
         case BT_HCI_EVT_DISCONN_COMPLETE:
             return __BT_HCI_EVT_FLAG_RECV | __BT_HCI_EVT_FLAG_RECV_PRIO;
-            /* fallthrough */
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
         case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 #if defined(CONFIG_BT_CONN)
@@ -180,11 +179,19 @@ static struct net_buf *usbh_bt_iso_recv(uint8_t *data, size_t remaining)
         return NULL;
     }
 
-    // if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-    //     USB_LOG_ERR("ISO payload length is not correct\r\n");
-    //     net_buf_unref(buf);
-    //     return NULL;
-    // }
+    /*
+     * Per Bluetooth Core Spec v5.x Vol 4 Part E Section 5.4.5,
+     * the ISO_Data_Load_Length field occupies bits 0..13 (14 bits) of the
+     * 16-bit length field in the HCI ISO Data packet header.
+     * Bits 14..15 are RFU and must be masked out.
+     * This matches Zephyr's bt_iso_hdr_len() macro definition:
+     *   #define bt_iso_hdr_len(h) ((h) & BIT_MASK(14))  // BIT_MASK(14) == 0x3FFF
+     */
+    if (remaining != (sys_le16_to_cpu(hdr.len) & 0x3FFF)) {
+        USB_LOG_ERR("ISO payload length is not correct\r\n");
+        net_buf_unref(buf);
+        return NULL;
+    }
 
     buf_tailroom = net_buf_tailroom(buf);
     if (buf_tailroom < remaining) {
@@ -274,7 +281,7 @@ static int bt_usbh_send(struct net_buf *buf)
 
     err = usbh_bluetooth_hci_write(pkt_indicator, buf->data, buf->len);
     if (err < 0) {
-        err = 255;
+        err = -EIO;
     } else {
         err = 0;
     }
@@ -306,19 +313,27 @@ __WEAK void usbh_bluetooth_stop_callback(void)
 
 void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
 {
-    bt_hci_driver_register(&usbh_drv);
+    static bool s_registered;
+
+    (void)bluetooth_class;
+
+    if (!s_registered) {
+        bt_hci_driver_register(&usbh_drv);
 
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
-    usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_rx_thread, NULL);
+        usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_rx_thread, NULL);
 #else
-    usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
-    usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
+        usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
+        usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
 #endif
+        s_registered = true;
+    }
     usbh_bluetooth_run_callback();
 }
 
 void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class)
 {
+    (void)bluetooth_class;
     usbh_bluetooth_stop_callback();
 }
 

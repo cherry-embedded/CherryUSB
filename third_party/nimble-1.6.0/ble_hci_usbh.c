@@ -8,6 +8,7 @@
 #include "usbh_bluetooth.h"
 
 #include <nimble/ble.h>
+#include "nimble/hci_common.h"
 #include "nimble/transport.h"
 #include "nimble/transport/hci_h4.h"
 
@@ -34,21 +35,14 @@ static int hci_usb_frame_cb(uint8_t pkt_type, void *data)
 
 void usbh_bluetooth_hci_read_callback(uint8_t *data, uint32_t len)
 {
-    size_t remaining = len;
-    uint8_t pkt_indicator;
-
-    pkt_indicator = *data++;
-    remaining -= sizeof(pkt_indicator);
-
-    hci_h4_sm_rx(&g_hci_h4sm, &pkt_indicator, 1);
-    hci_h4_sm_rx(&g_hci_h4sm, data, remaining);
+    hci_h4_sm_rx(&g_hci_h4sm, data, (uint16_t)len);
 }
 
 int ble_transport_to_ll_cmd_impl(void *buf)
 {
-    int ret = 0;
-    uint8_t *cmd_pkt_data = (uint8_t *)buf;
-    size_t pkt_len = cmd_pkt_data[2] + 3;
+    const struct ble_hci_cmd *cmd = buf;
+    size_t pkt_len = sizeof(*cmd) + cmd->length;
+    int ret;
 
     ret = usbh_bluetooth_hci_write(USB_BLUETOOTH_HCI_CMD, buf, pkt_len);
     if (ret < 0) {
@@ -63,23 +57,19 @@ int ble_transport_to_ll_cmd_impl(void *buf)
 
 int ble_transport_to_ll_acl_impl(struct os_mbuf *om)
 {
-    struct os_mbuf *x = om;
-    int ret = 0;
+    uint8_t buf[BLE_HCI_DATA_HDR_SZ + MYNEWT_VAL(BLE_TRANSPORT_ACL_SIZE)];
+    uint16_t pkt_len = OS_MBUF_PKTLEN(om);
+    int ret;
 
-    while (x != NULL) {
-        ret = usbh_bluetooth_hci_write(USB_BLUETOOTH_HCI_ACL, x->om_data, x->om_len);
-        if (ret < 0) {
-            ret = BLE_ERR_MEM_CAPACITY;
-            break;
-        } else {
-            ret = 0;
-        }
-        x = SLIST_NEXT(x, om_next);
+    if (pkt_len > sizeof(buf)) {
+        os_mbuf_free_chain(om);
+        return BLE_ERR_MEM_CAPACITY;
     }
 
+    os_mbuf_copydata(om, 0, pkt_len, buf);
+    ret = usbh_bluetooth_hci_write(USB_BLUETOOTH_HCI_ACL, buf, pkt_len);
     os_mbuf_free_chain(om);
-
-    return ret;
+    return ret < 0 ? BLE_ERR_MEM_CAPACITY : 0;
 }
 
 __WEAK void usbh_bluetooth_run_callback(void)
@@ -94,6 +84,7 @@ __WEAK void usbh_bluetooth_stop_callback(void)
 
 void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
 {
+    (void)bluetooth_class;
     hci_h4_sm_init(&g_hci_h4sm, &hci_h4_allocs_from_ll, hci_usb_frame_cb);
 
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
@@ -107,5 +98,6 @@ void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
 
 void usbh_bluetooth_stop(struct usbh_bluetooth *bluetooth_class)
 {
+    (void)bluetooth_class;
     usbh_bluetooth_stop_callback();
 }
