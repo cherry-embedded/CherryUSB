@@ -69,7 +69,6 @@ static void usdb_msc_set_max_lun(uint8_t busid)
 static void usbd_msc_reset(uint8_t busid)
 {
     g_usbd_msc[busid].stage = MSC_READ_CBW;
-    g_usbd_msc[busid].readonly = false;
 }
 
 static int msc_storage_class_interface_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
@@ -289,7 +288,7 @@ static bool SCSI_inquiry(uint8_t busid, uint8_t **data, uint32_t *len)
         0x00,
         0x80,
         0x00,
-        0x08,
+        (0x08 - 4U),
         0x20, /* Put Product Serial number */
         0x20,
         0x20,
