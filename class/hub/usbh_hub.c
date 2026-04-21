@@ -642,6 +642,7 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     child->speed = speed;
                     child->bus = hub->bus;
                     child->mutex = usb_osal_mutex_create();
+                    USB_ASSERT(child->mutex != NULL);
 
                     USB_LOG_INFO("New %s device on Bus %u, Hub %u, Port %u connected\r\n", speed_table[speed], hub->bus->busid, hub->index, port + 1);
 
