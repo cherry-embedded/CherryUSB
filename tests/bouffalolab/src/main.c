@@ -1,6 +1,8 @@
 #include <FreeRTOS.h>
 #include "semphr.h"
 #include "usbh_core.h"
+#include "usbh_hid.h"
+#include "usbh_serial.h"
 #include "bflb_uart.h"
 #include "board.h"
 #include "shell.h"
@@ -104,6 +106,10 @@ int main(void)
     }
 }
 
+SHELL_CMD_EXPORT_ALIAS(lsusb, lsusb, ls usb);
+SHELL_CMD_EXPORT_ALIAS(lshid, lshid, ls hid);
+SHELL_CMD_EXPORT_ALIAS(usbh_serial, usbh_serial, usbh_serial);
+
 int usbh_deinit(int argc, char **argv)
 {
     printf("usbh_deinit\r\n");
@@ -120,8 +126,6 @@ int usbh_init(int argc, char **argv)
 }
 
 SHELL_CMD_EXPORT_ALIAS(usbh_init, usbh_init, usbh init);
-
-SHELL_CMD_EXPORT_ALIAS(lsusb, lsusb, ls usb);
 
 // int uvcinit(int argc, char **argv)
 // {

@@ -11,45 +11,52 @@
 #endif
 
 /**
- * SYS_LIGHTWEIGHT_PROT==1: if you want inter-task protection for certain
- * critical regions during buffer allocation, deallocation and memory
- * allocation and deallocation.
+ * NO_SYS==1: Use lwIP without OS-awareness (no thread, semaphores, mutexes or
+ * mboxes). This means threaded APIs cannot be used (socket, netconn,
+ * i.e. everything in the 'api' folder), only the callback-style raw API is
+ * available (and you have to watch out for yourself that you don't access
+ * lwIP functions/structures from more than one context at a time!)
+ */
+#define NO_SYS 0
+
+/**
+ * LWIP_TIMERS==0: Drop support for sys_timeout and lwip-internal cyclic timers.
+ * (the array of lwip-internal cyclic timers is still provided)
+ * (check NO_SYS_NO_TIMERS for compatibility to old versions)
+ */
+#define LWIP_TIMERS 1
+
+/**
+ * LWIP_TCPIP_CORE_LOCKING_INPUT: when LWIP_TCPIP_CORE_LOCKING is enabled,
+ * this lets tcpip_input() grab the mutex for input packets as well,
+ * instead of allocating a message and passing it to tcpip_thread.
+ *
+ * ATTENTION: this does not work when tcpip_input() is called from
+ * interrupt context!
+ */
+#ifndef LWIP_TCPIP_CORE_LOCKING_INPUT
+#define LWIP_TCPIP_CORE_LOCKING_INPUT 1
+#endif
+
+/**
+ * SYS_LIGHTWEIGHT_PROT==1: enable inter-task protection (and task-vs-interrupt
+ * protection) for certain critical regions during buffer allocation, deallocation
+ * and memory allocation and deallocation.
+ * ATTENTION: This is required when using lwIP from more than one context! If
+ * you disable this, you must be sure what you are doing!
  */
 #define SYS_LIGHTWEIGHT_PROT 1
-#define IP_REASSEMBLY        0
-#define IP_FRAG              0
-#define ARP_QUEUEING         0
-#define NO_SYS               0
-#define LWIP_RAND            rand
 
-#define LWIP_NETIF_HOSTNAME  0
-#define LWIP_TIMEVAL_PRIVATE 0
-#define LWIP_TIMERS          1
-#define LWIP_RAW             1
-#define LWIP_IPV4            1
-#define LWIP_IGMP            1
-#define LWIP_ICMP            1
-#define ICMP_TTL             64
-#define LWIP_TCP             1
-#define TCP_TTL              255
-#define LWIP_UDP             1
-#define UDP_TTL              255
-#define LWIP_DNS             1
-
+/*
+   ------------------------------------
+   ---------- Memory options ----------
+   ------------------------------------
+*/
 /**
- * LWIP_NETIF_API==1: Support netif api (in netifapi.c)
+ * MEM_LIBC_MALLOC==1: Use malloc/free/realloc provided by your C-library
+ * instead of the lwip internal allocator. Can save code size if you
+ * already use it.
  */
-#define LWIP_NETIF_API 1
-/**
- * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
- */
-#define LWIP_NETCONN 1
-/**
- * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
- */
-#define LWIP_SOCKET 1
-
-/* ---------- Memory options ---------- */
 #define MEMP_MEM_MALLOC 0
 
 /* MEM_ALIGNMENT: should be set to the alignment of the CPU for which
@@ -65,9 +72,16 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEM_SIZE (32 * 1024)
 #endif
 
-/* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
-   sends a lot of data out of ROM (or other static memory), this
-   should be set high. */
+/*
+   ------------------------------------------------
+   ---------- Internal Memory Pool Sizes ----------
+   ------------------------------------------------
+*/
+/**
+ * MEMP_NUM_PBUF: the number of memp struct pbufs (used for PBUF_ROM and PBUF_REF).
+ * If the application sends a lot of data out of ROM (or other static memory),
+ * this should be set high.
+ */
 #ifndef MEMP_NUM_PBUF
 #define MEMP_NUM_PBUF 100
 #endif
@@ -80,34 +94,54 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_RAW_PCB 4
 #endif
 
-/* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
-   per active UDP "connection". */
+/**
+ * MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
+ * per active UDP "connection".
+ * (requires the LWIP_UDP option)
+ */
 #ifndef MEMP_NUM_UDP_PCB
 #define MEMP_NUM_UDP_PCB 4
 #endif
 
-/* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
-   connections. */
+/**
+ * MEMP_NUM_TCP_PCB: the number of simultaneously active TCP connections.
+ * (requires the LWIP_TCP option)
+ */
 #ifndef MEMP_NUM_TCP_PCB
-#define MEMP_NUM_TCP_PCB 4
+#define MEMP_NUM_TCP_PCB 5
 #endif
 
-/* MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
-   connections. */
+/**
+ * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.
+ * (requires the LWIP_TCP option)
+ */
 #ifndef MEMP_NUM_TCP_PCB_LISTEN
-#define MEMP_NUM_TCP_PCB_LISTEN 5
+#define MEMP_NUM_TCP_PCB_LISTEN 8
 #endif
 
-/* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
-   segments. */
+/**
+ * MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP segments.
+ * (requires the LWIP_TCP option)
+ */
 #ifndef MEMP_NUM_TCP_SEG
 #define MEMP_NUM_TCP_SEG 40
 #endif
 
-/* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
-   timeouts. */
+/**
+ * MEMP_NUM_SYS_TIMEOUT: the number of simultaneously active timeouts.
+ * The default number of timeouts is calculated here for all enabled modules.
+ * The formula expects settings to be either '0' or '1'.
+ */
 #ifndef MEMP_NUM_SYS_TIMEOUT
 #define MEMP_NUM_SYS_TIMEOUT (LWIP_NUM_SYS_TIMEOUT_INTERNAL)
+#endif
+
+/**
+ * MEMP_NUM_NETBUF: the number of struct netbufs.
+ * (only needed if you use the sequential API, like api_lib.c)
+ */
+#ifndef MEMP_NUM_NETBUF
+#define MEMP_NUM_NETBUF 2
 #endif
 
 /**
@@ -118,60 +152,181 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_NETCONN 4
 #endif
 
-/* ---------- Pbuf options ---------- */
-/* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
+/*
+   ---------------------------------
+   ---------- ARP options ----------
+   ---------------------------------
+*/
+/**
+ * LWIP_ARP==1: Enable ARP functionality.
+ */
+#define LWIP_ARP 1
+
+/**
+ * ARP_QUEUEING==1: Multiple outgoing packets are queued during hardware address
+ * resolution. By default, only the most recent packet is queued per IP address.
+ * This is sufficient for most protocols and mainly reduces TCP connection
+ * startup time. Set this to 1 if you know your application sends more than one
+ * packet in a row to an IP address that is not in the ARP cache.
+ */
+#define ARP_QUEUEING 0
+
+/*
+   --------------------------------
+   ---------- IP options ----------
+   --------------------------------
+*/
+#define LWIP_IPV4 1
+
+/**
+ * IP_FORWARD==1: Enables the ability to forward IP packets across network
+ * interfaces. If you are going to run lwIP on a device with only one network
+ * interface, define this to 0.
+ */
+#define IP_FORWARD 1
+
+/**
+ * IP_REASSEMBLY==1: Reassemble incoming fragmented IP packets. Note that
+ * this option does not affect outgoing packet sizes, which can be controlled
+ * via IP_FRAG.
+ */
+#define IP_REASSEMBLY 0
+
+/**
+ * IP_FRAG==1: Fragment outgoing IP packets if their size exceeds MTU. Note
+ * that this option does not affect incoming packet sizes, which can be
+ * controlled via IP_REASSEMBLY.
+ */
+#define IP_FRAG 0
+
+/*
+   ----------------------------------
+   ---------- ICMP options ----------
+   ----------------------------------
+*/
+#define LWIP_ICMP 1
+
+/*
+   ---------------------------------
+   ---------- RAW options ----------
+   ---------------------------------
+*/
+#define LWIP_RAW 1
+
+/*
+   ----------------------------------
+   ---------- DHCP options ----------
+   ----------------------------------
+*/
+#ifndef LWIP_DHCP
+#define LWIP_DHCP 1
+#endif
+
+/*
+   ------------------------------------
+   ---------- AUTOIP options ----------
+   ------------------------------------
+*/
+#ifndef LWIP_AUTOIP
+#define LWIP_AUTOIP 0
+#endif
+
+/*
+   ----------------------------------
+   ---------- IGMP options ----------
+   ----------------------------------
+*/
+#ifndef LWIP_IGMP
+#define LWIP_IGMP 0
+#endif
+
+/*
+   ----------------------------------
+   ---------- DNS options -----------
+   ----------------------------------
+*/
+#define LWIP_DNS 1
+
+/*
+   ---------------------------------
+   ---------- UDP options ----------
+   ---------------------------------
+*/
+#define LWIP_UDP 1
+
+/*
+   ---------------------------------
+   ---------- TCP options ----------
+   ---------------------------------
+*/
+#define LWIP_TCP 1
+
+/**
+ * TCP_WND: The size of a TCP window.  This must be at least
+ * (2 * TCP_MSS) for things to work well.
+ * ATTENTION: when using TCP_RCV_SCALE, TCP_WND is the total size
+ * with scaling applied. Maximum window value in the TCP header
+ * will be TCP_WND >> TCP_RCV_SCALE
+ */
+#ifndef TCP_WND
+#define TCP_WND (16 * TCP_MSS)
+#endif
+
+/**
+ * TCP_QUEUE_OOSEQ==1: TCP will queue segments that arrive out of order.
+ * Define to 0 if your device is low on memory.
+ */
+#ifndef TCP_QUEUE_OOSEQ
+#define TCP_QUEUE_OOSEQ 0
+#endif
+
+/**
+ * TCP_MSS: TCP Maximum segment size. (default is 536, a conservative default,
+ * you might want to increase this.)
+ * For the receive side, this MSS is advertised to the remote side
+ * when opening a connection. For the transmit size, this MSS sets
+ * an upper limit on the MSS advertised by the remote host.
+ */
+#ifndef TCP_MSS
+#define TCP_MSS (1500 - 40) /* TCP_MSS = (Ethernet MTU - IP header size - TCP header size) */
+#endif
+
+/**
+ * TCP_SND_BUF: TCP sender buffer space (bytes).
+ * To achieve good performance, this should be at least 2 * TCP_MSS.
+ */
+#ifndef TCP_SND_BUF
+#define TCP_SND_BUF (8 * TCP_MSS)
+#endif
+
+/**
+ * TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
+ * as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work.
+ */
+#ifndef TCP_SND_QUEUELEN
+#define TCP_SND_QUEUELEN (4 * TCP_SND_BUF / TCP_MSS)
+#endif
+
+#ifndef LWIP_WND_SCALE
+#define LWIP_WND_SCALE 0
+#define TCP_RCV_SCALE  0
+#endif
+
+/*
+   ----------------------------------
+   ---------- Pbuf options ----------
+   ----------------------------------
+*/
+/**
+ * PBUF_POOL_SIZE: the number of buffers in the pbuf pool.
+ */
 #ifndef PBUF_POOL_SIZE
-#define PBUF_POOL_SIZE 20
+#define PBUF_POOL_SIZE 16
 #endif
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
 #ifndef PBUF_POOL_BUFSIZE
 #define PBUF_POOL_BUFSIZE 1600
-#endif
-
-/* ---------- TCP options ---------- */
-/* Controls if TCP should queue segments that arrive out of
-   order. Define to 0 if your device is low on memory. */
-#ifndef TCP_QUEUE_OOSEQ
-#define TCP_QUEUE_OOSEQ 0
-#endif
-
-/* TCP Maximum segment size. */
-#ifndef TCP_MSS
-#define TCP_MSS (1500 - 40) /* TCP_MSS = (Ethernet MTU - IP header size - TCP header size) */
-#endif
-
-/* TCP sender buffer space (bytes). */
-#ifndef TCP_SND_BUF
-#define TCP_SND_BUF (8 * TCP_MSS)
-#endif
-
-/*  TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
-  as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work. */
-#ifndef TCP_SND_QUEUELEN
-#define TCP_SND_QUEUELEN (4 * TCP_SND_BUF / TCP_MSS)
-#endif
-
-/* TCP receive window. */
-#ifndef TCP_WND
-#define TCP_WND (16 * TCP_MSS)
-#endif
-
-/* ---------- DHCP options ---------- */
-/* Define LWIP_DHCP to 1 if you want DHCP configuration of
-   interfaces. DHCP is not implemented in lwIP 0.5.1, however, so
-   turning this on does currently not work. */
-#ifndef LWIP_DHCP
-#define LWIP_DHCP 1
-#endif
-
-/* ---------- Statistics options ---------- */
-#ifndef LWIP_STATS
-#define LWIP_STATS 0
-#endif
-
-#ifndef LWIP_PROVIDE_ERRNO
-#define LWIP_PROVIDE_ERRNO 1
 #endif
 
 /*
@@ -187,8 +342,29 @@ a lot of data that needs to be copied, this should be set high. */
 #define LWIP_SINGLE_NETIF 1
 #endif
 
-/* ---------- link callback options ---------- */
-/* LWIP_NETIF_LINK_CALLBACK==1: Support a callback function from an interface
+/**
+ * LWIP_NETIF_HOSTNAME==1: use DHCP_OPTION_HOSTNAME with netif's hostname
+ * field.
+ */
+#ifndef LWIP_NETIF_HOSTNAME
+#define LWIP_NETIF_HOSTNAME 0
+#endif
+
+/**
+ * LWIP_NETIF_API==1: Support netif api (in netifapi.c)
+ */
+#define LWIP_NETIF_API 1
+
+/**
+ * LWIP_NETIF_STATUS_CALLBACK==1: Support a callback function whenever an interface
+ * changes its up/down status (i.e., due to DHCP IP acquisition)
+ */
+#ifndef LWIP_NETIF_STATUS_CALLBACK
+#define LWIP_NETIF_STATUS_CALLBACK 0
+#endif
+
+/**
+ * LWIP_NETIF_LINK_CALLBACK==1: Support a callback function from an interface
  * whenever the link changes (i.e., link down)
  */
 #ifndef LWIP_NETIF_LINK_CALLBACK
@@ -214,7 +390,51 @@ a lot of data that needs to be copied, this should be set high. */
  *   }
  */
 #ifndef LWIP_NETIF_TX_SINGLE_PBUF
-#define LWIP_NETIF_TX_SINGLE_PBUF 0
+#define LWIP_NETIF_TX_SINGLE_PBUF 1
+#endif
+
+/*
+   ----------------------------------------------
+   ---------- Sequential layer options ----------
+   ----------------------------------------------
+*/
+/**
+ * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
+ */
+#define LWIP_NETCONN 1
+
+/*
+   ------------------------------------
+   ---------- Socket options ----------
+   ------------------------------------
+*/
+/**
+ * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
+ */
+#define LWIP_SOCKET 1
+
+/**
+ * LWIP_SO_SNDTIMEO==1: Enable send timeout for sockets/netconns and
+ * SO_SNDTIMEO processing.
+ */
+#define LWIP_SO_SNDTIMEO 1
+
+/**
+ * LWIP_SO_RCVTIMEO==1: Enable receive timeout for sockets/netconns and
+ * SO_RCVTIMEO processing.
+ */
+#define LWIP_SO_RCVTIMEO 1
+
+/*
+   ----------------------------------------
+   ---------- Statistics options ----------
+   ----------------------------------------
+*/
+/**
+ * LWIP_STATS==1: Enable statistics collection in lwip_stats.
+ */
+#ifndef LWIP_STATS
+#define LWIP_STATS 0
 #endif
 
 /*
@@ -258,6 +478,47 @@ a lot of data that needs to be copied, this should be set high. */
 #define CHECKSUM_CHECK_TCP 1
 /* CHECKSUM_CHECK_ICMP==1: Check checksums by software for incoming ICMP packets.*/
 #define CHECKSUM_GEN_ICMP  1
+#endif
+
+/*
+   ------------------------------------
+   ---------- Thread options ----------
+   ------------------------------------
+*/
+#ifndef TCPIP_THREAD_NAME
+#define TCPIP_THREAD_NAME "tcpip"
+#endif
+
+#ifndef TCPIP_THREAD_STACKSIZE
+#define TCPIP_THREAD_STACKSIZE 2048
+#endif
+
+#ifndef TCPIP_MBOX_SIZE
+#define TCPIP_MBOX_SIZE 64
+#endif
+
+#ifndef DEFAULT_RAW_RECVMBOX_SIZE
+#define DEFAULT_RAW_RECVMBOX_SIZE 1000
+#endif
+
+#ifndef DEFAULT_UDP_RECVMBOX_SIZE
+#define DEFAULT_UDP_RECVMBOX_SIZE 1000
+#endif
+
+#ifndef DEFAULT_TCP_RECVMBOX_SIZE
+#define DEFAULT_TCP_RECVMBOX_SIZE 1000
+#endif
+
+#ifndef DEFAULT_ACCEPTMBOX_SIZE
+#define DEFAULT_ACCEPTMBOX_SIZE 1000
+#endif
+
+#ifndef DEFAULT_THREAD_STACKSIZE
+#define DEFAULT_THREAD_STACKSIZE 2048
+#endif
+
+#ifndef TCPIP_THREAD_PRIO
+#define TCPIP_THREAD_PRIO 10
 #endif
 
 /*
@@ -381,61 +642,17 @@ a lot of data that needs to be copied, this should be set high. */
 
 #endif
 
-/*
-   ---------------------------------
-   ---------- OS options ----------
-   ---------------------------------
-*/
-#ifndef TCPIP_THREAD_NAME
-#define TCPIP_THREAD_NAME "tcpip"
-#endif
-
-#ifndef TCPIP_THREAD_STACKSIZE
-#define TCPIP_THREAD_STACKSIZE 2048
-#endif
-
-#ifndef TCPIP_MBOX_SIZE
-#define TCPIP_MBOX_SIZE 8
-#endif
-
-#ifndef DEFAULT_RAW_RECVMBOX_SIZE
-#define DEFAULT_RAW_RECVMBOX_SIZE 50
-#endif
-
-#ifndef DEFAULT_UDP_RECVMBOX_SIZE
-#define DEFAULT_UDP_RECVMBOX_SIZE 50
-#endif
-
-#ifndef DEFAULT_TCP_RECVMBOX_SIZE
-#define DEFAULT_TCP_RECVMBOX_SIZE 50
-#endif
-
-#ifndef DEFAULT_ACCEPTMBOX_SIZE
-#define DEFAULT_ACCEPTMBOX_SIZE 50
-#endif
-
-#ifndef DEFAULT_THREAD_STACKSIZE
-#define DEFAULT_THREAD_STACKSIZE 500
-#endif
-
-#ifndef TCPIP_THREAD_PRIO
-#define TCPIP_THREAD_PRIO 10
-#endif
-
-#define LWIP_COMPAT_MUTEX       0
-#define LWIP_TCPIP_CORE_LOCKING 1
-
-#ifndef LWIP_TCPIP_CORE_LOCKING_INPUT
-#define LWIP_TCPIP_CORE_LOCKING_INPUT 1
-#endif
+// bouffalo patch
+#define LWIP_COMPAT_MUTEX        0
+#define LWIP_PROVIDE_ERRNO       1
+#define LWIP_TIMEVAL_PRIVATE     0
+#define LWIP_RAND                rand
+#define LWIP_SUPPORT_CUSTOM_PBUF 1
+#define LWIP_DNS_SERVER          0
 
 #ifndef LWIP_MEM_SECTION
 #define LWIP_MEM_SECTION ".bss"
 #endif
-
-// bouffalo patch
-#define LWIP_DNS_SERVER          0
-#define LWIP_SUPPORT_CUSTOM_PBUF 1
 
 #define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)] __attribute__((section(LWIP_MEM_SECTION)))
 
