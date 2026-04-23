@@ -705,7 +705,6 @@ static void usbh_hub_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     }
     usb_hc_deinit(bus);
     usb_osal_mq_delete(bus->hub_mq);
-    bus->hub_mq = NULL;
     usb_osal_sem_give(bus->hub_sem);
     usb_osal_thread_delete(NULL);
 }
@@ -756,9 +755,13 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
     if (!bus->hub_mq || !bus->hub_sem) {
         return -USB_ERR_INVAL;
     }
+
     usb_osal_mq_send(bus->hub_mq, (uintptr_t)NULL);
     usb_osal_sem_take(bus->hub_sem, USB_OSAL_WAITING_FOREVER);
     usb_osal_sem_delete(bus->hub_sem);
+    bus->hub_mq = NULL;
+    bus->hub_sem = NULL;
+
     bus->event_handler(bus->busid, USB_HUB_INDEX_ANY, USB_HUB_PORT_ANY, USB_INTERFACE_ANY, USBH_EVENT_DEINIT);
 
     return 0;
