@@ -259,7 +259,30 @@ static int dfu_class_interface_request_handler(uint8_t busid, struct usb_setup_p
                     (*data)[5] = 0; /* iString */
                     *len = 6;
 
+                    break;
+                case DFU_REQUEST_GETSTATE:
+                    (*data)[0] = g_usbd_dfu.dfu_state;
+                    *len = 1;
+                    break;
+
+                default:
+                    return -1;
+            }
+            break;
+        case DFU_STATE_DFU_MANIFEST_WAIT_RESET:
+            switch (setup->bRequest) {
+                case DFU_REQUEST_GETSTATUS:
+
+                    (*data)[0] = DFU_STATUS_OK; /* bStatus */
+                    (*data)[1] = 0;
+                    (*data)[2] = 0;
+                    (*data)[3] = 0;
+                    (*data)[4] = g_usbd_dfu.dfu_state;
+                    (*data)[5] = 0; /* iString */
+                    *len = 6;
+
                     usbd_dfu_reset();
+
                     break;
                 case DFU_REQUEST_GETSTATE:
                     (*data)[0] = g_usbd_dfu.dfu_state;
