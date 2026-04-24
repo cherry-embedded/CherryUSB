@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>基于现有 demo 快速验证 &mdash; CherryUSB 1.6.0 documentation</title>
+  <title>基于现有 demo 快速验证 &mdash; CherryUSB 1.6.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=72d88caf"></script>
+      <script src="../_static/documentation_options.js?v=d6a008b6"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -53,18 +53,18 @@
 <li class="toctree-l2"><a class="reference internal" href="#essemi-sdk">基于 Essemi 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#artinchip-sdk">基于 Artinchip 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#kendryte-canmv-k230-sdk">基于 Kendryte canmv-k230 系列（官方 SDK 支持）</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#nxp-mcx">基于 NXP MCX 系列芯片</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sifli-sdk">基于 SiFli 系列芯片（官方 SDK 支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nxp-mcx">基于 NXP MCX 系列芯片</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#rp2040-rp2035-sdk">基于 RP2040/RP2035 芯片（官方 SDK 即将支持）</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#bekencorp-sdk">基于 Bekencorp 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st">基于 ST 系列芯片</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#usb-device">USB Device 移植要点</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usb-host">USB Host 移植要点</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#sophgo-sdk">基于 Sophgo 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#actionstech-sdk">基于 Actionstech 系列芯片（官方 SDK 支持）</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sdk">基于新塘系列芯片（官方 SDK 支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sophgo-sdk">基于 Sophgo 系列芯片（官方 SDK 支持）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bekencorp-sdk">基于 Bekencorp 系列芯片（官方 SDK 支持）</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="transplant.html">芯片通用移植指南</a></li>
@@ -362,28 +362,6 @@
 </tbody>
 </table>
 </section>
-<section id="nxp-mcx">
-<h2>基于 NXP MCX 系列芯片<a class="headerlink" href="#nxp-mcx" title="Link to this heading"></a></h2>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 33.3%" />
-<col style="width: 33.3%" />
-<col style="width: 33.3%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Repo url</p></th>
-<th class="head"><p>USB IP</p></th>
-<th class="head"><p>Version</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><a class="reference external" href="https://github.com/CherryUSB/cherryusb_mcx">https://github.com/CherryUSB/cherryusb_mcx</a>  <a class="reference external" href="https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx">https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx</a></p></td>
-<td><p>CHIPIDEA/kinetis</p></td>
-<td><p>less than latest</p></td>
-</tr>
-</tbody>
-</table>
-</section>
 <section id="sifli-sdk">
 <h2>基于 SiFli 系列芯片（官方 SDK 支持）<a class="headerlink" href="#sifli-sdk" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
@@ -401,6 +379,28 @@
 <tbody>
 <tr class="row-even"><td><p><a class="reference external" href="https://github.com/OpenSiFli/SiFli-SDK">https://github.com/OpenSiFli/SiFli-SDK</a></p></td>
 <td><p>MUSB</p></td>
+<td><p>less than latest</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="nxp-mcx">
+<h2>基于 NXP MCX 系列芯片<a class="headerlink" href="#nxp-mcx" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Repo url</p></th>
+<th class="head"><p>USB IP</p></th>
+<th class="head"><p>Version</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/CherryUSB/cherryusb_mcx">https://github.com/CherryUSB/cherryusb_mcx</a>  <a class="reference external" href="https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx">https://github.com/RT-Thread/rt-thread/tree/master/bsp/nxp/mcx</a></p></td>
+<td><p>CHIPIDEA/kinetis</p></td>
 <td><p>less than latest</p></td>
 </tr>
 </tbody>
@@ -424,28 +424,6 @@
 <tr class="row-even"><td><p><a class="reference external" href="https://github.com/CherryUSB/pico-examples">https://github.com/CherryUSB/pico-examples</a>  <a class="reference external" href="https://github.com/CherryUSB/pico-sdk">https://github.com/CherryUSB/pico-sdk</a></p></td>
 <td><p>RP2040</p></td>
 <td><p>less than latest</p></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="bekencorp-sdk">
-<h2>基于 Bekencorp 系列芯片（官方 SDK 支持）<a class="headerlink" href="#bekencorp-sdk" title="Link to this heading"></a></h2>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 33.3%" />
-<col style="width: 33.3%" />
-<col style="width: 33.3%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Repo url</p></th>
-<th class="head"><p>USB IP</p></th>
-<th class="head"><p>Version</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><a class="reference external" href="https://github.com/bekencorp/armino">https://github.com/bekencorp/armino</a></p></td>
-<td><p>MUSB</p></td>
-<td><p>equal to v0.7.0</p></td>
 </tr>
 </tbody>
 </table>
@@ -647,6 +625,14 @@
 </figure>
 </section>
 </section>
+<section id="actionstech-sdk">
+<h2>基于 Actionstech 系列芯片（官方 SDK 支持）<a class="headerlink" href="#actionstech-sdk" title="Link to this heading"></a></h2>
+<p>Not opensource， 请联系 Actionstech 官方</p>
+</section>
+<section id="sdk">
+<h2>基于新塘系列芯片（官方 SDK 支持）<a class="headerlink" href="#sdk" title="Link to this heading"></a></h2>
+<p>Not opensource， 请联系 新塘 官方</p>
+</section>
 <section id="sophgo-sdk">
 <h2>基于 Sophgo 系列芯片（官方 SDK 支持）<a class="headerlink" href="#sophgo-sdk" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
@@ -669,13 +655,27 @@
 </tbody>
 </table>
 </section>
-<section id="actionstech-sdk">
-<h2>基于 Actionstech 系列芯片（官方 SDK 支持）<a class="headerlink" href="#actionstech-sdk" title="Link to this heading"></a></h2>
-<p>Not opensource， 请联系 Actionstech 官方</p>
-</section>
-<section id="sdk">
-<h2>基于新塘系列芯片（官方 SDK 支持）<a class="headerlink" href="#sdk" title="Link to this heading"></a></h2>
-<p>Not opensource， 请联系 新塘 官方</p>
+<section id="bekencorp-sdk">
+<h2>基于 Bekencorp 系列芯片（官方 SDK 支持）<a class="headerlink" href="#bekencorp-sdk" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Repo url</p></th>
+<th class="head"><p>USB IP</p></th>
+<th class="head"><p>Version</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/bekencorp/armino">https://github.com/bekencorp/armino</a></p></td>
+<td><p>MUSB</p></td>
+<td><p>equal to v0.7.0</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 
