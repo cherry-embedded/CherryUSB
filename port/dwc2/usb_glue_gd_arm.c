@@ -9,7 +9,7 @@
 #include "usb_dwc2_param.h"
 #include "board_config.h"
 
-const struct dwc2_user_params param_pa11_pa12 = {
+static const struct dwc2_user_params param_pa11_pa12 = {
     .phy_type = DWC2_PHY_TYPE_PARAM_FS,
     .device_dma_enable = false,
     .device_dma_desc_enable = false,
@@ -35,8 +35,8 @@ const struct dwc2_user_params param_pa11_pa12 = {
     .total_fifo_size = 320 // 1280 byte
 };
 
-#if CONFIG_USBDEV_EP_NUM != 4 && CONFIG_USBDEV_EP_NUM != 6
-#error "gd32 only has 4 endpoints for pa11/pa12 and 6 endpoints for pb14/pb15"
+#if CONFIG_USBDEV_EP_NUM != 4 
+#error "gd32 only has 4 endpoints for pa11/pa12"
 #endif
 
 void usb_dc_low_level_init(uint8_t busid) {
@@ -63,11 +63,14 @@ void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
     }
 #endif
 }
+#endif
 void dwc2_override_hw_params(uint32_t reg_base, struct dwc2_hw_params *hw) {
     /* HWCFG2 reads 0, this is unknown why */
-    hw->num_dev_ep = 4;
+    if(reg_base == 0x50000000UL) {
+        hw->num_dev_ep = 4;
+    }
+    /* TODO: For other GD32, potentially will need to update like this as well*/
 }
-#endif
 
 void usbd_dwc2_delay_ms(uint8_t ms)
 {
