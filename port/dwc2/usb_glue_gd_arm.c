@@ -67,9 +67,9 @@ void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
 void dwc2_override_hw_params(uint32_t reg_base, struct dwc2_hw_params *hw) {
     /* HWCFG2 reads 0, this is unknown why */
     if(reg_base == 0x50000000UL) {
-        hw->num_dev_ep = 4;
+        hw->num_dev_ep = CONFIG_USBDEV_EP_NUM - 1;
     }
-    /* TODO: For other GD32, potentially will need to update like this as well*/
+    /* TODO: For other GD32, potentially will need to update like this as well */
 }
 
 void usbd_dwc2_delay_ms(uint8_t ms)
