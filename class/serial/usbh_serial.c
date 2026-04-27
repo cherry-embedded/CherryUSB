@@ -14,8 +14,6 @@
 #define DEV_FORMAT_VENDOR  "/dev/ttyUSB%d"
 #define DEV_FORMAT_CDC_ACM "/dev/ttyACM%d"
 
-#define CONFIG_USBHOST_MAX_SERIAL_CLASS 4
-
 static struct usbh_serial g_serial_class[CONFIG_USBHOST_MAX_SERIAL_CLASS];
 
 static uint32_t g_devinuse = 0;
