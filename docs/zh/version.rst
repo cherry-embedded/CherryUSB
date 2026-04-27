@@ -180,3 +180,13 @@ v1.6.0
 - 增加 ti xmc，infineon edge e8x port 支持
 - dwc2 增加 usbd_dwc2_get_system_clock 替换 SystemCoreClock；删除 __UNALIGNED_UINT32_READ 和 __UNALIGNED_UINT32_WRITE 宏；读取 setup 个数设置为 1个；第一次读取 setup 移动到 USB_OTG_GINTSTS_ENUMDNE 中断中
 - dwc2/ehci 增加 roothub 速度设置
+
+v1.6.1
+----------------------
+
+- 新增 USB 副屏驱动
+- 重构 DFU device 驱动
+- 重构主机报告描述符解析驱动
+- cherryrb 和 cherrymp 组件内置
+- 主机 hub 线程释放改成使用 mq 替代互斥锁
+- 部分 bugfix 和安全性代码检查

@@ -127,6 +127,21 @@ CSH_CMD_EXPORT(lsusb, );
 CSH_CMD_EXPORT(lshid, );
 CSH_CMD_EXPORT(usbh_serial, );
 
+int usbh_init(int argc, char **argv)
+{
+    usbh_initialize(0, CONFIG_HPM_USBH_BASE, NULL);
+    return 0;
+}
+
+CSH_CMD_EXPORT(usbh_init, usbh_init);
+
+int usbh_deinit(int argc, char **argv)
+{
+    usbh_deinitialize(0);
+    return 0;
+}
+
+CSH_CMD_EXPORT(usbh_deinit, usbh_deinit);
 #ifdef CONFIG_USB_EHCI_ISO
 // clang-format off
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t src_buffer[1024 * 10];
