@@ -6,8 +6,8 @@ project = 'CherryUSB'
 copyright = '2022 ~ 2026, sakumisu'
 author = 'sakumisu'
 
-release = '1.6.0'
-version = '1.6.0'
+release = '1.6.1'
+version = '1.6.1'
 
 # -- General configuration
 
