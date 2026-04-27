@@ -86,16 +86,18 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2, disable log):
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)      |  RAM (Byte)   |  Heap (Byte)     |
 |:-------------:|:--------------:|:-------------------------:|:-------------:|:----------------:|
-|usbd_core.c    |  ~4500          | (512(default) + 320) * bus | 0           | 0                |
-|usbd_cdc_acm.c |  ~900           | 0                         | 0            | 0                |
-|usbd_msc.c     |  ~5000          | (128 + 512(default)) * bus | 16 * bus    | 0                |
-|usbd_hid.c     |  ~300           | 0                         | 0            | 0                |
-|usbd_audio.c   |  ~4000          | 0                         | 0            | 0                |
-|usbd_video.c   |  ~7000          | 0                         | 132 * bus    | 0                |
-|usbd_rndis.c   |  ~2500          | 2 * 1580(default)+156+8   | 80           | 0                |
-|usbd_cdc_ecm.c |  ~900           | 2 * 1514(default)+16      | 42           | 0                |
+|usbd_core.c    |  ~4000          | (512(default) + 320) * bus | 8           | 0                |
+|usbd_cdc_acm.c |  ~400           | 0                         | 0            | 0                |
+|usbd_msc.c     |  ~3200          | (128 + 512(default)) * bus | 16 * bus    | 0                |
+|usbd_hid.c     |  ~200           | 0                         | 0            | 0                |
+|usbd_audio.c   |  ~1300          | 0                         | 0            | 0                |
+|usbd_video.c   |  ~2500          | 0                         | 124 * bus    | 0                |
+|usbd_rndis.c   |  ~2000          | 2 * 1580(default)+156+8   | 76           | 0                |
+|usbd_cdc_ecm.c |  ~1500          | 2 * 1514(default)+16      | 42           | 0                |
 |usbd_mtp.c     |  ~9000          | 2048(default)+128         | sizeof(struct mtp_object) * n| 0 |
-|usbd_dfu.c     |  ~2200          | 0                         | 45                           | 0 |
+|usbd_dfu.c     |  ~800           | 0                         | 1                           | 0 |
+
+![usbdevice_usage](docs/assets/usbdevice_usage.png)
 
 ## Host Stack Overview
 
@@ -128,19 +130,27 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2, disable log):
 
 |   file        |  FLASH (Byte)  |  No Cache RAM (Byte)            |  RAM (Byte)                 |  Heap (Byte) |
 |:-------------:|:--------------:|:-------------------------------:|:---------------------------:|:------------:|
-|usbh_core.c    |  ~4500 | (512(default) + 8 * (1+x) *n) * bus | sizeof(struct usbh_hub) * bus     | raw_config_desc |
-|usbh_hub.c     |  ~3500          | (32 + 4 * (1+x)) * bus    | 12 + sizeof(struct usbh_hub) * x   | 0          |
-|usbh_cdc_acm.c |  ~600           | 7 * x            | 4  + sizeof(struct usbh_cdc_acm) * x        | 0          |
-|usbh_msc.c     |  ~2000          | 128 * x            | 4  + sizeof(struct usbh_msc) * x          | 0          |
-|usbh_hid.c     |  ~800           | 64 * x           | 4  + sizeof(struct usbh_hid) * x            | 0          |
-|usbh_video.c   |  ~5000          | 128 * x           | 4  + sizeof(struct usbh_video) * x         | 0          |
-|usbh_audio.c   |  ~4000          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0          |
+|usbh_core.c    |  ~4000 | (512(default) + 8 * (1+x) *n) * bus | sizeof(struct usbh_hub) * bus     | raw_config_desc |
+|usbh_hub.c     |  ~3000          | (32 + 4 * (1+x)) * bus    | 12 + sizeof(struct usbh_hub) * x   | 0          |
+|usbh_msc.c     |  ~1500          | 128 * x            | 4  + sizeof(struct usbh_msc) * x          | 0          |
+|usbh_hid.c     |  ~2000          | 64 * x           | 4  + sizeof(struct usbh_hid) * x            | 0          |
+|usbh_video.c   |  ~2500          | 128 * x           | 4  + sizeof(struct usbh_video) * x         | 0          |
+|usbh_audio.c   |  ~3000          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0          |
 |usbh_rndis.c   |  ~3000          | 512 + 2 * 2048(default)| sizeof(struct usbh_rndis) * 1         | 0          |
 |usbh_cdc_ecm.c |  ~1500          | 2 * 1514 + 16           | sizeof(struct usbh_cdc_ecm) * 1      | 0          |
 |usbh_cdc_ncm.c |  ~2000          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1| 0          |
 |usbh_bluetooth.c |  ~1000        | 2 * 2048(default)   | sizeof(struct usbh_bluetooth) * 1        | 0          |
-|usbh_asix.c    |  ~7000          | 2 * 2048(default) + 16 + 32  | sizeof(struct usbh_asix) * 1    | 0          |
-|usbh_rtl8152.c |  ~9000          | 16K+ 2K(default) + 2 + 32 | sizeof(struct usbh_rtl8152) * 1    | 0          |
+|usbh_asix.c    |  ~3500          | 2 * 2048(default) + 16 + 32  | sizeof(struct usbh_asix) * 1    | 0          |
+|usbh_rtl8152.c |  ~5500          | 16K+ 2K(default) + 2 + 32 | sizeof(struct usbh_rtl8152) * 1    | 0          |
+|usbh_serial.c  |  ~3000          | (512 * 2 + 32 * 2) * x            | sizeof(struct usbh_serial) * x (2048 default)       | 0          |
+|usbh_cdc_acm.c |  ~1000          | 0            | 0        | 0          |
+|usbh_ch340.c   |  ~1200          | 0            | 0        | 0          |
+|usbh_ftdi.c    |  ~1200          | 0            | 0        | 0          |
+|usbh_cp2102.c  |  ~2200          | 0            | 0        | 0          |
+|usbh_pl2303.c  |  ~2500          | 0            | 0        | 0          |
+|usbh_gsm.c     |  ~300           | 0            | 0        | 0          |
+
+![usbhost_usage](docs/assets/usbhost_usage.png)
 
 Among them, `sizeof(struct usbh_hub)` and `sizeof(struct usbh_hubport)` are affected by the following macros:
 
