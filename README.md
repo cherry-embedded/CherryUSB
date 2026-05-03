@@ -90,7 +90,7 @@ CherryUSB Device Stack resource usage (GCC 10.2 with -O2, disable log):
 |usbd_cdc_acm.c |  ~400           | 0                         | 0            | 0                |
 |usbd_msc.c     |  ~3200          | (128 + 512(default)) * bus | 16 * bus    | 0                |
 |usbd_hid.c     |  ~200           | 0                         | 0            | 0                |
-|usbd_audio.c   |  ~1300          | 0                         | 0            | 0                |
+|usbd_audio.c   |  ~1300          | 0                         | 8 * bus      | 0                |
 |usbd_video.c   |  ~2500          | 0                         | 124 * bus    | 0                |
 |usbd_rndis.c   |  ~2000          | 2 * 1580(default)+156+8   | 76           | 0                |
 |usbd_cdc_ecm.c |  ~1500          | 2 * 1514(default)+16      | 42           | 0                |
