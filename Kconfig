@@ -76,6 +76,8 @@ if CHERRYUSB
                 bool "aic"
             config CHERRYUSB_DEVICE_RP2040
                 bool "rp2040"
+            config CHERRYUSB_DEVICE_RENESAS
+                bool "renesas"
             config CHERRYUSB_DEVICE_CH32
                 bool "ch32"
             config CHERRYUSB_DEVICE_PUSB2
