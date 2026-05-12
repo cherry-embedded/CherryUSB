@@ -36,7 +36,7 @@ Please note that host must support dma mode.
 
 ### Espressif
 
-- ESP32S2、ESP32S3、ESP32P4
+- ESP32S2、ESP32S3、ESP32P4、ESP32S31
 
 ### Sophgo
 
