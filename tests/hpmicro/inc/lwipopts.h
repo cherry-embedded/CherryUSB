@@ -17,7 +17,9 @@
  * available (and you have to watch out for yourself that you don't access
  * lwIP functions/structures from more than one context at a time!)
  */
+#ifndef NO_SYS
 #define NO_SYS 0
+#endif
 
 /**
  * LWIP_TIMERS==0: Drop support for sys_timeout and lwip-internal cyclic timers.
@@ -35,7 +37,7 @@
  * interrupt context!
  */
 #ifndef LWIP_TCPIP_CORE_LOCKING_INPUT
-#define LWIP_TCPIP_CORE_LOCKING_INPUT 1
+#define LWIP_TCPIP_CORE_LOCKING_INPUT 0
 #endif
 
 /**
@@ -45,7 +47,7 @@
  * ATTENTION: This is required when using lwIP from more than one context! If
  * you disable this, you must be sure what you are doing!
  */
-#define SYS_LIGHTWEIGHT_PROT 1
+#define SYS_LIGHTWEIGHT_PROT (!NO_SYS)
 
 /*
    ------------------------------------
@@ -63,7 +65,7 @@
    lwIP is compiled. 4 byte alignment -> define MEM_ALIGNMENT to 4, 2
    byte alignment -> define MEM_ALIGNMENT to 2. */
 #ifndef MEM_ALIGNMENT
-#define MEM_ALIGNMENT 64
+#define MEM_ALIGNMENT 4
 #endif
 
 /* MEM_SIZE: the size of the heap memory. If the application will send
@@ -83,7 +85,7 @@ a lot of data that needs to be copied, this should be set high. */
  * this should be set high.
  */
 #ifndef MEMP_NUM_PBUF
-#define MEMP_NUM_PBUF 100
+#define MEMP_NUM_PBUF 32
 #endif
 
 /**
@@ -124,7 +126,7 @@ a lot of data that needs to be copied, this should be set high. */
  * (requires the LWIP_TCP option)
  */
 #ifndef MEMP_NUM_TCP_SEG
-#define MEMP_NUM_TCP_SEG 40
+#define MEMP_NUM_TCP_SEG TCP_SND_QUEUELEN
 #endif
 
 /**
@@ -137,19 +139,12 @@ a lot of data that needs to be copied, this should be set high. */
 #endif
 
 /**
- * MEMP_NUM_NETBUF: the number of struct netbufs.
- * (only needed if you use the sequential API, like api_lib.c)
+ * MEMP_NUM_TCPIP_MSG_INPKT: the number of struct tcpip_msg, which are used
+ * for incoming packets.
+ * (only needed if you use tcpip.c)
  */
-#ifndef MEMP_NUM_NETBUF
-#define MEMP_NUM_NETBUF 2
-#endif
-
-/**
- * MEMP_NUM_NETCONN: the number of struct netconns.
- * (only needed if you use the sequential API, like api_lib.c)
- */
-#ifndef MEMP_NUM_NETCONN
-#define MEMP_NUM_NETCONN 4
+#ifndef MEMP_NUM_TCPIP_MSG_INPKT
+#define MEMP_NUM_TCPIP_MSG_INPKT        (TCPIP_MBOX_SIZE / 2)
 #endif
 
 /*
@@ -183,7 +178,7 @@ a lot of data that needs to be copied, this should be set high. */
  * interfaces. If you are going to run lwIP on a device with only one network
  * interface, define this to 0.
  */
-#define IP_FORWARD 1
+#define IP_FORWARD (!LWIP_SINGLE_NETIF)
 
 /**
  * IP_REASSEMBLY==1: Reassemble incoming fragmented IP packets. Note that
@@ -296,7 +291,7 @@ a lot of data that needs to be copied, this should be set high. */
  * To achieve good performance, this should be at least 2 * TCP_MSS.
  */
 #ifndef TCP_SND_BUF
-#define TCP_SND_BUF (8 * TCP_MSS)
+#define TCP_SND_BUF (16 * TCP_MSS)
 #endif
 
 /**
@@ -321,7 +316,7 @@ a lot of data that needs to be copied, this should be set high. */
  * PBUF_POOL_SIZE: the number of buffers in the pbuf pool.
  */
 #ifndef PBUF_POOL_SIZE
-#define PBUF_POOL_SIZE 16
+#define PBUF_POOL_SIZE 32
 #endif
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
@@ -353,7 +348,7 @@ a lot of data that needs to be copied, this should be set high. */
 /**
  * LWIP_NETIF_API==1: Support netif api (in netifapi.c)
  */
-#define LWIP_NETIF_API 1
+#define LWIP_NETIF_API (!NO_SYS)
 
 /**
  * LWIP_NETIF_STATUS_CALLBACK==1: Support a callback function whenever an interface
@@ -401,7 +396,7 @@ a lot of data that needs to be copied, this should be set high. */
 /**
  * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
  */
-#define LWIP_NETCONN 1
+#define LWIP_NETCONN (!NO_SYS)
 
 /*
    ------------------------------------
@@ -411,7 +406,7 @@ a lot of data that needs to be copied, this should be set high. */
 /**
  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
  */
-#define LWIP_SOCKET 1
+#define LWIP_SOCKET (!NO_SYS)
 
 /**
  * LWIP_SO_SNDTIMEO==1: Enable send timeout for sockets/netconns and
