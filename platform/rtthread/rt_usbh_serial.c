@@ -146,6 +146,18 @@ const static struct rt_device_ops usbh_serial_ops = {
 };
 #endif
 
+static void rt_usbh_serial_rx_complete_callback(struct usbh_serial *serial, int nbytes)
+{
+    struct rt_device *device;
+    RT_ASSERT(serial != RT_NULL && serial->user_data != RT_NULL);
+
+    device = (struct rt_device *)serial->user_data;
+
+    if (device->rx_indicate) {
+        device->rx_indicate(device, nbytes);
+    }
+}
+
 rt_err_t usbh_serial_register(struct usbh_serial *serial)
 {
     rt_err_t ret;
@@ -175,6 +187,7 @@ rt_err_t usbh_serial_register(struct usbh_serial *serial)
 #endif
     device->user_data = serial;
     serial->user_data = device;
+    serial->rx_complete_callback = rt_usbh_serial_rx_complete_callback;
 
     /* skip /dev/ to avoid BAD file */
     const char *dev_name = serial->hport->config.intf[serial->intf].devname;
