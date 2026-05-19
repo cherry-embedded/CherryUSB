@@ -76,6 +76,10 @@ void usbh_lwip_eth_output_common(struct pbuf *p, uint8_t *buf)
 
 void usbh_lwip_eth_input_common(struct netif *netif, uint8_t *buf, uint32_t len)
 {
+    if (len > 1514) {
+        USB_LOG_ERR("Ethernet frame too large: %" PRIu32 "\r\n", len);
+        return;
+    }
 #if LWIP_TCPIP_CORE_LOCKING_INPUT
     pbuf_type type = PBUF_REF;
 #else
