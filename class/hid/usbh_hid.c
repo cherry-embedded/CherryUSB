@@ -122,7 +122,7 @@ int usbh_hid_set_protocol(struct usbh_hid *hid_class, uint8_t protocol)
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = HID_REQUEST_SET_PROTOCOL;
     setup->wValue = protocol;
-    setup->wIndex = 0;
+    setup->wIndex = hid_class->intf;
     setup->wLength = 0;
 
     return usbh_control_transfer(hid_class->hport, setup, NULL);
@@ -164,7 +164,7 @@ int usbh_hid_set_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = HID_REQUEST_SET_REPORT;
     setup->wValue = (uint16_t)(((uint32_t)report_type << 8U) | (uint32_t)report_id);
-    setup->wIndex = 0;
+    setup->wIndex = hid_class->intf;
     setup->wLength = buflen;
 
     return usbh_control_transfer(hid_class->hport, setup, buffer);
@@ -182,7 +182,7 @@ int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
     setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = HID_REQUEST_GET_REPORT;
     setup->wValue = (uint16_t)(((uint32_t)report_type << 8U) | (uint32_t)report_id);
-    setup->wIndex = 0;
+    setup->wIndex = hid_class->intf;
     setup->wLength = buflen;
 
     return usbh_control_transfer(hid_class->hport, setup, buffer);
