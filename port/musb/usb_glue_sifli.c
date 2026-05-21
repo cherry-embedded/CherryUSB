@@ -51,6 +51,7 @@ void usb_dc_low_level_init(uint8_t busid)
 
 #ifdef SOC_SF32LB58X
     //hwp_usbc->utmicfg12 = hwp_usbc->utmicfg12 | 0x3; //set xo_clk_sel
+    hwp_usbc->utmicfg23 = 0xd8;
     hwp_usbc->ldo25 = hwp_usbc->ldo25 | 0xa; //set psw_en and ldo25_en
     HAL_Delay(1);
     hwp_usbc->swcntl3 = 0x1;                    //set utmi_en for USB2.0
@@ -96,10 +97,14 @@ void usb_hc_low_level_init(struct usbh_bus *bus)
 
 #ifdef SOC_SF32LB58X
     //hwp_usbc->utmicfg12 = hwp_usbc->utmicfg12 | 0x3; //set xo_clk_sel
+    hwp_usbc->utmicfg23 = 0xd8;
     hwp_usbc->ldo25 = hwp_usbc->ldo25 | 0xa; //set psw_en and ldo25_en
     HAL_Delay(1);
     hwp_usbc->swcntl3 = 0x1;                    //set utmi_en for USB2.0
     hwp_usbc->usbcfg = hwp_usbc->usbcfg | 0x40; //enable usb PLL.
+    hwp_usbc->dpbrxdisl = 0xff;
+    hwp_usbc->dpbtxdisl = 0xff;
+    hwp_usbc->utmicfg25 = hwp_usbc->utmicfg25 | 0xc0;
 #elif defined(SOC_SF32LB56X) || defined(SOC_SF32LB52X)
     hwp_hpsys_cfg->USBCR |= HPSYS_CFG_USBCR_DM_PD | HPSYS_CFG_USBCR_DP_EN | HPSYS_CFG_USBCR_USB_EN;
 #elif defined(SOC_SF32LB55X)
@@ -136,27 +141,46 @@ void usb_hc_low_level_deinit(struct usbh_bus *bus)
     HAL_RCC_DisableModule(RCC_MOD_USBC);
 }
 
-void musb_reset_prev(void)
+void musb_sifli_reset_port(struct usbh_bus *bus)
 {
+#define HWREGB(x) \
+    (*((volatile uint8_t *)(x)))
+
+#define USB_BASE (bus->hcd.reg_base)
+#define MUSB_POWER_OFFSET 0x01
+
+#if defined(SF32LB58X)
+    hwp_usbc->utmicfg25 |= 0xc0;
+    hwp_usbc->utmicfg21 = 0x23;
+    hwp_usbc->swcntl2 = 0x7c;
+    hwp_usbc->utmicfg0 = 0x30;
+#endif
+    HWREGB(USB_BASE + MUSB_POWER_OFFSET) |= USB_POWER_RESET;
 #if defined(SF32LB58X)
     hwp_usbc->rsvd0 = 0xc; //58
 #endif
-}
-
-void musb_reset_post(void)
-{
+    usb_osal_msleep(500);
+    HWREGB(USB_BASE + MUSB_POWER_OFFSET) &= ~(USB_POWER_RESET);
+    usb_osal_msleep(5);
 #if defined(SF32LB58X)
     hwp_usbc->rsvd0 = 0x0; //58
+    hwp_usbc->utmicfg25 &= ~0xc0;
+    hwp_usbc->utmicfg21 = 0x2f;
+    hwp_usbc->swcntl2 = 0x40;
+    hwp_usbc->utmicfg0 = 0x00;
 #endif
 }
+
 #endif
 
 void USBC_IRQHandler(void)
 {
+    rt_interrupt_enter();
 #ifdef PKG_CHERRYUSB_DEVICE
     USBD_IRQHandler(0);
 #endif
 #ifdef PKG_CHERRYUSB_HOST
     USBH_IRQHandler(0);
 #endif
+    rt_interrupt_leave();
 }
