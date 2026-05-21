@@ -354,7 +354,7 @@ __WEAK int usbd_dfu_write(uint16_t value, const uint8_t *data, uint16_t length)
     return 0;
 }
 
-__WEAK int usbd_dfu_read(uint16_t value, const uint8_t *data, uint16_t length, uint16_t *actual_length)
+__WEAK int usbd_dfu_read(uint16_t value, uint8_t *data, uint16_t length, uint16_t *actual_length)
 {
     return 0;
 }
