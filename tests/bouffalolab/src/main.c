@@ -21,8 +21,9 @@ static ATTR_NOINIT_PSRAM_SECTION USB_MEM_ALIGNX uint8_t frame_buffer1[640 * 480 
 static ATTR_NOINIT_PSRAM_SECTION USB_MEM_ALIGNX uint8_t frame_buffer2[640 * 480 * 2];
 static struct usbh_videoframe frame_pool[2];
 
-static ATTR_NOINIT_PSRAM_SECTION USB_MEM_ALIGNX uint8_t frame_buffer[AUDIO_MIC_EP_MPS * 8];
-static struct usbh_audioframe frame_pool2[8];
+#define AUDIP_MIC_POOL_SIZE (10)
+static ATTR_NOINIT_PSRAM_SECTION USB_MEM_ALIGNX uint8_t frame_mic_buffer[AUDIO_MIC_EP_MAX_MPS * AUDIO_MIC_ISO_PACKETS * AUDIP_MIC_POOL_SIZE];
+static struct usbh_audioframe frame_mic_pool[AUDIP_MIC_POOL_SIZE];
 
 void usbh_video_run(struct usbh_video *video_class)
 {
@@ -92,12 +93,12 @@ int main(void)
     extern void usbh_video_fps_init(void);
     usbh_video_fps_init();
 
-    for (uint8_t i = 0; i < 8; i++) {
-        frame_pool2[i].frame_buf = frame_buffer + i * AUDIO_MIC_EP_MPS;
-        frame_pool2[i].frame_bufsize = AUDIO_MIC_EP_MPS;
+    for (uint8_t i = 0; i < AUDIP_MIC_POOL_SIZE; i++) {
+        frame_mic_pool[i].frame_buf = frame_mic_buffer + i * AUDIO_MIC_EP_MAX_MPS * AUDIO_MIC_ISO_PACKETS;
+        frame_mic_pool[i].frame_bufsize = AUDIO_MIC_EP_MAX_MPS * AUDIO_MIC_ISO_PACKETS;
     }
 
-    usbh_audio_mic_stream_create(frame_pool2, 8);
+    usbh_audio_mic_stream_create(frame_mic_pool, AUDIP_MIC_POOL_SIZE);
     usb_osal_thread_create("uac_mic", 3072, 5, usbh_audio_mic_frame_thread, NULL);
 #endif
     vTaskStartScheduler();
@@ -191,4 +192,24 @@ int usbh_uac_stop(int argc, char **argv)
 }
 
 SHELL_CMD_EXPORT_ALIAS(usbh_uac_stop, usbh_uac_stop, usbh_uac_stop);
+
+int usbh_uac_volume(int argc, char **argv)
+{
+    struct usbh_audio *audio_class;
+
+    if (argc < 2) {
+        USB_LOG_ERR("please input correct command: usbh_uac_volume dB_val\r\n");
+        return -1;
+    }
+
+    audio_class = (struct usbh_audio *)usbh_find_class_instance("/dev/audio0");
+
+    int ret = usbh_audio_set_volume(audio_class, "mic", 0, atoi(argv[1]));
+    if (ret < 0) {
+        USB_LOG_ERR("set volume failed, ret: %d\r\n", ret);
+    }
+    return 0;
+}
+
+CSH_CMD_EXPORT(usbh_uac_volume, usbh_uac_volume);
 #endif
