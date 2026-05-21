@@ -489,13 +489,8 @@ void rndis_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     (void)busid;
 
-    if ((nbytes % usbd_get_ep_mps(0, ep)) == 0 && nbytes) {
-        /* send zlp */
-        usbd_ep_start_write(0, ep, NULL, 0);
-    } else {
-        usbd_rndis_data_send_done(g_rndis_tx_data_length);
-        g_rndis_tx_data_length = 0;
-    }
+    usbd_rndis_data_send_done(g_rndis_tx_data_length);
+    g_rndis_tx_data_length = 0;
 }
 
 void rndis_int_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
@@ -515,6 +510,11 @@ int usbd_rndis_start_write(uint8_t *buf, uint32_t len)
 
     if (g_rndis_tx_data_length > 0) {
         return -USB_ERR_BUSY;
+    }
+
+    if((len % usbd_get_ep_mps(0, rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr)) == 0) {
+        /* If the data length is a multiple of the endpoint max packet size, add one byte to indicate the end of the transfer. */
+        len += 1;
     }
 
     g_rndis_tx_data_length = len;
