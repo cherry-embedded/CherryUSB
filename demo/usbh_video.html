@@ -98,7 +98,11 @@
 <li class="toctree-l1"><a class="reference internal" href="usbh_bluetooth.html">BTBLE Host</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_wifi.html">WIFI Host</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_audio.html">Audio Host</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Video Host</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Video Host</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">使用流程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">宏的说明</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="usb_otg.html">USB OTG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_vendor.html">Vendor Device 驱动编写</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_vendor.html">Vendor Host 驱动编写</a></li>
@@ -164,8 +168,64 @@
 <h1>Video Host<a class="headerlink" href="#video-host" title="Link to this heading"></a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Host UVC 为商用收费，请联系官方购买授权。</p>
+<p>Host UVC 框架和 ISO 驱动为商用收费，请联系官方购买授权。</p>
 </div>
+<section id="id1">
+<h2>使用流程<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>注册 frame 内存池，通常设计为双buffer。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">frame_buffer1</span><span class="p">[</span><span class="n">IMAGE_WIDTH</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">IMAGE_HEIGHT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">frame_buffer2</span><span class="p">[</span><span class="n">IMAGE_WIDTH</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">IMAGE_HEIGHT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_videoframe</span><span class="w"> </span><span class="n">frame_pool</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+<span class="n">frame_pool</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">frame_buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">frame_buffer1</span><span class="p">;</span>
+<span class="n">frame_pool</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">frame_bufsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IMAGE_WIDTH</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">IMAGE_HEIGHT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">frame_pool</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">frame_buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">frame_buffer2</span><span class="p">;</span>
+<span class="n">frame_pool</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">frame_bufsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IMAGE_WIDTH</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">IMAGE_HEIGHT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+
+<span class="n">usbh_video_stream_create</span><span class="p">(</span><span class="n">frame_pool</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>创建 frame 接收线程并处理。frame-&gt;frame_format 指示当前帧的格式，frame-&gt;frame_buf 指向帧数据，frame-&gt;frame_size 指示帧数据大小。处理完成后需要调用 usbh_video_stream_enqueue 将 frame 重新入队。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_video_frame_thread</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">argument</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_videoframe</span><span class="w"> </span><span class="o">*</span><span class="n">frame</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_video_stream_dequeue</span><span class="p">(</span><span class="o">&amp;</span><span class="n">frame</span><span class="p">,</span><span class="w"> </span><span class="mh">0xfffffff</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;frame buf:%p,frame len:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">frame_buf</span><span class="p">,</span><span class="w"> </span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">frame_size</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">usbh_video_stream_enqueue</span><span class="p">(</span><span class="n">frame</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">usb_osal_thread_create</span><span class="p">(</span><span class="s">&quot;uvc_frame&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">3072</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_video_frame_thread</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><cite>usbh_video_fps_init</cite> 函数辅助打印帧率</p></li>
+<li><p>调用 <cite>usbh_video_stream_start</cite> 启动视频流，调用 <cite>usbh_video_stream_stop</cite> 停止视频流。</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>宏的说明<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define VIDEO_ISO_PACKETS  (8 * 2)</span>
+<span class="cp">#define VIDEO_EP_MAX_MPS   3072</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>VIDEO_ISO_PACKETS：每次传输的帧或者微帧的个数， <strong>需要是 8 的倍数，因此摄像头的 bInterval 字段必须为 1</strong>。</p></li>
+<li><p>VIDEO_EP_MAX_MPS：视频流端点的最大包大小，单位为字节。 <strong>如果 USB IP 能够支持到 3072字节，则支持市面上所有的摄像头，如果不支持，则只能支持部分摄像头或者需要定制摄像头</strong>。</p></li>
+</ul>
+</section>
 </section>
 
 

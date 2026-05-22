@@ -162,7 +162,7 @@
              
   <section id="usb-otg">
 <h1>USB OTG<a class="headerlink" href="#usb-otg" title="Link to this heading"></a></h1>
-<p>如果需要使用 OTG 功能，首先使用的芯片需要支持 ID 检测功能，然后使能 <code class="docutils literal notranslate"><span class="pre">CONFIG_USB_OTG_ENABLE</span></code> 宏，将之前的例程中 <code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code>
+<p>如果需要使用 OTG 功能，首先使用的芯片需要支持 ID 检测功能，然后使能 <code class="docutils literal notranslate"><span class="pre">CONFIG_USB_OTG_ENABLE</span></code> 宏，将之前的例程中 <code class="docutils literal notranslate"><span class="pre">usbd_initialize</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">usbh_initialize</span></code>
 替换成 <code class="docutils literal notranslate"><span class="pre">usbotg_initialize</span></code> 即可。</p>
 <p>ID 检测电路根据不同的 USB 接口类型有所不同，常见的有 micro-USB 和 USB-C 两种接口类型。</p>
 <ul class="simple">

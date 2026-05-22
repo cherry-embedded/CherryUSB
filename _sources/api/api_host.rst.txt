@@ -214,7 +214,7 @@ usbh_serial_write
 usbh_serial_read
 """"""""""""""""""""""""""""""""""""
 
-``usbh_serial_read`` 从串口读数据。 **如果没有设置波特率，不允许使用该 API，设置波特率后，内部会开启 rx 接收并将数据写入 ringbuf **。
+``usbh_serial_read`` 从串口读数据。  **如果没有设置波特率，不允许使用该 API，设置波特率后，内部会开启 rx 接收并将数据写入 ringbuf**。
 
 .. code-block:: C
 

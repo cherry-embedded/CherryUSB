@@ -97,7 +97,12 @@
 <li class="toctree-l1"><a class="reference internal" href="usbh_net.html">Network Host</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_bluetooth.html">BTBLE Host</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_wifi.html">WIFI Host</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Audio Host</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Audio Host</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mic">MIC 使用流程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#speaker">SPEAKER 使用流程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">宏的说明</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="usbh_video.html">Video Host</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usb_otg.html">USB OTG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_vendor.html">Vendor Device 驱动编写</a></li>
@@ -164,8 +169,92 @@
 <h1>Audio Host<a class="headerlink" href="#audio-host" title="Link to this heading"></a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Host UAC 为商用收费，请联系官方购买授权。</p>
+<p>Host UAC 框架和 ISO 驱动为商用收费，请联系官方购买授权。</p>
 </div>
+<section id="mic">
+<h2>MIC 使用流程<a class="headerlink" href="#mic" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>注册 frame 内存池, AUDIO_MIC_EP_MAX_MPS 可以改成实际能支持的最大 iso ep_in_mps 以减少 RAM 消耗。 <strong>一个 frame 收到的数据大小范围为 0 ~ x * AUDIO_MIC_ISO_PACKETS</strong>。x 为实际 iso ep_in_mps。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define AUDIP_MIC_POOL_SIZE (10)</span>
+<span class="k">static</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">frame_mic_buffer</span><span class="p">[</span><span class="n">AUDIO_MIC_EP_MAX_MPS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_MIC_ISO_PACKETS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIP_MIC_POOL_SIZE</span><span class="p">];</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_audioframe</span><span class="w"> </span><span class="n">frame_mic_pool</span><span class="p">[</span><span class="n">AUDIP_MIC_POOL_SIZE</span><span class="p">];</span>
+
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">AUDIP_MIC_POOL_SIZE</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">frame_mic_pool</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">frame_buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">frame_mic_buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_MIC_EP_MAX_MPS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_MIC_ISO_PACKETS</span><span class="p">;</span>
+<span class="w">    </span><span class="n">frame_mic_pool</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">frame_bufsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AUDIO_MIC_EP_MAX_MPS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_MIC_ISO_PACKETS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">usbh_audio_mic_stream_create</span><span class="p">(</span><span class="n">frame_mic_pool</span><span class="p">,</span><span class="w"> </span><span class="n">AUDIP_MIC_POOL_SIZE</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>开启 MIC 数据接收线程并处理，处理完成后需要将 frame 重新入队。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_audio_mic_frame_thread</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">argument</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_audioframe</span><span class="w"> </span><span class="o">*</span><span class="n">frame</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_audio_mic_stream_dequeue</span><span class="p">(</span><span class="o">&amp;</span><span class="n">frame</span><span class="p">,</span><span class="w"> </span><span class="mh">0xfffffff</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="n">USB_LOG_RAW</span><span class="p">(</span><span class="s">&quot;frame buf:%p,frame len:%d</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">frame_buf</span><span class="p">,</span><span class="w"> </span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">frame_size</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">usbh_audio_mic_stream_enqueue</span><span class="p">(</span><span class="n">frame</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>调用 <cite>usbh_audio_mic_stream_start</cite> 启动 MIC 流，调用 <cite>usbh_audio_mic_stream_stop</cite> 停止 MIC 流。</p></li>
+</ul>
+</section>
+<section id="speaker">
+<h2>SPEAKER 使用流程<a class="headerlink" href="#speaker" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>注册 frame 内存池, AUDIO_SPEAKER_EP_MAX_MPS 可以改成实际能支持的最大 iso ep_out_mps 以减少 RAM 消耗。一个 frame 必须按照 ep_out_mps * AUDIO_SPEAKER_ISO_PACKETS 的大小来填充数据。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define AUDIO_SPEAKER_POOL_SIZE (10)</span>
+<span class="k">static</span><span class="w"> </span><span class="n">USB_MEM_ALIGNX</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">frame_speaker_buffer</span><span class="p">[</span><span class="n">AUDIO_SPEAKER_EP_MAX_MPS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_ISO_PACKETS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_POOL_SIZE</span><span class="p">];</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_audioframe</span><span class="w"> </span><span class="n">frame_speaker_pool</span><span class="p">[</span><span class="n">AUDIO_SPEAKER_POOL_SIZE</span><span class="p">];</span>
+
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_POOL_SIZE</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">frame_speaker_pool</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">frame_buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">frame_speaker_buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_EP_MAX_MPS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_ISO_PACKETS</span><span class="p">;</span>
+<span class="w">    </span><span class="n">frame_speaker_pool</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">frame_bufsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_EP_MAX_MPS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_ISO_PACKETS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">usbh_audio_speaker_stream_create</span><span class="p">(</span><span class="n">frame_speaker_pool</span><span class="p">,</span><span class="w"> </span><span class="n">AUDIO_SPEAKER_POOL_SIZE</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>调用 <cite>usbh_audio_speaker_stream_start</cite> 启动 SPEAKER 流，调用 <cite>usbh_audio_speaker_stream_stop</cite> 停止 SPEAKER 流。</p></li>
+<li><p>调用 <cite>usbh_uac_speaker_frame_alloc</cite> 申请一个 frame，填充数据后调用 <cite>usbh_uac_speaker_frame_send</cite> 将数据入队。</p></li>
+<li><p>当前 speaker frame 的处理是在 <cite>usbh_audio_speaker_stream_start</cite> 启动以后的周期性中断中循环接收和发送，用户也可以改成使用线程来进行接收和发送。</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>宏的说明<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define AUDIO_MIC_ISO_PACKETS  (1)</span>
+<span class="cp">#define AUDIO_MIC_EP_MAX_MPS   1024</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>AUDIO_MIC_ISO_PACKETS：每次传输的帧或者微帧的个数</p></li>
+<li><p>AUDIO_MIC_EP_MAX_MPS：音频输入端点最大包大小，单位为字节。</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define AUDIO_SPEAKER_ISO_PACKETS  (1)</span>
+<span class="cp">#define AUDIO_SPEAKER_EP_MAX_MPS   1024</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>AUDIO_SPEAKER_ISO_PACKETS：每次传输的帧或者微帧的个数</p></li>
+<li><p>AUDIO_SPEAKER_EP_MAX_MPS：音频输出端点最大包大小，单位为字节。</p></li>
+</ul>
+</section>
 </section>
 
 
