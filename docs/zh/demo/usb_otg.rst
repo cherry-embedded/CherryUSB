@@ -1,7 +1,7 @@
 USB OTG
 =================
 
-如果需要使用 OTG 功能，首先使用的芯片需要支持 ID 检测功能，然后使能 ``CONFIG_USB_OTG_ENABLE`` 宏，将之前的例程中 ``usbh_initialize`` 或者 ``usbh_initialize``
+如果需要使用 OTG 功能，首先使用的芯片需要支持 ID 检测功能，然后使能 ``CONFIG_USB_OTG_ENABLE`` 宏，将之前的例程中 ``usbd_initialize`` 或者 ``usbh_initialize``
 替换成 ``usbotg_initialize`` 即可。
 
 ID 检测电路根据不同的 USB 接口类型有所不同，常见的有 micro-USB 和 USB-C 两种接口类型。
