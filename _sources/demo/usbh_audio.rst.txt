@@ -75,7 +75,7 @@ SPEAKER 使用流程
     #define AUDIO_MIC_ISO_PACKETS  (1)
     #define AUDIO_MIC_EP_MAX_MPS   1024
 
-- AUDIO_MIC_ISO_PACKETS：每次传输的帧或者微帧的个数
+- AUDIO_MIC_ISO_PACKETS：每次传输的 ISO 个数，单位是 bInterval 计算出来的帧或者微针时间。例如 全速 bInterval 为1或者高速 bInterval 为4时表示 1ms传输一个包。
 - AUDIO_MIC_EP_MAX_MPS：音频输入端点最大包大小，单位为字节。
 
 .. code-block:: C
@@ -83,5 +83,7 @@ SPEAKER 使用流程
     #define AUDIO_SPEAKER_ISO_PACKETS  (1)
     #define AUDIO_SPEAKER_EP_MAX_MPS   1024
 
-- AUDIO_SPEAKER_ISO_PACKETS：每次传输的帧或者微帧的个数
+- AUDIO_SPEAKER_ISO_PACKETS：每次传输的 ISO 个数，单位是 bInterval 计算出来的帧或者微针时间。例如 全速 bInterval 为1或者高速 bInterval 为4时表示 1ms传输一个包。
 - AUDIO_SPEAKER_EP_MAX_MPS：音频输出端点最大包大小，单位为字节。
+
+.. note:: 增大 AUDIO_MIC_ISO_PACKETS or AUDIO_SPEAKER_ISO_PACKETS 可以降低传输中断频率，但是会增加 RAM 的开销，需要目标 IP 支持 scatter-gather DMA 才有效果，对于 buffer dma 或者 fifo 模式的 IP 不会降低中断频率。

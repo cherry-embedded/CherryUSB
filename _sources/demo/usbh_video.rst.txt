@@ -55,5 +55,7 @@ Video Host
     #define VIDEO_ISO_PACKETS  (8 * 2)
     #define VIDEO_EP_MAX_MPS   3072
 
-- VIDEO_ISO_PACKETS：每次传输的帧或者微帧的个数， **需要是 8 的倍数，因此摄像头的 bInterval 字段必须为 1**。
-- VIDEO_EP_MAX_MPS：视频流端点的最大包大小，单位为字节。 **如果 USB IP 能够支持到 3072字节，则支持市面上所有的摄像头，如果不支持，则只能支持部分摄像头或者需要定制摄像头**。
+- VIDEO_ISO_PACKETS：每次传输的 ISO 个数。 **要求是 8 的倍数，对应高速设备（1ms 8个包），全速设备（8ms 8个包）**。 这里我们限定摄像头 bInterval 是 1，并且目前没有不是 1 的摄像头。
+- VIDEO_EP_MAX_MPS：视频流端点的最大包大小，单位为字节。 **如果 USB IP 能够支持到 3072字节，则支持市面上所有的摄像头，如果不支持，则只能支持部分摄像头或者需要定制摄像头**。对 BULK 摄像头没有要求。
+
+.. note:: 增大 VIDEO_ISO_PACKETS 可以降低传输中断频率，但是会增加 RAM 的开销，需要目标 IP 支持 scatter-gather DMA 才有效果，对于 buffer dma 或者 fifo 模式的 IP 不会降低中断频率。

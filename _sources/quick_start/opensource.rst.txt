@@ -56,9 +56,6 @@
     * - phobia
       - rombrew
       - https://github.com/rombrew/phobia
-    * - FMT-Firmware
-      - Firmament-Autopilot
-      - https://github.com/Firmament-Autopilot/FMT-Firmware
     * - sdk-bsp-stm32h7r-realthread-artpi2
       - RT-Thread
       - https://github.com/RT-Thread-Studio/sdk-bsp-stm32h7r-realthread-artpi2
@@ -71,3 +68,6 @@
     * - f1c200s_library
       - lhdjply
       - https://gitee.com/lhdjply/f1c200s_library
+    * - MuseCube
+      - dydcyy-gh
+      - https://github.com/dydcyy-gh/MuseCube
