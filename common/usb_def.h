@@ -766,12 +766,12 @@ struct usb_desc_header {
 #define USB_MSOSV1_COMP_ID_FUNCTION_MTP_DESCRIPTOR_INIT(bFirstInterfaceNumber)\
     bFirstInterfaceNumber,                          /* bFirstInterfaceNumber */\
     0x01,                                           /* reserved1 */            \
-    'M', 'T', 'P', 'U', 'S', 'B', 0x00, 0x00,       /* compatibleID[8] */      \
+    'M', 'T', 'P', 0x00, 0x00, 0x00, 0x00, 0x00,    /* compatibleID[8] */      \
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* subCompatibleID[8] */   \
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00              /* reserved2[6] */
 
 #define USB_MSOSV1_COMP_ID_FUNCTION_ADB_DESCRIPTOR_INIT(bFirstInterfaceNumber)\
-    bFirstInterfaceNumber,                          * bFirstInterfaceNumber */\
+    bFirstInterfaceNumber,                          /* bFirstInterfaceNumber */\
     0x01,                                           /* reserved1 */            \
     'A', 'D', 'B', 0x00, 0x00, 0x00, 0x00, 0x00,    /* compatibleID[8] */      \
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* subCompatibleID[8] */   \
