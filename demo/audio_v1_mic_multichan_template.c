@@ -55,7 +55,7 @@
 
 /* AudioFreq * DataSize (2 bytes) * NumChannels (Stereo: 1) */
 /* 16bit(2 Bytes) 单声道(Mono:1) */
-#define AUDIO_IN_PACKET ((uint32_t)((AUDIO_MIC_FREQ * 2 * IN_CHANNEL_NUM) / 1000))
+#define AUDIO_IN_PACKET ((uint32_t)((AUDIO_MIC_FREQ * AUDIO_MIC_FRAME_SIZE_BYTE * IN_CHANNEL_NUM) / 1000))
 
 #define USB_CONFIG_SIZE (unsigned long)(9 +                                                    \
                                         AUDIO_AC_DESCRIPTOR_LEN(1) +                           \
