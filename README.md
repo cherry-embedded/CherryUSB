@@ -135,7 +135,7 @@ CherryUSB Host Stack resource usage (GCC 10.2 with -O2, disable log):
 |usbh_msc.c     |  ~1500          | 128 * x            | 4  + sizeof(struct usbh_msc) * x          | 0          |
 |usbh_hid.c     |  ~2000          | 64 * x           | 4  + sizeof(struct usbh_hid) * x            | 0          |
 |usbh_video.c   |  ~2500          | 128 * x           | 4  + sizeof(struct usbh_video) * x         | 0          |
-|usbh_audio.c   |  ~3000          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0          |
+|usbh_audio.c   |  ~4000          | 128 * x           | 4  + sizeof(struct usbh_audio) * x         | 0          |
 |usbh_rndis.c   |  ~3000          | 512 + 2 * 2048(default)| sizeof(struct usbh_rndis) * 1         | 0          |
 |usbh_cdc_ecm.c |  ~1500          | 2 * 1514 + 16           | sizeof(struct usbh_cdc_ecm) * 1      | 0          |
 |usbh_cdc_ncm.c |  ~2000          | 2 * 2048(default) + 16 + 32   | sizeof(struct usbh_cdc_ncm) * 1| 0          |

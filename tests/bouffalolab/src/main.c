@@ -197,19 +197,20 @@ int usbh_uac_volume(int argc, char **argv)
 {
     struct usbh_audio *audio_class;
 
-    if (argc < 2) {
-        USB_LOG_ERR("please input correct command: usbh_uac_volume dB_val\r\n");
+    if (argc < 3) {
+        USB_LOG_ERR("please input correct command: usbh_uac_volume volume is_tx\r\n");
         return -1;
     }
 
     audio_class = (struct usbh_audio *)usbh_find_class_instance("/dev/audio0");
 
-    int ret = usbh_audio_set_volume(audio_class, "mic", 0, atoi(argv[1]));
+    usbh_audio_set_mute(audio_class, false, false);
+    int ret = usbh_audio_set_volume(audio_class, atoi(argv[1]), atoi(argv[2]));
     if (ret < 0) {
         USB_LOG_ERR("set volume failed, ret: %d\r\n", ret);
     }
     return 0;
 }
 
-CSH_CMD_EXPORT(usbh_uac_volume, usbh_uac_volume);
+SHELL_CMD_EXPORT_ALIAS(usbh_uac_volume, usbh_uac_volume, usbh_uac_volume);
 #endif

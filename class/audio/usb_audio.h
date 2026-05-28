@@ -642,7 +642,7 @@ struct audio_cs_if_ac_feature_unit_descriptor {
     uint8_t bUnitID;
     uint8_t bSourceID;
     uint8_t bControlSize;
-    uint8_t bmaControls[33]; // variable
+    uint8_t bmaControls[1];
     uint8_t iFeature;
 } __PACKED;
 
@@ -654,11 +654,27 @@ struct audio_cs_if_ac_selector_unit_descriptor {
     uint8_t bDescriptorSubtype;
     uint8_t bUnitID;
     uint8_t bNrInPins;
-    uint8_t baSourceID[1];
+    uint8_t baSourceID[2];
     uint8_t iSelector;
 } __PACKED;
 
 #define AUDIO_SIZEOF_AC_SELECTOR_UNIT_DESC(bNrInPins) (6 + (bNrInPins))
+
+struct audio_cs_if_ac_mixer_unit_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bDescriptorSubtype;
+    uint8_t bUnitID;
+    uint8_t bNrInPins;
+    uint8_t baSourceID[2];
+    uint8_t bNrChannels;
+    uint16_t wChannelConfig;
+    uint8_t iChannelNames;
+    uint8_t bmControls;
+    uint8_t iMixer;
+} __PACKED;
+
+#define AUDIO_SIZEOF_AC_MIXER_UNIT_DESC(bNrInPins) (11 + (bNrInPins))
 
 struct audio_cs_if_as_general_descriptor {
     uint8_t bLength;

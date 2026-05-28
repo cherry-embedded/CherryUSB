@@ -3,6 +3,9 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+set(RV_ARCH "rv32imafc")
+set(RV_ABI "ilp32f")
+
 set(CONFIG_CHERRYSH 1)
 set(CONFIG_CHERRYSH_INTERFACE "uart")
 set(CONFIG_USB_DEVICE 1)
@@ -53,6 +56,8 @@ sdk_ld_options(-uusbd_cdc_ecm_start_write)
 sdk_ld_options(-uusbd_cdc_ecm_start_read)
 sdk_ld_options(-uusbd_video_stream_start_write)
 sdk_ld_options(-uusbd_video_stream_split_transfer)
+
+sdk_ld_options(-lm)
 
 sdk_inc(inc)
 sdk_app_src(inc/arch/sys_arch.c)
