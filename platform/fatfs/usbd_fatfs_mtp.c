@@ -220,7 +220,7 @@ struct mtp_dirent *usbd_mtp_readdir(MTP_DIR *dir)
 #define SS(fs) ((fs)->ssize) /* Variable sector size */
 #endif
 
-int usbd_mtp_stat(const char *path, struct stat *buf)
+int usbd_mtp_stat(const char *path, struct mtp_stat *buf)
 {
     FILINFO file_info;
     FRESULT result;
@@ -232,14 +232,14 @@ int usbd_mtp_stat(const char *path, struct stat *buf)
         printf("f_stat failed, cause: %s\n", show_error_string(result));
         return -1;
     }
-    buf->st_mode = S_IFREG | S_IRUSR | S_IRGRP | S_IROTH |
-                   S_IWUSR | S_IWGRP | S_IWOTH;
+    buf->st_mode = MTP_S_IFREG | MTP_S_IRUSR | MTP_S_IRGRP | MTP_S_IROTH |
+                   MTP_S_IWUSR | MTP_S_IWGRP | MTP_S_IWOTH;
     if (file_info.fattrib & AM_DIR) {
-        buf->st_mode &= ~S_IFREG;
-        buf->st_mode |= S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH;
+        buf->st_mode &= ~MTP_S_IFREG;
+        buf->st_mode |= MTP_S_IFDIR | MTP_S_IXUSR | MTP_S_IXGRP | MTP_S_IXOTH;
     }
     if (file_info.fattrib & AM_RDO)
-        buf->st_mode &= ~(S_IWUSR | S_IWGRP | S_IWOTH);
+        buf->st_mode &= ~(MTP_S_IWUSR | MTP_S_IWGRP | MTP_S_IWOTH);
 
     buf->st_size = file_info.fsize;
     buf->st_blksize = f->csize * SS(f);
@@ -282,11 +282,11 @@ int usbd_mtp_open(const char *path, uint8_t mode)
 {
     BYTE flags;
 
-    if (mode == O_RDONLY) {
+    if (mode == MTP_O_RDONLY) {
         flags = FA_READ | FA_OPEN_EXISTING;
-    } else if (mode == O_WRONLY) {
+    } else if (mode == MTP_O_WRONLY) {
         flags = FA_WRITE | FA_OPEN_ALWAYS;
-    } else if (mode == O_RDWR) {
+    } else if (mode == MTP_O_RDWR) {
         flags = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
     } else {
         return -1; // Invalid mode
