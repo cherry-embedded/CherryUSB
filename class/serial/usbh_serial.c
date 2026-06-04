@@ -73,6 +73,7 @@ static void usbh_serial_free(struct usbh_serial *serial)
 static void usbh_serial_callback(void *arg, int nbytes)
 {
     struct usbh_serial *serial = (struct usbh_serial *)arg;
+    uint32_t free_space;
     int ret;
 
     if (nbytes < 0) {
@@ -101,6 +102,11 @@ static void usbh_serial_callback(void *arg, int nbytes)
             serial->rx_errorcode = ret;
             usb_osal_sem_give(serial->rx_complete_sem);
             return;
+        }
+
+        free_space = usb_ringbuffer_get_free(&serial->rx_rb);
+        if (free_space < (nbytes - serial->driver->ignore_rx_header)) {
+            USB_LOG_ERR("serial rx ringbuffer overflow, free space: %u, rx size: %u\n", free_space, (nbytes - serial->driver->ignore_rx_header));
         }
 
         usb_ringbuffer_write(&serial->rx_rb,
