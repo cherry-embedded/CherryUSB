@@ -232,7 +232,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
         src += Glob('port/dwc2/usb_glue_kendryte.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_INFINEON']):
-        src += Glob('port/dwc2/usb_hc_dwc2.c')
+        LIBPATH += [GetCurrentDir() + '/../../../target/infineon/edge-e83/m55/board/usb']
+        LIBS += ['usb_hc_dwc2']
         src += Glob('port/dwc2/usb_glue_infineon.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_AT']):
         src += Glob('port/dwc2/usb_hc_dwc2.c')
@@ -349,6 +350,21 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
 
 src += Glob('platform/rtthread/usb_msh.c')
 src += Glob('platform/rtthread/usb_check.c')
+
+def unique_sources(items):
+    result = []
+    seen = set()
+
+    for item in items:
+        key = str(item).replace('\\', '/')
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+
+    return result
+
+src = unique_sources(src)
 
 group = DefineGroup('CherryUSB', src, depend = ['PKG_USING_CHERRYUSB'], LIBS = LIBS, LIBPATH=LIBPATH, CPPPATH = path, CPPDEFINES = CPPDEFINES)
 

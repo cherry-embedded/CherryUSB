@@ -29,8 +29,8 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_video_buf[USB_ALIGN_UP(128, CON
 
 static const char *format_type[] = { "uncompressed", "mjpeg" };
 
-static struct usbh_video g_video_class[CONFIG_USBHOST_MAX_VIDEO_CLASS];
-static uint32_t g_devinuse = 0;
+USB_NOCACHE_RAM_SECTION static struct usbh_video g_video_class[CONFIG_USBHOST_MAX_VIDEO_CLASS];
+USB_NOCACHE_RAM_SECTION static uint32_t g_devinuse = 0;
 
 static struct usbh_video *usbh_video_class_alloc(void)
 {

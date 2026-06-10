@@ -9,10 +9,10 @@
 #define USB_DBG_TAG "usbh_core"
 #include "usb_log.h"
 
-struct usbh_class_info *usbh_class_info_table_begin = NULL;
-struct usbh_class_info *usbh_class_info_table_end = NULL;
+USB_NOCACHE_RAM_SECTION struct usbh_class_info *usbh_class_info_table_begin = NULL;
+USB_NOCACHE_RAM_SECTION struct usbh_class_info *usbh_class_info_table_end = NULL;
 
-usb_slist_t g_bus_head = USB_SLIST_OBJECT_INIT(g_bus_head);
+USB_NOCACHE_RAM_SECTION usb_slist_t g_bus_head = USB_SLIST_OBJECT_INIT(g_bus_head);
 
 struct setup_align_buffer {
     uint8_t buffer[USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE)];
@@ -21,7 +21,7 @@ struct setup_align_buffer {
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t ep0_request_buffer[CONFIG_USBHOST_MAX_BUS][USB_ALIGN_UP(CONFIG_USBHOST_REQUEST_BUFFER_LEN, CONFIG_USB_ALIGN_SIZE)];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX struct setup_align_buffer g_setup_buffer[CONFIG_USBHOST_MAX_BUS][CONFIG_USBHOST_MAX_EXTHUBS + 1][CONFIG_USBHOST_MAX_EHPORTS];
 
-struct usbh_bus g_usbhost_bus[CONFIG_USBHOST_MAX_BUS];
+USB_NOCACHE_RAM_SECTION struct usbh_bus g_usbhost_bus[CONFIG_USBHOST_MAX_BUS];
 
 /* general descriptor field offsets */
 #define DESC_bLength         0 /** Length offset */
