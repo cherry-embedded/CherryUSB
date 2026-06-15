@@ -46,6 +46,7 @@ list(
     ${CMAKE_CURRENT_LIST_DIR}/class/video
     ${CMAKE_CURRENT_LIST_DIR}/class/wireless
     ${CMAKE_CURRENT_LIST_DIR}/class/midi
+    ${CMAKE_CURRENT_LIST_DIR}/class/mtp
     ${CMAKE_CURRENT_LIST_DIR}/class/adb
     ${CMAKE_CURRENT_LIST_DIR}/class/dfu
     ${CMAKE_CURRENT_LIST_DIR}/class/serial
