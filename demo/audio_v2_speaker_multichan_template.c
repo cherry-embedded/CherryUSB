@@ -18,7 +18,7 @@
 #define FEEDBACK_ENDP_PACKET_SIZE 0x04
 #else
 #define EP_INTERVAL               0x01
-#define FEEDBACK_ENDP_PACKET_SIZE 0x03
+#define FEEDBACK_ENDP_PACKET_SIZE 0x04
 #endif
 
 #define AUDIO_OUT_EP          0x01
