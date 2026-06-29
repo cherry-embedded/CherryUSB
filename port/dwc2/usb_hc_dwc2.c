@@ -520,6 +520,7 @@ static uint16_t dwc2_calculate_packet_num(uint32_t input_size, uint8_t ep_addr, 
     if (ep_addr & 0x80) {
         input_size = num_packets * ep_mps;
     } else {
+        input_size = MIN(0x3FF * ep_mps, input_size);
     }
 
     *output_size = input_size;

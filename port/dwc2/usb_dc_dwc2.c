@@ -918,6 +918,11 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
     } else {
         pktcnt = (uint16_t)((data_len + g_dwc2_udc[busid].in_ep[ep_idx].ep_mps - 1U) / g_dwc2_udc[busid].in_ep[ep_idx].ep_mps);
 
+        if (pktcnt > 0x3FF) {
+            pktcnt = 0x3FF; // pktcnt 10bits
+        }
+
+        data_len = MIN(0x3FF * g_dwc2_udc[busid].in_ep[ep_idx].ep_mps, data_len);
         USB_OTG_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_PKTCNT & (pktcnt << 19));
         USB_OTG_INEP(ep_idx)->DIEPTSIZ |= (USB_OTG_DIEPTSIZ_XFRSIZ & data_len);
     }
@@ -994,6 +999,12 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & data_len);
     } else {
         pktcnt = (uint16_t)((data_len + g_dwc2_udc[busid].out_ep[ep_idx].ep_mps - 1U) / g_dwc2_udc[busid].out_ep[ep_idx].ep_mps);
+
+        if (pktcnt > 0x3FF) {
+            pktcnt = 0x3FF; // pktcnt 10bits
+        }
+
+        data_len = pktcnt * g_dwc2_udc[busid].out_ep[ep_idx].ep_mps;
 
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (pktcnt << 19));
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & data_len);
