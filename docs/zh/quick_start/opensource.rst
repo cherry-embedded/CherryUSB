@@ -71,3 +71,7 @@
     * - MuseCube
       - dydcyy-gh
       - https://github.com/dydcyy-gh/MuseCube
+    * - zmk
+      - OpenSiFli
+      - https://github.com/OpenSiFli/zmk
+
