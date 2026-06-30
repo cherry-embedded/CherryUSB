@@ -133,6 +133,8 @@ static dcd_data_t *g_dcd_data[CONFIG_USBDEV_MAX_BUS] = {
 #endif
 };
 
+static uint8_t _setup_data[8];
+
 /* Index to bit position in register */
 static inline uint8_t ep_idx2bit(uint8_t ep_idx)
 {
@@ -660,6 +662,7 @@ void USBD_IRQHandler(uint8_t busid)
         memset(g_chipidea_udc[busid].out_ep, 0, sizeof(struct chipidea_ep_state) * CONFIG_USBDEV_EP_NUM);
         usbd_event_reset_handler(busid);
         chipidea_bus_reset(busid, g_chipidea_udc[busid].in_ep[0].ep_mps);
+        return;
     }
 
     if (int_status & intr_suspend) {
@@ -734,7 +737,12 @@ void USBD_IRQHandler(uint8_t busid)
             /*------------- Set up Received -------------*/
             USB_OTG_DEV->ENDPTSETUPSTAT = edpt_setup_status;
             dcd_qhd_t *qhd0 = chipidea_qhd_get(busid, 0);
-            usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&qhd0->setup_request);
+            do {
+                USB_OTG_DEV->USBCMD |= USB_USBCMD_SUTW_MASK;
+                memcpy(_setup_data, (uint8_t *)(&qhd0->setup_request), 8);
+            } while (!USB_USBCMD_SUTW_GET(USB_OTG_DEV->USBCMD));
+            USB_OTG_DEV->USBCMD &= ~USB_USBCMD_SUTW_MASK;
+            usbd_event_ep0_setup_complete_handler(busid, _setup_data);
         }
     }
 }
