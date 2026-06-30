@@ -100,5 +100,11 @@ CDC ACM Device
 - 上述我们需要注意，长度设置为 2048 是为了测试 ZLP 功能，通常实际使用时，接收长度应该使用 CDC_MAX_MPS 。具体原因参考 :ref:`usb_ext`
 - 如果需要做性能测试，使用 tools/test_srcipts/test_cdc_speed.py 进行测试,并在测试之前删除 `usbd_cdc_acm_bulk_out` 和 `usbd_cdc_acm_bulk_in` 中的打印，否则会影响测试结果。
 
+测试命令如下：
 
-此外，对于 CDC ACM 搭配 OS 的情况，通常我们 read 使用异步并将数据存储到 ringbuffer 中，write 使用同步搭配 sem 使用。
+.. code-block:: python
+
+    python test_cdc_speed.py --port COM17 --mode tx --chunk-length 4M
+    python test_cdc_speed.py --port COM17 --mode rx --chunk-length 4M
+
+.. note:: 对于 CDC ACM 搭配 OS 的情况，通常我们 read 使用异步并将数据存储到 ringbuffer 中，write 使用同步搭配 sem 使用。
