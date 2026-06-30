@@ -6,8 +6,8 @@
 #include "usbd_core.h"
 #include "usbd_adb.h"
 
-#define ADB_OUT_EP_IDX        0
-#define ADB_IN_EP_IDX         1
+#define ADB_OUT_EP_IDX 0
+#define ADB_IN_EP_IDX  1
 
 #define ADB_STATE_READ_MSG    0
 #define ADB_STATE_READ_DATA   1
@@ -16,18 +16,18 @@
 #define ADB_STATE_AWRITE_MSG  4
 #define ADB_STATE_AWRITE_DATA 5
 
-#define MAX_PAYLOAD_V1        (4 * 1024)
-#define MAX_PAYLOAD_V2        (256 * 1024)
-#define MAX_PAYLOAD           MAX_PAYLOAD_V1
-#define A_VERSION             0x01000000
+#define MAX_PAYLOAD_V1 (4 * 1024)
+#define MAX_PAYLOAD_V2 (256 * 1024)
+#define MAX_PAYLOAD    MAX_PAYLOAD_V1
+#define A_VERSION      0x01000000
 
-#define A_SYNC                0x434e5953
-#define A_CNXN                0x4e584e43
-#define A_OPEN                0x4e45504f
-#define A_OKAY                0x59414b4f
-#define A_CLSE                0x45534c43
-#define A_WRTE                0x45545257
-#define A_AUTH                0x48545541
+#define A_SYNC 0x434e5953
+#define A_CNXN 0x4e584e43
+#define A_OPEN 0x4e45504f
+#define A_OKAY 0x59414b4f
+#define A_CLSE 0x45534c43
+#define A_WRTE 0x45545257
+#define A_AUTH 0x48545541
 
 struct adb_msg {
     uint32_t command;     /* command identifier constant (A_CNXN, ...) */
@@ -118,10 +118,10 @@ void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
         USB_ASSERT(rx_packet.msg.data_length <= sizeof(rx_packet.payload));
 
         USB_LOG_DBG("command:%x arg0:%x arg1:%x len:%d\r\n",
-                     rx_packet.msg.command,
-                     rx_packet.msg.arg0,
-                     rx_packet.msg.arg1,
-                     rx_packet.msg.data_length);
+                    rx_packet.msg.command,
+                    rx_packet.msg.arg0,
+                    rx_packet.msg.arg1,
+                    rx_packet.msg.data_length);
 
         if (rx_packet.msg.data_length) {
             /* setup next out ep read transfer */
@@ -143,6 +143,7 @@ void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
                 break;
             case A_CNXN: /* CONNECT(version, maxdata, "system-id-string") */
+            {
                 char *support_feature = "device::"
                                         "ro.product.name=cherryadb;"
                                         "ro.product.model=cherrysh;"
@@ -158,7 +159,7 @@ void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
                 adb_send_msg(&tx_packet);
 
                 adb_client.writable = false;
-                break;
+            } break;
             case A_OPEN: /* OPEN(local-id, 0, "destination") */
                 rx_packet.payload[rx_packet.msg.data_length] = '\0';
 

@@ -8,13 +8,13 @@
 
 #include <stdint.h>
 
-#define ADB_SHELL_LOALID     0x01
-#define ADB_FILE_LOALID      0x02
+#define ADB_SHELL_LOALID 0x01
+#define ADB_FILE_LOALID  0x02
 
 // clang-format off
-#define ADB_DESCRIPTOR_INIT(bFirstInterface, in_ep, out_ep, wMaxPacketSize)                   \
+#define ADB_DESCRIPTOR_INIT(bFirstInterface, in_ep, out_ep, wMaxPacketSize)             \
     USB_INTERFACE_DESCRIPTOR_INIT(bFirstInterface, 0x00, 0x02, 0xff, 0x42, 0x01, 0x02), \
-    USB_ENDPOINT_DESCRIPTOR_INIT(in_ep, 0x02, wMaxPacketSize, 0x00),     \
+    USB_ENDPOINT_DESCRIPTOR_INIT(in_ep, 0x02, wMaxPacketSize, 0x00),                    \
     USB_ENDPOINT_DESCRIPTOR_INIT(out_ep, 0x02, wMaxPacketSize, 0x00)
 // clang-format on
 
