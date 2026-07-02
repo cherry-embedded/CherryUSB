@@ -51,6 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/q%26a.html">Q &amp; A</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/opensource.html">基于 CherryUSB 的开源项目</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/usb_speed.html">USB 极限速度测试</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
@@ -258,13 +259,7 @@
 </div>
 <ul class="simple">
 <li><p>上述我们需要注意，长度设置为 2048 是为了测试 ZLP 功能，通常实际使用时，接收长度应该使用 CDC_MAX_MPS 。具体原因参考 <a class="reference internal" href="../usb/usb_ext.html#usb-ext"><span class="std std-ref">USB 知识点拓展</span></a></p></li>
-<li><p>如果需要做性能测试，使用 tools/test_srcipts/test_cdc_speed.py 进行测试,并在测试之前删除 <cite>usbd_cdc_acm_bulk_out</cite> 和 <cite>usbd_cdc_acm_bulk_in</cite> 中的打印，否则会影响测试结果。</p></li>
 </ul>
-<p>测试命令如下：</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">test_cdc_speed</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">port</span> <span class="n">COM17</span> <span class="o">--</span><span class="n">mode</span> <span class="n">tx</span> <span class="o">--</span><span class="n">chunk</span><span class="o">-</span><span class="n">length</span> <span class="mi">4</span><span class="n">M</span>
-<span class="n">python</span> <span class="n">test_cdc_speed</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">port</span> <span class="n">COM17</span> <span class="o">--</span><span class="n">mode</span> <span class="n">rx</span> <span class="o">--</span><span class="n">chunk</span><span class="o">-</span><span class="n">length</span> <span class="mi">4</span><span class="n">M</span>
-</pre></div>
-</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>对于 CDC ACM 搭配 OS 的情况，通常我们 read 使用异步并将数据存储到 ringbuffer 中，write 使用同步搭配 sem 使用。</p>
