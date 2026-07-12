@@ -1,0 +1,24 @@
+---
+Checks: >
+  -*,
+  clang-analyzer-core.*,
+  clang-analyzer-deadcode.*,
+  clang-analyzer-nullability.*,
+  clang-analyzer-security.*,
+  -clang-analyzer-security.insecureAPI.*,
+  clang-analyzer-unix.*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses,
+  -bugprone-reserved-identifier
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*(core|class|common|osal|port|platform)/.*'
+FormatStyle: none
+
+CheckOptions:
+  bugprone-argument-comment.StrictMode: false
+  bugprone-sizeof-expression.WarnOnSizeOfConstant: true
+  bugprone-sizeof-expression.WarnOnSizeOfIntegerExpression: false
+  bugprone-suspicious-memset-usage.WarnOnImplicitCast: true
+...

@@ -1,0 +1,93 @@
+name: Clang-Tidy action
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      scan_regex:
+        description: "Regex used to select files from compile_commands.json"
+        required: false
+        default: "/(core|class|common|osal|port|platform)/.*[.]c$"
+
+jobs:
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy cmake ninja-build jq ripgrep wget
+
+      - name: Download hpm_sdk
+        run: |
+          cd ~
+          git clone --depth 1 https://github.com/hpmicro/hpm_sdk.git
+
+      - name: Download RISC-V toolchain
+        run: |
+          cd ~
+          wget -q https://github.com/hpmicro/riscv-gnu-toolchain/releases/download/2023.10.18/rv32imac_zicsr_zifencei_multilib_b_ext-linux.tar.gz
+          tar -xzf rv32imac_zicsr_zifencei_multilib_b_ext-linux.tar.gz
+
+      - name: Generate HPM compile database
+        run: |
+          cd tests/hpmicro
+          export HPM_SDK_BASE=~/hpm_sdk
+          export GNURISCV_TOOLCHAIN_PATH=~/rv32imac_zicsr_zifencei_multilib_b_ext-linux
+          export HPM_SDK_TOOLCHAIN_VARIANT=
+          cmake -S . -B build -GNinja \
+            -DBOARD=hpm6800evk \
+            -DHPM_BUILD_TYPE=flash_sdram_xip \
+            -DCMAKE_BUILD_TYPE=debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run clang-tidy
+        shell: bash
+        env:
+          SCAN_REGEX: ${{ github.event.inputs.scan_regex || '/(core|class|common|osal|port|platform)/.*[.]c$' }}
+        run: |
+          TOOLCHAIN="$HOME/rv32imac_zicsr_zifencei_multilib_b_ext-linux"
+          GCC="$TOOLCHAIN/bin/riscv32-unknown-elf-gcc"
+          GCC_INCLUDE="$("$GCC" -print-file-name=include)"
+          GCC_INCLUDE_FIXED="$("$GCC" -print-file-name=include-fixed)"
+
+          set +e
+          jq -r '.[].file' tests/hpmicro/build/compile_commands.json \
+            | rg "^${GITHUB_WORKSPACE}${SCAN_REGEX}" \
+            | xargs -r -n1 clang-tidy \
+                -p tests/hpmicro/build \
+                --quiet \
+                --extra-arg-before=--target=riscv32-unknown-elf \
+                --extra-arg=-isystem"$GCC_INCLUDE" \
+                --extra-arg=-isystem"$GCC_INCLUDE_FIXED" \
+            > clang-tidy.log 2>&1
+          tidy_status=$?
+          set -e
+
+          grep -E "warning:|error:" clang-tidy.log | tee clang-tidy-summary.log || true
+
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):[[:space:]]warning:[[:space:]](.*)$ ]]; then
+              echo "::warning file=${BASH_REMATCH[1]},line=${BASH_REMATCH[2]},col=${BASH_REMATCH[3]}::${BASH_REMATCH[4]}"
+            elif [[ "$line" =~ ^([^:]+):([0-9]+):([0-9]+):[[:space:]]error:[[:space:]](.*)$ ]]; then
+              echo "::error file=${BASH_REMATCH[1]},line=${BASH_REMATCH[2]},col=${BASH_REMATCH[3]}::${BASH_REMATCH[4]}"
+            fi
+          done < clang-tidy-summary.log
+
+          if [ "$tidy_status" -ne 0 ]; then
+            exit "$tidy_status"
+          fi
+
+      - name: Upload clang-tidy logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-logs
+          path: |
+            clang-tidy.log
+            clang-tidy-summary.log
