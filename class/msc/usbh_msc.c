@@ -403,12 +403,12 @@ int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, con
     memset(cbw, 0, USB_SIZEOF_MSC_CBW);
     cbw->dSignature = MSC_CBW_Signature;
 
-    cbw->dDataLength = (msc_class->blocksize * nsectors);
+    cbw->dDataLength = (msc_class->blocksize * (nsectors & 0xffff));
     cbw->bCBLength = SCSICMD_WRITE10_SIZEOF;
     cbw->CB[0] = SCSI_CMD_WRITE10;
 
     SET_BE32(&cbw->CB[2], start_sector);
-    SET_BE16(&cbw->CB[7], nsectors);
+    SET_BE16(&cbw->CB[7], nsectors & 0xffff);
 
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], (uint8_t *)buffer, CONFIG_USBHOST_MSC_TIMEOUT);
 }
@@ -422,13 +422,13 @@ int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, cons
     memset(cbw, 0, USB_SIZEOF_MSC_CBW);
     cbw->dSignature = MSC_CBW_Signature;
 
-    cbw->dDataLength = (msc_class->blocksize * nsectors);
+    cbw->dDataLength = (msc_class->blocksize * (nsectors & 0xffff));
     cbw->bmFlags = 0x80;
     cbw->bCBLength = SCSICMD_READ10_SIZEOF;
     cbw->CB[0] = SCSI_CMD_READ10;
 
     SET_BE32(&cbw->CB[2], start_sector);
-    SET_BE16(&cbw->CB[7], nsectors);
+    SET_BE16(&cbw->CB[7], nsectors & 0xffff);
 
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], (uint8_t *)buffer, CONFIG_USBHOST_MSC_TIMEOUT);
 }

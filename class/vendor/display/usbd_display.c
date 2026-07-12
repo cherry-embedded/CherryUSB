@@ -127,6 +127,7 @@ drop_frame:
     usbd_ep_start_read(busid, g_usbd_display.out_ep.ep_addr, usb_dispay_dummy, usbd_get_ep_mps(0, g_usbd_display.out_ep.ep_addr));
     return;
 get_frame:
+    USB_ASSERT((usb_display_buf_offset + 16384) <= g_usbd_display.current_frame->frame_bufsize);
     usbd_ep_start_read(busid, g_usbd_display.out_ep.ep_addr, &g_usbd_display.current_frame->frame_buf[usb_display_buf_offset], 16384);
     return;
 }
@@ -154,7 +155,7 @@ struct usbd_interface *usbd_display_init_intf(struct usbd_interface *intf,
     usbd_add_endpoint(0, &g_usbd_display.in_ep);
 
     for (uint32_t i = 0; i < count; i++) {
-        USB_ASSERT_MSG(frame[i].frame_bufsize % 16384, "frame_bufsize must be the multiple of 16384");
+        USB_ASSERT_MSG((frame[i].frame_bufsize % 16384) == 0, "frame_bufsize must be the multiple of 16384");
     }
 
     usbd_display_frame_create(frame, count);

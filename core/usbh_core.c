@@ -225,7 +225,7 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
 
         memset(hport->config.intf, 0, sizeof(struct usbh_interface) * CONFIG_USBHOST_MAX_INTERFACES);
 
-        while (p[DESC_bLength] && (desc_len <= length)) {
+        while (p[DESC_bLength]) {
             switch (p[DESC_bDescriptorType]) {
                 case USB_DESCRIPTOR_TYPE_INTERFACE:
                     intf_desc = (struct usb_interface_descriptor *)p;
@@ -276,6 +276,10 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
             /* skip to next descriptor */
             desc_len += p[DESC_bLength];
             p += p[DESC_bLength];
+
+            if(desc_len > length) {
+                return -USB_ERR_NOMEM;
+            }
         }
     }
     return 0;
@@ -799,6 +803,10 @@ static struct usbh_hubport *usbh_list_all_hubport(struct usbh_hub *hub, uint8_t 
     struct usbh_hubport *hport;
     struct usbh_hub *hub_next;
 
+    if ((hub_index > hub->index) || (hub_port > hub->nports)) {
+        return NULL;
+    }
+
     if (hub->index == hub_index) {
         hport = &hub->child[hub_port - 1];
         if (hport->connected) {
@@ -816,9 +824,9 @@ static struct usbh_hubport *usbh_list_all_hubport(struct usbh_hub *hub, uint8_t 
                             hub_next = hport->config.intf[itf].priv;
 
                             if (hub_next && hub_next->connected) {
-                                hport = usbh_list_all_hubport(hub_next, hub_index, hub_port);
-                                if (hport) {
-                                    return hport;
+                                struct usbh_hubport *hport_next = usbh_list_all_hubport(hub_next, hub_index, hub_port);
+                                if (hport_next) {
+                                    return hport_next;
                                 }
                             }
                         }

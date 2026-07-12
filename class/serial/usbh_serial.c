@@ -228,7 +228,7 @@ struct usbh_serial *usbh_serial_open(const char *devname, uint32_t open_flags)
         return NULL;
     }
 
-    if (serial && serial->driver && serial->driver->open) {
+    if (serial->driver && serial->driver->open) {
         ret = serial->driver->open(serial);
         if (ret < 0) {
             return NULL;
@@ -335,6 +335,8 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
             struct usbh_serial_termios *termios = (struct usbh_serial_termios *)arg;
             struct cdc_line_coding line_coding;
 
+            USB_ASSERT(termios != NULL);
+
             line_coding.dwDTERate = termios->baudrate;
             line_coding.bCharFormat = termios->stopbits;
             line_coding.bParityType = termios->parity;
@@ -347,7 +349,7 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
                 usbh_kill_urb(&serial->bulkout_urb);
             }
 
-            if (serial && serial->driver && serial->driver->set_line_coding) {
+            if (serial->driver && serial->driver->set_line_coding) {
                 ret = serial->driver->set_line_coding(serial, &line_coding);
                 if (ret < 0) {
                     return ret;
@@ -358,7 +360,7 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
 
             memcpy(&serial->line_coding, &line_coding, sizeof(struct cdc_line_coding));
 
-            if (serial && serial->driver && serial->driver->set_flow_control) {
+            if (serial->driver && serial->driver->set_flow_control) {
                 ret = serial->driver->set_flow_control(serial, termios->rtscts);
             }
 
@@ -383,8 +385,10 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
             struct usbh_serial_termios *termios = (struct usbh_serial_termios *)arg;
             struct cdc_line_coding line_coding;
 
-            if (serial && serial->driver && serial->driver->get_line_coding) {
-                return serial->driver->get_line_coding(serial, &line_coding);
+            USB_ASSERT(termios != NULL);
+
+            if (serial->driver && serial->driver->get_line_coding) {
+                serial->driver->get_line_coding(serial, &line_coding);
             } else {
                 memcpy(&line_coding, &serial->line_coding, sizeof(struct cdc_line_coding));
             }
@@ -424,7 +428,7 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
             uint32_t *flags = (uint32_t *)arg;
             int status;
 
-            if (serial && serial->driver && serial->driver->get_modem_status) {
+            if (serial->driver && serial->driver->get_modem_status) {
                 status = serial->driver->get_modem_status(serial);
                 if (status < 0) {
                     return status;
