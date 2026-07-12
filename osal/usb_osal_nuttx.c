@@ -333,6 +333,10 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     (void)name;
 
     if (!timer || !wdog) {
+        if(timer)
+            kmm_free(timer);
+        if(wdog)
+            kmm_free(wdog);
         return NULL;
     }
 

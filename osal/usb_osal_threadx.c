@@ -117,9 +117,7 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&mutex_ptr, sizeof(TX_MUTEX), TX_NO_WAIT);
     if (mutex_ptr == TX_NULL) {
-        USB_LOG_ERR("Create mutex failed\r\n");
-        while (1) {
-        }
+        return NULL;
     }
 
     tx_mutex_create(mutex_ptr, "usbh_mutex", TX_INHERIT);
@@ -159,9 +157,7 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&queue_ptr, USB_ALIGN_UP(sizeof(TX_QUEUE), 4) + sizeof(uintptr_t) * max_msgs, TX_NO_WAIT);
     if (queue_ptr == TX_NULL) {
-        USB_LOG_ERR("Create TX_QUEUE failed\r\n");
-        while (1) {
-        }
+        return NULL;
     }
 
     tx_queue_create(queue_ptr, "usbh_mq", sizeof(uintptr_t) / 4, (CHAR *)queue_ptr + USB_ALIGN_UP(sizeof(TX_QUEUE), 4), sizeof(uintptr_t) * max_msgs);
@@ -202,17 +198,14 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer, sizeof(struct usb_osal_timer), TX_NO_WAIT);
     if (timer == TX_NULL) {
-        USB_LOG_ERR("Create usb_osal_timer failed\r\n");
-        while (1) {
-        }
+        return NULL;
     }
     memset(timer, 0, sizeof(struct usb_osal_timer));
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&timer_ptr, sizeof(TX_TIMER), TX_NO_WAIT);
     if (timer_ptr == TX_NULL) {
-        USB_LOG_ERR("Create TX_TIMER failed\r\n");
-        while (1) {
-        }
+        tx_byte_release(timer);
+        return NULL;
     }
 
     timer->timer = timer_ptr;
@@ -220,6 +213,8 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     timer->is_period = is_period;
     if (tx_timer_create(timer_ptr, (CHAR *)name, (void (*)(ULONG))handler, (uintptr_t)argument, 1, is_period ? 1 : 0,
                         TX_NO_ACTIVATE) != TX_SUCCESS) {
+        tx_byte_release(timer_ptr);
+        tx_byte_release(timer);
         return NULL;
     }
     return timer;

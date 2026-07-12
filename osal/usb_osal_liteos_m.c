@@ -30,9 +30,7 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 
     ret = LOS_TaskCreate(&task_id, &task_init_param);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Create task[%s] failed code[%u]\r\n", name, ret);
-        while (1) {
-        }
+        return NULL;
     }
 
     return (usb_osal_thread_t)task_id;
@@ -41,18 +39,12 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
     UINT32 task_id = (UINT32)thread;
-    UINT32 ret;
 
     if (thread == NULL) {
         task_id = LOS_CurTaskIDGet();
     }
 
-    ret = LOS_TaskDelete(task_id);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete task id[%u] failed code[%u]\r\n", task_id, ret);
-        while (1) {
-        }
-    }
+    LOS_TaskDelete(task_id);
 }
 
 void usb_osal_thread_schedule_other(void)
@@ -74,9 +66,7 @@ usb_osal_sem_t usb_osal_sem_create(uint32_t initial_count)
 
     ret = LOS_SemCreate(initial_count, &sem_handle);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Create Sem failed code[%u]\r\n", ret);
-        while (1) {
-        }
+        return NULL;
     }
     return (usb_osal_sem_t)sem_handle;
 }
@@ -89,15 +79,8 @@ usb_osal_sem_t usb_osal_sem_create_counting(uint32_t max_count)
 void usb_osal_sem_delete(usb_osal_sem_t sem)
 {
     UINT32 sem_handle = (UINT32)sem;
-    UINT32 ret;
 
-    ret = LOS_SemDelete(sem_handle);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete sem handle[%u] failed code[%u]\r\n",
-                    sem_handle, ret);
-        while (1) {
-        }
-    }
+    LOS_SemDelete(sem_handle);
 }
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
@@ -134,9 +117,7 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
 
     ret = LOS_MuxCreate(&mux_handle);
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Create mux failed code[%u]\r\n", ret);
-        while (1) {
-        }
+        return NULL;
     }
     return (usb_osal_mutex_t)mux_handle;
 }
@@ -144,15 +125,8 @@ usb_osal_mutex_t usb_osal_mutex_create(void)
 void usb_osal_mutex_delete(usb_osal_mutex_t mutex)
 {
     UINT32 mux_handle = (UINT32)mutex;
-    UINT32 ret;
 
-    ret = LOS_MuxDelete(mux_handle);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete mux handle[%u] failed code[%u]\r\n",
-                    mux_handle, ret);
-        while (1) {
-        }
-    }
+    LOS_MuxDelete(mux_handle);
 }
 
 int usb_osal_mutex_take(usb_osal_mutex_t mutex)
@@ -182,9 +156,7 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 
     ret = LOS_QueueCreate(NULL, max_msgs, &queue_id, 0, sizeof(uintptr_t));
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Create queue failed code[%u]\r\n", ret);
-        while (1) {
-        }
+        return NULL;
     }
     return (usb_osal_mq_t)queue_id;
 }
@@ -192,15 +164,8 @@ usb_osal_mq_t usb_osal_mq_create(uint32_t max_msgs)
 void usb_osal_mq_delete(usb_osal_mq_t mq)
 {
     UINT32 queue_id = (UINT32)mq;
-    UINT32 ret;
 
-    ret = LOS_QueueDelete(queue_id);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete queue id[%u] failed code[%u]\r\n",
-                    queue_id, ret);
-        while (1) {
-        }
-    }
+    LOS_QueueDelete(queue_id);
 }
 
 int usb_osal_mq_send(usb_osal_mq_t mq, uintptr_t addr)
@@ -242,9 +207,7 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
 
     timer_handle = usb_osal_malloc(sizeof(struct usb_osal_timer));
     if (timer_handle == NULL) {
-        USB_LOG_ERR("Malloc usb_osal_timer failed\r\n");
-        while (1) {
-        }
+        return NULL;
     }
     memset(timer_handle, 0x00, sizeof(struct usb_osal_timer));
 
@@ -258,9 +221,8 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
     );
 
     if (ret != LOS_OK) {
-        USB_LOG_ERR("Create software timer failed code[%u]\r\n", ret);
-        while (1) {
-        }
+        usb_osal_free(timer_handle);
+        return NULL;
     }
 
     timer_handle->handler = handler;
@@ -275,44 +237,23 @@ struct usb_osal_timer *usb_osal_timer_create(const char *name, uint32_t timeout_
 void usb_osal_timer_delete(struct usb_osal_timer *timer)
 {
     UINT32 timer_id = (UINT32)timer->timer;
-    UINT32 ret;
 
-    ret = LOS_SwtmrDelete(timer_id);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Delete software timer id[%u] failed code[%u]\r\n",
-                    timer_id, ret);
-        while (1) {
-        }
-    }
+    LOS_SwtmrDelete(timer_id);
     usb_osal_free(timer);
 }
 
 void usb_osal_timer_start(struct usb_osal_timer *timer)
 {
     UINT32 timer_id = (UINT32)timer->timer;
-    UINT32 ret;
 
-    ret = LOS_SwtmrStart(timer_id);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Start software timer id[%u] failed code[%u]\r\n",
-                    timer_id, ret);
-        while (1) {
-        }
-    }
+    LOS_SwtmrStart(timer_id);
 }
 
 void usb_osal_timer_stop(struct usb_osal_timer *timer)
 {
     UINT32 timer_id = (UINT32)timer->timer;
-    UINT32 ret;
 
-    ret = LOS_SwtmrStop(timer_id);
-    if (ret != LOS_OK) {
-        USB_LOG_ERR("Stop software timer id[%u] failed code[%u]\r\n",
-                    timer_id, ret);
-        while (1) {
-        }
-    }
+    LOS_SwtmrStop(timer_id);
 }
 
 size_t usb_osal_enter_critical_section(void)
