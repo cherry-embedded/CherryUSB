@@ -561,10 +561,10 @@ static int usbd_video_stream_request_handler(uint8_t busid, struct usb_setup_pac
         case VIDEO_VS_PROBE_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_SET_CUR:
-                    //memcpy((uint8_t *)&g_usbd_video[busid].probe, *data, setup->wLength);
+                    //memcpy((uint8_t *)&g_usbd_video[busid].probe, *data, sizeof(struct video_probe_and_commit_controls));
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].probe, setup->wLength);
+                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].probe, sizeof(struct video_probe_and_commit_controls));
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 
@@ -572,7 +572,7 @@ static int usbd_video_stream_request_handler(uint8_t busid, struct usb_setup_pac
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].probe, setup->wLength);
+                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].probe, sizeof(struct video_probe_and_commit_controls));
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_LEN:
@@ -592,17 +592,17 @@ static int usbd_video_stream_request_handler(uint8_t busid, struct usb_setup_pac
         case VIDEO_VS_COMMIT_CONTROL:
             switch (setup->bRequest) {
                 case VIDEO_REQUEST_SET_CUR:
-                    //memcpy((uint8_t *)&g_usbd_video[busid].commit, *data, setup->wLength);
+                    //memcpy((uint8_t *)&g_usbd_video[busid].commit, *data, sizeof(struct video_probe_and_commit_controls));
                     break;
                 case VIDEO_REQUEST_GET_CUR:
-                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].commit, setup->wLength);
+                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].commit, sizeof(struct video_probe_and_commit_controls));
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
                 case VIDEO_REQUEST_GET_MIN:
                 case VIDEO_REQUEST_GET_MAX:
                 case VIDEO_REQUEST_GET_RES:
                 case VIDEO_REQUEST_GET_DEF:
-                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].commit, setup->wLength);
+                    memcpy(*data, (uint8_t *)&g_usbd_video[busid].commit, sizeof(struct video_probe_and_commit_controls));
                     *len = sizeof(struct video_probe_and_commit_controls);
                     break;
 

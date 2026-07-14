@@ -382,6 +382,7 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t frame_index = 0xff;
     uint8_t format_index = 0xff;
     uint8_t num_of_frames = 0xff;
+    uint32_t desc_len = 0;
     uint8_t *p;
 
     struct usbh_video *video_class = usbh_video_class_alloc();
@@ -489,7 +490,12 @@ static int usbh_video_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                 break;
         }
         /* skip to next descriptor */
+        desc_len += p[DESC_bLength];
         p += p[DESC_bLength];
+
+        if (desc_len > hport->config.config_desc.wTotalLength) {
+            return -USB_ERR_INVAL;
+        }
     }
 
     usbh_video_list_info(video_class);

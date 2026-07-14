@@ -628,6 +628,7 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t cur_alt_setting = 0;
     const uint8_t *p;
     const uint8_t *p_ac_desc = NULL;
+    uint32_t desc_len = 0;
 
     struct usbh_audio *audio_class = usbh_audio_class_alloc();
     if (audio_class == NULL) {
@@ -698,7 +699,7 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                             USB_ASSERT(cur_alt_setting < CONFIG_USBHOST_MAX_INTF_ALTSETTINGS);
 
                             audio_class->as_msg_table[cur_iface - audio_class->ctrl_intf - 1].bNrChannels = desc->bNrChannels;
-                            memcpy(&audio_class->as_msg_table[cur_iface - audio_class->ctrl_intf - 1].as_format[cur_alt_setting], desc, desc->bLength);
+                            memcpy(&audio_class->as_msg_table[cur_iface - audio_class->ctrl_intf - 1].as_format[cur_alt_setting], desc, AUDIO_SIZEOF_FORMAT_TYPE_DESC(1));
                         } break;
                         default:
                             break;
@@ -718,7 +719,12 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                 break;
         }
         /* skip to next descriptor */
+        desc_len += p[DESC_bLength];
         p += p[DESC_bLength];
+
+        if (desc_len > hport->config.config_desc.wTotalLength) {
+            return -USB_ERR_INVAL;
+        }
     }
 
     if (p_ac_desc == NULL) {

@@ -79,6 +79,7 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t *p;
     uint8_t cur_iface = 0xff;
     uint8_t mac_str_idx = 0xff;
+    uint32_t desc_len = 0;
 
     struct usbh_cdc_ecm *cdc_ecm_class = &g_cdc_ecm_class;
 
@@ -111,7 +112,12 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
                 break;
         }
         /* skip to next descriptor */
+        desc_len += p[DESC_bLength];
         p += p[DESC_bLength];
+
+        if (desc_len > hport->config.config_desc.wTotalLength) {
+            return -USB_ERR_INVAL;
+        }
     }
 
 get_mac:

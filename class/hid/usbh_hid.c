@@ -194,6 +194,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     uint8_t cur_iface = 0xff;
     uint8_t *p;
     bool found = false;
+    uint32_t desc_len = 0;
 
     struct usbh_hid *hid_class = usbh_hid_class_alloc();
     if (hid_class == NULL) {
@@ -234,7 +235,12 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
                 break;
         }
         /* skip to next descriptor */
+        desc_len += p[DESC_bLength];
         p += p[DESC_bLength];
+
+        if (desc_len > hport->config.config_desc.wTotalLength) {
+            return -USB_ERR_INVAL;
+        }
     }
 
     if (found == false) {
@@ -317,6 +323,10 @@ int usbh_hid_parse_report_descriptor(const uint8_t *report_data, uint32_t report
 
         if (itemsize == 3) /* HID spec: 6.2.2.2 - Short Items */
             itemsize = 4;
+
+        if((itemsize + i + 1) > report_size) {
+            goto err;
+        }
 
         itemval = hid_get_itemval(report_data, i, itemsize);
 
