@@ -143,12 +143,12 @@ struct xinput_out_report {
 } __PACKED;
 
 // clang-format off
-#define XINPUT_DESCRIPTOR_LEN (9 + 16 + 7 + 7)
+#define XINPUT_DESCRIPTOR_LEN (9 + 17 + 7 + 7)
 
 #define XINPUT_DESCRIPTOR_INIT(bInterfaceNumber, out_ep, in_ep)                                                                     \
     USB_INTERFACE_DESCRIPTOR_INIT(bInterfaceNumber, 0x00, 0x02, 0xff, 0x5d, 0x01, 0x00), /* XInput proprietary descriptor (0x21) */ \
-    16, 0x21, 0x00, 0x01, 0x01, 0x24, in_ep, 0x14, 0x03, 0x00, 0x03, 0x13, out_ep, 0x00, 0x03, 0x00,                               \
-    USB_ENDPOINT_DESCRIPTOR_INIT(in_ep, 0x03, 32, 0x01),                                                                        \
+    0x11, 0x21, 0x00, 0x01, 0x01, 0x25, in_ep, 0x14, 0x00, 0x00, 0x00, 0x00, 0x13, out_ep, 0x08, 0x00, 0x00,                        \
+    USB_ENDPOINT_DESCRIPTOR_INIT(in_ep, 0x03, 32, 0x01),                                                                            \
     USB_ENDPOINT_DESCRIPTOR_INIT(out_ep, 0x03, 32, 0x08)
 // clang-format on
 
