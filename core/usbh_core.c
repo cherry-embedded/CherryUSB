@@ -242,7 +242,7 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                         return -USB_ERR_NOMEM;
                     }
 
-                    if (cur_ep_num >= CONFIG_USBHOST_MAX_ENDPOINTS) {
+                    if (cur_ep_num > CONFIG_USBHOST_MAX_ENDPOINTS) {
                         USB_LOG_ERR("Endpoint num %d overflow\r\n", cur_ep_num);
                         return -USB_ERR_NOMEM;
                     }
