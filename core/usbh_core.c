@@ -272,6 +272,12 @@ static int parse_config_descriptor(struct usbh_hubport *hport, struct usb_config
                         return -USB_ERR_INVAL;
                     }
                     ep_desc = (struct usb_endpoint_descriptor *)p;
+
+                    if (cur_ep >= CONFIG_USBHOST_MAX_ENDPOINTS) {
+                        USB_LOG_ERR("Endpoint num %d overflow\r\n", cur_ep);
+                        return -USB_ERR_NOMEM;
+                    }
+
                     memcpy(&hport->config.intf[cur_iface].altsetting[cur_alt_setting].ep[cur_ep].ep_desc, ep_desc, 7);
                     cur_ep++;
                     break;
