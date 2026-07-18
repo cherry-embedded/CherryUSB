@@ -323,6 +323,11 @@ void dwc2_ep_write(uint8_t busid, uint8_t ep_idx, uint8_t *src, uint16_t len)
     }
 }
 
+__WEAK void dwc2_override_hw_params(uint32_t reg_base, struct dwc2_hw_params *hw) {
+    (void)reg_base;
+    (void)hw;
+}
+
 void dwc2_ep_read(uint8_t busid, uint8_t *dest, uint16_t len)
 {
     uint32_t *p32;
@@ -495,6 +500,7 @@ int usb_dc_init(uint8_t busid)
 
     dwc2_get_hwparams(USBD_BASE, &g_dwc2_udc[busid].hw_params);
     dwc2_get_user_params(USBD_BASE, &g_dwc2_udc[busid].user_params);
+    dwc2_override_hw_params(USBD_BASE, &g_dwc2_udc[busid].hw_params);
 
     if (g_dwc2_udc[busid].user_params.phy_utmi_width == 0) {
         g_dwc2_udc[busid].user_params.phy_utmi_width = 8;
