@@ -161,7 +161,13 @@ void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
                 adb_client.writable = false;
             } break;
             case A_OPEN: /* OPEN(local-id, 0, "destination") */
-                rx_packet.payload[rx_packet.msg.data_length] = '\0';
+                /* data_length may equal sizeof(payload); writing at [data_length]
+                 * would be one past the end of the buffer. */
+                if (rx_packet.msg.data_length >= sizeof(rx_packet.payload)) {
+                    rx_packet.payload[sizeof(rx_packet.payload) - 1] = '\0';
+                } else {
+                    rx_packet.payload[rx_packet.msg.data_length] = '\0';
+                }
 
                 if (strncmp((const char *)rx_packet.payload, "shell:", 6) == 0) {
                     adb_client.localid = ADB_SHELL_LOALID;
