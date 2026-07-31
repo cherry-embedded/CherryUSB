@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_idf_version.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "diskio_impl.h"
@@ -215,12 +216,16 @@ esp_err_t msc_host_vfs_register(struct usbh_msc *msc_class,
     strcpy(vfs->base_path, base_path);
     vfs->pdrv = pdrv;
 
+#if ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(6, 0, 0)
     esp_vfs_fat_conf_t conf = {
         .base_path = base_path,
         .fat_drive = drive,
         .max_files = mount_config->max_files,
     };
     ret = esp_vfs_fat_register(&conf, &fs);
+#else
+    ret = esp_vfs_fat_register(base_path, drive, mount_config->max_files, &fs);
+#endif
     ESP_GOTO_ON_ERROR(ret, fail, TAG, "Failed to register filesystem, error=%s", esp_err_to_name(ret));
     vfs->fs = fs;
 
