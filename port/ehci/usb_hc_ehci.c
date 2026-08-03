@@ -799,6 +799,7 @@ int usb_hc_init(struct usbh_bus *bus)
     for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
         qh = &ehci_qh_pool[bus->hcd.hcd_id][index];
         qh->waitsem = usb_osal_sem_create(0);
+        USB_ASSERT(qh->waitsem != NULL);
     }
 
     memset(&g_async_qh_head[bus->hcd.hcd_id], 0, sizeof(struct ehci_qh_hw));

@@ -1351,14 +1351,12 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 #ifdef CONFIG_USBDEV_EP0_THREAD
     g_usbd_core[busid].usbd_ep0_mq = usb_osal_mq_create(1);
     if (g_usbd_core[busid].usbd_ep0_mq == NULL) {
-        USB_LOG_ERR("No memory to alloc for g_usbd_core[busid].usbd_ep0_mq\r\n");
-        while (1) {
-        }
+        return -USB_ERR_NOMEM;
     }
     g_usbd_core[busid].usbd_ep0_thread = usb_osal_thread_create("usbd_ep0", CONFIG_USBDEV_EP0_STACKSIZE, CONFIG_USBDEV_EP0_PRIO, usbdev_ep0_thread, (void *)(uint32_t)busid);
     if (g_usbd_core[busid].usbd_ep0_thread == NULL) {
-        USB_LOG_ERR("No memory to alloc for g_usbd_core[busid].usbd_ep0_thread\r\n");
-        while (1) {
+        usb_osal_mq_delete(g_usbd_core[busid].usbd_ep0_mq);
+        return -USB_ERR_NOMEM;
         }
     }
 #endif

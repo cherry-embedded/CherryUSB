@@ -292,10 +292,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     for (uint8_t i = 0; i <= USB_HOST_INTERRUPT_ENDPOINTS; i++) {
         g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem = usb_osal_sem_create(0);
-        if (g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem == NULL) {
-            USB_LOG_ERR("Failed to create waitsem\r\n");
-            return -USB_ERR_NOMEM;
-        }
+        USB_ASSERT(g_rp2040_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem != NULL);
     }
 
     g_rp2040_hcd[bus->hcd.hcd_id].ep0_mutex = usb_osal_mutex_create();

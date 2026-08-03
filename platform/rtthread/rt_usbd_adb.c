@@ -126,6 +126,7 @@ void usbd_adb_shell_init(uint8_t in_ep, uint8_t out_ep)
 #endif
 
     g_usbd_adb_shell.tx_done = usb_osal_sem_create(0);
+    USB_ASSERT(g_usbd_adb_shell.tx_done != NULL);
     rt_ringbuffer_init(&g_usbd_adb_shell.rx_rb, g_usbd_adb_shell.rx_rb_buffer, sizeof(g_usbd_adb_shell.rx_rb_buffer));
 }
 

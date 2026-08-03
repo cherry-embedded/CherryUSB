@@ -731,21 +731,21 @@ int usbh_hub_initialize(struct usbh_bus *bus)
 
     bus->hub_mq = usb_osal_mq_create(7);
     if (bus->hub_mq == NULL) {
-        USB_LOG_ERR("Failed to create hub mq\r\n");
-        return -1;
+        return -USB_ERR_NOMEM;
     }
 
     bus->hub_sem = usb_osal_sem_create(0);
     if (bus->hub_sem == NULL) {
-        USB_LOG_ERR("Failed to create hub sem\r\n");
-        return -1;
+        usb_osal_mq_delete(bus->hub_mq);
+        return -USB_ERR_NOMEM;
     }
 
     snprintf(thread_name, 32, "usbh_hub%u", bus->busid);
     bus->hub_thread = usb_osal_thread_create(thread_name, CONFIG_USBHOST_PSC_STACKSIZE, CONFIG_USBHOST_PSC_PRIO, usbh_hub_thread, bus);
     if (bus->hub_thread == NULL) {
-        USB_LOG_ERR("Failed to create hub thread\r\n");
-        return -1;
+        usb_osal_mq_delete(bus->hub_mq);
+        usb_osal_sem_delete(bus->hub_sem);
+        return -USB_ERR_NOMEM;
     }
     return 0;
 }
@@ -759,6 +759,7 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
     usb_osal_mq_send(bus->hub_mq, (uintptr_t)NULL);
     usb_osal_sem_take(bus->hub_sem, USB_OSAL_WAITING_FOREVER);
     usb_osal_sem_delete(bus->hub_sem);
+    usb_osal_mq_delete(bus->hub_mq);
     bus->hub_mq = NULL;
     bus->hub_sem = NULL;
 

@@ -258,6 +258,7 @@ void usbd_cdc_acm_serial_init(uint8_t busid, uint8_t in_ep, uint8_t out_ep)
     serial->in_ep = in_ep;
     serial->out_ep = out_ep;
     serial->tx_done = usb_osal_sem_create(0);
+    USB_ASSERT(serial->tx_done != NULL);
 
     usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &serial->intf_ctrl));
     usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &serial->intf_data));

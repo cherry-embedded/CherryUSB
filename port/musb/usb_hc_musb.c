@@ -576,6 +576,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     for (uint8_t i = 0; i < CONFIG_USB_MUSB_PIPE_NUM; i++) {
         g_musb_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem = usb_osal_sem_create(0);
+        USB_ASSERT(g_musb_hcd[bus->hcd.hcd_id].pipe_pool[i].waitsem != NULL);
     }
 
     cfg_num = usbh_get_musb_fifo_cfg(&cfg);

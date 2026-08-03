@@ -88,17 +88,14 @@ int usbotg_initialize(uint8_t busid, uint32_t reg_base, usbd_event_handler_t dev
 
     g_usbotg_core[busid].change_sem = usb_osal_sem_create(0);
     if (g_usbotg_core[busid].change_sem == NULL) {
-        USB_LOG_ERR("Failed to create change_sem\r\n");
-        while (1) {
-        }
+        return -USB_ERR_NOMEM;
     }
 
     snprintf(thread_name, 32, "usbotg%u", busid);
     g_usbotg_core[busid].change_thread = usb_osal_thread_create(thread_name, 2048, 10, usbotg_rolechange_thread, (void *)(uintptr_t)busid);
     if (g_usbotg_core[busid].change_thread == NULL) {
-        USB_LOG_ERR("Failed to create usbotg thread\r\n");
-        while (1) {
-        }
+        usb_osal_sem_delete(g_usbotg_core[busid].change_sem);
+        return -USB_ERR_NOMEM;
     }
 
     usbotg_trigger_role_change(busid, default_role);

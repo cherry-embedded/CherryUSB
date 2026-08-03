@@ -696,6 +696,7 @@ int usb_hc_init(struct usbh_bus *bus)
 
     for (uint8_t chidx = 0; chidx < g_dwc2_hcd[bus->hcd.hcd_id].hw_params.host_channels; chidx++) {
         g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx].waitsem = usb_osal_sem_create(0);
+        USB_ASSERT(g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx].waitsem != NULL);
     }
 
     USB_LOG_INFO("dwc2 has %d channels and dfifo depth(32-bit words) is %d\r\n",

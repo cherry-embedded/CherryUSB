@@ -35,6 +35,11 @@ static struct usbh_serial *usbh_serial_alloc(bool is_cdcacm)
             g_serial_class[devno].iobuffer = g_serial_iobuffer[devno];
             g_serial_class[devno].rx_complete_sem = usb_osal_sem_create(0);
 
+            if(g_serial_class[devno].rx_complete_sem == NULL) {
+                g_devinuse &= ~(1U << devno);
+                return NULL;
+            }
+
             if (is_cdcacm) {
                 for (devno2 = 0; devno2 < CONFIG_USBHOST_MAX_SERIAL_CLASS; devno2++) {
                     if ((g_cdcacm_devinuse & (1U << devno2)) == 0) {
@@ -67,6 +72,7 @@ static void usbh_serial_free(struct usbh_serial *serial)
 
     if (g_serial_class[devno].rx_complete_sem) {
         usb_osal_sem_delete(g_serial_class[devno].rx_complete_sem);
+        g_serial_class[devno].rx_complete_sem = NULL;
     }
 }
 
