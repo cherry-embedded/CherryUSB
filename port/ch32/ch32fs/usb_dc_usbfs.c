@@ -271,7 +271,8 @@ void USBD_IRQHandler(uint8_t busid)
 
         switch (token) {
             case USBFS_UIS_TOKEN_SETUP:
-                USB_SET_RX_CTRL(ep_idx, USBFS_UEP_R_RES_NAK);
+                USB_SET_TX_CTRL(0, USBFS_UEP_T_RES_NAK);
+                USB_SET_RX_CTRL(0, USBFS_UEP_R_RES_NAK);
                 usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&g_ch32_usbfs_udc.setup);
                 break;
 
