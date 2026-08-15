@@ -185,6 +185,26 @@
         (field)[3] = (uint8_t)((value) >> 0);  \
     } while (0)
 
+#define GET_LE16(field) \
+    (((uint16_t)(field)[0] << 0) | ((uint16_t)(field)[1] << 8))
+
+#define GET_LE32(field) \
+    (((uint32_t)(field)[0] << 0) | ((uint32_t)(field)[1] << 8) | ((uint32_t)(field)[2] << 16) | ((uint32_t)(field)[3] << 24))
+
+#define SET_LE16(field, value)                \
+    do {                                      \
+        (field)[0] = (uint8_t)((value) >> 0); \
+        (field)[1] = (uint8_t)((value) >> 8); \
+    } while (0)
+
+#define SET_LE32(field, value)                \
+    do {                                      \
+        (field)[0] = (uint8_t)((value) >> 0); \
+        (field)[1] = (uint8_t)((value) >> 8); \
+        (field)[2] = (uint8_t)((value) >> 16); \
+        (field)[3] = (uint8_t)((value) >> 24); \
+    } while (0)
+
 #define WBVAL(x) ((x) & 0xFF), (((x) >> 8) & 0xFF)
 #define DBVAL(x) ((x) & 0xFF), (((x) >> 8) & 0xFF), (((x) >> 16) & 0xFF), (((x) >> 24) & 0xFF)
 
