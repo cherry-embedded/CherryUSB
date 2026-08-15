@@ -43,6 +43,7 @@ static uint16_t g_cdc_ncm_packet_filter = 0;
 static volatile uint8_t g_current_net_status = 0;
 static volatile uint8_t g_cmd_intf = 0;
 static uint8_t g_cdc_ncm_mac[6] = { 0 };
+static bool g_cdc_ncm_ep_registered = false;
 
 static uint32_t g_connect_speed_table[2] = { CDC_NCM_CONNECT_SPEED_UPSTREAM, CDC_NCM_CONNECT_SPEED_DOWNSTREAM };
 
@@ -121,15 +122,15 @@ static int cdc_ncm_class_interface_request_handler(uint8_t busid, struct usb_set
         g_cdc_ncm_ntb_format = 0;
         break;
     case CDC_REQUEST_GET_NTB_INPUT_SIZE:
-        SET_LE32(g_cdc_ncm_ctrl_buf, g_cdc_ncm_ntb_out_max_size);
+        SET_LE32(g_cdc_ncm_ctrl_buf, g_cdc_ncm_ntb_in_max_size);
         *data = g_cdc_ncm_ctrl_buf;
         *len = 4;
         break;
     case CDC_REQUEST_SET_NTB_INPUT_SIZE:
         if (setup->wLength >= 4 && data && *data) {
             uint32_t ntb_size = GET_LE32(*data);
-            if (ntb_size >= (CDC_NCM_DATAGRAM_OFFSET + CDC_NCM_NDP16_LEN) && ntb_size <= sizeof(g_cdc_ncm_rx_buffer)) {
-                g_cdc_ncm_ntb_out_max_size = ntb_size;
+            if (ntb_size >= (CDC_NCM_DATAGRAM_OFFSET + CDC_NCM_NDP16_LEN) && ntb_size <= CONFIG_CDC_NCM_NTB_MAX_SIZE) {
+                g_cdc_ncm_ntb_in_max_size = ntb_size;
             }
         }
         break;
@@ -200,8 +201,9 @@ static void cdc_ncm_notify_handler(uint8_t busid, uint8_t event, void *arg)
         g_cdc_ncm_rx_ndp_index = 0;
         break;
     case USBD_EVENT_SET_INTERFACE: {
-        struct usb_interface_descriptor *desc = (struct usb_interface_descriptor *)arg;
 #ifdef CONFIG_USBDEV_CDC_NCM_USING_LWIP
+        struct usb_interface_descriptor *desc = (struct usb_interface_descriptor *)arg;
+
         if (desc && desc->bAlternateSetting == 1) {
             g_cdc_ncm_data_alt_active = true;
             usbd_cdc_ncm_start_read(g_cdc_ncm_rx_buffer, g_cdc_ncm_ntb_out_max_size);
@@ -209,6 +211,8 @@ static void cdc_ncm_notify_handler(uint8_t busid, uint8_t event, void *arg)
             g_cdc_ncm_data_alt_active = false;
             g_cdc_ncm_tx_ntb_length = 0;
         }
+#else
+        (void)arg;
 #endif
         break;
     }
@@ -266,12 +270,15 @@ int usbd_cdc_ncm_start_write(uint8_t *buf, uint32_t len)
         return -USB_ERR_BUSY;
     }
 
+    /* mark busy before submitting: the transfer may complete in interrupt
+       context before usbd_ep_start_write() returns */
+    g_cdc_ncm_tx_ntb_length = len;
     ret = usbd_ep_start_write(0, cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX].ep_addr, buf, len);
     if (ret != 0) {
+        g_cdc_ncm_tx_ntb_length = 0;
         return ret;
     }
 
-    g_cdc_ncm_tx_ntb_length = len;
     USB_LOG_DBG("txlen:%d\r\n", g_cdc_ncm_tx_ntb_length);
     return 0;
 }
@@ -291,39 +298,55 @@ int usbd_cdc_ncm_start_read(uint8_t *buf, uint32_t len)
 }
 
 #ifdef CONFIG_USBDEV_CDC_NCM_USING_LWIP
+static bool cdc_ncm_check_ndp16(uint16_t ndp_index)
+{
+    struct cdc_ncm_ndp16 *ndp16;
+    uint32_t signature;
+    uint16_t ndp_len;
+
+    if (ndp_index == 0 || (uint32_t)ndp_index + sizeof(struct cdc_ncm_ndp16) > g_cdc_ncm_rx_ntb_length) {
+        return false;
+    }
+
+    ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_rx_data_buffer[ndp_index];
+    signature = GET_LE32((uint8_t *)&ndp16->dwSignature);
+    ndp_len = GET_LE16((uint8_t *)&ndp16->wLength);
+
+    if ((signature != CDC_NCM_NDP16_SIGNATURE_NCM0) &&
+        (signature != CDC_NCM_NDP16_SIGNATURE_NCM1)) {
+        USB_LOG_WRN("invalid ncm ndp16 signature\r\n");
+        return false;
+    }
+
+    if (ndp_len < 12 || (uint32_t)ndp_index + ndp_len > g_cdc_ncm_rx_ntb_length) {
+        USB_LOG_WRN("invalid ncm ndp16 len\r\n");
+        return false;
+    }
+
+    return true;
+}
+
 static bool cdc_ncm_prepare_rx_ndp(void)
 {
     struct cdc_ncm_nth16 *nth16;
-    struct cdc_ncm_ndp16 *ndp16;
+    uint16_t ndp_index;
 
     if (g_cdc_ncm_rx_ntb_length < (CDC_NCM_NTH16_LEN + CDC_NCM_NDP16_LEN)) {
         return false;
     }
 
     nth16 = (struct cdc_ncm_nth16 *)g_cdc_ncm_rx_data_buffer;
-    if (nth16->dwSignature != CDC_NCM_NTH16_SIGNATURE ||
-        nth16->wHeaderLength != CDC_NCM_NTH16_LEN ||
-        nth16->wBlockLength > g_cdc_ncm_rx_ntb_length ||
-        nth16->wNdpIndex == 0 ||
-        nth16->wNdpIndex + sizeof(struct cdc_ncm_ndp16) > g_cdc_ncm_rx_ntb_length) {
+    ndp_index = GET_LE16((uint8_t *)&nth16->wNdpIndex);
+    if (GET_LE32((uint8_t *)&nth16->dwSignature) != CDC_NCM_NTH16_SIGNATURE ||
+        GET_LE16((uint8_t *)&nth16->wHeaderLength) != CDC_NCM_NTH16_LEN ||
+        (uint32_t)GET_LE16((uint8_t *)&nth16->wBlockLength) > g_cdc_ncm_rx_ntb_length ||
+        !cdc_ncm_check_ndp16(ndp_index)) {
         USB_LOG_WRN("invalid ncm nth16\r\n");
         return false;
     }
 
-    ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_rx_data_buffer[nth16->wNdpIndex];
-    if ((ndp16->dwSignature != CDC_NCM_NDP16_SIGNATURE_NCM0) &&
-        (ndp16->dwSignature != CDC_NCM_NDP16_SIGNATURE_NCM1)) {
-        USB_LOG_WRN("invalid ncm ndp16\r\n");
-        return false;
-    }
-
-    if (ndp16->wLength < 12 || (nth16->wNdpIndex + ndp16->wLength) > g_cdc_ncm_rx_ntb_length) {
-        USB_LOG_WRN("invalid ncm ndp16 len\r\n");
-        return false;
-    }
-
-    g_cdc_ncm_rx_ndp_index = nth16->wNdpIndex;
-    g_cdc_ncm_rx_sequence = nth16->wSequence;
+    g_cdc_ncm_rx_ndp_index = ndp_index;
+    g_cdc_ncm_rx_sequence = GET_LE16((uint8_t *)&nth16->wSequence);
     (void)g_cdc_ncm_rx_sequence;
     return true;
 }
@@ -331,6 +354,8 @@ static bool cdc_ncm_prepare_rx_ndp(void)
 struct pbuf *usbd_cdc_ncm_eth_rx(void)
 {
     struct cdc_ncm_ndp16 *ndp16;
+    uint16_t ndp_len;
+    uint16_t next_ndp_index;
 
     if (g_cdc_ncm_rx_ntb_length == 0 || g_cdc_ncm_rx_data_buffer == NULL) {
         return NULL;
@@ -341,40 +366,51 @@ struct pbuf *usbd_cdc_ncm_eth_rx(void)
         return NULL;
     }
 
-    ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_rx_data_buffer[g_cdc_ncm_rx_ndp_index];
+    for (;;) {
+        ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_rx_data_buffer[g_cdc_ncm_rx_ndp_index];
+        ndp_len = GET_LE16((uint8_t *)&ndp16->wLength);
 
-    while ((8 + 4 * (g_cdc_ncm_rx_datagram_pos + 1)) <= ndp16->wLength) {
-        struct cdc_ncm_ndp16_datagram *datagram;
-        uint16_t index;
-        uint16_t length;
-        struct pbuf *p;
+        while ((8 + 4 * (g_cdc_ncm_rx_datagram_pos + 1)) <= ndp_len) {
+            struct cdc_ncm_ndp16_datagram *datagram;
+            uint16_t index;
+            uint16_t length;
+            struct pbuf *p;
 
-        datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_rx_data_buffer[g_cdc_ncm_rx_ndp_index + 8 + 4 * g_cdc_ncm_rx_datagram_pos];
-        g_cdc_ncm_rx_datagram_pos++;
-        index = datagram->wDatagramIndex;
-        length = datagram->wDatagramLength;
+            datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_rx_data_buffer[g_cdc_ncm_rx_ndp_index + 8 + 4 * g_cdc_ncm_rx_datagram_pos];
+            g_cdc_ncm_rx_datagram_pos++;
+            index = GET_LE16((uint8_t *)&datagram->wDatagramIndex);
+            length = GET_LE16((uint8_t *)&datagram->wDatagramLength);
 
-        if (index == 0 || length == 0) {
+            if (index == 0 || length == 0) {
+                break;
+            }
+            if ((uint32_t)index + length > g_cdc_ncm_rx_ntb_length || length > g_cdc_ncm_max_datagram_size) {
+                USB_LOG_WRN("invalid ncm datagram index:%u len:%u\r\n", index, length);
+                continue;
+            }
+
+            p = pbuf_alloc(PBUF_RAW, length, PBUF_POOL);
+            if (p == NULL) {
+                USB_LOG_WRN("ncm pbuf alloc failed\r\n");
+                usbd_cdc_ncm_start_read(g_cdc_ncm_rx_buffer, g_cdc_ncm_ntb_out_max_size);
+                return NULL;
+            }
+            if (pbuf_take(p, &g_cdc_ncm_rx_data_buffer[index], length) != ERR_OK) {
+                pbuf_free(p);
+                continue;
+            }
+
+            USB_LOG_DBG("rxlen:%d\r\n", length);
+            return p;
+        }
+
+        /* current ndp is exhausted, follow the ndp chain if present */
+        next_ndp_index = GET_LE16((uint8_t *)&ndp16->wNextNdpIndex);
+        if (next_ndp_index == 0 || !cdc_ncm_check_ndp16(next_ndp_index)) {
             break;
         }
-        if ((uint32_t)index + length > g_cdc_ncm_rx_ntb_length || length > g_cdc_ncm_max_datagram_size) {
-            USB_LOG_WRN("invalid ncm datagram index:%u len:%u\r\n", index, length);
-            continue;
-        }
-
-        p = pbuf_alloc(PBUF_RAW, length, PBUF_POOL);
-        if (p == NULL) {
-            USB_LOG_WRN("ncm pbuf alloc failed\r\n");
-            usbd_cdc_ncm_start_read(g_cdc_ncm_rx_buffer, g_cdc_ncm_ntb_out_max_size);
-            return NULL;
-        }
-        if (pbuf_take(p, &g_cdc_ncm_rx_data_buffer[index], length) != ERR_OK) {
-            pbuf_free(p);
-            continue;
-        }
-
-        USB_LOG_DBG("rxlen:%d\r\n", length);
-        return p;
+        g_cdc_ncm_rx_ndp_index = next_ndp_index;
+        g_cdc_ncm_rx_datagram_pos = 0;
     }
 
     usbd_cdc_ncm_start_read(g_cdc_ncm_rx_buffer, g_cdc_ncm_ntb_out_max_size);
@@ -401,11 +437,16 @@ int usbd_cdc_ncm_eth_tx(struct pbuf *p)
         return -USB_ERR_BUSY;
     }
 
-    payload_len = MIN(p->tot_len, g_cdc_ncm_max_datagram_size);
+    if (p->tot_len > g_cdc_ncm_max_datagram_size) {
+        USB_LOG_WRN("ncm tx frame too large:%u\r\n", p->tot_len);
+        return -USB_ERR_INVAL;
+    }
+
+    payload_len = p->tot_len;
     aligned_payload_len = USB_ALIGN_UP(payload_len, 4);
     ndp_index = CDC_NCM_DATAGRAM_OFFSET + aligned_payload_len;
     block_len = ndp_index + CDC_NCM_NDP16_LEN;
-    if (block_len > sizeof(g_cdc_ncm_tx_buffer)) {
+    if (block_len > sizeof(g_cdc_ncm_tx_buffer) || block_len > g_cdc_ncm_ntb_in_max_size) {
         return -USB_ERR_INVAL;
     }
 
@@ -417,23 +458,23 @@ int usbd_cdc_ncm_eth_tx(struct pbuf *p)
         buffer += copy_len;
         payload_len -= copy_len;
     }
-    payload_len = MIN(p->tot_len, g_cdc_ncm_max_datagram_size);
+    payload_len = p->tot_len;
 
     nth16 = (struct cdc_ncm_nth16 *)&g_cdc_ncm_tx_buffer[0];
-    nth16->dwSignature = CDC_NCM_NTH16_SIGNATURE;
-    nth16->wHeaderLength = CDC_NCM_NTH16_LEN;
-    nth16->wSequence = g_cdc_ncm_tx_sequence++;
-    nth16->wBlockLength = block_len;
-    nth16->wNdpIndex = ndp_index;
+    SET_LE32((uint8_t *)&nth16->dwSignature, CDC_NCM_NTH16_SIGNATURE);
+    SET_LE16((uint8_t *)&nth16->wHeaderLength, CDC_NCM_NTH16_LEN);
+    SET_LE16((uint8_t *)&nth16->wSequence, g_cdc_ncm_tx_sequence++);
+    SET_LE16((uint8_t *)&nth16->wBlockLength, block_len);
+    SET_LE16((uint8_t *)&nth16->wNdpIndex, ndp_index);
 
     ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_tx_buffer[ndp_index];
-    ndp16->dwSignature = CDC_NCM_NDP16_SIGNATURE_NCM0;
-    ndp16->wLength = CDC_NCM_NDP16_LEN;
-    ndp16->wNextNdpIndex = 0;
+    SET_LE32((uint8_t *)&ndp16->dwSignature, CDC_NCM_NDP16_SIGNATURE_NCM0);
+    SET_LE16((uint8_t *)&ndp16->wLength, CDC_NCM_NDP16_LEN);
+    SET_LE16((uint8_t *)&ndp16->wNextNdpIndex, 0);
 
     datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_tx_buffer[ndp_index + 8];
-    datagram[0].wDatagramIndex = CDC_NCM_DATAGRAM_OFFSET;
-    datagram[0].wDatagramLength = payload_len;
+    SET_LE16((uint8_t *)&datagram[0].wDatagramIndex, CDC_NCM_DATAGRAM_OFFSET);
+    SET_LE16((uint8_t *)&datagram[0].wDatagramLength, payload_len);
     datagram[1].wDatagramIndex = 0;
     datagram[1].wDatagramLength = 0;
 
@@ -454,16 +495,21 @@ struct usbd_interface *usbd_cdc_ncm_init_intf(struct usbd_interface *intf,
     intf->vendor_handler = NULL;
     intf->notify_handler = cdc_ncm_notify_handler;
 
-    cdc_ncm_ep_data[CDC_NCM_OUT_EP_IDX].ep_addr = out_ep;
-    cdc_ncm_ep_data[CDC_NCM_OUT_EP_IDX].ep_cb = cdc_ncm_bulk_out;
-    cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX].ep_addr = in_ep;
-    cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX].ep_cb = cdc_ncm_bulk_in;
-    cdc_ncm_ep_data[CDC_NCM_INT_EP_IDX].ep_addr = int_ep;
-    cdc_ncm_ep_data[CDC_NCM_INT_EP_IDX].ep_cb = cdc_ncm_int_in;
+    /* control and data interfaces share the same endpoints, register them only once */
+    if (!g_cdc_ncm_ep_registered) {
+        g_cdc_ncm_ep_registered = true;
 
-    usbd_add_endpoint(0, &cdc_ncm_ep_data[CDC_NCM_OUT_EP_IDX]);
-    usbd_add_endpoint(0, &cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX]);
-    usbd_add_endpoint(0, &cdc_ncm_ep_data[CDC_NCM_INT_EP_IDX]);
+        cdc_ncm_ep_data[CDC_NCM_OUT_EP_IDX].ep_addr = out_ep;
+        cdc_ncm_ep_data[CDC_NCM_OUT_EP_IDX].ep_cb = cdc_ncm_bulk_out;
+        cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX].ep_addr = in_ep;
+        cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX].ep_cb = cdc_ncm_bulk_in;
+        cdc_ncm_ep_data[CDC_NCM_INT_EP_IDX].ep_addr = int_ep;
+        cdc_ncm_ep_data[CDC_NCM_INT_EP_IDX].ep_cb = cdc_ncm_int_in;
+
+        usbd_add_endpoint(0, &cdc_ncm_ep_data[CDC_NCM_OUT_EP_IDX]);
+        usbd_add_endpoint(0, &cdc_ncm_ep_data[CDC_NCM_IN_EP_IDX]);
+        usbd_add_endpoint(0, &cdc_ncm_ep_data[CDC_NCM_INT_EP_IDX]);
+    }
 
     return intf;
 }

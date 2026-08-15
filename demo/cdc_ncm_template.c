@@ -97,13 +97,6 @@ const struct usb_descriptor cdc_ncm_descriptor = {
 
 uint8_t mac[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
-volatile bool cdc_ncm_tx_done = false;
-
-void usbd_cdc_ncm_data_send_done(uint32_t len)
-{
-    cdc_ncm_tx_done = true; // suggest you to use semaphore in os
-}
-
 #ifdef RT_USING_LWIP
 
 #ifndef RT_LWIP_DHCP
@@ -119,7 +112,16 @@ void usbd_cdc_ncm_data_send_done(uint32_t len)
 #include <netif/ethernetif.h>
 #include <dhcp_server.h>
 
+#define CDC_NCM_TX_TIMEOUT_MS 1000
+
 struct eth_device cdc_ncm_dev;
+static struct rt_semaphore cdc_ncm_tx_sem;
+
+void usbd_cdc_ncm_data_send_done(uint32_t len)
+{
+    (void)len;
+    rt_sem_release(&cdc_ncm_tx_sem);
+}
 
 static rt_err_t rt_usbd_cdc_ncm_control(rt_device_t dev, int cmd, void *args)
 {
@@ -152,10 +154,10 @@ rt_err_t rt_usbd_cdc_ncm_eth_tx(rt_device_t dev, struct pbuf *p)
 {
     int ret;
 
-    cdc_ncm_tx_done = false;
     ret = usbd_cdc_ncm_eth_tx(p);
     if (ret == 0) {
-        while (!cdc_ncm_tx_done) {
+        if (rt_sem_take(&cdc_ncm_tx_sem, rt_tick_from_millisecond(CDC_NCM_TX_TIMEOUT_MS)) != RT_EOK) {
+            return -RT_ETIMEOUT;
         }
         return RT_EOK;
     } else
@@ -164,6 +166,8 @@ rt_err_t rt_usbd_cdc_ncm_eth_tx(rt_device_t dev, struct pbuf *p)
 
 void cdc_ncm_lwip_init(void)
 {
+    rt_sem_init(&cdc_ncm_tx_sem, "ncm_tx", 0, RT_IPC_FLAG_PRIO);
+
     cdc_ncm_dev.parent.control = rt_usbd_cdc_ncm_control;
     cdc_ncm_dev.eth_rx = rt_usbd_cdc_ncm_eth_rx;
     cdc_ncm_dev.eth_tx = rt_usbd_cdc_ncm_eth_tx;
@@ -187,6 +191,17 @@ void usbd_cdc_ncm_data_recv_done(uint32_t len)
 
 #include "dhserver.h"
 #include "dnserver.h"
+
+/* rough bounded wait for the polled demo; in a real application use an os semaphore with timeout */
+#define CDC_NCM_TX_TIMEOUT_LOOPS 1000000UL
+
+volatile bool cdc_ncm_tx_done = false;
+
+void usbd_cdc_ncm_data_send_done(uint32_t len)
+{
+    (void)len;
+    cdc_ncm_tx_done = true;
+}
 
 /*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
 #define IP_ADDR0      (uint8_t)192
@@ -246,11 +261,15 @@ static struct netif cdc_ncm_netif; //network interface
 err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
     int ret;
+    uint32_t timeout = CDC_NCM_TX_TIMEOUT_LOOPS;
 
     cdc_ncm_tx_done = false;
     ret = usbd_cdc_ncm_eth_tx(p);
     if (ret == 0) {
         while (!cdc_ncm_tx_done) {
+            if (--timeout == 0) {
+                return ERR_TIMEOUT;
+            }
         }
         return ERR_OK;
     } else

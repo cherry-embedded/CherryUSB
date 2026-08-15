@@ -6,6 +6,8 @@
 #ifndef USBD_CDC_NCM_H
 #define USBD_CDC_NCM_H
 
+#include <stdint.h>
+#include <stdbool.h>
 #include "usb_cdc.h"
 
 #ifdef __cplusplus
