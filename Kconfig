@@ -122,7 +122,6 @@ if CHERRYUSB
         config CHERRYUSB_DEVICE_CDC_NCM
             bool
             prompt "Enable usb cdc ncm device"
-            depends on !IDF_CMAKE
             default n
 
         config CHERRYUSB_DEVICE_MTP
