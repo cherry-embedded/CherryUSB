@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, sakumisu
+ * Copyright (c) 2025-2026 sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,8 +48,12 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 static void release_thread_handler(struct k_work *work)
 {
     struct release_thread_work *release_work = (struct release_thread_work *)work;
-    k_free(release_work->thread);
-    k_work_cancel(work);
+
+    /* The workqueue may preempt the thread that queued this work. Wait until
+     * k_thread_abort() has completed before freeing its TCB and stack. */
+    if (k_thread_join(release_work->thread, K_FOREVER) == 0) {
+        k_free(release_work->thread);
+    }
     k_free(release_work);
 }
 
@@ -63,6 +67,10 @@ void usb_osal_thread_delete(usb_osal_thread_t thread)
         thread = z_current_get();
 #endif
         release_work = k_malloc(sizeof(struct release_thread_work));
+        if (release_work == NULL) {
+            k_thread_abort(thread);
+            return;
+        }
         release_work->thread = thread;
         k_work_init(&release_work->work, release_thread_handler);
         k_work_submit(&release_work->work);
