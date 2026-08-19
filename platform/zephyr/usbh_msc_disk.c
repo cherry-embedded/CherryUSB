@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, sakumisu
+ * Copyright (c) 2025-2026 sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,12 +131,26 @@ static struct disk_info usbh_msc_disk = {
     .ops = &msc_disk_ops,
 };
 
+__WEAK void usbh_msc_app_run(struct usbh_msc *msc_class)
+{
+    (void)msc_class;
+}
+
+__WEAK void usbh_msc_app_stop(struct usbh_msc *msc_class)
+{
+    (void)msc_class;
+}
+
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
     disk_access_register(&usbh_msc_disk);
+
+    usbh_msc_app_run(msc_class);
 }
 
 void usbh_msc_stop(struct usbh_msc *msc_class)
 {
+    usbh_msc_app_stop(msc_class);
+
     disk_access_unregister(&usbh_msc_disk);
 }
