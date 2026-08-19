@@ -105,7 +105,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('port/renesas/device/r_usb_device.c')
         src += Glob('port/renesas/device/usb_dc_rensas.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32']):
-        if GetDepend(['PKG_CHERRYUSB_DEVICE_HS']):
+        if GetDepend(['PKG_CHERRYUSB_DEVICE_SPEED_HS']):
             src += Glob('port/ch32/usb_dc_usbhs.c')
         else:
             src += Glob('port/ch32/usb_dc_usbfs.c')

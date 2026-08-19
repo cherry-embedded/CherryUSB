@@ -505,6 +505,39 @@ static bool SCSI_readCapacity10(uint8_t busid, uint8_t **data, uint32_t *len)
     return true;
 }
 
+static bool SCSI_readCapacity16(uint8_t busid, uint8_t **data, uint32_t *len)
+{
+    uint8_t capacity16[32];
+    uint32_t last_lba;
+    uint32_t blk_size;
+
+    /* service action 0x10 = READ CAPACITY(16); other service actions unsupported */
+    if ((g_usbd_msc[busid].cbw.dDataLength == 0U) ||
+        ((g_usbd_msc[busid].cbw.CB[1] & 0x1fU) != 0x10U)) {
+        SCSI_SetSenseData(busid, SCSI_KCQIR_INVALIDCOMMAND);
+        return false;
+    }
+
+    last_lba = g_usbd_msc[busid].scsi_blk_nbr[g_usbd_msc[busid].cbw.bLUN] - 1U;
+    blk_size = g_usbd_msc[busid].scsi_blk_size[g_usbd_msc[busid].cbw.bLUN];
+
+    memset(capacity16, 0, sizeof(capacity16));
+    /* 8-byte LBA (project volume < 4G, upper 4 bytes stay 0) */
+    capacity16[4] = (uint8_t)((last_lba >> 24) & 0xff);
+    capacity16[5] = (uint8_t)((last_lba >> 16) & 0xff);
+    capacity16[6] = (uint8_t)((last_lba >> 8) & 0xff);
+    capacity16[7] = (uint8_t)(last_lba & 0xff);
+    /* 4-byte block length */
+    capacity16[8]  = (uint8_t)((blk_size >> 24) & 0xff);
+    capacity16[9]  = (uint8_t)((blk_size >> 16) & 0xff);
+    capacity16[10] = (uint8_t)((blk_size >> 8) & 0xff);
+    capacity16[11] = (uint8_t)(blk_size & 0xff);
+
+    memcpy(*data, (uint8_t *)capacity16, sizeof(capacity16));
+    *len = sizeof(capacity16);
+    return true;
+}
+
 static bool SCSI_read10(uint8_t busid, uint8_t **data, uint32_t *len)
 {
     (void)data;
@@ -727,6 +760,9 @@ static bool SCSI_CBWDecode(uint8_t busid, uint32_t nbytes)
                 break;
             case SCSI_CMD_READCAPACITY10:
                 ret = SCSI_readCapacity10(busid, &buf2send, &len2send);
+                break;
+            case SCSI_CMD_READCAPACITY16:
+                ret = SCSI_readCapacity16(busid, &buf2send, &len2send);
                 break;
             case SCSI_CMD_READ10:
                 ret = SCSI_read10(busid, NULL, 0);
