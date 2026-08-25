@@ -335,17 +335,16 @@ static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t USB_Request[DAP_PACKET_COU
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t USB_Response[DAP_PACKET_COUNT][DAP_PACKET_SIZE]; // Response Buffer
 static uint16_t USB_RespSize[DAP_PACKET_COUNT];                                                        // Response Size
 
-volatile struct cdc_line_coding g_cdc_lincoding;
-volatile uint8_t config_uart = 0;
-volatile uint8_t config_uart_transfer = 0;
-
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t uartrx_ringbuffer[CONFIG_UARTRX_RINGBUF_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t usbrx_ringbuffer[CONFIG_USBRX_RINGBUF_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t usb_tmpbuffer[DAP_PACKET_SIZE];
 
+static volatile struct cdc_line_coding g_cdc_lincoding;
+static volatile uint8_t config_uart = 0;
+static volatile uint8_t config_uart_transfer = 0;
 static volatile uint8_t usbrx_idle_flag = 0;
-static volatile uint8_t usbtx_idle_flag = 0;
-static volatile uint8_t uarttx_idle_flag = 0;
+static volatile uint8_t usbtx_idle_flag = 1;
+static volatile uint8_t uarttx_idle_flag = 1;
 
 USB_NOCACHE_RAM_SECTION chry_ringbuffer_t g_uartrx;
 USB_NOCACHE_RAM_SECTION chry_ringbuffer_t g_usbrx;
@@ -356,9 +355,6 @@ void usbd_event_handler(uint8_t busid, uint8_t event)
     switch (event) {
         case USBD_EVENT_RESET:
             usbrx_idle_flag = 0;
-            usbtx_idle_flag = 0;
-            uarttx_idle_flag = 0;
-            config_uart_transfer = 0;
             break;
         case USBD_EVENT_CONNECTED:
             break;
@@ -437,20 +433,13 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     (void)busid;
-    uint32_t size;
-    uint8_t *buffer;
 
     chry_ringbuffer_linear_read_done(&g_uartrx, nbytes);
     if ((nbytes % DAP_PACKET_SIZE) == 0 && nbytes) {
         /* send zlp */
         usbd_ep_start_write(0, CDC_IN_EP, NULL, 0);
     } else {
-        if (chry_ringbuffer_get_used(&g_uartrx)) {
-            buffer = chry_ringbuffer_linear_read_setup(&g_uartrx, &size);
-            usbd_ep_start_write(0, CDC_IN_EP, buffer, size);
-        } else {
-            usbtx_idle_flag = 1;
-        }
+        usbtx_idle_flag = 1;
     }
 }
 
@@ -624,7 +613,8 @@ void chry_dap_handle(void)
 void usbd_cdc_acm_set_line_coding(uint8_t busid, uint8_t intf, struct cdc_line_coding *line_coding)
 {
     (void)busid;
-    if (memcmp(line_coding, (uint8_t *)&g_cdc_lincoding, sizeof(struct cdc_line_coding)) != 0) {
+
+    if (memcmp((uint8_t *)&g_cdc_lincoding, line_coding, sizeof(struct cdc_line_coding)) != 0 && line_coding->dwDTERate != 0) {
         memcpy((uint8_t *)&g_cdc_lincoding, line_coding, sizeof(struct cdc_line_coding));
         config_uart = 1;
         config_uart_transfer = 0;
@@ -641,6 +631,10 @@ void chry_dap_usb2uart_handle(void)
 {
     uint32_t size;
     uint8_t *buffer;
+
+    if (usb_device_is_configured(0) == 0) {
+        return;
+    }
 
     if (config_uart) {
         /* disable irq here */
@@ -700,16 +694,9 @@ __WEAK void chry_dap_usb2uart_uart_config_callback(struct cdc_line_coding *line_
 /* called by user */
 void chry_dap_usb2uart_uart_send_complete(uint32_t size)
 {
-    uint8_t *buffer;
-
     chry_ringbuffer_linear_read_done(&g_usbrx, size);
 
-    if (chry_ringbuffer_get_used(&g_usbrx)) {
-        buffer = chry_ringbuffer_linear_read_setup(&g_usbrx, &size);
-        chry_dap_usb2uart_uart_send_bydma(buffer, size);
-    } else {
-        uarttx_idle_flag = 1;
-    }
+    uarttx_idle_flag = 1;
 }
 
 /* implment by user */
