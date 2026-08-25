@@ -694,12 +694,12 @@ static int usbh_audio_ctrl_connect(struct usbh_hubport *hport, uint8_t intf)
                         case AUDIO_STREAMING_FORMAT_TYPE: {
                             struct audio_cs_if_as_format_type_descriptor *desc = (struct audio_cs_if_as_format_type_descriptor *)p;
 
-                            USB_ASSERT(desc->bSamFreqType == 1);
+                            USB_ASSERT(desc->bSamFreqType <= CONFIG_USBHOST_AUDIO_MAX_SAMPLE_FREQ_NUM && desc->bSamFreqType > 0);
                             USB_ASSERT(desc->bNrChannels <= CONFIG_USBHOST_AUDIO_MAX_CHANNELS);
                             USB_ASSERT(cur_alt_setting < CONFIG_USBHOST_MAX_INTF_ALTSETTINGS);
 
                             audio_class->as_msg_table[cur_iface - audio_class->ctrl_intf - 1].bNrChannels = desc->bNrChannels;
-                            memcpy(&audio_class->as_msg_table[cur_iface - audio_class->ctrl_intf - 1].as_format[cur_alt_setting], desc, AUDIO_SIZEOF_FORMAT_TYPE_DESC(1));
+                            memcpy(&audio_class->as_msg_table[cur_iface - audio_class->ctrl_intf - 1].as_format[cur_alt_setting], desc, AUDIO_SIZEOF_FORMAT_TYPE_DESC(desc->bSamFreqType));
                         } break;
                         default:
                             break;

@@ -687,6 +687,10 @@ struct audio_cs_if_as_general_descriptor {
 
 #define AUDIO_SIZEOF_AS_GENERAL_DESC (7)
 
+#ifndef CONFIG_USBHOST_AUDIO_MAX_SAMPLE_FREQ_NUM
+#define CONFIG_USBHOST_AUDIO_MAX_SAMPLE_FREQ_NUM 8
+#endif
+
 struct audio_cs_if_as_format_type_descriptor {
     uint8_t bLength;
     uint8_t bDescriptorType;
@@ -696,7 +700,7 @@ struct audio_cs_if_as_format_type_descriptor {
     uint8_t bSubframeSize;
     uint8_t bBitResolution;
     uint8_t bSamFreqType;
-    uint8_t tSamFreq[3];
+    uint8_t tSamFreq[3 * CONFIG_USBHOST_AUDIO_MAX_SAMPLE_FREQ_NUM];
 } __PACKED;
 
 #define AUDIO_SIZEOF_FORMAT_TYPE_DESC(bSamFreqType) (8 + 3 * (bSamFreqType))
