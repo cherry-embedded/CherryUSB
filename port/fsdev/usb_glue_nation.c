@@ -100,6 +100,8 @@ static void Set_USBClock(void)
         break;
 
     default:
+        USB_LOG_ERR("Unsupported system clock %u Hz for USBFS 48 MHz clock (supported: 48/96/144/192/240 MHz)\r\n",
+                    (unsigned int)SystemCoreClock);
         break;
     }
 }
