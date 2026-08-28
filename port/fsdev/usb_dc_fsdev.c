@@ -60,6 +60,11 @@ __WEAK void usb_dc_low_level_deinit(void)
 {
 }
 
+/**
+ * @brief Initialize the USB device controller.
+ * @param busid USB bus index (fsdev supports a single instance, bus 0).
+ * @retval 0 on success.
+ */
 int usb_dc_init(uint8_t busid)
 {
     usb_dc_low_level_init();
@@ -346,6 +351,10 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     return 0;
 }
 
+/**
+ * @brief USB FS device interrupt handler: dispatches ISTR events.
+ * @param busid USB bus index (fsdev supports a single instance, bus 0).
+ */
 void USBD_IRQHandler(uint8_t busid)
 {
     uint16_t wIstr, wEPVal;
