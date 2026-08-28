@@ -29,15 +29,6 @@
 #define USBFS_SRAM_BASE 0x40004C00UL
 #define USBFS_APB1_CLK  RCC_APB1_PERIPH_USBFS
 
-/* Default system clock in MHz */
-#if defined(N32H473) || defined(N32H474)
-#define USBFS_SYSCLK_MHZ 192
-#elif defined(N32H480)
-#define USBFS_SYSCLK_MHZ 144
-#else /* N32H481 / N32H482 / N32H487 / N32H488 (and N32H485, not defined in the SDK) */
-#define USBFS_SYSCLK_MHZ 240
-#endif
-
 #elif defined(N32H49X)
 #include "n32h49x_rcc.h"
 #include "n32h49x_gpio.h"
@@ -47,12 +38,10 @@
 #define USBFS_SRAM_BASE 0x40004C00UL
 #define USBFS_APB1_CLK  RCC_APB1_PERIPHEN_USBFS
 
-/* N32H49X EVAL runs at 240 MHz PLLCLK. */
-#define USBFS_SYSCLK_MHZ 240
-
 #else
 #error "unsupported N32H4x part: define a N32H47x_48x part macro (N32H473/474/475/481/482/480/487/488) or N32H49X"
 #endif /* N32H473..N32H488 (48x SDK) / N32H49X (49x SDK) */
+
 /*
  * N32H4x (N32H47x_48x / N32H49x) USB Full-Speed Device (USB_FS_Device).
  *
@@ -72,10 +61,19 @@
  *     (19, high priority, iso/double-buffer only) 
  */
 
-/* Configure the USBFS 48 MHz clock from PLLCLK. */
+/**
+ * @brief Configure the USBFS 48 MHz clock from the actual PLLCLK.
+ *
+ * The prescaler source is derived from SystemCoreClock at runtime, so the
+ * divider always matches the frequency the board is actually running at
+ * (no per-part compile-time table to keep in sync with the PLL setup).
+ * Supported PLLCLK values: 48/96/144/192/240 MHz -> DIV1/2/3/4/5.
+ * Unsupported frequencies leave the prescaler untouched and must be fixed
+ * in the board clock configuration (48 MHz USB clock is then not guaranteed).
+ */
 static void Set_USBClock(void)
 {
-    switch (USBFS_SYSCLK_MHZ * 1000000UL) {
+    switch (SystemCoreClock) {
     case 48000000: /* SYSCLK_VALUE_48MHz  -> DIV1 */
         RCC_ConfigUSBPLLPresClk(RCC_USBPLLCLK_SRC_PLL, RCC_USBPLLCLK_DIV1);
         RCC->CFG3 &= ~RCC_CFG3_USBFSTM;
@@ -106,8 +104,12 @@ static void Set_USBClock(void)
     }
 }
 
-/* USB DM/DP pin configuration.  Defaults to the EVAL board mapping
- * (PA11 = DM, PA12 = DP, AF10).  */
+/**
+ * @brief Configure the USB DM/DP pins.
+ *
+ * Defaults to the EVAL board mapping (PA11 = DM, PA12 = DP, AF10).
+ * Marked __WEAK so the board layer can override it for other pin maps.
+ */
 __WEAK void n32h4xx_usbfs_gpio_init(void)
 {
     RCC_EnableAHB1PeriphClk(RCC_AHB_PERIPHEN_GPIOA, ENABLE);
@@ -126,11 +128,15 @@ __WEAK void n32h4xx_usbfs_gpio_init(void)
     GPIO_InitPeripheral(GPIOA, &GPIO_InitStructure);
 }
 
-void usb_dc_low_level_init(uint8_t busid)
+/**
+ * @brief Low-level USBFS initialization: clock, GPIO and interrupt channel.
+ *
+ * Signature must match the __WEAK stub in usb_dc_fsdev.c (no parameter),
+ * so the fsdev port always talks to bus 0.
+ */
+void usb_dc_low_level_init(void)
 {
-    /* Same pattern as usb_glue_st.c: locate the peripheral through the
-     * register base passed in by the DCD layer. */
-    if (g_usbdev_bus[busid].reg_base != USBFS_REG_BASE) {
+    if (g_usbdev_bus[0].reg_base != USBFS_REG_BASE) {
         return;
     }
 
@@ -143,9 +149,8 @@ void usb_dc_low_level_init(uint8_t busid)
     n32h4xx_usbfs_gpio_init();
 
     /* 3. Low-priority USB FS interrupt (all FS device events, including the
-     *    USB_STS.WKUP/SUSPD bits handled by usb_dc_fsdev.c).  */
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-
+     *    USB_STS.WKUP/SUSPD bits handled by usb_dc_fsdev.c).  Priority-group
+     *    selection stays with the board/application startup code. */
     NVIC_InitType NVIC_InitStructure;
 
     NVIC_InitStructure.NVIC_IRQChannel                   = USB_FS_LP_IRQn;
@@ -155,9 +160,12 @@ void usb_dc_low_level_init(uint8_t busid)
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void usb_dc_low_level_deinit(uint8_t busid)
+/**
+ * @brief Low-level USBFS deinitialization: disable interrupt and APB1 clock.
+ */
+void usb_dc_low_level_deinit(void)
 {
-    if (g_usbdev_bus[busid].reg_base != USBFS_REG_BASE) {
+    if (g_usbdev_bus[0].reg_base != USBFS_REG_BASE) {
         return;
     }
 
@@ -170,7 +178,9 @@ void usb_dc_low_level_deinit(uint8_t busid)
     RCC_EnableAPB1PeriphClk(USBFS_APB1_CLK, DISABLE);
 }
 
-/* Low-priority USB FS interrupt: all FS device events. */
+/**
+ * @brief Low-priority USB FS interrupt: dispatches all FS device events.
+ */
 void USB_FS_LP_IRQHandler(void)
 {
     USBD_IRQHandler(0);
