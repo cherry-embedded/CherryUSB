@@ -200,6 +200,9 @@ int usb_dc_init(uint8_t busid)
     USBHSD->INT_EN = USBHS_UDIE_BUS_RST | USBHS_UDIE_SUSPEND |
                      USBHS_UDIE_BUS_SLEEP | USBHS_UDIE_LPM_ACT |
                      USBHS_UDIE_TRANSFER | USBHS_UDIE_LINK_RDY;
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    USBHSD->INT_EN |= USBHS_UDIE_SOF_ACT;
+#endif
 #ifdef CONFIG_USB_HS
     USBHSD->BASE_MODE = USBHS_UD_SPEED_HIGH;
 #else
@@ -559,6 +562,12 @@ void USBD_IRQHandler(uint8_t busid)
         USBHSD->INT_FG = USBHS_UDIF_LINK_RDY;
         usbd_event_connect_handler(g_busid);
     }
+#ifdef CONFIG_USBDEV_SOF_ENABLE
+    if (flags & USBHS_UDIF_RX_SOF) {
+        USBHSD->INT_FG = USBHS_UDIF_RX_SOF;
+        usbd_event_sof_handler(g_busid);
+    }
+#endif
     if (g_udc.pending_address_valid && usbd_get_ep0_next_state(g_busid) == USBD_EP0_STATE_SETUP) {
         USBHSD->DEV_AD = g_udc.pending_address;
         g_udc.pending_address_valid = false;

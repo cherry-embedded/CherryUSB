@@ -132,6 +132,7 @@ typedef struct {
 #define USBHS_UD_SPEED_HIGH         0x01U
 
 #define USBHS_UDIE_LINK_RDY         0x40U
+#define USBHS_UDIE_SOF_ACT          0x20U
 #define USBHS_UDIE_TRANSFER         0x10U
 #define USBHS_UDIE_LPM_ACT          0x08U
 #define USBHS_UDIE_BUS_SLEEP        0x04U
@@ -139,6 +140,7 @@ typedef struct {
 #define USBHS_UDIE_BUS_RST          0x01U
 
 #define USBHS_UDIF_LINK_RDY         0x40U
+#define USBHS_UDIF_RX_SOF           0x20U
 #define USBHS_UDIF_TRANSFER         0x10U
 #define USBHS_UDIF_LPM_ACT          0x08U
 #define USBHS_UDIF_BUS_SLEEP        0x04U

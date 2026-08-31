@@ -43,6 +43,11 @@ void USBHS_IRQHandler(void)
 The application passes `USBHS_BASE` as the `reg_base` argument to
 `usbd_initialize()`.
 
+Define `CONFIG_USBDEV_SOF_ENABLE` when the application needs Start-of-Frame
+events. The DCD then enables `USBHS_UDIE_SOF_ACT`, clears
+`USBHS_UDIF_RX_SOF`, and forwards each received SOF to
+`usbd_event_sof_handler()`.
+
 ## Validation
 
 The port was validated on a CH32X315 evaluation board using the official WCH
