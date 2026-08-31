@@ -27,12 +27,12 @@ LIBPATH = []
 CPPDEFINES = []
 
 # USB DEVICE
-if GetDepend(['PKG_CHERRYUSB_DEVICE']):
+if GetDepend(['PKG_CHERRYUSB_DEVICE']) or GetDepend(['RT_CHERRYUSB_DEVICE']):
     path += [cwd + '/osal']
     src += Glob('core/usbd_core.c')
     src += Glob('osal/usb_osal_rtthread.c')
 
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_SPEED_HS']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_SPEED_HS']) or GetDepend(['RT_CHERRYUSB_DEVICE_SPEED_HS']):
         CPPDEFINES+=['CONFIG_USB_HS']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_FSDEV_ST']):
@@ -109,7 +109,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             src += Glob('port/ch32/usb_dc_usbhs.c')
         else:
             src += Glob('port/ch32/usb_dc_usbfs.c')
-    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32X315']):
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32X315']) or GetDepend(['RT_CHERRYUSB_DEVICE_CH32X315']):
         path += [cwd + '/port/ch32/ch32x315']
         src += Glob('port/ch32/ch32x315/usb_dc_ch32x315.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):

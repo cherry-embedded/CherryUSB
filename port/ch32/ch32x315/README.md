@@ -9,6 +9,8 @@ device-only and supports High-Speed operation with a Full-Speed fallback.
 - Endpoint indices: EP0..EP7
 - USB DMA fields contain offsets from the 64 KiB SRAM window at `0x20000000`
 - DMA buffers must be 4-byte aligned and remain inside the SRAM window
+- Non-zero endpoint maximum packet sizes must be multiples of 4 bytes so that
+  multi-packet DMA transfers keep the buffer address aligned
 - The controller provides a built-in High-Speed PHY
 
 ## Platform hooks

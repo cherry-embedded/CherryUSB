@@ -106,6 +106,12 @@ static volatile uint8_t *ep_rx_ctrl(uint8_t ep)
     return (volatile uint8_t *)((uintptr_t)&USBHSD->UEP0_RX_CTRL + (uintptr_t)ep * 4U);
 }
 
+static void ep_set_rx_window(uint8_t ep, const struct ch32x315_ep_state *state)
+{
+    uint32_t window = state->remaining < state->mps ? state->remaining : state->mps;
+    *ep_max_len(ep) = window;
+}
+
 static int usb_dma_addr_len(const void *ptr, uint32_t len, uint32_t *dma)
 {
     uintptr_t addr = (uintptr_t)ptr;
@@ -151,6 +157,7 @@ static void ep0_arm_setup(void)
         return;
     }
     USBHSD->UEP0_DMA = dma;
+    *ep_max_len(0) = g_udc.out[0].mps ? g_udc.out[0].mps : USB_CTRL_EP_MPS;
     g_udc.rx_toggle[0] = false;
     g_udc.tx_toggle[0] = false;
     g_udc.in[0].stalled = false;
@@ -258,7 +265,8 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
     idx = USB_EP_GET_IDX(ep->bEndpointAddress);
     type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
     mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
-    if (idx >= CH32X315_EP_COUNT || mps == 0 || mps > 1024) {
+    /* Each completed packet advances the DMA buffer by its length. */
+    if (idx >= CH32X315_EP_COUNT || mps == 0 || mps > 1024 || (mps & 0x03U)) {
         return -1;
     }
     *ep_max_len(idx) = mps;
@@ -335,6 +343,7 @@ int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
         g_udc.in[idx].stalled = false;
     } else {
         g_udc.rx_toggle[idx] = false;
+        ep_set_rx_window(idx, &g_udc.out[idx]);
         *ep_rx_ctrl(idx) = USBHS_UEP_R_RES_ACK | USBHS_UEP_R_TOG_DATA0;
         g_udc.out[idx].stalled = false;
     }
@@ -403,6 +412,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
     state->buf = data;
     state->remaining = data_len;
     state->actual = 0;
+    ep_set_rx_window(idx, state);
     if (idx == 0) {
         if (data_len) {
             USBHSD->UEP0_DMA = dma;
@@ -471,6 +481,7 @@ static void handle_out(uint8_t idx)
      * value; re-arm the endpoint with the same toggle otherwise. */
     if (!(rx_ctrl & USBHS_UEP_R_TOG_MATCH)) {
         ep_clear_rx_done(idx);
+        ep_set_rx_window(idx, state);
         *ep_rx_ctrl(idx) = (uint8_t)(USBHS_UEP_R_RES_ACK |
                                      (g_udc.rx_toggle[idx] ? USBHS_UEP_R_TOG_DATA1 : USBHS_UEP_R_TOG_DATA0));
         return;
@@ -490,6 +501,7 @@ static void handle_out(uint8_t idx)
         uint32_t dma;
         if (usb_dma_addr_len(state->buf, state->remaining, &dma) == 0) {
             *ep_rx_dma(idx) = dma;
+            ep_set_rx_window(idx, state);
             *ep_rx_ctrl(idx) = (uint8_t)(USBHS_UEP_R_RES_ACK |
                                          (g_udc.rx_toggle[idx] ? USBHS_UEP_R_TOG_DATA1 : USBHS_UEP_R_TOG_DATA0));
         }
