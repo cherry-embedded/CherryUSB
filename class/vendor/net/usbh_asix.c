@@ -15,6 +15,10 @@
 
 static struct usbh_asix g_asix_class;
 
+#if CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE > (16 * 1024)
+#error "CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE must be less than 16K"
+#endif
+
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_rx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_tx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_ASIX_ETH_MAX_TX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_inttx_buffer[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
@@ -679,11 +683,6 @@ void usbh_asix_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     uint16_t len;
     uint16_t len_crc;
     uint32_t data_offset;
-#if CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE <= (16 * 1024)
-    uint32_t transfer_size = CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE;
-#else
-    uint32_t transfer_size = (16 * 1024);
-#endif
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
     USB_LOG_INFO("Create asix rx thread\r\n");
@@ -706,20 +705,18 @@ find_class:
 
     g_asix_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_asix_class.bulkin_urb, g_asix_class.hport, g_asix_class.bulkin, &g_asix_rx_buffer[g_asix_rx_length], transfer_size, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_asix_class.bulkin_urb, g_asix_class.hport, g_asix_class.bulkin, g_asix_rx_buffer, CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_asix_class.bulkin_urb);
         if (ret < 0) {
             goto find_class;
         }
 
-        g_asix_rx_length += g_asix_class.bulkin_urb.actual_length;
+        g_asix_rx_length = g_asix_class.bulkin_urb.actual_length;
+        if (g_asix_rx_length == 0) {
+            continue;
+        }
 
-        /* A transfer is complete because last packet is a short packet.
-         * Short packet is not zero, match g_asix_rx_length % USB_GET_MAXPACKETSIZE(g_asix_class.bulkin->wMaxPacketSize).
-         * Short packet is zero, check if g_asix_class.bulkin_urb.actual_length < transfer_size, for example transfer is complete with size is 1024 < 2048.
-        */
-        if (g_asix_rx_length % USB_GET_MAXPACKETSIZE(g_asix_class.bulkin->wMaxPacketSize) ||
-            (g_asix_class.bulkin_urb.actual_length < transfer_size)) {
+        if (g_asix_rx_length < CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE) {
             USB_LOG_DBG("rxlen:%d\r\n", g_asix_rx_length);
 
             data_offset = 0;
@@ -743,15 +740,7 @@ find_class:
                 }
             }
         } else {
-#if CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE <= (16 * 1024)
-            if (g_asix_rx_length == CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE) {
-#else
-            if ((g_asix_rx_length + (16 * 1024)) > CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE) {
-#endif
-                USB_LOG_ERR("Rx packet is overflow, please reduce tcp window size or increase CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE\r\n");
-                while (1) {
-                }
-            }
+            USB_LOG_ERR("asix packet overflow\r\n");
         }
     }
     // clang-format off

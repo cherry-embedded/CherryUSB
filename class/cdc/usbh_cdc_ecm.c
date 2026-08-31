@@ -271,21 +271,18 @@ find_class:
         }
 
         g_cdc_ecm_rx_length = g_cdc_ecm_class.bulkin_urb.actual_length;
+        if (g_cdc_ecm_rx_length == 0) {
+            continue;
+        }
 
-        /* A transfer is complete because last packet is a short packet.
-         * Short packet is not zero, match g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize).
-         * Short packet is zero, check if g_cdc_ecm_class.bulkin_urb.actual_length < transfer_size, for example transfer is complete with size is 512 < 1514.
-         * This case is always true
-        */
-        if (g_cdc_ecm_rx_length % USB_GET_MAXPACKETSIZE(g_cdc_ecm_class.bulkin->wMaxPacketSize) ||
-            (g_cdc_ecm_class.bulkin_urb.actual_length < CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE)) {
+        if (g_cdc_ecm_rx_length < CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
             USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
 
             usbh_cdc_ecm_eth_input(g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
 
             g_cdc_ecm_rx_length = 0;
         } else {
-            /* There's no way to run here. */
+            USB_LOG_ERR("cdc ecm rx packet overflow\r\n");
         }
     }
     // clang-format off

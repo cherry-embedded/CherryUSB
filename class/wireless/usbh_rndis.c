@@ -13,6 +13,10 @@
 
 #define DEV_FORMAT "/dev/rndis"
 
+#if CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE > (16 * 1024)
+#error "CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE must be less than 16K"
+#endif
+
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[512];
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, CONFIG_USB_ALIGN_SIZE)];
@@ -448,11 +452,6 @@ void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     uint32_t pmg_offset;
     rndis_data_packet_t *pmsg;
     rndis_data_packet_t temp;
-#if CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE <= (16 * 1024)
-    uint32_t transfer_size = CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE;
-#else
-    uint32_t transfer_size = (16 * 1024);
-#endif
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
@@ -476,22 +475,21 @@ find_class:
 
     g_rndis_rx_length = 0;
     while (1) {
-        usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, &g_rndis_rx_buffer[g_rndis_rx_length], transfer_size, USB_OSAL_WAITING_FOREVER, NULL, NULL);
+        usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, g_rndis_rx_buffer, CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_rndis_class.bulkin_urb);
         if (ret < 0) {
             break;
         }
 
-        g_rndis_rx_length += g_rndis_class.bulkin_urb.actual_length;
+        g_rndis_rx_length = g_rndis_class.bulkin_urb.actual_length;
+        if (g_rndis_rx_length == 0) {
+            USB_LOG_WRN("rndis rx length is 0 but no zero required in spec\r\n");
+            continue;
+        }
 
-        /* A transfer is complete because last packet is a short packet.
-         * Short packet is not zero, match g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize).
-         * Short packet cannot be zero.
-        */
         if (g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize)) {
             pmg_offset = 0;
-
-            uint32_t total_len = g_rndis_rx_length;
+            USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_length);
 
             while (g_rndis_rx_length > 0) {
                 USB_LOG_DBG("rxlen:%u\r\n", (unsigned int)g_rndis_rx_length);
@@ -516,21 +514,12 @@ find_class:
                         g_rndis_rx_length = 0;
                     }
                 } else {
-                    USB_LOG_ERR("offset:%u,remain:%u,total:%u\r\n", (unsigned int)pmg_offset, (unsigned int)g_rndis_rx_length, (unsigned int)total_len);
+                    USB_LOG_ERR("Error rndis packet message, offset:%u, remain:%u\r\n", (unsigned int)pmg_offset, (unsigned int)g_rndis_rx_length);
                     g_rndis_rx_length = 0;
-                    USB_LOG_ERR("Error rndis packet message\r\n");
                 }
             }
         } else {
-#if CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE <= (16 * 1024)
-            if (g_rndis_rx_length == CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
-#else
-            if ((g_rndis_rx_length + (16 * 1024)) > CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
-#endif
-                USB_LOG_ERR("Rx packet is overflow, please reduce tcp window size or increase CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE\r\n");
-                while (1) {
-                }
-            }
+            USB_LOG_ERR("rndis packet overflow\r\n");
         }
     }
 
