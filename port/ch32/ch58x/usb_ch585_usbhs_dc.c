@@ -41,7 +41,7 @@
  * @brief   Endpoint information structure
  */
 typedef struct _usbd_ep_info {
-    uint8_t mps;       /* Maximum packet length of endpoint */
+    uint16_t mps;       /* Maximum packet length of endpoint */
     uint8_t eptype;    /* Endpoint Type */
     uint8_t ep_enable; /* Endpoint enable */
     uint8_t *xfer_buf;
@@ -143,7 +143,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         return -1;
     }
 
-    uint8_t mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+    uint16_t mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
     USB_SET_MAX_LEN(epid, mps);
 
     if (USB_EP_DIR_IS_IN(ep->bEndpointAddress)) {
