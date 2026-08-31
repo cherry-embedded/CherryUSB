@@ -76,6 +76,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#hub">hub 结构体</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbh-initialize">usbh_initialize</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbh-find-class-instance">usbh_find_class_instance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-control-transfer">usbh_control_transfer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#lsusb">lsusb</a></li>
 </ul>
 </li>
@@ -330,6 +331,19 @@
 <ul class="simple">
 <li><p><strong>devname</strong>  class 名称</p></li>
 <li><p><strong>return</strong>  class 结构体句柄</p></li>
+</ul>
+</section>
+<section id="usbh-control-transfer">
+<h3>usbh_control_transfer<a class="headerlink" href="#usbh-control-transfer" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_control_transfer</span></code> 用来发送控制传输请求。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_control_transfer</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hubport</span><span class="w"> </span><span class="o">*</span><span class="n">hport</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_setup_packet</span><span class="w"> </span><span class="o">*</span><span class="n">setup</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>hport</strong>  hubport 结构体句柄</p></li>
+<li><p><strong>setup</strong>  控制传输请求结构体指针</p></li>
+<li><p><strong>buffer</strong>  数据缓冲区指针</p></li>
+<li><p><strong>return</strong>  实际传输的数据长度或者错误码，不包含 setup 长度</p></li>
 </ul>
 </section>
 <section id="lsusb">

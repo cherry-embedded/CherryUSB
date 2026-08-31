@@ -145,6 +145,20 @@ usbh_find_class_instance
 - **devname**  class 名称
 - **return**  class 结构体句柄
 
+usbh_control_transfer
+""""""""""""""""""""""""""""""""""""
+
+``usbh_control_transfer`` 用来发送控制传输请求。
+
+.. code-block:: C
+
+    int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *setup, void *buffer);
+
+- **hport**  hubport 结构体句柄
+- **setup**  控制传输请求结构体指针
+- **buffer**  数据缓冲区指针
+- **return**  实际传输的数据长度或者错误码，不包含 setup 长度
+
 lsusb
 """"""""""""""""""""""""""""""""""""
 
