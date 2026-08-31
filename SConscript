@@ -109,6 +109,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             src += Glob('port/ch32/usb_dc_usbhs.c')
         else:
             src += Glob('port/ch32/usb_dc_usbfs.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_CH32X315']):
+        path += [cwd + '/port/ch32/ch32x315']
+        src += Glob('port/ch32/ch32x315/usb_dc_ch32x315.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_PUSB2']):
         path += [cwd + '/port/pusb2/rt-thread']
         src += Glob('port/pusb2/rt-thread/usb_dc_glue_phytium.c')
