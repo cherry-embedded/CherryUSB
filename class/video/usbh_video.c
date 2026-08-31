@@ -77,7 +77,7 @@ int usbh_video_get(struct usbh_video *video_class, uint8_t request, uint8_t intf
     retry = 0;
     while (1) {
         ret = usbh_control_transfer(video_class->hport, setup, g_video_buf);
-        if (ret > 0) {
+        if (ret >= len) {
             break;
         }
         retry++;

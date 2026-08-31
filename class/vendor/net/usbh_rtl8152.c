@@ -962,10 +962,10 @@ static int usbh_rtl8152_read_regs(struct usbh_rtl8152 *rtl8152_class,
     setup->wLength = size;
 
     ret = usbh_control_transfer(rtl8152_class->hport, setup, g_rtl8152_buf);
-    if (ret < 8) {
+    if (ret < size) {
         return ret;
     }
-    memcpy(data, g_rtl8152_buf, MIN(ret - 8, size));
+    memcpy(data, g_rtl8152_buf, size);
 
     return ret;
 }

@@ -181,7 +181,7 @@ static int usbh_cp210x_control_in(struct usbh_serial *serial, uint8_t bRequest, 
     setup->wLength = size;
 
     ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
-    if (ret < 0) {
+    if (ret < size) {
         return ret;
     }
     memcpy(data, serial->iobuffer, size);

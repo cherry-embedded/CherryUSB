@@ -366,7 +366,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wLength = 8;
 
     ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
-    if (ret < 0) {
+    if (ret < 8) {
         USB_LOG_ERR("Failed to get device descriptor,errorcode:%d\r\n", ret);
         goto errout;
     }
@@ -426,7 +426,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wLength = USB_SIZEOF_DEVICE_DESC;
 
     ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
-    if (ret < 0) {
+    if (ret < USB_SIZEOF_DEVICE_DESC) {
         USB_LOG_ERR("Failed to get full device descriptor,errorcode:%d\r\n", ret);
         goto errout;
     }
@@ -450,7 +450,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wLength = USB_SIZEOF_CONFIG_DESC;
 
     ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
-    if (ret < 0) {
+    if (ret < USB_SIZEOF_CONFIG_DESC) {
         USB_LOG_ERR("Failed to get config descriptor,errorcode:%d\r\n", ret);
         goto errout;
     }
@@ -477,7 +477,7 @@ int usbh_enumerate(struct usbh_hubport *hport)
     setup->wLength = wTotalLength;
 
     ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
-    if (ret < 0) {
+    if (ret < wTotalLength) {
         USB_LOG_ERR("Failed to get full config descriptor,errorcode:%d\r\n", ret);
         goto errout;
     }
@@ -721,7 +721,7 @@ resubmit:
         ret = urb->actual_length;
     }
 
-    if (ret < 0 && (ret != -USB_ERR_TIMEOUT)) {
+    if (ret < sizeof(struct usb_setup_packet) && (ret != -USB_ERR_TIMEOUT)) {
         retry--;
         if (retry > 0) {
             USB_LOG_WRN("Control transfer failed, errorcode %d, retrying...\r\n", ret);
@@ -730,7 +730,7 @@ resubmit:
     }
 
     usb_osal_mutex_give(hport->mutex);
-    return ret;
+    return ret < sizeof(struct usb_setup_packet) ? ret : (ret - sizeof(struct usb_setup_packet));
 }
 
 int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output, uint16_t output_len)
@@ -758,6 +758,13 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
     src = ep0_request_buffer[hport->bus->busid];
     dst = output;
     len = src[0];
+
+    if (ret != len) {
+        USB_LOG_ERR("Get string descriptor failed, expect %d, actual %d\r\n", len, ret);
+        return -USB_ERR_IO;
+    }
+
+    memset(output, 0, output_len);
 
     if (((len - 2) / 2) > output_len) {
         return -USB_ERR_NOMEM;

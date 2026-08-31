@@ -103,10 +103,10 @@ int usbh_hid_get_idle(struct usbh_hid *hid_class, uint8_t *buffer)
     setup->wLength = 1;
 
     ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
-    if (ret < 8) {
+    if (ret < 1) {
         return ret;
     }
-    memcpy(buffer, g_hid_buf[hid_class->minor], MIN((uint32_t)ret - 8, 1));
+    *buffer = g_hid_buf[hid_class->minor][0];
     return ret;
 }
 
@@ -145,10 +145,10 @@ int usbh_hid_get_protocol(struct usbh_hid *hid_class, uint8_t *protocol)
     setup->wLength = 1;
 
     ret = usbh_control_transfer(hid_class->hport, setup, g_hid_buf[hid_class->minor]);
-    if (ret < 8) {
+    if (ret < 1) {
         return ret;
     }
-    memcpy(protocol, g_hid_buf[hid_class->minor], MIN((uint32_t)ret - 8, 1));
+    *protocol = g_hid_buf[hid_class->minor][0];
     return ret;
 }
 
@@ -324,7 +324,7 @@ int usbh_hid_parse_report_descriptor(const uint8_t *report_data, uint32_t report
         if (itemsize == 3) /* HID spec: 6.2.2.2 - Short Items */
             itemsize = 4;
 
-        if((itemsize + i + 1) > report_size) {
+        if ((itemsize + i + 1) > report_size) {
             goto err;
         }
 
@@ -450,7 +450,7 @@ int usbh_hid_report_convert(struct usbh_hid_report_item *item, const uint8_t *re
     const uint8_t *src;
     uint32_t bits_len = item->attribute.report_size * item->attribute.report_count;
 
-    if(bits_len == 0) {
+    if (bits_len == 0) {
         return -1;
     }
 

@@ -385,7 +385,7 @@ feature_found:
         setup->wLength = 2;
 
         ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
-        if (ret < 0) {
+        if (ret < 2) {
             return ret;
         }
 
@@ -400,7 +400,7 @@ feature_found:
         setup->wLength = 2;
 
         ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
-        if (ret < 0) {
+        if (ret < 2) {
             return ret;
         }
 
@@ -415,7 +415,7 @@ feature_found:
         setup->wLength = 2;
 
         ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
-        if (ret < 0) {
+        if (ret < 2) {
             return ret;
         }
         memcpy(volume_max, g_audio_buf, 2);
@@ -429,7 +429,7 @@ feature_found:
         setup->wLength = 2;
 
         ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
-        if (ret < 0) {
+        if (ret < 2) {
             return ret;
         }
         memcpy(volume_res, g_audio_buf, 2);

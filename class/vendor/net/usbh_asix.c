@@ -71,10 +71,10 @@ static int usbh_asix_read_cmd(struct usbh_asix *asix_class,
     setup->wLength = size;
 
     ret = usbh_control_transfer(asix_class->hport, setup, g_asix_buf);
-    if (ret < 8) {
+    if (ret < size) {
         return ret;
     }
-    memcpy(data, g_asix_buf, MIN(ret - 8, size));
+    memcpy(data, g_asix_buf, size);
 
     return ret;
 }

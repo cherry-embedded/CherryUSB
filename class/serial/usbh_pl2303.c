@@ -242,10 +242,10 @@ static int pl2303_vendor_read(struct usbh_serial *serial, uint16_t wValue, uint8
     setup->wLength = 1;
 
     ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
-    if (ret < 0) {
+    if (ret < 1) {
         return ret;
     }
-    memcpy(data, serial->iobuffer, 1);
+    *data = serial->iobuffer[0];
 
     return ret;
 }
@@ -280,7 +280,7 @@ static bool pl2303_is_hxd_clone(struct usbh_serial *serial)
     setup->wLength = 7;
 
     ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
-    if (ret < 0) {
+    if (ret < 7) {
         return false;
     }
     return true;
@@ -566,7 +566,7 @@ static int usbh_pl2303_get_line_coding(struct usbh_serial *serial, struct cdc_li
     setup->wLength = 7;
 
     ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
-    if (ret < 0) {
+    if (ret < sizeof(struct cdc_line_coding)) {
         return ret;
     }
     memcpy(line_coding, serial->iobuffer, sizeof(struct cdc_line_coding));

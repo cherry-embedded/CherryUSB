@@ -36,7 +36,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wLength = 2;
 
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
-    if (ret < 0) {
+    if (ret < 2) {
         return ret;
     }
 

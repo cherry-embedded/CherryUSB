@@ -108,7 +108,7 @@ static int usbh_cdc_acm_get_line_coding(struct usbh_serial *serial, struct cdc_l
     setup->wLength = 7;
 
     ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
-    if (ret < 0) {
+    if (ret < sizeof(struct cdc_line_coding)) {
         return ret;
     }
     memcpy(line_coding, serial->iobuffer, sizeof(struct cdc_line_coding));

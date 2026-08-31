@@ -340,8 +340,8 @@ static int usbh_ftdi_get_modem_status(struct usbh_serial *serial)
     setup->wLength = 2;
 
     ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
-    if (ret < 0) {
-        return 0;
+    if (ret < 2) {
+        return ret;
     }
 
     status = (serial->iobuffer[0] & FTDI_SIO_DSR_MASK ? USBH_SERIAL_TIOCM_DSR : 0) |

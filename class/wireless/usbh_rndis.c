@@ -15,9 +15,6 @@
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[512];
 
-#define CONFIG_USBHOST_RNDIS_ETH_MAX_FRAME_SIZE 1514
-#define CONFIG_USBHOST_RNDIS_ETH_MSG_SIZE       (CONFIG_USBHOST_RNDIS_ETH_MAX_FRAME_SIZE + 44)
-
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 // static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_inttx_buffer[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
@@ -83,7 +80,7 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
     setup->wLength = sizeof(g_rndis_buf);
 
     ret = usbh_control_transfer(rndis_class->hport, setup, (uint8_t *)resp);
-    if (ret < 0) {
+    if (ret < sizeof(rndis_initialize_cmplt_t)) {
         USB_LOG_ERR("init recv error, ret: %d\r\n", ret);
         return ret;
     }
@@ -141,7 +138,7 @@ int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class, uint32_t oid, 
     setup->wLength = sizeof(g_rndis_buf);
 
     ret = usbh_control_transfer(rndis_class->hport, setup, (uint8_t *)resp);
-    if (ret < 0) {
+    if (ret < sizeof(rndis_query_cmplt_t)) {
         USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", (unsigned int)oid, ret);
         return ret;
     }
@@ -198,7 +195,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     setup->wLength = sizeof(g_rndis_buf);
 
     ret = usbh_control_transfer(rndis_class->hport, setup, (uint8_t *)resp);
-    if (ret < 0) {
+    if (ret < sizeof(rndis_set_cmplt_t)) {
         USB_LOG_ERR("oid:%08x recv error, ret: %d\r\n", (unsigned int)oid, ret);
         return ret;
     }
@@ -265,7 +262,7 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
     setup->wLength = sizeof(g_rndis_buf);
 
     ret = usbh_control_transfer(rndis_class->hport, setup, (uint8_t *)resp);
-    if (ret < 0) {
+    if (ret < sizeof(rndis_keepalive_cmplt_t)) {
         USB_LOG_ERR("keepalive recv error, ret: %d\r\n", ret);
         return ret;
     }

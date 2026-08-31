@@ -71,7 +71,7 @@ static int _usbh_hub_get_hub_descriptor(struct usbh_hub *hub, uint8_t *buffer)
     setup->wLength = USB_SIZEOF_HUB_DESC;
 
     ret = usbh_control_transfer(hub->parent, setup, g_hub_buf[hub->bus->busid]);
-    if (ret < 0) {
+    if (ret < USB_SIZEOF_HUB_DESC) {
         return ret;
     }
     memcpy(buffer, g_hub_buf[hub->bus->busid], USB_SIZEOF_HUB_DESC);
@@ -93,7 +93,7 @@ static int _usbh_hub_get_hub_ss_descriptor(struct usbh_hub *hub, uint8_t *buffer
     setup->wLength = USB_SIZEOF_HUB_SS_DESC;
 
     ret = usbh_control_transfer(hub->parent, setup, g_hub_buf[hub->bus->busid]);
-    if (ret < 0) {
+    if (ret < USB_SIZEOF_HUB_SS_DESC) {
         return ret;
     }
     memcpy(buffer, g_hub_buf[hub->bus->busid], USB_SIZEOF_HUB_SS_DESC);
@@ -115,7 +115,7 @@ static int _usbh_hub_get_portstatus(struct usbh_hub *hub, uint8_t port, struct h
     setup->wLength = 4;
 
     ret = usbh_control_transfer(hub->parent, setup, g_hub_buf[hub->bus->busid]);
-    if (ret < 0) {
+    if (ret < 4) {
         return ret;
     }
     memcpy(port_status, g_hub_buf[hub->bus->busid], 4);
