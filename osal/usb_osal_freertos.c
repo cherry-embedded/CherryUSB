@@ -57,11 +57,22 @@ void usb_osal_sem_delete(usb_osal_sem_t sem)
 
 int usb_osal_sem_take(usb_osal_sem_t sem, uint32_t timeout)
 {
-    if (timeout == USB_OSAL_WAITING_FOREVER) {
-        return (xSemaphoreTake((SemaphoreHandle_t)sem, portMAX_DELAY) == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    if (xPortIsInsideInterrupt()) {
+        /* ISR context: only non-blocking take is allowed */
+        ret = xSemaphoreTakeFromISR((SemaphoreHandle_t)sem, &xHigherPriorityTaskWoken);
+        if (ret == pdPASS) {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+    } else if (timeout == USB_OSAL_WAITING_FOREVER) {
+        ret = xSemaphoreTake((SemaphoreHandle_t)sem, portMAX_DELAY);
     } else {
-        return (xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout)) == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
+        ret = xSemaphoreTake((SemaphoreHandle_t)sem, pdMS_TO_TICKS(timeout));
     }
+
+    return (ret == pdPASS) ? 0 : -USB_ERR_TIMEOUT;
 }
 
 int usb_osal_sem_give(usb_osal_sem_t sem)
@@ -206,7 +217,17 @@ void usb_osal_timer_start(struct usb_osal_timer *timer)
 
 void usb_osal_timer_stop(struct usb_osal_timer *timer)
 {
-    xTimerStop(timer->timer, 0);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    int ret;
+
+    if (xPortIsInsideInterrupt()) {
+        ret = xTimerStopFromISR(timer->timer, &xHigherPriorityTaskWoken);
+        if (ret == pdPASS) {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+    } else {
+        xTimerStop(timer->timer, 0);
+    }
 }
 
 size_t usb_osal_enter_critical_section(void)
