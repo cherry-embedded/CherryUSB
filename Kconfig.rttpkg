@@ -81,6 +81,8 @@ if PKG_USING_CHERRYUSB
                 bool "renesas"
             config PKG_CHERRYUSB_DEVICE_CH32
                 bool "ch32"
+            config PKG_CHERRYUSB_DEVICE_CH32X315
+                bool "ch32x315"
             config PKG_CHERRYUSB_DEVICE_PUSB2
                 bool "pusb2"
         endchoice

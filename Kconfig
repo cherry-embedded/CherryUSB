@@ -80,6 +80,8 @@ if CHERRYUSB
                 bool "renesas"
             config CHERRYUSB_DEVICE_CH32
                 bool "ch32"
+            config CHERRYUSB_DEVICE_CH32X315
+                bool "ch32x315"
             config CHERRYUSB_DEVICE_PUSB2
                 bool "pusb2"
         endchoice

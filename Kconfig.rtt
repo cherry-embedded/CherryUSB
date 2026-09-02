@@ -80,6 +80,8 @@ if RT_USING_CHERRYUSB
                 bool "renesas"
             config RT_CHERRYUSB_DEVICE_CH32
                 bool "ch32"
+            config RT_CHERRYUSB_DEVICE_CH32X315
+                bool "ch32x315"
             config RT_CHERRYUSB_DEVICE_PUSB2
                 bool "pusb2"
             config RT_CHERRYUSB_DEVICE_NRF5X
