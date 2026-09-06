@@ -401,6 +401,14 @@ if CHERRYUSB
             select USBHOST_PLATFORM_RTL8152
             default n
 
+        config CHERRYUSB_HOST_AIC8800
+            bool
+            prompt "Enable usb aic8800 wifi driver"
+            default n
+            help
+              Thin USB transport for AIC8800 FullMAC dongles.
+              Firmware, WPA2 and lwIP stay in the application.
+
         config CHERRYUSB_HOST_FTDI
             bool
             prompt "Enable usb ftdi driver"

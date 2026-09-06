@@ -428,6 +428,11 @@ if PKG_USING_CHERRYUSB
             select CONFIG_USBHOST_PLATFORM_RTL8152
             default n
 
+        config PKG_CHERRYUSB_HOST_AIC8800
+            bool
+            prompt "Enable usb aic8800 wifi driver"
+            default n
+
         config PKG_CHERRYUSB_HOST_FTDI
             bool
             prompt "Enable usb ftdi driver"

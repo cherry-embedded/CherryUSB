@@ -217,6 +217,9 @@
  */
 // #define CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
 
+/* Register AIC8800 1111:1111 ZeroCD in usbh_aic8800. Needs MSC class. */
+// #define CONFIG_USBHOST_AIC8800_ZEROCD
+
 /* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,
  * you can change to 2K ~ 16K and must be larger than TCP RX windows size in order to avoid being overflow.
  */

@@ -184,3 +184,9 @@ CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
 
 MSC modeswitch 后强制父 hub 端口重新枚举，并且不注册临时 MSC 设备。
 需要 ``CONFIG_USBHOST_HUB_FORCE_REENUMERATE``。默认关闭。
+
+CONFIG_USBHOST_AIC8800_ZEROCD
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+在 ``usbh_aic8800`` 中注册 AIC8800 ``1111:1111`` ZeroCD 命令。需要 host MSC。
+默认关闭。

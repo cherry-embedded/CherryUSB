@@ -185,3 +185,9 @@ CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
 After MSC modeswitch, force the parent hub port to re-enumerate and do
 not register the temporary MSC device. Requires
 ``CONFIG_USBHOST_HUB_FORCE_REENUMERATE``. Disabled by default.
+
+CONFIG_USBHOST_AIC8800_ZEROCD
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Register the AIC8800 ``1111:1111`` ZeroCD message in ``usbh_aic8800``.
+Requires the host MSC class. Disabled by default.
