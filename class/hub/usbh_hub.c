@@ -481,6 +481,9 @@ static void usbh_hub_events(struct usbh_hub *hub)
     struct usbh_hubport *child;
     struct hub_port_status port_status;
     uint16_t portchange_index;
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+    uint16_t force_reenumerate;
+#endif
     uint16_t portstatus;
     uint16_t portchange;
     uint16_t mask;
@@ -497,7 +500,15 @@ static void usbh_hub_events(struct usbh_hub *hub)
 
     flags = usb_osal_enter_critical_section();
     memcpy(&portchange_index, hub->int_buffer, 2);
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+    force_reenumerate = hub->force_reenumerate;
+    hub->force_reenumerate = 0;
+#endif
     usb_osal_leave_critical_section(flags);
+
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+    portchange_index |= force_reenumerate;
+#endif
 
     for (uint8_t port = 0; port < hub->nports; port++) {
         USB_LOG_DBG("Port change:0x%02x\r\n", portchange_index);
@@ -518,6 +529,13 @@ static void usbh_hub_events(struct usbh_hub *hub)
         portstatus = port_status.wPortStatus;
         portchange = port_status.wPortChange;
 
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+        if (force_reenumerate & (1U << (port + 1))) {
+            USB_LOG_INFO("Force hub-port %u re-enumeration\r\n", port + 1);
+            portchange |= HUB_PORT_STATUS_C_CONNECTION;
+        }
+#endif
+
         USB_LOG_DBG("port %u, status:0x%03x, change:0x%02x\r\n", port + 1, portstatus, portchange);
 
         /* First, clear all change bits */
@@ -537,6 +555,11 @@ static void usbh_hub_events(struct usbh_hub *hub)
         }
 
         portchange = port_status.wPortChange;
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+        if (force_reenumerate & (1U << (port + 1))) {
+            portchange |= HUB_PORT_STATUS_C_CONNECTION;
+        }
+#endif
 
         /* Second, if port changes, debounces first */
         if (portchange & HUB_PORT_STATUS_C_CONNECTION) {
@@ -713,6 +736,25 @@ void usbh_hub_thread_wakeup(struct usbh_hub *hub)
 {
     usb_osal_mq_send(hub->bus->hub_mq, (uintptr_t)hub);
 }
+
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+int usbh_hub_force_reenumerate(struct usbh_hub *hub, uint8_t port)
+{
+    size_t flags;
+
+    if ((hub == NULL) || !hub->connected ||
+        (port == 0U) || (port > hub->nports) || (port > 15U)) {
+        return -USB_ERR_INVAL;
+    }
+
+    flags = usb_osal_enter_critical_section();
+    hub->force_reenumerate |= (uint16_t)(1U << port);
+    usb_osal_leave_critical_section(flags);
+
+    usbh_hub_thread_wakeup(hub);
+    return 0;
+}
+#endif
 
 int usbh_hub_initialize(struct usbh_bus *bus)
 {

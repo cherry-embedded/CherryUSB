@@ -332,6 +332,29 @@ if CHERRYUSB
             prompt "Enable usb msc driver"
             default n
 
+        config CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+            bool
+            prompt "Force hub port re-enumeration API"
+            default n
+
+        config CONFIG_USBHOST_MSC_MODESWITCH_NO_CSW
+            bool
+            prompt "MSC modeswitch without waiting for CSW"
+            depends on CHERRYUSB_HOST_MSC
+            default n
+
+        config CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
+            bool
+            prompt "Re-enumerate after MSC modeswitch"
+            depends on CHERRYUSB_HOST_MSC && CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+            default n
+
+        config CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS
+            int
+            prompt "Delay after MSC modeswitch (ms)"
+            depends on CHERRYUSB_HOST_MSC
+            default 0
+
         config CHERRYUSB_HOST_CDC_ECM
             bool
             prompt "Enable usb cdc ecm driver"
