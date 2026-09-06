@@ -14,3 +14,12 @@
 
 - CH57X/CH58X(usbfs)
 - CH585(usbhs)
+
+## USBHS
+
+- CH32V205
+- CH32V4x7
+- CH32H417
+- CH32X305
+- CH58x
+- CH645
