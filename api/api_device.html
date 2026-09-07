@@ -101,6 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#usbd-audio-close">usbd_audio_close</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbd-audio-set-mute">usbd_audio_set_mute</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbd-audio-set-volume">usbd_audio_set_volume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbd-audio-get-volume">usbd_audio_get_volume</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbd-audio-set-sampling-freq">usbd_audio_set_sampling_freq</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbd-audio-get-sampling-freq-table">usbd_audio_get_sampling_freq_table</a></li>
 </ul>
@@ -584,14 +585,27 @@ bos描述符，winusb 描述符。</p>
 <section id="usbd-audio-set-volume">
 <h3>usbd_audio_set_volume<a class="headerlink" href="#usbd-audio-set-volume" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">usbd_audio_set_volume</span></code>  用来设置音量。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_set_volume</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ch</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">volume_db</span><span class="p">);</span>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbd_audio_set_volume</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ch</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">volume_percent</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li><p><strong>busid</strong> USB 总线 id</p></li>
 <li><p><strong>ep</strong> 要设置音量的端点</p></li>
 <li><p><strong>ch</strong> 要设置音量的通道</p></li>
-<li><p><strong>volume_db</strong> 要设置音量的分贝，单位 -100dB ~ 0dB</p></li>
+<li><p><strong>volume_percent</strong> 要设置音量的百分比，范围 0 ~ 100</p></li>
+</ul>
+</section>
+<section id="usbd-audio-get-volume">
+<h3>usbd_audio_get_volume<a class="headerlink" href="#usbd-audio-get-volume" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_audio_get_volume</span></code>  用来获取音量。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">uint8_t</span><span class="w"> </span><span class="nf">usbd_audio_get_volume</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ch</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>busid</strong> USB 总线 id</p></li>
+<li><p><strong>ep</strong> 要获取音量的端点</p></li>
+<li><p><strong>ch</strong> 要获取音量的通道</p></li>
+<li><p><strong>返回</strong> 音量的百分比，范围 0 ~ 100</p></li>
 </ul>
 </section>
 <section id="usbd-audio-set-sampling-freq">
