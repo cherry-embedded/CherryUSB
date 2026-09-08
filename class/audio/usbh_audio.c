@@ -37,6 +37,25 @@ static int16_t volume_float2hex(float volume_db)
     return (int16_t)(volume_db * 256);
 }
 
+static float volume_roundf(float x) {
+    if (x >= 0.0f) {
+        int intpart = (int)x;
+        float frac = x - (float)intpart;
+
+        if (frac >= 0.5f) {
+            intpart++;
+        }
+        return (float)intpart;
+    } else {
+        int intpart = (int)x;
+        float frac = x - (float)intpart;
+        if (frac <= -0.5f) {
+            intpart--;
+        }
+        return (float)intpart;
+    }
+}
+
 static struct usbh_audio *usbh_audio_class_alloc(void)
 {
     uint8_t devno;
@@ -486,7 +505,7 @@ feature_found:
     /* Calculate target volume in float to avoid int16_t calculation overflow. */
     volume_db = volume_hex2float(volume_min) + (volume_hex2float(volume_max) - volume_hex2float(volume_min)) * (float)volume / 100.0f;
     /* Round to the nearest float value based on volume_res. */
-    volume_db = roundf(volume_db / volume_hex2float(volume_res)) * volume_hex2float(volume_res);
+    volume_db = volume_roundf(volume_db / volume_hex2float(volume_res)) * volume_hex2float(volume_res);
     volume_hex = volume_float2hex(volume_db);
 
     USB_LOG_INFO("ch %d volume info: (%.2f dB ~ %.2f dB, step: %.2f dB)\r\n",

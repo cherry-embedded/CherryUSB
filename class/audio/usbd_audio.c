@@ -6,18 +6,52 @@
 #include "usbd_core.h"
 #include "usbd_audio.h"
 
-struct audio_entity_param {
-    uint32_t wCur;
-    uint32_t wMin;
-    uint32_t wMax;
-    uint32_t wRes;
-};
-
 struct usbd_audio_priv {
     struct audio_entity_info *table;
     uint8_t num;
     uint16_t uac_version;
 } g_usbd_audio[CONFIG_USBDEV_MAX_BUS];
+
+static float volume_hex2float(int16_t volume_hex)
+{
+    return (float)volume_hex / 256.0f;
+}
+
+static int16_t volume_float2hex(float volume_db)
+{
+    return (int16_t)(volume_db * 256);
+}
+
+static float volume_roundf(float x) {
+    if (x >= 0.0f) {
+        int intpart = (int)x;
+        float frac = x - (float)intpart;
+
+        if (frac >= 0.5f) {
+            intpart++;
+        }
+        return (float)intpart;
+    } else {
+        int intpart = (int)x;
+        float frac = x - (float)intpart;
+        if (frac <= -0.5f) {
+            intpart--;
+        }
+        return (float)intpart;
+    }
+}
+
+static float volume_align_to_res(int16_t volume_hex, int16_t res_hex)
+{
+    float val = volume_hex2float(volume_hex);
+    float res = volume_hex2float(res_hex);
+
+    if (res == 0.0f) {
+        return val;
+    }
+
+    return volume_roundf(val / res) * res;
+}
 
 static int audio_class_endpoint_request_handler(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
 {
@@ -66,8 +100,14 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
     uint8_t control_selector;
     uint8_t ch;
     uint8_t mute;
-    uint16_t volume;
-    int volume_db = 0;
+    int16_t volume_hex_curr;
+    int16_t volume_hex_min;
+    int16_t volume_hex_max;
+    int16_t volume_hex_res;
+    float volume_db_curr = 0.0f;
+    float volume_db_min = 0.0f;
+    float volume_db_max = 0.0f;
+    float volume_db_res = 0.0f;
     uint32_t sampling_freq = 0;
 
     const char *mute_string[2] = { "off", "on" };
@@ -92,6 +132,11 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
     }
 
     USB_LOG_DBG("Audio entity_id:%02x, subtype:%02x, cs:%02x\r\n", entity_id, subtype, control_selector);
+
+    usbd_audio_get_volume_range(busid, ep, ch, &volume_db_min, &volume_db_max, &volume_db_res);
+    volume_hex_res = volume_float2hex(volume_db_res);
+    volume_hex_min = volume_float2hex(volume_db_min);
+    volume_hex_max = volume_float2hex(volume_db_max);
 
     switch (subtype) {
         case AUDIO_CONTROL_FEATURE_UNIT:
@@ -130,39 +175,29 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                     if (g_usbd_audio[busid].uac_version < 0x0200) {
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_SET_CUR:
-                                memcpy(&volume, *data, 2);
-                                if (volume < 0x8000) {
-                                    volume_db = volume / 256;
-                                } else {
-                                    volume_db = (volume - 0x10000) / 256;
-                                }
-                                USB_LOG_DBG("Set ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%d dB\r\n", ep, ch, volume, volume_db);
-                                usbd_audio_set_volume(busid, ep, ch, volume_db);
+                                memcpy(&volume_hex_curr, *data, 2);
+                                volume_db_curr = volume_align_to_res(volume_hex_curr, volume_hex_res);
+                                volume_db_curr = MIN(MAX(volume_db_curr, volume_db_min), volume_db_max);
+                                USB_LOG_DBG("Set ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%.2f dB\r\n", ep, ch, volume_hex_curr, volume_db_curr);
+                                usbd_audio_set_volume(busid, ep, ch, volume_db_curr);
                                 break;
                             case AUDIO_REQUEST_GET_CUR:
-                                volume_db = usbd_audio_get_volume(busid, ep, ch);
-                                if (volume_db >= 0) {
-                                    volume = volume_db * 256;
-                                } else {
-                                    volume = volume_db * 256 + 0x10000;
-                                }
-                                USB_LOG_DBG("Get ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%d dB\r\n", ep, ch, volume, volume_db);
-                                memcpy(*data, &volume, 2);
+                                volume_db_curr = usbd_audio_get_volume(busid, ep, ch);
+                                volume_hex_curr = volume_float2hex(volume_db_curr);
+                                USB_LOG_DBG("Get ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%.2f dB\r\n", ep, ch, volume_hex_curr, volume_db_curr);
+                                memcpy(*data, &volume_hex_curr, 2);
                                 *len = 2;
                                 break;
                             case AUDIO_REQUEST_GET_MIN:
-                                (*data)[0] = 0x00; /* -100 dB */
-                                (*data)[1] = 0x9c;
+                                memcpy(*data, &volume_hex_min, 2);
                                 *len = 2;
                                 break;
                             case AUDIO_REQUEST_GET_MAX:
-                                (*data)[0] = 0x00; /* 0 dB */
-                                (*data)[1] = 0x00;
+                                memcpy(*data, &volume_hex_max, 2);
                                 *len = 2;
                                 break;
                             case AUDIO_REQUEST_GET_RES:
-                                (*data)[0] = 0x00; /* 1 dB */
-                                (*data)[1] = 0x01;
+                                memcpy(*data, &volume_hex_res, 2);
                                 *len = 2;
                                 break;
                             default:
@@ -172,32 +207,26 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_CUR:
                                 if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
-                                    volume_db = usbd_audio_get_volume(busid, ep, ch);
-                                    if (volume_db >= 0) {
-                                        volume = volume_db * 256;
-                                    } else {
-                                        volume = volume_db * 256 + 0x10000;
-                                    }
-                                    USB_LOG_DBG("Get ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%d dB\r\n", ep, ch, volume, volume_db);
-                                    memcpy(*data, &volume, 2);
+                                    volume_db_curr = usbd_audio_get_volume(busid, ep, ch);
+                                    volume_hex_curr = volume_float2hex(volume_db_curr);
+                                    USB_LOG_DBG("Get ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%d dB\r\n", ep, ch, volume_hex_curr, volume_db_curr);
+                                    memcpy(*data, &volume_hex_curr, 2);
                                     *len = 2;
                                 } else {
-                                    memcpy(&volume, *data, 2);
-                                    if (volume < 0x8000) {
-                                        volume_db = volume / 256;
-                                    } else {
-                                        volume_db = (volume - 0x10000) / 256;
-                                    }
-                                    USB_LOG_DBG("Set ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%d dB\r\n", ep, ch, volume, volume_db);
-                                    usbd_audio_set_volume(busid, ep, ch, volume_db);
+                                    memcpy(&volume_hex_curr, *data, 2);
+                                    volume_db_curr = volume_align_to_res(volume_hex_curr, volume_hex_res);
+                                    volume_db_curr = MIN(MAX(volume_db_curr, volume_db_min), volume_db_max);
+                                    USB_LOG_DBG("Set ep:0x%02x ch:%d vol_hex:0x%04x, vol_db:%d dB\r\n", ep, ch, volume_hex_curr, volume_db_curr);
+                                    usbd_audio_set_volume(busid, ep, ch, volume_db_curr);
                                 }
                                 break;
                             case AUDIO_REQUEST_RANGE:
                                 if (setup->bmRequestType & USB_REQUEST_DIR_MASK) {
                                     *((uint16_t *)(*data + 0)) = 1;
-                                    *((uint16_t *)(*data + 2)) = 0x9c00; /* MIN -100 dB */
-                                    *((uint16_t *)(*data + 4)) = 0x0000; /* MAX 0 dB */
-                                    *((uint16_t *)(*data + 6)) = 0x100;  /* RES 1 dB */
+
+                                    *((uint16_t *)(*data + 2)) = volume_hex_min;
+                                    *((uint16_t *)(*data + 4)) = volume_hex_max;
+                                    *((uint16_t *)(*data + 6)) = volume_hex_res;
                                     *len = 8;
                                 } else {
                                 }
@@ -312,7 +341,7 @@ struct usbd_interface *usbd_audio_init_intf(uint8_t busid,
     return intf;
 }
 
-__WEAK void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int volume_db)
+__WEAK void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, float volume_db)
 {
     (void)busid;
     (void)ep;
@@ -320,13 +349,24 @@ __WEAK void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int vol
     (void)volume_db;
 }
 
-__WEAK int usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
+__WEAK float usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
 {
     (void)busid;
     (void)ep;
     (void)ch;
 
-    return 0;
+    return 0.0f;
+}
+
+__WEAK void usbd_audio_get_volume_range(uint8_t busid, uint8_t ep, uint8_t ch, float *min, float *max, float *res)
+{
+    (void)busid;
+    (void)ep;
+    (void)ch;
+
+    *min = -100.0f;
+    *max = 0.0f;
+    *res = 1.0f;
 }
 
 __WEAK void usbd_audio_set_mute(uint8_t busid, uint8_t ep, uint8_t ch, bool mute)

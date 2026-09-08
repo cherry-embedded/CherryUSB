@@ -163,6 +163,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[AUDIO_IN_PACKET];
 volatile bool tx_flag = 0;
 volatile bool ep_tx_busy_flag = false;
 volatile uint32_t s_mic_sample_rate;
+volatile float s_mic_volume_db;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -219,6 +220,21 @@ uint32_t usbd_audio_get_sampling_freq(uint8_t busid, uint8_t ep)
     }
 
     return freq;
+}
+
+void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, float volume_db)
+{
+    if (ep == AUDIO_IN_EP) {
+        s_mic_volume_db = volume_db;
+    }
+}
+
+float usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
+{
+    if (ep == AUDIO_IN_EP) {
+        return s_mic_volume_db;
+    }
+    return 0;
 }
 
 void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sampling_freq_table)

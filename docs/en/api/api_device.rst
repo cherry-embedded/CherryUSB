@@ -388,12 +388,26 @@ usbd_audio_set_volume
 
 .. code-block:: C
 
-    void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int volume_db);
+    void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, float volume_db);
 
 - **busid** USB bus ID
 - **ep** Endpoint to set volume
 - **ch** Channel to set volume
-- **volume_db** Volume to set in decibels, range -100dB ~ 0dB
+- **volume_db** Volume to set in dB, default range -100 ~ 0
+
+usbd_audio_get_volume
+""""""""""""""""""""""""""""""""""""
+
+``usbd_audio_get_volume`` is used to get volume.
+
+.. code-block:: C
+
+    float usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch);
+
+- **busid** USB bus ID
+- **ep** Endpoint to get volume
+- **ch** Channel to get volume
+- **returns** Volume in dB, default range -100 ~ 0
 
 usbd_audio_set_sampling_freq
 """"""""""""""""""""""""""""""""""""

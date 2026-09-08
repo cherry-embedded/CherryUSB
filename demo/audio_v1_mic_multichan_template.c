@@ -138,6 +138,7 @@ const struct usb_descriptor audio_v1_descriptor = {
 volatile bool tx_flag = 0;
 volatile bool ep_tx_busy_flag = false;
 volatile uint32_t s_mic_sample_rate;
+volatile float s_mic_volume_db;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -196,6 +197,21 @@ uint32_t usbd_audio_get_sampling_freq(uint8_t busid, uint8_t ep)
     }
 
     return freq;
+}
+
+void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, float volume_db)
+{
+    if (ep == AUDIO_IN_EP) {
+        s_mic_volume_db = volume_db;
+    }
+}
+
+float usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
+{
+    if (ep == AUDIO_IN_EP) {
+        return s_mic_volume_db;
+    }
+    return 0;
 }
 
 void usbd_audio_iso_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)

@@ -260,6 +260,8 @@ volatile bool rx_flag = 0;
 volatile bool ep_tx_busy_flag = false;
 volatile uint32_t s_mic_sample_rate;
 volatile uint32_t s_speaker_sample_rate;
+volatile float s_mic_volume_db;
+volatile float s_speaker_volume_db;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -352,6 +354,25 @@ void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sam
         *sampling_freq_table = (uint8_t *)mic_default_sampling_freq_table;
     } else {
     }
+}
+
+void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, float volume_db)
+{
+    if (ep == AUDIO_IN_EP) {
+        s_mic_volume_db = volume_db;
+    } else if (ep == AUDIO_OUT_EP) {
+        s_speaker_volume_db = volume_db;
+    }
+}
+
+float usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch)
+{
+    if (ep == AUDIO_IN_EP) {
+        return s_mic_volume_db;
+    } else if (ep == AUDIO_OUT_EP) {
+        return s_speaker_volume_db;
+    }
+    return 0;
 }
 
 void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes)
