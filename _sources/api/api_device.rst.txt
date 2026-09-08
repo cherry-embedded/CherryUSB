@@ -390,12 +390,12 @@ usbd_audio_set_volume
 
 .. code-block:: C
 
-    void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, int volume_db);
+    void usbd_audio_set_volume(uint8_t busid, uint8_t ep, uint8_t ch, float volume_db);
 
 - **busid** USB 总线 id
 - **ep** 要设置音量的端点
 - **ch** 要设置音量的通道
-- **volume_db** 要设置音量的 dB，范围 -100 ~ 0
+- **volume_db** 要设置音量的 dB，默认范围 -100 ~ 0
 
 usbd_audio_get_volume
 """"""""""""""""""""""""""""""""""""
@@ -404,12 +404,12 @@ usbd_audio_get_volume
 
 .. code-block:: C
 
-    int usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch);
+    float usbd_audio_get_volume(uint8_t busid, uint8_t ep, uint8_t ch);
 
 - **busid** USB 总线 id
 - **ep** 要获取音量的端点
 - **ch** 要获取音量的通道
-- **返回** 音量的 dB，范围 -100 ~ 0
+- **返回** 音量的 dB，默认范围 -100 ~ 0
 
 
 usbd_audio_set_sampling_freq
