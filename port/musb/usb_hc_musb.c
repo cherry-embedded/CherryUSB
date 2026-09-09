@@ -188,14 +188,14 @@ static void musb_fifo_flush(struct usbh_bus *bus, uint8_t ep)
     uint8_t ep_idx = ep & 0x7f;
     if (ep_idx == 0) {
         if ((HWREGB(USB_TXCSRL_BASE(ep_idx)) & (USB_CSRL0_RXRDY | USB_CSRL0_TXRDY)) != 0)
-            HWREGB(USB_RXCSRL_BASE(ep_idx)) |= USB_CSRH0_FLUSH;
+            HWREGB(USB_TXCSRH_BASE(ep_idx)) |= USB_CSRH0_FLUSH;
     } else {
         if (ep & 0x80) {
-            if (HWREGB(USB_TXCSRL_BASE(ep_idx)) & USB_TXCSRL1_TXRDY)
-                HWREGB(USB_TXCSRL_BASE(ep_idx)) |= USB_TXCSRL1_FLUSH;
-        } else {
             if (HWREGB(USB_RXCSRL_BASE(ep_idx)) & USB_RXCSRL1_RXRDY)
                 HWREGB(USB_RXCSRL_BASE(ep_idx)) |= USB_RXCSRL1_FLUSH;
+        } else {
+            if (HWREGB(USB_TXCSRL_BASE(ep_idx)) & USB_TXCSRL1_TXRDY)
+                HWREGB(USB_TXCSRL_BASE(ep_idx)) |= USB_TXCSRL1_FLUSH;
         }
     }
 }
