@@ -28,9 +28,9 @@ struct ch32_usbhs_ep_state {
 };
 
 struct ch32_usbhs_udc {
+    struct usb_setup_packet setup;
     struct ch32_usbhs_ep_state ep_in[CONFIG_USBDEV_EP_NUM];
     struct ch32_usbhs_ep_state ep_out[CONFIG_USBDEV_EP_NUM];
-    struct usb_setup_packet setup;
 } g_ch32_usbhs_udc[CONFIG_USBDEV_MAX_BUS];
 
 __WEAK void usb_dc_low_level_init(uint8_t busid)
@@ -155,9 +155,13 @@ int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     if (USB_EP_DIR_IS_OUT(ep)) {
+        USBHSD->UEP_RX_TOG_AUTO &= ~(1 << ep_idx);
         ENDP_RX_CTRL(ep_idx) = (ENDP_RX_CTRL(ep_idx) & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_STALL;
+        USBHSD->UEP_RX_TOG_AUTO |= 1 << ep_idx;
     } else {
+        USBHSD->UEP_TX_TOG_AUTO &= ~(1 << ep_idx);
         ENDP_TX_CTRL(ep_idx) = (ENDP_TX_CTRL(ep_idx) & ~USBHS_UEP_T_RES_MASK) | USBHS_UEP_T_RES_STALL;
+        USBHSD->UEP_TX_TOG_AUTO |= 1 << ep_idx;
     }
     return 0;
 }
@@ -364,13 +368,11 @@ void USBD_IRQHandler(uint8_t busid)
             }
             ENDP_RX_LEN(endp) = 0;
             ENDP_RX_CTRL(endp) = (ENDP_RX_CTRL(endp) & ~USBHS_UEP_R_DONE);
-        }
-        // OUT transfer toggle mismatch
-        else {
+        } else {
+            // OUT transfer toggle mismatch
             ENDP_RX_CTRL(endp) = (ENDP_RX_CTRL(endp) & ~(USBHS_UEP_R_DONE | USBHS_UEP_R_RES_MASK)) | USBHS_UEP_R_RES_ACK;
         }
     } else if (flag & USBHS_UDIF_BUS_RST) {
-        USBHSD->DEV_AD = 0;
         USBHSD->UEP0_DMA = (uint32_t)&g_ch32_usbhs_udc[busid].setup;
         USBHSD->UEP0_TX_CTRL = USBHS_UEP_T_RES_NAK;
         USBHSD->UEP0_RX_CTRL = USBHS_UEP_R_RES_ACK;
