@@ -15,7 +15,6 @@
 #define ENDP_TX_LEN(ep)   *((volatile uint16_t *)&(USBFSD->UEP0_TX_LEN) + (ep) * 2)
 #define ENDP_TX_CTRL(ep)  *((volatile uint8_t *)&(USBFSD->UEP0_TX_CTRL) + (ep) * 4)
 #define ENDP_RX_CTRL(ep)  *((volatile uint8_t *)&(USBFSD->UEP0_RX_CTRL) + (ep) * 4)
-#define ENDP_DMA_ADDR(ep) *((volatile uint32_t *)&(USBFSD->UEP0_DMA) + (ep))
 
 struct ch32_usbfs_ep_state {
     uint8_t ep_type;
@@ -121,16 +120,19 @@ int usbd_set_address(uint8_t busid, const uint8_t addr)
 
 int usbd_set_remote_wakeup(uint8_t busid)
 {
-    // USBFSD->UDEV_CTRL ^= USBFS_UD_LOW_SPEED;
-    // Delay_Ms(8);
-    // USBFSD->UDEV_CTRL ^= USBFS_UD_LOW_SPEED;
-    // Delay_Ms(1);
-    return 0;
+    return -1;
 }
 
 uint8_t usbd_get_port_speed(uint8_t busid)
 {
     return (USBFSD->UDEV_CTRL & USBFS_UD_LOW_SPEED) ? USB_SPEED_LOW : USB_SPEED_FULL;
+}
+
+static inline void ch32_usbfs_update_ep_buf(uint8_t busid, uint8_t epid)
+{
+    __IO uint8_t *endp_mode_reg = (__IO uint8_t *)((uint32_t)USBFSD + endp_mode_reg_offset[epid]);
+    endp_rx_bufs[epid - 1] = &endp_xfer_bufs[epid - 1][0];
+    endp_tx_bufs[epid - 1] = (*endp_mode_reg & endp_mode_rx_en[epid]) ? &endp_xfer_bufs[epid - 1][64] : &endp_xfer_bufs[epid - 1][0];
 }
 
 int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
@@ -149,7 +151,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_ch32_usbfs_udc[busid].ep_in[epid].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         if (epid) {
             *endp_mode_reg |= endp_mode_tx_en[epid];
-            endp_tx_bufs[epid - 1] = *endp_mode_reg & endp_mode_rx_en[epid] ? &endp_xfer_bufs[epid - 1][64] : &endp_xfer_bufs[epid - 1][0];
+            ch32_usbfs_update_ep_buf(busid, epid);
         }
         if (g_ch32_usbfs_udc[busid].ep_in[epid].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             ENDP_TX_CTRL(epid) = USBFS_UEP_T_AUTO_TOG | USBFS_UEP_T_RES_NAK;
@@ -161,7 +163,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         g_ch32_usbfs_udc[busid].ep_out[epid].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
         if (epid) {
             *endp_mode_reg |= endp_mode_rx_en[epid];
-            endp_rx_bufs[epid - 1] = &endp_xfer_bufs[epid - 1][0];
+            ch32_usbfs_update_ep_buf(busid, epid);
         }
         if (g_ch32_usbfs_udc[busid].ep_out[epid].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
             ENDP_RX_CTRL(epid) = USBFS_UEP_R_AUTO_TOG | USBFS_UEP_R_RES_NAK;
@@ -185,11 +187,10 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
         __IO uint8_t *endp_mode_reg = (__IO uint8_t *)((uint32_t)USBFSD + endp_mode_reg_offset[epid]);
         if (USB_EP_DIR_IS_IN(ep)) {
             *endp_mode_reg &= ~endp_mode_tx_en[epid];
-            endp_rx_bufs[epid - 1] = &endp_xfer_bufs[epid - 1][0];
         } else {
             *endp_mode_reg &= ~endp_mode_rx_en[epid];
-            endp_tx_bufs[epid - 1] = &endp_xfer_bufs[epid - 1][0];
         }
+        ch32_usbfs_update_ep_buf(busid, epid);
     }
     return 0;
 }
@@ -311,8 +312,8 @@ void USBD_IRQHandler(uint8_t busid)
 
         switch (token) {
             case USBFS_UIS_TOKEN_SETUP:
-                ENDP_TX_CTRL(0) = (ENDP_RX_CTRL(0) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_NAK | USBFS_UEP_T_TOG;
-                ENDP_RX_CTRL(0) = (ENDP_RX_CTRL(0) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_T_RES_NAK | USBFS_UEP_R_TOG;
+                ENDP_TX_CTRL(0) = (ENDP_TX_CTRL(0) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_NAK | USBFS_UEP_T_TOG;
+                ENDP_RX_CTRL(0) = (ENDP_RX_CTRL(0) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_NAK | USBFS_UEP_R_TOG;
                 usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&g_ch32_usbfs_udc[busid].setup);
                 break;
 
@@ -321,6 +322,7 @@ void USBD_IRQHandler(uint8_t busid)
                     if (endp == 0) {
                         USBFSD->UEP0_RX_CTRL ^= USBFS_UEP_R_TOG;
                         uint32_t read_count = USBFSD->RX_LEN;
+                        read_count = MIN(read_count, g_ch32_usbfs_udc[busid].ep_out[endp].xfer_len);
                         g_ch32_usbfs_udc[busid].ep_out[0].actual_xfer_len += read_count;
                         g_ch32_usbfs_udc[busid].ep_out[0].xfer_len -= read_count;
                         usbd_event_ep_out_complete_handler(0, 0x00, g_ch32_usbfs_udc[busid].ep_out[0].actual_xfer_len);
@@ -333,6 +335,7 @@ void USBD_IRQHandler(uint8_t busid)
                             ENDP_RX_CTRL(endp) = (ENDP_RX_CTRL(endp) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_NAK;
                         }
                         uint32_t read_count = USBFSD->RX_LEN;
+                        read_count = MIN(read_count, g_ch32_usbfs_udc[busid].ep_out[endp].xfer_len);
                         memcpy(g_ch32_usbfs_udc[busid].ep_out[endp].xfer_buf, endp_rx_bufs[endp - 1], read_count);
                         g_ch32_usbfs_udc[busid].ep_out[endp].xfer_buf += read_count;
                         g_ch32_usbfs_udc[busid].ep_out[endp].actual_xfer_len += read_count;
@@ -379,7 +382,7 @@ void USBD_IRQHandler(uint8_t busid)
                     uint32_t write_count = MIN(g_ch32_usbfs_udc[busid].ep_in[endp].xfer_len, g_ch32_usbfs_udc[busid].ep_in[endp].ep_mps);
                     ENDP_TX_LEN(endp) = write_count;
                     memcpy(endp_tx_bufs[endp - 1], g_ch32_usbfs_udc[busid].ep_in[endp].xfer_buf, write_count);
-                    if (g_ch32_usbfs_udc[busid].ep_out[endp].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                    if (g_ch32_usbfs_udc[busid].ep_in[endp].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                         ENDP_TX_CTRL(endp) = (ENDP_TX_CTRL(endp) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_ACK;
                     } else {
                         ENDP_TX_CTRL(endp) = (ENDP_TX_CTRL(endp) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_NONE;
