@@ -137,12 +137,6 @@ static inline void ehci_qh_add_head(struct ehci_qh_hw *head, struct ehci_qh_hw *
     n->hw.hlp = head->hw.hlp;
     usb_ehci_qh_qtd_flush(n);
 
-    if (n->urb->setup) {
-        usb_dcache_clean((uintptr_t)n->urb->setup, USB_ALIGN_UP(8, CONFIG_USB_ALIGN_SIZE));
-    }
-
-    usb_dcache_flush((uintptr_t)n->urb->transfer_buffer, USB_ALIGN_UP(n->urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
-
     head->hw.hlp = QH_HLP_QH(n);
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
     usb_dcache_clean((uintptr_t)&head->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
@@ -1265,6 +1259,18 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->actual_length = 0;
 
     usb_osal_leave_critical_section(flags);
+
+    if (urb->setup) {
+        usb_dcache_clean((uintptr_t)urb->setup, USB_ALIGN_UP(sizeof(struct usb_setup_packet), CONFIG_USB_ALIGN_SIZE));
+    }
+
+    if (urb->transfer_buffer) {
+        if ((urb->setup && urb->setup->bmRequestType & 0x80) || (urb->ep->bEndpointAddress & 0x80)) {
+            usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
+        } else {
+            usb_dcache_clean((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
+        }
+    }
 
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:

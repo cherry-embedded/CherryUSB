@@ -1043,21 +1043,14 @@ int usbh_submit_urb(struct usbh_urb *urb)
 
     if (urb->setup) {
         usb_dcache_clean((uintptr_t)urb->setup, USB_ALIGN_UP(sizeof(struct usb_setup_packet), CONFIG_USB_ALIGN_SIZE));
+    }
 
-        if (urb->transfer_buffer) {
-            if (urb->setup->bmRequestType & 0x80) {
-                usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
-            } else {
-                usb_dcache_clean((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
-            }
-        }
-    } else if (urb->transfer_buffer && (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes) != USB_ENDPOINT_TYPE_ISOCHRONOUS)) {
-        if (urb->ep->bEndpointAddress & 0x80) {
+    if (urb->transfer_buffer) {
+        if ((urb->setup && urb->setup->bmRequestType & 0x80) || (urb->ep->bEndpointAddress & 0x80)) {
             usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
         } else {
             usb_dcache_clean((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
         }
-    } else {
     }
 
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
