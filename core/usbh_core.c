@@ -719,9 +719,10 @@ resubmit:
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
+
     }
 
-    if (ret < sizeof(struct usb_setup_packet) && (ret != -USB_ERR_TIMEOUT)) {
+    if (ret < (int)sizeof(struct usb_setup_packet) && (ret != -USB_ERR_TIMEOUT)) {
         retry--;
         if (retry > 0) {
             USB_LOG_WRN("Control transfer failed, errorcode %d, retrying...\r\n", ret);
@@ -730,7 +731,7 @@ resubmit:
     }
 
     usb_osal_mutex_give(hport->mutex);
-    return ret < sizeof(struct usb_setup_packet) ? ret : (ret - sizeof(struct usb_setup_packet));
+    return ret < (int)sizeof(struct usb_setup_packet) ? ret : (ret - (int)sizeof(struct usb_setup_packet));
 }
 
 int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output, uint16_t output_len)
