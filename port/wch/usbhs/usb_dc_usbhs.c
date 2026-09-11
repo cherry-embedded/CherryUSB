@@ -28,7 +28,8 @@ struct ch32_usbhs_ep_state {
 };
 
 struct ch32_usbhs_udc {
-    struct usb_setup_packet setup;
+    uint8_t dev_addr;
+    __attribute__((aligned(4))) struct usb_setup_packet setup;
     struct ch32_usbhs_ep_state ep_in[CONFIG_USBDEV_EP_NUM];
     struct ch32_usbhs_ep_state ep_out[CONFIG_USBDEV_EP_NUM];
 } g_ch32_usbhs_udc[CONFIG_USBDEV_MAX_BUS];
@@ -55,6 +56,8 @@ int usb_dc_init(uint8_t busid)
     USBHSD->UEP_RX_TOG_AUTO = 0;
     USBHSD->UEP_TX_ISO = 0;
     USBHSD->UEP_RX_ISO = 0;
+
+    USBHSD->DEV_AD = 0x00;
     USBHSD->BASE_MODE = USBHS_UD_SPEED_HIGH;
     USBHSD->CONTROL = USBHS_UD_DEV_EN | USBHS_UD_DMA_EN | USBHS_UD_LPM_EN | USBHS_UD_PHY_SUSPENDM;
     return 0;
@@ -69,7 +72,7 @@ int usb_dc_deinit(uint8_t busid)
 
 int usbd_set_address(uint8_t busid, const uint8_t addr)
 {
-    USBHSD->DEV_AD = addr;
+    g_ch32_usbhs_udc[busid].dev_addr = addr;
     return 0;
 }
 
@@ -111,10 +114,11 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         if (ep_type == USB_ENDPOINT_TYPE_BULK) {
             ENDP_MAX_LEN(epid) = ep_mps;
             // No send ZLP.
-            USBHSD->UEP_TX_BURST_MODE |= bit;
             USBHSD->UEP_TX_BURST |= bit;
+            USBHSD->UEP_TX_BURST_MODE |= bit;
         } else {
             USBHSD->UEP_TX_BURST &= ~bit;
+            USBHSD->UEP_TX_BURST_MODE &= ~bit;
         }
         ENDP_TX_CTRL(epid) = USBHS_UEP_T_RES_NAK;
     } else {
@@ -124,12 +128,12 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
         USBHSD->UEP_RX_TOG_AUTO |= bit;
         USBHSD->UEP_RX_ISO = ep_type == USB_ENDPOINT_TYPE_ISOCHRONOUS ? USBHSD->UEP_RX_ISO | bit : USBHSD->UEP_RX_ISO & ~bit;
         if (ep_type == USB_ENDPOINT_TYPE_BULK) {
-            ENDP_MAX_LEN(epid) = ep_mps;
             // Response NYTE.
-            USBHSD->UEP_RX_RES_MODE |= bit;
             USBHSD->UEP_RX_BURST |= bit;
+            USBHSD->UEP_RX_RES_MODE |= bit;
         } else {
             USBHSD->UEP_RX_BURST &= ~bit;
+            USBHSD->UEP_RX_RES_MODE &= ~bit;
         }
         ENDP_RX_CTRL(epid) = USBHS_UEP_R_RES_NAK;
     }
@@ -144,9 +148,13 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
     if (USB_EP_DIR_IS_IN(ep)) {
         USBHSD->UEP_TX_EN &= ~bit;
         USBHSD->UEP_TX_TOG_AUTO &= ~bit;
+        USBHSD->UEP_TX_ISO &= ~bit;
+        USBHSD->UEP_TX_BURST &= ~bit;
     } else {
         USBHSD->UEP_RX_EN &= ~bit;
         USBHSD->UEP_RX_TOG_AUTO &= ~bit;
+        USBHSD->UEP_RX_ISO &= ~bit;
+        USBHSD->UEP_RX_BURST &= ~bit;
     }
     return 0;
 }
@@ -155,13 +163,9 @@ int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     if (USB_EP_DIR_IS_OUT(ep)) {
-        USBHSD->UEP_RX_TOG_AUTO &= ~(1 << ep_idx);
         ENDP_RX_CTRL(ep_idx) = (ENDP_RX_CTRL(ep_idx) & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_STALL;
-        USBHSD->UEP_RX_TOG_AUTO |= 1 << ep_idx;
     } else {
-        USBHSD->UEP_TX_TOG_AUTO &= ~(1 << ep_idx);
         ENDP_TX_CTRL(ep_idx) = (ENDP_TX_CTRL(ep_idx) & ~USBHS_UEP_T_RES_MASK) | USBHS_UEP_T_RES_STALL;
-        USBHSD->UEP_TX_TOG_AUTO |= 1 << ep_idx;
     }
     return 0;
 }
@@ -170,9 +174,13 @@ int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
 {
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
     if (USB_EP_DIR_IS_OUT(ep)) {
+        USBHSD->UEP_RX_TOG_AUTO &= ~(1 << ep_idx);
         ENDP_RX_CTRL(ep_idx) = USBHS_UEP_R_RES_ACK | USBHS_UEP_R_TOG_DATA0;
+        USBHSD->UEP_RX_TOG_AUTO |= 1 << ep_idx;
     } else {
+        USBHSD->UEP_TX_TOG_AUTO &= ~(1 << ep_idx);
         ENDP_TX_CTRL(ep_idx) = USBHS_UEP_T_RES_NAK | USBHS_UEP_T_TOG_DATA0;
+        USBHSD->UEP_TX_TOG_AUTO |= 1 << ep_idx;
     }
     return 0;
 }
@@ -302,6 +310,7 @@ static inline void handle_ep0_out(uint8_t busid)
     USBHSD->UEP0_RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
 
     uint32_t read_count = ENDP_RX_LEN(0);
+    read_count = MIN(read_count, g_ch32_usbhs_udc[busid].ep_out[0].xfer_len);
     g_ch32_usbhs_udc[busid].ep_out[0].actual_xfer_len += read_count;
     g_ch32_usbhs_udc[busid].ep_out[0].xfer_len -= read_count;
     usbd_event_ep_out_complete_handler(0, 0x00, g_ch32_usbhs_udc[busid].ep_out[0].actual_xfer_len);
@@ -314,7 +323,7 @@ static inline void handle_ep0_out(uint8_t busid)
 static inline void handle_non_ep0_out(uint8_t busid, uint8_t epid)
 {
     uint32_t read_count = ENDP_RX_LEN(epid);
-
+    read_count = MIN(read_count, g_ch32_usbhs_udc[busid].ep_out[epid].xfer_len);
     if (USBHSD->UEP_RX_BURST & (1 << epid)) {
         usbd_event_ep_out_complete_handler(0, epid, read_count);
     } else {
@@ -357,6 +366,12 @@ void USBD_IRQHandler(uint8_t busid)
             } else {
                 handle_non_ep0_in(busid, endp);
             }
+
+            if (g_ch32_usbhs_udc[busid].dev_addr) {
+                USBHSD->DEV_AD = g_ch32_usbhs_udc[busid].dev_addr;
+                g_ch32_usbhs_udc[busid].dev_addr = 0;
+            }
+
             ENDP_TX_CTRL(endp) = (ENDP_TX_CTRL(endp) & ~USBHS_UEP_T_DONE);
         }
         // OUT transfer
@@ -373,6 +388,7 @@ void USBD_IRQHandler(uint8_t busid)
             ENDP_RX_CTRL(endp) = (ENDP_RX_CTRL(endp) & ~(USBHS_UEP_R_DONE | USBHS_UEP_R_RES_MASK)) | USBHS_UEP_R_RES_ACK;
         }
     } else if (flag & USBHS_UDIF_BUS_RST) {
+        USBHSD->DEV_AD = 0;
         USBHSD->UEP0_DMA = (uint32_t)&g_ch32_usbhs_udc[busid].setup;
         USBHSD->UEP0_TX_CTRL = USBHS_UEP_T_RES_NAK;
         USBHSD->UEP0_RX_CTRL = USBHS_UEP_R_RES_ACK;
