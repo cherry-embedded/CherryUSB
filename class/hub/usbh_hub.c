@@ -647,15 +647,9 @@ static void usbh_hub_events(struct usbh_hub *hub)
                     USB_LOG_INFO("New %s device on Bus %u, Hub %u, Port %u connected\r\n", speed_table[speed], hub->bus->busid, hub->index, port + 1);
 
                     if (usbh_enumerate(child) < 0) {
-                        /** release child sources */
-                        usbh_hubport_release(child);
                         USB_LOG_ERR("Port %u enumerate fail\r\n", child->port);
                     }
                 } else {
-                    child = &hub->child[port];
-                    /** release child sources */
-                    usbh_hubport_release(child);
-
                     /** some USB 3.0 ip may failed to enable USB 2.0 port for USB 3.0 device */
                     USB_LOG_WRN("Failed to enable port %u\r\n", port + 1);
 
