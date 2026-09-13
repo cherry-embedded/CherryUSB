@@ -56,6 +56,7 @@ list(
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/xbox
     ${CMAKE_CURRENT_LIST_DIR}/class/aoa
     ${CMAKE_CURRENT_LIST_DIR}/class/gamepad
+    ${CMAKE_CURRENT_LIST_DIR}/class/tmc
 )
 
 if(CONFIG_CHERRYUSB_DEVICE)
@@ -95,6 +96,19 @@ if(CONFIG_CHERRYUSB_DEVICE)
     endif()
     if(CONFIG_CHERRYUSB_DEVICE_DISPLAY)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/vendor/display/usbd_display.c)
+    endif()
+    if(CONFIG_CHERRYUSB_DEVICE_TMC)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/tmc/usbd_tmc.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/error.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/expression.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/fifo.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/ieee488.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/lexer.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/minimal.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/parser.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/units.c)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/utils.c)
+        list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/inc)
     endif()
 
     if(CONFIG_CHERRYUSB_DEVICE_FSDEV_ST)

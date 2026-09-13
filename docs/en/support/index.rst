@@ -29,11 +29,6 @@ Demonstrates USB Host UVC driver with 648 * 480 YUV camera. FPS 30.
 
 .. figure:: img/mtpdev.png
 
-- Device TMC class driver
-
-.. figure:: img/tmcdev1.png
-.. figure:: img/tmcdev2.png
-
 - USB network class high-performance version optimization, includes CDC-NCM, CDC-RNDIS, proprietary class drivers (supports multi-packet transmission and reception), RNDIS example shown below
 
 .. figure:: img/rndistx.png

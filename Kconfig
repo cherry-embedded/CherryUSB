@@ -144,6 +144,11 @@ if CHERRYUSB
             prompt "Enable usb display device"
             default n
 
+        config CHERRYUSB_DEVICE_TMC
+            bool
+            prompt "Enable usb tmc device"
+            default n
+
         config USBDEV_REQUEST_BUFFER_LEN
             int
             prompt "Set device control transfer max buffer size"
