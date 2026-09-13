@@ -146,6 +146,11 @@ if RT_USING_CHERRYUSB
             prompt "Enable usb display device"
             default n
 
+        config RT_CHERRYUSB_DEVICE_TMC
+            bool
+            prompt "Enable usb tmc device"
+            default n
+
         config RT_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV
             bool
             prompt "Enable chardev for cdc acm device"
