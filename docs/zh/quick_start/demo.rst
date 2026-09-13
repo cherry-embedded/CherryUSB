@@ -14,7 +14,7 @@
     * - Repo url
       - USB IP
       - Version
-    * - https://github.com/CherryUSB/cherryusb_bouffalolab
+    * - https://github.com/bouffalolab/bouffalo_sdk
       - FOTG210
       - less than latest
 
@@ -28,11 +28,11 @@
     * - Repo url
       - USB IP
       - Version
-    * - https://github.com/CherryUSB/cherryusb_hpmicro
+    * - https://github.com/hpmicro/hpm_sdk
       - CHIPIDEA
       - less than latest
 
-基于 esp32s2/s3/p4 系列芯片（官方 SDK 支持）
+基于 ESPressif 系列芯片（官方 SDK 支持）
 -------------------------------------------------
 
 .. list-table::
@@ -105,7 +105,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
       - AIC/EHCI/OHCI
       - less than latest
 
-基于 Kendryte canmv-k230 系列（官方 SDK 支持）
+基于 Kendryte K230 系列（官方 SDK 支持）
 -----------------------------------------------
 
 .. list-table::
@@ -115,7 +115,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
     * - Repo url
       - USB IP
       - Version
-    * - https://github.com/CherryUSB/k230_sdk
+    * - https://www.kendryte.com/k230_rtos/zh/main/userguide/how_to_build.html
       - DWC2
       - less than latest
 
@@ -132,6 +132,20 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
     * - https://github.com/OpenSiFli/SiFli-SDK
       - MUSB
       - less than latest
+
+基于 WCH 系列芯片
+--------------------------------------------
+
+.. list-table::
+    :widths: 10 10 10
+    :header-rows: 1
+
+    * - Repo url
+      - USB IP
+      - Version
+    * - https://github.com/CherryUSB/cherryusb_wch
+      - WCH USBHS/USBFS/USBSS
+      - greater than v1.6.1
 
 基于 NXP MCX 系列芯片
 ---------------------------
@@ -308,16 +322,6 @@ USB Host 移植要点
 
 .. figure:: img/stm32_18.png
 
-基于 Actionstech 系列芯片（官方 SDK 支持）
-------------------------------------------------------
-
-Not opensource， 请联系 Actionstech 官方
-
-基于新塘系列芯片（官方 SDK 支持）
-------------------------------------------------------
-
-Not opensource， 请联系 新塘 官方
-
 基于 Sophgo 系列芯片（官方 SDK 支持）
 ------------------------------------------------------
 
@@ -342,6 +346,26 @@ Not opensource， 请联系 新塘 官方
     * - Repo url
       - USB IP
       - Version
-    * - https://github.com/bekencorp/armino
+    * - https://github.com/bekencorp/bk_idk_ai
       - MUSB
       - equal to v0.7.0
+
+基于 Actionstech 系列芯片（官方 SDK 支持）
+------------------------------------------------------
+
+Not opensource， 请联系 Actionstech 官方
+
+基于 Nuvoton 系列芯片（官方 SDK 支持）
+------------------------------------------------------
+
+Not opensource， 请联系 Nuvoton 官方
+
+基于 AllwinnerTech 系列芯片（官方 SDK 支持）
+------------------------------------------------------
+
+Not opensource， 请联系 AllwinnerTech 官方
+
+基于 ListenAI 系列芯片（官方 SDK 支持）
+------------------------------------------------------
+
+Not opensource， 请联系 ListenAI 官方
