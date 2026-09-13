@@ -31,8 +31,12 @@
 
 struct usbd_tx_rx_msg {
     uint8_t ep;
+    uint8_t ep_type;
     uint8_t ep_mult;
     uint16_t ep_mps;
+    uint8_t ep_interval;
+    uint8_t ep_maxburst;
+    uint8_t ep_maxstream;
     uint32_t nbytes;
     usbd_endpoint_callback cb;
 };
@@ -62,8 +66,11 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     bool self_powered;
     bool remote_wakeup_support;
     bool remote_wakeup_enabled;
+    bool u1_enable;
+    bool u2_enable;
     bool is_suspend;
     uint8_t speed;
+    uint16_t isoch_delay;
 #ifdef CONFIG_USBDEV_TEST_MODE
     bool test_req;
 #endif
@@ -132,9 +139,13 @@ static bool usbd_set_endpoint(uint8_t busid, const struct usb_endpoint_descripto
     if (ep->bEndpointAddress & 0x80) {
         g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
+        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_interval = ep->bInterval;
     } else {
         g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mps = USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
         g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_mult = USB_GET_MULT(ep->wMaxPacketSize);
+        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
+        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_interval = ep->bInterval;
     }
 
     return usbd_ep_open(busid, ep) == 0 ? true : false;
@@ -159,6 +170,79 @@ static bool usbd_reset_endpoint(uint8_t busid, const struct usb_endpoint_descrip
     return usbd_ep_close(busid, ep->bEndpointAddress) == 0 ? true : false;
 }
 
+/**
+ * @brief Set endpoint companion descriptor for the specified endpoint
+ */
+static bool usbd_set_endpoint_extra(uint8_t busid, const struct usb_endpoint_descriptor *ep, const struct usb_endpoint_companion_descriptor *ep_comp)
+{
+    USB_LOG_DBG("Set ep maxburst:%u bmAttributes:%u wBytesPerInterval:%u\r\n",
+                ep_comp->bMaxBurst,
+                ep_comp->bmAttributes,
+                ep_comp->wBytesPerInterval);
+
+    uint16_t wBytesPerInterval = 0;
+
+    (void)wBytesPerInterval;
+
+    if (ep->bEndpointAddress & 0x80) {
+        g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_maxburst = ep_comp->bMaxBurst + 1;
+
+        switch (USB_GET_ENDPOINT_TYPE(ep->bmAttributes)) {
+            case USB_ENDPOINT_TYPE_BULK:
+                g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_maxstream = 2 << (ep_comp->bmAttributes & 0x1f);
+                break;
+            case USB_ENDPOINT_TYPE_INTERRUPT:
+                g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_maxstream = 0;
+
+                wBytesPerInterval = g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_maxburst * USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+                USB_ASSERT_MSG(wBytesPerInterval == ep_comp->wBytesPerInterval, "wBytesPerInterval mismatch");
+                break;
+
+            case USB_ENDPOINT_TYPE_ISOCHRONOUS:
+                g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_maxstream = 0;
+
+                USB_ASSERT_MSG((USB_GET_MULT(ep->wMaxPacketSize) == (ep_comp->bmAttributes & 0x03)), "mult mismatch");
+                wBytesPerInterval = g_usbd_core[busid].tx_msg[ep->bEndpointAddress & 0x7f].ep_maxburst *
+                                    (USB_GET_MULT(ep->wMaxPacketSize) + 1) *
+                                    USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+
+                USB_ASSERT_MSG(wBytesPerInterval == ep_comp->wBytesPerInterval, "wBytesPerInterval mismatch");
+                break;
+
+            default:
+                break;
+        }
+    } else {
+        g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_maxburst = ep_comp->bMaxBurst + 1;
+
+        switch (USB_GET_ENDPOINT_TYPE(ep->bmAttributes)) {
+            case USB_ENDPOINT_TYPE_BULK:
+                g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_maxstream = 2 << (ep_comp->bmAttributes & 0x1f);
+                break;
+            case USB_ENDPOINT_TYPE_INTERRUPT:
+                g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_maxstream = 0;
+
+                wBytesPerInterval = g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_maxburst * USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+                USB_ASSERT_MSG(wBytesPerInterval == ep_comp->wBytesPerInterval, "wBytesPerInterval mismatch");
+                break;
+
+            case USB_ENDPOINT_TYPE_ISOCHRONOUS:
+                g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_maxstream = 0;
+
+                USB_ASSERT_MSG((USB_GET_MULT(ep->wMaxPacketSize) == (ep_comp->bmAttributes & 0x03)), "mult mismatch");
+                wBytesPerInterval = g_usbd_core[busid].rx_msg[ep->bEndpointAddress & 0x7f].ep_maxburst *
+                                    (USB_GET_MULT(ep->wMaxPacketSize) + 1) *
+                                    USB_GET_MAXPACKETSIZE(ep->wMaxPacketSize);
+
+                USB_ASSERT_MSG(wBytesPerInterval == ep_comp->wBytesPerInterval, "wBytesPerInterval mismatch");
+                break;
+
+            default:
+                break;
+        }
+    }
+    return usbd_ep_open_extra(busid, ep, ep_comp) == 0 ? true : false;
+}
 /**
  * @brief get specified USB descriptor
  *
@@ -372,8 +456,21 @@ static bool usbd_set_configuration(uint8_t busid, uint8_t config_index, uint8_t 
                 }
 
                 found = usbd_set_endpoint(busid, (struct usb_endpoint_descriptor *)p);
-                break;
 
+                if (g_usbd_core[busid].speed >= USB_SPEED_SUPER) {
+                    const uint8_t *ep_comp_desc;
+
+                    ep_comp_desc = p;
+                    ep_comp_desc += p[DESC_bLength];
+
+                    if (ep_comp_desc[DESC_bLength] == USB_SIZEOF_ENDPOINT_COMPANION_DESC &&
+                        ep_comp_desc[DESC_bDescriptorType] == USB_DESCRIPTOR_TYPE_ENDPOINT_COMPANION) {
+                        usbd_set_endpoint_extra(busid, (struct usb_endpoint_descriptor *)p, (struct usb_endpoint_companion_descriptor *)ep_comp_desc);
+                    } else {
+                        USB_ASSERT("Invalid endpoint companion descriptor");
+                    }
+                }
+                break;
             default:
                 break;
         }
@@ -442,12 +539,25 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                         ret = usbd_reset_endpoint(busid, ep_desc);
                     } else if (cur_alt_setting == alt_setting) {
                         ret = usbd_set_endpoint(busid, ep_desc);
+
+                        if (g_usbd_core[busid].speed >= USB_SPEED_SUPER) {
+                            const uint8_t *ep_comp_desc;
+
+                            ep_comp_desc = p;
+                            ep_comp_desc += p[DESC_bLength];
+
+                            if (ep_comp_desc[DESC_bLength] == USB_SIZEOF_ENDPOINT_COMPANION_DESC &&
+                                ep_comp_desc[DESC_bDescriptorType] == USB_DESCRIPTOR_TYPE_ENDPOINT_COMPANION) {
+                                usbd_set_endpoint_extra(busid, ep_desc, (struct usb_endpoint_companion_descriptor *)ep_comp_desc);
+                            } else {
+                                USB_ASSERT("Invalid endpoint companion descriptor");
+                            }
+                        }
                     } else {
                     }
                 }
 
                 break;
-
             default:
                 break;
         }
@@ -491,6 +601,13 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
             if (g_usbd_core[busid].remote_wakeup_enabled) {
                 (*data)[0] |= USB_GETSTATUS_REMOTE_WAKEUP;
             }
+            if (g_usbd_core[busid].u1_enable) {
+                (*data)[0] |= USB_GETSTATUS_U1_ENABLE;
+            }
+            if (g_usbd_core[busid].u2_enable) {
+                (*data)[0] |= USB_GETSTATUS_U2_ENABLE;
+            }
+
             (*data)[1] = 0x00;
             *len = 2;
             break;
@@ -505,11 +622,28 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
                     g_usbd_core[busid].remote_wakeup_enabled = false;
                     g_usbd_core[busid].event_handler(busid, USBD_EVENT_CLR_REMOTE_WAKEUP);
                 }
+            } else if (value == USB_FEATURE_U1_ENABLE) {
+                if (setup->bRequest == USB_REQUEST_SET_FEATURE) {
+                    g_usbd_core[busid].u1_enable = true;
+                    g_usbd_core[busid].event_handler(busid, USBD_EVENT_SET_U1_ENABLE);
+                } else {
+                    g_usbd_core[busid].u1_enable = false;
+                    g_usbd_core[busid].event_handler(busid, USBD_EVENT_CLR_U1_ENABLE);
+                }
+            } else if (value == USB_FEATURE_U2_ENABLE) {
+                if (setup->bRequest == USB_REQUEST_SET_FEATURE) {
+                    g_usbd_core[busid].u2_enable = true;
+                    g_usbd_core[busid].event_handler(busid, USBD_EVENT_SET_U2_ENABLE);
+                } else {
+                    g_usbd_core[busid].u2_enable = false;
+                    g_usbd_core[busid].event_handler(busid, USBD_EVENT_CLR_U2_ENABLE);
+                }
             } else if (value == USB_FEATURE_TEST_MODE) {
 #ifdef CONFIG_USBDEV_TEST_MODE
                 g_usbd_core[busid].test_req = true;
 #endif
             }
+
             *len = 0;
             break;
 
@@ -551,6 +685,11 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
         case USB_REQUEST_GET_INTERFACE:
         case USB_REQUEST_SET_INTERFACE:
             ret = false;
+            break;
+        case USB_REQUEST_SET_SEL:
+            break;
+        case USB_REQUEST_SET_ISOCH_DLY:
+            g_usbd_core[busid].isoch_delay = value;
             break;
 
         default:
@@ -1262,6 +1401,29 @@ uint8_t usbd_get_ep_mult(uint8_t busid, uint8_t ep)
     }
 }
 
+int usbd_get_ep_info(uint8_t busid, uint8_t ep, struct usbd_endpoint_info *ep_info)
+{
+    if (g_usbd_core[busid].configuration == 0)
+        return -1;
+
+    if (ep & 0x80) {
+        ep_info->ep_type = g_usbd_core[busid].tx_msg[ep & 0x7f].ep_type;
+        ep_info->ep_mult = g_usbd_core[busid].tx_msg[ep & 0x7f].ep_mult;
+        ep_info->ep_mps = g_usbd_core[busid].tx_msg[ep & 0x7f].ep_mps;
+        ep_info->ep_interval = g_usbd_core[busid].tx_msg[ep & 0x7f].ep_interval;
+        ep_info->ep_maxburst = g_usbd_core[busid].tx_msg[ep & 0x7f].ep_maxburst;
+        ep_info->ep_maxstream = g_usbd_core[busid].tx_msg[ep & 0x7f].ep_maxstream;
+    } else {
+        ep_info->ep_type = g_usbd_core[busid].rx_msg[ep & 0x7f].ep_type;
+        ep_info->ep_mult = g_usbd_core[busid].rx_msg[ep & 0x7f].ep_mult;
+        ep_info->ep_mps = g_usbd_core[busid].rx_msg[ep & 0x7f].ep_mps;
+        ep_info->ep_interval = g_usbd_core[busid].rx_msg[ep & 0x7f].ep_interval;
+        ep_info->ep_maxburst = g_usbd_core[busid].rx_msg[ep & 0x7f].ep_maxburst;
+        ep_info->ep_maxstream = g_usbd_core[busid].rx_msg[ep & 0x7f].ep_maxstream;
+    }
+    return 0;
+}
+
 bool usb_device_is_configured(uint8_t busid)
 {
     return g_usbd_core[busid].configuration;
@@ -1357,15 +1519,15 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
     if (g_usbd_core[busid].usbd_ep0_thread == NULL) {
         usb_osal_mq_delete(g_usbd_core[busid].usbd_ep0_mq);
         return -USB_ERR_NOMEM;
-        }
     }
+}
 #endif
 
-    g_usbd_core[busid].event_handler = event_handler;
-    usbd_class_event_notify_handler(busid, USBD_EVENT_INIT, NULL);
-    g_usbd_core[busid].event_handler(busid, USBD_EVENT_INIT);
-    ret = usb_dc_init(busid);
-    return ret;
+g_usbd_core[busid].event_handler = event_handler;
+usbd_class_event_notify_handler(busid, USBD_EVENT_INIT, NULL);
+g_usbd_core[busid].event_handler(busid, USBD_EVENT_INIT);
+ret = usb_dc_init(busid);
+return ret;
 }
 
 int usbd_deinitialize(uint8_t busid)
@@ -1383,5 +1545,14 @@ int usbd_deinitialize(uint8_t busid)
 #endif
     g_usbd_core[busid].event_handler(busid, USBD_EVENT_DEINIT);
     usbd_class_event_notify_handler(busid, USBD_EVENT_DEINIT, NULL);
+    return 0;
+}
+
+__WEAK int usbd_ep_open_extra(uint8_t busid, const struct usb_endpoint_descriptor *ep, const struct usb_endpoint_companion_descriptor *ep_comp)
+{
+    (void)busid;
+    (void)ep;
+    (void)ep_comp;
+
     return 0;
 }

@@ -44,6 +44,10 @@ enum usbd_event_type {
     USBD_EVENT_SET_INTERFACE,     /** USB interface selected */
     USBD_EVENT_SET_REMOTE_WAKEUP, /** USB set remote wakeup */
     USBD_EVENT_CLR_REMOTE_WAKEUP, /** USB clear remote wakeup */
+    USBD_EVENT_SET_U1_ENABLE,     /** USB U1 enable */
+    USBD_EVENT_SET_U2_ENABLE,     /** USB U2 enable */
+    USBD_EVENT_CLR_U1_ENABLE,     /** USB U1 disable */
+    USBD_EVENT_CLR_U2_ENABLE,     /** USB U2 disable */
     USBD_EVENT_INIT,              /** USB init done when call usbd_initialize */
     USBD_EVENT_DEINIT,            /** USB deinit done when call usbd_deinitialize */
     USBD_EVENT_UNKNOWN
@@ -59,6 +63,15 @@ typedef int (*usbd_request_handler)(uint8_t busid, struct usb_setup_packet *setu
 typedef void (*usbd_endpoint_callback)(uint8_t busid, uint8_t ep, uint32_t nbytes);
 typedef void (*usbd_notify_handler)(uint8_t busid, uint8_t event, void *arg);
 typedef void (*usbd_event_handler_t)(uint8_t busid, uint8_t event);
+
+struct usbd_endpoint_info {
+    uint8_t ep_type;
+    uint8_t ep_mult;
+    uint16_t ep_mps;
+    uint8_t ep_interval;
+    uint8_t ep_maxburst;
+    uint8_t ep_maxstream;
+};
 
 struct usbd_endpoint {
     uint8_t ep_addr;
@@ -105,6 +118,7 @@ void usbd_add_endpoint(uint8_t busid, struct usbd_endpoint *ep);
 
 uint16_t usbd_get_ep_mps(uint8_t busid, uint8_t ep);
 uint8_t usbd_get_ep_mult(uint8_t busid, uint8_t ep);
+int usbd_get_ep_info(uint8_t busid, uint8_t ep, struct usbd_endpoint_info *ep_info);
 bool usb_device_is_configured(uint8_t busid);
 bool usb_device_is_suspend(uint8_t busid);
 int usbd_send_remote_wakeup(uint8_t busid);

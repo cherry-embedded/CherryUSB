@@ -104,6 +104,8 @@
 #define USB_REQUEST_LOOPBACK_DATA_WRITE 0x15
 #define USB_REQUEST_LOOPBACK_DATA_READ  0x16
 #define USB_REQUEST_SET_INTERFACE_DS    0x17
+#define USB_REQUEST_SET_SEL             0x30
+#define USB_REQUEST_SET_ISOCH_DLY       0x31
 
 /* USB Standard Feature selectors */
 #define USB_FEATURE_ENDPOINT_HALT  0
@@ -116,11 +118,15 @@
 #define USB_FEATURE_AHNPSUPPORT    4
 #define USB_FEATURE_AALTHNPSUPPORT 5
 #define USB_FEATURE_DEBUGMODE      6
+#define USB_FEATURE_U1_ENABLE      0x30
+#define USB_FEATURE_U2_ENABLE      0x31
 
 /* USB GET_STATUS Bit Values */
 #define USB_GETSTATUS_ENDPOINT_HALT 0x01
 #define USB_GETSTATUS_SELF_POWERED  0x01
 #define USB_GETSTATUS_REMOTE_WAKEUP 0x02
+#define USB_GETSTATUS_U1_ENABLE     0x04
+#define USB_GETSTATUS_U2_ENABLE     0x08
 
 /* USB Descriptor Types */
 #define USB_DESCRIPTOR_TYPE_DEVICE                0x01U
@@ -137,6 +143,7 @@
 #define USB_DESCRIPTOR_TYPE_BINARY_OBJECT_STORE   0x0FU
 #define USB_DESCRIPTOR_TYPE_DEVICE_CAPABILITY     0x10U
 #define USB_DESCRIPTOR_TYPE_WIRELESS_ENDPOINTCOMP 0x11U
+#define USB_DESCRIPTOR_TYPE_ENDPOINT_COMPANION    0x30U
 
 /* Class Specific Descriptor */
 #define USB_CS_DESCRIPTOR_TYPE_DEVICE        0x21U
@@ -405,6 +412,17 @@ struct usb_endpoint_descriptor {
 
 #define USB_SIZEOF_ENDPOINT_DESC 7
 
+/** Standard Endpoint Companion Descriptor */
+struct usb_endpoint_companion_descriptor {
+    uint8_t bLength;          /* Descriptor size in bytes = 6 */
+    uint8_t bDescriptorType;  /* ENDPOINT COMPANION descriptor type = 0x30 */
+    uint8_t bMaxBurst;        /* Maximum number of bursts */
+    uint8_t bmAttributes;     /* Companion attributes */
+    uint16_t wBytesPerInterval; /* Bytes per interval */
+} __PACKED;
+
+#define USB_SIZEOF_ENDPOINT_COMPANION_DESC 6
+
 /** Unicode (UTF16LE) String Descriptor */
 struct usb_string_descriptor {
     uint8_t bLength;
@@ -638,6 +656,22 @@ struct usb_desc_header {
     USB_STRING_SERIAL_INDEX,    /* iSerial */                                                                                              \
     bNumConfigurations          /* bNumConfigurations */
 
+#define USB3_DEVICE_DESCRIPTOR_INIT(bcdUSB, bDeviceClass, bDeviceSubClass, bDeviceProtocol, idVendor, idProduct, bcdDevice, bNumConfigurations) \
+    0x12,                       /* bLength */                                                                                              \
+    USB_DESCRIPTOR_TYPE_DEVICE, /* bDescriptorType */                                                                                      \
+    WBVAL(USB_3_0),             /* bcdUSB */                                                                                               \
+    bDeviceClass,               /* bDeviceClass */                                                                                         \
+    bDeviceSubClass,            /* bDeviceSubClass */                                                                                      \
+    bDeviceProtocol,            /* bDeviceProtocol */                                                                                      \
+    0x09,                       /* bMaxPacketSize */                                                                                       \
+    WBVAL(idVendor),            /* idVendor */                                                                                             \
+    WBVAL(idProduct),           /* idProduct */                                                                                            \
+    WBVAL(bcdDevice),           /* bcdDevice */                                                                                            \
+    USB_STRING_MFC_INDEX,       /* iManufacturer */                                                                                        \
+    USB_STRING_PRODUCT_INDEX,   /* iProduct */                                                                                             \
+    USB_STRING_SERIAL_INDEX,    /* iSerial */                                                                                              \
+    bNumConfigurations          /* bNumConfigurations */
+
 #define USB_CONFIG_DESCRIPTOR_INIT(wTotalLength, bNumInterfaces, bConfigurationValue, bmAttributes, bMaxPower) \
     0x09,                              /* bLength */                                                       \
     USB_DESCRIPTOR_TYPE_CONFIGURATION, /* bDescriptorType */                                               \
@@ -688,6 +722,13 @@ struct usb_desc_header {
     bmAttributes,                 /* bmAttributes */                                        \
     WBVAL(wMaxPacketSize),        /* wMaxPacketSize */                                      \
     bInterval                     /* bInterval */
+
+#define USB_ENDPOINT_COMPANION_DESCRIPTOR_INIT(bMaxBurst, bmAttributes, wBytesPerInterval) \
+    0x06,                         /* bLength */                                            \
+    USB_DESCRIPTOR_TYPE_ENDPOINT_COMPANION, /* bDescriptorType */                          \
+    bMaxBurst,                     /* bMaxBurst */                                         \
+    bmAttributes,                  /* bmAttributes */                                      \
+    WBVAL(wBytesPerInterval)       /* wBytesPerInterval */
 
 #define USB_IAD_DESCRIPTOR_INIT(bFirstInterface, bInterfaceCount, bFunctionClass, bFunctionSubClass, bFunctionProtocol) \
     0x08,                                      /* bLength */                                             \

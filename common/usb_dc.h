@@ -59,6 +59,15 @@ uint8_t usbd_get_port_speed(uint8_t busid);
 int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep);
 
 /**
+ * @brief configure endpoint extra for usb3.0.
+ *
+ * @param [in]  ep_cfg Endpoint config.
+ *
+ * @return On success will return 0, and others indicate fail.
+ */
+int usbd_ep_open_extra(uint8_t busid, const struct usb_endpoint_descriptor *ep, const struct usb_endpoint_companion_descriptor *ep_comp);
+
+/**
  * @brief Disable the selected endpoint
  *
  * @param[in] ep Endpoint address
