@@ -2,4 +2,4 @@
 
 ## Support Chip List
 
-- BL616/BL808
+- BL616/BL808 (fotg210 + EHCI)

@@ -65,8 +65,6 @@ if PKG_USING_CHERRYUSB
                 bool "chipidea_custom"
             config PKG_CHERRYUSB_DEVICE_KINETIS_MCX
                 bool "kinetis_mcx"
-            config PKG_CHERRYUSB_DEVICE_KINETIS_MM32
-                bool "kinetis_mm32"
             config PKG_CHERRYUSB_DEVICE_KINETIS_CUSTOM
                 bool "kinetis_custom"
             config PKG_CHERRYUSB_DEVICE_BL
@@ -79,8 +77,12 @@ if PKG_USING_CHERRYUSB
                 bool "rp2040"
             config PKG_CHERRYUSB_DEVICE_RENESAS
                 bool "renesas"
-            config PKG_CHERRYUSB_DEVICE_CH32
-                bool "ch32"
+            config PKG_CHERRYUSB_DEVICE_CH32_USBFS
+                bool "ch32_usbfs"
+            config PKG_CHERRYUSB_DEVICE_CH32_USBHS
+                bool "ch32_usbhs"
+            config PKG_CHERRYUSB_DEVICE_CH32_USBSS
+                bool "ch32_usbss"
             config PKG_CHERRYUSB_DEVICE_PUSB2
                 bool "pusb2"
         endchoice
@@ -302,10 +304,6 @@ if PKG_USING_CHERRYUSB
                 bool "ehci_aic"
             config PKG_CHERRYUSB_HOST_EHCI_MCX
                 bool "ehci_mcx"
-            config PKG_CHERRYUSB_HOST_EHCI_NUC980
-                bool "ehci_nuc980"
-            config PKG_CHERRYUSB_HOST_EHCI_MA35D0
-                bool "ehci_ma35d0"
             config PKG_CHERRYUSB_HOST_EHCI_CUSTOM
                 bool "ehci_custom"
             config PKG_CHERRYUSB_HOST_DWC2_ST
@@ -340,6 +338,12 @@ if PKG_USING_CHERRYUSB
                 bool "xhci"
             config PKG_CHERRYUSB_HOST_RP2040
                 bool "rp2040"
+            config PKG_CHERRYUSB_DEVICE_CH32_USBFS
+                bool "ch32_usbfs"
+            config PKG_CHERRYUSB_DEVICE_CH32_USBHS
+                bool "ch32_usbhs"
+            config PKG_CHERRYUSB_DEVICE_CH32_USBSS
+                bool "ch32_usbss"
         endchoice
 
         config PKG_CHERRYUSB_HOST_CDC_ACM

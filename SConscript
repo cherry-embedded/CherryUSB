@@ -205,7 +205,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
 
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_BL']):
         src += Glob('port/ehci/usb_hc_ehci.c')
-        src += Glob('port/ehci/usb_glue_bouffalo.c')
+        src += Glob('port/bouffalolab/usb_glue_bouffalo.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_HPM']):
         path += [cwd + '/port/hpmicro']
         src += Glob('port/ehci/usb_hc_ehci.c')
@@ -215,7 +215,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         path += [cwd + '/port/ehci']
         path += [cwd + '/port/ohci']
         src += Glob('port/ehci/usb_hc_ehci.c')
-        src += Glob('port/ehci/usb_glue_aic.c')
+        src += Glob('port/aic/usb_glue_aic.c')
         src += Glob('port/ohci/usb_hc_ohci.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_MCX']):
         path += [cwd + '/port/chipidea']

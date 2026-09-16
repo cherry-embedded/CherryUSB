@@ -64,8 +64,6 @@ if RT_USING_CHERRYUSB
                 bool "chipidea_custom"
             config RT_CHERRYUSB_DEVICE_KINETIS_MCX
                 bool "kinetis_mcx"
-            config RT_CHERRYUSB_DEVICE_KINETIS_MM32
-                bool "kinetis_mm32"
             config RT_CHERRYUSB_DEVICE_KINETIS_CUSTOM
                 bool "kinetis_custom"
             config RT_CHERRYUSB_DEVICE_BL
@@ -78,8 +76,12 @@ if RT_USING_CHERRYUSB
                 bool "rp2040"
             config RT_CHERRYUSB_DEVICE_RENESAS
                 bool "renesas"
-            config RT_CHERRYUSB_DEVICE_CH32
-                bool "ch32"
+            config RT_CHERRYUSB_DEVICE_CH32_USBFS
+                bool "ch32_usbfs"
+            config RT_CHERRYUSB_DEVICE_CH32_USBHS
+                bool "ch32_usbhs"
+            config RT_CHERRYUSB_DEVICE_CH32_USBSS
+                bool "ch32_usbss"
             config RT_CHERRYUSB_DEVICE_PUSB2
                 bool "pusb2"
             config RT_CHERRYUSB_DEVICE_NRF5X
@@ -303,10 +305,6 @@ if RT_USING_CHERRYUSB
                 bool "ehci_aic"
             config RT_CHERRYUSB_HOST_EHCI_MCX
                 bool "ehci_mcx"
-            config RT_CHERRYUSB_HOST_EHCI_NUC980
-                bool "ehci_nuc980"
-            config RT_CHERRYUSB_HOST_EHCI_MA35D0
-                bool "ehci_ma35d0"
             config RT_CHERRYUSB_HOST_EHCI_CUSTOM
                 bool "ehci_custom"
             config RT_CHERRYUSB_HOST_DWC2_ST
@@ -341,6 +339,12 @@ if RT_USING_CHERRYUSB
                 bool "xhci"
             config RT_CHERRYUSB_HOST_RP2040
                 bool "rp2040"
+            config RT_CHERRYUSB_HOST_CH32_USBFS
+                bool "ch32_usbfs"
+            config RT_CHERRYUSB_HOST_CH32_USBHS
+                bool "ch32_usbhs"
+            config RT_CHERRYUSB_HOST_CH32_USBSS
+                bool "ch32_usbss"
         endchoice
 
         config RT_CHERRYUSB_HOST_CDC_ACM
