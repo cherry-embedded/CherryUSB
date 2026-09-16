@@ -519,7 +519,7 @@ typedef struct
 } USBHSD_TypeDef;
 
 /* USBHS Host Registers */
-typedef struct  __attribute__((packed))
+typedef struct
 {
     __IO uint8_t  CFG;
     uint8_t  RESERVED0;
