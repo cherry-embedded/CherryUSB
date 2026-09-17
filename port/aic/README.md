@@ -2,4 +2,4 @@
 
 ## Support Chip List
 
-- ALL (aic + EHCI)
+- ALL series (aic + EHCI + OHCI)

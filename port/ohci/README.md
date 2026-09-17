@@ -8,7 +8,7 @@ This OHCI is a companion controller of EHCI. But you can use OHCI only without C
 
 ### AllwinnerTech
 
-- F133(EHCI + OHCI)
+- Except F1Cxxx, F2Cxxx (musb + EHCI+ OHCI)
 
 ### Nuvoton
 
@@ -16,7 +16,7 @@ This OHCI is a companion controller of EHCI. But you can use OHCI only without C
 
 ### Artinchip
 
-- d13x, d21x(EHCI + OHCI)
+- ALL series (aic + EHCI + OHCI)
 
 ### NXP
 

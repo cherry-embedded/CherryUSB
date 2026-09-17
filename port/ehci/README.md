@@ -4,15 +4,15 @@
 
 ### BouffaloLab
 
-- BouffaloLab BL616/BL808 (bouffalolab + EHCI)
+- BouffaloLab BL616/BL808 (fotg210 + EHCI)
 
 ### HPMicro
 
-- HPM all series (hpmicro + EHCI)
+- HPM all series (chipidea + EHCI)
 
 ### AllwinnerTech
 
-- F133/T113
+- Except F1Cxxx, F2Cxxx (musb + EHCI+ OHCI)
 
 ### Nuvoton
 
@@ -20,7 +20,7 @@
 
 ### Artinchip
 
-- d13x, d21x
+- ALL series (aic + EHCI + OHCI)
 
 ### NXP
 

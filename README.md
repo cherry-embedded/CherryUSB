@@ -40,7 +40,7 @@ Considering USB performance requirements to reach theoretical USB hardware bandw
 - No length restrictions, facilitating hardware DMA interfacing and maximizing DMA advantages
 - Packetization handled in interrupt context
 
-Performance show：https://cherryusb.cherry-embedded.org/show/
+Performance show：https://cherryusb.readthedocs.io/en/latest/show/index.html
 
 ## Directory Structure
 

@@ -18,6 +18,7 @@
 ### AllwinnerTech
 
 - F1Cxxx, F2Cxxx
+- Except F1Cxxx, F2Cxxx (musb + EHCI+ OHCI)
 
 ### SIFLI
 
