@@ -124,3 +124,31 @@ jobs:
           rm -rf packages/CherryUSB-latest
           pkgs --update
           scons -j8
+
+  build_wch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y make
+
+      - name: Download wch demo repo
+        run: |
+          cd ~
+          git clone https://github.com/CherryUSB/wch-support-cherryusb.git --recursive
+          cd ~/wch-support-cherryusb
+          git submodule update --remote
+      - name: Download RISC-V toolchain
+        run: |
+          cd ~
+          wget https://github.com/CherryUSB/wch-support-cherryusb/releases/download/v1.0/MRS_Toolchain_Linux_X64_V240.tar.xz
+          tar -xJf MRS_Toolchain_Linux_X64_V240.tar.xz
+          export PATH=~/Toolchain/riscv32-wch-elf-gcc/bin:$PATH
+      - name: Build wch demo
+        run: |
+          cd ~/wch-support-cherryusb
+          make all -j8 CHIP=ch32h417qeu6 IP=usbfs
+          make clear
+          make all -j8 CHIP=ch32h417qeu6 IP=usbhs
