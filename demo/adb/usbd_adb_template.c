@@ -18,12 +18,6 @@
 /*!< config descriptor size */
 #define USB_CONFIG_SIZE    (9 + 9 + 7 + 7)
 
-#ifdef CONFIG_USB_HS
-#define WINUSB_MAX_MPS 512
-#else
-#define WINUSB_MAX_MPS 64
-#endif
-
 #define WCID_VENDOR_CODE 0x17
 #define ADB_INTF_NUM 0
 
@@ -112,25 +106,28 @@ static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0100, 0x01)
 };
 
-static const uint8_t config_descriptor[] = {
+static const uint8_t config_descriptor_hs[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    ADB_DESCRIPTOR_INIT(ADB_INTF_NUM, WINUSB_IN_EP, WINUSB_OUT_EP, WINUSB_MAX_MPS)
+    ADB_DESCRIPTOR_INIT(ADB_INTF_NUM, WINUSB_IN_EP, WINUSB_OUT_EP, USB_BULK_EP_MPS_HS)
+};
+
+static const uint8_t config_descriptor_fs[] = {
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    ADB_DESCRIPTOR_INIT(ADB_INTF_NUM, WINUSB_IN_EP, WINUSB_OUT_EP, USB_BULK_EP_MPS_FS)
 };
 
 static const uint8_t device_quality_descriptor[] = {
-    ///////////////////////////////////////
-    /// device qualifier descriptor
-    ///////////////////////////////////////
-    0x0a,
-    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
-    0x00,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x40,
-    0x00,
-    0x00,
+    USB_DEVICE_QUALIFIER_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, 0x01),
+};
+
+static const uint8_t other_speed_config_descriptor_hs[] = {
+    USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    ADB_DESCRIPTOR_INIT(ADB_INTF_NUM, WINUSB_IN_EP, WINUSB_OUT_EP, USB_BULK_EP_MPS_FS)
+};
+
+static const uint8_t other_speed_config_descriptor_fs[] = {
+    USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x01, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    ADB_DESCRIPTOR_INIT(ADB_INTF_NUM, WINUSB_IN_EP, WINUSB_OUT_EP, USB_BULK_EP_MPS_HS)
 };
 
 static const char *string_descriptors[] = {
@@ -142,21 +139,44 @@ static const char *string_descriptors[] = {
 
 static const uint8_t *device_descriptor_callback(uint8_t speed)
 {
+    (void)speed;
+
     return device_descriptor;
 }
 
 static const uint8_t *config_descriptor_callback(uint8_t speed)
 {
-    return config_descriptor;
+    if (speed == USB_SPEED_HIGH) {
+        return config_descriptor_hs;
+    } else if (speed == USB_SPEED_FULL) {
+        return config_descriptor_fs;
+    } else {
+        return NULL;
+    }
 }
 
 static const uint8_t *device_quality_descriptor_callback(uint8_t speed)
 {
+    (void)speed;
+
     return device_quality_descriptor;
+}
+
+static const uint8_t *other_speed_config_descriptor_callback(uint8_t speed)
+{
+    if (speed == USB_SPEED_HIGH) {
+        return other_speed_config_descriptor_hs;
+    } else if (speed == USB_SPEED_FULL) {
+        return other_speed_config_descriptor_fs;
+    } else {
+        return NULL;
+    }
 }
 
 static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
 {
+    (void)speed;
+
     if (index >= (sizeof(string_descriptors) / sizeof(char *))) {
         return NULL;
     }
@@ -167,6 +187,7 @@ const struct usb_descriptor adb_descriptor = {
     .device_descriptor_callback = device_descriptor_callback,
     .config_descriptor_callback = config_descriptor_callback,
     .device_quality_descriptor_callback = device_quality_descriptor_callback,
+    .other_speed_descriptor_callback = other_speed_config_descriptor_callback,
     .string_descriptor_callback = string_descriptor_callback,
     .msosv1_descriptor = &msosv1_desc
 };

@@ -9,23 +9,15 @@
 #include "usbd_cdc_acm.h"
 #include "general.h"
 #include "gdb_if.h"
-#include "hpm_l1c_drv.h"
+
+#define USBD_VID           0xffff
+#define USBD_PID           0xffff
+#define USBD_MAX_POWER     100
+#define USBD_LANGID_STRING 1033
 
 #define CDC_IN_EP  0x81
 #define CDC_OUT_EP 0x01
 #define CDC_INT_EP 0x83
-
-#define CDC_MAX_PACKET_SIZE 512
-
-#ifdef CONFIG_USB_HS
-#if CDC_MAX_PACKET_SIZE != 512
-#error "CDC_MAX_PACKET_SIZE must be 512 in hs"
-#endif
-#else
-#if CDC_MAX_PACKET_SIZE != 64
-#error "CDC_MAX_PACKET_SIZE must be 64 in fs"
-#endif
-#endif
 
 /*!< config descriptor size */
 #define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN)

@@ -22,45 +22,75 @@
                                         MIDI_STANDARD_DESCRIPTOR_LEN + \
                                         AUDIO_MS_SIZ)
 
-#ifdef CONFIG_USB_HS
-#define MIDI_EP_MPS 512
-#else
-#define MIDI_EP_MPS 64
-#endif
+/*!< max ep mps used to size the ram buffers */
+#define MIDI_EP_MPS_MAX USB_BULK_EP_MPS_HS
 
 static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, USBD_VID, USBD_PID, 0x0100, 0x01)
 };
 
-static const uint8_t config_descriptor[] = {
+static const uint8_t config_descriptor_hs[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, 0x00, 0x01),
     MIDI_STANDARD_DESCRIPTOR_INIT(0x01, 0x02),
     MIDI_CS_HEADER_DESCRIPTOR_INIT(AUDIO_MS_SIZ),
     MIDI_JACK_DESCRIPTOR_INIT(0x01),
     // OUT endpoint descriptor
-    0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
+    0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(USB_BULK_EP_MPS_HS), 0x00, 0x00, 0x00,
     0x05, 0x25, 0x01, 0x01, 0x01,
 
     // IN endpoint descriptor
-    0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(MIDI_EP_MPS), 0x00, 0x00, 0x00,
+    0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(USB_BULK_EP_MPS_HS), 0x00, 0x00, 0x00,
+    0x05, 0x25, 0x01, 0x01, 0x03
+};
+
+static const uint8_t config_descriptor_fs[] = {
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, 0x00, 0x01),
+    MIDI_STANDARD_DESCRIPTOR_INIT(0x01, 0x02),
+    MIDI_CS_HEADER_DESCRIPTOR_INIT(AUDIO_MS_SIZ),
+    MIDI_JACK_DESCRIPTOR_INIT(0x01),
+    // OUT endpoint descriptor
+    0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(USB_BULK_EP_MPS_FS), 0x00, 0x00, 0x00,
+    0x05, 0x25, 0x01, 0x01, 0x01,
+
+    // IN endpoint descriptor
+    0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(USB_BULK_EP_MPS_FS), 0x00, 0x00, 0x00,
     0x05, 0x25, 0x01, 0x01, 0x03
 };
 
 static const uint8_t device_quality_descriptor[] = {
-    ///////////////////////////////////////
-    /// device qualifier descriptor
-    ///////////////////////////////////////
-    0x0a,
-    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
-    0x00,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x40,
-    0x00,
-    0x00,
+    USB_DEVICE_QUALIFIER_DESCRIPTOR_INIT(USB_2_0, 0x00, 0x00, 0x00, 0x01),
+};
+
+static const uint8_t other_speed_config_descriptor_hs[] = {
+    USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, 0x00, 0x01),
+    MIDI_STANDARD_DESCRIPTOR_INIT(0x01, 0x02),
+    MIDI_CS_HEADER_DESCRIPTOR_INIT(AUDIO_MS_SIZ),
+    MIDI_JACK_DESCRIPTOR_INIT(0x01),
+    // OUT endpoint descriptor
+    0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(USB_BULK_EP_MPS_FS), 0x00, 0x00, 0x00,
+    0x05, 0x25, 0x01, 0x01, 0x01,
+
+    // IN endpoint descriptor
+    0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(USB_BULK_EP_MPS_FS), 0x00, 0x00, 0x00,
+    0x05, 0x25, 0x01, 0x01, 0x03
+};
+
+static const uint8_t other_speed_config_descriptor_fs[] = {
+    USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    AUDIO_AC_DESCRIPTOR_INIT(0x00, 0x02, AUDIO_AC_SIZ, 0x00, 0x01),
+    MIDI_STANDARD_DESCRIPTOR_INIT(0x01, 0x02),
+    MIDI_CS_HEADER_DESCRIPTOR_INIT(AUDIO_MS_SIZ),
+    MIDI_JACK_DESCRIPTOR_INIT(0x01),
+    // OUT endpoint descriptor
+    0x09, 0x05, MIDI_OUT_EP, 0x02, WBVAL(USB_BULK_EP_MPS_HS), 0x00, 0x00, 0x00,
+    0x05, 0x25, 0x01, 0x01, 0x01,
+
+    // IN endpoint descriptor
+    0x09, 0x05, MIDI_IN_EP, 0x02, WBVAL(USB_BULK_EP_MPS_HS), 0x00, 0x00, 0x00,
+    0x05, 0x25, 0x01, 0x01, 0x03
 };
 
 static const char *string_descriptors[] = {
@@ -72,21 +102,44 @@ static const char *string_descriptors[] = {
 
 static const uint8_t *device_descriptor_callback(uint8_t speed)
 {
+    (void)speed;
+
     return device_descriptor;
 }
 
 static const uint8_t *config_descriptor_callback(uint8_t speed)
 {
-    return config_descriptor;
+    if (speed == USB_SPEED_HIGH) {
+        return config_descriptor_hs;
+    } else if (speed == USB_SPEED_FULL) {
+        return config_descriptor_fs;
+    } else {
+        return NULL;
+    }
 }
 
 static const uint8_t *device_quality_descriptor_callback(uint8_t speed)
 {
+    (void)speed;
+
     return device_quality_descriptor;
+}
+
+static const uint8_t *other_speed_config_descriptor_callback(uint8_t speed)
+{
+    if (speed == USB_SPEED_HIGH) {
+        return other_speed_config_descriptor_hs;
+    } else if (speed == USB_SPEED_FULL) {
+        return other_speed_config_descriptor_fs;
+    } else {
+        return NULL;
+    }
 }
 
 static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
 {
+    (void)speed;
+
     if (index >= (sizeof(string_descriptors) / sizeof(char *))) {
         return NULL;
     }
@@ -97,11 +150,12 @@ const struct usb_descriptor midi_descriptor = {
     .device_descriptor_callback = device_descriptor_callback,
     .config_descriptor_callback = config_descriptor_callback,
     .device_quality_descriptor_callback = device_quality_descriptor_callback,
+    .other_speed_descriptor_callback = other_speed_config_descriptor_callback,
     .string_descriptor_callback = string_descriptor_callback
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[MIDI_EP_MPS];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[MIDI_EP_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[MIDI_EP_MPS_MAX];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[MIDI_EP_MPS_MAX];
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
@@ -117,7 +171,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
-            usbd_ep_start_read(busid, MIDI_OUT_EP, read_buffer, MIDI_EP_MPS);
+            usbd_ep_start_read(busid, MIDI_OUT_EP, read_buffer, usbd_get_ep_mps(busid, MIDI_OUT_EP));
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -131,7 +185,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
 
 void usbd_midi_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    usbd_ep_start_read(busid, MIDI_OUT_EP, read_buffer, MIDI_EP_MPS);
+    usbd_ep_start_read(busid, MIDI_OUT_EP, read_buffer, usbd_get_ep_mps(busid, MIDI_OUT_EP));
 }
 
 void usbd_midi_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)

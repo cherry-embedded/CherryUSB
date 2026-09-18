@@ -1383,6 +1383,11 @@ void usbd_add_endpoint(uint8_t busid, struct usbd_endpoint *ep)
     }
 }
 
+uint8_t usbd_get_device_speed(uint8_t busid)
+{
+    return g_usbd_core[busid].speed;
+}
+
 uint16_t usbd_get_ep_mps(uint8_t busid, uint8_t ep)
 {
     if (ep & 0x80) {
