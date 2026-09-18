@@ -174,6 +174,9 @@ struct usbh_hub {
     struct usb_endpoint_descriptor *intin;
     struct usbh_urb intin_urb;
     uint8_t *int_buffer;
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+    uint16_t force_reenumerate;
+#endif
     struct usb_osal_timer *int_timer;
 };
 
