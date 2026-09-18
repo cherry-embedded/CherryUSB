@@ -338,11 +338,11 @@ if PKG_USING_CHERRYUSB
                 bool "xhci"
             config PKG_CHERRYUSB_HOST_RP2040
                 bool "rp2040"
-            config PKG_CHERRYUSB_DEVICE_CH32_USBFS
+            config PKG_CHERRYUSB_HOST_CH32_USBFS
                 bool "ch32_usbfs"
-            config PKG_CHERRYUSB_DEVICE_CH32_USBHS
+            config PKG_CHERRYUSB_HOST_CH32_USBHS
                 bool "ch32_usbhs"
-            config PKG_CHERRYUSB_DEVICE_CH32_USBSS
+            config PKG_CHERRYUSB_HOST_CH32_USBSS
                 bool "ch32_usbss"
         endchoice
 

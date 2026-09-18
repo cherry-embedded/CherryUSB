@@ -147,3 +147,32 @@ jobs:
           make all -j8 CHIP=ch32h417qeu6 IP=usbfs
           make clear
           make all -j8 CHIP=ch32h417qeu6 IP=usbhs
+
+  build_sifli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get install git wget flex bison gperf cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+      - name: Download sifli_sdk
+        run: |
+          cd ~
+          git clone https://github.com/OpenSiFli/SiFli-SDK --recursive -b release/v2.5
+          cd ~/SiFli-SDK
+
+      - name: Build sifli demo
+        run: |
+          pwd
+          rm -rf ~/SiFli-SDK/external/cherryusb
+          cp ../CherryUSB ~/SiFli-SDK/external/cherryusb -r
+          cd ~/SiFli-SDK
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          ./install.sh
+          . export.sh
+          cd ~/SiFli-SDK/example/cherryusb/device/cdc_hid_msc/project
+          scons --board=sf32lb52-lcd_n16r8 -j8
+          cd ~/SiFli-SDK/example/cherryusb/host/msc_host/project
+          scons --board=sf32lb52-lcd_n16r8 -j8
