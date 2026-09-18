@@ -7,6 +7,10 @@
 #include "usbd_core.h"
 #include "usb_usbfs_reg.h"
 
+#ifdef CONFIG_USB_HS
+#error "USBFS controller does not support high-speed mode"
+#endif
+
 #ifndef CONFIG_USBDEV_EP_NUM
 #define CONFIG_USBDEV_EP_NUM 8
 #endif

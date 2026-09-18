@@ -58,7 +58,13 @@ int usb_dc_init(uint8_t busid)
     USBHSD->UEP_RX_ISO = 0;
 
     USBHSD->DEV_AD = 0x00;
+
+#ifdef CONFIG_USB_HS
     USBHSD->BASE_MODE = USBHS_UD_SPEED_HIGH;
+#else
+    USBHSD->BASE_MODE = USBHS_UD_SPEED_FULL;
+#endif
+
     USBHSD->CONTROL = USBHS_UD_DEV_EN | USBHS_UD_DMA_EN | USBHS_UD_LPM_EN | USBHS_UD_PHY_SUSPENDM;
     return 0;
 }
