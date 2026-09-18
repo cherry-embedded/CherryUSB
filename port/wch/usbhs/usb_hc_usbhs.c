@@ -20,6 +20,12 @@ typedef enum {
 } ep0_state_t;
 
 typedef enum {
+    XFER_STATE_IDLE,
+    XFER_STATE_BUSY,
+    XFER_STATE_COMP,
+} xfer_state_t;
+
+typedef enum {
     ENDP_TOG_DATA0,
     ENDP_TOG_DATA1,
     ENDP_TOG_DATA2,
@@ -55,6 +61,7 @@ typedef struct usbhs_xfer {
     uint8_t token;
     uint8_t toggle;
     uint8_t dev_addr;
+    uint8_t xfer_state;
     uint8_t split_retry;
     uint8_t split_mframe;
     uint16_t length;
@@ -66,9 +73,13 @@ typedef struct usbhs_xfer {
 
 struct usbhs_pipe {
     bool used;
-    bool xfered;
+    bool killed;
+    bool ping;
+    bool ping_en;
     uint8_t type;
     uint8_t ep0_state;
+    uint32_t tick;
+    uint32_t interval;
     usb_osal_sem_t waitsem;
     usbhs_xfer_t xfer;
     struct usbh_urb *urb;
@@ -83,21 +94,50 @@ struct usbhs_hcd {
     bool port_ssc;
     bool port_rsc;
     uint8_t speed;
+    uint32_t tick;
     usbhs_xfer_t *curr_xfer;
     struct usbhs_pipe *pipe_list[4];
     struct usbhs_pipe pipe_pool[8];
 } g_usbhs_hcd[CONFIG_USBHOST_MAX_BUS];
 
-static struct usbhs_pipe *usbhs_pipe_alloc(struct usbh_bus *bus, uint8_t type)
+static struct usbhs_pipe *usbhs_pipe_alloc(struct usbh_bus *bus, struct usbh_urb *urb, struct usb_endpoint_descriptor *ep)
 {
     for (size_t chidx = 0; chidx < sizeof(g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool) / sizeof(struct usbhs_pipe); chidx++) {
         if (!g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].used) {
+            uint8_t type = USB_GET_ENDPOINT_TYPE(ep->bmAttributes);
             g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].used = true;
-            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].xfered = false;
+            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].killed = false;
+            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].ping = false;
+            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].type = type;
             g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].ep0_state = USB_EP0_STATE_SETUP;
-            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].next = NULL;
-            memset(&g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].xfer, 0, sizeof(usbhs_xfer_t));
+            if (g_usbhs_hcd[bus->hcd.hcd_id].speed == USB_SPEED_HIGH &&
+                (type == USB_ENDPOINT_TYPE_CONTROL || type == USB_ENDPOINT_TYPE_BULK)) {
+                g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].ping_en = true;
+            } else {
+                g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].ping_en = false;
+            }
+            if (type == USB_ENDPOINT_TYPE_ISOCHRONOUS || type == USB_ENDPOINT_TYPE_INTERRUPT) {
+                uint8_t interval = ep->bInterval;
+                if (g_usbhs_hcd[bus->hcd.hcd_id].speed == USB_SPEED_HIGH) {
+                    if (urb->hport->speed == USB_SPEED_HIGH) {
+                        g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = 1 << (interval - 1);
+                    } else if (type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                        g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = (1 << (interval - 1)) << 3;
+                    } else {
+                        g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = interval << 3;
+                    }
+                } else if (type == USB_ENDPOINT_TYPE_ISOCHRONOUS) {
+                    g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = 1 << (interval - 1);
+                } else {
+                    g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = interval;
+                }
+            } else {
+                g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = 0;
+            }
 
+            usb_osal_sem_reset(g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].waitsem);
+            memset(&g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].xfer, 0, sizeof(usbhs_xfer_t));
+            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].urb = urb;
             if (g_usbhs_hcd[bus->hcd.hcd_id].pipe_list[type] == NULL) {
                 g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].prev = NULL;
                 g_usbhs_hcd[bus->hcd.hcd_id].pipe_list[type] = &g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx];
@@ -109,7 +149,7 @@ static struct usbhs_pipe *usbhs_pipe_alloc(struct usbh_bus *bus, uint8_t type)
                 g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].prev = ppipe;
                 ppipe->next = &g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx];
             }
-
+            g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].next = NULL;
             return &g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx];
         }
     }
@@ -119,21 +159,23 @@ static struct usbhs_pipe *usbhs_pipe_alloc(struct usbh_bus *bus, uint8_t type)
 
 static void usbhs_pipe_free(struct usbh_bus *bus, struct usbhs_pipe *pipe, uint8_t type)
 {
-    if (pipe->prev) {
-        pipe->prev->next = pipe->next;
+    usbhs_xfer_t *xfer = &pipe->xfer;
+
+    if (xfer->xfer_state != XFER_STATE_BUSY) {
+        if (pipe->prev) {
+            pipe->prev->next = pipe->next;
+        } else {
+            g_usbhs_hcd[bus->hcd.hcd_id].pipe_list[type] = pipe->next;
+        }
+
+        if (pipe->next) {
+            pipe->next->prev = pipe->prev;
+        }
+
+        pipe->used = false;
     } else {
-        g_usbhs_hcd[bus->hcd.hcd_id].pipe_list[type] = pipe->next;
+        pipe->killed = true;
     }
-    if (pipe->next) {
-        pipe->next->prev = pipe->prev;
-    }
-
-    if (pipe->urb) {
-        pipe->urb->hcpriv = NULL;
-        pipe->urb = NULL;
-    }
-
-    pipe->used = false;
 }
 
 static usbhs_xfer_t **usbhs_xfer_process(struct usbh_bus *bus, usbhs_xfer_t **last_xfer, uint8_t type)
@@ -141,97 +183,110 @@ static usbhs_xfer_t **usbhs_xfer_process(struct usbh_bus *bus, usbhs_xfer_t **la
     struct usbhs_pipe *pipe = g_usbhs_hcd[bus->hcd.hcd_id].pipe_list[type];
 
     while (pipe) {
-        if (pipe->xfered) {
-            pipe = pipe->next;
-            continue;
-        }
-
-        struct usbh_urb *urb = pipe->urb;
         usbhs_xfer_t *xfer = &pipe->xfer;
+        if (xfer->xfer_state != XFER_STATE_COMP) {
+            struct usbh_urb *urb = pipe->urb;
+            if (urb->hport->speed != g_usbhs_hcd[bus->hcd.hcd_id].speed) {
+                if (g_usbhs_hcd[bus->hcd.hcd_id].speed == USB_SPEED_FULL) {
+                    xfer->pre = 1;
+                } else {
+                    split_data_t *split = &xfer->split_data;
+                    uint8_t mframe = (USBHSH->FRAME & USBHS_UH_MFRAME_NO) >> 16;
 
-        if (urb->hport->speed != g_usbhs_hcd[bus->hcd.hcd_id].speed) {
-            if (g_usbhs_hcd[bus->hcd.hcd_id].speed == USB_SPEED_FULL) {
-                xfer->pre = 1;
-            } else {
-                split_data_t *split = &xfer->split_data;
-                uint8_t mframe = (USBHSH->FRAME & USBHS_UH_MFRAME_NO) >> 16;
+                    if (split->sc == 1 || split->iso_out_offset) {
+                        if (mframe != xfer->split_mframe) {
+                            xfer->split_mframe = mframe;
+                            xfer->xfer_state = XFER_STATE_BUSY;
+                            *last_xfer = xfer;
+                            last_xfer = &xfer->next;
+                        }
 
-                if (split->sc == 1 || split->iso_out_offset) {
-                    if (mframe != xfer->split_mframe) {
-                        xfer->split_mframe = mframe;
-                        *last_xfer = xfer;
-                        last_xfer = &xfer->next;
+                        pipe = pipe->next;
+                        continue;
                     }
 
-                    pipe = pipe->next;
-                    continue;
+                    static const uint8_t valid_microframe[] = { 6, 1, 6, 2 };
+                    if (mframe >= valid_microframe[type]) {
+                        pipe = pipe->next;
+                        continue;
+                    }
+
+                    struct usbh_hubport *port = urb->hport;
+                    while (port->parent && port->parent->speed != USB_SPEED_HIGH) {
+                        port = port->parent->parent;
+                    }
+
+                    split->hub_addr = port->parent->hub_addr;
+                    split->sc = 0;
+                    split->port = port->port;
+                    split->s = urb->hport->speed == USB_SPEED_LOW ? 1 : 0;
+                    split->e = 0;
+                    split->et = type;
+
+                    if (type == USB_ENDPOINT_TYPE_ISOCHRONOUS && xfer->token == USB_PID_OUT) {
+                        split->iso_out_length = MIN(urb->transfer_buffer_length - urb->actual_length, 1023);
+                        split->iso_out_offset = 0;
+                        split->s = 1;
+                        split->e = split->iso_out_length <= HIGH_SPLIT_ISO_OUT_MAX_SIZE ? 1 : 0;
+                    }
+                }
+            }
+
+            if (pipe->ping) {
+                xfer->token = USB_PID_PING;
+                xfer->xfer_state = XFER_STATE_BUSY;
+                *last_xfer = xfer;
+                last_xfer = &xfer->next;
+                pipe = pipe->next;
+                continue;
+            }
+
+            xfer->dev_addr = urb->hport->dev_addr;
+            xfer->pipe = pipe;
+
+            if (type == USB_ENDPOINT_TYPE_CONTROL) {
+                xfer->endp = 0;
+                switch (pipe->ep0_state) {
+                    case USB_EP0_STATE_SETUP:
+                        xfer->token = USB_PID_SETUP;
+                        xfer->toggle = ENDP_TOG_DATA0;
+                        xfer->length = sizeof(struct usb_setup_packet);
+                        xfer->buffer = (uint8_t *)(urb->setup);
+                        break;
+
+                    case USB_EP0_STATE_DATA:
+                        xfer->token = urb->setup->bmRequestType & 0x80 ? USB_PID_IN : USB_PID_OUT;
+                        xfer->toggle = urb->data_toggle;
+                        xfer->length = MIN(urb->transfer_buffer_length - (urb->actual_length - sizeof(struct usb_setup_packet)),
+                                           USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize));
+                        xfer->buffer = urb->transfer_buffer + urb->actual_length - sizeof(struct usb_setup_packet);
+                        break;
+
+                    case USB_EP0_STATE_STATUS:
+                        xfer->token = urb->setup->bmRequestType & 0x80 ? USB_PID_OUT : USB_PID_IN;
+                        xfer->toggle = ENDP_TOG_DATA1;
+                        xfer->length = 0;
+                        xfer->buffer = NULL;
+                        break;
                 }
 
-                static const uint8_t valid_microframe[] = { 6, 1, 6, 2 };
-                if (mframe >= valid_microframe[type]) {
-                    pipe = pipe->next;
-                    continue;
-                }
+                xfer->xfer_state = XFER_STATE_BUSY;
+                *last_xfer = xfer;
+                last_xfer = &xfer->next;
+            } else if (pipe->interval == 0 || g_usbhs_hcd[bus->hcd.hcd_id].tick - pipe->tick >= pipe->interval) {
+                pipe->tick = g_usbhs_hcd[bus->hcd.hcd_id].tick;
+                xfer->endp = USB_EP_GET_IDX(urb->ep->bEndpointAddress);
+                xfer->token = USB_EP_GET_DIR(urb->ep->bEndpointAddress) ? USB_PID_IN : USB_PID_OUT;
+                xfer->toggle = urb->data_toggle;
+                xfer->length = MIN(urb->transfer_buffer_length - urb->actual_length, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize));
+                xfer->buffer = urb->transfer_buffer + urb->actual_length;
 
-                struct usbh_hubport *port = urb->hport;
-                while (port->parent && port->parent->speed != USB_SPEED_HIGH) {
-                    port = port->parent->parent;
-                }
-
-                split->hub_addr = port->parent->hub_addr;
-                split->sc = 0;
-                split->port = port->port;
-                split->s = urb->hport->speed == USB_SPEED_LOW ? 1 : 0;
-                split->e = 0;
-                split->et = type;
-
-                if (type == USB_ENDPOINT_TYPE_ISOCHRONOUS && xfer->token == USB_PID_OUT) {
-                    split->iso_out_length = MIN(urb->transfer_buffer_length - urb->actual_length, 1023);
-                    split->iso_out_offset = 0;
-                    split->s = 1;
-                    split->e = split->iso_out_length <= HIGH_SPLIT_ISO_OUT_MAX_SIZE ? 1 : 0;
-                }
+                xfer->xfer_state = XFER_STATE_BUSY;
+                *last_xfer = xfer;
+                last_xfer = &xfer->next;
             }
         }
 
-        xfer->dev_addr = urb->hport->dev_addr;
-        xfer->pipe = pipe;
-
-        if (type == USB_ENDPOINT_TYPE_CONTROL) {
-            xfer->endp = 0;
-            switch (pipe->ep0_state) {
-                case USB_EP0_STATE_SETUP:
-                    xfer->token = USB_PID_SETUP;
-                    xfer->toggle = ENDP_TOG_DATA0;
-                    xfer->length = sizeof(struct usb_setup_packet);
-                    xfer->buffer = (uint8_t *)(urb->setup);
-                    break;
-
-                case USB_EP0_STATE_DATA:
-                    xfer->token = urb->setup->bmRequestType & 0x80 ? USB_PID_IN : USB_PID_OUT;
-                    xfer->toggle = urb->data_toggle;
-                    xfer->length = MIN(urb->transfer_buffer_length - (urb->actual_length - sizeof(struct usb_setup_packet)),
-                                       USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize));
-                    xfer->buffer = urb->transfer_buffer + urb->actual_length - sizeof(struct usb_setup_packet);
-                    break;
-
-                case USB_EP0_STATE_STATUS:
-                    xfer->token = urb->setup->bmRequestType & 0x80 ? USB_PID_OUT : USB_PID_IN;
-                    xfer->toggle = ENDP_TOG_DATA1;
-                    xfer->length = 0;
-                    xfer->buffer = NULL;
-                    break;
-            }
-        } else {
-            xfer->endp = USB_EP_GET_IDX(urb->ep->bEndpointAddress);
-            xfer->token = USB_EP_GET_DIR(urb->ep->bEndpointAddress) ? USB_PID_IN : USB_PID_OUT;
-            xfer->toggle = urb->data_toggle;
-            xfer->length = MIN(urb->transfer_buffer_length - urb->actual_length, USB_GET_MAXPACKETSIZE(urb->ep->wMaxPacketSize));
-            xfer->buffer = urb->transfer_buffer + urb->actual_length;
-        }
-
-        *last_xfer = xfer;
-        last_xfer = &xfer->next;
         pipe = pipe->next;
     }
 
@@ -240,8 +295,10 @@ static usbhs_xfer_t **usbhs_xfer_process(struct usbh_bus *bus, usbhs_xfer_t **la
 
 static void usbhs_transfer_start(struct usbh_bus *bus)
 {
-    if ((USBHSH->CONTROL & USBHS_UH_HOST_ACTION) || (USBHSH->INT_FLAG & USBHS_UHIF_TRANSFER))
+    if ((USBHSH->CONTROL & USBHS_UH_HOST_ACTION) || (USBHSH->INT_FLAG & USBHS_UHIF_TRANSFER) ||
+        !(USBHSH->PORT_STATUS & USBHS_UHIS_PORT_CONNECT)) {
         return;
+    }
 
     if (g_usbhs_hcd[bus->hcd.hcd_id].sof_act || !g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer) {
         g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer = NULL;
@@ -255,6 +312,7 @@ static void usbhs_transfer_start(struct usbh_bus *bus)
 
         last_xfer = usbhs_xfer_process(bus, last_xfer, USB_ENDPOINT_TYPE_CONTROL);
         last_xfer = usbhs_xfer_process(bus, last_xfer, USB_ENDPOINT_TYPE_BULK);
+        *last_xfer = NULL;
     }
 
     if (g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer) {
@@ -352,21 +410,31 @@ static bool usbhs_split_transfer_complete(struct usbh_bus *bus, usbhs_xfer_t *xf
 static void usbhs_transfer_complete(struct usbh_bus *bus, uint8_t recv_pid, size_t recv_len)
 {
     static const uint8_t tog_pid[] = { USB_PID_DATA0, USB_PID_DATA1, USB_PID_DATA2, USB_PID_MDATA };
+
     usbhs_xfer_t *xfer = g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer;
     struct usbhs_pipe *pipe = xfer->pipe;
 
-    if (xfer->split_data.split_data) {
-        if (!usbhs_split_transfer_complete(bus, xfer, recv_pid))
-            return;
-    }
-
-    struct usbh_urb *urb = pipe->urb;
-
-    if (!urb) {
+    xfer->xfer_state = XFER_STATE_IDLE;
+    if (pipe->killed) {
+        usbhs_pipe_free(bus, pipe, pipe->type);
         return;
     }
 
+    if (xfer->split_data.split_data && !usbhs_split_transfer_complete(bus, xfer, recv_pid)) {
+        return;
+    }
+
+    struct usbh_urb *urb = pipe->urb;
     if (recv_pid == USB_PID_ACK || recv_pid == USB_PID_NYET || recv_pid == tog_pid[xfer->toggle]) {
+        if (xfer->token == USB_PID_PING) {
+            pipe->ping = false;
+            return;
+        }
+
+        if (recv_pid == USB_PID_NYET) {
+            pipe->ping = true;
+        }
+
         size_t len = xfer->token == USB_PID_IN ? recv_len : xfer->length;
         urb->actual_length += len;
 
@@ -395,9 +463,8 @@ static void usbhs_transfer_complete(struct usbh_bus *bus, uint8_t recv_pid, size
         urb->errorcode = -USB_ERR_STALL;
         goto end;
     } else if (recv_pid == USB_PID_NAK) {
-        if (xfer->endp != 0) {
-            urb->errorcode = -USB_ERR_NAK;
-            goto end;
+        if (pipe->ping_en && xfer->token == USB_PID_OUT) {
+            pipe->ping = true;
         }
     } else {
         urb->errorcode = -USB_ERR_IO;
@@ -406,7 +473,7 @@ static void usbhs_transfer_complete(struct usbh_bus *bus, uint8_t recv_pid, size
     return;
 
 end:
-    pipe->xfered = true;
+    xfer->xfer_state = XFER_STATE_COMP;
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
     } else {
@@ -621,7 +688,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     USB_ASSERT_MSG(!((uintptr_t)urb->setup % 4) && !((uintptr_t)urb->transfer_buffer % 4),
                    "urb->setup or urb->transfer_buffer is not aligned 4 bytes");
 
-    if (!(USBHSH->PORT_STATUS & USBHS_UHIS_PORT_CONNECT) || !urb->hport->connected) {
+    if (!urb->hport->connected) {
         return -USB_ERR_NOTCONN;
     }
 
@@ -630,15 +697,11 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
 
     size_t flags = usb_osal_enter_critical_section();
-    struct usbhs_pipe *pipe = usbhs_pipe_alloc(bus, USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes));
+    struct usbhs_pipe *pipe = usbhs_pipe_alloc(bus, urb, urb->ep);
     if (!pipe) {
         usb_osal_leave_critical_section(flags);
         return -USB_ERR_NOMEM;
     }
-
-    pipe->urb = urb;
-    pipe->type = USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes);
-    usb_osal_sem_reset(pipe->waitsem);
 
     urb->hcpriv = pipe;
     urb->errorcode = -USB_ERR_BUSY;
@@ -675,7 +738,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     size_t flags = usb_osal_enter_critical_section();
 
     struct usbhs_pipe *pipe = urb->hcpriv;
-    pipe->xfered = true;
 
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
@@ -701,18 +763,15 @@ void USBH_IRQHandler(uint8_t busid)
     uint8_t int_flag = USBHSH->INT_FLAG;
 
     if (int_flag & USBHS_UHIF_SOF_ACT) {
+        g_usbhs_hcd[bus->hcd.hcd_id].tick++;
         g_usbhs_hcd[bus->hcd.hcd_id].sof_act = true;
         usbhs_transfer_start(bus);
         USBHSH->INT_FLAG = USBHS_UHIF_SOF_ACT;
     } else if (int_flag & USBHS_UHIF_TRANSFER) {
-        if ((USBHSH->PORT_STATUS & USBHS_UHIS_PORT_CONNECT) && g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer) {
-            usbhs_transfer_complete(bus, USBHSH->INT_ST & 0x0F, USBHSH->RX_LEN);
-            g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer = g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer->next;
-            USBHSH->INT_FLAG = USBHS_UHIF_TRANSFER;
-            usbhs_transfer_start(bus);
-        } else {
-            USBHSH->INT_FLAG = USBHS_UHIF_TRANSFER;
-        }
+        usbhs_transfer_complete(bus, USBHSH->INT_ST & 0x0F, USBHSH->RX_LEN);
+        g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer = g_usbhs_hcd[bus->hcd.hcd_id].curr_xfer->next;
+        USBHSH->INT_FLAG = USBHS_UHIF_TRANSFER;
+        usbhs_transfer_start(bus);
     }
 
     /* Get the port change status */
