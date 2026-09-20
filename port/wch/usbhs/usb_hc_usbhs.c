@@ -135,7 +135,6 @@ static struct usbhs_pipe *usbhs_pipe_alloc(struct usbh_bus *bus, struct usbh_urb
                 g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].interval = 0;
             }
 
-            usb_osal_sem_reset(g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].waitsem);
             memset(&g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].xfer, 0, sizeof(usbhs_xfer_t));
             g_usbhs_hcd[bus->hcd.hcd_id].pipe_pool[chidx].urb = urb;
             if (g_usbhs_hcd[bus->hcd.hcd_id].pipe_list[type] == NULL) {
