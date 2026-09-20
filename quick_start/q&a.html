@@ -270,7 +270,8 @@
 </section>
 <section id="config-usb-hs">
 <h2>CONFIG_USB_HS 何时使用<a class="headerlink" href="#config-usb-hs" title="Link to this heading"></a></h2>
-<p>当你的芯片硬件支持高速，并想初始化成高速模式时开启，相关 IP 会根据该宏配置内部或者外部 高速 PHY。</p>
+<p>当你的芯片硬件支持高速，并想初始化成高速模式时开启，相关 IP 会根据该宏配置内部或者外部 高速 PHY。
+需要注意，对于多 port 的情况，如果没有特别配置（比如某个口只支持全速，则该宏无效），否则所有 port 都会初始化成高速模式。</p>
 </section>
 <section id="failed-to-enable-port">
 <h2>Failed to enable port<a class="headerlink" href="#failed-to-enable-port" title="Link to this heading"></a></h2>
