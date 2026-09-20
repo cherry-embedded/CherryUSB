@@ -10,20 +10,8 @@
 #define VIDEO_IN_EP  0x81
 #define VIDEO_INT_EP 0x83
 
-#ifdef CONFIG_USB_HS
-#define MAX_PAYLOAD_SIZE  1024 // for high speed with one transcations every one micro frame
+#define MAX_PAYLOAD_SIZE 1020
 #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 1)) | (0x00 << 11))
-
-// #define MAX_PAYLOAD_SIZE  2048 // for high speed with two transcations every one micro frame
-// #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 2)) | (0x01 << 11))
-
-// #define MAX_PAYLOAD_SIZE  3072 // for high speed with three transcations every one micro frame
-// #define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 3)) | (0x02 << 11))
-
-#else
-#define MAX_PAYLOAD_SIZE  1020
-#define VIDEO_PACKET_SIZE (unsigned int)(((MAX_PAYLOAD_SIZE / 1)) | (0x00 << 11))
-#endif
 
 #define WIDTH  (unsigned int)(64)
 #define HEIGHT (unsigned int)(48)
@@ -53,7 +41,22 @@ static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xef, 0x02, 0x01, USBD_VID, USBD_PID, 0x0001, 0x01)
 };
 
-static const uint8_t config_descriptor[] = {
+static const uint8_t config_descriptor_hs[] = {
+    USB_CONFIG_DESCRIPTOR_INIT(USB_VIDEO_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    //VIDEO_VC_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
+    VIDEO_VC_NOEP_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
+    VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x00, 0x00),
+    VIDEO_VS_INPUT_HEADER_DESCRIPTOR_INIT(0x01, VS_HEADER_SIZ, VIDEO_IN_EP, 0x00),
+    VIDEO_VS_FORMAT_UNCOMPRESSED_DESCRIPTOR_INIT(0x01, 0x01, VIDEO_GUID_YUY2),
+    VIDEO_VS_FRAME_UNCOMPRESSED_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, MAX_FRAME_SIZE, INTERVAL),
+    VIDEO_VS_COLOR_MATCHING_DESCRIPTOR_INIT(),
+    VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x01, 0x01),
+    /* 1.2.2.2 Standard VideoStream Isochronous Video Data Endpoint Descriptor */
+    USB_ENDPOINT_DESCRIPTOR_INIT(VIDEO_IN_EP, 0x05, VIDEO_PACKET_SIZE, 0x01),
+
+};
+
+static const uint8_t config_descriptor_fs[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_VIDEO_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
     //VIDEO_VC_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
     VIDEO_VC_NOEP_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
@@ -69,19 +72,37 @@ static const uint8_t config_descriptor[] = {
 };
 
 static const uint8_t device_quality_descriptor[] = {
-    ///////////////////////////////////////
-    /// device qualifier descriptor
-    ///////////////////////////////////////
-    0x0a,
-    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
-    0x00,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x40,
-    0x00,
-    0x00,
+    USB_DEVICE_QUALIFIER_DESCRIPTOR_INIT(USB_2_0, 0xef, 0x02, 0x01, 0x01),
+};
+
+static const uint8_t other_speed_config_descriptor_hs[] = {
+    USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(USB_VIDEO_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    //VIDEO_VC_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
+    VIDEO_VC_NOEP_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
+    VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x00, 0x00),
+    VIDEO_VS_INPUT_HEADER_DESCRIPTOR_INIT(0x01, VS_HEADER_SIZ, VIDEO_IN_EP, 0x00),
+    VIDEO_VS_FORMAT_UNCOMPRESSED_DESCRIPTOR_INIT(0x01, 0x01, VIDEO_GUID_YUY2),
+    VIDEO_VS_FRAME_UNCOMPRESSED_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, MAX_FRAME_SIZE, INTERVAL),
+    VIDEO_VS_COLOR_MATCHING_DESCRIPTOR_INIT(),
+    VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x01, 0x01),
+    /* 1.2.2.2 Standard VideoStream Isochronous Video Data Endpoint Descriptor */
+    USB_ENDPOINT_DESCRIPTOR_INIT(VIDEO_IN_EP, 0x05, VIDEO_PACKET_SIZE, 0x01),
+
+};
+
+static const uint8_t other_speed_config_descriptor_fs[] = {
+    USB_OTHER_SPEED_CONFIG_DESCRIPTOR_INIT(USB_VIDEO_DESC_SIZ, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    //VIDEO_VC_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
+    VIDEO_VC_NOEP_DESCRIPTOR_INIT(0x00, VIDEO_INT_EP, 0x0100, VIDEO_VC_TERMINAL_LEN, 48000000, 0x02),
+    VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x00, 0x00),
+    VIDEO_VS_INPUT_HEADER_DESCRIPTOR_INIT(0x01, VS_HEADER_SIZ, VIDEO_IN_EP, 0x00),
+    VIDEO_VS_FORMAT_UNCOMPRESSED_DESCRIPTOR_INIT(0x01, 0x01, VIDEO_GUID_YUY2),
+    VIDEO_VS_FRAME_UNCOMPRESSED_DESCRIPTOR_INIT(0x01, WIDTH, HEIGHT, MIN_BIT_RATE, MAX_BIT_RATE, MAX_FRAME_SIZE, INTERVAL),
+    VIDEO_VS_COLOR_MATCHING_DESCRIPTOR_INIT(),
+    VIDEO_VS_DESCRIPTOR_INIT(0x01, 0x01, 0x01),
+    /* 1.2.2.2 Standard VideoStream Isochronous Video Data Endpoint Descriptor */
+    USB_ENDPOINT_DESCRIPTOR_INIT(VIDEO_IN_EP, 0x05, VIDEO_PACKET_SIZE, 0x01),
+
 };
 
 static const char *string_descriptors[] = {
@@ -93,21 +114,44 @@ static const char *string_descriptors[] = {
 
 static const uint8_t *device_descriptor_callback(uint8_t speed)
 {
+    (void)speed;
+
     return device_descriptor;
 }
 
 static const uint8_t *config_descriptor_callback(uint8_t speed)
 {
-    return config_descriptor;
+    if (speed == USB_SPEED_HIGH) {
+        return config_descriptor_hs;
+    } else if (speed == USB_SPEED_FULL) {
+        return config_descriptor_fs;
+    } else {
+        return NULL;
+    }
 }
 
 static const uint8_t *device_quality_descriptor_callback(uint8_t speed)
 {
+    (void)speed;
+
     return device_quality_descriptor;
+}
+
+static const uint8_t *other_speed_config_descriptor_callback(uint8_t speed)
+{
+    if (speed == USB_SPEED_HIGH) {
+        return other_speed_config_descriptor_hs;
+    } else if (speed == USB_SPEED_FULL) {
+        return other_speed_config_descriptor_fs;
+    } else {
+        return NULL;
+    }
 }
 
 static const char *string_descriptor_callback(uint8_t speed, uint8_t index)
 {
+    (void)speed;
+
     if (index >= (sizeof(string_descriptors) / sizeof(char *))) {
         return NULL;
     }
@@ -118,6 +162,7 @@ const struct usb_descriptor video_descriptor = {
     .device_descriptor_callback = device_descriptor_callback,
     .config_descriptor_callback = config_descriptor_callback,
     .device_quality_descriptor_callback = device_quality_descriptor_callback,
+    .other_speed_descriptor_callback = other_speed_config_descriptor_callback,
     .string_descriptor_callback = string_descriptor_callback
 };
 
