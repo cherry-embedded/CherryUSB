@@ -640,3 +640,12 @@ CLASS_INFO_DEFINE const struct usbh_class_info rndis_cdcacm_class_info = {
     .id_table = NULL,
     .class_driver = &rndis_class_driver
 };
+
+CLASS_INFO_DEFINE const struct usbh_class_info rndis_android_class_info = {
+    .match_flags = USB_CLASS_MATCH_INTF_CLASS | USB_CLASS_MATCH_INTF_SUBCLASS | USB_CLASS_MATCH_INTF_PROTOCOL,
+    .bInterfaceClass = USB_DEVICE_CLASS_MISC,
+    .bInterfaceSubClass = 0x04,
+    .bInterfaceProtocol = 0x01,
+    .id_table = NULL,
+    .class_driver = &rndis_class_driver
+};
