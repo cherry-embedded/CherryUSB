@@ -27,10 +27,10 @@ jobs:
 
       - name: Build hpm demo
         run: |
-          cd tests/hpmicro
           export HPM_SDK_BASE=~/hpm_sdk
           export GNURISCV_TOOLCHAIN_PATH=~/rv32imac_zicsr_zifencei_multilib_b_ext-linux
           export HPM_SDK_TOOLCHAIN_VARIANT=
+          cd tests/hpmicro
           cmake -S . -B build -GNinja -DBOARD=hpm6800evk -DHPM_BUILD_TYPE=flash_sdram_xip -DCMAKE_BUILD_TYPE=debug -DEXTRA_C_FLAGS="-Werror";cmake --build build
 
   build_bouffalolab:
@@ -54,9 +54,9 @@ jobs:
 
       - name: Build bouffalo demo
         run: |
-          cd tests/bouffalolab
           export BL_SDK_BASE=~/bouffalo_sdk
           export PATH=~/toolchain_gcc_t-head_linux/bin:$PATH
+          cd tests/bouffalolab
           make CHIP=bl616 BOARD=bl616dk -j12
 
   build_espressif:
@@ -66,9 +66,9 @@ jobs:
     runs-on: ubuntu-latest
     container: espressif/idf:${{ matrix.idf_ver }}
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Build espressif demo
         shell: bash
         run: |
@@ -79,6 +79,9 @@ jobs:
   build_rtthread:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@main
         with:
@@ -105,18 +108,18 @@ jobs:
 
       - name: Build rtthread demo
         run: |
+          rm -rf ~/sdk-bsp-stm32h7r-realthread-artpi2/projects/art_pi2_cherryusb_usbhost/packages/CherryUSB-latest
+          cp ../CherryUSB ~/sdk-bsp-stm32h7r-realthread-artpi2/projects/art_pi2_cherryusb_usbhost/packages/CherryUSB-latest -r
+          rm -rf ~/sdk-bsp-stm32h7r-realthread-artpi2/projects/art_pi2_cherryusb_usbdev_cdc_acm/packages/CherryUSB-latest
+          cp ../CherryUSB ~/sdk-bsp-stm32h7r-realthread-artpi2/projects/art_pi2_cherryusb_usbdev_cdc_acm/packages/CherryUSB-latest -r
           cd ~/sdk-bsp-stm32h7r-realthread-artpi2
           source ~/.env/env.sh
           export RTT_ROOT=~/sdk-bsp-stm32h7r-realthread-artpi2/rt-thread
           export RTT_CC=gcc
           export RTT_EXEC_PATH=/opt/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi/bin
           cd ~/sdk-bsp-stm32h7r-realthread-artpi2/projects/art_pi2_cherryusb_usbdev_cdc_acm
-          rm -rf packages/CherryUSB-latest
-          pkgs --update
           scons -j8
           cd ~/sdk-bsp-stm32h7r-realthread-artpi2/projects/art_pi2_cherryusb_usbhost
-          rm -rf packages/CherryUSB-latest
-          pkgs --update
           scons -j8
 
   build_wch:
@@ -132,17 +135,17 @@ jobs:
         run: |
           cd ~
           git clone https://github.com/CherryUSB/wch-support-cherryusb.git --recursive
-          cd ~/wch-support-cherryusb
-          git submodule update --remote
       - name: Download RISC-V toolchain
         run: |
           cd ~
           wget https://github.com/CherryUSB/wch-support-cherryusb/releases/download/v1.0/MRS_Toolchain_Linux_X64_V240.tar.xz
           tar -xJf MRS_Toolchain_Linux_X64_V240.tar.xz
+
       - name: Build wch demo
         run: |
+          rm -rf ~/wch-support-cherryusb/CherryUSB
+          cp ../CherryUSB ~/wch-support-cherryusb/CherryUSB -r
           export PATH=~/Toolchain/riscv32-wch-elf-gcc/bin:$PATH
-          riscv32-wch-elf-gcc -v
           cd ~/wch-support-cherryusb
           make all -j8 CHIP=ch32h417qeu6 IP=usbfs
           make clear
@@ -161,11 +164,9 @@ jobs:
         run: |
           cd ~
           git clone https://github.com/OpenSiFli/SiFli-SDK --recursive -b release/v2.5
-          cd ~/SiFli-SDK
 
       - name: Build sifli demo
         run: |
-          pwd
           rm -rf ~/SiFli-SDK/external/cherryusb
           cp ../CherryUSB ~/SiFli-SDK/external/cherryusb -r
           cd ~/SiFli-SDK
