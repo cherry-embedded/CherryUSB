@@ -24,8 +24,12 @@ usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, 
 void usb_osal_thread_delete(usb_osal_thread_t thread)
 {
     if (thread == NULL) {
+#if (RTTHREAD_VERSION >= RT_VERSION_CHECK(3, 1, 5))
         rt_thread_t self = rt_thread_self();
         rt_thread_control(self, RT_THREAD_CTRL_CLOSE, RT_NULL);
+#else
+        rt_thread_exit();
+#endif
         return;
     }
 
