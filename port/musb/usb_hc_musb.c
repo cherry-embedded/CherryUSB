@@ -952,6 +952,11 @@ int usbh_kill_urb(struct usbh_urb *urb)
     flags = usb_osal_enter_critical_section();
 
     pipe = (struct musb_pipe *)urb->hcpriv;
+    if (!pipe) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_INVAL;
+    }
+
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
     if (urb->ep->bEndpointAddress & 0x80) {
@@ -964,6 +969,8 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     musb_fifo_flush(bus, urb->ep->bEndpointAddress);
 
+    usb_osal_leave_critical_section(flags);
+
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
     } else {
@@ -974,7 +981,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
         urb->complete(urb->arg, urb->errorcode);
     }
 
-    usb_osal_leave_critical_section(flags);
     return 0;
 }
 

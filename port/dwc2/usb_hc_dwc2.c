@@ -1101,10 +1101,15 @@ int usbh_kill_urb(struct usbh_urb *urb)
     flags = usb_osal_enter_critical_section();
 
     chan = (struct dwc2_chan *)urb->hcpriv;
+    if (!chan) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_INVAL;
+    }
 
     dwc2_halt(bus, chan->chidx);
 
     urb->errorcode = -USB_ERR_SHUTDOWN;
+    usb_osal_leave_critical_section(flags);
 
     if (urb->timeout) {
         usb_osal_sem_give(chan->waitsem);
@@ -1115,8 +1120,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     if (urb->complete) {
         urb->complete(urb->arg, urb->errorcode);
     }
-
-    usb_osal_leave_critical_section(flags);
 
     return 0;
 }

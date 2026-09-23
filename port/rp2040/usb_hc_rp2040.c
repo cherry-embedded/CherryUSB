@@ -588,6 +588,11 @@ int usbh_kill_urb(struct usbh_urb *urb)
     flags = usb_osal_enter_critical_section();
 
     pipe = (struct rp2040_pipe *)urb->hcpriv;
+    if (!pipe) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_INVAL;
+    }
+
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
     usb_hw_clear->int_ep_ctrl = 1 << pipe->chidx;
@@ -595,6 +600,8 @@ int usbh_kill_urb(struct usbh_urb *urb)
     usb_hw_clear->buf_status = 1 << (pipe->chidx * 2 + 1);
     *pipe->endpoint_control = 0;
     *pipe->buffer_control = 0;
+
+    usb_osal_leave_critical_section(flags);
 
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
@@ -605,8 +612,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
     if (urb->complete) {
         urb->complete(urb->arg, urb->errorcode);
     }
-
-    usb_osal_leave_critical_section(flags);
 
     return 0;
 }

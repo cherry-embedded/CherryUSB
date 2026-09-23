@@ -113,6 +113,8 @@ static void usbfs_pipe_free(struct usbh_bus *bus, struct usbfs_pipe *pipe, uint8
 {
     usbfs_xfer_t *xfer = &pipe->xfer;
 
+    size_t flags = usb_osal_enter_critical_section();
+
     if (xfer->xfer_state != XFER_STATE_BUSY) {
         if (pipe->prev) {
             pipe->prev->next = pipe->next;
@@ -128,6 +130,8 @@ static void usbfs_pipe_free(struct usbh_bus *bus, struct usbfs_pipe *pipe, uint8
     } else {
         pipe->killed = true;
     }
+
+    usb_osal_leave_critical_section(flags);
 }
 
 static usbfs_xfer_t **usbfs_xfer_process(struct usbh_bus *bus, usbfs_xfer_t **last_xfer, uint8_t type)
@@ -567,8 +571,14 @@ int usbh_kill_urb(struct usbh_urb *urb)
     size_t flags = usb_osal_enter_critical_section();
 
     struct usbfs_pipe *pipe = urb->hcpriv;
+    if (!pipe) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_INVAL;
+    }
 
     urb->errorcode = -USB_ERR_SHUTDOWN;
+
+    usb_osal_leave_critical_section(flags);
 
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
@@ -580,7 +590,6 @@ int usbh_kill_urb(struct usbh_urb *urb)
         urb->complete(urb->arg, urb->errorcode);
     }
 
-    usb_osal_leave_critical_section(flags);
     return 0;
 }
 
