@@ -80,7 +80,7 @@ CherryUSB Device Stack has the following functions:
 - Support Vendor class
 - Support UF2
 - Support Android Debug Bridge (Only support shell)
-- Support multi device with the same USB IP
+- Support multi device USB IP (IP can be different)
 
 CherryUSB Device Stack resource usage (GCC 10.2 with -O2, disable log):
 
@@ -122,7 +122,7 @@ CherryUSB Host Stack has the following functions:
 - Support Vendor network Class(RTL8152、AX88772)
 - Support USB modeswitch
 - Support Android Open Accessory
-- Support multi host with the same USB IP
+- Support multi host USB IP (IP can be different)
 
 The CherryUSB Host stack also provides the lsusb function, which allows you to view information about all mounted devices, including those on external hubs, with the help of a shell plugin.
 

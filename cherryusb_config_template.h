@@ -306,6 +306,7 @@
 /* ---------------- MUSB Configuration ---------------- */
 #define CONFIG_USB_MUSB_PIPE_NUM 8
 // #define CONFIG_USB_MUSB_SUNXI
+// #define CONFIG_USB_MUSB_SIFLI
 // #define CONFIG_USB_MUSB_WITHOUT_MULTIPOINT
 
 /* When your chip hardware supports high-speed and wants to initialize it in high-speed mode,
@@ -325,5 +326,11 @@
 
 /* Enable OTG support, only support hpmicro now */
 // #define CONFIG_USB_OTG_ENABLE
+
+/* Support multiple device controller with different IP */
+// #define CONFIG_USBHOST_MULT_DC
+
+/* Support multiple host controller with different IP */
+// #define CONFIG_USBHOST_MULT_HC
 
 #endif

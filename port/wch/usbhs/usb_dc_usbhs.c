@@ -7,6 +7,23 @@
 #include "usbd_core.h"
 #include "usb_usbhs_reg.h"
 
+#if defined(CONFIG_USBDEV_MULT_DC)
+#define usb_dc_init            usbd_wch_usbhs_dc_init
+#define usb_dc_deinit          usbd_wch_usbhs_dc_deinit
+#define usbd_set_address       usbd_wch_usbhs_set_address
+#define usbd_set_remote_wakeup usbd_wch_usbhs_set_remote_wakeup
+#define usbd_get_port_speed    usbd_wch_usbhs_get_port_speed
+#define usbd_ep_open           usbd_wch_usbhs_ep_open
+#define usbd_ep_open_extra     usbd_wch_usbhs_ep_open_extra
+#define usbd_ep_close          usbd_wch_usbhs_ep_close
+#define usbd_ep_set_stall      usbd_wch_usbhs_ep_set_stall
+#define usbd_ep_clear_stall    usbd_wch_usbhs_ep_clear_stall
+#define usbd_ep_is_stalled     usbd_wch_usbhs_ep_is_stalled
+#define usbd_ep_start_write    usbd_wch_usbhs_ep_start_write
+#define usbd_ep_start_read     usbd_wch_usbhs_ep_start_read
+#define USBD_IRQHandler        usbd_wch_usbhs_irq_handler
+#endif
+
 #ifndef CONFIG_USBDEV_EP_NUM
 #define CONFIG_USBDEV_EP_NUM 8
 #endif
@@ -409,3 +426,23 @@ void USBD_IRQHandler(uint8_t busid)
         USBHSD->INT_FG = flag;
     }
 }
+
+#if defined(CONFIG_USBDEV_MULT_DC)
+struct usbd_dc_driver wch_usbhs_dc_driver = {
+    .driver_name = "wch_usbhs_dcd",
+    .driver_desc = "WCH USBHS Device Controller",
+    .init = usb_dc_init,
+    .deinit = usb_dc_deinit,
+    .set_address = usbd_set_address,
+    .set_remote_wakeup = usbd_set_remote_wakeup,
+    .get_port_speed = usbd_get_port_speed,
+    .ep_open = usbd_ep_open,
+    .ep_close = usbd_ep_close,
+    .ep_set_stall = usbd_ep_set_stall,
+    .ep_clear_stall = usbd_ep_clear_stall,
+    .ep_is_stalled = usbd_ep_is_stalled,
+    .ep_start_write = usbd_ep_start_write,
+    .ep_start_read = usbd_ep_start_read,
+    .irq_handler = USBD_IRQHandler,
+};
+#endif

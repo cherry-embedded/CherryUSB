@@ -634,11 +634,18 @@ void usbh_hubport_release(struct usbh_hubport *hport)
 
 static void usbh_bus_init(struct usbh_bus *bus, uint8_t busid, uintptr_t reg_base)
 {
+#if defined(CONFIG_USBHOST_MULT_HC)
+    const struct usbh_hc_driver *hc_driver = bus->hc_driver;
+    USB_ASSERT_MSG(hc_driver != NULL, "usb hc driver is not registered");
+#endif
+
     memset(bus, 0, sizeof(struct usbh_bus));
     bus->busid = busid;
     bus->hcd.hcd_id = busid;
     bus->hcd.reg_base = reg_base;
-
+#if defined(CONFIG_USBHOST_MULT_HC)
+    bus->hc_driver = hc_driver;
+#endif
     /* devaddr 1 is for roothub */
     bus->devgen.last = 0x7f;
 
@@ -686,6 +693,9 @@ int usbh_deinitialize(uint8_t busid)
     USB_ASSERT_MSG(busid < CONFIG_USBHOST_MAX_BUS, "bus overflow\r\n");
 
     bus = &g_usbhost_bus[busid];
+#if defined(CONFIG_USBHOST_MULT_HC)
+    USB_ASSERT_MSG(bus->hc_driver != NULL, "usb hc driver is not registered");
+#endif
 
     usbh_hub_deinitialize(bus);
 
@@ -719,7 +729,6 @@ resubmit:
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
-
     }
 
     if (ret < (int)sizeof(struct usb_setup_packet) && (ret != -USB_ERR_TIMEOUT)) {
@@ -1250,3 +1259,76 @@ __WEAK uint8_t usbh_get_hport_active_config_index(struct usbh_hubport *hport)
 
     return 0; // Default to configuration index 0
 }
+
+#if defined(CONFIG_USBHOST_MULT_HC)
+void usbh_register_hc_driver(uint8_t busid, const struct usbh_hc_driver *driver)
+{
+    USB_ASSERT_MSG(busid < CONFIG_USBHOST_MAX_BUS, "bus overflow\r\n");
+    USB_ASSERT_MSG(driver != NULL, "hc driver driver is NULL\r\n");
+
+    g_usbhost_bus[busid].hc_driver = driver;
+}
+
+int usb_hc_init(struct usbh_bus *bus)
+{
+    if (bus && bus->hc_driver && bus->hc_driver->init) {
+        return bus->hc_driver->init(bus);
+    } else {
+        return -USB_ERR_INVAL;
+    }
+}
+
+int usb_hc_deinit(struct usbh_bus *bus)
+{
+    if (bus && bus->hc_driver && bus->hc_driver->deinit) {
+        return bus->hc_driver->deinit(bus);
+    } else {
+        return -USB_ERR_INVAL;
+    }
+}
+
+uint16_t usbh_get_frame_number(struct usbh_bus *bus)
+{
+    if (bus && bus->hc_driver && bus->hc_driver->get_frame_number) {
+        return bus->hc_driver->get_frame_number(bus);
+    } else {
+        return 0;
+    }
+}
+
+int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, uint8_t *buf)
+{
+    if (bus && bus->hc_driver && bus->hc_driver->roothub_control) {
+        return bus->hc_driver->roothub_control(bus, setup, buf);
+    } else {
+        return -USB_ERR_INVAL;
+    }
+}
+
+int usbh_submit_urb(struct usbh_urb *urb)
+{
+    if (urb && urb->hport && urb->hport->bus && urb->hport->bus->hc_driver && urb->hport->bus->hc_driver->submit_urb) {
+        return urb->hport->bus->hc_driver->submit_urb(urb);
+    } else {
+        return -USB_ERR_INVAL;
+    }
+}
+
+int usbh_kill_urb(struct usbh_urb *urb)
+{
+    if (urb && urb->hport && urb->hport->bus && urb->hport->bus->hc_driver && urb->hport->bus->hc_driver->kill_urb) {
+        return urb->hport->bus->hc_driver->kill_urb(urb);
+    } else {
+        return -USB_ERR_INVAL;
+    }
+}
+
+void USBH_IRQHandler(uint8_t busid)
+{
+    USB_ASSERT_MSG(busid < CONFIG_USBHOST_MAX_BUS, "bus overflow\r\n");
+
+    if (g_usbhost_bus[busid].hc_driver && g_usbhost_bus[busid].hc_driver->irq_handler) {
+        g_usbhost_bus[busid].hc_driver->irq_handler(busid);
+    }
+}
+#endif

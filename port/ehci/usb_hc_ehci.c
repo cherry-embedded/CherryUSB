@@ -8,6 +8,18 @@
 #include "usb_hc_ohci.h"
 #endif
 
+#if defined(CONFIG_USBHOST_MULT_HC)
+#define usb_hc_init            usbh_ehci_hc_init
+#define usb_hc_deinit          usbh_ehci_hc_deinit
+#define usbh_get_frame_number  usbh_ehci_get_frame_number
+#define usbh_roothub_control   usbh_ehci_roothub_control
+#define usbh_submit_urb        usbh_ehci_submit_urb
+#define usbh_kill_urb          usbh_ehci_kill_urb
+#define USBH_IRQHandler        usbh_ehci_irq_handler
+
+int usbh_ehci_kill_urb(struct usbh_urb *urb);
+#endif
+
 #define EHCI_TUNE_CERR    3 /* 0-3 qtd retries; 0 == don't stop */
 #define EHCI_TUNE_RL_HS   4 /* nak throttle; see 4.9 */
 #define EHCI_TUNE_RL_TT   0
@@ -1509,3 +1521,17 @@ void USBH_IRQHandler(uint8_t busid)
     if (usbsts & EHCI_USBSTS_FATAL) {
     }
 }
+
+#if defined(CONFIG_USBHOST_MULT_HC)
+struct usbh_hc_driver ehci_hc_driver = {
+    .driver_name = "ehci_hcd",
+    .driver_desc = "EHCI Host Controller",
+    .init = usb_hc_init,
+    .deinit = usb_hc_deinit,
+    .get_frame_number = usbh_get_frame_number,
+    .roothub_control = usbh_roothub_control,
+    .submit_urb = usbh_submit_urb,
+    .kill_urb = usbh_kill_urb,
+    .irq_handler = USBH_IRQHandler,
+};
+#endif

@@ -80,7 +80,7 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 Vendor 类 class
 - 支持 UF2
 - 支持 Android Debug Bridge (Only support shell)
-- 支持相同 USB IP 的多从机
+- 支持多从机 USBIP（IP 可以不一样）
 
 CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：
 
@@ -122,7 +122,7 @@ CherryUSB Host 协议栈当前实现以下功能：
 - 支持 Vendor network 类(RTL8152、AX88772)
 - 支持 USB modeswitch
 - 支持 Android Open Accessory
-- 支持相同 USB IP 的多主机
+- 支持多主机 USBIP（IP 可以不一样）
 
 同时，CherryUSB Host 协议栈还提供了 lsusb 的功能，借助 shell 插件可以查看所有挂载设备的信息，包括外部 hub 上的设备的信息。
 
