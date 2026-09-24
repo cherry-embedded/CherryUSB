@@ -97,9 +97,7 @@ static void usbh_serial_callback(void *arg, int nbytes)
         return;
 
     if (nbytes < 0) {
-        if (nbytes != -USB_ERR_SHUTDOWN) {
-            USB_LOG_ERR("serial transfer error: %d\n", nbytes);
-        }
+        USB_LOG_ERR("serial transfer error: %d\n", nbytes);
         serial->rx_errorcode = nbytes;
         usb_osal_sem_give(serial->rx_complete_sem);
         return;
@@ -504,20 +502,19 @@ int usbh_serial_read(struct usbh_serial *serial, void *buffer, uint32_t buflen)
         }
     }
 
-    if (serial->open_flags & USBH_SERIAL_O_NONBLOCK) {
-        return usb_ringbuffer_read(&serial->rx_rb, buffer, buflen);
-    } else {
+    if (!(serial->open_flags & USBH_SERIAL_O_NONBLOCK)) {
         if (usb_ringbuffer_get_used(&serial->rx_rb) == 0) {
             ret = usb_osal_sem_take(serial->rx_complete_sem, serial->rx_timeout_ms == 0 ? USB_OSAL_WAITING_FOREVER : serial->rx_timeout_ms);
             if (ret < 0) {
                 return ret;
             }
-            if (serial->rx_errorcode < 0) {
-                return serial->rx_errorcode;
-            }
         }
-        return usb_ringbuffer_read(&serial->rx_rb, buffer, buflen);
     }
+
+    if (serial->rx_errorcode < 0) {
+        return serial->rx_errorcode;
+    }
+    return usb_ringbuffer_read(&serial->rx_rb, buffer, buflen);
 }
 
 int usbh_serial_cdc_write_async(struct usbh_serial *serial, uint8_t *buffer, uint32_t buflen, usbh_complete_callback_t complete, void *arg)
