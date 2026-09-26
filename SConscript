@@ -320,6 +320,8 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         src += Glob('class/vendor/net/usbh_asix.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_RTL8152']):
         src += Glob('class/vendor/net/usbh_rtl8152.c')
+    if GetDepend(['PKG_CHERRYUSB_HOST_AIC8800']):
+        src += Glob('class/vendor/wifi/usbh_aic8800.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_FTDI']):
         src += Glob('class/serial/usbh_ftdi.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_CH34X']):
