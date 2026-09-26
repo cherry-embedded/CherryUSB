@@ -13,6 +13,33 @@ extern "C" {
 #endif
 
 /**
+ * @brief USB device controller driver ops.
+ *
+ * Structure containing the USB device controller driver ops.
+ */
+struct usbd_dc_driver {
+    const char *driver_name;
+    const char *driver_desc;
+    int (*init)(uint8_t busid);
+    int (*deinit)(uint8_t busid);
+    int (*set_address)(uint8_t busid, const uint8_t addr);
+    int (*set_remote_wakeup)(uint8_t busid);
+    uint8_t (*get_port_speed)(uint8_t busid);
+    int (*ep_open)(uint8_t busid, const struct usb_endpoint_descriptor *ep);
+    int (*ep_open_extra)(uint8_t busid, const struct usb_endpoint_descriptor *ep, const struct usb_endpoint_companion_descriptor *ep_comp);
+    int (*ep_close)(uint8_t busid, const uint8_t ep);
+    int (*ep_set_stall)(uint8_t busid, const uint8_t ep);
+    int (*ep_clear_stall)(uint8_t busid, const uint8_t ep);
+    int (*ep_is_stalled)(uint8_t busid, const uint8_t ep, uint8_t *stalled);
+    int (*ep_start_write)(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len);
+    int (*ep_start_read)(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len);
+    void (*irq_handler)(uint8_t busid);
+#ifdef CONFIG_USBDEV_TEST_MODE
+    void (*execute_test_mode)(uint8_t busid, uint8_t test_mode);
+#endif
+};
+
+/**
  * @brief init device controller registers.
  * @return On success will return 0, and others indicate fail.
  */

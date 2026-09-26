@@ -8,6 +8,18 @@
 #include "usbh_hub.h"
 #include "usb_usbfs_reg.h"
 
+#if defined(CONFIG_USBHOST_MULT_HC)
+#define usb_hc_init            usbh_wch_usbfs_hc_init
+#define usb_hc_deinit          usbh_wch_usbfs_hc_deinit
+#define usbh_get_frame_number  usbh_wch_usbfs_get_frame_number
+#define usbh_roothub_control   usbh_wch_usbfs_roothub_control
+#define usbh_submit_urb        usbh_wch_usbfs_submit_urb
+#define usbh_kill_urb          usbh_wch_usbfs_kill_urb
+#define USBH_IRQHandler        usbh_wch_usbfs_irq_handler
+
+int usbh_wch_usbfs_kill_urb(struct usbh_urb *urb);
+#endif
+
 #define USBFSH ((USBFSH_TypeDef *)bus->hcd.reg_base)
 
 typedef enum {
@@ -317,15 +329,8 @@ end:
     }
 }
 
-__WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
-{
-    (void)bus;
-}
-
-__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
-{
-    (void)bus;
-}
+extern void usb_hc_low_level_init(struct usbh_bus *bus);
+extern void usb_hc_low_level_deinit(struct usbh_bus *bus);
 
 int usb_hc_init(struct usbh_bus *bus)
 {
@@ -620,3 +625,17 @@ void USBH_IRQHandler(uint8_t busid)
         USBFSH->INT_FG = int_flag;
     }
 }
+
+#if defined(CONFIG_USBHOST_MULT_HC)
+struct usbh_hc_driver wch_usbfs_hc_driver = {
+    .driver_name = "wch_usbfs_hcd",
+    .driver_desc = "WCH USBFS Host Controller",
+    .init = usb_hc_init,
+    .deinit = usb_hc_deinit,
+    .get_frame_number = usbh_get_frame_number,
+    .roothub_control = usbh_roothub_control,
+    .submit_urb = usbh_submit_urb,
+    .kill_urb = usbh_kill_urb,
+    .irq_handler = USBH_IRQHandler,
+};
+#endif

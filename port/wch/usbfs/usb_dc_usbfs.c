@@ -7,18 +7,31 @@
 #include "usbd_core.h"
 #include "usb_usbfs_reg.h"
 
-#ifdef CONFIG_USB_HS
-#error "USBFS controller does not support high-speed mode"
+#if defined(CONFIG_USBDEV_MULT_DC)
+#define usb_dc_init            usbd_wch_usbfs_dc_init
+#define usb_dc_deinit          usbd_wch_usbfs_dc_deinit
+#define usbd_set_address       usbd_wch_usbfs_set_address
+#define usbd_set_remote_wakeup usbd_wch_usbfs_set_remote_wakeup
+#define usbd_get_port_speed    usbd_wch_usbfs_get_port_speed
+#define usbd_ep_open           usbd_wch_usbfs_ep_open
+#define usbd_ep_open_extra     usbd_wch_usbfs_ep_open_extra
+#define usbd_ep_close          usbd_wch_usbfs_ep_close
+#define usbd_ep_set_stall      usbd_wch_usbfs_ep_set_stall
+#define usbd_ep_clear_stall    usbd_wch_usbfs_ep_clear_stall
+#define usbd_ep_is_stalled     usbd_wch_usbfs_ep_is_stalled
+#define usbd_ep_start_write    usbd_wch_usbfs_ep_start_write
+#define usbd_ep_start_read     usbd_wch_usbfs_ep_start_read
+#define USBD_IRQHandler        usbd_wch_usbfs_irq_handler
 #endif
 
 #ifndef CONFIG_USBDEV_EP_NUM
 #define CONFIG_USBDEV_EP_NUM 8
 #endif
 
-#define USBFSD            ((USBFSD_TypeDef *)g_usbdev_bus[busid].reg_base)
-#define ENDP_TX_LEN(ep)   *((volatile uint16_t *)&(USBFSD->UEP0_TX_LEN) + (ep) * 2)
-#define ENDP_TX_CTRL(ep)  *((volatile uint8_t *)&(USBFSD->UEP0_TX_CTRL) + (ep) * 4)
-#define ENDP_RX_CTRL(ep)  *((volatile uint8_t *)&(USBFSD->UEP0_RX_CTRL) + (ep) * 4)
+#define USBFSD           ((USBFSD_TypeDef *)g_usbdev_bus[busid].reg_base)
+#define ENDP_TX_LEN(ep)  *((volatile uint16_t *)&(USBFSD->UEP0_TX_LEN) + (ep)*2)
+#define ENDP_TX_CTRL(ep) *((volatile uint8_t *)&(USBFSD->UEP0_TX_CTRL) + (ep)*4)
+#define ENDP_RX_CTRL(ep) *((volatile uint8_t *)&(USBFSD->UEP0_RX_CTRL) + (ep)*4)
 
 struct ch32_usbfs_ep_state {
     uint8_t ep_type;
@@ -72,14 +85,8 @@ static uint8_t *endp_tx_bufs[CONFIG_USBDEV_EP_NUM - 1];
 static uint8_t *endp_rx_bufs[CONFIG_USBDEV_EP_NUM - 1];
 static __attribute__((aligned(4))) uint8_t endp_xfer_bufs[CONFIG_USBDEV_EP_NUM - 1][64 + 64];
 
-__WEAK void
-usb_dc_low_level_init(uint8_t busid)
-{
-}
-
-__WEAK void usb_dc_low_level_deinit(uint8_t busid)
-{
-}
+extern void usb_dc_low_level_init(uint8_t busid);
+extern void usb_dc_low_level_deinit(uint8_t busid);
 
 int usb_dc_init(uint8_t busid)
 {
@@ -318,7 +325,7 @@ void USBD_IRQHandler(uint8_t busid)
             case USBFS_UIS_TOKEN_SETUP:
                 ENDP_TX_CTRL(0) = (ENDP_TX_CTRL(0) & ~USBFS_UEP_T_RES_MASK) | USBFS_UEP_T_RES_NAK | USBFS_UEP_T_TOG;
                 ENDP_RX_CTRL(0) = (ENDP_RX_CTRL(0) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_NAK | USBFS_UEP_R_TOG;
-                usbd_event_ep0_setup_complete_handler(0, (uint8_t *)&g_ch32_usbfs_udc[busid].setup);
+                usbd_event_ep0_setup_complete_handler(busid, (uint8_t *)&g_ch32_usbfs_udc[busid].setup);
                 break;
 
             case USBFS_UIS_TOKEN_OUT:
@@ -329,7 +336,7 @@ void USBD_IRQHandler(uint8_t busid)
                         read_count = MIN(read_count, g_ch32_usbfs_udc[busid].ep_out[endp].xfer_len);
                         g_ch32_usbfs_udc[busid].ep_out[0].actual_xfer_len += read_count;
                         g_ch32_usbfs_udc[busid].ep_out[0].xfer_len -= read_count;
-                        usbd_event_ep_out_complete_handler(0, 0x00, g_ch32_usbfs_udc[busid].ep_out[0].actual_xfer_len);
+                        usbd_event_ep_out_complete_handler(busid, 0x00, g_ch32_usbfs_udc[busid].ep_out[0].actual_xfer_len);
                         if (read_count == 0) {
                             USBFSD->UEP0_DMA = (uint32_t)&g_ch32_usbfs_udc[busid].setup;
                             ENDP_RX_CTRL(0) = (ENDP_RX_CTRL(0) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK;
@@ -345,7 +352,7 @@ void USBD_IRQHandler(uint8_t busid)
                         g_ch32_usbfs_udc[busid].ep_out[endp].actual_xfer_len += read_count;
                         g_ch32_usbfs_udc[busid].ep_out[endp].xfer_len -= read_count;
                         if ((read_count < g_ch32_usbfs_udc[busid].ep_out[endp].ep_mps) || (g_ch32_usbfs_udc[busid].ep_out[endp].xfer_len == 0)) {
-                            usbd_event_ep_out_complete_handler(0, endp, g_ch32_usbfs_udc[busid].ep_out[endp].actual_xfer_len);
+                            usbd_event_ep_out_complete_handler(busid, endp, g_ch32_usbfs_udc[busid].ep_out[endp].actual_xfer_len);
                         } else if (g_ch32_usbfs_udc[busid].ep_out[endp].ep_type != USB_ENDPOINT_TYPE_ISOCHRONOUS) {
                             ENDP_RX_CTRL(endp) = (ENDP_RX_CTRL(endp) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK;
                         } else {
@@ -373,7 +380,7 @@ void USBD_IRQHandler(uint8_t busid)
                         }
 
                         USBFSD->UEP0_TX_CTRL ^= USBFS_UEP_T_TOG;
-                        usbd_event_ep_in_complete_handler(0, 0x80, g_ch32_usbfs_udc[busid].ep_in[0].actual_xfer_len);
+                        usbd_event_ep_in_complete_handler(busid, 0x80, g_ch32_usbfs_udc[busid].ep_in[0].actual_xfer_len);
                     } else {
                         USBFSD->UEP0_DMA = (uint32_t)&g_ch32_usbfs_udc[busid].setup;
                         ENDP_RX_CTRL(0) = (ENDP_RX_CTRL(0) & ~USBFS_UEP_R_RES_MASK) | USBFS_UEP_R_RES_ACK;
@@ -394,7 +401,7 @@ void USBD_IRQHandler(uint8_t busid)
                 } else {
                     g_ch32_usbfs_udc[busid].ep_in[endp].actual_xfer_len += g_ch32_usbfs_udc[busid].ep_in[endp].xfer_len;
                     g_ch32_usbfs_udc[busid].ep_in[endp].xfer_len = 0;
-                    usbd_event_ep_in_complete_handler(0, 0x80 | endp, g_ch32_usbfs_udc[busid].ep_in[endp].actual_xfer_len);
+                    usbd_event_ep_in_complete_handler(busid, 0x80 | endp, g_ch32_usbfs_udc[busid].ep_in[endp].actual_xfer_len);
                 }
 
                 if (g_ch32_usbfs_udc[busid].dev_addr) {
@@ -423,3 +430,23 @@ void USBD_IRQHandler(uint8_t busid)
         USBFSD->INT_FG = flag;
     }
 }
+
+#if defined(CONFIG_USBDEV_MULT_DC)
+struct usbd_dc_driver wch_usbfs_dc_driver = {
+    .driver_name = "wch_usbfs_dcd",
+    .driver_desc = "WCH USBFS Device Controller",
+    .init = usb_dc_init,
+    .deinit = usb_dc_deinit,
+    .set_address = usbd_set_address,
+    .set_remote_wakeup = usbd_set_remote_wakeup,
+    .get_port_speed = usbd_get_port_speed,
+    .ep_open = usbd_ep_open,
+    .ep_close = usbd_ep_close,
+    .ep_set_stall = usbd_ep_set_stall,
+    .ep_clear_stall = usbd_ep_clear_stall,
+    .ep_is_stalled = usbd_ep_is_stalled,
+    .ep_start_write = usbd_ep_start_write,
+    .ep_start_read = usbd_ep_start_read,
+    .irq_handler = USBD_IRQHandler,
+};
+#endif
