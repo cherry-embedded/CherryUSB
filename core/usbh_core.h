@@ -107,6 +107,7 @@ struct usbh_class_info {
 struct usbh_hubport;
 struct usbh_class_driver {
     const char *driver_name;
+    const char *driver_desc;
     int (*connect)(struct usbh_hubport *hport, uint8_t intf);
     int (*disconnect)(struct usbh_hubport *hport, uint8_t intf);
 };
@@ -205,6 +206,9 @@ struct usbh_bus {
     usb_osal_mq_t hub_mq;
     usb_osal_sem_t hub_sem;
     usbh_event_handler_t event_handler;
+#if defined(CONFIG_USBHOST_MULT_HC)
+    const struct usbh_hc_driver *hc_driver;
+#endif
 };
 
 static inline void usbh_control_urb_fill(struct usbh_urb *urb,
@@ -311,6 +315,9 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
  */
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting);
 
+#if defined(CONFIG_USBHOST_MULT_HC)
+void usbh_register_hc_driver(uint8_t busid, const struct usbh_hc_driver *driver);
+#endif
 int usbh_initialize(uint8_t busid, uintptr_t reg_base, usbh_event_handler_t event_handler);
 int usbh_deinitialize(uint8_t busid);
 void *usbh_find_class_instance(const char *devname);

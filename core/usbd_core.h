@@ -103,6 +103,9 @@ struct usb_descriptor {
 struct usbd_bus {
     uint8_t busid;
     uintptr_t reg_base;
+#if defined(CONFIG_USBDEV_MULT_DC)
+    const struct usbd_dc_driver *driver;
+#endif
 };
 
 extern struct usbd_bus g_usbdev_bus[];
@@ -125,6 +128,9 @@ bool usb_device_is_suspend(uint8_t busid);
 int usbd_send_remote_wakeup(uint8_t busid);
 uint8_t usbd_get_ep0_next_state(uint8_t busid);
 
+#if defined(CONFIG_USBDEV_MULT_DC)
+void usbd_register_dc_driver(uint8_t busid, const struct usbd_dc_driver *driver);
+#endif
 int usbd_initialize(uint8_t busid, uintptr_t reg_base, usbd_event_handler_t event_handler);
 int usbd_deinitialize(uint8_t busid);
 

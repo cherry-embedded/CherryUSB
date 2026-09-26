@@ -1512,7 +1512,12 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 
     USB_ASSERT_MSG(busid < CONFIG_USBDEV_MAX_BUS, "bus overflow\r\n");
 
+#if defined(CONFIG_USBDEV_MULT_DC)
+    USB_ASSERT_MSG(g_usbd_dc_driver_table[busid] != NULL, "usb dc driver is not registered");
+#endif
+
     bus = &g_usbdev_bus[busid];
+    bus->busid = busid;
     bus->reg_base = reg_base;
 
 #ifdef CONFIG_USBDEV_EP0_THREAD
@@ -1538,6 +1543,10 @@ int usbd_deinitialize(uint8_t busid)
 {
     USB_ASSERT_MSG(busid < CONFIG_USBDEV_MAX_BUS, "bus overflow\r\n");
 
+#if defined(CONFIG_USBDEV_MULT_DC)
+    USB_ASSERT_MSG(g_usbd_dc_driver_table[busid] != NULL, "usb dc driver is not registered");
+#endif
+
     usb_dc_deinit(busid);
 #ifdef CONFIG_USBDEV_EP0_THREAD
     if (g_usbd_core[busid].usbd_ep0_thread) {
@@ -1560,3 +1569,245 @@ __WEAK int usbd_ep_open_extra(uint8_t busid, const struct usb_endpoint_descripto
 
     return 0;
 }
+
+#if defined(CONFIG_USBDEV_MULT_DC)
+void usbd_register_dc_driver(uint8_t busid, const struct usbd_dc_driver *driver)
+{
+    struct usbd_bus *bus;
+
+    USB_ASSERT_MSG(busid < CONFIG_USBDEV_MAX_BUS, "bus overflow\r\n");
+    USB_ASSERT_MSG(driver != NULL, "dc driver driver is NULL\r\n");
+
+    bus = &g_usbdev_bus[busid];
+
+    memset(bus, 0, sizeof(struct usbd_bus));
+    bus->busid = busid;
+    bus->driver = driver;
+}
+
+int usb_dc_init(uint8_t busid)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->init) {
+        return bus->driver->init(busid);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usb_dc_deinit(uint8_t busid)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->deinit) {
+        return bus->driver->deinit(busid);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_set_address(uint8_t busid, const uint8_t addr)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->set_address) {
+        return bus->driver->set_address(busid, addr);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_set_remote_wakeup(uint8_t busid)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->set_remote_wakeup) {
+        return bus->driver->set_remote_wakeup(busid);
+    }
+    return -USB_ERR_INVAL;
+}
+
+uint8_t usbd_get_port_speed(uint8_t busid)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->get_port_speed) {
+        return bus->driver->get_port_speed(busid);
+    }
+    return USB_SPEED_UNKNOWN;
+}
+
+int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_open) {
+        return bus->driver->ep_open(busid, ep);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_open_extra(uint8_t busid, const struct usb_endpoint_descriptor *ep, const struct usb_endpoint_companion_descriptor *ep_comp)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_open_extra) {
+        return bus->driver->ep_open_extra(busid, ep, ep_comp);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_close(uint8_t busid, const uint8_t ep)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_close) {
+        return bus->driver->ep_close(busid, ep);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_set_stall(uint8_t busid, const uint8_t ep)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_set_stall) {
+        return bus->driver->ep_set_stall(busid, ep);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_clear_stall) {
+        return bus->driver->ep_clear_stall(busid, ep);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_is_stalled) {
+        return bus->driver->ep_is_stalled(busid, ep, stalled);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_start_write) {
+        return bus->driver->ep_start_write(busid, ep, data, data_len);
+    }
+    return -USB_ERR_INVAL;
+}
+
+int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return -USB_ERR_INVAL;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->ep_start_read) {
+        return bus->driver->ep_start_read(busid, ep, data, data_len);
+    }
+    return -USB_ERR_INVAL;
+}
+
+void USBD_IRQHandler(uint8_t busid)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->irq_handler) {
+        return bus->driver->irq_handler(busid);
+    }
+}
+
+#ifdef CONFIG_USBDEV_TEST_MODE
+void usbd_execute_test_mode(uint8_t busid, uint8_t test_mode)
+{
+    struct usbd_bus *bus;
+
+    if (busid >= CONFIG_USBDEV_MAX_BUS) {
+        return;
+    }
+
+    bus = &g_usbdev_bus[busid];
+    if (bus->driver && bus->driver->execute_test_mode) {
+        return bus->driver->execute_test_mode(busid, test_mode);
+    }
+}
+#endif
+
+#endif
