@@ -621,15 +621,8 @@ static void musb_pipe_free(struct musb_pipe *pipe)
     usb_osal_leave_critical_section(flags);
 }
 
-__WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
-{
-    (void)bus;
-}
-
-__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
-{
-    (void)bus;
-}
+extern void usb_hc_low_level_init(struct usbh_bus *bus);
+extern void usb_hc_low_level_deinit(struct usbh_bus *bus);
 
 int usb_hc_init(struct usbh_bus *bus)
 {

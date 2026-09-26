@@ -58,7 +58,7 @@
  *   - APB1 peripheral; USBFS needs a precise 48 MHz USB clock derived from
  *     PLLCLK (48/96/144/192/240 MHz -> DIV1/2/3/4/5).
  *   - IRQ : USB_FS_LP_IRQn (20, low priority, used here) ; USB_FS_HP_IRQn
- *     (19, high priority, iso/double-buffer only) 
+ *     (19, high priority, iso/double-buffer only)
  */
 
 /**
@@ -136,7 +136,7 @@ __WEAK void n32h4xx_usbfs_gpio_init(void)
  * Signature must match the __WEAK stub in usb_dc_fsdev.c (no parameter),
  * so the fsdev port always talks to bus 0.
  */
-void usb_dc_low_level_init(void)
+void usb_dc_low_level_init(uint8_t busid)
 {
     if (g_usbdev_bus[0].reg_base != USBFS_REG_BASE) {
         return;
@@ -165,7 +165,7 @@ void usb_dc_low_level_init(void)
 /**
  * @brief Low-level USBFS deinitialization: disable interrupt and APB1 clock.
  */
-void usb_dc_low_level_deinit(void)
+void usb_dc_low_level_deinit(uint8_t busid)
 {
     if (g_usbdev_bus[0].reg_base != USBFS_REG_BASE) {
         return;

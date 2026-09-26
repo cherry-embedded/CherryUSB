@@ -309,15 +309,8 @@ void OHCI_IRQHandler(uint8_t busid)
 }
 
 #ifndef CONFIG_USB_EHCI_WITH_OHCI
-__WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
-{
-    (void)bus;
-}
-
-__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
-{
-    (void)bus;
-}
+extern void usb_hc_low_level_init(struct usbh_bus *bus);
+extern void usb_hc_low_level_deinit(struct usbh_bus *bus);
 
 int usb_hc_init(struct usbh_bus *bus)
 {

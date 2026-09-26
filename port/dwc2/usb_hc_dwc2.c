@@ -658,15 +658,8 @@ static void dwc2_iso_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_u
 }
 #endif
 
-__WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
-{
-    (void)bus;
-}
-
-__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
-{
-    (void)bus;
-}
+extern void usb_hc_low_level_init(struct usbh_bus *bus);
+extern void usb_hc_low_level_deinit(struct usbh_bus *bus);
 
 int usb_hc_init(struct usbh_bus *bus)
 {

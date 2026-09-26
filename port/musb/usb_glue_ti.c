@@ -90,7 +90,7 @@ void usbd_musb_delay_ms(uint8_t ms)
     /* implement later */
 }
 
-void usb_dc_low_level_init(void)
+void usb_dc_low_level_init(uint8_t busid)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_USB0);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
@@ -119,7 +119,7 @@ void usb_dc_low_level_init(void)
     IntEnable(INT_USB0);
 }
 
-void usb_dc_low_level_deinit(void)
+void usb_dc_low_level_deinit(uint8_t busid)
 {
     IntDisable(INT_USB0);
     g_usb_irq_handler = NULL;

@@ -52,13 +52,8 @@ struct fsdev_udc {
     struct fsdev_ep_state out_ep[CONFIG_USBDEV_EP_NUM]; /*!< OUT endpoint parameters */
 } g_fsdev_udc;
 
-__WEAK void usb_dc_low_level_init(void)
-{
-}
-
-__WEAK void usb_dc_low_level_deinit(void)
-{
-}
+extern void usb_dc_low_level_init(uint8_t busid);
+extern void usb_dc_low_level_deinit(uint8_t busid);
 
 /**
  * @brief Initialize the USB device controller.
@@ -67,7 +62,7 @@ __WEAK void usb_dc_low_level_deinit(void)
  */
 int usb_dc_init(uint8_t busid)
 {
-    usb_dc_low_level_init();
+    usb_dc_low_level_init(busid);
 
 #if defined(N32H4X_FSDEV)
     /* N32H4x power-on sequence: the USB_CTRL reset value is 0x0300
@@ -133,8 +128,8 @@ int usb_dc_deinit(uint8_t busid)
 
     /* switch-off device */
     USB->CNTR = (uint16_t)(USB_CNTR_FRES | USB_CNTR_PDWN);
+    usb_dc_low_level_deinit(busid);
 
-    usb_dc_low_level_deinit();
     return 0;
 }
 

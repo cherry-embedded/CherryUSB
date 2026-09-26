@@ -787,17 +787,10 @@ static int usbh_reset_port(struct usbh_bus *bus, const uint8_t port)
     return 0;
 }
 
-__WEAK void usb_hc_low_level_init(struct usbh_bus *bus)
-{
-    (void)bus;
-}
+extern void usb_hc_low_level_init(struct usbh_bus *bus);
+extern void usb_hc_low_level_deinit(struct usbh_bus *bus);
 
 __WEAK void usb_hc_low_level2_init(struct usbh_bus *bus)
-{
-    (void)bus;
-}
-
-__WEAK void usb_hc_low_level_deinit(struct usbh_bus *bus)
 {
     (void)bus;
 }

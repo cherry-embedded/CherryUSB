@@ -440,13 +440,8 @@ static bool chipidea_start_xfer(uint8_t busid, uint8_t ep_addr, uint8_t *buffer,
     return true;
 }
 
-__WEAK void usb_dc_low_level_init(uint8_t busid)
-{
-}
-
-__WEAK void usb_dc_low_level_deinit(uint8_t busid)
-{
-}
+extern void usb_dc_low_level_init(uint8_t busid);
+extern void usb_dc_low_level_deinit(uint8_t busid);
 
 int usb_dc_init(uint8_t busid)
 {
