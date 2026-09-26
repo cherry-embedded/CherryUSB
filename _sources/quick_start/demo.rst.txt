@@ -143,7 +143,7 @@ ESP-Registry 可以参考官方文档，推荐使用 vscode + esp-idf 的开发�
     * - Repo url
       - USB IP
       - Version
-    * - https://github.com/CherryUSB/cherryusb_wch
+    * - https://github.com/CherryUSB/cherryusb_wch https://github.com/CherryUSB/wch-support-cherryusb
       - WCH USBHS/USBFS/USBSS
       - greater than v1.6.1
 
