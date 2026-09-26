@@ -247,7 +247,7 @@ static void bk_analog_layer_usb_sys_related_ops(uint32_t usb_mode, bool ops)
     }
 }
 
-void usb_dc_low_level_init(void)
+void usb_dc_low_level_init(uint8_t busid)
 {
 #if CONFIG_SYS_CPU0
     bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_USB_1, 0x0, 0x0);
@@ -266,7 +266,7 @@ void usb_dc_low_level_init(void)
     bk_int_set_priority(INT_SRC_USB, 2);
 }
 
-void usb_dc_low_level_deinit(void)
+void usb_dc_low_level_deinit(uint8_t busid)
 {
     bk_pm_module_vote_cpu_freq(PM_DEV_ID_USB_1, PM_CPU_FRQ_DEFAULT);
     sys_hal_usb_analog_phy_en(false);

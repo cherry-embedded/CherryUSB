@@ -301,13 +301,8 @@ static uint32_t usbd_musb_fifo_config(struct musb_fifo_cfg *cfg, uint32_t offset
     return (offset + fifo_used);
 }
 
-__WEAK void usb_dc_low_level_init(void)
-{
-}
-
-__WEAK void usb_dc_low_level_deinit(void)
-{
-}
+extern void usb_dc_low_level_init(uint8_t busid);
+extern void usb_dc_low_level_deinit(uint8_t busid);
 
 int usb_dc_init(uint8_t busid)
 {
@@ -315,7 +310,7 @@ int usb_dc_init(uint8_t busid)
     uint8_t cfg_num;
     struct musb_fifo_cfg *cfg;
 
-    usb_dc_low_level_init();
+    usb_dc_low_level_init(busid);
 
 #ifdef CONFIG_USB_HS
     HWREGB(USB_BASE + MUSB_POWER_OFFSET) |= USB_POWER_HSENAB;
@@ -357,7 +352,7 @@ int usb_dc_deinit(uint8_t busid)
 
     HWREGB(USB_BASE + MUSB_POWER_OFFSET) &= ~USB_POWER_SOFTCONN;
 
-    usb_dc_low_level_deinit();
+    usb_dc_low_level_deinit(busid);
     return 0;
 }
 

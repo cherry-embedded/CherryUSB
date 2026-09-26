@@ -83,13 +83,8 @@ static void kinetis_read_setup(uint8_t busid)
     kinetis_start_transfer(busid, USB_CONTROL_OUT_EP0, setup_packet[busid], 8);
 }
 
-__WEAK void usb_dc_low_level_init(uint8_t busid)
-{
-}
-
-__WEAK void usb_dc_low_level_deinit(uint8_t busid)
-{
-}
+extern void usb_dc_low_level_init(uint8_t busid);
+extern void usb_dc_low_level_deinit(uint8_t busid);
 
 int usb_dc_init(uint8_t busid)
 {
