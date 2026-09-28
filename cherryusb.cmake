@@ -70,6 +70,12 @@ if(CONFIG_CHERRYUSB_DEVICE)
     if(CONFIG_CHERRYUSB_DEVICE_MSC)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/msc/usbd_msc.c)
     endif()
+    if(CONFIG_CHERRYUSB_DEVICE_MTP)
+        list(APPEND cherryusb_srcs
+            ${CMAKE_CURRENT_LIST_DIR}/class/mtp/usbd_mtp.c
+            ${CMAKE_CURRENT_LIST_DIR}/class/mtp/usbd_mtp_obj.c
+            ${CMAKE_CURRENT_LIST_DIR}/class/mtp/usbd_mtp_ptp.c)
+    endif()
     if(CONFIG_CHERRYUSB_DEVICE_AUDIO)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/audio/usbd_audio.c)
     endif()

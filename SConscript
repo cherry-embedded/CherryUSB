@@ -130,6 +130,10 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/hid/usbd_hid.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC']):
         src += Glob('class/msc/usbd_msc.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MTP']):
+        src += Glob('class/mtp/usbd_mtp.c')
+        src += Glob('class/mtp/usbd_mtp_obj.c')
+        src += Glob('class/mtp/usbd_mtp_ptp.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_AUDIO']):
         src += Glob('class/audio/usbd_audio.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_VIDEO']):

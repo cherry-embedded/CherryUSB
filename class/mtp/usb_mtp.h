@@ -22,6 +22,11 @@
 #ifndef USB_MTP_H
 #define USB_MTP_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "usb_util.h"   /* __PACKED / __WEAK */
+
 // clang-format off
 #define MTP_STANDARD_VERSION            100
 
