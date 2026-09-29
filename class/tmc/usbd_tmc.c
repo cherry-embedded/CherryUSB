@@ -137,7 +137,6 @@ static int tmc_class_interface_request_handler(uint8_t busid, struct usb_setup_p
 }
 
 #define TMC_OUT_MAX ((uint32_t)sizeof(tmc_read_buffer))
-#define TMC_OUT_PADDING 4u
 
 static volatile uint32_t tmc_out_need;
 static volatile uint32_t tmc_out_got;
@@ -149,7 +148,7 @@ static void tmc_out_start_read(uint8_t busid)
     uint32_t len = usbd_get_ep_mps(busid, ep);
 
     if (tmc_out_need != 0) {
-        if (tmc_out_need <= TMC_OUT_MAX - TMC_OUT_PADDING) {
+        if (tmc_out_need <= TMC_OUT_MAX) {
             off = tmc_out_got;
             len = tmc_out_need - tmc_out_got;
         } else {
@@ -193,6 +192,7 @@ void tmc_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
         tmc_out_need = (uint32_t)sizeof(struct tmc_bulk_header);
         if (header->MsgID == TMC_MSGID_OUT_DEV_DEP_MSG_OUT) {
             tmc_out_need += header->msg_specific.dev_dep_msg_out.transferSize;
+            tmc_out_need = (tmc_out_need + 3u) & ~3u;
         }
         tmc_out_got = nbytes;
     } else {
@@ -209,7 +209,7 @@ void tmc_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
     tmc_out_need = 0;
     tmc_out_got = 0;
 
-    if (need <= TMC_OUT_MAX - TMC_OUT_PADDING) {
+    if (need <= TMC_OUT_MAX) {
         switch (header->MsgID) {
             case TMC_MSGID_OUT_DEV_DEP_MSG_OUT: {
                 uint32_t payload = header->msg_specific.dev_dep_msg_out.transferSize;
