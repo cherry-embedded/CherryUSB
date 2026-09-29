@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, sakumisu
+ * Copyright (c) 2025, akako
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,9 @@
 
 /* Describe EndPoints configuration */
 static struct usbd_endpoint tmc_ep_data[2];
+static volatile uint32_t tmc_out_expected;
+static volatile uint32_t tmc_out_recv;
+
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t tmc_read_buffer[512 + 64];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t tmc_write_buffer[2048];
@@ -135,15 +139,32 @@ static int tmc_class_interface_request_handler(uint8_t busid, struct usb_setup_p
     return 0;
 }
 
+static void tmc_out_read_next(uint8_t busid)
+{
+    uint8_t ep = tmc_ep_data[TMC_OUT_EP_IDX].ep_addr;
+    uint32_t mps = usbd_get_ep_mps(busid, ep);
+    uint32_t off = tmc_out_recv;
+    uint32_t cnt = mps;
+
+    if (off + cnt > sizeof(tmc_read_buffer)) {
+        cnt = (off < sizeof(tmc_read_buffer)) ? (sizeof(tmc_read_buffer) - off) : 1u;
+    }
+    usbd_ep_start_read(busid, ep, tmc_read_buffer + off, cnt);
+}
+
 void tmc_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     (void)arg;
 
     switch (event) {
         case USBD_EVENT_RESET:
+            tmc_out_expected = 0;
+            tmc_out_recv = 0;
             break;
         case USBD_EVENT_CONFIGURED:
-            usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+            tmc_out_expected = 0;
+            tmc_out_recv = 0;
+            tmc_out_read_next(busid);
             break;
 
         default:
@@ -153,8 +174,34 @@ void tmc_notify_handler(uint8_t busid, uint8_t event, void *arg)
 
 void tmc_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    (void)ep;
     struct tmc_bulk_header *header = (struct tmc_bulk_header *)tmc_read_buffer;
     struct tmc_bulk_header *header2 = (struct tmc_bulk_header *)tmc_write_buffer;
+
+    if (tmc_out_expected == 0) {
+        if (nbytes < sizeof(struct tmc_bulk_header)) {
+            tmc_out_read_next(busid);
+            return;
+        }
+        tmc_out_expected = (uint32_t)sizeof(struct tmc_bulk_header);
+        if (header->MsgID == TMC_MSGID_OUT_DEV_DEP_MSG_OUT) {
+            tmc_out_expected += header->msg_specific.dev_dep_msg_out.transferSize;
+        }
+        if (tmc_out_expected > sizeof(tmc_read_buffer)) {
+            tmc_out_expected = sizeof(tmc_read_buffer);
+        }
+        tmc_out_recv = nbytes;
+    } else {
+        tmc_out_recv += nbytes;
+    }
+
+    if (tmc_out_recv < tmc_out_expected) {
+        tmc_out_read_next(busid);
+        return;
+    }
+
+    tmc_out_expected = 0;
+    tmc_out_recv = 0;
 
     switch (header->MsgID) {
         case TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
@@ -174,7 +221,8 @@ void tmc_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
         default:
             break;
     }
-    usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+
+    tmc_out_read_next(busid);
 }
 
 void tmc_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
