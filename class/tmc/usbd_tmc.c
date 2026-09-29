@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, sakumisu
+ * Copyright (c) 2026, akako
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,15 +136,41 @@ static int tmc_class_interface_request_handler(uint8_t busid, struct usb_setup_p
     return 0;
 }
 
+#define TMC_OUT_MAX ((uint32_t)sizeof(tmc_read_buffer))
+
+static volatile uint32_t tmc_out_need;
+static volatile uint32_t tmc_out_got;
+
+static void tmc_out_start_read(uint8_t busid)
+{
+    uint8_t ep = tmc_ep_data[TMC_OUT_EP_IDX].ep_addr;
+    uint32_t off = 0;
+    uint32_t len = usbd_get_ep_mps(busid, ep);
+
+    if (tmc_out_need != 0) {
+        if (tmc_out_need <= TMC_OUT_MAX) {
+            off = tmc_out_got;
+            len = tmc_out_need - tmc_out_got;
+        } else {
+            len = TMC_OUT_MAX;
+        }
+    }
+    usbd_ep_start_read(busid, ep, tmc_read_buffer + off, len);
+}
+
 void tmc_notify_handler(uint8_t busid, uint8_t event, void *arg)
 {
     (void)arg;
 
     switch (event) {
         case USBD_EVENT_RESET:
+            tmc_out_need = 0;
+            tmc_out_got = 0;
             break;
         case USBD_EVENT_CONFIGURED:
-            usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+            tmc_out_need = 0;
+            tmc_out_got = 0;
+            tmc_out_start_read(busid);
             break;
 
         default:
@@ -153,28 +180,64 @@ void tmc_notify_handler(uint8_t busid, uint8_t event, void *arg)
 
 void tmc_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    (void)ep;
     struct tmc_bulk_header *header = (struct tmc_bulk_header *)tmc_read_buffer;
     struct tmc_bulk_header *header2 = (struct tmc_bulk_header *)tmc_write_buffer;
 
-    switch (header->MsgID) {
-        case TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
-            header2->msg_specific.dev_dep_msg_in.transferSize = 0;
-            SCPI_Input(&scpi_context, (const char *)(tmc_read_buffer + sizeof(struct tmc_bulk_header)), header->msg_specific.dev_dep_msg_out.transferSize);
-            break;
-        case TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
-            header2->MsgID = TMC_MSGID_IN_DEV_DEP_MSG_IN;
-            header2->bTag = header->bTag;
-            header2->bTagInverse = header->bTagInverse;
-            header2->reserved = 0;
-            header2->msg_specific.dev_dep_msg_in.bmTransferAttributes = TMC_BULK_HEADER_TRANSFER_ATTR_TERMCHAR;
-
-            usbd_ep_start_write(busid, tmc_ep_data[TMC_IN_EP_IDX].ep_addr, tmc_write_buffer, sizeof(struct tmc_bulk_header) + header2->msg_specific.dev_dep_msg_in.transferSize);
-            break;
-
-        default:
-            break;
+    if (tmc_out_need == 0) {
+        if (nbytes < sizeof(struct tmc_bulk_header)) {
+            tmc_out_start_read(busid);
+            return;
+        }
+        tmc_out_need = (uint32_t)sizeof(struct tmc_bulk_header);
+        if (header->MsgID == TMC_MSGID_OUT_DEV_DEP_MSG_OUT) {
+            tmc_out_need += header->msg_specific.dev_dep_msg_out.transferSize;
+            tmc_out_need = (tmc_out_need + 3u) & ~3u;
+        }
+        tmc_out_got = nbytes;
+    } else {
+        tmc_out_got += nbytes;
     }
-    usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+
+    if (tmc_out_got < tmc_out_need) {
+        tmc_out_start_read(busid);
+        return;
+    }
+
+    uint32_t need = tmc_out_need;
+    uint32_t recv = tmc_out_got;
+    tmc_out_need = 0;
+    tmc_out_got = 0;
+
+    if (need <= TMC_OUT_MAX) {
+        switch (header->MsgID) {
+            case TMC_MSGID_OUT_DEV_DEP_MSG_OUT: {
+                uint32_t payload = header->msg_specific.dev_dep_msg_out.transferSize;
+                uint32_t avail = (recv > (uint32_t)sizeof(struct tmc_bulk_header)) ?
+                                 (recv - (uint32_t)sizeof(struct tmc_bulk_header)) : 0u;
+                if (payload > avail) {
+                    payload = avail;
+                }
+                header2->msg_specific.dev_dep_msg_in.transferSize = 0;
+                SCPI_Input(&scpi_context, (const char *)(tmc_read_buffer + sizeof(struct tmc_bulk_header)), payload);
+                break;
+            }
+            case TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
+                header2->MsgID = TMC_MSGID_IN_DEV_DEP_MSG_IN;
+                header2->bTag = header->bTag;
+                header2->bTagInverse = header->bTagInverse;
+                header2->reserved = 0;
+                header2->msg_specific.dev_dep_msg_in.bmTransferAttributes = TMC_BULK_HEADER_TRANSFER_ATTR_TERMCHAR;
+
+                usbd_ep_start_write(busid, tmc_ep_data[TMC_IN_EP_IDX].ep_addr, tmc_write_buffer, sizeof(struct tmc_bulk_header) + header2->msg_specific.dev_dep_msg_in.transferSize);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    tmc_out_start_read(busid);
 }
 
 void tmc_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
