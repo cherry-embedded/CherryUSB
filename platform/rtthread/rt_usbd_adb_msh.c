@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, sakumisu
+ * Copyright (c) 2024 ~ 2026, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,26 +15,9 @@
 
 struct usbd_adb_shell {
     struct rt_device parent;
-    usb_osal_sem_t tx_done;
     struct rt_ringbuffer rx_rb;
     rt_uint8_t rx_rb_buffer[CONFIG_USBDEV_SHELL_RX_BUFSIZE];
 } g_usbd_adb_shell;
-
-void usbd_adb_notify_shell_read(uint8_t *data, uint32_t len)
-{
-    rt_ringbuffer_put(&g_usbd_adb_shell.rx_rb, data, len);
-
-    if (g_usbd_adb_shell.parent.rx_indicate) {
-        g_usbd_adb_shell.parent.rx_indicate(&g_usbd_adb_shell.parent, len);
-    }
-}
-
-void usbd_adb_notify_write_done(void)
-{
-    if (g_usbd_adb_shell.tx_done) {
-        usb_osal_sem_give(g_usbd_adb_shell.tx_done);
-    }
-}
 
 static rt_err_t usbd_adb_shell_open(struct rt_device *dev, rt_uint16_t oflag)
 {
@@ -46,10 +29,6 @@ static rt_err_t usbd_adb_shell_open(struct rt_device *dev, rt_uint16_t oflag)
 
 static rt_err_t usbd_adb_shell_close(struct rt_device *dev)
 {
-    if (g_usbd_adb_shell.tx_done) {
-        usb_osal_sem_give(g_usbd_adb_shell.tx_done);
-    }
-
     return RT_EOK;
 }
 
@@ -70,15 +49,7 @@ static rt_ssize_t usbd_adb_shell_write(struct rt_device *dev,
 
     RT_ASSERT(dev != RT_NULL);
 
-    if (!usb_device_is_configured(0)) {
-        return size;
-    }
-
-    if (usbd_adb_can_write() && size) {
-        usb_osal_sem_reset(g_usbd_adb_shell.tx_done);
-        usbd_abd_write(ADB_SHELL_LOALID, buffer, size);
-        usb_osal_sem_take(g_usbd_adb_shell.tx_done, 0xffffffff);
-    }
+    usbd_adb_write(ADB_LOCALID_SHELL, buffer, size);
 
     return size;
 }
@@ -94,7 +65,7 @@ const static struct rt_device_ops usbd_adb_shell_ops = {
 };
 #endif
 
-void usbd_adb_shell_init(uint8_t in_ep, uint8_t out_ep)
+void rt_usbd_adb_shell_init(void)
 {
     rt_err_t ret;
     struct rt_device *device;
@@ -125,9 +96,38 @@ void usbd_adb_shell_init(uint8_t in_ep, uint8_t out_ep)
     device->fops = NULL;
 #endif
 
-    g_usbd_adb_shell.tx_done = usb_osal_sem_create(0);
-    USB_ASSERT(g_usbd_adb_shell.tx_done != NULL);
     rt_ringbuffer_init(&g_usbd_adb_shell.rx_rb, g_usbd_adb_shell.rx_rb_buffer, sizeof(g_usbd_adb_shell.rx_rb_buffer));
+}
+
+static void adb_shell_on_open(uint32_t remoteid)
+{
+    USB_LOG_INFO("adb shell open, remoteid:%u\r\n", (unsigned)remoteid);
+}
+
+static void adb_shell_on_close(uint32_t remoteid)
+{
+    USB_LOG_INFO("adb shell close, remoteid:%u\r\n", (unsigned)remoteid);
+}
+
+static void adb_shell_on_write(uint32_t remoteid, const uint8_t *data, uint32_t len)
+{
+    rt_ringbuffer_put(&g_usbd_adb_shell.rx_rb, data, len);
+}
+
+static const struct adb_service adb_shell_service = {
+    .name = "shell:",
+    .localid = ADB_LOCALID_SHELL,
+    .on_open = adb_shell_on_open,
+    .on_close = adb_shell_on_close,
+    .on_write = adb_shell_on_write,
+};
+
+void usbd_adb_shell_init(void)
+{
+    if (usbd_adb_service_register(&adb_shell_service) != 0) {
+        USB_LOG_ERR("adb shell: register failed\r\n");
+    }
+    rt_usbd_adb_shell_init();
 }
 
 static int adb_enter(int argc, char **argv)
