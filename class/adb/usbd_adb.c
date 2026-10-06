@@ -509,3 +509,11 @@ void usbd_adb_close(uint32_t localid)
 
     usbd_adb_send_internal(A_CLSE, localid, remoteid, NULL, 0);
 }
+
+__WEAK void usbd_adb_shell_init(void)
+{
+}
+
+__WEAK void usbd_adb_sync_init(void)
+{
+}

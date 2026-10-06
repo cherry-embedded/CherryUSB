@@ -10,6 +10,12 @@ set(CONFIG_CHERRYSH 1)
 set(CONFIG_CHERRYSH_INTERFACE "uart")
 set(CONFIG_USB_DEVICE 1)
 
+set(CONFIG_SDMMC 1)
+set(CONFIG_FATFS 1)
+
+set(CONFIG_CHERRYUSB_DEVICE_ADB_SYNC 1)
+set(CONFIG_CHERRYUSB_DEVICE_ADB_SYNC_FATFS 1)
+
 set(CONFIG_FREERTOS 1)
 set(CONFIG_LWIP 1)
 set(CONFIG_LWIP_IPERF 1)
@@ -34,6 +40,8 @@ sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_CDC_RNDIS)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_ASIX)
 sdk_compile_definitions(-DCONFIG_USBHOST_PLATFORM_RTL8152)
 
+sdk_compile_definitions(-DSD_FATFS_ENABLE=1)
+sdk_compile_definitions(-DFF_CODE_PAGE=437)
 # sdk_compile_definitions(-DCONFIG_USB_OTG_ENABLE)
 
 sdk_compile_options("-O2")

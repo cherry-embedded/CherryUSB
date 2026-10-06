@@ -138,6 +138,21 @@ if CHERRYUSB
             prompt "Enable usb adb device"
             default n
 
+        config CHERRYUSB_DEVICE_ADB_CHERRYSH
+            bool
+            prompt "Enable usb adb shell service with cherrysh"
+            default n
+
+        config CHERRYUSB_DEVICE_ADB_SYNC
+            bool
+            prompt "Enable usb adb sync service"
+            default n
+
+        config CHERRYUSB_DEVICE_ADB_SYNC_FATFS
+            bool
+            prompt "Enable usb adb sync service with fatfs"
+            default n
+
         config CHERRYUSB_DEVICE_DFU
             bool
             prompt "Enable usb dfu device"
