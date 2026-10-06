@@ -146,7 +146,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('class/vendor/display/usbd_display.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB']):
         src += Glob('class/adb/usbd_adb.c')
-        src += Glob('platform/rtthread/rt_usbd_adb.c')
+        src += Glob('platform/rtthread/rt_usbd_adb_msh.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV']):
         src += Glob('platform/rtthread/rt_usbd_serial.c')

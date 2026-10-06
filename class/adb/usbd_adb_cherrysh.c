@@ -1,35 +1,36 @@
 /*
- * Copyright (c) 2024, sakumisu
+ * Copyright (c) 2024 ~ 2026, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "usbd_core.h"
+#include "usbd_adb.h"
+#include "csh.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "event_groups.h"
-#include "csh.h"
-#include "usbd_core.h"
-#include "usbd_adb.h"
-#include "chry_ringbuffer.h"
 
-static chry_ringbuffer_t shell_rb;
-static uint8_t mempool[1024];
-
-#ifndef task_repl_PRIORITY
-#define task_repl_PRIORITY (configMAX_PRIORITIES - 4U)
+#ifndef CHERRYSH_TASK_REPL_PRIORITY
+#define CHERRYSH_TASK_REPL_PRIORITY (2)
 #endif
 
-#ifndef task_exec_PRIORITY
-#define task_exec_PRIORITY (configMAX_PRIORITIES - 5U)
+#ifndef CHERRYSH_TASK_EXEC_PRIORITY
+#define CHERRYSH_TASK_EXEC_PRIORITY (1)
+#endif
+
+#ifndef CHERRYSH_TASK_REPL_STACK_SIZE
+#define CHERRYSH_TASK_REPL_STACK_SIZE 1024U
+#endif
+
+#ifndef CHERRYSH_TASK_EXEC_STACK_SIZE
+#define CHERRYSH_TASK_EXEC_STACK_SIZE 1024U
 #endif
 
 static chry_shell_t csh;
 static volatile bool login = false;
-
-static StaticTask_t task_buffer_repl;
-static StaticTask_t task_buffer_exec;
-
-static StackType_t task_stack_repl[1024];
-static StackType_t task_stack_exec[1024];
+static usb_ringbuffer_t shell_rb;
+static uint8_t mempool[1024];
 
 static TaskHandle_t task_hdl_repl = NULL;
 static TaskHandle_t task_hdl_exec = NULL;
@@ -37,34 +38,45 @@ static TaskHandle_t task_hdl_exec = NULL;
 static EventGroupHandle_t event_hdl;
 static StaticEventGroup_t event_grp;
 
-void usbd_adb_notify_shell_read(uint8_t *data, uint32_t len)
-{
-    chry_ringbuffer_write(&shell_rb, data, len);
+static int shell_init(bool need_login);
 
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xEventGroupSetBitsFromISR(event_hdl, 0x10, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+static void adb_shell_on_open(uint32_t remoteid)
+{
+    USB_LOG_INFO("adb shell open, remoteid:%u\r\n", (unsigned)remoteid);
 }
 
-void usbd_adb_notify_write_done(void)
+static void adb_shell_on_close(uint32_t remoteid)
 {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xEventGroupSetBitsFromISR(event_hdl, 0x20, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    USB_LOG_INFO("adb shell close, remoteid:%u\r\n", (unsigned)remoteid);
+}
+
+static void adb_shell_on_write(uint32_t remoteid, const uint8_t *data, uint32_t len)
+{
+    usb_ringbuffer_write(&shell_rb, (uint8_t *)data, len);
+    xEventGroupSetBits(event_hdl, 0x10);
+}
+
+static const struct adb_service adb_shell_service = {
+    .name = "shell:",
+    .localid = ADB_LOCALID_SHELL,
+    .on_open = adb_shell_on_open,
+    .on_close = adb_shell_on_close,
+    .on_write = adb_shell_on_write,
+};
+
+void usbd_adb_shell_init(void)
+{
+    if (usbd_adb_service_register(&adb_shell_service) != 0) {
+        USB_LOG_ERR("adb shell: register failed\r\n");
+    }
+    shell_init(false);
 }
 
 static uint16_t csh_sput_cb(chry_readline_t *rl, const void *data, uint16_t size)
 {
     (void)rl;
 
-    if (!usb_device_is_configured(0)) {
-        return size;
-    }
-
-    if (usbd_adb_can_write() && size) {
-        usbd_abd_write(ADB_SHELL_LOALID, data, size);
-        xEventGroupWaitBits(event_hdl, 0x20, pdTRUE, pdFALSE, portMAX_DELAY);
-    }
+    usbd_adb_write(ADB_LOCALID_SHELL, data, size);
 
     return size;
 }
@@ -72,8 +84,7 @@ static uint16_t csh_sput_cb(chry_readline_t *rl, const void *data, uint16_t size
 static uint16_t csh_sget_cb(chry_readline_t *rl, void *data, uint16_t size)
 {
     (void)rl;
-
-    return chry_ringbuffer_read(&shell_rb, data, size);
+    return usb_ringbuffer_read(&shell_rb, data, size);
 }
 
 static void wait_char(void)
@@ -173,7 +184,10 @@ int chry_shell_port_create_context(chry_shell_t *csh, int argc, const char **arg
         vTaskDelete(*p_task_hdl_exec);
     }
 
-    *p_task_hdl_exec = xTaskCreateStatic(task_exec, "task_exec", 1024U, NULL, task_exec_PRIORITY, task_stack_exec, &task_buffer_exec);
+    *p_task_hdl_exec = NULL;
+    if (xTaskCreate(task_exec, "task_exec", CHERRYSH_TASK_EXEC_STACK_SIZE, NULL, CHERRYSH_TASK_EXEC_PRIORITY, (TaskHandle_t *)p_task_hdl_exec) != pdPASS) {
+        return -1;
+    }
     return 0;
 }
 
@@ -221,11 +235,11 @@ void chry_shell_port_default_handler(chry_shell_t *csh, int sig)
     chry_readline_edit_refresh(&csh->rl);
 }
 
-int shell_init(bool need_login)
+static int shell_init(bool need_login)
 {
-    chry_shell_init_t csh_init;
+    chry_shell_init_t csh_init = {0};
 
-    if (chry_ringbuffer_init(&shell_rb, mempool, sizeof(mempool))) {
+    if (usb_ringbuffer_init(&shell_rb, mempool, sizeof(mempool))) {
         return -1;
     }
 
@@ -240,6 +254,7 @@ int shell_init(bool need_login)
     csh_init.sget = csh_sget_cb;
 
 #if defined(CONFIG_CSH_SYMTAB) && CONFIG_CSH_SYMTAB
+#if defined(__GNUC__)
     extern const int __fsymtab_start;
     extern const int __fsymtab_end;
     extern const int __vsymtab_start;
@@ -250,6 +265,14 @@ int shell_init(bool need_login)
     csh_init.command_table_end = &__fsymtab_end;
     csh_init.variable_table_beg = &__vsymtab_start;
     csh_init.variable_table_end = &__vsymtab_end;
+#elif defined(__ICCARM__) || defined(__ICCRX__) || defined(__ICCRISCV__)
+#pragma section="FSymTab"
+#pragma section="VSymTab"
+    csh_init.command_table_beg = __section_begin("FSymTab");
+    csh_init.command_table_end = __section_end("FSymTab");
+    csh_init.variable_table_beg = __section_begin("VSymTab");
+    csh_init.variable_table_end = __section_end("VSymTab");
+#endif
 #endif
 
 #if defined(CONFIG_CSH_PROMPTEDIT) && CONFIG_CSH_PROMPTEDIT
@@ -283,7 +306,7 @@ int shell_init(bool need_login)
          and the strcmp attribute is used weakly by default,
          int chry_shell_port_hash_strcmp(const char *hash, const char *str); */
     csh_init.hash[0] = "12345678"; /*!< If there is no password, set to NULL */
-    csh_init.host = "cherryadb";
+    csh_init.host = BOARD_NAME;
     csh_init.user_data = NULL;
 
     int ret = chry_shell_init(&csh, &csh_init);
@@ -293,7 +316,10 @@ int shell_init(bool need_login)
 
     task_hdl_exec = NULL;
     event_hdl = xEventGroupCreateStatic(&event_grp);
-    task_hdl_repl = xTaskCreateStatic(task_repl, "task_repl", 1024U, NULL, task_repl_PRIORITY, task_stack_repl, &task_buffer_repl);
+    task_hdl_repl = NULL;
+    if (xTaskCreate(task_repl, "task_repl", CHERRYSH_TASK_REPL_STACK_SIZE, NULL, CHERRYSH_TASK_REPL_PRIORITY, (TaskHandle_t *)&task_hdl_repl) != pdPASS) {
+        return -1;
+    }
 
     return 0;
 }
@@ -315,8 +341,7 @@ static int csh_exit(int argc, char **argv)
     (void)argc;
     (void)argv;
 
-    usbd_adb_close(ADB_SHELL_LOALID);
-
+    usbd_adb_close(ADB_LOCALID_SHELL);
     return 0;
 }
 CSH_SCMD_EXPORT_ALIAS(csh_exit, exit, );

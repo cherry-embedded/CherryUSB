@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, sakumisu
+ * Copyright (c) 2024 ~ 2026, sakumisu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -220,27 +220,8 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
 
 static struct usbd_interface intf0;
 
-#ifdef RT_USING_MSH
-extern void usbd_adb_shell_init(uint8_t in_ep, uint8_t out_ep);
-#else
-extern int shell_init(bool need_login);
-#endif
 void cherryadb_init(uint8_t busid, uint32_t reg_base)
 {
-#ifdef RT_USING_MSH
-    usbd_adb_shell_init(WINUSB_IN_EP, WINUSB_OUT_EP);
-#else
-    /* default password is : 12345678 */
-    /* shell_init() must be called in-task */
-    if (0 != shell_init(false)) {
-        /* shell failed to be initialized */
-        USB_LOG_RAW("Failed to initialize shell\r\n");
-        for (;;) {
-            ;
-        }
-    }
-#endif
-
     usbd_desc_register(busid, &adb_descriptor);
 
     usbd_add_interface(busid, usbd_adb_init_intf(busid, &intf0, WINUSB_IN_EP, WINUSB_OUT_EP));
