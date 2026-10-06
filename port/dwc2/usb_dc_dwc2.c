@@ -776,6 +776,15 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
 
     if (USB_EP_DIR_IS_OUT(ep)) {
         if (USB_OTG_OUTEP(ep_idx)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) {
+            /* An OUT endpoint is only disabled while Global OUT NAK is in effect */
+            USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SGONAK;
+            count = 0;
+            do {
+                if (++count > 50000) {
+                    break;
+               }
+            } while ((USB_OTG_GLB->GINTSTS & USB_OTG_GINTSTS_BOUTNAKEFF) != USB_OTG_GINTSTS_BOUTNAKEFF);
+
             USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
             USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_EPDIS;
 
@@ -789,6 +798,8 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
 
             /* Clear and unmask endpoint disabled interrupt */
             USB_OTG_OUTEP(ep_idx)->DOEPINT = USB_OTG_DOEPINT_EPDISD;
+
+            USB_OTG_DEV->DCTL |= USB_OTG_DCTL_CGONAK;
         }
 
         USB_OTG_DEV->DEACHMSK &= ~(USB_OTG_DAINTMSK_OEPM & ((uint32_t)(1UL << (ep_idx & 0x07)) << 16));
