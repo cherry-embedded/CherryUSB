@@ -91,6 +91,8 @@
 <li class="toctree-l1"><a class="reference internal" href="usbd_rndis.html">CDC RNDIS Device</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usbd_ecm.html">CDC ECM Device</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">ADB Device</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#shell">shell 使用</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sync">sync 使用</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#adb">进入 adb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">退出 adb</a></li>
 </ul>
@@ -167,7 +169,7 @@
              
   <section id="adb-device">
 <h1>ADB Device<a class="headerlink" href="#adb-device" title="Link to this heading"></a></h1>
-<p>adb device demo 参考 <cite>demo/adb/usbd_adb_template.c</cite> 模板。默认适配 <strong>cherrysh</strong> (<cite>platform/demo/adb/cherrysh_port.c</cite>) 和 <strong>rt-thread msh</strong> (<cite>platform/rtthread/usbd_adb_shell.c</cite>)，只需要在 main 中添加以下初始化即可。</p>
+<p>adb device demo 参考 <cite>demo/adb_template.c</cite> 模板。调用如下：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">cherryadb_init</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">xxxxx</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -175,6 +177,22 @@
 <figure class="align-default">
 <img alt="../_images/rtt_adb_shell1.png" src="../_images/rtt_adb_shell1.png" />
 </figure>
+<section id="shell">
+<h2>shell 使用<a class="headerlink" href="#shell" title="Link to this heading"></a></h2>
+<p>默认支持 <strong>cherrysh</strong> 和 <strong>rt-thread msh</strong>，如果使用其他 shell，需自行适配。</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>如使用 cherrysh，请将 class/adb/usbd_adb_cherrysh.c 加入到编译系统</p>
+</div>
+</section>
+<section id="sync">
+<h2>sync 使用<a class="headerlink" href="#sync" title="Link to this heading"></a></h2>
+<p>默认支持 <strong>fatfs</strong> 和 <strong>rt-thread dfs</strong>。如果使用 fatfs， <strong>需要在代码初始化之前 mount 文件系统，并且根路径为 “/” **。参考 **platform/fatfs/vfs_fatfs_port.c</strong>。</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>如使用 sync 功能和 fatfs，请将 class/adb/usbd_adb_sync.c，platform/fatfs/vfs_fatfs_port.c 加入到编译系统</p>
+</div>
+</section>
 <section id="adb">
 <h2>进入 adb<a class="headerlink" href="#adb" title="Link to this heading"></a></h2>
 <ul class="simple">
