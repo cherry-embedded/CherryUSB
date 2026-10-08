@@ -954,15 +954,23 @@ int usbh_kill_urb(struct usbh_urb *urb)
 
     urb->errorcode = -USB_ERR_SHUTDOWN;
 
+#ifdef MUSB_SIFLI_EP_MAP
+    uint8_t chidx = pipe->chidx;
+    uint8_t fifo_ep = (urb->ep->bEndpointAddress & 0x80) | chidx;
+#else
+    uint8_t chidx = (urb->ep->bEndpointAddress & 0x0f);
+    uint8_t fifo_ep = urb->ep->bEndpointAddress;
+#endif
+
     if (urb->ep->bEndpointAddress & 0x80) {
-        HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << (urb->ep->bEndpointAddress & 0x0f));
-        HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << (urb->ep->bEndpointAddress & 0x0f));
+        HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << chidx);
+        HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << chidx);
     } else {
-        HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << (urb->ep->bEndpointAddress & 0x0f));
-        HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << (urb->ep->bEndpointAddress & 0x0f));
+        HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << chidx);
+        HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << chidx);
     }
 
-    musb_fifo_flush(bus, urb->ep->bEndpointAddress);
+    musb_fifo_flush(bus, fifo_ep);
 
     usb_osal_leave_critical_section(flags);
 
