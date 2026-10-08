@@ -152,8 +152,8 @@ static void usbd_msc_send_csw(uint8_t busid, uint8_t CSW_Status)
     g_usbd_msc[busid].csw.bStatus = CSW_Status;
 
     /* updating the State Machine , so that we wait CSW when this
-	 * transfer is complete, ie when we get a bulk in callback
-	 */
+     * transfer is complete, ie when we get a bulk in callback
+     */
     g_usbd_msc[busid].stage = MSC_WAIT_CSW;
 
     USB_LOG_DBG("Send csw\r\n");
@@ -165,8 +165,8 @@ static void usbd_msc_send_info(uint8_t busid, uint8_t *buffer, uint8_t size)
     size = MIN(size, g_usbd_msc[busid].cbw.dDataLength);
 
     /* updating the State Machine , so that we send CSW when this
-	 * transfer is complete, ie when we get a bulk in callback
-	 */
+     * transfer is complete, ie when we get a bulk in callback
+     */
     g_usbd_msc[busid].stage = MSC_SEND_CSW;
 
     usbd_ep_start_write(busid, mass_ep_data[busid][MSD_IN_EP_IDX].ep_addr, buffer, size);
@@ -691,10 +691,15 @@ static bool SCSI_processRead(uint8_t busid)
 static bool SCSI_processWrite(uint8_t busid, uint32_t nbytes)
 {
     uint32_t data_len = 0;
+    uint8_t csw_status = CSW_STATUS_CMD_PASSED;
 
     USB_LOG_DBG("write lba:%d\r\n", g_usbd_msc[busid].start_sector);
 
-    if (usbd_msc_sector_write(busid, g_usbd_msc[busid].cbw.bLUN, g_usbd_msc[busid].start_sector, g_usbd_msc[busid].block_buffer, nbytes) != 0) {
+    if (g_usbd_msc[busid].readonly) {
+        /* Discard data when read-only */
+        SCSI_SetSenseData(busid, SCSI_KCQWP_COMMANDNOTALLOWED);
+        csw_status = CSW_STATUS_CMD_FAILED;
+    } else if (usbd_msc_sector_write(busid, g_usbd_msc[busid].cbw.bLUN, g_usbd_msc[busid].start_sector, g_usbd_msc[busid].block_buffer, nbytes) != 0) {
         SCSI_SetSenseData(busid, SCSI_KCQHE_WRITEFAULT);
         return false;
     }
@@ -704,7 +709,7 @@ static bool SCSI_processWrite(uint8_t busid, uint32_t nbytes)
     g_usbd_msc[busid].csw.dDataResidue -= nbytes;
 
     if (g_usbd_msc[busid].nsectors == 0) {
-        usbd_msc_send_csw(busid, CSW_STATUS_CMD_PASSED);
+        usbd_msc_send_csw(busid, csw_status);
     } else {
         data_len = MIN(g_usbd_msc[busid].nsectors * g_usbd_msc[busid].scsi_blk_size[g_usbd_msc[busid].cbw.bLUN], CONFIG_USBDEV_MSC_MAX_BUFSIZE);
         usbd_ep_start_read(busid, mass_ep_data[busid][MSD_OUT_EP_IDX].ep_addr, g_usbd_msc[busid].block_buffer, data_len);
