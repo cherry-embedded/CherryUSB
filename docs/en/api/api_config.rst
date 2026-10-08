@@ -160,3 +160,28 @@ CONFIG_USBHOST_MSC_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Timeout for MSC read/write transfers, default 5s
+
+CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Expose ``usbh_hub_force_reenumerate()`` so a class can restart the normal
+debounce/reset/enumeration path when a reconnect pulse is too short for
+the host controller to latch. Disabled by default.
+
+CONFIG_USBHOST_MSC_MODESWITCH_NO_CSW
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MSC usb_modeswitch sends the CBW only and does not wait for a CSW.
+Some ZeroCD devices reboot after the CBW. Disabled by default (CBW+CSW).
+
+CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Milliseconds to sleep after a successful MSC modeswitch. Default 0.
+
+CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After MSC modeswitch, force the parent hub port to re-enumerate and do
+not register the temporary MSC device. Requires
+``CONFIG_USBHOST_HUB_FORCE_REENUMERATE``. Disabled by default.

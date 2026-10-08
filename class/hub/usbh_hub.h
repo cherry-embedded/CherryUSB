@@ -19,6 +19,11 @@ int usbh_hub_clear_feature(struct usbh_hub *hub, uint8_t port, uint8_t feature);
 
 void usbh_hub_thread_wakeup(struct usbh_hub *hub);
 
+#ifdef CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+/* Force one port through the normal debounce/reset/enumeration path. */
+int usbh_hub_force_reenumerate(struct usbh_hub *hub, uint8_t port);
+#endif
+
 int usbh_hub_initialize(struct usbh_bus *bus);
 int usbh_hub_deinitialize(struct usbh_bus *bus);
 
