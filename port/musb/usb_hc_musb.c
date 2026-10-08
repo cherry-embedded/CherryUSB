@@ -351,6 +351,8 @@ void musb_control_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_urb 
     HWREGB(USB_TXHUBPORT_BASE(chidx)) = 0;
 #endif
 
+    HWREGH(USB_BASE + MUSB_TXIE_OFFSET) |= USB_TXIE_EP0;
+
     musb_write_packet(bus, chidx, (uint8_t *)setup, 8);
     HWREGB(USB_TXCSRL_BASE(chidx)) = USB_CSRL0_TXRDY | USB_CSRL0_SETUP;
     musb_set_active_ep(bus, old_ep_index);
