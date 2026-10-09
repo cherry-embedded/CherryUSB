@@ -1020,8 +1020,6 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
             pktcnt = 0x3FF; // pktcnt 10bits
         }
 
-        data_len = pktcnt * g_dwc2_udc[busid].out_ep[ep_idx].ep_mps;
-
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_PKTCNT & (pktcnt << 19));
         USB_OTG_OUTEP(ep_idx)->DOEPTSIZ |= (USB_OTG_DOEPTSIZ_XFRSIZ & data_len);
     }
