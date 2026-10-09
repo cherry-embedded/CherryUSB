@@ -423,6 +423,7 @@ static void adb_notify_handler(uint8_t busid, uint8_t event, void *arg)
             USB_ASSERT_MSG(g_usbd_adb.rx_thread, "adb rx_thread fail");
             usbd_adb_shell_init();
             usbd_adb_sync_init();
+            break;
         case USBD_EVENT_DEINIT:
             break;
         default:
