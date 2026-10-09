@@ -25,12 +25,6 @@ sync 使用
 
 .. note:: 如使用 sync 功能和 fatfs，请将 class/adb/usbd_adb_sync.c，platform/fatfs/vfs_fatfs_port.c 加入到编译系统
 
-进入 adb
---------------
-
-- 使用 **cherrysh** 时枚举完成以后自动进入 adb 模式
-- 使用 **msh** 需要在 **msh** 中输入 ``adb_enter`` 进入 adb 模式
-
 退出 adb
 --------------
 

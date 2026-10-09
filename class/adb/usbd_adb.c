@@ -411,18 +411,6 @@ static void adb_notify_handler(uint8_t busid, uint8_t event, void *arg)
             break;
 
         case USBD_EVENT_INIT:
-            g_usbd_adb.rx_sem = usb_osal_sem_create(0);
-            USB_ASSERT_MSG(g_usbd_adb.rx_sem, "adb rx_sem fail");
-            g_usbd_adb.tx_sem = usb_osal_sem_create(0);
-            USB_ASSERT_MSG(g_usbd_adb.tx_sem, "adb tx_sem fail");
-            g_usbd_adb.tx_lock = usb_osal_mutex_create();
-            USB_ASSERT_MSG(g_usbd_adb.tx_lock, "adb tx_lock fail");
-
-            g_usbd_adb.rx_thread = usb_osal_thread_create("usbd_adb", ADB_DAEMON_THREAD_STACK,
-                                                          ADB_DAEMON_THREAD_PRIO, adb_rx_thread_entry, NULL);
-            USB_ASSERT_MSG(g_usbd_adb.rx_thread, "adb rx_thread fail");
-            usbd_adb_shell_init();
-            usbd_adb_sync_init();
             break;
         case USBD_EVENT_DEINIT:
             break;
@@ -451,6 +439,19 @@ struct usbd_interface *usbd_adb_init_intf(uint8_t busid, struct usbd_interface *
     intf->class_endpoint_handler = NULL;
     intf->vendor_handler = NULL;
     intf->notify_handler = adb_notify_handler;
+
+    g_usbd_adb.rx_sem = usb_osal_sem_create(0);
+    USB_ASSERT_MSG(g_usbd_adb.rx_sem, "adb rx_sem fail");
+    g_usbd_adb.tx_sem = usb_osal_sem_create(0);
+    USB_ASSERT_MSG(g_usbd_adb.tx_sem, "adb tx_sem fail");
+    g_usbd_adb.tx_lock = usb_osal_mutex_create();
+    USB_ASSERT_MSG(g_usbd_adb.tx_lock, "adb tx_lock fail");
+
+    g_usbd_adb.rx_thread = usb_osal_thread_create("usbd_adb", ADB_DAEMON_THREAD_STACK,
+                                                  ADB_DAEMON_THREAD_PRIO, adb_rx_thread_entry, NULL);
+    USB_ASSERT_MSG(g_usbd_adb.rx_thread, "adb rx_thread fail");
+    usbd_adb_shell_init();
+    usbd_adb_sync_init();
 
     return intf;
 }

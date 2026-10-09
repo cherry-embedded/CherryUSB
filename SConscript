@@ -149,7 +149,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('platform/rtthread/rt_usbd_adb_msh.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB_SYNC']):
         src += Glob('class/adb/usbd_adb_sync.c')
-        src += Glob('platform/rtthread/rt_usbd_adb_dfs.c')
+        src += Glob('platform/rtthread/rt_vfs_dfs.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TMC']):
         src += Glob('class/tmc/usbd_tmc.c')
         src += Glob('third_party/libscpi/src/error.c')

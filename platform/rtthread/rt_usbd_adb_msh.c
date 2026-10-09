@@ -107,6 +107,8 @@ void rt_usbd_adb_shell_init(void)
 static void adb_shell_on_open(uint32_t remoteid)
 {
     USB_LOG_INFO("adb shell open, remoteid:%u\r\n", (unsigned)remoteid);
+    finsh_set_device("adb-sh");
+    rt_console_set_device("adb-sh");
 }
 
 static void adb_shell_on_close(uint32_t remoteid)
@@ -139,18 +141,6 @@ void usbd_adb_shell_init(void)
     }
     rt_usbd_adb_shell_init();
 }
-
-static int adb_enter(int argc, char **argv)
-{
-    (void)argc;
-    (void)argv;
-
-    finsh_set_device("adb-sh");
-    rt_console_set_device("adb-sh");
-
-    return 0;
-}
-MSH_CMD_EXPORT(adb_enter, adb_enter);
 
 static int adb_exit(int argc, char **argv)
 {

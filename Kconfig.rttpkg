@@ -137,6 +137,14 @@ if PKG_USING_CHERRYUSB
             prompt "Enable usb adb device"
             default n
 
+        config PKG_CHERRYUSB_DEVICE_ADB_SYNC
+            bool
+            prompt "Enable usb adb sync service"
+            default n
+            select RT_USING_DFS
+            select RT_USING_DFS_ELMFAT
+            select DFS_USING_POSIX
+
         config PKG_CHERRYUSB_DEVICE_DFU
             bool
             prompt "Enable usb dfu device"
