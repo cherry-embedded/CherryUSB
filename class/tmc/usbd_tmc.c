@@ -12,22 +12,30 @@
 /* Describe EndPoints configuration */
 static struct usbd_endpoint tmc_ep_data[2];
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t tmc_read_buffer[512 + 64];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t tmc_write_buffer[2048];
+#ifndef CONFIG_USBDEV_TMC_MAX_BUFSIZE
+#define CONFIG_USBDEV_TMC_MAX_BUFSIZE 1024
+#endif
 
-#define SCPI_INPUT_BUFFER_LENGTH 512
-static char scpi_input_buffer[SCPI_INPUT_BUFFER_LENGTH];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t tmc_read_buffer[CONFIG_USBDEV_TMC_MAX_BUFSIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t tmc_write_buffer[CONFIG_USBDEV_TMC_MAX_BUFSIZE];
+
+static volatile uint32_t g_tmc_read_offset = 0;
+static volatile uint32_t g_tmc_read_total = 0;
+
+static scpi_t scpi_context;
+
+static char scpi_input_buffer[CONFIG_USBDEV_TMC_MAX_BUFSIZE];
 
 #define SCPI_ERROR_QUEUE_SIZE 4
 static scpi_error_t scpi_error_queue_data[SCPI_ERROR_QUEUE_SIZE];
-
-static scpi_t scpi_context;
 
 static size_t SCPI_Write(scpi_t *context, const char *data, size_t len)
 {
     (void)context;
 
     struct tmc_bulk_header *header = (struct tmc_bulk_header *)tmc_write_buffer;
+
+    USB_ASSERT_MSG((header->msg_specific.dev_dep_msg_in.transferSize + len) <= (CONFIG_USBDEV_TMC_MAX_BUFSIZE - sizeof(struct tmc_bulk_header)), "SCPI_Write: buffer overflow\r\n");
 
     memcpy(tmc_write_buffer + sizeof(struct tmc_bulk_header) + header->msg_specific.dev_dep_msg_in.transferSize, data, len);
     header->msg_specific.dev_dep_msg_in.transferSize += len;
@@ -143,7 +151,9 @@ void tmc_notify_handler(uint8_t busid, uint8_t event, void *arg)
         case USBD_EVENT_RESET:
             break;
         case USBD_EVENT_CONFIGURED:
-            usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+            g_tmc_read_offset = 0;
+            g_tmc_read_total = 0;
+            usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer + g_tmc_read_offset, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
             break;
 
         default:
@@ -153,28 +163,57 @@ void tmc_notify_handler(uint8_t busid, uint8_t event, void *arg)
 
 void tmc_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    struct tmc_bulk_header *header = (struct tmc_bulk_header *)tmc_read_buffer;
-    struct tmc_bulk_header *header2 = (struct tmc_bulk_header *)tmc_write_buffer;
+    struct tmc_bulk_header *out_header = (struct tmc_bulk_header *)tmc_read_buffer;
+    struct tmc_bulk_header *in_header = (struct tmc_bulk_header *)tmc_write_buffer;
 
-    switch (header->MsgID) {
+    g_tmc_read_offset += nbytes;
+
+    if (g_tmc_read_total == 0) {
+        USB_ASSERT_MSG(nbytes >= sizeof(struct tmc_bulk_header), "tmc header size error\r\n");
+
+        switch (out_header->MsgID) {
+            case TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
+                g_tmc_read_total = ((out_header->msg_specific.dev_dep_msg_out.transferSize + 3u) & ~3u) + sizeof(struct tmc_bulk_header);
+                break;
+            case TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
+                g_tmc_read_total = sizeof(struct tmc_bulk_header);
+                break;
+            default:
+                USB_LOG_WRN("Unhandled TMC MsgID 0x%02x\r\n", out_header->MsgID);
+                break;
+        }
+        USB_ASSERT_MSG(g_tmc_read_total <= CONFIG_USBDEV_TMC_MAX_BUFSIZE, "tmc read buffer overflow\r\n");
+    }
+
+    if (g_tmc_read_offset < g_tmc_read_total) {
+        usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer + g_tmc_read_offset, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+        return;
+    }
+
+    switch (out_header->MsgID) {
         case TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
-            header2->msg_specific.dev_dep_msg_in.transferSize = 0;
-            SCPI_Input(&scpi_context, (const char *)(tmc_read_buffer + sizeof(struct tmc_bulk_header)), header->msg_specific.dev_dep_msg_out.transferSize);
+            SCPI_Input(&scpi_context,
+                       (const char *)(tmc_read_buffer + sizeof(struct tmc_bulk_header)),
+                       g_tmc_read_total);
             break;
         case TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
-            header2->MsgID = TMC_MSGID_IN_DEV_DEP_MSG_IN;
-            header2->bTag = header->bTag;
-            header2->bTagInverse = header->bTagInverse;
-            header2->reserved = 0;
-            header2->msg_specific.dev_dep_msg_in.bmTransferAttributes = TMC_BULK_HEADER_TRANSFER_ATTR_TERMCHAR;
 
-            usbd_ep_start_write(busid, tmc_ep_data[TMC_IN_EP_IDX].ep_addr, tmc_write_buffer, sizeof(struct tmc_bulk_header) + header2->msg_specific.dev_dep_msg_in.transferSize);
+            in_header->MsgID = TMC_MSGID_IN_DEV_DEP_MSG_IN;
+            in_header->bTag = out_header->bTag;
+            in_header->bTagInverse = out_header->bTagInverse;
+            in_header->reserved = 0;
+            in_header->msg_specific.dev_dep_msg_in.bmTransferAttributes = TMC_BULK_HEADER_TRANSFER_ATTR_TERMCHAR;
+
+            usbd_ep_start_write(busid, tmc_ep_data[TMC_IN_EP_IDX].ep_addr, tmc_write_buffer, sizeof(struct tmc_bulk_header) + in_header->msg_specific.dev_dep_msg_in.transferSize);
             break;
-
         default:
+            USB_LOG_WRN("Unhandled TMC MsgID 0x%02x\r\n", out_header->MsgID);
             break;
     }
-    usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
+
+    g_tmc_read_offset = 0;
+    g_tmc_read_total = 0;
+    usbd_ep_start_read(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr, tmc_read_buffer + g_tmc_read_offset, usbd_get_ep_mps(busid, tmc_ep_data[TMC_OUT_EP_IDX].ep_addr));
 }
 
 void tmc_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
@@ -212,7 +251,7 @@ struct usbd_interface *usbd_tmc_init_intf(uint8_t busid,
               &scpi_interface,
               scpi_units_def,
               idn[0], idn[1], idn[2], idn[3],
-              scpi_input_buffer, SCPI_INPUT_BUFFER_LENGTH,
+              scpi_input_buffer, CONFIG_USBDEV_TMC_MAX_BUFSIZE,
               scpi_error_queue_data, SCPI_ERROR_QUEUE_SIZE);
 
     return intf;

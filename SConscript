@@ -147,6 +147,21 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
     if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB']):
         src += Glob('class/adb/usbd_adb.c')
         src += Glob('platform/rtthread/rt_usbd_adb_msh.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_ADB_SYNC']):
+        src += Glob('class/adb/usbd_adb_sync.c')
+        src += Glob('platform/rtthread/rt_usbd_adb_dfs.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TMC']):
+        src += Glob('class/tmc/usbd_tmc.c')
+        src += Glob('third_party/libscpi/src/error.c')
+        src += Glob('third_party/libscpi/src/expression.c')
+        src += Glob('third_party/libscpi/src/fifo.c')
+        src += Glob('third_party/libscpi/src/ieee488.c')
+        src += Glob('third_party/libscpi/src/lexer.c')
+        src += Glob('third_party/libscpi/src/minimal.c')
+        src += Glob('third_party/libscpi/src/parser.c')
+        src += Glob('third_party/libscpi/src/units.c')
+        src += Glob('third_party/libscpi/src/utils.c')
+        path += [cwd + '/third_party/libscpi/inc']
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV']):
         src += Glob('platform/rtthread/rt_usbd_serial.c')
