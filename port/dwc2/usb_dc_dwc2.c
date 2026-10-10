@@ -625,10 +625,13 @@ int usb_dc_deinit(uint8_t busid)
     USB_OTG_GLB->GAHBCFG &= ~USB_OTG_GAHBCFG_GINT;
     USB_OTG_DEV->DCTL |= USB_OTG_DCTL_SDIS;
 
-    /* Clear Pending interrupt */
     for (uint8_t i = 0U; i < 15U; i++) {
+        USB_OTG_INEP(i)->DIEPCTL = 0;
+        USB_OTG_OUTEP(i)->DOEPCTL = USB_OTG_DOEPCTL_SNAK;
         USB_OTG_INEP(i)->DIEPINT = 0xFB7FU;
         USB_OTG_OUTEP(i)->DOEPINT = 0xFB7FU;
+        USB_OTG_INEP(i)->DIEPTSIZ = 0U;
+        USB_OTG_OUTEP(i)->DOEPTSIZ = 0U;
     }
 
     /* Clear interrupt masks */
@@ -782,7 +785,7 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep)
             do {
                 if (++count > 50000) {
                     break;
-               }
+                }
             } while ((USB_OTG_GLB->GINTSTS & USB_OTG_GINTSTS_BOUTNAKEFF) != USB_OTG_GINTSTS_BOUTNAKEFF);
 
             USB_OTG_OUTEP(ep_idx)->DOEPCTL |= USB_OTG_DOEPCTL_SNAK;
@@ -1173,25 +1176,12 @@ process_setup:
             dwc2_flush_rxfifo(busid);
 
             for (uint8_t i = 0U; i < (g_dwc2_udc[busid].hw_params.num_dev_ep + 1); i++) {
-                if (i == 0U) {
-                    USB_OTG_INEP(i)->DIEPCTL = USB_OTG_DIEPCTL_SNAK;
-                    USB_OTG_OUTEP(i)->DOEPCTL = USB_OTG_DOEPCTL_SNAK;
-                } else {
-                    if (USB_OTG_INEP(i)->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
-                        USB_OTG_INEP(i)->DIEPCTL = (USB_OTG_DIEPCTL_EPDIS | USB_OTG_DIEPCTL_SNAK);
-                    } else {
-                        USB_OTG_INEP(i)->DIEPCTL = 0;
-                    }
-                    if (USB_OTG_OUTEP(i)->DOEPCTL & USB_OTG_DOEPCTL_EPENA) {
-                        USB_OTG_OUTEP(i)->DOEPCTL = (USB_OTG_DOEPCTL_EPDIS | USB_OTG_DOEPCTL_SNAK);
-                    } else {
-                        USB_OTG_OUTEP(i)->DOEPCTL = 0;
-                    }
-                }
+                USB_OTG_INEP(i)->DIEPCTL = 0;
+                USB_OTG_OUTEP(i)->DOEPCTL = USB_OTG_DOEPCTL_SNAK;
+                USB_OTG_INEP(i)->DIEPINT = 0xFB7FU;
+                USB_OTG_OUTEP(i)->DOEPINT = 0xFB7FU;
                 USB_OTG_INEP(i)->DIEPTSIZ = 0U;
-                USB_OTG_INEP(i)->DIEPINT = 0xFBFFU;
                 USB_OTG_OUTEP(i)->DOEPTSIZ = 0U;
-                USB_OTG_OUTEP(i)->DOEPINT = 0xFBFFU;
             }
 
             USB_OTG_DEV->DAINTMSK |= 0x10001U;
