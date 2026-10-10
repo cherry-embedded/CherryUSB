@@ -117,7 +117,7 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
             LIBS = ['libpusb2_dc_a64.a']
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/pusb2']
-            LIBS = ['libpusb2_dc_a32_softfp_neon.a']
+            LIBS = ['libpusb2_dc_a32_softfp_crypto-neon-fp-armv8.a']
     if GetDepend(['PKG_CHERRYUSB_DEVICE_NRF5X']):
         src += Glob('port/nrf5x/usb_dc_nrf5x.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_RP2040']):
@@ -236,12 +236,6 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
         path += [cwd + '/port/chipidea']
         src += Glob('port/ehci/usb_hc_ehci.c')
         src += Glob('port/nxp/usb_glue_mcx.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_NUC980']):
-        src += Glob('port/ehci/usb_hc_ehci.c')
-        src += Glob('port/ehci/usb_glue_nuc980.c')
-    if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_MA35D0']):
-        src += Glob('port/ehci/usb_hc_ehci.c')
-        src += Glob('port/ehci/usb_glue_ma35d0.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_EHCI_CUSTOM']):
         src += Glob('port/ehci/usb_hc_ehci.c')
     if GetDepend(['PKG_CHERRYUSB_HOST_DWC2_ST']):
@@ -296,7 +290,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
             LIBS = ['libpusb2_hc_a64.a']
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/pusb2']
-            LIBS = ['libpusb2_hc_a32_softfp_neon.a']
+            LIBS = ['libpusb2_hc_a32_softfp_crypto-neon-fp-armv8.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_XHCI']):
         path += [cwd + '/port/xhci/phytium/rt-thread']
@@ -307,7 +301,7 @@ if GetDepend(['PKG_CHERRYUSB_HOST']):
             LIBS = ['libxhci_a64.a']
         if GetDepend(['ARCH_ARM_CORTEX_A']):
             LIBPATH = [cwd + '/port/xhci/phytium']
-            LIBS = ['libxhci_a32_softfp_neon.a']
+            LIBS = ['libxhci_a32_softfp_crypto-neon-fp-armv8.a']
 
     if GetDepend(['PKG_CHERRYUSB_HOST_RP2040']):
         path += [cwd + '/port/rp2040']

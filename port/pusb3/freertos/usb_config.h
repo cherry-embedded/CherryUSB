@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "sdkconfig.h"
 #include "fparameters.h"
 
@@ -20,6 +21,9 @@ void usb_sys_mem_free(void *ptr);
 void *usb_sys_malloc_align(size_t align, size_t size);
 unsigned long usb_hc_get_register_base(uint32_t id);
 unsigned long usb_dc_get_register_base(uint32_t id);
+unsigned long usb_otg_get_register_base(uint32_t id);
+void usb_dc_disable_interrupt(uint32_t id);
+void usb_dc_enable_interrupt(uint32_t id);
 void usb_hc_disable_interrupt(uint32_t id);
 void usb_hc_enable_interrupt(uint32_t id);
 
@@ -61,9 +65,50 @@ void usb_hc_enable_interrupt(uint32_t id);
 
 /* ================= USB Device Stack Configuration ================ */
 
+/* Ep0 in and out transfer buffer */
+#ifndef CONFIG_USBDEV_REQUEST_BUFFER_LEN
+#define CONFIG_USBDEV_REQUEST_BUFFER_LEN 512
+#endif
+
+#ifndef CONFIG_USBDEV_EP0_PRIO
+#define CONFIG_USBDEV_EP0_PRIO 4
+#endif
+
+#ifndef CONFIG_USBDEV_EP0_STACKSIZE
+#define CONFIG_USBDEV_EP0_STACKSIZE 2048
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_MAX_LUN
+#define CONFIG_USBDEV_MSC_MAX_LUN 1
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_MAX_BUFSIZE
+#define CONFIG_USBDEV_MSC_MAX_BUFSIZE 8192
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_MANUFACTURER_STRING
+#define CONFIG_USBDEV_MSC_MANUFACTURER_STRING ""
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_PRODUCT_STRING
+#define CONFIG_USBDEV_MSC_PRODUCT_STRING ""
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_VERSION_STRING
+#define CONFIG_USBDEV_MSC_VERSION_STRING "0.01"
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_PRIO
+#define CONFIG_USBDEV_MSC_PRIO 4
+#endif
+
+#ifndef CONFIG_USBDEV_MSC_STACKSIZE
+#define CONFIG_USBDEV_MSC_STACKSIZE 2048
+#endif
+
 /* ================ USB HOST Stack Configuration ================== */
 
-#define CONFIG_USBHOST_MAX_RHPORTS          8
+#define CONFIG_USBHOST_MAX_RHPORTS          2
 #define CONFIG_USBHOST_MAX_EXTHUBS          4
 #define CONFIG_USBHOST_MAX_EHPORTS          8
 #define CONFIG_USBHOST_MAX_INTERFACES       8
@@ -83,20 +128,6 @@ void usb_hc_enable_interrupt(uint32_t id);
 #endif
 #ifndef CONFIG_USBHOST_PSC_STACKSIZE
 #define CONFIG_USBHOST_PSC_STACKSIZE 8192
-#endif
-
-/* XHCI deferred interrupt thread priority (0 = highest, CherryUSB
- * convention; must match hub priority PSC_PRIO) */
-#ifndef CONFIG_USB_XHCI_IRQ_PRIO
-#define CONFIG_USB_XHCI_IRQ_PRIO 0
-#endif
-
-/* GIC interrupt priority: must be >= configMAX_API_CALL_INTERRUPT_PRIORITY
- * so xSemaphoreGiveFromISR from a hard ISR is well-defined */
-#define USB_XHCI_GIC_IRQ_PRIO 13U
-#ifdef configMAX_API_CALL_INTERRUPT_PRIORITY
-_Static_assert(USB_XHCI_GIC_IRQ_PRIO >= configMAX_API_CALL_INTERRUPT_PRIORITY,
-               "XHCI GIC irq priority must be >= configMAX_API_CALL_INTERRUPT_PRIORITY");
 #endif
 
 #ifndef CONFIG_USBHOST_MSOS_VENDOR_CODE
@@ -122,43 +153,46 @@ _Static_assert(USB_XHCI_GIC_IRQ_PRIO >= configMAX_API_CALL_INTERRUPT_PRIORITY,
 
 /* ================ USB Device Port Configuration ================*/
 
+#ifndef CONFIG_USBDEV_MAX_BUS
+#define CONFIG_USBDEV_MAX_BUS 1 /* for now, bus num must be 1 except hpm ip */
+#endif
+
+#ifndef CONFIG_USBDEV_EP_NUM
+#define CONFIG_USBDEV_EP_NUM 8
+#endif
+
+/* When your chip hardware supports high-speed and wants to initialize it in high-speed mode, the relevant IP will configure the internal or external high-speed PHY according to CONFIG_USB_HS. */
+#ifndef CONFIG_USB_HS
+#define CONFIG_USB_HS
+#endif
+
 /* ================ USB Host Port Configuration ==================*/
 #ifndef CONFIG_USBHOST_MAX_BUS
-#define CONFIG_USBHOST_MAX_BUS 4
+#define CONFIG_USBHOST_MAX_BUS 7
+#endif
+
+#ifndef CONFIG_USBHOST_OTG_BUS_ID
+#define CONFIG_USBHOST_OTG_BUS_ID 0
 #endif
 
 #ifndef CONFIG_USBHOST_PIPE_NUM
 #define CONFIG_USBHOST_PIPE_NUM 10
 #endif
 
+/* XHCI deferred interrupt thread priority (0 = highest, CherryUSB
+ * convention; must match hub priority PSC_PRIO) */
+#ifndef CONFIG_USB_XHCI_IRQ_PRIO
+#define CONFIG_USB_XHCI_IRQ_PRIO 0
+#endif
+
+/* GIC interrupt priority: must be >= configMAX_API_CALL_INTERRUPT_PRIORITY
+ * so xSemaphoreGiveFromISR from a hard ISR is well-defined */
+#define USB_XHCI_GIC_IRQ_PRIO 13U
+#ifdef configMAX_API_CALL_INTERRUPT_PRIORITY
+_Static_assert(USB_XHCI_GIC_IRQ_PRIO >= configMAX_API_CALL_INTERRUPT_PRIORITY,
+               "XHCI GIC irq priority must be >= configMAX_API_CALL_INTERRUPT_PRIORITY");
+#endif
+
 /* ================ USB Dcache Configuration ==================*/
-
-/* ================ USB Device Framework Configuration ============*/
-
-#ifndef USB_HAVE_BUSDMA
-#define USB_HAVE_BUSDMA 1
-#endif
-#define USB_HAVE_PER_BUS_PROCESS 1
-#ifndef USB_HAVE_FIXED_IFACE
-#define USB_HAVE_FIXED_IFACE 1
-#endif
-#ifndef USB_HAVE_FIXED_ENDPOINT
-#define USB_HAVE_FIXED_ENDPOINT 1
-#endif
-#ifndef USB_HAVE_MALLOC_WAITOK
-#define USB_HAVE_MALLOC_WAITOK 0
-#endif
-#ifndef USB_HAVE_UGEN
-#define USB_HAVE_UGEN 0
-#endif
-#ifndef USB_HAVE_PF
-#define USB_HAVE_PF 0
-#endif
-#ifndef USB_HAVE_POWERD
-#define USB_HAVE_POWERD 0
-#endif
-#ifndef USB_HAVE_TT_SUPPORT
-#define USB_HAVE_TT_SUPPORT 0
-#endif
 
 #endif

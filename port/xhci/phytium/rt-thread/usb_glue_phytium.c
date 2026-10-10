@@ -20,8 +20,7 @@ void *xhci_mem_malloc(size_t align, size_t size)
 {
     void *result = rt_malloc_align(size, align);
 
-    if (result)
-    {
+    if (result) {
         memset(result, 0U, size);
     }
 
@@ -30,20 +29,16 @@ void *xhci_mem_malloc(size_t align, size_t size)
 
 void xhci_mem_free(void *ptr)
 {
-    if (NULL != ptr)
-    {
+    if (NULL != ptr) {
         rt_free(ptr);
     }
 }
 
 void xhci_dcache_sync(void *ptr, size_t len, uint32_t flags)
 {
-    if (flags & XHCI_DCACHE_FLUSH)
-    {
+    if (flags & XHCI_DCACHE_FLUSH) {
         rt_hw_cpu_dcache_ops(RT_HW_CACHE_FLUSH, ptr, len);
-    }
-    else if (flags & XHCI_DCACHE_INVALIDATE)
-    {
+    } else if (flags & XHCI_DCACHE_INVALIDATE) {
         rt_hw_cpu_dcache_ops(RT_HW_CACHE_INVALIDATE, ptr, len);
     }
 }

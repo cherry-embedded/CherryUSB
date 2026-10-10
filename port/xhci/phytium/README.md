@@ -7,8 +7,8 @@
 
 - FreeRTOS
 
-- - 1. [XHCI 平台控制器使用鼠标/键盘/U盘功能](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/xhci_platform/README.md)
-- - 2. [XHCI PCIe控制器使用鼠标/键盘/U盘功能](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/xhci_pcie/README.md)
+- - 1. [XHCI 平台控制器使用鼠标/键盘/U盘功能](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/usb_host/README.md)
+- - 2. [XHCI PCIe控制器使用鼠标/键盘/U盘功能](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/usb_host/README.md)
 - - 3. [LVGL 中使用 XHCI 平台控制器连接的鼠标/键盘/U盘](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/blob/master/example/peripheral/media/lvgl_indev/README.md)
 
 ---------------------------------------------
@@ -42,8 +42,8 @@
 
 - FreeRTOS
 
-  - 1. [XHCI platform controller for mouse/keyboard/USB drive functions](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/xhci_platform/README.md)
-  - 2. [XHCI PCIe controller for mouse/keyboard/USB drive functions](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/xhci_pcie/README.md)
+  - 1. [XHCI platform controller for mouse/keyboard/USB drive functions](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/usb_host/README.md)
+  - 2. [XHCI PCIe controller for mouse/keyboard/USB drive functions](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/tree/master/example/peripheral/usb/usb_host/README.md)
   - 3. [Using XHCI platform controller-connected mouse/keyboard/USB drive in LVGL](https://gitee.com/phytium_embedded/phytium-free-rtos-sdk/blob/master/example/peripheral/media/lvgl_indev/README.md)
 
 ---------------------------------------------

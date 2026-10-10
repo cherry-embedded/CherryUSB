@@ -1,11 +1,11 @@
 /*
- * Copyright : (C) 2024 Phytium Information Technology, Inc.
+ * Copyright : (C) 2024 Phytium Information Technology, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Modify History:
- *  Ver   Who        Date         Changes
- * ----- ------     --------    --------------------------------------
+ * Modify History:
+ *  Ver   Who        Date         Changes
+ * -----  ------     --------    --------------------------------------
  * 1.0   zhugengyu  2024/6/26 first commit
  */
 
@@ -19,123 +19,89 @@
 #include "fcpu_info.h"
 #include "fdebug.h"
 #include "fcache.h"
-#include "fmemory_pool.h"
 
 #include "usbd_core.h"
 
-/************************** Constant Definitions *****************************/
-#define USB_MEMP_TOTAL_SIZE     SZ_1M
-
-/**************************** Type Definitions *******************************/
+/************************** Function Declarations ***************************/
 void USBD_IRQHandler(uint8_t busid);
 
-/************************** Variable Definitions *****************************/
-static FMemp memp;
-static u8 memp_buf[USB_MEMP_TOTAL_SIZE] __attribute__((aligned(8))) = {0};
+extern void usb_sys_mem_init(void);
+extern void usb_sys_mem_deinit(void);
+extern void usb_sys_mem_inc_ref(void);
+extern u32 usb_sys_mem_dec_ref(void);
+extern u8 usb_otg_is_active(void);
 
-void usb_sys_mem_init(void)
-{
-    if (FT_COMPONENT_IS_READY != memp.is_ready)
-    {
-        USB_ASSERT(FT_SUCCESS == FMempInit(&memp, &memp_buf[0], &memp_buf[0] + USB_MEMP_TOTAL_SIZE));
-    }
-}
-
-void usb_sys_mem_deinit(void)
-{
-    if (FT_COMPONENT_IS_READY == memp.is_ready)
-    {
-        FMempDeinit(&memp);
-    }
-}
-
-void *usb_sys_malloc_align(size_t align, size_t size)
-{
-    void *result = FMempMallocAlign(&memp, size, align);
-
-    if (result)
-    {
-        memset(result, 0U, size);
-    }
-
-    return result;
-}
-
-void *usb_sys_mem_malloc(size_t size)
-{
-    return usb_sys_malloc_align(sizeof(void *), size);
-}
-
-void usb_sys_mem_free(void *ptr)
-{
-    if (NULL != ptr)
-    {
-        FMempFree(&memp, ptr);
-    }
-}
-
-void usb_assert(const char *filename, int linenum)
-{
-    FAssert(filename, linenum, 0xff);
-}
+/************************** Function Implementations *************************/
 
 static void usb_dc_pusb2_interrupt_handler(s32 vector, void *param)
 {
+    (void)param;
+    FASSERT(vector == FUSB2_0_VHUB_IRQ_NUM);
     USBD_IRQHandler(CONFIG_USB_PUSB2_BUS_ID);
 }
 
 static void usb_dc_setup_pusb2_interrupt(u32 id)
 {
     u32 cpu_id;
-    USB_ASSERT(id == FUSB2_ID_VHUB_0);
-    u32 irq_num = FUSB2_0_VHUB_IRQ_NUM;
+    FASSERT(id == CONFIG_USB_PUSB2_BUS_ID);
     u32 irq_priority = 13U;
 
     GetCpuId(&cpu_id);
-    InterruptSetTargetCpus(irq_num, cpu_id);
+    InterruptSetTargetCpus(FUSB2_0_VHUB_IRQ_NUM, cpu_id);
 
-    InterruptSetPriority(irq_num, irq_priority);
+    InterruptSetPriority(FUSB2_0_VHUB_IRQ_NUM, irq_priority);
 
     /* register intr callback */
-    InterruptInstall(irq_num,
+    InterruptInstall(FUSB2_0_VHUB_IRQ_NUM,
                      usb_dc_pusb2_interrupt_handler,
                      NULL,
                      NULL);
 
     /* enable irq */
-    InterruptUmask(irq_num);
+    InterruptUmask(FUSB2_0_VHUB_IRQ_NUM);
 }
 
 static void usb_dc_revoke_pusb2_interrupt(u32 id)
 {
-    USB_ASSERT(id == FUSB2_ID_VHUB_0);
-    u32 irq_num = FUSB2_0_VHUB_IRQ_NUM;
+    FASSERT(id == CONFIG_USB_PUSB2_BUS_ID);
 
     /* disable irq */
-    InterruptMask(irq_num);
-}
-
-extern int vApplicationInIrq(void);
-int xPortIsInsideInterrupt(void)
-{
-    return vApplicationInIrq();
+    InterruptMask(FUSB2_0_VHUB_IRQ_NUM);
 }
 
 unsigned long usb_dc_get_register_base(uint32_t id)
 {
-    USB_ASSERT(id == FUSB2_ID_VHUB_0);
+    FASSERT(id == CONFIG_USB_PUSB2_BUS_ID);
     return FUSB2_0_VHUB_BASE_ADDR;
 }
 
 /* implement cherryusb weak functions */
-void usb_dc_low_level_init()
+void usb_dc_low_level_init(void)
 {
+    /* Initialize shared memory pool if not already done */
     usb_sys_mem_init();
+    usb_sys_mem_inc_ref();
+
+    /* In OTG mode, the OTG interrupt handler is already installed by usb_otg_init.
+     * Skip installing DC-specific handler to avoid conflicts. */
+    if (usb_otg_is_active()) {
+        return;
+    }
+
     usb_dc_setup_pusb2_interrupt(CONFIG_USB_PUSB2_BUS_ID);
 }
 
 void usb_dc_low_level_deinit(void)
 {
+    /* Release memory pool if last user */
+    if (usb_sys_mem_dec_ref()) {
+        usb_sys_mem_deinit();
+    }
+
+    /* In OTG mode, do not revoke interrupt - OTG handles it */
+    if (usb_otg_is_active()) {
+        return;
+    }
+
     usb_dc_revoke_pusb2_interrupt(CONFIG_USB_PUSB2_BUS_ID);
-    usb_sys_mem_deinit();
 }

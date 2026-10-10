@@ -87,8 +87,3 @@ void *usb_sys_malloc_align(size_t align, size_t size)
 
     return buf;
 }
-
-int usbd_set_remote_wakeup(uint8_t busid)
-{
-    return -1;
-}
