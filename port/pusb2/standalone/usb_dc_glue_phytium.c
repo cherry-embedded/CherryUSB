@@ -19,32 +19,31 @@
 #include "fdebug.h"
 #include "fcache.h"
 #include "fmemory_pool.h"
+#include "fsleep.h"
 
 #include "usbd_core.h"
 
 /************************** Constant Definitions *****************************/
-#define USB_MEMP_TOTAL_SIZE     SZ_1M
+#define USB_MEMP_TOTAL_SIZE SZ_1M
 
 /**************************** Type Definitions *******************************/
 void USBD_IRQHandler(uint8_t busid);
 
 /************************** Variable Definitions *****************************/
 static FMemp memp;
-static u8 memp_buf[USB_MEMP_TOTAL_SIZE] __attribute__((aligned(8))) = {0};
+static u8 memp_buf[USB_MEMP_TOTAL_SIZE] __attribute__((aligned(8))) = { 0 };
 
 static void usb_sys_mem_init(void)
 {
-    if (FT_COMPONENT_IS_READY != memp.is_ready)
-    {
+    if (FT_COMPONENT_IS_READY != memp.is_ready) {
         USB_ASSERT(FT_SUCCESS == FMempInit(&memp, &memp_buf[0], &memp_buf[0] + USB_MEMP_TOTAL_SIZE));
     }
 }
 
 static void usb_sys_mem_deinit(void)
 {
-    if (FT_COMPONENT_IS_READY == memp.is_ready)
-    {
-        FMempRemove(&memp);
+    if (FT_COMPONENT_IS_READY == memp.is_ready) {
+        FMempDeinit(&memp);
     }
 }
 
@@ -52,8 +51,7 @@ void *usb_sys_malloc_align(size_t align, size_t size)
 {
     void *result = FMempMallocAlign(&memp, size, align);
 
-    if (result)
-    {
+    if (result) {
         memset(result, 0U, size);
     }
 
@@ -67,8 +65,7 @@ void *usb_sys_mem_malloc(size_t size)
 
 void usb_sys_mem_free(void *ptr)
 {
-    if (NULL != ptr)
-    {
+    if (NULL != ptr) {
         FMempFree(&memp, ptr);
     }
 }
@@ -133,12 +130,16 @@ void usb_dc_low_level_deinit(void)
     usb_dc_revoke_pusb2_interrupt(CONFIG_USB_PUSB2_BUS_ID);
 }
 
-size_t usb_osal_enter_critical_section(void) 
+size_t usb_osal_enter_critical_section(void)
 {
     return 0;
 }
 
-void usb_osal_leave_critical_section(size_t flag) 
+void usb_osal_leave_critical_section(size_t flag)
 {
-    
+}
+
+void usb_osal_msleep(uint32_t delay)
+{
+    fsleep_millisec(delay);
 }

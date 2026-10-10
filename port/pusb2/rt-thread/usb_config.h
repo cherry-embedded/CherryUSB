@@ -12,7 +12,6 @@
 #define CHERRYUSB_CONFIG_H
 
 #include "rtconfig.h"
-#include <rtthread.h> 
 
 /* ================ USB common Configuration ================ */
 
@@ -22,9 +21,9 @@ void *usb_sys_mem_malloc(size_t size);
 void usb_sys_mem_free(void *ptr);
 void *usb_sys_malloc_align(size_t align, size_t size);
 
-#define usb_malloc(size)        usb_sys_mem_malloc(size)
-#define usb_free(ptr)           usb_sys_mem_free(ptr)
-#define usb_align(align, size)  usb_sys_malloc_align(align, size)
+#define usb_malloc(size)       usb_sys_mem_malloc(size)
+#define usb_free(ptr)          usb_sys_mem_free(ptr)
+#define usb_align(align, size) usb_sys_malloc_align(align, size)
 
 unsigned long usb_hc_get_register_base(uint32_t id);
 unsigned long usb_dc_get_register_base(uint32_t id);
@@ -260,7 +259,7 @@ unsigned long usb_dc_get_register_base(uint32_t id);
 #define CONFIG_USB_XHCI_HCCR_OFFSET (0x0)
 
 /* ---------------- PUSB2 Configuration ---------------- */
-#define CONFIG_USB_PUSB2_BUS_NUM  3U
-#define CONFIG_USB_PUSB2_BUS_ID   0U
+#define CONFIG_USB_PUSB2_BUS_NUM 3U
+#define CONFIG_USB_PUSB2_BUS_ID  0U
 
 #endif

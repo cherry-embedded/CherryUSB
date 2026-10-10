@@ -28,7 +28,7 @@ void usb_hc_setup_xhci_interrupt(uint32_t id)
 {
     uint32_t irq_num = (id == FUSB3_ID_0) ? FUSB3_0_IRQ_NUM : FUSB3_1_IRQ_NUM;
     rt_hw_interrupt_set_priority(irq_num, 0xd0);
-    rt_hw_interrupt_install(irq_num, usb_hc_xhci_interrupt_handler, 
+    rt_hw_interrupt_install(irq_num, usb_hc_xhci_interrupt_handler,
                             NULL, "xhci");
     rt_hw_interrupt_umask(irq_num);
 }

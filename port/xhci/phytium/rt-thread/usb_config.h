@@ -283,7 +283,7 @@ unsigned long usb_hc_get_register_base(uint32_t id);
 #define CONFIG_USB_XHCI_HCCR_OFFSET (0x0)
 
 #ifndef CONFIG_USB_XHCI_ENABLE_SOFT_ISR
-#define CONFIG_USB_XHCI_ENABLE_SOFT_ISR   0
+#define CONFIG_USB_XHCI_ENABLE_SOFT_ISR 0
 #endif
 
 #endif

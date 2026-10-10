@@ -135,6 +135,7 @@ jobs:
         run: |
           cd ~
           git clone https://github.com/CherryUSB/wch-support-cherryusb.git --recursive
+
       - name: Download RISC-V toolchain
         run: |
           cd ~
@@ -177,3 +178,66 @@ jobs:
           scons --board=sf32lb52-lcd_n16r8 -j8
           cd ~/SiFli-SDK/example/cherryusb/host/msc_host/project
           scons --board=sf32lb52-lcd_n16r8 -j8
+
+  build_phytium:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y make
+
+      - name: Download phytium-free-rtos-sdk
+        run: |
+          cd ~
+          git config --global http.version HTTP/1.1
+          git config --global http.postBuffer 524288000
+          git clone https://gitee.com/phytium_embedded/phytium-free-rtos-sdk.git
+          cd ~/phytium-free-rtos-sdk
+          git checkout 1e6f4ca501d9cd92a99204193939e45df6b8502d
+          ./install.py
+
+      - name: Download toolchain
+        run: |
+          cd ~
+          git clone https://github.com/CherryUSB/phytium_env_ubuntu_x64
+
+      - name: Build phytium demo
+        run: |
+          rm -rf ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/class
+          rm -rf ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/core
+          rm -rf ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/common
+          rm -rf ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/osal
+          rm -rf ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/port
+          rm -rf ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/demo
+          cp -r ../CherryUSB/class ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/class
+          cp -r ../CherryUSB/core ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/core
+          cp -r ../CherryUSB/common ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/common
+          cp -r ../CherryUSB/osal ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/osal
+          cp -r ../CherryUSB/port ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/port
+          cp -r ../CherryUSB/demo ~/phytium-free-rtos-sdk/standalone/third-party/cherryusb/demo
+          cd ~/phytium_env_ubuntu_x64
+          ./setup_dev.py
+          source /etc/profile.d/phytium_dev.sh
+          mkdir -p ~/output
+          cd ~/phytium-free-rtos-sdk/example/peripheral/usb/usb_device
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch64_demo_pusb2_lib
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch32_demo_pusb2_hardfp_lib
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch32_demo_pusb2_softfp_lib
+          make clean image USR_BOOT_DIR=~/output
+          cd ~/phytium-free-rtos-sdk/example/peripheral/usb/usb_host
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch64_demo_xhci
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch32_demo_xhci_hardfp
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch32_demo_xhci_softfp
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch64_demo_pusb2
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch32_demo_pusb2_hardfp
+          make clean image USR_BOOT_DIR=~/output
+          make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch32_demo_pusb2_softfp
+          make clean image USR_BOOT_DIR=~/output
