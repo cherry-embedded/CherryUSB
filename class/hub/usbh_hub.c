@@ -753,7 +753,6 @@ int usbh_hub_deinitialize(struct usbh_bus *bus)
     usb_osal_mq_send(bus->hub_mq, (uintptr_t)NULL);
     usb_osal_sem_take(bus->hub_sem, USB_OSAL_WAITING_FOREVER);
     usb_osal_sem_delete(bus->hub_sem);
-    usb_osal_mq_delete(bus->hub_mq);
     bus->hub_mq = NULL;
     bus->hub_sem = NULL;
 
