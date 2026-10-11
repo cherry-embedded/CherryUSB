@@ -27,6 +27,7 @@ volatile uint32_t g_cdc_ecm_tx_data_length = 0;
 
 static volatile uint8_t g_current_net_status = 0;
 static volatile uint8_t g_cmd_intf = 0;
+static volatile bool g_cdc_ecm_opened = false;
 
 static uint32_t g_connect_speed_table[2] = { CDC_ECM_CONNECT_SPEED_UPSTREAM,
                                              CDC_ECM_CONNECT_SPEED_DOWNSTREAM };
@@ -122,12 +123,23 @@ void cdc_ecm_notify_handler(uint8_t busid, uint8_t event, void *arg)
             g_current_net_status = 0;
             g_cdc_ecm_rx_data_length = 0;
             g_cdc_ecm_tx_data_length = 0;
+            g_cdc_ecm_opened = false;
             break;
         case USBD_EVENT_CONFIGURED:
-#ifdef CONFIG_USBDEV_CDC_ECM_USING_LWIP
-            usbd_cdc_ecm_start_read(g_cdc_ecm_rx_buffer, CONFIG_CDC_ECM_ETH_MAX_SEGSZE);
-#endif
             break;
+        case USBD_EVENT_SET_INTERFACE: {
+            struct usb_interface_descriptor *intf = (struct usb_interface_descriptor *)arg;
+            if (intf->bAlternateSetting) {
+                g_cdc_ecm_opened = true;
+#ifdef CONFIG_USBDEV_CDC_ECM_USING_LWIP
+                usbd_cdc_ecm_start_read(g_cdc_ecm_rx_buffer, CONFIG_CDC_ECM_ETH_MAX_SEGSZE);
+#endif
+            } else {
+                g_cdc_ecm_rx_data_length = 0;
+                g_cdc_ecm_tx_data_length = 0;
+                g_cdc_ecm_opened = false;
+            }
+        } break;
 
         default:
             break;
@@ -171,6 +183,8 @@ void cdc_ecm_int_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 int usbd_cdc_ecm_start_write(uint8_t *buf, uint32_t len)
 {
+    int ret;
+
     if (!usb_device_is_configured(0)) {
         return -USB_ERR_NOTCONN;
     }
@@ -179,15 +193,28 @@ int usbd_cdc_ecm_start_write(uint8_t *buf, uint32_t len)
         return -USB_ERR_BUSY;
     }
 
+    if (!g_cdc_ecm_opened) {
+        return -USB_ERR_NOTCONN;
+    }
+
     g_cdc_ecm_tx_data_length = len;
 
     USB_LOG_DBG("txlen:%d\r\n", g_cdc_ecm_tx_data_length);
-    return usbd_ep_start_write(0, cdc_ecm_ep_data[CDC_ECM_IN_EP_IDX].ep_addr, buf, len);
+    ret = usbd_ep_start_write(0, cdc_ecm_ep_data[CDC_ECM_IN_EP_IDX].ep_addr, buf, len);
+    if (ret < 0) {
+        g_cdc_ecm_tx_data_length = 0;
+        return ret;
+    }
+    return 0;
 }
 
 int usbd_cdc_ecm_start_read(uint8_t *buf, uint32_t len)
 {
     if (!usb_device_is_configured(0)) {
+        return -USB_ERR_NOTCONN;
+    }
+
+    if (!g_cdc_ecm_opened) {
         return -USB_ERR_NOTCONN;
     }
 
