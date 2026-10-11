@@ -295,13 +295,22 @@ static inline void dwc2_get_hwparams(uint32_t reg_base, struct dwc2_hw_params *h
     unsigned int width;
     uint32_t snpsid, hwcfg1, hwcfg2, hwcfg3, hwcfg4;
 
+#if defined(CONFIG_USB_DWC2_GD)
+    extern void dwc2_get_gd_reg(uint32_t reg_base,
+                                uint32_t *snpsid,
+                                uint32_t *hwcfg1,
+                                uint32_t *hwcfg2,
+                                uint32_t *hwcfg3,
+                                uint32_t *hwcfg4);
+    dwc2_get_gd_reg(reg_base, &snpsid, &hwcfg1, &hwcfg2, &hwcfg3, &hwcfg4);
+#else
     snpsid = dwc2_readl(reg_base + GSNPSID_OFFSET);
 
     hwcfg1 = dwc2_readl(reg_base + GHWCFG1_OFFSET);
     hwcfg2 = dwc2_readl(reg_base + GHWCFG2_OFFSET);
     hwcfg3 = dwc2_readl(reg_base + GHWCFG3_OFFSET);
     hwcfg4 = dwc2_readl(reg_base + GHWCFG4_OFFSET);
-
+#endif
     /* snpsid */
     hw->snpsid = snpsid;
 
