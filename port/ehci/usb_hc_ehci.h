@@ -64,7 +64,7 @@ struct ehci_qh_hw {
     struct usbh_urb *urb;
     usb_osal_sem_t waitsem;
     uint8_t remove_in_iaad;
-    volatile uint8_t killed;
+    volatile uint8_t killed; /* only used in usbh_kill_urb */
 } __attribute__((aligned(CONFIG_USB_EHCI_ALIGN_SIZE)));
 
 struct ehci_itd_hw {
