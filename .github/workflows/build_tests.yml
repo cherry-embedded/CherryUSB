@@ -50,7 +50,7 @@ jobs:
       - name: Download RISC-V toolchain
         run: |
           cd ~
-          git clone https://github.com/bouffalolab/toolchain_gcc_t-head_linux.git
+          git clone https://github.com/CherryUSB/toolchain_gcc_t-head_linux.git
 
       - name: Build bouffalo demo
         run: |
