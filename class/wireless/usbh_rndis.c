@@ -509,9 +509,7 @@ void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
     USB_LOG_INFO("Create rndis rx thread\r\n");
-    // clang-format off
-find_class:
-    // clang-format on
+
     g_rndis_class.connect_status = false;
     if (usbh_find_class_instance("/dev/rndis") == NULL) {
         goto delete;
@@ -520,8 +518,7 @@ find_class:
     while (g_rndis_class.connect_status == false) {
         ret = usbh_rndis_get_connect_status(&g_rndis_class);
         if (ret < 0) {
-            usb_osal_msleep(100);
-            goto find_class;
+            goto delete;
         }
         usb_osal_msleep(128);
     }
@@ -531,7 +528,7 @@ find_class:
         usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, g_rndis_rx_buffer, CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_rndis_class.bulkin_urb);
         if (ret < 0) {
-            break;
+            goto delete;
         }
 
         g_rndis_rx_length = g_rndis_class.bulkin_urb.actual_length;

@@ -2145,9 +2145,7 @@ void usbh_rtl8152_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
     USB_LOG_INFO("Create rtl8152 rx thread\r\n");
-    // clang-format off
-find_class:
-    // clang-format on
+
     g_rtl8152_class.connect_status = false;
     if (usbh_find_class_instance("/dev/rtl8152") == NULL) {
         goto delete;
@@ -2156,8 +2154,7 @@ find_class:
     while (g_rtl8152_class.connect_status == false) {
         ret = usbh_rtl8152_get_connect_status(&g_rtl8152_class);
         if (ret < 0) {
-            usb_osal_msleep(100);
-            goto find_class;
+            goto delete;
         }
         usb_osal_msleep(128);
     }
@@ -2176,7 +2173,7 @@ find_class:
         usbh_bulk_urb_fill(&g_rtl8152_class.bulkin_urb, g_rtl8152_class.hport, g_rtl8152_class.bulkin, g_rtl8152_rx_buffer, CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_rtl8152_class.bulkin_urb);
         if (ret < 0) {
-            goto find_class;
+            goto delete;
         }
 
         g_rtl8152_rx_length = g_rtl8152_class.bulkin_urb.actual_length;
