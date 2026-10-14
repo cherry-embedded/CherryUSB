@@ -643,7 +643,9 @@ static void ehci_urb_waitup(struct usbh_bus *bus, struct usbh_urb *urb)
     qh->killed = 0;
 
 #ifdef CONFIG_USB_DCACHE_ENABLE
-    if (urb->transfer_buffer && (urb->ep->bEndpointAddress & 0x80) && urb->errorcode == 0) {
+    if (urb->transfer_buffer &&
+        ((urb->setup && urb->setup->bmRequestType & 0x80) || (urb->ep->bEndpointAddress & 0x80)) &&
+        urb->errorcode == 0) {
         switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
             case USB_ENDPOINT_TYPE_CONTROL:
                 usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->actual_length - 8, CONFIG_USB_ALIGN_SIZE));
