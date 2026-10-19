@@ -15,6 +15,7 @@ path += [cwd + '/class/midi']
 path += [cwd + '/class/mtp']
 path += [cwd + '/class/adb']
 path += [cwd + '/class/dfu']
+path += [cwd + '/class/gs_usb']
 path += [cwd + '/class/serial']
 path += [cwd + '/class/vendor/net']
 path += [cwd + '/class/vendor/wifi']
@@ -162,6 +163,9 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('third_party/libscpi/src/units.c')
         src += Glob('third_party/libscpi/src/utils.c')
         path += [cwd + '/third_party/libscpi/inc']
+
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_GS_USB']):
+        src += Glob('class/gs_usb/usbd_gs_usb.c')
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM_CHARDEV']):
         src += Glob('platform/rtthread/rt_usbd_serial.c')

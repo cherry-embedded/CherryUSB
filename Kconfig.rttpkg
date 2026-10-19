@@ -150,6 +150,11 @@ if PKG_USING_CHERRYUSB
             prompt "Enable usb dfu device"
             default n
 
+        config PKG_CHERRYUSB_DEVICE_GS_USB
+            bool
+            prompt "Enable usb gs_usb device"
+            default n
+
         config PKG_CHERRYUSB_DEVICE_DISPLAY
             bool
             prompt "Enable usb display device"

@@ -77,9 +77,10 @@ CherryUSB Device 协议栈当前实现以下功能：
 - 支持 Test and Measurement Class (TMC)
 - 支持 WINUSB1.0、WINUSB2.0、WEBUSB、BOS
 - 支持 Vendor display ([xfz1986_usb_graphic_driver](https://github.com/chuanjinpang/win10_idd_xfz1986_usb_graphic_driver_display))
+- 支持 linux gs usb class
 - 支持 Vendor 类 class
 - 支持 UF2
-- 支持 Android Debug Bridge (Only support shell)
+- 支持 Android Debug Bridge (support shell and sync)
 - 支持多从机 USBIP（IP 可以不一样）
 
 CherryUSB Device 协议栈资源占用说明（GCC 10.2 with -O2）：

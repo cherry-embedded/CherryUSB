@@ -77,9 +77,10 @@ CherryUSB Device Stack has the following functions:
 - Support Test and Measurement Class (TMC)
 - Support WINUSB1.0, WINUSB2.0, WEBUSB, BOS
 - Support Vendor display ([xfz1986_usb_graphic_driver](https://github.com/chuanjinpang/win10_idd_xfz1986_usb_graphic_driver_display))
+- Support Linux GS USB class
 - Support Vendor class
 - Support UF2
-- Support Android Debug Bridge (Only support shell)
+- Support Android Debug Bridge (support shell and sync)
 - Support multi device USB IP (IP can be different)
 
 CherryUSB Device Stack resource usage (GCC 10.2 with -O2, disable log):

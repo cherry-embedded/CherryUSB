@@ -49,6 +49,7 @@ list(
     ${CMAKE_CURRENT_LIST_DIR}/class/mtp
     ${CMAKE_CURRENT_LIST_DIR}/class/adb
     ${CMAKE_CURRENT_LIST_DIR}/class/dfu
+    ${CMAKE_CURRENT_LIST_DIR}/class/gs_usb
     ${CMAKE_CURRENT_LIST_DIR}/class/serial
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/net
     ${CMAKE_CURRENT_LIST_DIR}/class/vendor/wifi
@@ -118,6 +119,9 @@ if(CONFIG_CHERRYUSB_DEVICE)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/units.c)
         list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/src/utils.c)
         list(APPEND cherryusb_incs ${CMAKE_CURRENT_LIST_DIR}/third_party/libscpi/inc)
+    endif()
+    if(CONFIG_CHERRYUSB_DEVICE_GS_USB)
+        list(APPEND cherryusb_srcs ${CMAKE_CURRENT_LIST_DIR}/class/gs_usb/usbd_gs_usb.c)
     endif()
 
     if(CONFIG_CHERRYUSB_DEVICE_FSDEV_ST)
