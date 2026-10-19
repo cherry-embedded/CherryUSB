@@ -14,10 +14,15 @@ int USB_disk_initialize(void)
 {
     active_msc_class = (struct usbh_msc *)usbh_find_class_instance("/dev/sda");
     if (active_msc_class == NULL) {
-        printf("do not find /dev/sda\r\n");
+        USB_LOG_ERR("do not find /dev/sda\r\n");
         return RES_NOTRDY;
     }
     if (usbh_msc_scsi_init(active_msc_class) < 0) {
+        return RES_NOTRDY;
+    }
+
+    if ((active_msc_class->blocksize < FF_MIN_SS) || (active_msc_class->blocksize > FF_MAX_SS)) {
+        USB_LOG_ERR("unsupported block size %u\r\n", (unsigned int)active_msc_class->blocksize);
         return RES_NOTRDY;
     }
     return RES_OK;
@@ -38,7 +43,7 @@ int USB_disk_read(BYTE *buff, LBA_t sector, UINT count)
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = (uint8_t *)aligned_alloc(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
         if (!align_buf) {
-            printf("msc get align buf failed\r\n");
+            USB_LOG_ERR("msc get align buf failed\r\n");
             return -USB_ERR_NOMEM;
         }
     }
@@ -68,7 +73,7 @@ int USB_disk_write(const BYTE *buff, LBA_t sector, UINT count)
     if ((uint32_t)buff & (CONFIG_USB_ALIGN_SIZE - 1)) {
         align_buf = (uint8_t *)aligned_alloc(CONFIG_USB_ALIGN_SIZE, count * active_msc_class->blocksize);
         if (!align_buf) {
-            printf("msc get align buf failed\r\n");
+            USB_LOG_ERR("msc get align buf failed\r\n");
             return -USB_ERR_NOMEM;
         }
         usb_memcpy(align_buf, buff, count * active_msc_class->blocksize);

@@ -389,11 +389,14 @@ int usbh_msc_scsi_init(struct usbh_msc *msc_class)
         return ret;
     }
 
-    if (msc_class->blocksize > 0) {
+    if (msc_class->blocksize == 512 ||
+        msc_class->blocksize == 1024 ||
+        msc_class->blocksize == 2048 ||
+        msc_class->blocksize == 4096) {
         USB_LOG_INFO("Capacity info:\r\n");
         USB_LOG_INFO("Block num:%d,block size:%d\r\n", (unsigned int)msc_class->blocknum, (unsigned int)msc_class->blocksize);
     } else {
-        USB_LOG_ERR("Invalid block size\r\n");
+        USB_LOG_ERR("Invalid block size %u\r\n", (unsigned int)msc_class->blocksize);
         return -USB_ERR_RANGE;
     }
 
