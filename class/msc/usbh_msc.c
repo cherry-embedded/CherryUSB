@@ -17,6 +17,15 @@
 #define CONFIG_USBHOST_MSC_READY_CHECK_TIMES 10
 #endif
 
+#ifndef CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS
+#define CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS 0
+#endif
+
+#if defined(CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE) && \
+    !defined(CONFIG_USBHOST_HUB_FORCE_REENUMERATE)
+#error CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE requires CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+#endif
+
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_cbw_csw[CONFIG_USBHOST_MAX_MSC_CLASS][USB_ALIGN_UP(64, CONFIG_USB_ALIGN_SIZE)];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[CONFIG_USBHOST_MAX_MSC_CLASS][USB_ALIGN_UP(64, CONFIG_USB_ALIGN_SIZE)];
 
@@ -256,7 +265,7 @@ static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], g_msc_buf[msc_class->sdchar - 'a'], CONFIG_USBHOST_MSC_TIMEOUT);
 }
 
-static inline void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
+static inline int usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
 {
     struct CBW *cbw;
 
@@ -265,7 +274,28 @@ static inline void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t
 
     memcpy(g_msc_cbw_csw[msc_class->sdchar - 'a'], message, 31);
 
-    usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], NULL, CONFIG_USBHOST_MSC_TIMEOUT);
+    usbh_msc_cbw_dump(cbw);
+#ifdef CONFIG_USBHOST_MSC_MODESWITCH_NO_CSW
+    {
+        int nbytes;
+
+        /* Some ZeroCD devices accept the CBW and reboot without a CSW. */
+        nbytes = usbh_msc_bulk_out_transfer(msc_class, (uint8_t *)cbw,
+                                            USB_SIZEOF_MSC_CBW,
+                                            CONFIG_USBHOST_MSC_TIMEOUT);
+        if (nbytes < 0) {
+            USB_LOG_ERR("usb_modeswitch CBW send failed: %d\r\n", nbytes);
+            return nbytes;
+        }
+
+        USB_LOG_INFO("usb_modeswitch CBW sent: %d bytes\r\n", nbytes);
+        return (nbytes == USB_SIZEOF_MSC_CBW) ? 0 : -USB_ERR_INVAL;
+    }
+#else
+    return usbh_bulk_cbw_csw_xfer(msc_class, cbw,
+                                  (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'],
+                                  NULL, CONFIG_USBHOST_MSC_TIMEOUT);
+#endif
 }
 
 static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -315,7 +345,27 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
                 if ((hport->device_desc.idVendor == config->vid) &&
                     (hport->device_desc.idProduct == config->pid)) {
                     USB_LOG_INFO("%s usb_modeswitch enable\r\n", config->name);
-                    usbh_msc_modeswitch(msc_class, config->message_content);
+                    ret = usbh_msc_modeswitch(msc_class,
+                                              config->message_content);
+                    if (ret < 0) {
+                        USB_LOG_ERR("%s usb_modeswitch failed: %d\r\n",
+                                    config->name, ret);
+                        return ret;
+                    }
+
+#if CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS > 0
+                    usb_osal_msleep(CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS);
+#endif
+#ifdef CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
+                    ret = usbh_hub_force_reenumerate(hport->parent,
+                                                     hport->port);
+                    if (ret < 0) {
+                        USB_LOG_ERR("force re-enumeration failed: %d\r\n", ret);
+                        return ret;
+                    }
+                    USB_LOG_INFO("hub-port re-enumeration requested\r\n");
+                    return 0;
+#endif
                     return 0;
                 }
                 num++;
