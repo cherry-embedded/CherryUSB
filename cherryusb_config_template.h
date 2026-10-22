@@ -197,6 +197,26 @@
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
 #endif
 
+/* Request a hub port to walk debounce/reset/enumeration without a PHY pulse.
+ * Needed when a device reconnect is too short for the host controller to latch.
+ */
+// #define CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+
+/* MSC usb_modeswitch: send CBW only. Some ZeroCD devices reboot and never
+ * return a CSW. Default remains the standard CBW + CSW transfer.
+ */
+// #define CONFIG_USBHOST_MSC_MODESWITCH_NO_CSW
+
+/* Optional delay after a successful modeswitch, then continue or re-enumerate. */
+#ifndef CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS
+#define CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS 0
+#endif
+
+/* After modeswitch, force the parent hub port to re-enumerate and do not
+ * register the temporary MSC device. Requires CONFIG_USBHOST_HUB_FORCE_REENUMERATE.
+ */
+// #define CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
+
 /* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,
  * you can change to 2K ~ 16K and must be larger than TCP RX windows size in order to avoid being overflow.
  */
