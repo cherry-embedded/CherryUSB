@@ -235,8 +235,12 @@ struct pbuf *usbd_cdc_ecm_eth_rx(void)
         usbd_cdc_ecm_start_read(g_cdc_ecm_rx_buffer, CONFIG_CDC_ECM_ETH_MAX_SEGSZE);
         return NULL;
     }
-    usb_memcpy(p->payload, (uint8_t *)g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_data_length);
-    p->len = g_cdc_ecm_rx_data_length;
+
+    if (pbuf_take(p, g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_data_length) != ERR_OK) {
+        pbuf_free(p);
+        usbd_cdc_ecm_start_read(g_cdc_ecm_rx_buffer, CONFIG_CDC_ECM_ETH_MAX_SEGSZE);
+        return NULL;
+    }
 
     USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_data_length);
     usbd_cdc_ecm_start_read(g_cdc_ecm_rx_buffer, CONFIG_CDC_ECM_ETH_MAX_SEGSZE);
@@ -257,7 +261,7 @@ int usbd_cdc_ecm_eth_tx(struct pbuf *p)
     }
 
     if (p->tot_len > sizeof(g_cdc_ecm_tx_buffer)) {
-        p->tot_len = sizeof(g_cdc_ecm_tx_buffer);
+        return -USB_ERR_NOMEM;
     }
 
     buffer = g_cdc_ecm_tx_buffer;

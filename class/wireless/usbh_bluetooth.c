@@ -108,10 +108,6 @@ static int usbh_bluetooth_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_bluetooth *bluetooth_class = (struct usbh_bluetooth *)hport->config.intf[intf].priv;
 
-    if (hport->config.config_desc.bNumInterfaces == (intf + 1)) {
-        return 0;
-    }
-
     if (bluetooth_class) {
         if (bluetooth_class->bulkin) {
             usbh_kill_urb(&bluetooth_class->bulkin_urb);
@@ -183,6 +179,10 @@ int usbh_bluetooth_hci_write(uint8_t hci_type, uint8_t *buffer, uint32_t buflen)
 {
     int ret;
 
+    if (!buffer || buflen > (sizeof(g_bluetooth_tx_buf) - 1U)) {
+        return -USB_ERR_INVAL;
+    }
+
     g_bluetooth_tx_buf[0] = hci_type;
     memcpy(&g_bluetooth_tx_buf[1], buffer, buflen);
     usbh_bluetooth_hci_dump(g_bluetooth_tx_buf, buflen + 1);
@@ -201,6 +201,11 @@ void usbh_bluetooth_hci_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     USB_LOG_INFO("Create hc rx thread\r\n");
     while (1) {
+        if ((actual_len + ep_mps) > sizeof(g_bluetooth_rx_buf)) {
+            USB_LOG_ERR("Bluetooth rx buffer overflow\r\n");
+            break;
+        }
+
         usbh_bulk_urb_fill(&g_bluetooth_class.bulkin_urb, g_bluetooth_class.hport, g_bluetooth_class.bulkin, &g_bluetooth_rx_buf[actual_len], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_bluetooth_class.bulkin_urb);
         if (ret < 0) {
@@ -216,6 +221,7 @@ void usbh_bluetooth_hci_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
             }
         }
         actual_len += g_bluetooth_class.bulkin_urb.actual_length;
+
         if (g_bluetooth_class.bulkin_urb.actual_length != ep_mps) {
             usbh_bluetooth_hci_dump(g_bluetooth_rx_buf, actual_len);
             usbh_bluetooth_hci_read_callback(g_bluetooth_rx_buf, actual_len);
@@ -256,11 +262,19 @@ int usbh_bluetooth_hci_write(uint8_t hci_type, uint8_t *buffer, uint32_t buflen)
     int ret;
 
     if (hci_type == USB_BLUETOOTH_HCI_CMD) {
+        if (!buffer || buflen > sizeof(g_bluetooth_cmd_buf) - 1U) {
+            return -USB_ERR_INVAL;
+        }
+
         g_bluetooth_cmd_buf[0] = USB_BLUETOOTH_HCI_CMD;
         memcpy(&g_bluetooth_cmd_buf[1], buffer, buflen);
         usbh_bluetooth_hci_dump(g_bluetooth_cmd_buf, buflen + 1);
         ret = usbh_bluetooth_hci_cmd(&g_bluetooth_cmd_buf[1], buflen);
     } else if (hci_type == USB_BLUETOOTH_HCI_ACL) {
+        if (!buffer || buflen > (sizeof(g_bluetooth_tx_buf) - 1U)) {
+            return -USB_ERR_INVAL;
+        }
+
         g_bluetooth_tx_buf[0] = USB_BLUETOOTH_HCI_ACL;
         memcpy(&g_bluetooth_tx_buf[1], buffer, buflen);
         usbh_bluetooth_hci_dump(g_bluetooth_tx_buf, buflen + 1);
@@ -285,6 +299,11 @@ void usbh_bluetooth_hci_evt_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     USB_LOG_INFO("Create hc event rx thread\r\n");
     while (1) {
+        if ((actual_len + ep_mps + 1) > sizeof(g_bluetooth_evt_buf)) {
+            USB_LOG_ERR("Bluetooth rx buffer overflow\r\n");
+            break;
+        }
+
         usbh_int_urb_fill(&g_bluetooth_class.intin_urb, g_bluetooth_class.hport, g_bluetooth_class.intin, &g_bluetooth_evt_buf[1 + actual_len], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_bluetooth_class.intin_urb);
         if (ret < 0) {
@@ -304,6 +323,7 @@ void usbh_bluetooth_hci_evt_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
             }
         }
         actual_len += g_bluetooth_class.intin_urb.actual_length;
+
         if (g_bluetooth_class.intin_urb.actual_length != ep_mps) {
             g_bluetooth_evt_buf[0] = USB_BLUETOOTH_HCI_EVT;
             usbh_bluetooth_hci_dump(g_bluetooth_evt_buf, actual_len + 1);
@@ -332,6 +352,11 @@ void usbh_bluetooth_hci_acl_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     USB_LOG_INFO("Create hc acl rx thread\r\n");
     while (1) {
+        if ((actual_len + ep_mps + 1) > sizeof(g_bluetooth_rx_buf)) {
+            USB_LOG_ERR("Bluetooth rx buffer overflow\r\n");
+            break;
+        }
+
         usbh_bulk_urb_fill(&g_bluetooth_class.bulkin_urb, g_bluetooth_class.hport, g_bluetooth_class.bulkin, &g_bluetooth_rx_buf[1 + actual_len], ep_mps, USB_OSAL_WAITING_FOREVER, NULL, NULL);
         ret = usbh_submit_urb(&g_bluetooth_class.bulkin_urb);
         if (ret < 0) {
@@ -347,6 +372,7 @@ void usbh_bluetooth_hci_acl_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
             }
         }
         actual_len += g_bluetooth_class.bulkin_urb.actual_length;
+
         if (g_bluetooth_class.bulkin_urb.actual_length != ep_mps) {
             g_bluetooth_rx_buf[0] = USB_BLUETOOTH_HCI_ACL;
             usbh_bluetooth_hci_dump(g_bluetooth_rx_buf, actual_len + 1);

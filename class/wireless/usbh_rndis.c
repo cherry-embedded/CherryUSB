@@ -176,12 +176,11 @@ static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
         return -USB_ERR_INVAL;
     }
 
-    if(query_len > (sizeof(g_rndis_buf) - sizeof(rndis_query_msg_t))) {
+    if (query_len > (sizeof(g_rndis_buf) - sizeof(rndis_query_msg_t))) {
         return -USB_ERR_NOMEM;
     }
 
     setup = rndis_class->hport->setup;
-
 
     cmd = (rndis_query_msg_t *)g_rndis_buf;
 
@@ -210,14 +209,20 @@ static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
         return ret;
     }
 
+    if (ret < (int)sizeof(rndis_generic_msg_t)) {
+        return -USB_ERR_INVAL;
+    }
+
     resp = (rndis_query_cmplt_t *)g_rndis_buf;
 
-    if(resp->MessageType != REMOTE_NDIS_QUERY_CMPLT) {
+    *info_len = 0;
+    if (resp->MessageType != REMOTE_NDIS_QUERY_CMPLT) {
         return ret;
     }
 
-    if (query_len != 0 && resp->InformationBufferLength != query_len) {
-        return -USB_ERR_RANGE;
+    if ((ret != (int)(sizeof(rndis_query_cmplt_t) + resp->InformationBufferLength)) ||
+        (query_len != 0 && resp->InformationBufferLength != query_len)) {
+        return -USB_ERR_INVAL;
     }
 
     if (resp->InformationBufferLength > info_max_len) {
@@ -240,7 +245,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
         return -USB_ERR_INVAL;
     }
 
-    if(info_len > (sizeof(g_rndis_buf) - sizeof(rndis_set_msg_t))) {
+    if (info_len > (sizeof(g_rndis_buf) - sizeof(rndis_set_msg_t))) {
         return -USB_ERR_NOMEM;
     }
 
@@ -544,6 +549,9 @@ void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
             while (g_rndis_rx_length > 0) {
                 USB_LOG_DBG("rxlen:%u\r\n", (unsigned int)g_rndis_rx_length);
 
+                if (g_rndis_rx_length < sizeof(rndis_data_packet_t)) {
+                    break;
+                }
                 pmsg = (rndis_data_packet_t *)(g_rndis_rx_buffer + pmg_offset);
 
                 /* Not word-aligned case */
@@ -552,7 +560,12 @@ void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
                     pmsg = &temp;
                 }
 
-                if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG) {
+                if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG &&
+                    pmsg->MessageLength >= sizeof(rndis_data_packet_t) &&
+                    pmsg->MessageLength <= g_rndis_rx_length &&
+                    pmsg->DataOffset >= sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t) &&
+                    pmsg->DataOffset <= pmsg->MessageLength - sizeof(rndis_generic_msg_t) &&
+                    pmsg->DataLength <= pmsg->MessageLength - sizeof(rndis_generic_msg_t) - pmsg->DataOffset) {
                     uint8_t *buf = (uint8_t *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
 
                     usbh_rndis_eth_input(buf, pmsg->DataLength);
@@ -592,6 +605,10 @@ int usbh_rndis_eth_output(uint32_t buflen)
 
     if (g_rndis_class.connect_status == false) {
         return -USB_ERR_NOTCONN;
+    }
+
+    if (buflen > (sizeof(g_rndis_tx_buffer) - sizeof(rndis_data_packet_t) - 1)) {
+        return -USB_ERR_NOMEM;
     }
 
     hdr = (rndis_data_packet_t *)g_rndis_tx_buffer;

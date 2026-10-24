@@ -376,7 +376,7 @@ static int rndis_set_cmd_handler(uint8_t *data, uint32_t len)
         case OID_GEN_RNDIS_CONFIG_PARAMETER:
             break;
         case OID_GEN_CURRENT_PACKET_FILTER:
-            if (len < (sizeof(rndis_set_msg_t) + cmd->InformationBufferLength)) {
+            if (len < (sizeof(rndis_set_msg_t) + cmd->InformationBufferLength) && cmd->InformationBufferLength != 4) {
                 return -1;
             }
 
@@ -410,7 +410,7 @@ static int rndis_reset_cmd_handler(uint8_t *data, uint32_t len)
 
     (void)data;
 
-    if (len < sizeof(rndis_reset_cmplt_t)) {
+    if (len < sizeof(rndis_reset_msg_t)) {
         return -1;
     }
 
@@ -477,8 +477,18 @@ void rndis_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
     (void)busid;
     (void)ep;
 
+    if (nbytes < sizeof(rndis_data_packet_t)) {
+        usbd_rndis_start_read((uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_total_length);
+        return;
+    }
+
     hdr = (rndis_data_packet_t *)g_rndis_rx_data_buffer;
-    if ((hdr->MessageType != REMOTE_NDIS_PACKET_MSG) || (nbytes < hdr->MessageLength)) {
+    if ((hdr->MessageType != REMOTE_NDIS_PACKET_MSG) ||
+        (hdr->MessageLength < sizeof(rndis_data_packet_t)) ||
+        (hdr->MessageLength > nbytes) ||
+        (hdr->DataOffset < sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t)) ||
+        (hdr->DataOffset > hdr->MessageLength - sizeof(rndis_generic_msg_t)) ||
+        (hdr->DataLength > hdr->MessageLength - sizeof(rndis_generic_msg_t) - hdr->DataOffset)) {
         usbd_rndis_start_read((uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_total_length);
         return;
     }
@@ -509,6 +519,8 @@ void rndis_int_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 
 int usbd_rndis_start_write(uint8_t *buf, uint32_t len)
 {
+    int ret;
+
     if (!usb_device_is_configured(0)) {
         return -USB_ERR_NOTCONN;
     }
@@ -525,7 +537,13 @@ int usbd_rndis_start_write(uint8_t *buf, uint32_t len)
     g_rndis_tx_data_length = len;
 
     USB_LOG_DBG("txlen:%d\r\n", g_rndis_tx_data_length);
-    return usbd_ep_start_write(0, rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, buf, len);
+
+    ret = usbd_ep_start_write(0, rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, buf, len);
+    if (ret < 0) {
+        g_rndis_tx_data_length = 0;
+        return ret;
+    }
+    return 0;
 }
 
 int usbd_rndis_start_read(uint8_t *buf, uint32_t len)
@@ -550,13 +568,18 @@ struct pbuf *usbd_rndis_eth_rx(void)
     if (g_rndis_rx_data_length == 0) {
         return NULL;
     }
+
     p = pbuf_alloc(PBUF_RAW, g_rndis_rx_data_length, PBUF_POOL);
     if (p == NULL) {
         usbd_rndis_start_read(g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
         return NULL;
     }
-    usb_memcpy(p->payload, (uint8_t *)g_rndis_rx_data_buffer, g_rndis_rx_data_length);
-    p->len = g_rndis_rx_data_length;
+
+    if (pbuf_take(p, g_rndis_rx_data_buffer, g_rndis_rx_data_length) != ERR_OK) {
+        pbuf_free(p);
+        usbd_rndis_start_read(g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
+        return NULL;
+    }
 
     USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_data_length);
     usbd_rndis_start_read(g_rndis_rx_buffer, sizeof(g_rndis_rx_buffer));
@@ -577,8 +600,8 @@ int usbd_rndis_eth_tx(struct pbuf *p)
         return -USB_ERR_BUSY;
     }
 
-    if (p->tot_len > sizeof(g_rndis_tx_buffer)) {
-        p->tot_len = sizeof(g_rndis_tx_buffer);
+    if (p->tot_len > (sizeof(g_rndis_tx_buffer) - sizeof(rndis_data_packet_t) - 1)) {
+        return -USB_ERR_NOMEM;
     }
 
     buffer = (uint8_t *)(g_rndis_tx_buffer + sizeof(rndis_data_packet_t));

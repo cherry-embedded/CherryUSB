@@ -2186,9 +2186,16 @@ void usbh_rtl8152_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
             USB_LOG_DBG("rxlen:%d\r\n", g_rtl8152_rx_length);
             while (g_rtl8152_rx_length > 0) {
+                if (g_rtl8152_rx_length < sizeof(struct rx_desc)) {
+                    break;
+                }
                 struct rx_desc *rx_desc = (struct rx_desc *)&g_rtl8152_rx_buffer[data_offset];
 
                 len = rx_desc->opts1 & RX_LEN_MASK;
+                if (len == 0 || len > g_rtl8152_rx_length - sizeof(struct rx_desc)) {
+                    USB_LOG_ERR("invalid rtl8152 rx length\r\n");
+                    break;
+                }
 
                 USB_LOG_DBG("data_offset:%d, eth len:%d\r\n", data_offset, len);
 
@@ -2199,8 +2206,12 @@ void usbh_rtl8152_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
                 g_rtl8152_rx_length -= (len + sizeof(struct rx_desc));
 
                 if (len & (RX_ALIGN - 1)) {
-                    data_offset += (RX_ALIGN - (len & (RX_ALIGN - 1)));
-                    g_rtl8152_rx_length -= (RX_ALIGN - (len & (RX_ALIGN - 1)));
+                    uint32_t padding = RX_ALIGN - (len & (RX_ALIGN - 1));
+                    if (padding > g_rtl8152_rx_length) {
+                        break;
+                    }
+                    data_offset += padding;
+                    g_rtl8152_rx_length -= padding;
                 }
             }
         } else {
@@ -2225,6 +2236,10 @@ int usbh_rtl8152_eth_output(uint32_t buflen)
 
     if (g_rtl8152_class.connect_status == false) {
         return -USB_ERR_NOTCONN;
+    }
+
+    if (buflen > (sizeof(g_rtl8152_tx_buffer) - sizeof(struct tx_desc))) {
+        return -USB_ERR_NOMEM;
     }
 
     tx_desc = (struct tx_desc *)g_rtl8152_tx_buffer;

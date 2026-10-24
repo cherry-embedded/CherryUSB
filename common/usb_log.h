@@ -95,8 +95,21 @@
         }                                                                        \
     } while (false)
 #else
-#define USB_ASSERT(f) {}
-#define USB_ASSERT_MSG(f, fmt, ...) {}
+#define USB_ASSERT(f)                                                            \
+    do {                                                                         \
+        if (!(f)) {                                                              \
+            while (1) {                                                          \
+            }                                                                    \
+        }                                                                        \
+    } while (false)
+
+#define USB_ASSERT_MSG(f, fmt, ...)                                              \
+    do {                                                                         \
+        if (!(f)) {                                                              \
+            while (1) {                                                          \
+            }                                                                    \
+        }                                                                        \
+    } while (false)
 #endif
 
 #define ___is_print(ch) ((unsigned int)((ch) - ' ') < 127u - ' ')

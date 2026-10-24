@@ -92,15 +92,21 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
     hport->config.intf[intf].priv = cdc_ecm_class;
     hport->config.intf[intf + 1].priv = NULL;
 
+    if (hport->config.intf[intf + 1].altsetting[0].intf_desc.bInterfaceClass != USB_DEVICE_CLASS_CDC_DATA) {
+        return -USB_ERR_INVAL;
+    }
+
     p = hport->raw_config_desc;
-    while (p[DESC_bLength]) {
+    while (desc_len < hport->config.config_desc.wTotalLength) {
         switch (p[DESC_bDescriptorType]) {
             case USB_DESCRIPTOR_TYPE_INTERFACE:
                 cur_iface = p[INTF_DESC_bInterfaceNumber];
                 //cur_alt_setting = p[INTF_DESC_bAlternateSetting];
                 break;
             case CDC_CS_INTERFACE:
-                if ((cur_iface == cdc_ecm_class->ctrl_intf) && p[DESC_bDescriptorSubType] == CDC_FUNC_DESC_ETHERNET_NETWORKING) {
+                if ((cur_iface == cdc_ecm_class->ctrl_intf) &&
+                    (p[DESC_bDescriptorSubType] == CDC_FUNC_DESC_ETHERNET_NETWORKING) &&
+                    (p[DESC_bLength] == sizeof(struct cdc_eth_descriptor))) {
                     struct cdc_eth_descriptor *desc = (struct cdc_eth_descriptor *)p;
                     mac_str_idx = desc->iMACAddress;
                     cdc_ecm_class->max_segment_size = desc->wMaxSegmentSize;
@@ -114,10 +120,6 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
         /* skip to next descriptor */
         desc_len += p[DESC_bLength];
         p += p[DESC_bLength];
-
-        if (desc_len > hport->config.config_desc.wTotalLength) {
-            return -USB_ERR_INVAL;
-        }
     }
 
 get_mac:
@@ -298,6 +300,10 @@ int usbh_cdc_ecm_eth_output(uint32_t buflen)
 {
     if (g_cdc_ecm_class.connect_status == false) {
         return -USB_ERR_NOTCONN;
+    }
+
+    if (buflen > sizeof(g_cdc_ecm_tx_buffer)) {
+        return -USB_ERR_NOMEM;
     }
 
     USB_LOG_DBG("txlen:%d\r\n", buflen);

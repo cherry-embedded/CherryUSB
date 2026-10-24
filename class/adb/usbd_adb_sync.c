@@ -234,29 +234,18 @@ static bool adb_sync_name_is_dir(const char *path)
  * "/sdc/.\output/...". FatFs takes both separators alike, so the backslashes
  * are folded into forward ones before any component is looked at - otherwise
  * ".\output" stays a single, unmakable name and the push dies on the first
- * file. The checks above run first, so this never turns a relative path into
- * something that looks absolute. */
-static bool adb_sync_build_full_path(const char *root, char *path, bool *wants_dir)
+ * file. After folding separators, the path must start with '/'. */
+static bool adb_sync_build_full_path(char *path, bool *wants_dir)
 {
     char *dst0;
     char *dst;
     char *src;
     size_t len;
-    size_t root_len;
     size_t i;
 
     *wants_dir = false;
 
-    root_len = strlen(root);
     len = strlen(path);
-
-    if ((root_len == 0u) || (len < root_len) || (strncmp(path, root, root_len) != 0)) {
-        return false;
-    }
-
-    if ((len > root_len) && (root[root_len - 1u] != '/') && (path[root_len] != '/')) {
-        return false;
-    }
 
     for (i = 0u; i < len; i++) {
         if (path[i] == '\\') {
@@ -264,6 +253,9 @@ static bool adb_sync_build_full_path(const char *root, char *path, bool *wants_d
         }
     }
 
+    if (path[0] != '/') {
+        return false;
+    }
     *wants_dir = (len > 1u) && (path[len - 1u] == '/');
 
     dst0 = path;
@@ -754,9 +746,8 @@ static void adb_sync_dispatch(uint32_t id, char *body)
     len = strlen(body);
     memcpy(g_adb_sync.path, body, len + 1u);
 
-    if (adb_sync_build_full_path(vfs_get_fs_root_path(), g_adb_sync.path, &wants_dir) == false) {
-        adb_sync_fail("the path has to be absolute, starting with '%s', not '%s'",
-                      vfs_get_fs_root_path(), g_adb_sync.path);
+    if (adb_sync_build_full_path(g_adb_sync.path, &wants_dir) == false) {
+        adb_sync_fail("the path has to be absolute, starting with '/', not '%s'", g_adb_sync.path);
         return;
     }
 
@@ -796,6 +787,15 @@ static void adb_sync_header_ready(void)
     }
 
     if ((id == ID_STAT) || (id == ID_LIST) || (id == ID_RECV) || (id == ID_SEND)) {
+        /* A new request abandons any unfinished push, even if its body is
+         * rejected below. Keep the remembered target for this sync session. */
+        if (g_adb_sync.fd >= 0) {
+            vfs_close(g_adb_sync.fd);
+            g_adb_sync.fd = -1;
+        }
+        g_adb_sync.push_failed = false;
+        g_adb_sync.push_isdir = false;
+
         if (len > ADB_SYNC_PATH_MAX) {
             g_adb_sync.req = id;
             g_adb_sync.rx_remain = len;

@@ -192,6 +192,9 @@ struct usbh_serial *usbh_serial_probe(struct usbh_hubport *hport, uint8_t intf,
 
     if (!serial->bulkin || !serial->bulkout) {
         USB_LOG_ERR("Serial bulk in/out endpoint not found\r\n");
+        if (driver->detach) {
+            driver->detach(serial);
+        }
         usbh_serial_free(serial);
         return NULL;
     }
@@ -352,7 +355,13 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
             struct usbh_serial_termios *termios = (struct usbh_serial_termios *)arg;
             struct cdc_line_coding line_coding;
 
-            USB_ASSERT(termios != NULL);
+            if (termios == NULL) {
+                return -USB_ERR_INVAL;
+            }
+
+            if (termios->baudrate == 0) {
+                return -USB_ERR_INVAL;
+            }
 
             line_coding.dwDTERate = termios->baudrate;
             line_coding.bCharFormat = termios->stopbits;
@@ -379,6 +388,9 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
 
             if (serial->driver && serial->driver->set_flow_control) {
                 ret = serial->driver->set_flow_control(serial, termios->rtscts);
+                if (ret < 0) {
+                    return ret;
+                }
             }
 
             serial->rtscts = termios->rtscts;
@@ -399,10 +411,18 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
             struct usbh_serial_termios *termios = (struct usbh_serial_termios *)arg;
             struct cdc_line_coding line_coding;
 
-            USB_ASSERT(termios != NULL);
+            if (termios == NULL) {
+                return -USB_ERR_INVAL;
+            }
 
             if (serial->driver && serial->driver->get_line_coding) {
-                serial->driver->get_line_coding(serial, &line_coding);
+                ret = serial->driver->get_line_coding(serial, &line_coding);
+                if (ret < 0) {
+                    return ret;
+                }
+                if (ret != (int)sizeof(struct cdc_line_coding)) {
+                    return -USB_ERR_INVAL;
+                }
             } else {
                 memcpy(&line_coding, &serial->line_coding, sizeof(struct cdc_line_coding));
             }
@@ -451,6 +471,7 @@ int usbh_serial_control(struct usbh_serial *serial, int cmd, void *arg)
                 return -USB_ERR_NOTSUPP;
             }
             *flags = status;
+            return 0;
         } break;
         default:
             break;
@@ -532,7 +553,7 @@ int usbh_serial_cdc_write_async(struct usbh_serial *serial, uint8_t *buffer, uin
     urb = &serial->bulkout_urb;
 
     usbh_bulk_urb_fill(urb, serial->hport, serial->bulkout, buffer, buflen,
-                       0, complete, serial);
+                       0, complete, arg);
     return usbh_submit_urb(urb);
 }
 
@@ -555,7 +576,7 @@ int usbh_serial_cdc_read_async(struct usbh_serial *serial, uint8_t *buffer, uint
     urb = &serial->bulkin_urb;
 
     usbh_bulk_urb_fill(urb, serial->hport, serial->bulkin, buffer, MIN(buflen, serial->bulkin->wMaxPacketSize),
-                       0, complete, serial);
+                       0, complete, arg);
     return usbh_submit_urb(urb);
 }
 
@@ -618,7 +639,12 @@ int usbh_serial(int argc, char **argv)
         usbh_serial_control(serial, USBH_SERIAL_CMD_TIOCMSET, &flags);
         USB_LOG_INFO("Set DTR: %d, RTS: %d\r\n", atoi(argv[3]), atoi(argv[4]));
     } else if (strncmp(argv[2], "-w", 2) == 0 && argc >= 4) {
-        memcpy(g_serial_testbuffer, argv[3], MIN(strlen(argv[3]), sizeof(g_serial_testbuffer)));
+        if (strlen(argv[3]) > (sizeof(g_serial_testbuffer) - 3)) {
+            USB_LOG_ERR("Input string too long\r\n");
+            return -USB_ERR_INVAL;
+        }
+
+        memcpy(g_serial_testbuffer, argv[3], strlen(argv[3]));
         uint32_t len = snprintf((char *)g_serial_testbuffer, sizeof(g_serial_testbuffer), "%s\r\n", argv[3]);
         ret = usbh_serial_write(serial, g_serial_testbuffer, len);
         if (ret >= 0) {

@@ -268,8 +268,8 @@ errout:
 static void usbh_ftdi_detach(struct usbh_serial *serial)
 {
     if (serial && serial->priv) {
-        serial->priv = NULL;
         usb_osal_free(serial->priv);
+        serial->priv = NULL;
     }
 }
 

@@ -39,7 +39,16 @@ static int cdc_acm_class_interface_request_handler(uint8_t busid, struct usb_set
             /*                                        4 - Space                            */
             /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
             /*******************************************************************************/
-            memcpy(&line_coding, *data, 7);
+            if (*len != sizeof(struct cdc_line_coding)) {
+                return -1;
+            }
+            memcpy(&line_coding, *data, sizeof(struct cdc_line_coding));
+
+            if (line_coding.bParityType >= ARRAY_SIZE(parity_name) ||
+                line_coding.bCharFormat >= ARRAY_SIZE(stop_name)) {
+                return -1;
+            }
+
             USB_LOG_DBG("Set intf:%d linecoding <%d %d %s %s>\r\n",
                         intf_num,
                         (unsigned int)line_coding.dwDTERate,
@@ -63,8 +72,14 @@ static int cdc_acm_class_interface_request_handler(uint8_t busid, struct usb_set
 
         case CDC_REQUEST_GET_LINE_CODING:
             usbd_cdc_acm_get_line_coding(busid, intf_num, &line_coding);
-            memcpy(*data, &line_coding, 7);
-            *len = 7;
+            memcpy(*data, &line_coding, sizeof(struct cdc_line_coding));
+
+            if (line_coding.bParityType >= ARRAY_SIZE(parity_name) ||
+                line_coding.bCharFormat >= ARRAY_SIZE(stop_name)) {
+                return -1;
+            }
+
+            *len = sizeof(struct cdc_line_coding);
             USB_LOG_DBG("Get intf:%d linecoding %d %d %d %d\r\n",
                         intf_num,
                         (unsigned int)line_coding.dwDTERate,

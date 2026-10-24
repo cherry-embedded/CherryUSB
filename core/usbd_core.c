@@ -29,6 +29,10 @@
 #define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
+#ifndef CONFIG_USBDEV_MAX_INTERFACES
+#define CONFIG_USBDEV_MAX_INTERFACES 16
+#endif
+
 struct usbd_tx_rx_msg {
     uint8_t ep;
     uint8_t ep_type;
@@ -78,8 +82,8 @@ USB_NOCACHE_RAM_SECTION struct usbd_core_priv {
     usb_osal_mq_t usbd_ep0_mq;
     usb_osal_thread_t usbd_ep0_thread;
 #endif
-    struct usbd_interface *intf[16];
-    uint8_t intf_altsetting[16];
+    struct usbd_interface *intf[CONFIG_USBDEV_MAX_INTERFACES];
+    uint8_t intf_altsetting[CONFIG_USBDEV_MAX_INTERFACES];
     uint8_t intf_offset;
 
     struct usbd_tx_rx_msg tx_msg[16];
@@ -532,13 +536,19 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
                 break;
 
             case USB_DESCRIPTOR_TYPE_ENDPOINT:
-                if (cur_iface == iface) {
+                if (cur_iface == iface && if_desc != NULL) {
                     ep_desc = (struct usb_endpoint_descriptor *)p;
 
                     if (alt_setting == 0) {
                         ret = usbd_reset_endpoint(busid, ep_desc);
+                        if (ret == false) {
+                            return ret;
+                        }
                     } else if (cur_alt_setting == alt_setting) {
                         ret = usbd_set_endpoint(busid, ep_desc);
+                        if (ret == false) {
+                            return ret;
+                        }
 
                         if (g_usbd_core[busid].speed >= USB_SPEED_SUPER) {
                             const uint8_t *ep_comp_desc;
@@ -570,7 +580,9 @@ static bool usbd_set_interface(uint8_t busid, uint8_t iface, uint8_t alt_setting
         }
     }
 
-    usbd_class_event_notify_handler(busid, USBD_EVENT_SET_INTERFACE, (void *)if_desc);
+    if (if_desc) {
+        usbd_class_event_notify_handler(busid, USBD_EVENT_SET_INTERFACE, (void *)if_desc);
+    }
 
     return ret;
 }
@@ -687,9 +699,11 @@ static bool usbd_std_device_req_handler(uint8_t busid, struct usb_setup_packet *
             ret = false;
             break;
         case USB_REQUEST_SET_SEL:
+            *len = 0;
             break;
         case USB_REQUEST_SET_ISOCH_DLY:
             g_usbd_core[busid].isoch_delay = value;
+            *len = 0;
             break;
 
         default:
@@ -719,6 +733,10 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
     uint32_t desc_len = 0;
     uint32_t current_desc_len = 0;
     uint8_t cur_iface = 0xFF;
+
+    if (intf_num >= g_usbd_core[busid].intf_offset) {
+        return false;
+    }
 
     p = g_usbd_core[busid].descriptors->config_descriptor_callback(g_usbd_core[busid].speed);
 
@@ -791,8 +809,12 @@ static bool usbd_std_interface_req_handler(uint8_t busid, struct usb_setup_packe
             break;
 
         case USB_REQUEST_SET_INTERFACE:
+            ret = usbd_set_interface(busid, intf_num, setup->wValue);
+            if (ret == false) {
+                break;
+            }
             g_usbd_core[busid].intf_altsetting[intf_num] = LO_BYTE(setup->wValue);
-            usbd_set_interface(busid, setup->wIndex, setup->wValue);
+
             *len = 0;
             break;
 
@@ -822,6 +844,10 @@ static bool usbd_std_endpoint_req_handler(uint8_t busid, struct usb_setup_packet
 
     /* Only when device is configured, then endpoint requests can be valid. */
     if (!is_device_configured(busid)) {
+        return false;
+    }
+
+    if ((ep & 0x7f) >= 16) {
         return false;
     }
 
@@ -963,21 +989,19 @@ static int usbd_vendor_request_handler(uint8_t busid, struct usb_setup_packet *s
         if (setup->bRequest == g_usbd_core[busid].descriptors->msosv1_descriptor->vendor_code) {
             switch (setup->wIndex) {
                 case 0x04:
-                    desclen = g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[0] +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[1] << 8) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[2] << 16) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id[3] << 24);
-
+                    desclen = GET_LE32(g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id);
                     *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id;
                     //memcpy(*data, g_usbd_core[busid].descriptors->msosv1_descriptor->compat_id, desclen);
                     *len = desclen;
                     return 0;
                 case 0x05:
-                    desclen = g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][0] +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][1] << 8) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][2] << 16) +
-                              (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue][3] << 24);
+                    if (g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property == NULL ||
+                        setup->wValue >= g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property_count ||
+                        g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue] == NULL) {
+                        return -1;
+                    }
 
+                    desclen = GET_LE32(g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue]);
                     *data = (uint8_t *)g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue];
                     //memcpy(*data, g_usbd_core[busid].descriptors->msosv1_descriptor->comp_id_property[setup->wValue], desclen);
                     *len = desclen;
@@ -1367,6 +1391,8 @@ void usbd_desc_register(uint8_t busid, const struct usb_descriptor *desc)
 
 void usbd_add_interface(uint8_t busid, struct usbd_interface *intf)
 {
+    USB_ASSERT_MSG(g_usbd_core[busid].intf_offset < CONFIG_USBDEV_MAX_INTERFACES, "Too many interfaces\r\n");
+
     intf->intf_num = g_usbd_core[busid].intf_offset;
     g_usbd_core[busid].intf[g_usbd_core[busid].intf_offset] = intf;
     g_usbd_core[busid].intf_offset++;
@@ -1521,14 +1547,9 @@ int usbd_initialize(uint8_t busid, uintptr_t reg_base, void (*event_handler)(uin
 
 #ifdef CONFIG_USBDEV_EP0_THREAD
     g_usbd_core[busid].usbd_ep0_mq = usb_osal_mq_create(1);
-    if (g_usbd_core[busid].usbd_ep0_mq == NULL) {
-        return -USB_ERR_NOMEM;
-    }
+    USB_ASSERT(g_usbd_core[busid].usbd_ep0_mq);
     g_usbd_core[busid].usbd_ep0_thread = usb_osal_thread_create("usbd_ep0", CONFIG_USBDEV_EP0_STACKSIZE, CONFIG_USBDEV_EP0_PRIO, usbdev_ep0_thread, (void *)(uint32_t)busid);
-    if (g_usbd_core[busid].usbd_ep0_thread == NULL) {
-        usb_osal_mq_delete(g_usbd_core[busid].usbd_ep0_mq);
-        return -USB_ERR_NOMEM;
-    }
+    USB_ASSERT(g_usbd_core[busid].usbd_ep0_thread);
 #endif
 
     g_usbd_core[busid].event_handler = event_handler;

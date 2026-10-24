@@ -22,7 +22,8 @@ static int16_t volume_float2hex(float volume_db)
     return (int16_t)(volume_db * 256);
 }
 
-static float volume_roundf(float x) {
+static float volume_roundf(float x)
+{
     if (x >= 0.0f) {
         int intpart = (int)x;
         float frac = x - (float)intpart;
@@ -66,6 +67,10 @@ static int audio_class_endpoint_request_handler(uint8_t busid, struct usb_setup_
         case AUDIO_EP_CONTROL_SAMPLING_FEQ:
             switch (setup->bRequest) {
                 case AUDIO_REQUEST_SET_CUR:
+                    if (setup->wLength != 3) {
+                        return -1;
+                    }
+
                     memcpy((uint8_t *)&sampling_freq, *data, 3);
                     USB_LOG_DBG("Set ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
                     usbd_audio_set_sampling_freq(busid, ep, sampling_freq);
@@ -145,6 +150,10 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                     if (g_usbd_audio[busid].uac_version < 0x0200) {
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_SET_CUR:
+                                if (setup->wLength != 1) {
+                                    return -1;
+                                }
+
                                 mute = (*data)[0];
                                 usbd_audio_set_mute(busid, ep, ch, mute);
                                 break;
@@ -162,6 +171,10 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                     (*data)[0] = usbd_audio_get_mute(busid, ep, ch);
                                     *len = 1;
                                 } else {
+                                    if (setup->wLength != 1) {
+                                        return -1;
+                                    }
+
                                     mute = (*data)[0];
                                     usbd_audio_set_mute(busid, ep, ch, mute);
                                 }
@@ -175,6 +188,10 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                     if (g_usbd_audio[busid].uac_version < 0x0200) {
                         switch (setup->bRequest) {
                             case AUDIO_REQUEST_SET_CUR:
+                                if (setup->wLength != 2) {
+                                    return -1;
+                                }
+
                                 memcpy(&volume_hex_curr, *data, 2);
                                 volume_db_curr = volume_align_to_res(volume_hex_curr, volume_hex_res);
                                 volume_db_curr = MIN(MAX(volume_db_curr, volume_db_min), volume_db_max);
@@ -213,6 +230,10 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                     memcpy(*data, &volume_hex_curr, 2);
                                     *len = 2;
                                 } else {
+                                    if (setup->wLength != 2) {
+                                        return -1;
+                                    }
+
                                     memcpy(&volume_hex_curr, *data, 2);
                                     volume_db_curr = volume_align_to_res(volume_hex_curr, volume_hex_res);
                                     volume_db_curr = MIN(MAX(volume_db_curr, volume_db_min), volume_db_max);
@@ -252,6 +273,10 @@ static int audio_class_interface_request_handler(uint8_t busid, struct usb_setup
                                 USB_LOG_DBG("Get ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
                                 *len = 4;
                             } else {
+                                if (setup->wLength != 4) {
+                                    return -1;
+                                }
+
                                 memcpy(&sampling_freq, *data, 4);
                                 USB_LOG_DBG("Set ep:0x%02x %d Hz\r\n", ep, (int)sampling_freq);
                                 usbd_audio_set_sampling_freq(busid, ep, sampling_freq);

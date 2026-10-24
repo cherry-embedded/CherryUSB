@@ -261,8 +261,13 @@ static int usbh_cp210x_set_baudrate(struct usbh_serial *serial, uint32_t baudrat
     if (!serial || !serial->hport || !serial->priv) {
         return -USB_ERR_INVAL;
     }
+
     setup = serial->hport->setup;
     cp210x_class = (struct usbh_cp210x *)serial->priv;
+
+    if (baudrate < cp210x_class->min_speed || baudrate > cp210x_class->max_speed) {
+        return -USB_ERR_INVAL;
+    }
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_INTERFACE;
     setup->bRequest = CP210X_SET_BAUDRATE;
@@ -328,8 +333,8 @@ errout:
 static void usbh_cp210x_detach(struct usbh_serial *serial)
 {
     if (serial && serial->priv) {
-        serial->priv = NULL;
         usb_osal_free(serial->priv);
+        serial->priv = NULL;
     }
 }
 

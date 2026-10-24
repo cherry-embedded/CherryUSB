@@ -96,12 +96,21 @@ static int dfu_class_interface_request_handler(uint8_t busid, struct usb_setup_p
                 case DFU_REQUEST_UPLOAD:
                     usbd_dfu_begin_load();
 
-                    uint16_t actual_length;
+                    uint16_t actual_length = 0;
+
+                    if (setup->wLength > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
+                        return -1;
+                    }
                     if (usbd_dfu_read(setup->wValue, *data, setup->wLength, &actual_length) < 0) {
                         g_usbd_dfu.dfu_state = DFU_STATE_DFU_ERROR;
                         return -1;
                     } else {
-                        g_usbd_dfu.dfu_state = DFU_STATE_DFU_UPLOAD_IDLE;
+                        if (actual_length < setup->wLength) {
+                            usbd_dfu_end_load();
+                            g_usbd_dfu.dfu_state = DFU_STATE_DFU_IDLE;
+                        } else {
+                            g_usbd_dfu.dfu_state = DFU_STATE_DFU_UPLOAD_IDLE;
+                        }
                     }
                     *len = actual_length;
                     break;
@@ -212,7 +221,11 @@ static int dfu_class_interface_request_handler(uint8_t busid, struct usb_setup_p
         case DFU_STATE_DFU_UPLOAD_IDLE:
             switch (setup->bRequest) {
                 case DFU_REQUEST_UPLOAD: {
-                    uint16_t actual_length;
+                    uint16_t actual_length = 0;
+
+                    if (setup->wLength > CONFIG_USBDEV_REQUEST_BUFFER_LEN) {
+                        return -1;
+                    }
                     if (usbd_dfu_read(setup->wValue, *data, setup->wLength, &actual_length) < 0) {
                         g_usbd_dfu.dfu_state = DFU_STATE_DFU_ERROR;
                         return -1;
@@ -224,6 +237,7 @@ static int dfu_class_interface_request_handler(uint8_t busid, struct usb_setup_p
                             g_usbd_dfu.dfu_state = DFU_STATE_DFU_UPLOAD_IDLE;
                         }
                     }
+                    *len = actual_length;
                 } break;
                 case DFU_REQUEST_ABORT:
                     g_usbd_dfu.dfu_state = DFU_STATE_DFU_IDLE;

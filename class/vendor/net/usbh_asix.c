@@ -718,10 +718,13 @@ void usbh_asix_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
             data_offset = 0;
             while (g_asix_rx_length > 0) {
+                if (g_asix_rx_length < 4) {
+                    break;
+                }
                 len = ((uint16_t)g_asix_rx_buffer[data_offset + 0] | ((uint16_t)(g_asix_rx_buffer[data_offset + 1]) << 8)) & 0x7ff;
                 len_crc = g_asix_rx_buffer[data_offset + 2] | ((uint16_t)(g_asix_rx_buffer[data_offset + 3]) << 8);
 
-                if (len != (~len_crc & 0x7ff)) {
+                if (len != (~len_crc & 0x7ff) || len == 0 || (len > g_asix_rx_length - 4)) {
                     USB_LOG_ERR("rx header error\r\n");
                     g_asix_rx_length = 0;
                     continue;
@@ -732,8 +735,9 @@ void usbh_asix_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
                 g_asix_rx_length -= (len + 4);
                 data_offset += (len + 4);
 
-                if (g_asix_rx_length < 4) {
-                    g_asix_rx_length = 0;
+                if ((len & 1) && g_asix_rx_length > 0) {
+                    g_asix_rx_length--;
+                    data_offset++;
                 }
             }
         } else {
@@ -760,17 +764,21 @@ int usbh_asix_eth_output(uint32_t buflen)
         return -USB_ERR_NOTCONN;
     }
 
+    if (buflen > (sizeof(g_asix_tx_buffer) - 8)) {
+        return -USB_ERR_NOMEM;
+    }
+
     g_asix_tx_buffer[0] = buflen & 0xff;
     g_asix_tx_buffer[1] = (buflen >> 8) & 0xff;
     g_asix_tx_buffer[2] = ~g_asix_tx_buffer[0];
     g_asix_tx_buffer[3] = ~g_asix_tx_buffer[1];
 
-    if (!(buflen + 4) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) {
+    if (((buflen + 4U) % USB_GET_MAXPACKETSIZE(g_asix_class.bulkout->wMaxPacketSize)) == 0U) {
         USB_LOG_DBG("txlen:%d\r\n", buflen + 8);
-        g_asix_tx_buffer[buflen + 4 + 0] = 0x00;
-        g_asix_tx_buffer[buflen + 4 + 1] = 0x00;
-        g_asix_tx_buffer[buflen + 4 + 2] = 0xff;
-        g_asix_tx_buffer[buflen + 4 + 3] = 0xff;
+        g_asix_tx_buffer[buflen + 4] = 0x00;
+        g_asix_tx_buffer[buflen + 5] = 0x00;
+        g_asix_tx_buffer[buflen + 6] = 0xff;
+        g_asix_tx_buffer[buflen + 7] = 0xff;
         actual_len = buflen + 8;
     } else {
         USB_LOG_DBG("txlen:%d\r\n", buflen + 4);

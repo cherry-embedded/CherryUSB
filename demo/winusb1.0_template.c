@@ -106,6 +106,7 @@ struct usb_msosv1_descriptor msosv1_desc = {
     .vendor_code = WINUSB_VENDOR_CODE,
     .compat_id = WINUSB_WCIDDescriptor,
     .comp_id_property = WINUSB_IFx_WCIDProperties,
+    .comp_id_property_count = sizeof(WINUSB_IFx_WCIDProperties) / sizeof(WINUSB_IFx_WCIDProperties[0]),
 };
 
 #define WINUSB_IN_EP  0x81

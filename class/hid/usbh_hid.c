@@ -208,21 +208,18 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     hport->config.intf[intf].priv = hid_class;
 
     p = hport->raw_config_desc;
-    while (p[DESC_bLength]) {
+    while (desc_len < hport->config.config_desc.wTotalLength) {
         switch (p[DESC_bDescriptorType]) {
             case USB_DESCRIPTOR_TYPE_INTERFACE:
                 cur_iface = p[INTF_DESC_bInterfaceNumber];
-                if (cur_iface == intf) {
-                    hid_class->protocol = p[7];
-                    struct usb_hid_descriptor *desc = (struct usb_hid_descriptor *)(p + 9);
-
-                    if (desc->bDescriptorType != HID_DESCRIPTOR_TYPE_HID) {
-                        USB_LOG_ERR("HID descriptor not found\r\n");
-                        return -USB_ERR_INVAL;
-                    }
+                hid_class->protocol = p[7];
+                break;
+            case HID_DESCRIPTOR_TYPE_HID:
+                if ((cur_iface == intf) && (p[DESC_bLength] >= sizeof(struct usb_hid_descriptor))) {
+                    struct usb_hid_descriptor *desc = (struct usb_hid_descriptor *)p;
 
                     if (desc->subdesc[0].bDescriptorType != HID_DESCRIPTOR_TYPE_HID_REPORT) {
-                        USB_LOG_ERR("HID report descriptor not found\r\n");
+                        USB_LOG_ERR("invalid bDescriptorType\r\n");
                         return -USB_ERR_INVAL;
                     }
 
@@ -237,19 +234,20 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
         /* skip to next descriptor */
         desc_len += p[DESC_bLength];
         p += p[DESC_bLength];
-
-        if (desc_len > hport->config.config_desc.wTotalLength) {
-            return -USB_ERR_INVAL;
-        }
     }
 
     if (found == false) {
-        USB_LOG_ERR("HID interface not found\r\n");
+        USB_LOG_ERR("HID report descriptor not found\r\n");
         return -USB_ERR_INVAL;
     }
 found:
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
+
+        if (USB_GET_ENDPOINT_TYPE(ep_desc->bmAttributes) != USB_ENDPOINT_TYPE_INTERRUPT) {
+            return -USB_ERR_INVAL;
+        }
+
         if (ep_desc->bEndpointAddress & 0x80) {
             USBH_EP_INIT(hid_class->intin, ep_desc);
         } else {
@@ -297,7 +295,7 @@ static uint32_t hid_get_itemval(const uint8_t *data, unsigned int idx, unsigned 
     uint32_t value = 0;
 
     for (unsigned int i = 1; i <= size; i++)
-        value |= data[idx + i] << (8 * (i - 1));
+        value |= (uint32_t)data[idx + i] << (8 * (i - 1));
 
     return value;
 }
@@ -308,7 +306,7 @@ int usbh_hid_parse_report_descriptor(const uint8_t *report_data, uint32_t report
     struct usbh_hid_report_item *current_item = NULL;
     uint32_t itemtag, itemtype, itemsize, itemval;
     uint16_t temp_usage;
-    uint32_t total_report_size[3] = { 0 }; /* input, output, feature */
+    uint32_t report_bit_offset;
     uint32_t i = 0;
 
     memset(report_info, 0, sizeof(struct usbh_hid_report_info));
@@ -354,8 +352,25 @@ int usbh_hid_parse_report_descriptor(const uint8_t *report_data, uint32_t report
                             current_item->report_type = HID_REPORT_FEATURE;
                         }
 
-                        current_item->report_bit_offset = total_report_size[current_item->report_type - 1];
-                        total_report_size[current_item->report_type - 1] += current_item_attr.report_size * current_item_attr.report_count;
+                        report_bit_offset = 0;
+                        /* Resume the last field of this report type and ID. */
+                        for (uint32_t j = report_info->report_item_count; j > 0; j--) {
+                            const struct usbh_hid_report_item *previous = &report_info->report_items[j - 1];
+
+                            if (previous->report_type == current_item->report_type &&
+                                previous->attribute.report_id == current_item_attr.report_id) {
+                                report_bit_offset = previous->report_bit_offset +
+                                                    previous->attribute.report_size * previous->attribute.report_count;
+                                break;
+                            }
+                        }
+                        /* Keep every stored field's end offset representable. */
+                        if (current_item_attr.report_size != 0 &&
+                            current_item_attr.report_count >
+                                (UINT32_MAX - report_bit_offset) / current_item_attr.report_size) {
+                            goto err;
+                        }
+                        current_item->report_bit_offset = report_bit_offset;
 
                         memcpy(&current_item->attribute, &current_item_attr, sizeof(struct usbh_hid_report_item_attribute));
                         report_info->report_item_count++;
@@ -445,16 +460,23 @@ err:
     return -1;
 }
 
-int usbh_hid_report_convert(struct usbh_hid_report_item *item, const uint8_t *report_buf, uint32_t *output1, uint8_t **output2, uint32_t *output_len)
+int usbh_hid_report_convert(struct usbh_hid_report_item *item,
+                            const uint8_t *report_buf,
+                            uint16_t report_len,
+                            uint32_t *output1,
+                            uint8_t **output2,
+                            uint32_t *output_len)
 {
     const uint8_t *src;
-    uint32_t bits_len = item->attribute.report_size * item->attribute.report_count;
+    uint32_t available_bits;
+    uint32_t bits_len;
 
-    if (bits_len == 0) {
+    if (!item || !report_buf || !report_len || !output1 || !output2 || !output_len) {
         return -1;
     }
 
-    if (item->report_flags & HID_MAINITEM_CONSTANT) {
+    if (item->attribute.report_size == 0 || item->attribute.report_count == 0 ||
+        (item->report_flags & HID_MAINITEM_CONSTANT)) {
         return -1;
     }
 
@@ -464,15 +486,26 @@ int usbh_hid_report_convert(struct usbh_hid_report_item *item, const uint8_t *re
         }
 
         src = report_buf + 1; /* skip report id */
+        report_len--;
     } else {
         src = report_buf;
     }
+
+    available_bits = (uint32_t)report_len * 8U;
+    /* Check the remaining capacity before multiplying or adding bit counts. */
+    if (item->report_bit_offset > available_bits ||
+        item->attribute.report_count >
+            (available_bits - item->report_bit_offset) / item->attribute.report_size) {
+        return -USB_ERR_NOMEM;
+    }
+    bits_len = item->attribute.report_size * item->attribute.report_count;
 
     if ((bits_len < 32) && (bits_len % 8 != 0)) {
         *output1 = 0;
 
         for (uint32_t i = 0; i < bits_len; i++) {
-            *output1 |= ((src[item->report_bit_offset / 8] >> ((item->report_bit_offset % 8) + i)) & 0x01) << i;
+            uint32_t bit_offset = item->report_bit_offset + i;
+            *output1 |= ((uint32_t)((src[bit_offset / 8] >> (bit_offset % 8)) & 0x01U)) << i;
         }
 
         *output2 = NULL;

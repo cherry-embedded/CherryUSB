@@ -21,6 +21,25 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     struct usb_setup_packet *setup;
     int ret;
 
+    if (!hport || !info ||
+        !info->acc_manufacturer ||
+        !info->acc_model ||
+        !info->acc_description ||
+        !info->acc_version ||
+        !info->acc_uri ||
+        !info->acc_serial) {
+        return -USB_ERR_INVAL;
+    }
+
+    if (strlen(info->acc_manufacturer) >= sizeof(g_aoa_buffer) ||
+        strlen(info->acc_model) >= sizeof(g_aoa_buffer) ||
+        strlen(info->acc_description) >= sizeof(g_aoa_buffer) ||
+        strlen(info->acc_version) >= sizeof(g_aoa_buffer) ||
+        strlen(info->acc_uri) >= sizeof(g_aoa_buffer) ||
+        strlen(info->acc_serial) >= sizeof(g_aoa_buffer)) {
+        return -USB_ERR_INVAL;
+    }
+
     setup = hport->setup;
 
     if (setup == NULL) {
@@ -48,7 +67,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wIndex = AOA_ACCESSORY_STRING_MANUFACTURER;
     setup->wLength = strlen(info->acc_manufacturer) + 1;
 
-    memcpy(g_aoa_buffer, info->acc_manufacturer, strlen(info->acc_manufacturer));
+    memcpy(g_aoa_buffer, info->acc_manufacturer, strlen(info->acc_manufacturer) + 1);
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
@@ -60,7 +79,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wIndex = AOA_ACCESSORY_STRING_MODEL;
     setup->wLength = strlen(info->acc_model) + 1;
 
-    memcpy(g_aoa_buffer, info->acc_model, strlen(info->acc_model));
+    memcpy(g_aoa_buffer, info->acc_model, strlen(info->acc_model) + 1);
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
@@ -72,7 +91,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wIndex = AOA_ACCESSORY_STRING_DESCRIPTION;
     setup->wLength = strlen(info->acc_description) + 1;
 
-    memcpy(g_aoa_buffer, info->acc_description, strlen(info->acc_description));
+    memcpy(g_aoa_buffer, info->acc_description, strlen(info->acc_description) + 1);
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
@@ -84,7 +103,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wIndex = AOA_ACCESSORY_STRING_VERSION;
     setup->wLength = strlen(info->acc_version) + 1;
 
-    memcpy(g_aoa_buffer, info->acc_version, strlen(info->acc_version));
+    memcpy(g_aoa_buffer, info->acc_version, strlen(info->acc_version) + 1);
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
@@ -96,7 +115,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wIndex = AOA_ACCESSORY_STRING_URI;
     setup->wLength = strlen(info->acc_uri) + 1;
 
-    memcpy(g_aoa_buffer, info->acc_uri, strlen(info->acc_uri));
+    memcpy(g_aoa_buffer, info->acc_uri, strlen(info->acc_uri) + 1);
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
@@ -108,7 +127,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
     setup->wIndex = AOA_ACCESSORY_STRING_SERIAL;
     setup->wLength = strlen(info->acc_serial) + 1;
 
-    memcpy(g_aoa_buffer, info->acc_serial, strlen(info->acc_serial));
+    memcpy(g_aoa_buffer, info->acc_serial, strlen(info->acc_serial) + 1);
     ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
@@ -180,6 +199,11 @@ int usbh_aoa_send_hid_event(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *ev
     if (!aoa_class || !aoa_class->hport) {
         return -USB_ERR_INVAL;
     }
+
+    if (event_len > sizeof(g_aoa_buffer)) {
+        return -USB_ERR_INVAL;
+    }
+
     setup = aoa_class->hport->setup;
 
     setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;

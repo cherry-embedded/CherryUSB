@@ -74,6 +74,7 @@ struct usb_msosv1_descriptor linux_msosv1_desc = {
     .vendor_code = LINUX_USBD_GS_CAN_VENDOR_CODE,
     .compat_id = linux_WINUSB_WCIDDescriptor,
     .comp_id_property = linux_WINUSB_IFx_WCIDProperties,
+    .comp_id_property_count = sizeof(linux_WINUSB_IFx_WCIDProperties) / sizeof(linux_WINUSB_IFx_WCIDProperties[0]),
 };
 
 static const uint8_t linux_device_descriptor[] = {

@@ -358,6 +358,13 @@ void usbd_adb_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
             usb_osal_sem_give(g_usbd_adb.rx_sem);
         }
     } else if (g_usbd_adb.rx_state == ADB_RX_STATE_READ_DATA) {
+        if(nbytes != adb_rx_packet.msg.data_length) {
+            USB_LOG_ERR("short payload %u bytes\r\n", (unsigned)nbytes);
+            g_usbd_adb.rx_state = ADB_RX_STATE_READ_MSG;
+            usbd_ep_start_read(busid, g_usbd_adb.ep_data[ADB_OUT_EP_IDX].ep_addr, (uint8_t *)&adb_rx_packet.msg,
+                               sizeof(struct adb_msg));
+            return;
+        }
         /* payload complete -> the packet is complete */
         g_usbd_adb.rx_state = ADB_RX_STATE_COMPLETE;
         usb_osal_sem_give(g_usbd_adb.rx_sem);
@@ -441,15 +448,15 @@ struct usbd_interface *usbd_adb_init_intf(uint8_t busid, struct usbd_interface *
     intf->notify_handler = adb_notify_handler;
 
     g_usbd_adb.rx_sem = usb_osal_sem_create(0);
-    USB_ASSERT_MSG(g_usbd_adb.rx_sem, "adb rx_sem fail");
+    USB_ASSERT(g_usbd_adb.rx_sem);
     g_usbd_adb.tx_sem = usb_osal_sem_create(0);
-    USB_ASSERT_MSG(g_usbd_adb.tx_sem, "adb tx_sem fail");
+    USB_ASSERT(g_usbd_adb.tx_sem);
     g_usbd_adb.tx_lock = usb_osal_mutex_create();
-    USB_ASSERT_MSG(g_usbd_adb.tx_lock, "adb tx_lock fail");
+    USB_ASSERT(g_usbd_adb.tx_lock);
 
     g_usbd_adb.rx_thread = usb_osal_thread_create("usbd_adb", ADB_DAEMON_THREAD_STACK,
                                                   ADB_DAEMON_THREAD_PRIO, adb_rx_thread_entry, NULL);
-    USB_ASSERT_MSG(g_usbd_adb.rx_thread, "adb rx_thread fail");
+    USB_ASSERT(g_usbd_adb.rx_thread);
     usbd_adb_shell_init();
     usbd_adb_sync_init();
 

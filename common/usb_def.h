@@ -513,6 +513,7 @@ struct usb_msosv1_descriptor {
     uint8_t vendor_code;
     const uint8_t *compat_id;
     const uint8_t **comp_id_property;
+    uint16_t comp_id_property_count; /* Number of entries; zero disables property requests. */
 };
 
 /* MS OS 2.0 Header descriptor */
