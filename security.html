@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>安全公告与 CVE 目录 &mdash; CherryUSB 1.6.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d6a008b6"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="商业支持" href="support/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            CherryUSB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/start.html">入门必看</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/demo.html">基于现有 demo 快速验证</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/transplant.html">芯片通用移植指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/migration.html">部分改动迁移指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/opensource.html">基于 CherryUSB 的开源项目</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/usb_speed.html">USB 极限速度测试</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_desc.html">USB 描述符</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_request.html">USB 设备请求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_enum.html">USB 枚举</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_ext.html">USB 知识点拓展</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_host.html">主机协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_port.html">主从驱动</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_config.html">USB CONFIG 说明</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/winusb.html">WINUSB</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">例程</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_cdc_acm.html">CDC ACM Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_hid.html">HID Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_msc.html">MSC Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_audiov1.html">AudioV1 Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_audiov2.html">AudioV2 Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_video.html">USB Video Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_winusb.html">WinUSB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_webusb.html">WebUSB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_rndis.html">CDC RNDIS Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_ecm.html">CDC ECM Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_adb.html">ADB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_mtp.html">MTP Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_serial.html">Serial Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_hid.html">HID Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_msc.html">MSC Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_net.html">Network Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_bluetooth.html">BTBLE Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_wifi.html">WIFI Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_audio.html">Audio Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_video.html">Video Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usb_otg.html">USB OTG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_vendor.html">Vendor Device 驱动编写</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_vendor.html">Vendor Host 驱动编写</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usbip/ohci.html">OHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/ehci.html">EHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/xhci.html">XHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/chipidea.html">CHIPIDEA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/dwc2.html">DWC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/musb.html">MUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/fotg210.html">FOTG210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/cdns2.html">CDNS2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/cdns3.html">CDNS3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/dwc3.html">DWC3</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">chryusb_configurator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#wireshark">Wireshark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#audacity">Audacity</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="version.html">版本说明</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="show/index.html">性能展示</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="support/index.html">商业支持</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">安全公告</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">安全公告与 CVE 目录</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">报告安全漏洞</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">已公开的安全公告</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">每条公告需要的信息</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">CVE 公告模板</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cve-xxxx-xxxx-xxxx">CVE-xxxx-xxxx：xxxx</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CherryUSB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">安全公告与 CVE 目录</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/security.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cve">
+<h1>安全公告与 CVE 目录<a class="headerlink" href="#cve" title="Link to this heading"></a></h1>
+<section id="id1">
+<h2>报告安全漏洞<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>请按照仓库的
+<a class="reference external" href="https://github.com/cherry-embedded/CherryUSB/security/policy">安全策略</a>
+提交报告，或发送邮件至 <code class="docutils literal notranslate"><span class="pre">1203593632&#64;qq.com</span></code>。</p>
+</section>
+<section id="id3">
+<h2>已公开的安全公告<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<p>GitHub 上的正式公告请查看
+<a class="reference external" href="https://github.com/cherry-embedded/CherryUSB/security/advisories">CherryUSB Security Advisories</a>。</p>
+<p>本目录目前尚未添加公告条目。这不代表不存在漏洞或外部公告。
+仅在维护者确认问题并决定公开披露后，才将对应条目加入本目录。</p>
+</section>
+<section id="id4">
+<h2>每条公告需要的信息<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>公告标题和发布日期。</p></li>
+<li><p>GHSA 编号及公开公告链接（如已分配）。</p></li>
+<li><p>CVE 编号（如已分配）；公告也可以不包含 CVE 编号。</p></li>
+<li><p>受影响的版本或提交，以及必要的构建配置。</p></li>
+<li><p>修复版本和完整的修复提交编号。</p></li>
+<li><p>涉及的主机/设备类和控制器驱动（如适用）。</p></li>
+<li><p>影响、触发条件，以及可用的缓解措施。</p></li>
+<li><p>CWE，以及 CVSS 版本、向量和评分（如已评估）。</p></li>
+<li><p>经报告者同意的署名。</p></li>
+</ul>
+<p>不要仅依据修复提交推断受影响的版本范围，不要编造 CVE 编号，
+也不要将内部代码审查发现直接视为已公开的安全公告。</p>
+</section>
+<section id="id5">
+<h2>CVE 公告模板<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<p>以下为待填写模板，不是已公开的漏洞公告。请将 <code class="docutils literal notranslate"><span class="pre">xxxx</span></code> 替换为已确认的信息。</p>
+<section id="cve-xxxx-xxxx-xxxx">
+<h3>CVE-xxxx-xxxx：xxxx<a class="headerlink" href="#cve-xxxx-xxxx-xxxx" title="Link to this heading"></a></h3>
+<dl class="field-list simple">
+<dt class="field-odd">发布日期<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xxxx</p>
+</dd>
+<dt class="field-even">CVE 编号<span class="colon">:</span></dt>
+<dd class="field-even"><p>CVE-xxxx-xxxx</p>
+</dd>
+<dt class="field-odd">GHSA 编号<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GHSA-xxxx-xxxx-xxxx</p>
+</dd>
+<dt class="field-even">严重程度<span class="colon">:</span></dt>
+<dd class="field-even"><p>xxxx</p>
+</dd>
+<dt class="field-odd">CWE<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CWE-xxxx</p>
+</dd>
+<dt class="field-even">CVSS 版本、向量及评分<span class="colon">:</span></dt>
+<dd class="field-even"><p>xxxx</p>
+</dd>
+<dt class="field-odd">受影响版本<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xxxx</p>
+</dd>
+<dt class="field-even">修复版本<span class="colon">:</span></dt>
+<dd class="field-even"><p>xxxx</p>
+</dd>
+<dt class="field-odd">修复提交<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xxxx</p>
+</dd>
+<dt class="field-even">涉及组件<span class="colon">:</span></dt>
+<dd class="field-even"><p>xxxx</p>
+</dd>
+<dt class="field-odd">公告链接<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xxxx</p>
+</dd>
+<dt class="field-even">报告者<span class="colon">:</span></dt>
+<dd class="field-even"><p>xxxx</p>
+</dd>
+</dl>
+<p><strong>漏洞描述</strong></p>
+<p>xxxx</p>
+<p><strong>影响与触发条件</strong></p>
+<p>xxxx</p>
+<p><strong>修复说明</strong></p>
+<p>xxxx</p>
+<p><strong>缓解措施</strong></p>
+<p>xxxx</p>
+<p><strong>参考链接</strong></p>
+<ul class="simple">
+<li><p>xxxx</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="support/index.html" class="btn btn-neutral float-left" title="商业支持" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 ~ 2026, sakumisu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
