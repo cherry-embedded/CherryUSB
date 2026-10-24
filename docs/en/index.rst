@@ -157,3 +157,9 @@ Considering USB performance requirements to reach theoretical USB hardware bandw
    :caption: Commercial Support
 
    support/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Security
+
+   security
