@@ -251,7 +251,7 @@
  * you can change to 2K ~ 16K and must be larger than TCP RX windows size in order to avoid being overflow.
  */
 #ifndef CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE
-#define CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE (2048)
+#define CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE (16384)
 #endif
 /* Because lwip do not support multi pbuf at a time, so increasing this variable has no performance improvement */
 #ifndef CONFIG_USBHOST_RTL8152_ETH_MAX_TX_SIZE

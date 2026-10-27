@@ -9,13 +9,13 @@
 #endif
 
 #if defined(CONFIG_USBHOST_MULT_HC)
-#define usb_hc_init            usbh_ehci_hc_init
-#define usb_hc_deinit          usbh_ehci_hc_deinit
-#define usbh_get_frame_number  usbh_ehci_get_frame_number
-#define usbh_roothub_control   usbh_ehci_roothub_control
-#define usbh_submit_urb        usbh_ehci_submit_urb
-#define usbh_kill_urb          usbh_ehci_kill_urb
-#define USBH_IRQHandler        usbh_ehci_irq_handler
+#define usb_hc_init           usbh_ehci_hc_init
+#define usb_hc_deinit         usbh_ehci_hc_deinit
+#define usbh_get_frame_number usbh_ehci_get_frame_number
+#define usbh_roothub_control  usbh_ehci_roothub_control
+#define usbh_submit_urb       usbh_ehci_submit_urb
+#define usbh_kill_urb         usbh_ehci_kill_urb
+#define USBH_IRQHandler       usbh_ehci_irq_handler
 
 int usbh_ehci_kill_urb(struct usbh_urb *urb);
 #endif
@@ -633,6 +633,9 @@ static void ehci_urb_waitup(struct usbh_bus *bus, struct usbh_urb *urb)
     struct ehci_qh_hw *qh;
 
     qh = (struct ehci_qh_hw *)urb->hcpriv;
+    if (!qh) {
+        return;
+    }
 
     qh->remove_in_iaad = 0;
 
@@ -710,9 +713,7 @@ static void ehci_check_qh(struct usbh_bus *bus, struct ehci_qh_hw *qhead, struct
 #endif
         token = qtd->hw.token;
 
-        if (token & QTD_TOKEN_STATUS_ERRORS) {
-            break;
-        } else if (token & QTD_TOKEN_STATUS_ACTIVE) {
+        if (token & QTD_TOKEN_STATUS_ACTIVE) {
             return;
         }
 
@@ -721,22 +722,19 @@ static void ehci_check_qh(struct usbh_bus *bus, struct ehci_qh_hw *qhead, struct
 
     urb = qh->urb;
 
+    urb->data_toggle = (qh->hw.overlay.token & QTD_TOKEN_TOGGLE) != 0;
+
     if ((token & QTD_TOKEN_STATUS_ERRORS) == 0) {
-        if (token & QTD_TOKEN_TOGGLE) {
-            urb->data_toggle = true;
-        } else {
-            urb->data_toggle = false;
-        }
         urb->errorcode = 0;
     } else {
         if (token & QTD_TOKEN_STATUS_BABBLE) {
             urb->errorcode = -USB_ERR_BABBLE;
             urb->data_toggle = 0;
+        } else if (token & (QTD_TOKEN_STATUS_DBERR | QTD_TOKEN_STATUS_XACTERR)) {
+            urb->errorcode = -USB_ERR_IO;
         } else if (token & QTD_TOKEN_STATUS_HALTED) {
             urb->errorcode = -USB_ERR_STALL;
             urb->data_toggle = 0;
-        } else if (token & (QTD_TOKEN_STATUS_DBERR | QTD_TOKEN_STATUS_XACTERR)) {
-            urb->errorcode = -USB_ERR_IO;
         }
     }
 
