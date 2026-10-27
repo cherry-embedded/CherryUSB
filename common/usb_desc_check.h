@@ -39,8 +39,11 @@
  *     - bInterval matches the transfer type and the given speed
  *
  *   Interface association (IAD)
- *     - CDC, Audio, Video and RNDIS control interfaces must be covered by an IAD of
- *       the matching function class
+ *     - CDC control interfaces may use a Union functional descriptor instead of
+ *       an IAD; its master must match the current interface and its subordinate
+ *       interfaces must exist and differ from the master
+ *     - other CDC, Audio, Video and RNDIS control interfaces must be covered by
+ *       an IAD of the matching function class
  *     - every IAD describes at least two interfaces and sits before its first interface
  *     - IAD interface ranges must not overlap
  *     - the first interface of an IAD is the control interface of its declared
@@ -135,6 +138,7 @@ extern "C" {
 #define USB_DESC_CHECK_EP_MIN_LEN   7u
 #define USB_DESC_CHECK_IF_LEN       9u
 #define USB_DESC_CHECK_IAD_LEN      8u
+#define USB_DESC_CHECK_CDC_UNION    0x06u
 
 typedef enum {
     USB_DESC_CHECK_OK              =   0,
@@ -166,6 +170,7 @@ struct usb_desc_check_iface {
     uint8_t  cls;
     uint8_t  sub;
     uint8_t  proto;
+    uint8_t  cdc_union;
 };
 
 struct usb_desc_check_iad {
@@ -487,6 +492,7 @@ static inline int32_t usb_desc_check_config_desc(uint8_t speed, const uint8_t *b
         ifs[i].cls   = 0u;
         ifs[i].sub   = 0u;
         ifs[i].proto = 0u;
+        ifs[i].cdc_union = 0u;
     }
     for (i = 0u; i < 32u; i++) {
         ep_mask[i]  = 0u;
@@ -656,6 +662,19 @@ static inline int32_t usb_desc_check_config_desc(uint8_t speed, const uint8_t *b
             if (bl <= 3u) {
                 return usb_desc_check_fail(USB_DESC_CHECK_ERR_DESC_LEN, off, err_offset);
             }
+            if ((type == USB_CS_DESCRIPTOR_TYPE_INTERFACE) && (in_iface != 0u) &&
+                (alt_next[if_num] == 1u) && (ifs[if_num].cls == USB_CLASS_CDC) &&
+                (buffer[off + 2u] == USB_DESC_CHECK_CDC_UNION)) {
+                if (buffer[off + 3u] != if_num) {
+                    return usb_desc_check_fail(USB_DESC_CHECK_ERR_CDC, off, err_offset);
+                }
+                for (j = 4u; j < bl; j++) {
+                    if ((buffer[off + j] >= num_iface) || (buffer[off + j] == if_num)) {
+                        return usb_desc_check_fail(USB_DESC_CHECK_ERR_CDC, off, err_offset);
+                    }
+                }
+                ifs[if_num].cdc_union = 1u;
+            }
         } else {
         }
 
@@ -706,6 +725,9 @@ static inline int32_t usb_desc_check_config_desc(uint8_t speed, const uint8_t *b
 
     for (i = 0u; i < num_iface; i++) {
         if (usb_desc_check_is_ctrl(ifs[i].cls, ifs[i].sub, ifs[i].proto) == 0u) {
+            continue;
+        }
+        if ((ifs[i].cls == USB_CLASS_CDC) && (ifs[i].cdc_union != 0u)) {
             continue;
         }
         if (usb_desc_check_iad_covers(iads, iad_cnt, ifs, i) == 0u) {
