@@ -45,6 +45,11 @@
 #define GET_USB_PHY_TARGET(reg_base)    USB_PHY_TARGET_UTMI
 #undef GET_USB_PHY_SPEED
 #define GET_USB_PHY_SPEED(reg_base)     USB_PHY_SPEED_HIGH
+#elif CONFIG_IDF_TARGET_ESP32H4
+#define DEFAULT_CPU_FREQ_MHZ    CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_USB_INTR_SOURCE ETS_USB_OTG11_INTR_SOURCE
+#undef GET_USB_INTR_SOURCE
+#define GET_USB_INTR_SOURCE(reg_base)   DEFAULT_USB_INTR_SOURCE
 #else
 #define DEFAULT_CPU_FREQ_MHZ 160
 #endif
@@ -53,7 +58,7 @@ uint32_t SystemCoreClock = (DEFAULT_CPU_FREQ_MHZ * 1000 * 1000);
 static usb_phy_handle_t s_phy_handle[SOC_USB_OTG_PERIPH_NUM] = {NULL};
 static intr_handle_t s_interrupt_handle[SOC_USB_OTG_PERIPH_NUM] = {NULL};
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H4
 const struct dwc2_user_params param_fs = {
     .phy_type = DWC2_PHY_TYPE_PARAM_FS,
     .device_dma_enable = true,
@@ -273,7 +278,7 @@ void usb_hc_low_level_deinit(struct usbh_bus *bus)
 
 void dwc2_get_user_params(uint32_t reg_base, struct dwc2_user_params *params)
 {
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H4
     memcpy(params, &param_fs, sizeof(struct dwc2_user_params));
 #elif CONFIG_IDF_TARGET_ESP32P4
     if (reg_base == ESP_USB_HS0_BASE) {
