@@ -273,6 +273,12 @@
 #define CONFIG_USBDEV_MAX_BUS 1
 #define CONFIG_USBHOST_MAX_BUS 1
 #define CONFIG_USB_HS
+#elif CONFIG_IDF_TARGET_ESP32H4
+#define ESP_USB_FS0_BASE            0x60040000
+#define ESP_USBD_BASE               ESP_USB_FS0_BASE
+#define ESP_USBH_BASE               ESP_USB_FS0_BASE
+#define CONFIG_USBDEV_MAX_BUS 1
+#define CONFIG_USBHOST_MAX_BUS 1
 #else
 #error "Unsupported SoC"
 #endif

@@ -19,7 +19,7 @@ void app_main(void)
 {
     USB_LOG_INFO("Hello CherryUSB!\n");
 
-    cdc_acm_msc_init(0, 0x60080000);
+    cdc_acm_msc_init(0, ESP_USBD_BASE);
     while(1)
     {
         vTaskDelay(10);
