@@ -195,6 +195,9 @@ static void socket_recv(int recv_socket, struct sockaddr_storage listen_addr, ui
             iperf_show_socket_error_reason(error_log, recv_socket);
             s_iperf_ctrl.finish = true;
             break;
+        } else if (actual_recv == 0 && type == IPERF_TRANS_TYPE_TCP) {
+            /* EOF: the client finished the timed test and closed normally. */
+            break;
         } else {
             if (iperf_recv_start) {
                 iperf_start_report();
