@@ -269,6 +269,10 @@
 */
 // #define CONFIG_USB_DWC2_DMA_ENABLE
 
+/* enable dwc2 device descriptor dma mode */
+// #define CONFIG_USB_DWC2_DEV_DESC_DMA_ENABLE
+#define CONFIG_USB_DWC2_DEV_DMA_DESC_NUM 4
+
 /* ---------------- MUSB Configuration ---------------- */
 #define CONFIG_USB_MUSB_EP_NUM 8
 // #define CONFIG_USB_MUSB_SUNXI

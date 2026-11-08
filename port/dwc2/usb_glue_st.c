@@ -411,7 +411,11 @@ const struct dwc2_user_params param_pb14_pb15 = {
 #else
     .device_dma_enable = false,
 #endif
+#if defined(CONFIG_USB_DWC2_DEV_DESC_DMA_ENABLE)
+    .device_dma_desc_enable = true,
+#else
     .device_dma_desc_enable = false,
+#endif
     .device_rx_fifo_size = (952 - 16 - 256 - 128 - 128 - 128 - 128),
     .device_tx_fifo_size = {
         [0] = 16,  // 64 byte

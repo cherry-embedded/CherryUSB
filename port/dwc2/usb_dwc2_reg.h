@@ -254,7 +254,7 @@ typedef struct
 
 #define USB_OTG_DCFG_DESCDMA_Pos                 (23U)
 #define USB_OTG_DCFG_DESCDMA_Msk                 (0x1UL << USB_OTG_DCFG_DESCDMA_Pos)
-#define USB_OTG_DCFG_DESCDMA                     USB_OTG_DCFG_DESCDMA_Msk
+#define USB_OTG_DCFG_DESCDMA                     USB_OTG_DCFG_DESCDMA_Msk       /*!< Device descriptor DMA enable */
 
 #define USB_OTG_DCFG_PERSCHIVL_Pos               (24U)
 #define USB_OTG_DCFG_PERSCHIVL_Msk               (0x3UL << USB_OTG_DCFG_PERSCHIVL_Pos) /*!< 0x03000000 */
@@ -498,6 +498,9 @@ typedef struct
 #define USB_OTG_DIEPMSK_EPDM_Pos                 (1U)
 #define USB_OTG_DIEPMSK_EPDM_Msk                 (0x1UL << USB_OTG_DIEPMSK_EPDM_Pos) /*!< 0x00000002 */
 #define USB_OTG_DIEPMSK_EPDM                     USB_OTG_DIEPMSK_EPDM_Msk      /*!< Endpoint disabled interrupt mask                  */
+#define USB_OTG_DIEPMSK_AHBERRM_Pos              (2U)
+#define USB_OTG_DIEPMSK_AHBERRM_Msk              (0x1UL << USB_OTG_DIEPMSK_AHBERRM_Pos) /*!< 0x00000004 */
+#define USB_OTG_DIEPMSK_AHBERRM                  USB_OTG_DIEPMSK_AHBERRM_Msk   /*!< IN transaction AHB error interrupt mask */
 #define USB_OTG_DIEPMSK_TOM_Pos                  (3U)
 #define USB_OTG_DIEPMSK_TOM_Msk                  (0x1UL << USB_OTG_DIEPMSK_TOM_Pos) /*!< 0x00000008 */
 #define USB_OTG_DIEPMSK_TOM                      USB_OTG_DIEPMSK_TOM_Msk       /*!< Timeout condition mask (nonisochronous endpoints) */
@@ -516,6 +519,9 @@ typedef struct
 #define USB_OTG_DIEPMSK_BIM_Pos                  (9U)
 #define USB_OTG_DIEPMSK_BIM_Msk                  (0x1UL << USB_OTG_DIEPMSK_BIM_Pos) /*!< 0x00000200 */
 #define USB_OTG_DIEPMSK_BIM                      USB_OTG_DIEPMSK_BIM_Msk       /*!< BNA interrupt mask                                */
+#define USB_OTG_DIEPMSK_NAKM_Pos                 (13U)
+#define USB_OTG_DIEPMSK_NAKM_Msk                 (0x1UL << USB_OTG_DIEPMSK_NAKM_Pos) /*!< 0x00002000 */
+#define USB_OTG_DIEPMSK_NAKM                     USB_OTG_DIEPMSK_NAKM_Msk      /*!< NAK interrupt mask */
 
 /********************  Bit definition for USB_OTG_HPTXSTS register  ********************/
 #define USB_OTG_HPTXSTS_PTXFSAVL_Pos             (0U)
@@ -1465,6 +1471,11 @@ typedef struct
 #define USB_OTG_DIEPDMA_DMAADDR_Msk              (0xFFFFFFFFUL << USB_OTG_DIEPDMA_DMAADDR_Pos) /*!< 0xFFFFFFFF */
 #define USB_OTG_DIEPDMA_DMAADDR                  USB_OTG_DIEPDMA_DMAADDR_Msk   /*!< DMA address */
 
+/********************  Bit definition for USB_OTG_DOEPDMA register  ********************/
+#define USB_OTG_DOEPDMA_DMAADDR_Pos              (0U)
+#define USB_OTG_DOEPDMA_DMAADDR_Msk              (0xFFFFFFFFUL << USB_OTG_DOEPDMA_DMAADDR_Pos) /*!< 0xFFFFFFFF */
+#define USB_OTG_DOEPDMA_DMAADDR                  USB_OTG_DOEPDMA_DMAADDR_Msk   /*!< DMA address */
+
 /********************  Bit definition for USB_OTG_HCDMA register  ********************/
 #define USB_OTG_HCDMA_DMAADDR_Pos                (0U)
 #define USB_OTG_HCDMA_DMAADDR_Msk                (0xFFFFFFFFUL << USB_OTG_HCDMA_DMAADDR_Pos) /*!< 0xFFFFFFFF */
@@ -1549,6 +1560,9 @@ typedef struct
 #define USB_OTG_DOEPINT_OUTPKTERR_Pos            (8U)
 #define USB_OTG_DOEPINT_OUTPKTERR_Msk            (0x1UL << USB_OTG_DOEPINT_OUTPKTERR_Pos) /*!< 0x00000100 */
 #define USB_OTG_DOEPINT_OUTPKTERR                USB_OTG_DOEPINT_OUTPKTERR_Msk   /*!< OUT packet error */
+#define USB_OTG_DOEPINT_BNA_Pos                  (9U)
+#define USB_OTG_DOEPINT_BNA_Msk                  (0x1UL << USB_OTG_DOEPINT_BNA_Pos) /*!< 0x00000200 */
+#define USB_OTG_DOEPINT_BNA                      USB_OTG_DOEPINT_BNA_Msk       /*!< Buffer not available interrupt */
 #define USB_OTG_DOEPINT_BERR_Pos                 (12U)
 #define USB_OTG_DOEPINT_BERR_Msk                 (0x1UL << USB_OTG_DOEPINT_BERR_Pos) /*!< 0x00001000 */
 #define USB_OTG_DOEPINT_BERR                      USB_OTG_DOEPINT_BERR_Msk   /*!< Babble error interrupt */
@@ -1721,6 +1735,46 @@ typedef struct
 #define GRXSTS_PKTSTS_IN_XFER_COMP             3U
 #define GRXSTS_PKTSTS_DATA_TOGGLE_ERR          5U
 #define GRXSTS_PKTSTS_CH_HALTED                7U
+
+struct dwc2_dma_desc {
+    volatile uint32_t status;
+    uint32_t buf;
+};
+
+#define DWC2_DMA_DESC_SIZE                       8U
+#define DWC2_DMA_DESC_ALIGN                      4U
+#define DWC2_DEV_DMA_BUFF_STS_SHIFT              30U
+#define DWC2_DEV_DMA_BUFF_STS_MASK               (0x3UL << DWC2_DEV_DMA_BUFF_STS_SHIFT)
+#define DWC2_DEV_DMA_BUFF_STS_HREADY             0U
+#define DWC2_DEV_DMA_BUFF_STS_DMABUSY            1U
+#define DWC2_DEV_DMA_BUFF_STS_DMADONE            2U
+#define DWC2_DEV_DMA_BUFF_STS_HBUSY              3U
+#define DWC2_DEV_DMA_STS_SHIFT                   28U
+#define DWC2_DEV_DMA_STS_MASK                    (0x3UL << DWC2_DEV_DMA_STS_SHIFT)
+#define DWC2_DEV_DMA_STS_SUCC                    0U
+#define DWC2_DEV_DMA_STS_BUFF_FLUSH              1U
+#define DWC2_DEV_DMA_STS_BUFF_ERR                3U
+#define DWC2_DEV_DMA_L                          (0x1UL << 27U)
+#define DWC2_DEV_DMA_SHORT                      (0x1UL << 26U)
+#define DWC2_DEV_DMA_IOC                        (0x1UL << 25U)
+#define DWC2_DEV_DMA_SR                         (0x1UL << 24U)
+#define DWC2_DEV_DMA_MTRF                       (0x1UL << 23U)
+#define DWC2_DEV_DMA_ISOC_PID_SHIFT              23U
+#define DWC2_DEV_DMA_ISOC_PID_MASK               (0x3UL << DWC2_DEV_DMA_ISOC_PID_SHIFT)
+#define DWC2_DEV_DMA_ISOC_PID_DATA0              0U
+#define DWC2_DEV_DMA_ISOC_PID_DATA2              1U
+#define DWC2_DEV_DMA_ISOC_PID_DATA1              2U
+#define DWC2_DEV_DMA_ISOC_PID_MDATA              3U
+#define DWC2_DEV_DMA_ISOC_FRNUM_SHIFT            12U
+#define DWC2_DEV_DMA_ISOC_FRNUM_MASK             (0x7FFUL << DWC2_DEV_DMA_ISOC_FRNUM_SHIFT)
+#define DWC2_DEV_DMA_ISOC_TX_NBYTES_MASK         0xFFFUL
+#define DWC2_DEV_DMA_ISOC_TX_NBYTES_LIMIT        0xFFFU
+#define DWC2_DEV_DMA_ISOC_RX_NBYTES_MASK         0x7FFUL
+#define DWC2_DEV_DMA_ISOC_RX_NBYTES_LIMIT        0x7FFU
+#define DWC2_DEV_DMA_ISOC_NBYTES_SHIFT           0U
+#define DWC2_DEV_DMA_NBYTES_SHIFT                0U
+#define DWC2_DEV_DMA_NBYTES_MASK                 0xFFFFUL
+#define DWC2_DEV_DMA_NBYTES_LIMIT                0xFFFFU
 
 #define USB_MASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)     ((__INSTANCE__)->GINTMSK &= ~(__INTERRUPT__))
 #define USB_UNMASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)   ((__INSTANCE__)->GINTMSK |= (__INTERRUPT__))
