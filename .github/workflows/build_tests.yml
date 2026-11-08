@@ -45,7 +45,7 @@ jobs:
       - name: Download bouffalo_sdk
         run: |
           cd ~
-          git clone https://github.com/bouffalolab/bouffalo_sdk.git
+          git clone https://github.com/bouffalolab/bouffalo_sdk.git -b v2.3.37
 
       - name: Download RISC-V toolchain
         run: |
@@ -81,11 +81,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@main
-        with:
-          python-version: 3.8
 
       - name: Install dependencies
         run: |
@@ -202,6 +197,21 @@ jobs:
         run: |
           cd ~
           git clone https://github.com/CherryUSB/phytium_env_ubuntu_x64
+
+      - name: Patch setup_dev.py
+        run: |
+          python3 <<'PY'
+          import pathlib
+          p = pathlib.Path('/home/runner/phytium_env_ubuntu_x64/setup_dev.py')
+          text = p.read_text()
+          text = text.replace('platform.processor()', 'platform.machine()')
+          text = text.replace(
+              "re.search('MSYS_NT', platform.system()).span() == (0, len('MSYS_NT'))",
+              "platform.system().startswith('MSYS_NT')"
+          )
+          text = text.replace('"sed -i ', 'r"sed -i ')
+          p.write_text(text)
+          PY
 
       - name: Build phytium demo
         run: |
