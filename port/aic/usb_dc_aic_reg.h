@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Artinchip Technology Co., Ltd
+ * Copyright (c) 2022-2026, ArtInChip Technology Co., Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 
 #define __IO volatile               /*!< Defines 'read / write' permissions */
 
+#if defined(AIC_USB_DEVICE_DRV_V10)
+#define TXFIFO_NUM              3
 typedef struct {
     __IO uint32_t ahbbasic;         /* 0x0000: AHBBASIC */
     __IO uint32_t usbdevinit;       /* 0x0004: USBDEVINIT */
@@ -54,6 +56,50 @@ typedef struct {
     __IO uint32_t dtknqr3;          /* 0x0368: DTKNQR3 */
     __IO uint32_t dtknqr4;          /* 0x036C: DTKNQR4 */
 }AIC_UDC_RegDef;
+#elif defined(AIC_USB_DEVICE_DRV_V30)
+#define USB_NUM_BIDIR_ENDPOINTS 5U
+typedef struct {
+	__IO uint32_t ahbbasic;			/* 0x0000: AHBBASIC */
+	__IO uint32_t usbdevinit;       /* 0x0004: USBDEVINIT */
+	__IO uint32_t usbphyif;			/* 0x0008: USBPHYIF */
+	__IO uint32_t usbulpiphy;       /* 0x000C: USBULPIPHY */
+	__IO uint32_t usbintsts;        /* 0x0010: USBINTSTS */
+	__IO uint32_t usbintmsk;        /* 0x0014: USBINTMSK */
+	__IO uint32_t rxfifosiz;        /* 0x0018: RXFIFOSIZ */
+	__IO uint32_t rxfifosts_pop;    /* 0x001C: RXFIFOSTS */
+	__IO uint32_t ietxfifosiz;		/* 0x0020: IETXFIFO0_SIZ */
+	__IO uint32_t thr_ctl;			/* 0x0024: THR_CTL */
+	uint8_t  res0[0x8];
+	__IO uint32_t rxfifosts_dbg;    /* 0x0030: RXFIFOSTS_DBG */
+	uint8_t  res1[0xc];
+	__IO uint32_t phyclkctl;        /* 0x0040: RXFIFOSTS_DBG */
+	uint8_t  res2[0x1c];
+	__IO uint32_t txfifosiz[16 - 1];	/* 0x0060 - 0x0098: TXFIFOSIZ() */
+	uint8_t  res3[0x164];
+	__IO uint32_t usbdevconf;       /* 0x0200: USBDEVCONF */
+	__IO uint32_t usbdevfunc;       /* 0x0204: USBDEVFUNC */
+	__IO uint32_t usblinests;       /* 0x0208: USBLINESTS */
+	__IO uint32_t inepintmsk;       /* 0x020C: INEPINTMSK */
+	__IO uint32_t outepintmsk;		/* 0x0210: OUTEPINTMSK */
+	__IO uint32_t usbepint;			/* 0x0214: USBEPINT */
+	__IO uint32_t usbepintmsk;		/* 0x0218: USBEPINTMSK */
+	uint8_t  res4[0x4];
+	__IO uint32_t inepcfg[16];      /* 0x0220 - 0x0260: INEPCFG() */
+	__IO uint32_t outepcfg[16];	    /* 0x0260 - 0x02A0: OUTEPCFG() */
+	__IO uint32_t inepint[16];      /* 0x02A0 - 0x02E0: INEPINT() */
+	__IO uint32_t outepint[16];	    /* 0x02E0 - 0x0320: OUTEPINT() */
+	__IO uint32_t ineptsfsiz[16];	/* 0x0320 - 0x0360: INEPTSFSIZ() */
+	__IO uint32_t outeptsfsiz[16];	/* 0x0360 - 0x03A0: OUTEPTSFSIZ() */
+	__IO uint32_t inepdmaaddr[16];	/* 0x03A0 - 0x03E0: INEPDMAADDR() */
+	__IO uint32_t outepdmaaddr[16];	/* 0x03E0 - 0x0420: OUTEPDMAADDR() */
+	__IO uint32_t ineptxsts[16];	/* 0x0420 - 0x0460: INEPTXSTS() */
+	__IO uint32_t dtknqr1;			/* 0x0360: DTKNQR1 */
+	__IO uint32_t dtknqr2;			/* 0x0364: DTKNQR2 */
+	__IO uint32_t dtknqr3;			/* 0x0368: DTKNQR3 */
+	__IO uint32_t dtknqr4;			/* 0x036C: DTKNQR4 */
+}AIC_UDC_RegDef;
+#endif
+
 
 /*===================================================================== */
 /*definitions related to CSR setting */
@@ -114,6 +160,7 @@ typedef struct {
 
 /* USBINTSTS/USBINTMSK interrupt register */
 #define INT_RESUME                      (1u << 31)
+#define INT_DATA_FET_STOP_INT           (0x1 << 21)
 #define INT_INCOMP_ISO_OUT_INT          (0x1 << 21)
 #define INT_INCOMP_ISO_IN_INT           (0x1 << 20)
 #define INT_OUT_EP                      (0x1 << 19)
@@ -127,6 +174,14 @@ typedef struct {
 #define INT_NP_TX_FIFO_EMPTY            (0x1 << 5)
 #define INT_RX_FIFO_NOT_EMPTY           (0x1 << 4)
 #define INT_SOF                         (0x1 << 3)
+
+/* USB THR CTL */
+#define TX_THR_LEN(x)                   (((x) & 0x7FE) << 2)
+#define ISO_THR_EN                      (0x1 << 1)
+#define NON_ISO_THR_EN                  (0x1 << 0)
+
+#define PLL_COM                         (CONFIG_USB_AIC_DC_BASE + 0x8078)
+#define PLL_LOCKED                      BIT(23)
 
 #define FULL_SPEED_CONTROL_PKT_SIZE     8
 #define FULL_SPEED_BULK_PKT_SIZE        64
@@ -142,6 +197,7 @@ typedef struct {
 #define EPS_NUM                         5
 #define PERIOD_IN_EP_NUM                2
 #define TOTAL_FIFO_SIZE                 0x3f6
+#if defined(AIC_USB_DEVICE_DRV_V10)
 #ifdef LPKG_CHERRYUSB_DEVICE_VIDEO_DVP_TEMPLATE
 /* video_dvp_template must use 2K Bytes period_tx_fifo */
 #define AIC_RX_FIFO_SIZE                0x99
@@ -155,7 +211,24 @@ typedef struct {
 #define AIC_PERIOD_TX_FIFO1_SIZE        0x100
 #define AIC_PERIOD_TX_FIFO2_SIZE        0xDD
 #endif
-
+#else
+#ifdef LPKG_CHERRYUSB_DEVICE_VIDEO_DVP_TEMPLATE
+/* using fifo with threshold */
+#define AIC_RX_FIFO_SIZE                   0x119 /* rx fifo must be greater than the MPS of out ep */
+#define AIC_DEDICATED_TX_FIFO0_SIZE        0x10
+#define AIC_DEDICATED_TX_FIFO1_SIZE        0x180 /* high-bandwith 2k/3k  & AHB bus needs to operate at 240Mhz */
+#define AIC_DEDICATED_TX_FIFO2_SIZE        0x80
+#define AIC_DEDICATED_TX_FIFO3_SIZE        0x80
+#define AIC_DEDICATED_TX_FIFO4_SIZE        0x00
+#else
+#define AIC_RX_FIFO_SIZE                   0x119
+#define AIC_DEDICATED_TX_FIFO0_SIZE        0x20
+#define AIC_DEDICATED_TX_FIFO1_SIZE        0x80 /* to achieve the highest performance, it is best for FIFO to be twice the MPS */
+#define AIC_DEDICATED_TX_FIFO2_SIZE        0x80
+#define AIC_DEDICATED_TX_FIFO3_SIZE        0x80
+#define AIC_DEDICATED_TX_FIFO4_SIZE        0x80
+#endif
+#endif
 #define DEPCTL_TXFNUM_0                 (0x0 << 22)
 #define DEPCTL_TXFNUM_1                 (0x1 << 22)
 #define DEPCTL_TXFNUM_2                 (0x2 << 22)
@@ -204,6 +277,14 @@ typedef struct {
 #define USBDEVFUNC_SFTDISCON            (1 << 1)
 #define USBDEVFUNC_RMTWKUPSIG           (1 << 0)
 
+/* USBDEVFUNC TEST MODE */
+#define TEST_MODE_DISABLE               (0)
+#define TEST_J_MODE                     (1)
+#define TEST_K_MODE                     (2)
+#define TEST_SE0_NAK_MODE               (3)
+#define TEST_PACKET_MODE                (4)
+#define TEST_FORCE_MODE                 (5)
+
 /* USBLINESTS: Enumeration speed */
 #define USB_ENUM_SPEED_SHIFT            1
 #define USB_ENUM_SPEED_MASK             (0x3 << USB_ENUM_SPEED_SHIFT)
@@ -237,6 +318,7 @@ typedef struct {
 #define DEPCTL_ISO_TYPE                 (0x1 << 18)
 #define DEPCTL_BULK_TYPE                (0x2 << 18)
 #define DEPCTL_INTR_TYPE                (0x3 << 18)
+#define DEPCTL_NAK_STATUS               (0x1 << 17)
 #define DEPCTL_USBACTEP                 (0x1 << 15)
 #define DEPCTL_NEXT_EP_BIT              (11)
 #define DEPCTL_NEXT_EP_MASK             (0xFU << DEPCTL_NEXT_EP_BIT)
@@ -307,6 +389,6 @@ typedef struct {
 
 /* In EPn Txfifo Status (INEPTXSTS) */
 #define INEPTXSTS_IN_EP_TXFIFO_STS      (0xFFFFU << 0)
-
+#define INEPTXSTS_IN_EP_TXQUEUE_STS     (0xFFU << 15)
 
 #endif
