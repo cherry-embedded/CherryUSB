@@ -407,6 +407,20 @@ void USBD_IRQHandler(uint8_t busid)
         }
     } else if (flag & USBHS_UDIF_BUS_RST) {
         USBHSD->DEV_AD = 0;
+        USBHSD->UEP_TX_EN = 0;
+        USBHSD->UEP_RX_EN = 0;
+        USBHSD->UEP_TX_ISO = 0;
+        USBHSD->UEP_RX_ISO = 0;
+        USBHSD->UEP_TX_TOG_AUTO = 0;
+        USBHSD->UEP_RX_TOG_AUTO = 0;
+        USBHSD->UEP_TX_BURST = 0;
+        USBHSD->UEP_RX_BURST = 0;
+        USBHSD->UEP_TX_BURST_MODE = 0;
+        USBHSD->UEP_RX_RES_MODE = 0;
+        for (uint8_t i = 0; i < 8; i++) {
+            ENDP_TX_CTRL(i) = 0;
+            ENDP_RX_CTRL(i) = 0;
+        }
         USBHSD->UEP0_DMA = (uint32_t)&g_ch32_usbhs_udc[busid].setup;
         USBHSD->UEP0_TX_CTRL = USBHS_UEP_T_RES_NAK;
         USBHSD->UEP0_RX_CTRL = USBHS_UEP_R_RES_ACK;
