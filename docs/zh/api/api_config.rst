@@ -161,3 +161,26 @@ CONFIG_USBHOST_MSC_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 MSC 读写传输的超时时间，默认 5s
+
+CONFIG_USBHOST_HUB_FORCE_REENUMERATE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+提供 ``usbh_hub_force_reenumerate()``。设备重连脉冲过短、主机控制器抓不到
+连接变化时，class 可以走原来的 debounce/reset/枚举路径。默认关闭。
+
+CONFIG_USBHOST_MSC_MODESWITCH_NO_CSW
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MSC usb_modeswitch 只发 CBW，不等 CSW。部分 ZeroCD 设备在 CBW 后会重启。
+默认关闭（仍走 CBW+CSW）。
+
+CONFIG_USBHOST_MSC_MODESWITCH_DELAY_MS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MSC modeswitch 成功后的延时，单位毫秒，默认 0。
+
+CONFIG_USBHOST_MSC_MODESWITCH_FORCE_REENUMERATE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MSC modeswitch 后强制父 hub 端口重新枚举，并且不注册临时 MSC 设备。
+需要 ``CONFIG_USBHOST_HUB_FORCE_REENUMERATE``。默认关闭。
