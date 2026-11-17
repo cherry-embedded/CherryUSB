@@ -734,13 +734,14 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
         return -USB_ERR_INVAL;
     }
 
-    if (!hport->connected) {
-        return -USB_ERR_NODEV;
-    }
-
     urb = &hport->ep0_urb;
 
     usb_osal_mutex_take(hport->mutex);
+
+    if (!hport->connected) {
+        usb_osal_mutex_give(hport->mutex);
+        return -USB_ERR_NODEV;
+    }
 
     usbh_print_setup(setup);
 
