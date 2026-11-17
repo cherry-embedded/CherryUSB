@@ -538,11 +538,10 @@ void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
         g_rndis_rx_length = g_rndis_class.bulkin_urb.actual_length;
         if (g_rndis_rx_length == 0) {
-            USB_LOG_WRN("rndis rx length is 0 but no zero required in spec\r\n");
             continue;
         }
 
-        if (g_rndis_rx_length % USB_GET_MAXPACKETSIZE(g_rndis_class.bulkin->wMaxPacketSize)) {
+        if (g_rndis_rx_length < CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
             pmg_offset = 0;
             USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_length);
 
