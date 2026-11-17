@@ -70,6 +70,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#usb-host-usb">USB host 连接 USB 网卡问题</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#config-usb-dcache-enable">什么时候需要开启 CONFIG_USB_DCACHE_ENABLE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ip">哪些 IP 对数据有对齐要求</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#class">主机 class 变量生命周期的处理</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="migration.html">部分改动迁移指南</a></li>
@@ -222,12 +223,16 @@
 <section id="gd-ip">
 <h2>GD IP 问题<a class="headerlink" href="#gd-ip" title="Link to this heading"></a></h2>
 <p>GD IP 采用 DWC2，但是读取的硬件参数都是 0（我也不懂为什么不给人知道），因此需要用户自行知道硬件信息，从 1.5.0 开始由于需要读取硬件信息，因此无法直接使用。</p>
-<p>其次 GD 复位以后无法使用 EPDIS 功能关闭端点，需要用户删除 reset 中断中的以下代码：</p>
+<p>其次 GD 复位以后无法使用 EPDIS 功能关闭端点，需要用户删除 reset 中断中的以下代码（从 1.7.0 开始不需要加了，默认不再 EPDIS）：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">USB_OTG_INEP</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">DIEPCTL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">USB_OTG_DIEPCTL_EPDIS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USB_OTG_DIEPCTL_SNAK</span><span class="p">);</span>
 <span class="n">USB_OTG_OUTEP</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">DOEPCTL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">USB_OTG_DOEPCTL_EPDIS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">USB_OTG_DOEPCTL_SNAK</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>除此之外可能存在其他未知 BUG，请自行测试。</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>从 1.7.0 开始，新增 dwc2_get_gd_reg，用于软件模拟 DWC2 参数寄存器信息，以替换硬件参数寄存器</p>
+</div>
 </section>
 <section id="usb-log-dbg">
 <h2>开启 USB_LOG_DBG 后无法枚举<a class="headerlink" href="#usb-log-dbg" title="Link to this heading"></a></h2>
@@ -258,7 +263,7 @@
 </section>
 <section id="otg">
 <h2>OTG 有哪些芯片支持<a class="headerlink" href="#otg" title="Link to this heading"></a></h2>
-<p>当前主线仅 HPM 芯片支持 OTG 功能，通过 ID 引脚自动切换主从模式，其他芯片请使用手动切换模式 OR 自行实现添加 ID 识别的驱动。</p>
+<p>当前主线仅 hpmicro 支持，厂家 sdk 则包括 phytuim，artinchip, nuvoton 芯片支持 OTG 功能，通过 ID 引脚或者 UCSI-ACPI 自动切换主从模式，其他芯片请使用手动切换模式 OR 自行实现添加 ID 识别的驱动。</p>
 </section>
 <section id="pc-com">
 <h2>PC 识别的 COM 口如何更改名称<a class="headerlink" href="#pc-com" title="Link to this heading"></a></h2>
@@ -305,6 +310,12 @@ DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split �
 <li><p>在未开启 CONFIG_USB_DCACHE_ENABLE 时，仅 DWC2/WCH/AIC IP 需要 4字节对齐，其余 1字节对齐即可。</p></li>
 <li><p>在开启 CONFIG_USB_DCACHE_ENABLE 时，所有 IP 都需要对齐到 CONFIG_USB_ALIGN_SIZE 字节</p></li>
 </ul>
+</section>
+<section id="class">
+<h2>主机 class 变量生命周期的处理<a class="headerlink" href="#class" title="Link to this heading"></a></h2>
+<p>当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。合理的做法是，
+在 disconnect 函数中增加信号量等待，直到所有对该 class 资源的操作完成，然后释放信号量，这样才能保证安全退出。</p>
+<p>举例如下：</p>
 </section>
 </section>
 
