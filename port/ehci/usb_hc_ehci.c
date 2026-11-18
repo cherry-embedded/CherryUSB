@@ -1404,6 +1404,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
             if (timeout > 200000U) {
                 qh->remove_in_iaad = 0;
                 qh->killed = 0;
+                USB_LOG_ERR("iaad timeout\r\n");
                 return -USB_ERR_TIMEOUT;
             }
         }
@@ -1505,7 +1506,7 @@ void USBH_IRQHandler(uint8_t busid)
     if (usbsts & EHCI_USBSTS_IAA) {
         for (uint8_t index = 0; index < CONFIG_USB_EHCI_QH_NUM; index++) {
             struct ehci_qh_hw *qh = &ehci_qh_pool[bus->hcd.hcd_id][index];
-            if (qh->remove_in_iaad) {
+            if (qh->urb && qh->remove_in_iaad) {
                 ehci_urb_waitup(bus, qh->urb);
             }
         }
