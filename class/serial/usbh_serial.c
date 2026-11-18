@@ -205,7 +205,7 @@ struct usbh_serial *usbh_serial_probe(struct usbh_hubport *hport, uint8_t intf,
         snprintf(hport->config.intf[intf].devname, CONFIG_USBHOST_DEV_NAMELEN, DEV_FORMAT_VENDOR, serial->minor);
     }
 
-    hport->config.intf[intf].priv = serial;
+    usbh_set_intf_data(hport, intf, serial);
     USB_LOG_INFO("Register Serial Class: %s (%s)\r\n", hport->config.intf[intf].devname, driver->driver_name);
 
     usbh_serial_run(serial);
@@ -224,11 +224,9 @@ void usbh_serial_remove(struct usbh_serial *serial)
         serial->driver->detach(serial);
     }
 
-    if (serial->hport->config.intf[serial->intf].priv) {
-        usb_osal_thread_schedule_other();
-        USB_LOG_INFO("Unregister Serial Class: %s (%s)\r\n", serial->hport->config.intf[serial->intf].devname, serial->driver->driver_name);
-        usbh_serial_stop(serial);
-    }
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister Serial Class: %s (%s)\r\n", serial->hport->config.intf[serial->intf].devname, serial->driver->driver_name);
+    usbh_serial_stop(serial);
 
     usbh_serial_free(serial);
 }
@@ -689,8 +687,7 @@ static int usbh_cdc_data_connect(struct usbh_hubport *hport, uint8_t intf)
 
 static int usbh_cdc_data_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
-    (void)hport;
-    (void)intf;
+    usbh_set_intf_data(hport, intf, NULL);
     return 0;
 }
 

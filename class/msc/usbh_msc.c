@@ -293,7 +293,7 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
     msc_class->hport = hport;
     msc_class->intf = intf;
 
-    hport->config.intf[intf].priv = msc_class;
+    usbh_set_intf_data(hport, intf, msc_class);
 
     ret = usbh_msc_get_maxlun(msc_class, g_msc_buf[msc_class->sdchar - 'a']);
     if (ret < 0) {
@@ -302,7 +302,7 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
             g_msc_buf[msc_class->sdchar - 'a'][0] = 0;
             ret = 0;
         } else {
-            return ret;
+            goto errout;
         }
     }
 
@@ -326,7 +326,8 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
                     (hport->device_desc.idProduct == config->pid)) {
                     USB_LOG_INFO("%s usb_modeswitch enable\r\n", config->name);
                     usbh_msc_modeswitch(msc_class, config->message_content);
-                    return 0;
+                    ret = -USB_ERR_NODEV;
+                    goto errout;
                 }
                 num++;
             } else {
@@ -341,32 +342,32 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 
     usbh_msc_run(msc_class);
     return ret;
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_msc_class_free(msc_class);
+    return ret;
 }
 
 static int usbh_msc_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_msc *msc_class = (struct usbh_msc *)hport->config.intf[intf].priv;
+    struct usbh_msc *msc_class = (struct usbh_msc *)usbh_get_intf_data(hport, intf);
 
-    if (msc_class) {
-        if (msc_class->bulkin) {
-            usbh_kill_urb(&msc_class->bulkin_urb);
-        }
-
-        if (msc_class->bulkout) {
-            usbh_kill_urb(&msc_class->bulkout_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister MSC Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_msc_stop(msc_class);
-        }
-
-        usbh_msc_class_free(msc_class);
+    if (msc_class->bulkin) {
+        usbh_kill_urb(&msc_class->bulkin_urb);
     }
 
+    if (msc_class->bulkout) {
+        usbh_kill_urb(&msc_class->bulkout_urb);
+    }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister MSC Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_msc_stop(msc_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_msc_class_free(msc_class);
     return ret;
 }
 

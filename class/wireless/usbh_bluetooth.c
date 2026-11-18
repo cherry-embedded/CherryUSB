@@ -48,7 +48,7 @@ static int usbh_bluetooth_connect(struct usbh_hubport *hport, uint8_t intf)
 #ifndef CONFIG_USBHOST_BLUETOOTH_HCI_H4
     bluetooth_class->num_of_intf_altsettings = hport->config.intf[intf + 1].altsetting_num;
 #endif
-    hport->config.intf[intf].priv = bluetooth_class;
+    usbh_set_intf_data(hport, intf, bluetooth_class);
 
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
@@ -57,7 +57,8 @@ static int usbh_bluetooth_connect(struct usbh_hubport *hport, uint8_t intf)
             if (ep_desc->bEndpointAddress & 0x80) {
                 USBH_EP_INIT(bluetooth_class->intin, ep_desc);
             } else {
-                return -USB_ERR_NOTSUPP;
+                ret = -USB_ERR_NOTSUPP;
+                goto errout;
             }
         } else {
 #endif
@@ -92,7 +93,7 @@ static int usbh_bluetooth_connect(struct usbh_hubport *hport, uint8_t intf)
 
     ret = usbh_set_interface(hport, intf, 0);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
     USB_LOG_INFO("Bluetooth select altsetting 0\r\n");
 #endif
@@ -100,44 +101,53 @@ static int usbh_bluetooth_connect(struct usbh_hubport *hport, uint8_t intf)
     USB_LOG_INFO("Register Bluetooth Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_bluetooth_run(bluetooth_class);
     return ret;
+#ifndef CONFIG_USBHOST_BLUETOOTH_HCI_H4
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(bluetooth_class, 0, sizeof(struct usbh_bluetooth));
+    return ret;
+#endif
 }
 
 static int usbh_bluetooth_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_bluetooth *bluetooth_class = (struct usbh_bluetooth *)hport->config.intf[intf].priv;
-
-    if (bluetooth_class) {
-        if (bluetooth_class->bulkin) {
-            usbh_kill_urb(&bluetooth_class->bulkin_urb);
-        }
-
-        if (bluetooth_class->bulkout) {
-            usbh_kill_urb(&bluetooth_class->bulkout_urb);
-        }
 #ifndef CONFIG_USBHOST_BLUETOOTH_HCI_H4
-        if (bluetooth_class->intin) {
-            usbh_kill_urb(&bluetooth_class->intin_urb);
-        }
-
-        // if (bluetooth_class->isoin) {
-        //     usbh_kill_urb(&bluetooth_class->isoin_urb);
-        // }
-
-        // if (bluetooth_class->isoin) {
-        //     usbh_kill_urb(&bluetooth_class->isoinin_urb);
-        // }
+    if (intf != 0) {
+        usbh_set_intf_data(hport, intf, NULL);
+        return 0;
+    }
 #endif
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister Bluetooth Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_bluetooth_stop(bluetooth_class);
-        }
 
-        memset(bluetooth_class, 0, sizeof(struct usbh_bluetooth));
+    struct usbh_bluetooth *bluetooth_class = (struct usbh_bluetooth *)usbh_get_intf_data(hport, intf);
+
+    if (bluetooth_class->bulkin) {
+        usbh_kill_urb(&bluetooth_class->bulkin_urb);
     }
 
+    if (bluetooth_class->bulkout) {
+        usbh_kill_urb(&bluetooth_class->bulkout_urb);
+    }
+#ifndef CONFIG_USBHOST_BLUETOOTH_HCI_H4
+    if (bluetooth_class->intin) {
+        usbh_kill_urb(&bluetooth_class->intin_urb);
+    }
+
+    // if (bluetooth_class->isoin) {
+    //     usbh_kill_urb(&bluetooth_class->isoin_urb);
+    // }
+
+    // if (bluetooth_class->isoin) {
+    //     usbh_kill_urb(&bluetooth_class->isoinin_urb);
+    // }
+#endif
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister Bluetooth Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_bluetooth_stop(bluetooth_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(bluetooth_class, 0, sizeof(struct usbh_bluetooth));
     return ret;
 }
 

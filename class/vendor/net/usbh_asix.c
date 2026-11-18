@@ -527,7 +527,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
     asix_class->hport = hport;
     asix_class->intf = intf;
 
-    hport->config.intf[intf].priv = asix_class;
+    usbh_set_intf_data(hport, intf, asix_class);
 
     if ((hport->device_desc.idVendor == 0x0b95) && (hport->device_desc.idProduct == 0x772b)) {
         asix_class->name = "ASIX AX88772B";
@@ -541,7 +541,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
         ret = usbh_asix_read_cmd(asix_class, AX_CMD_READ_EEPROM,
                                  0x04 + i, 0, &asix_class->mac[i * 2], 2);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
     }
 
@@ -556,7 +556,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
     ret = usbh_asix_read_phy_addr(asix_class, true);
     if (ret < 0) {
         USB_LOG_ERR("Failed to read phy addr: %d\r\n", ret);
-        return ret;
+        goto errout;
     }
     asix_class->phy_addr = ret;
     asix_class->embd_phy = ((ret & 0x1f) == AX_EMBD_PHY_ADDR);
@@ -564,7 +564,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
     ret = usbh_asix_read_cmd(asix_class, AX_CMD_STATMNGSTS_REG, 0, 0, &asix_class->chipcode, 1);
     if (ret < 0) {
         USB_LOG_ERR("Failed to read STATMNGSTS_REG: %d\r\n", ret);
-        return ret;
+        goto errout;
     }
 
     asix_class->chipcode &= AX_CHIPCODE_MASK;
@@ -582,7 +582,8 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
             if (ep_desc->bEndpointAddress & 0x80) {
                 USBH_EP_INIT(asix_class->intin, ep_desc);
             } else {
-                return -USB_ERR_NOTSUPP;
+                ret = -USB_ERR_NOTSUPP;
+                goto errout;
             }
         } else {
             if (ep_desc->bEndpointAddress & 0x80) {
@@ -620,36 +621,36 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
     USB_LOG_INFO("Register ASIX Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_asix_run(asix_class);
     return ret;
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(asix_class, 0, sizeof(struct usbh_asix));
+    return ret;
 }
 
 static int usbh_asix_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_asix *asix_class = (struct usbh_asix *)hport->config.intf[intf].priv;
+    struct usbh_asix *asix_class = (struct usbh_asix *)usbh_get_intf_data(hport, intf);
 
-    if (asix_class) {
-        if (asix_class->bulkin) {
-            usbh_kill_urb(&asix_class->bulkin_urb);
-        }
-
-        if (asix_class->bulkout) {
-            usbh_kill_urb(&asix_class->bulkout_urb);
-        }
-
-        if (asix_class->intin) {
-            usbh_kill_urb(&asix_class->intin_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister ASIX Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_asix_stop(asix_class);
-        }
-
-        memset(asix_class, 0, sizeof(struct usbh_asix));
+    if (asix_class->bulkin) {
+        usbh_kill_urb(&asix_class->bulkin_urb);
     }
 
+    if (asix_class->bulkout) {
+        usbh_kill_urb(&asix_class->bulkout_urb);
+    }
+
+    if (asix_class->intin) {
+        usbh_kill_urb(&asix_class->intin_urb);
+    }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister ASIX Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_asix_stop(asix_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(asix_class, 0, sizeof(struct usbh_asix));
     return ret;
 }
 

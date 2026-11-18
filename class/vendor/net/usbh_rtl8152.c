@@ -2000,13 +2000,14 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
     rtl8152_class->hport = hport;
     rtl8152_class->intf = intf;
 
-    hport->config.intf[intf].priv = rtl8152_class;
+    usbh_set_intf_data(hport, intf, rtl8152_class);
 
     rtl8152_class->version = usbh_rtl8152_get_version(rtl8152_class);
 
     if (rtl8152_class->version == RTL_VER_UNKNOWN) {
         USB_LOG_ERR("Unknown version 0x%04x\r\n", rtl8152_class->version);
-        return -USB_ERR_NOTSUPP;
+        ret = -USB_ERR_NOTSUPP;
+        goto errout;
     } else {
         USB_LOG_INFO("rtl8152 version 0x%04x\r\n", rtl8152_class->version);
     }
@@ -2042,7 +2043,8 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
 
     rtl8152_class->saved_wolopts = __rtl_get_wol(rtl8152_class);
     if (rtl_ops_init(rtl8152_class) < 0) {
-        return -USB_ERR_NODEV;
+        ret = -USB_ERR_NODEV;
+        goto errout;
     }
 
     rtl8152_class->rtl_ops.init(rtl8152_class);
@@ -2050,13 +2052,14 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
 
     if (rtl8152_class->rx_buf_sz > CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE) {
         USB_LOG_ERR("rx_buf_sz is overflow, default is %d\r\n", (unsigned int)CONFIG_USBHOST_RTL8152_ETH_MAX_RX_SIZE);
-        return -USB_ERR_NOMEM;
+        ret = -USB_ERR_NOMEM;
+        goto errout;
     }
 
     memset(mac_buffer, 0, 12);
     ret = usbh_get_string_desc(rtl8152_class->hport, 3, (uint8_t *)mac_buffer, 12);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
     for (int i = 0, j = 0; i < 12; i += 2, j++) {
@@ -2086,7 +2089,8 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
             if (ep_desc->bEndpointAddress & 0x80) {
                 USBH_EP_INIT(rtl8152_class->intin, ep_desc);
             } else {
-                return -USB_ERR_NOTSUPP;
+                ret = -USB_ERR_NOTSUPP;
+                goto errout;
             }
         } else {
             if (ep_desc->bEndpointAddress & 0x80) {
@@ -2103,36 +2107,36 @@ static int usbh_rtl8152_connect(struct usbh_hubport *hport, uint8_t intf)
 
     usbh_rtl8152_run(rtl8152_class);
     return 0;
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(rtl8152_class, 0, sizeof(struct usbh_rtl8152));
+    return ret;
 }
 
 static int usbh_rtl8152_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_rtl8152 *rtl8152_class = (struct usbh_rtl8152 *)hport->config.intf[intf].priv;
+    struct usbh_rtl8152 *rtl8152_class = (struct usbh_rtl8152 *)usbh_get_intf_data(hport, intf);
 
-    if (rtl8152_class) {
-        if (rtl8152_class->bulkin) {
-            usbh_kill_urb(&rtl8152_class->bulkin_urb);
-        }
-
-        if (rtl8152_class->bulkout) {
-            usbh_kill_urb(&rtl8152_class->bulkout_urb);
-        }
-
-        if (rtl8152_class->intin) {
-            usbh_kill_urb(&rtl8152_class->intin_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister rtl8152 Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_rtl8152_stop(rtl8152_class);
-        }
-
-        memset(rtl8152_class, 0, sizeof(struct usbh_rtl8152));
+    if (rtl8152_class->bulkin) {
+        usbh_kill_urb(&rtl8152_class->bulkin_urb);
     }
 
+    if (rtl8152_class->bulkout) {
+        usbh_kill_urb(&rtl8152_class->bulkout_urb);
+    }
+
+    if (rtl8152_class->intin) {
+        usbh_kill_urb(&rtl8152_class->intin_urb);
+    }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister rtl8152 Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_rtl8152_stop(rtl8152_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(rtl8152_class, 0, sizeof(struct usbh_rtl8152));
     return ret;
 }
 

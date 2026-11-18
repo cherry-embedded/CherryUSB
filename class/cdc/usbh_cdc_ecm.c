@@ -89,11 +89,12 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
     cdc_ecm_class->ctrl_intf = intf;
     cdc_ecm_class->data_intf = intf + 1;
 
-    hport->config.intf[intf].priv = cdc_ecm_class;
-    hport->config.intf[intf + 1].priv = NULL;
+    usbh_set_intf_data(hport, intf, cdc_ecm_class);
+    usbh_set_intf_data(hport, intf + 1, NULL);
 
     if (hport->config.intf[intf + 1].altsetting[0].intf_desc.bInterfaceClass != USB_DEVICE_CLASS_CDC_DATA) {
-        return -USB_ERR_INVAL;
+        ret = -USB_ERR_INVAL;
+        goto errout;
     }
 
     p = hport->raw_config_desc;
@@ -125,13 +126,14 @@ static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
 get_mac:
     if (mac_str_idx == 0xff) {
         USB_LOG_ERR("Do not find cdc ecm mac string\r\n");
-        return -1;
+        ret = -1;
+        goto errout;
     }
 
     memset(mac_buffer, 0, 12);
     ret = usbh_get_string_desc(cdc_ecm_class->hport, mac_str_idx, (uint8_t *)mac_buffer, 12);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
     for (int i = 0, j = 0; i < 12; i += 2, j++) {
@@ -197,7 +199,7 @@ get_mac:
     */
     ret = usbh_cdc_ecm_set_eth_packet_filter(cdc_ecm_class, CONFIG_USBHOST_CDC_ECM_PKT_FILTER);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
     USB_LOG_INFO("Set CDC ECM packet filter:%04x\r\n", CONFIG_USBHOST_CDC_ECM_PKT_FILTER);
 
@@ -207,36 +209,36 @@ get_mac:
 
     usbh_cdc_ecm_run(cdc_ecm_class);
     return ret;
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(cdc_ecm_class, 0, sizeof(struct usbh_cdc_ecm));
+    return ret;
 }
 
 static int usbh_cdc_ecm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)hport->config.intf[intf].priv;
+    struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)usbh_get_intf_data(hport, intf);
 
-    if (cdc_ecm_class) {
-        if (cdc_ecm_class->bulkin) {
-            usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
-        }
-
-        if (cdc_ecm_class->bulkout) {
-            usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
-        }
-
-        if (cdc_ecm_class->intin) {
-            usbh_kill_urb(&cdc_ecm_class->intin_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister CDC ECM Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_cdc_ecm_stop(cdc_ecm_class);
-        }
-
-        memset(cdc_ecm_class, 0, sizeof(struct usbh_cdc_ecm));
+    if (cdc_ecm_class->bulkin) {
+        usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
     }
 
+    if (cdc_ecm_class->bulkout) {
+        usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
+    }
+
+    if (cdc_ecm_class->intin) {
+        usbh_kill_urb(&cdc_ecm_class->intin_urb);
+    }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister CDC ECM Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_cdc_ecm_stop(cdc_ecm_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(cdc_ecm_class, 0, sizeof(struct usbh_cdc_ecm));
     return ret;
 }
 

@@ -351,8 +351,8 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     rndis_class->ctrl_intf = intf;
     rndis_class->data_intf = intf + 1;
 
-    hport->config.intf[intf].priv = rndis_class;
-    hport->config.intf[intf + 1].priv = NULL;
+    usbh_set_intf_data(hport, intf, rndis_class);
+    usbh_set_intf_data(hport, intf + 1, NULL);
 
     // ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
     // USBH_EP_INIT(rndis_class->intin, ep_desc);
@@ -369,12 +369,12 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
 
     ret = usbh_rndis_init_msg_transfer(rndis_class);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
     ret = usbh_rndis_query_msg_transfer(rndis_class, OID_GEN_SUPPORTED_LIST, 0, tmp_buffer, sizeof(tmp_buffer), &data_len);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
     oid_num = (data_len / 4);
     USB_LOG_INFO("rndis query OID_GEN_SUPPORTED_LIST success,oid num: %u\r\n", (unsigned int)oid_num);
@@ -445,13 +445,13 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     uint32_t packet_filter = 0x0f;
     ret = usbh_rndis_set_msg_transfer(rndis_class, OID_GEN_CURRENT_PACKET_FILTER, (uint8_t *)&packet_filter, 4);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
     uint8_t multicast_list[6] = { 0x01, 0x00, 0x5E, 0x00, 0x00, 0x01 };
     ret = usbh_rndis_set_msg_transfer(rndis_class, OID_802_3_MULTICAST_LIST, multicast_list, 6);
     if (ret < 0) {
-        return ret;
+        goto errout;
     }
 
     USB_LOG_INFO("rndis MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
@@ -469,6 +469,9 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 query_errorout:
     USB_LOG_ERR("rndis query iod:%08x error\r\n", (unsigned int)oid);
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(rndis_class, 0, sizeof(struct usbh_rndis));
     return ret;
 }
 
@@ -476,30 +479,26 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_rndis *rndis_class = (struct usbh_rndis *)hport->config.intf[intf].priv;
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)usbh_get_intf_data(hport, intf);
 
-    if (rndis_class) {
-        if (rndis_class->bulkin) {
-            usbh_kill_urb(&rndis_class->bulkin_urb);
-        }
-
-        if (rndis_class->bulkout) {
-            usbh_kill_urb(&rndis_class->bulkout_urb);
-        }
-
-        // if (rndis_class->intin) {
-        //     usbh_kill_urb(&rndis_class->intin_urb);
-        // }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_rndis_stop(rndis_class);
-        }
-
-        memset(rndis_class, 0, sizeof(struct usbh_rndis));
+    if (rndis_class->bulkin) {
+        usbh_kill_urb(&rndis_class->bulkin_urb);
     }
 
+    if (rndis_class->bulkout) {
+        usbh_kill_urb(&rndis_class->bulkout_urb);
+    }
+
+    // if (rndis_class->intin) {
+    //     usbh_kill_urb(&rndis_class->intin_urb);
+    // }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_rndis_stop(rndis_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(rndis_class, 0, sizeof(struct usbh_rndis));
     return ret;
 }
 

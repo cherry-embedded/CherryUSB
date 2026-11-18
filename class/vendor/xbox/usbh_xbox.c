@@ -51,7 +51,7 @@ int usbh_xbox_connect(struct usbh_hubport *hport, uint8_t intf)
     xbox_class->hport = hport;
     xbox_class->intf = intf;
 
-    hport->config.intf[intf].priv = xbox_class;
+    usbh_set_intf_data(hport, intf, xbox_class);
 
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
@@ -74,26 +74,22 @@ int usbh_xbox_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_xbox *xbox_class = (struct usbh_xbox *)hport->config.intf[intf].priv;
+    struct usbh_xbox *xbox_class = (struct usbh_xbox *)usbh_get_intf_data(hport, intf);
 
-    if (xbox_class) {
-        if (xbox_class->intin) {
-            usbh_kill_urb(&xbox_class->intin_urb);
-        }
-
-        if (xbox_class->intout) {
-            usbh_kill_urb(&xbox_class->intout_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister XBOX Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_xbox_stop(xbox_class);
-        }
-
-        usbh_xbox_class_free(xbox_class);
+    if (xbox_class->intin) {
+        usbh_kill_urb(&xbox_class->intin_urb);
     }
 
+    if (xbox_class->intout) {
+        usbh_kill_urb(&xbox_class->intout_urb);
+    }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister XBOX Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_xbox_stop(xbox_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_xbox_class_free(xbox_class);
     return ret;
 }
 

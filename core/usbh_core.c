@@ -621,6 +621,8 @@ int usbh_enumerate(struct usbh_hubport *hport)
         ret = CLASS_CONNECT(hport, i);
         if (ret >= 0) {
             hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_START);
+        } else {
+            hport->config.intf[i].class_driver = NULL;
         }
     }
 
@@ -639,10 +641,10 @@ void usbh_hubport_release(struct usbh_hubport *hport)
         usbh_kill_urb(&hport->ep0_urb);
         usbh_free_devaddr(hport);
         for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
-            if (hport->config.intf[i].class_driver && hport->config.intf[i].class_driver->disconnect) {
+            if (usbh_get_intf_data(hport, i) && hport->config.intf[i].class_driver && hport->config.intf[i].class_driver->disconnect) {
                 CLASS_DISCONNECT(hport, i);
+                hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_STOP);
             }
-            hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, i, USBH_EVENT_INTERFACE_STOP);
         }
         hport->config.config_desc.bNumInterfaces = 0;
         usb_osal_mutex_take(hport->mutex);
@@ -828,11 +830,11 @@ static void *usbh_list_all_interface_name(struct usbh_hub *hub, const char *devn
         if (hport->connected) {
             for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
                 if (hport->config.intf[itf].class_driver && hport->config.intf[itf].class_driver->driver_name) {
-                    if ((strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0) && hport->config.intf[itf].priv)
-                        return hport->config.intf[itf].priv;
+                    if ((strncmp(hport->config.intf[itf].devname, devname, CONFIG_USBHOST_DEV_NAMELEN) == 0) && usbh_get_intf_data(hport, itf))
+                        return usbh_get_intf_data(hport, itf);
 
                     if (strcmp(hport->config.intf[itf].class_driver->driver_name, "hub") == 0) {
-                        hub_next = hport->config.intf[itf].priv;
+                        hub_next = usbh_get_intf_data(hport, itf);
 
                         if (hub_next && hub_next->connected) {
                             priv = usbh_list_all_interface_name(hub_next, devname);
@@ -869,7 +871,7 @@ static struct usbh_hubport *usbh_list_all_hubport(struct usbh_hub *hub, uint8_t 
                 for (uint8_t itf = 0; itf < hport->config.config_desc.bNumInterfaces; itf++) {
                     if (hport->config.intf[itf].class_driver && hport->config.intf[itf].class_driver->driver_name) {
                         if (strcmp(hport->config.intf[itf].class_driver->driver_name, "hub") == 0) {
-                            hub_next = hport->config.intf[itf].priv;
+                            hub_next = usbh_get_intf_data(hport, itf);
 
                             if (hub_next && hub_next->connected) {
                                 struct usbh_hubport *hport_next = usbh_list_all_hubport(hub_next, hub_index, hub_port);
@@ -1108,7 +1110,7 @@ static void usbh_list_device(struct usbh_hub *hub, bool astree, bool verbose, in
                     }
 
                     if (!strcmp(hport->config.intf[intf].class_driver->driver_name, "hub")) {
-                        hub_next = hport->config.intf[intf].priv;
+                        hub_next = usbh_get_intf_data(hport, intf);
 
                         if (hub_next && hub_next->connected) {
                             usbh_list_device(hub_next, astree, verbose, dev_addr, vid, pid);

@@ -344,11 +344,12 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     hub->speed = hport->speed;
 
     hport->self = hub;
-    hport->config.intf[intf].priv = hub;
+    usbh_set_intf_data(hport, intf, hub);
 
     if (hport->depth > HUB_MAX_DEPTH) {
         USB_LOG_ERR("Hub depth(%d) is overflow\r\n", hport->depth);
-        return -USB_ERR_INVAL;
+        ret = -USB_ERR_INVAL;
+        goto errout;
     }
 
     /*
@@ -361,7 +362,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         ret = usbh_hub_set_depth(hub, hport->depth - 1);
         if (ret < 0) {
             USB_LOG_ERR("Unable to set hub depth \r\n");
-            return ret;
+            goto errout;
         }
     }
 
@@ -369,12 +370,12 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     if (hport->speed == USB_SPEED_SUPER) {
         ret = _usbh_hub_get_hub_ss_descriptor(hub, (uint8_t *)&hub->hub_ss_desc);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
 
         ret = parse_hub_ss_descriptor(&hub->hub_ss_desc, USB_SIZEOF_HUB_SS_DESC);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
 
         nports = hub->hub_ss_desc.bNbrPorts;
@@ -383,12 +384,12 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     } else {
         ret = _usbh_hub_get_hub_descriptor(hub, (uint8_t *)&hub->hub_desc);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
 
         ret = parse_hub_descriptor(&hub->hub_desc, USB_SIZEOF_HUB_DESC);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
         nports = hub->hub_desc.bNbrPorts;
         hub->powerdelay = hub->hub_desc.bPwrOn2PwrGood * 2;
@@ -397,7 +398,8 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     if (nports > CONFIG_USBHOST_MAX_EHPORTS) {
         USB_LOG_ERR("Hub nports %u overflow\r\n", nports);
-        return -USB_ERR_NOMEM;
+        ret = -USB_ERR_NOMEM;
+        goto errout;
     }
 
     hub->nports = nports;
@@ -415,19 +417,21 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
 
     ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
     if (USB_GET_ENDPOINT_TYPE(ep_desc->bmAttributes) != USB_ENDPOINT_TYPE_INTERRUPT) {
-        return -USB_ERR_INVAL;
+        ret = -USB_ERR_INVAL;
+        goto errout;
     }
 
     if (ep_desc->bEndpointAddress & 0x80) {
         USBH_EP_INIT(hub->intin, ep_desc);
     } else {
-        return -1;
+        ret = -1;
+        goto errout;
     }
 
     for (uint8_t port = 0; port < hub->nports; port++) {
         ret = usbh_hub_set_feature(hub, port + 1, HUB_PORT_FEATURE_POWER);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
     }
 
@@ -437,7 +441,7 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
         ret = usbh_hub_get_portstatus(hub, port + 1, &port_status);
         USB_LOG_DBG("port %u, status:0x%03x, change:0x%02x\r\n", port + 1, port_status.wPortStatus, port_status.wPortChange);
         if (ret < 0) {
-            return ret;
+            goto errout;
         }
     }
 
@@ -451,10 +455,16 @@ static int usbh_hub_connect(struct usbh_hubport *hport, uint8_t intf)
     hub->int_timer = usb_osal_timer_create("hubint_tim", USBH_GET_URB_INTERVAL(hub->intin->bInterval, hport->speed) / 1000, hub_int_timeout, hub, 0);
     if (hub->int_timer == NULL) {
         USB_LOG_ERR("No memory to alloc int_timer\r\n");
-        return -USB_ERR_NOMEM;
+        ret = -USB_ERR_NOMEM;
+        goto errout;
     }
     usb_osal_timer_start(hub->int_timer);
     return 0;
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    hport->self = NULL;
+    usbh_hub_class_free(hub);
+    return ret;
 }
 
 static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
@@ -462,29 +472,26 @@ static int usbh_hub_disconnect(struct usbh_hubport *hport, uint8_t intf)
     struct usbh_hubport *child;
     int ret = 0;
 
-    struct usbh_hub *hub = (struct usbh_hub *)hport->config.intf[intf].priv;
+    struct usbh_hub *hub = (struct usbh_hub *)usbh_get_intf_data(hport, intf);
 
-    if (hub) {
-        if (hub->intin) {
-            usbh_kill_urb(&hub->intin_urb);
-        }
-
-        if (hub->int_timer) {
-            usb_osal_timer_delete(hub->int_timer);
-        }
-
-        for (uint8_t port = 0; port < hub->nports; port++) {
-            child = &hub->child[port];
-            usbh_hubport_release(child);
-            child->parent = NULL;
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
-        }
-
-        usbh_hub_class_free(hub);
+    if (hub->intin) {
+        usbh_kill_urb(&hub->intin_urb);
     }
+
+    if (hub->int_timer) {
+        usb_osal_timer_delete(hub->int_timer);
+    }
+
+    for (uint8_t port = 0; port < hub->nports; port++) {
+        child = &hub->child[port];
+        usbh_hubport_release(child);
+        child->parent = NULL;
+    }
+
+    USB_LOG_INFO("Unregister HUB Class:%s\r\n", hport->config.intf[intf].devname);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_hub_class_free(hub);
     return ret;
 }
 #endif

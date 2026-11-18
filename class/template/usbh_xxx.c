@@ -34,16 +34,20 @@ static void usbh_xxx_class_free(struct usbh_xxx *xxx_class)
 
 static int usbh_xxx_connect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usb_endpoint_descriptor *ep_desc;
-    int ret;
-
     struct usbh_xxx *xxx_class = usbh_xxx_class_alloc();
     if (xxx_class == NULL) {
         USB_LOG_ERR("Fail to alloc xxx_class\r\n");
         return -USB_ERR_NOMEM;
     }
 
-    return ret;
+    xxx_class->hport = hport;
+    xxx_class->intf = intf;
+    usbh_set_intf_data(hport, intf, xxx_class);
+
+    strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+    USB_LOG_INFO("Register xxx Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_xxx_run(xxx_class);
+    return 0;
 }
 
 
@@ -51,25 +55,21 @@ static int usbh_xxx_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_xxx *xxx_class = (struct usbh_xxx *)hport->config.intf[intf].priv;
+    struct usbh_xxx *xxx_class = (struct usbh_xxx *)usbh_get_intf_data(hport, intf);
 
-    if (xxx_class) {
-        if (xxx_class->xxxin) {
-            usbh_kill_urb(&xxx_class->xxxin_urb);
-        }
-
-        if (xxx_class->xxxout) {
-            usbh_kill_urb(&xxx_class->xxxout_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            USB_LOG_INFO("Unregister xxx Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_xxx_stop(xxx_class);
-        }
-
-        usbh_xxx_class_free(xxx_class);
+    if (xxx_class->xxxin) {
+        usbh_kill_urb(&xxx_class->xxxin_urb);
     }
 
+    if (xxx_class->xxxout) {
+        usbh_kill_urb(&xxx_class->xxxout_urb);
+    }
+
+    USB_LOG_INFO("Unregister xxx Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_xxx_stop(xxx_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_xxx_class_free(xxx_class);
     return ret;
 }
 

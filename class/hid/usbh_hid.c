@@ -191,6 +191,7 @@ int usbh_hid_get_report(struct usbh_hid *hid_class, uint8_t report_type, uint8_t
 int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
+    int ret;
     uint8_t cur_iface = 0xff;
     uint8_t *p;
     bool found = false;
@@ -205,7 +206,7 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
     hid_class->hport = hport;
     hid_class->intf = intf;
 
-    hport->config.intf[intf].priv = hid_class;
+    usbh_set_intf_data(hport, intf, hid_class);
 
     p = hport->raw_config_desc;
     while (desc_len < hport->config.config_desc.wTotalLength) {
@@ -220,7 +221,8 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
                     if (desc->subdesc[0].bDescriptorType != HID_DESCRIPTOR_TYPE_HID_REPORT) {
                         USB_LOG_ERR("invalid bDescriptorType\r\n");
-                        return -USB_ERR_INVAL;
+                        ret = -USB_ERR_INVAL;
+                        goto errout;
                     }
 
                     hid_class->report_size = desc->subdesc[0].wDescriptorLength;
@@ -238,14 +240,16 @@ int usbh_hid_connect(struct usbh_hubport *hport, uint8_t intf)
 
     if (found == false) {
         USB_LOG_ERR("HID report descriptor not found\r\n");
-        return -USB_ERR_INVAL;
+        ret = -USB_ERR_INVAL;
+        goto errout;
     }
 found:
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
 
         if (USB_GET_ENDPOINT_TYPE(ep_desc->bmAttributes) != USB_ENDPOINT_TYPE_INTERRUPT) {
-            return -USB_ERR_INVAL;
+            ret = -USB_ERR_INVAL;
+            goto errout;
         }
 
         if (ep_desc->bEndpointAddress & 0x80) {
@@ -261,32 +265,32 @@ found:
 
     usbh_hid_run(hid_class);
     return 0;
+errout:
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_hid_class_free(hid_class);
+    return ret;
 }
 
 int usbh_hid_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_hid *hid_class = (struct usbh_hid *)hport->config.intf[intf].priv;
+    struct usbh_hid *hid_class = (struct usbh_hid *)usbh_get_intf_data(hport, intf);
 
-    if (hid_class) {
-        if (hid_class->intin) {
-            usbh_kill_urb(&hid_class->intin_urb);
-        }
-
-        if (hid_class->intout) {
-            usbh_kill_urb(&hid_class->intout_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            usb_osal_thread_schedule_other();
-            USB_LOG_INFO("Unregister HID Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_hid_stop(hid_class);
-        }
-
-        usbh_hid_class_free(hid_class);
+    if (hid_class->intin) {
+        usbh_kill_urb(&hid_class->intin_urb);
     }
 
+    if (hid_class->intout) {
+        usbh_kill_urb(&hid_class->intout_urb);
+    }
+
+    usb_osal_thread_schedule_other();
+    USB_LOG_INFO("Unregister HID Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_hid_stop(hid_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_hid_class_free(hid_class);
     return ret;
 }
 

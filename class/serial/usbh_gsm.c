@@ -95,11 +95,10 @@ static int usbh_gsm_connect(struct usbh_hubport *hport, uint8_t intf)
 
 static int usbh_gsm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
-    struct usbh_serial *serial = (struct usbh_serial *)hport->config.intf[intf].priv;
+    struct usbh_serial *serial = (struct usbh_serial *)usbh_get_intf_data(hport, intf);
 
-    if (serial) {
-        usbh_serial_remove(serial);
-    }
+    usbh_set_intf_data(hport, intf, NULL);
+    usbh_serial_remove(serial);
     return 0;
 }
 

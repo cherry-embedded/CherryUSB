@@ -67,6 +67,9 @@ enum usbh_event_type {
 #define USB_CLASS_MATCH_INTF_NUM      0x0020
 #define USB_CLASS_MATCH_VID_PID       (USB_CLASS_MATCH_VENDOR | USB_CLASS_MATCH_PRODUCT)
 
+#define usbh_set_intf_data(hport, intf_index, data) ((hport)->config.intf[(intf_index)].priv = (data))
+#define usbh_get_intf_data(hport, intf_index)       ((hport)->config.intf[(intf_index)].priv)
+
 #define CLASS_CONNECT(hport, i)    ((hport)->config.intf[i].class_driver->connect(hport, i))
 #define CLASS_DISCONNECT(hport, i) ((hport)->config.intf[i].class_driver->disconnect(hport, i))
 

@@ -227,7 +227,7 @@ static int usbh_aoa_connect(struct usbh_hubport *hport, uint8_t intf)
     aoa_class->hport = hport;
     aoa_class->intf = intf;
 
-    hport->config.intf[intf].priv = aoa_class;
+    usbh_set_intf_data(hport, intf, aoa_class);
 
     for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
@@ -251,25 +251,21 @@ static int usbh_aoa_disconnect(struct usbh_hubport *hport, uint8_t intf)
 {
     int ret = 0;
 
-    struct usbh_aoa *aoa_class = (struct usbh_aoa *)hport->config.intf[intf].priv;
+    struct usbh_aoa *aoa_class = (struct usbh_aoa *)usbh_get_intf_data(hport, intf);
 
-    if (aoa_class) {
-        if (aoa_class->bulkin) {
-            usbh_kill_urb(&aoa_class->bulkin_urb);
-        }
-
-        if (aoa_class->bulkout) {
-            usbh_kill_urb(&aoa_class->bulkout_urb);
-        }
-
-        if (hport->config.intf[intf].devname[0] != '\0') {
-            USB_LOG_INFO("Unregister AOA Class:%s\r\n", hport->config.intf[intf].devname);
-            usbh_aoa_stop(aoa_class);
-        }
-
-        memset(aoa_class, 0, sizeof(struct usbh_aoa));
+    if (aoa_class->bulkin) {
+        usbh_kill_urb(&aoa_class->bulkin_urb);
     }
 
+    if (aoa_class->bulkout) {
+        usbh_kill_urb(&aoa_class->bulkout_urb);
+    }
+
+    USB_LOG_INFO("Unregister AOA Class:%s\r\n", hport->config.intf[intf].devname);
+    usbh_aoa_stop(aoa_class);
+
+    usbh_set_intf_data(hport, intf, NULL);
+    memset(aoa_class, 0, sizeof(struct usbh_aoa));
     return ret;
 }
 
