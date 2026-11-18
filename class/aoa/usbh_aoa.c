@@ -18,7 +18,7 @@ static struct usbh_aoa g_aoa_class;
 
 int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!hport || !info ||
@@ -40,106 +40,100 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
         return -USB_ERR_INVAL;
     }
 
-    setup = hport->setup;
-
-    if (setup == NULL) {
-        return -USB_ERR_INVAL;
-    }
-
     USB_LOG_INFO("Try switch into aoa mode\r\n");
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_GET_PROTOCOL;
-    setup->wValue = 0;
-    setup->wIndex = 0;
-    setup->wLength = 2;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_GET_PROTOCOL;
+    setup.wValue = 0;
+    setup.wIndex = 0;
+    setup.wLength = 2;
 
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 2) {
         return ret;
     }
 
     USB_LOG_INFO("AOA version: v%d.%d\r\n", g_aoa_buffer[0], g_aoa_buffer[1]);
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_STRING;
-    setup->wValue = 0;
-    setup->wIndex = AOA_ACCESSORY_STRING_MANUFACTURER;
-    setup->wLength = strlen(info->acc_manufacturer) + 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_STRING;
+    setup.wValue = 0;
+    setup.wIndex = AOA_ACCESSORY_STRING_MANUFACTURER;
+    setup.wLength = strlen(info->acc_manufacturer) + 1;
 
     memcpy(g_aoa_buffer, info->acc_manufacturer, strlen(info->acc_manufacturer) + 1);
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_STRING;
-    setup->wValue = 0;
-    setup->wIndex = AOA_ACCESSORY_STRING_MODEL;
-    setup->wLength = strlen(info->acc_model) + 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_STRING;
+    setup.wValue = 0;
+    setup.wIndex = AOA_ACCESSORY_STRING_MODEL;
+    setup.wLength = strlen(info->acc_model) + 1;
 
     memcpy(g_aoa_buffer, info->acc_model, strlen(info->acc_model) + 1);
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_STRING;
-    setup->wValue = 0;
-    setup->wIndex = AOA_ACCESSORY_STRING_DESCRIPTION;
-    setup->wLength = strlen(info->acc_description) + 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_STRING;
+    setup.wValue = 0;
+    setup.wIndex = AOA_ACCESSORY_STRING_DESCRIPTION;
+    setup.wLength = strlen(info->acc_description) + 1;
 
     memcpy(g_aoa_buffer, info->acc_description, strlen(info->acc_description) + 1);
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_STRING;
-    setup->wValue = 0;
-    setup->wIndex = AOA_ACCESSORY_STRING_VERSION;
-    setup->wLength = strlen(info->acc_version) + 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_STRING;
+    setup.wValue = 0;
+    setup.wIndex = AOA_ACCESSORY_STRING_VERSION;
+    setup.wLength = strlen(info->acc_version) + 1;
 
     memcpy(g_aoa_buffer, info->acc_version, strlen(info->acc_version) + 1);
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_STRING;
-    setup->wValue = 0;
-    setup->wIndex = AOA_ACCESSORY_STRING_URI;
-    setup->wLength = strlen(info->acc_uri) + 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_STRING;
+    setup.wValue = 0;
+    setup.wIndex = AOA_ACCESSORY_STRING_URI;
+    setup.wLength = strlen(info->acc_uri) + 1;
 
     memcpy(g_aoa_buffer, info->acc_uri, strlen(info->acc_uri) + 1);
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_STRING;
-    setup->wValue = 0;
-    setup->wIndex = AOA_ACCESSORY_STRING_SERIAL;
-    setup->wLength = strlen(info->acc_serial) + 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_STRING;
+    setup.wValue = 0;
+    setup.wIndex = AOA_ACCESSORY_STRING_SERIAL;
+    setup.wLength = strlen(info->acc_serial) + 1;
 
     memcpy(g_aoa_buffer, info->acc_serial, strlen(info->acc_serial) + 1);
-    ret = usbh_control_transfer(hport, setup, g_aoa_buffer);
+    ret = usbh_control_transfer(hport, &setup, g_aoa_buffer);
     if (ret < 0) {
         return ret;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_START;
-    setup->wValue = 0;
-    setup->wIndex = 0;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_START;
+    setup.wValue = 0;
+    setup.wIndex = 0;
+    setup.wLength = 0;
 
-    ret = usbh_control_transfer(hport, setup, NULL);
+    ret = usbh_control_transfer(hport, &setup, NULL);
     if (ret < 0) {
         return ret;
     }
@@ -150,7 +144,7 @@ int usbh_aoa_switch(struct usbh_hubport *hport, struct aoa_string_info *info)
 
 int usbh_aoa_register_hid(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *report, uint32_t report_len)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
     uint8_t len;
     uint32_t offset;
@@ -158,15 +152,14 @@ int usbh_aoa_register_hid(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *repo
     if (!aoa_class || !aoa_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = aoa_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_REGISTER_HID;
-    setup->wValue = id;
-    setup->wIndex = report_len;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_REGISTER_HID;
+    setup.wValue = id;
+    setup.wIndex = report_len;
+    setup.wLength = 0;
 
-    ret = usbh_control_transfer(aoa_class->hport, setup, NULL);
+    ret = usbh_control_transfer(aoa_class->hport, &setup, NULL);
     if (ret < 0) {
         return ret;
     }
@@ -175,14 +168,14 @@ int usbh_aoa_register_hid(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *repo
     while (report_len > 0) {
         len = report_len > 64 ? 64 : report_len;
 
-        setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-        setup->bRequest = AOA_ACCESSORY_SET_HID_REPORT_DESC;
-        setup->wValue = id;
-        setup->wIndex = offset;
-        setup->wLength = len;
+        setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+        setup.bRequest = AOA_ACCESSORY_SET_HID_REPORT_DESC;
+        setup.wValue = id;
+        setup.wIndex = offset;
+        setup.wLength = len;
 
         memcpy(g_aoa_buffer, report + offset, len);
-        ret = usbh_control_transfer(aoa_class->hport, setup, g_aoa_buffer);
+        ret = usbh_control_transfer(aoa_class->hport, &setup, g_aoa_buffer);
         if (ret < 0) {
             return ret;
         }
@@ -194,7 +187,7 @@ int usbh_aoa_register_hid(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *repo
 
 int usbh_aoa_send_hid_event(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *event, uint32_t event_len)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!aoa_class || !aoa_class->hport) {
         return -USB_ERR_INVAL;
@@ -204,16 +197,15 @@ int usbh_aoa_send_hid_event(struct usbh_aoa *aoa_class, uint16_t id, uint8_t *ev
         return -USB_ERR_INVAL;
     }
 
-    setup = aoa_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = AOA_ACCESSORY_SEND_HID_EVENT;
-    setup->wValue = id;
-    setup->wIndex = 0;
-    setup->wLength = event_len;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = AOA_ACCESSORY_SEND_HID_EVENT;
+    setup.wValue = id;
+    setup.wIndex = 0;
+    setup.wLength = event_len;
 
     memcpy(g_aoa_buffer, event, event_len);
-    return usbh_control_transfer(aoa_class->hport, setup, event);
+    return usbh_control_transfer(aoa_class->hport, &setup, event);
 }
 
 static int usbh_aoa_connect(struct usbh_hubport *hport, uint8_t intf)

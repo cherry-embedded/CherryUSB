@@ -143,44 +143,42 @@ static void usbh_cp210x_init_max_speed(struct usbh_serial *serial)
 
 static int usbh_cp210x_control_out(struct usbh_serial *serial, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t size)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = bRequest;
-    setup->wValue = wValue;
-    setup->wIndex = wIndex;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = bRequest;
+    setup.wValue = wValue;
+    setup.wIndex = wIndex;
+    setup.wLength = size;
 
     if (data && size) {
         memcpy(serial->iobuffer, data, size);
-        return usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+        return usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
     } else {
-        return usbh_control_transfer(serial->hport, setup, NULL);
+        return usbh_control_transfer(serial->hport, &setup, NULL);
     }
 }
 
 static int usbh_cp210x_control_in(struct usbh_serial *serial, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t size)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = bRequest;
-    setup->wValue = wValue;
-    setup->wIndex = wIndex;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = bRequest;
+    setup.wValue = wValue;
+    setup.wIndex = wIndex;
+    setup.wLength = size;
 
-    ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+    ret = usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
     if (ret < size) {
         return ret;
     }
@@ -255,25 +253,24 @@ static int usbh_cp210x_set_chars(struct usbh_serial *serial)
 
 static int usbh_cp210x_set_baudrate(struct usbh_serial *serial, uint32_t baudrate)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     struct usbh_cp210x *cp210x_class;
 
     if (!serial || !serial->hport || !serial->priv) {
         return -USB_ERR_INVAL;
     }
 
-    setup = serial->hport->setup;
     cp210x_class = (struct usbh_cp210x *)serial->priv;
 
     if (baudrate < cp210x_class->min_speed || baudrate > cp210x_class->max_speed) {
         return -USB_ERR_INVAL;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = CP210X_SET_BAUDRATE;
-    setup->wValue = 0;
-    setup->wIndex = serial->intf;
-    setup->wLength = 4;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = CP210X_SET_BAUDRATE;
+    setup.wValue = 0;
+    setup.wIndex = serial->intf;
+    setup.wLength = 4;
 
     if (cp210x_class->use_actual_rate)
         baudrate = cp210x_get_actual_rate(baudrate);
@@ -281,28 +278,27 @@ static int usbh_cp210x_set_baudrate(struct usbh_serial *serial, uint32_t baudrat
         baudrate = cp210x_get_an205_rate(baudrate);
 
     memcpy(serial->iobuffer, (uint8_t *)&baudrate, 4);
-    return usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+    return usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
 }
 
 static int usbh_cp210x_set_data_format(struct usbh_serial *serial, uint8_t databits, uint8_t parity, uint8_t stopbits)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     uint16_t value;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
     value = ((databits & 0x0F) << 8) | ((parity & 0x0f) << 4) | ((stopbits & 0x03) << 0);
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = CP210X_SET_LINE_CTL;
-    setup->wValue = value;
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = CP210X_SET_LINE_CTL;
+    setup.wValue = value;
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_cp210x_attach(struct usbh_serial *serial)

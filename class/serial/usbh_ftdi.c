@@ -106,25 +106,24 @@ static uint32_t ftdi_2232h_baud_to_divisor(uint32_t baud)
 
 int usbh_ftdi_reset(struct usbh_serial *serial)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_RESET;
-    setup->wValue = 0;
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_RESET;
+    setup.wValue = 0;
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ftdi_set_baudrate(struct usbh_serial *serial, uint32_t baudrate)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     struct usbh_ftdi *ftdi_class;
     uint32_t div_value;
     uint16_t value;
@@ -133,7 +132,6 @@ static int usbh_ftdi_set_baudrate(struct usbh_serial *serial, uint32_t baudrate)
     if (!serial || !serial->hport || !serial->priv) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
     ftdi_class = (struct usbh_ftdi *)serial->priv;
 
     switch (ftdi_class->chip_type) {
@@ -159,13 +157,13 @@ static int usbh_ftdi_set_baudrate(struct usbh_serial *serial, uint32_t baudrate)
     value = div_value & 0xFFFF;
     baudrate_high = (div_value >> 16) & 0xff;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_SET_BAUDRATE;
-    setup->wValue = value;
-    setup->wIndex = (baudrate_high << 8) | serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_SET_BAUDRATE;
+    setup.wValue = value;
+    setup.wIndex = (baudrate_high << 8) | serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ftdi_set_data_format(struct usbh_serial *serial, uint8_t databits, uint8_t parity, uint8_t stopbits, uint8_t isbreak)
@@ -176,41 +174,39 @@ static int usbh_ftdi_set_data_format(struct usbh_serial *serial, uint8_t databit
      * D11-D12 		STOP_BIT_1=0, STOP_BIT_15=1, STOP_BIT_2=2
      * D14  		BREAK_OFF=0, BREAK_ON=1
      **/
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     uint16_t value;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
     value = ((isbreak & 0x01) << 14) | ((stopbits & 0x03) << 11) | ((parity & 0x0f) << 8) | (databits & 0x0f);
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_SET_DATA;
-    setup->wValue = value;
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_SET_DATA;
+    setup.wValue = value;
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ftdi_set_latency_timer(struct usbh_serial *serial, uint16_t value)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_SET_LATENCY_TIMER;
-    setup->wValue = value;
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_SET_LATENCY_TIMER;
+    setup.wValue = value;
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ftdi_attach(struct usbh_serial *serial)
@@ -275,20 +271,19 @@ static void usbh_ftdi_detach(struct usbh_serial *serial)
 
 static int usbh_ftdi_set_flow_ctrl(struct usbh_serial *serial, bool hardctrl)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_SET_FLOW_CTRL;
-    setup->wValue = hardctrl ? FTDI_SIO_RTS_CTS_HS : FTDI_SIO_DISABLE_FLOW_CTRL;
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_SET_FLOW_CTRL;
+    setup.wValue = hardctrl ? FTDI_SIO_RTS_CTS_HS : FTDI_SIO_DISABLE_FLOW_CTRL;
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ftdi_set_line_coding(struct usbh_serial *serial, struct cdc_line_coding *line_coding)
@@ -302,28 +297,27 @@ static int usbh_ftdi_set_line_coding(struct usbh_serial *serial, struct cdc_line
 
 static int usbh_ftdi_set_line_state(struct usbh_serial *serial, bool dtr, bool rts)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     uint16_t value = 0;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
     value = ((dtr ? FTDI_SIO_SET_DTR_HIGH : FTDI_SIO_SET_DTR_LOW) | (rts ? FTDI_SIO_SET_RTS_HIGH : FTDI_SIO_SET_RTS_LOW));
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_SET_MODEM_CTRL;
-    setup->wValue = value;
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_SET_MODEM_CTRL;
+    setup.wValue = value;
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ftdi_get_modem_status(struct usbh_serial *serial)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     uint16_t status = 0;
     int ret;
 
@@ -331,15 +325,14 @@ static int usbh_ftdi_get_modem_status(struct usbh_serial *serial)
         return -USB_ERR_INVAL;
     }
 
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = FTDI_SIO_GET_MODEM_STATUS;
-    setup->wValue = 0x0000;
-    setup->wIndex = serial->intf;
-    setup->wLength = 2;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = FTDI_SIO_GET_MODEM_STATUS;
+    setup.wValue = 0x0000;
+    setup.wIndex = serial->intf;
+    setup.wLength = 2;
 
-    ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+    ret = usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
     if (ret < 2) {
         return ret;
     }

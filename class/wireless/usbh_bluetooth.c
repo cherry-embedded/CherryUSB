@@ -251,20 +251,19 @@ delete :
 static int usbh_bluetooth_hci_cmd(uint8_t *buffer, uint32_t buflen)
 {
     struct usbh_bluetooth *bluetooth_class = &g_bluetooth_class;
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!bluetooth_class || !bluetooth_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = bluetooth_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = 0x00;
-    setup->wValue = 0;
-    setup->wIndex = bluetooth_class->intf;
-    setup->wLength = buflen;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = 0x00;
+    setup.wValue = 0;
+    setup.wIndex = bluetooth_class->intf;
+    setup.wLength = buflen;
 
-    return usbh_control_transfer(bluetooth_class->hport, setup, buffer);
+    return usbh_control_transfer(bluetooth_class->hport, &setup, buffer);
 }
 
 int usbh_bluetooth_hci_write(uint8_t hci_type, uint8_t *buffer, uint32_t buflen)

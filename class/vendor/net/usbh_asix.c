@@ -60,21 +60,20 @@ static int usbh_asix_read_cmd(struct usbh_asix *asix_class,
                               void *data,
                               uint16_t size)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!asix_class || !asix_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = asix_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = cmd;
-    setup->wValue = value;
-    setup->wIndex = index;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = cmd;
+    setup.wValue = value;
+    setup.wIndex = index;
+    setup.wLength = size;
 
-    ret = usbh_control_transfer(asix_class->hport, setup, g_asix_buf);
+    ret = usbh_control_transfer(asix_class->hport, &setup, g_asix_buf);
     if (ret < size) {
         return ret;
     }
@@ -90,24 +89,23 @@ static int usbh_asix_write_cmd(struct usbh_asix *asix_class,
                                void *data,
                                uint16_t size)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!asix_class || !asix_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = asix_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = cmd;
-    setup->wValue = value;
-    setup->wIndex = index;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = cmd;
+    setup.wValue = value;
+    setup.wIndex = index;
+    setup.wLength = size;
 
     if (data && size) {
         memcpy(g_asix_buf, data, size);
-        return usbh_control_transfer(asix_class->hport, setup, g_asix_buf);
+        return usbh_control_transfer(asix_class->hport, &setup, g_asix_buf);
     } else {
-        return usbh_control_transfer(asix_class->hport, setup, NULL);
+        return usbh_control_transfer(asix_class->hport, &setup, NULL);
     }
 }
 

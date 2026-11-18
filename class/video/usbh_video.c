@@ -59,7 +59,7 @@ static void usbh_video_class_free(struct usbh_video *video_class)
 
 int usbh_video_get(struct usbh_video *video_class, uint8_t request, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
     uint8_t retry;
 
@@ -71,17 +71,16 @@ int usbh_video_get(struct usbh_video *video_class, uint8_t request, uint8_t intf
         return -USB_ERR_INVAL;
     }
 
-    setup = video_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = request;
-    setup->wValue = cs << 8;
-    setup->wIndex = (entity_id << 8) | intf;
-    setup->wLength = len;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = request;
+    setup.wValue = cs << 8;
+    setup.wIndex = (entity_id << 8) | intf;
+    setup.wLength = len;
 
     retry = 0;
     while (1) {
-        ret = usbh_control_transfer(video_class->hport, setup, g_video_buf);
+        ret = usbh_control_transfer(video_class->hport, &setup, g_video_buf);
         if (ret == len) {
             break;
         }
@@ -101,7 +100,7 @@ int usbh_video_get(struct usbh_video *video_class, uint8_t request, uint8_t intf
 
 int usbh_video_set(struct usbh_video *video_class, uint8_t request, uint8_t intf, uint8_t entity_id, uint8_t cs, uint8_t *buf, uint16_t len)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!video_class || !video_class->hport) {
@@ -112,17 +111,16 @@ int usbh_video_set(struct usbh_video *video_class, uint8_t request, uint8_t intf
         return -USB_ERR_INVAL;
     }
 
-    setup = video_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = request;
-    setup->wValue = cs << 8;
-    setup->wIndex = (entity_id << 8) | intf;
-    setup->wLength = len;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = request;
+    setup.wValue = cs << 8;
+    setup.wIndex = (entity_id << 8) | intf;
+    setup.wLength = len;
 
     memcpy(g_video_buf, buf, len);
 
-    ret = usbh_control_transfer(video_class->hport, setup, g_video_buf);
+    ret = usbh_control_transfer(video_class->hport, &setup, g_video_buf);
     usb_osal_msleep(50);
     return ret;
 }
@@ -155,7 +153,7 @@ int usbh_video_open(struct usbh_video *video_class,
                     uint16_t wHeight,
                     uint8_t altsetting)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
@@ -169,7 +167,6 @@ int usbh_video_open(struct usbh_video *video_class,
     if (!video_class || !video_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = video_class->hport->setup;
 
     if (video_class->is_opened) {
         return 0;
@@ -259,13 +256,13 @@ dev_found:
 
     step = 8;
     if (!video_class->is_bulk) {
-        setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-        setup->bRequest = USB_REQUEST_SET_INTERFACE;
-        setup->wValue = altsetting;
-        setup->wIndex = video_class->data_intf;
-        setup->wLength = 0;
+        setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+        setup.bRequest = USB_REQUEST_SET_INTERFACE;
+        setup.wValue = altsetting;
+        setup.wIndex = video_class->data_intf;
+        setup.wLength = 0;
 
-        ret = usbh_control_transfer(video_class->hport, setup, NULL);
+        ret = usbh_control_transfer(video_class->hport, &setup, NULL);
         if (ret < 0) {
             goto errout;
         }
@@ -296,33 +293,32 @@ errout:
 
 int usbh_video_close(struct usbh_video *video_class)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret = 0;
 
     if (!video_class || !video_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = video_class->hport->setup;
 
     USB_LOG_INFO("Close video device\r\n");
 
     video_class->is_opened = false;
 
     if (video_class->is_bulk) {
-        setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_ENDPOINT;
-        setup->bRequest = USB_REQUEST_CLEAR_FEATURE;
-        setup->wValue = USB_FEATURE_ENDPOINT_HALT;
-        setup->wIndex = video_class->bulkin->bEndpointAddress;
-        setup->wLength = 0;
+        setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_ENDPOINT;
+        setup.bRequest = USB_REQUEST_CLEAR_FEATURE;
+        setup.wValue = USB_FEATURE_ENDPOINT_HALT;
+        setup.wIndex = video_class->bulkin->bEndpointAddress;
+        setup.wLength = 0;
     } else {
-        setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-        setup->bRequest = USB_REQUEST_SET_INTERFACE;
-        setup->wValue = 0;
-        setup->wIndex = video_class->data_intf;
-        setup->wLength = 0;
+        setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+        setup.bRequest = USB_REQUEST_SET_INTERFACE;
+        setup.wValue = 0;
+        setup.wIndex = video_class->data_intf;
+        setup.wLength = 0;
     }
 
-    ret = usbh_control_transfer(video_class->hport, setup, NULL);
+    ret = usbh_control_transfer(video_class->hport, &setup, NULL);
     if (ret < 0) {
         return ret;
     }

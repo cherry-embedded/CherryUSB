@@ -73,41 +73,39 @@ static void usbh_cdc_acm_detach(struct usbh_serial *serial)
 
 static int usbh_cdc_acm_set_line_coding(struct usbh_serial *serial, struct cdc_line_coding *line_coding)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = CDC_REQUEST_SET_LINE_CODING;
-    setup->wValue = 0;
-    setup->wIndex = serial->intf;
-    setup->wLength = 7;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = CDC_REQUEST_SET_LINE_CODING;
+    setup.wValue = 0;
+    setup.wIndex = serial->intf;
+    setup.wLength = 7;
 
     memcpy(serial->iobuffer, line_coding, sizeof(struct cdc_line_coding));
 
-    return usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+    return usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
 }
 
 static int usbh_cdc_acm_get_line_coding(struct usbh_serial *serial, struct cdc_line_coding *line_coding)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = CDC_REQUEST_GET_LINE_CODING;
-    setup->wValue = 0;
-    setup->wIndex = serial->intf;
-    setup->wLength = 7;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = CDC_REQUEST_GET_LINE_CODING;
+    setup.wValue = 0;
+    setup.wIndex = serial->intf;
+    setup.wLength = 7;
 
-    ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+    ret = usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
     if (ret < sizeof(struct cdc_line_coding)) {
         return ret;
     }
@@ -117,20 +115,19 @@ static int usbh_cdc_acm_get_line_coding(struct usbh_serial *serial, struct cdc_l
 
 static int usbh_cdc_acm_set_line_state(struct usbh_serial *serial, bool dtr, bool rts)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = CDC_REQUEST_SET_CONTROL_LINE_STATE;
-    setup->wValue = (dtr << 0) | (rts << 1);
-    setup->wIndex = serial->intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = CDC_REQUEST_SET_CONTROL_LINE_STATE;
+    setup.wValue = (dtr << 0) | (rts << 1);
+    setup.wIndex = serial->intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_cdc_acm_get_modem_status(struct usbh_serial *serial)

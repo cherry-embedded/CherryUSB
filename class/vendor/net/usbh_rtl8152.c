@@ -951,21 +951,20 @@ static int usbh_rtl8152_read_regs(struct usbh_rtl8152 *rtl8152_class,
                                   uint16_t size,
                                   void *data)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!rtl8152_class || !rtl8152_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = rtl8152_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = RTL8152_REQ_GET_REGS;
-    setup->wValue = value;
-    setup->wIndex = index;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = RTL8152_REQ_GET_REGS;
+    setup.wValue = value;
+    setup.wIndex = index;
+    setup.wLength = size;
 
-    ret = usbh_control_transfer(rtl8152_class->hport, setup, g_rtl8152_buf);
+    ret = usbh_control_transfer(rtl8152_class->hport, &setup, g_rtl8152_buf);
     if (ret < size) {
         return ret;
     }
@@ -980,21 +979,20 @@ static int usbh_rtl8152_write_regs(struct usbh_rtl8152 *rtl8152_class,
                                    uint16_t size,
                                    void *data)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!rtl8152_class || !rtl8152_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = rtl8152_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = RTL8152_REQ_SET_REGS;
-    setup->wValue = value;
-    setup->wIndex = index;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = RTL8152_REQ_SET_REGS;
+    setup.wValue = value;
+    setup.wIndex = index;
+    setup.wLength = size;
 
     memcpy(g_rtl8152_buf, data, size);
-    return usbh_control_transfer(rtl8152_class->hport, setup, g_rtl8152_buf);
+    return usbh_control_transfer(rtl8152_class->hport, &setup, g_rtl8152_buf);
 }
 
 static int generic_ocp_read(struct usbh_rtl8152 *tp, uint16_t index, uint16_t size,

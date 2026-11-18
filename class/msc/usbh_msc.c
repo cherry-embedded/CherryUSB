@@ -51,21 +51,20 @@ static void usbh_msc_class_free(struct usbh_msc *msc_class)
 
 static int usbh_msc_get_maxlun(struct usbh_msc *msc_class, uint8_t *buffer)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!msc_class || !msc_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = msc_class->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = MSC_REQUEST_GET_MAX_LUN;
-    setup->wValue = 0;
-    setup->wIndex = msc_class->intf;
-    setup->wLength = 1;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = MSC_REQUEST_GET_MAX_LUN;
+    setup.wValue = 0;
+    setup.wIndex = msc_class->intf;
+    setup.wLength = 1;
 
-    ret = usbh_control_transfer(msc_class->hport, setup, buffer);
+    ret = usbh_control_transfer(msc_class->hport, &setup, buffer);
     if (ret < 1) {
         return ret;
     }

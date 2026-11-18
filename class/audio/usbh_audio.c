@@ -304,7 +304,7 @@ static struct audio_cs_if_ac_feature_unit_descriptor *usbh_audio_find_feature_un
 
 int usbh_audio_open(struct usbh_audio *audio_class, uint32_t samp_freq, uint8_t bitresolution, bool is_tx)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     struct usb_endpoint_descriptor *ep_desc;
     uint8_t mult;
     uint16_t mps;
@@ -315,7 +315,6 @@ int usbh_audio_open(struct usbh_audio *audio_class, uint32_t samp_freq, uint8_t 
     if (!audio_class || !audio_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = audio_class->hport->setup;
 
     if (audio_class->is_opened) {
         return 0;
@@ -345,13 +344,13 @@ freq_found:
         return -USB_ERR_NODEV;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = altsetting;
-    setup->wIndex = intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = USB_REQUEST_SET_INTERFACE;
+    setup.wValue = altsetting;
+    setup.wIndex = intf;
+    setup.wLength = 0;
 
-    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
+    ret = usbh_control_transfer(audio_class->hport, &setup, NULL);
     if (ret < 0) {
         return ret;
     }
@@ -359,14 +358,14 @@ freq_found:
     ep_desc = &audio_class->hport->config.intf[intf].altsetting[altsetting].ep[0].ep_desc;
 
     if (audio_class->as_msg_table[intf - audio_class->ctrl_intf - 1].ep_attr & AUDIO_EP_CONTROL_SAMPLING_FEQ) {
-        setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_ENDPOINT;
-        setup->bRequest = AUDIO_REQUEST_SET_CUR;
-        setup->wValue = (AUDIO_EP_CONTROL_SAMPLING_FEQ << 8) | 0x00;
-        setup->wIndex = ep_desc->bEndpointAddress;
-        setup->wLength = 3;
+        setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_ENDPOINT;
+        setup.bRequest = AUDIO_REQUEST_SET_CUR;
+        setup.wValue = (AUDIO_EP_CONTROL_SAMPLING_FEQ << 8) | 0x00;
+        setup.wIndex = ep_desc->bEndpointAddress;
+        setup.wLength = 3;
 
         memcpy(g_audio_buf, &samp_freq, 3);
-        ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+        ret = usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
         if (ret < 0) {
             return ret;
         }
@@ -389,7 +388,7 @@ freq_found:
 
 int usbh_audio_close(struct usbh_audio *audio_class, bool is_tx)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     struct usb_endpoint_descriptor *ep_desc;
     int ret;
     uint8_t intf = 0xff;
@@ -398,7 +397,6 @@ int usbh_audio_close(struct usbh_audio *audio_class, bool is_tx)
     if (!audio_class || !audio_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = audio_class->hport->setup;
 
     for (uint8_t i = 0; i < audio_class->bInCollection; i++) {
         if (audio_class->as_msg_table[i].is_tx == is_tx) {
@@ -412,13 +410,13 @@ intf_found:
         return -USB_ERR_NODEV;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = 0;
-    setup->wIndex = intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = USB_REQUEST_SET_INTERFACE;
+    setup.wValue = 0;
+    setup.wIndex = intf;
+    setup.wLength = 0;
 
-    ret = usbh_control_transfer(audio_class->hport, setup, NULL);
+    ret = usbh_control_transfer(audio_class->hport, &setup, NULL);
     if (ret < 0) {
         return ret;
     }
@@ -447,7 +445,7 @@ static int usbh_audio_get_volume_info(struct usbh_audio *audio_class,
                                       int16_t *volume_res,
                                       bool is_tx)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
     uint8_t feature_id = 0xff;
 
@@ -455,7 +453,6 @@ static int usbh_audio_get_volume_info(struct usbh_audio *audio_class,
         return -USB_ERR_INVAL;
     }
 
-    setup = audio_class->hport->setup;
 
     for (uint8_t i = 0; i < audio_class->bInCollection; i++) {
         if (audio_class->as_msg_table[i].is_tx == is_tx) {
@@ -470,13 +467,13 @@ feature_found:
     }
 
     if (volume_cur) {
-        setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-        setup->bRequest = AUDIO_REQUEST_GET_CUR;
-        setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
-        setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
-        setup->wLength = 2;
+        setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+        setup.bRequest = AUDIO_REQUEST_GET_CUR;
+        setup.wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+        setup.wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+        setup.wLength = 2;
 
-        ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+        ret = usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
         if (ret != 2) {
             return ret < 0 ? ret : -USB_ERR_IO;
         }
@@ -485,13 +482,13 @@ feature_found:
     }
 
     if (volume_min) {
-        setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-        setup->bRequest = AUDIO_REQUEST_GET_MIN;
-        setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
-        setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
-        setup->wLength = 2;
+        setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+        setup.bRequest = AUDIO_REQUEST_GET_MIN;
+        setup.wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+        setup.wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+        setup.wLength = 2;
 
-        ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+        ret = usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
         if (ret != 2) {
             return ret < 0 ? ret : -USB_ERR_IO;
         }
@@ -500,13 +497,13 @@ feature_found:
     }
 
     if (volume_max) {
-        setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-        setup->bRequest = AUDIO_REQUEST_GET_MAX;
-        setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
-        setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
-        setup->wLength = 2;
+        setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+        setup.bRequest = AUDIO_REQUEST_GET_MAX;
+        setup.wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+        setup.wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+        setup.wLength = 2;
 
-        ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+        ret = usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
         if (ret != 2) {
             return ret < 0 ? ret : -USB_ERR_IO;
         }
@@ -514,13 +511,13 @@ feature_found:
     }
 
     if (volume_res) {
-        setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-        setup->bRequest = AUDIO_REQUEST_GET_RES;
-        setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
-        setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
-        setup->wLength = 2;
+        setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+        setup.bRequest = AUDIO_REQUEST_GET_RES;
+        setup.wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+        setup.wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+        setup.wLength = 2;
 
-        ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+        ret = usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
         if (ret != 2) {
             return ret < 0 ? ret : -USB_ERR_IO;
         }
@@ -532,7 +529,7 @@ feature_found:
 
 static int __usbh_audio_set_volume(struct usbh_audio *audio_class, uint8_t ch, uint8_t volume, bool is_tx)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
     uint8_t feature_id = 0xff;
     int16_t volume_hex = 0;
@@ -550,7 +547,6 @@ static int __usbh_audio_set_volume(struct usbh_audio *audio_class, uint8_t ch, u
         return -USB_ERR_INVAL;
     }
 
-    setup = audio_class->hport->setup;
 
     for (uint8_t i = 0; i < audio_class->bInCollection; i++) {
         if (audio_class->as_msg_table[i].is_tx == is_tx) {
@@ -573,11 +569,11 @@ feature_found:
         return -USB_ERR_INVAL;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = AUDIO_REQUEST_SET_CUR;
-    setup->wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
-    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
-    setup->wLength = 2;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = AUDIO_REQUEST_SET_CUR;
+    setup.wValue = (AUDIO_FU_CONTROL_VOLUME << 8) | ch;
+    setup.wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+    setup.wLength = 2;
 
     /* Calculate target volume in float to avoid int16_t calculation overflow. */
     volume_db = volume_hex2float(volume_min) + (volume_hex2float(volume_max) - volume_hex2float(volume_min)) * (float)volume / 100.0f;
@@ -592,7 +588,7 @@ feature_found:
                  volume_hex2float(volume_res));
 
     memcpy(g_audio_buf, &volume_hex, 2);
-    ret = usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    ret = usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
     if (ret < 0) {
         return ret;
     }
@@ -627,13 +623,12 @@ int usbh_audio_set_volume(struct usbh_audio *audio_class, uint8_t volume, bool i
 
 static int __usbh_audio_set_mute(struct usbh_audio *audio_class, uint8_t ch, bool mute, bool is_tx)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     uint8_t feature_id = 0xff;
 
     if (!audio_class || !audio_class->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = audio_class->hport->setup;
 
     for (uint8_t i = 0; i < audio_class->bInCollection; i++) {
         if (audio_class->as_msg_table[i].is_tx == is_tx) {
@@ -647,14 +642,14 @@ feature_found:
         return -USB_ERR_NODEV;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = AUDIO_REQUEST_SET_CUR;
-    setup->wValue = (AUDIO_FU_CONTROL_MUTE << 8) | ch;
-    setup->wIndex = (feature_id << 8) | audio_class->ctrl_intf;
-    setup->wLength = 1;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = AUDIO_REQUEST_SET_CUR;
+    setup.wValue = (AUDIO_FU_CONTROL_MUTE << 8) | ch;
+    setup.wIndex = (feature_id << 8) | audio_class->ctrl_intf;
+    setup.wLength = 1;
 
     memcpy(g_audio_buf, &mute, 1);
-    return usbh_control_transfer(audio_class->hport, setup, g_audio_buf);
+    return usbh_control_transfer(audio_class->hport, &setup, g_audio_buf);
 }
 
 int usbh_audio_set_mute(struct usbh_audio *audio_class, bool mute, bool is_tx)

@@ -70,39 +70,37 @@ static int usbh_ch34x_get_baudrate_div(uint32_t baudrate, uint8_t *factor, uint8
 
 static int usbh_ch34x_control_out(struct usbh_serial *serial, uint8_t bRequest, uint16_t wValue, uint16_t wIndex)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = bRequest;
-    setup->wValue = wValue;
-    setup->wIndex = wIndex;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = bRequest;
+    setup.wValue = wValue;
+    setup.wIndex = wIndex;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(serial->hport, setup, NULL);
+    return usbh_control_transfer(serial->hport, &setup, NULL);
 }
 
 static int usbh_ch34x_control_in(struct usbh_serial *serial, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t size)
 {
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     int ret;
 
     if (!serial || !serial->hport) {
         return -USB_ERR_INVAL;
     }
-    setup = serial->hport->setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = bRequest;
-    setup->wValue = wValue;
-    setup->wIndex = wIndex;
-    setup->wLength = size;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = bRequest;
+    setup.wValue = wValue;
+    setup.wIndex = wIndex;
+    setup.wLength = size;
 
-    ret = usbh_control_transfer(serial->hport, setup, serial->iobuffer);
+    ret = usbh_control_transfer(serial->hport, &setup, serial->iobuffer);
     if (ret < size) {
         return ret;
     }

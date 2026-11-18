@@ -347,7 +347,7 @@ static int usbh_get_default_mps(int speed)
 int usbh_enumerate(struct usbh_hubport *hport)
 {
     struct usb_interface_descriptor *intf_desc;
-    struct usb_setup_packet *setup;
+    struct usb_setup_packet setup;
     struct usb_device_descriptor *dev_desc;
     struct usb_endpoint_descriptor *ep;
     int dev_addr;
@@ -357,7 +357,6 @@ int usbh_enumerate(struct usbh_hubport *hport)
     int ret;
 
     hport->setup = (struct usb_setup_packet *)&g_setup_buffer[hport->bus->busid][hport->parent->index - 1][hport->port - 1];
-    setup = hport->setup;
     ep = &hport->ep0;
 
     /* Config EP0 mps from speed */
@@ -372,13 +371,13 @@ int usbh_enumerate(struct usbh_hubport *hport)
     hport->dev_addr = 0;
 
     /* Read the first 8 bytes of the device descriptor */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
-    setup->wIndex = 0;
-    setup->wLength = 8;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup.wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
+    setup.wIndex = 0;
+    setup.wLength = 8;
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    ret = usbh_control_transfer(hport, &setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < 8) {
         USB_LOG_ERR("Failed to get device descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -414,13 +413,13 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
 
     /* Set the USB device address */
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_SET_ADDRESS;
-    setup->wValue = dev_addr;
-    setup->wIndex = 0;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_SET_ADDRESS;
+    setup.wValue = dev_addr;
+    setup.wIndex = 0;
+    setup.wLength = 0;
 
-    ret = usbh_control_transfer(hport, setup, NULL);
+    ret = usbh_control_transfer(hport, &setup, NULL);
     if (ret < 0) {
         USB_LOG_ERR("Failed to set devaddr,errorcode:%d\r\n", ret);
         __usbh_free_devaddr(&hport->bus->devgen, (uint8_t)dev_addr);
@@ -434,13 +433,13 @@ int usbh_enumerate(struct usbh_hubport *hport)
     hport->dev_addr = dev_addr;
 
     /* Read the full device descriptor */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
-    setup->wIndex = 0;
-    setup->wLength = USB_SIZEOF_DEVICE_DESC;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup.wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_DEVICE << 8) | 0);
+    setup.wIndex = 0;
+    setup.wLength = USB_SIZEOF_DEVICE_DESC;
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    ret = usbh_control_transfer(hport, &setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < USB_SIZEOF_DEVICE_DESC) {
         USB_LOG_ERR("Failed to get full device descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -463,13 +462,13 @@ int usbh_enumerate(struct usbh_hubport *hport)
     USB_LOG_DBG("The device selects config %d\r\n", config_index);
 
     /* Read the first 9 bytes of the config descriptor */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | config_index);
-    setup->wIndex = 0;
-    setup->wLength = USB_SIZEOF_CONFIG_DESC;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup.wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | config_index);
+    setup.wIndex = 0;
+    setup.wLength = USB_SIZEOF_CONFIG_DESC;
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    ret = usbh_control_transfer(hport, &setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < USB_SIZEOF_CONFIG_DESC) {
         USB_LOG_ERR("Failed to get config descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -490,13 +489,13 @@ int usbh_enumerate(struct usbh_hubport *hport)
         goto errout;
     }
 
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | config_index);
-    setup->wIndex = 0;
-    setup->wLength = wTotalLength;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup.wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_CONFIGURATION << 8) | config_index);
+    setup.wIndex = 0;
+    setup.wLength = wTotalLength;
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    ret = usbh_control_transfer(hport, &setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < wTotalLength) {
         USB_LOG_ERR("Failed to get full config descriptor,errorcode:%d\r\n", ret);
         goto errout;
@@ -567,26 +566,26 @@ int usbh_enumerate(struct usbh_hubport *hport)
     }
 #endif
     /* Select device configuration 1 */
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_SET_CONFIGURATION;
-    setup->wValue = config_value;
-    setup->wIndex = 0;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_SET_CONFIGURATION;
+    setup.wValue = config_value;
+    setup.wIndex = 0;
+    setup.wLength = 0;
 
-    ret = usbh_control_transfer(hport, setup, NULL);
+    ret = usbh_control_transfer(hport, &setup, NULL);
     if (ret < 0) {
         USB_LOG_ERR("Failed to set configuration,errorcode:%d\r\n", ret);
         goto errout;
     }
 
 #ifdef CONFIG_USBHOST_MSOS_ENABLE
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = CONFIG_USBHOST_MSOS_VENDOR_CODE;
-    setup->wValue = 0;
-    setup->wIndex = 0x0004;
-    setup->wLength = 16;
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_VENDOR | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = CONFIG_USBHOST_MSOS_VENDOR_CODE;
+    setup.wValue = 0;
+    setup.wIndex = 0x0004;
+    setup.wLength = 16;
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    ret = usbh_control_transfer(hport, &setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < 0 && (ret != -USB_ERR_STALL)) {
         USB_LOG_ERR("Failed to get msosv1 compat id,errorcode:%d\r\n", ret);
         goto errout;
@@ -637,7 +636,9 @@ errout:
 void usbh_hubport_release(struct usbh_hubport *hport)
 {
     if (hport->connected) {
+        usb_osal_mutex_take(hport->mutex);
         hport->connected = false;
+        usb_osal_mutex_give(hport->mutex);
         usbh_kill_urb(&hport->ep0_urb);
         usbh_free_devaddr(hport);
         for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
@@ -647,7 +648,6 @@ void usbh_hubport_release(struct usbh_hubport *hport)
             }
         }
         hport->config.config_desc.bNumInterfaces = 0;
-        usb_osal_mutex_take(hport->mutex);
         usb_osal_mutex_delete(hport->mutex);
         USB_LOG_INFO("Device on Bus %u, Hub %u, Port %u disconnected\r\n", hport->bus->busid, hport->parent->index, hport->port);
         hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_DISCONNECTED);
@@ -732,22 +732,24 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
     volatile uint8_t retry = 3;
     int ret;
 
-    if (!hport || !setup) {
+    if (!hport || !hport->setup || !setup) {
         return -USB_ERR_INVAL;
-    }
-
-    if (!hport->connected) {
-        return -USB_ERR_NODEV;
     }
 
     urb = &hport->ep0_urb;
 
     usb_osal_mutex_take(hport->mutex);
 
-    usbh_print_setup(setup);
-
 resubmit:
-    usbh_control_urb_fill(urb, hport, setup, buffer, setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
+    if (!hport->connected) {
+        usb_osal_mutex_give(hport->mutex);
+        return -USB_ERR_NODEV;
+    }
+
+    memcpy(hport->setup, setup, sizeof(struct usb_setup_packet));
+    usbh_print_setup(hport->setup);
+
+    usbh_control_urb_fill(urb, hport, hport->setup, buffer, hport->setup->wLength, CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT, NULL, NULL);
     ret = usbh_submit_urb(urb);
     if (ret == 0) {
         ret = urb->actual_length;
@@ -772,19 +774,19 @@ resubmit:
 
 int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *output, uint16_t output_len)
 {
-    struct usb_setup_packet *setup = hport->setup;
+    struct usb_setup_packet setup;
     int ret;
     uint8_t *src;
     uint16_t len;
 
     /* Get Manufacturer string */
-    setup->bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
-    setup->bRequest = USB_REQUEST_GET_DESCRIPTOR;
-    setup->wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | index);
-    setup->wIndex = 0x0409;
-    setup->wLength = MIN(255, CONFIG_USBHOST_REQUEST_BUFFER_LEN);
+    setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_DEVICE;
+    setup.bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    setup.wValue = (uint16_t)((USB_DESCRIPTOR_TYPE_STRING << 8) | index);
+    setup.wIndex = 0x0409;
+    setup.wLength = MIN(255, CONFIG_USBHOST_REQUEST_BUFFER_LEN);
 
-    ret = usbh_control_transfer(hport, setup, ep0_request_buffer[hport->bus->busid]);
+    ret = usbh_control_transfer(hport, &setup, ep0_request_buffer[hport->bus->busid]);
     if (ret < 0) {
         return ret;
     }
@@ -808,15 +810,15 @@ int usbh_get_string_desc(struct usbh_hubport *hport, uint8_t index, uint8_t *out
 
 int usbh_set_interface(struct usbh_hubport *hport, uint8_t intf, uint8_t altsetting)
 {
-    struct usb_setup_packet *setup = hport->setup;
+    struct usb_setup_packet setup;
 
-    setup->bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
-    setup->bRequest = USB_REQUEST_SET_INTERFACE;
-    setup->wValue = altsetting;
-    setup->wIndex = intf;
-    setup->wLength = 0;
+    setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_STANDARD | USB_REQUEST_RECIPIENT_INTERFACE;
+    setup.bRequest = USB_REQUEST_SET_INTERFACE;
+    setup.wValue = altsetting;
+    setup.wIndex = intf;
+    setup.wLength = 0;
 
-    return usbh_control_transfer(hport, setup, NULL);
+    return usbh_control_transfer(hport, &setup, NULL);
 }
 
 static void *usbh_list_all_interface_name(struct usbh_hub *hub, const char *devname)
