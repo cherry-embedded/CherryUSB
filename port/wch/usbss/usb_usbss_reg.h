@@ -1,0 +1,580 @@
+/*
+ * Copyright (c) 2026, Links (lhd@wch.cn)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef USB_USBSS_REG_H
+#define USB_USBSS_REG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* @include */
+#include <stdint.h>
+
+/*******************************************************************************/
+/* USBSS Related Register Macro Definition */
+
+/* LINK_CFG */
+#define U3_LINK_RESET         0x80000000
+#define LINK_FORCE_RXTERM     0x00800000
+#define LINK_FORCE_POLLING    0x00400000
+#define LINK_TOUT_MODE        0x00200000
+#define LINK_U1_PING_EN       0x00100000
+#define LINK_U2_ALLOW         0x00020000
+#define LINK_U1_ALLOW         0x00010000
+#define LINK_LTSSM_MODE       0x00008000
+#define LINK_LOOPBACK_ACT     0x00004000
+#define LINK_LOOPBACK_EN      0x00002000
+#define LINK_U2_RXDET         0x00001000
+#define LINK_CP78_SEL_MASK    0x00000C00
+#define LINK_CP78_SEL_190BITS 0x00000000
+#define LINK_CP78_SEL_120BITS 0x00000400
+#define LINK_CP78_SEL_50BITS  0x00000800
+#define LINK_CP78_SEL_250BITS 0x00000C00
+#define LINK_TX_DEEMPH_MASK   0x00000300
+#define LINK_TX_DEEMPH_6DB    0x00000000
+#define LINK_TX_DEEMPH_3_5DB  0x00000100
+#define LINK_TX_SWING         0x00000080
+#define LINK_RX_EQ_EN         0x00000040
+#define LINK_LFPS_RX_PD       0x00000020
+#define LINK_COMPLIANCE_EN    0x00000010
+#define LINK_PHY_RESET        0x00000008
+#define LINK_SS_PLR_SWAP      0x00000004
+#define LINK_RX_TERM_EN       0x00000002
+#define LINK_DOWN_MODE        0x00000001
+
+/* LINK_CTRL */
+#define LINK_RX_TS_CFG_MASK 0xFF000000
+#define LINK_TX_TS_CFG_MASK 0x00FF0000
+#define LINK_HOT_RESET      0x00010000
+#define LINK_TX_LGO_U3      0x00008000
+#define LINK_TX_LGO_U2      0x00004000
+#define LINK_TX_LGO_U1      0x00002000
+#define LINK_POLLING_EN     0x00001000
+#define LINK_REG_ROUT_EN    0x00000800
+#define LINK_LUP_LDN_EN     0x00000400
+#define LINK_TX_UX_EXIT     0x00000200
+#define LINK_TX_WARM_RESET  0x00000100
+#define LINK_GO_RX_DET      0x00000080
+#define LINK_GO_RECOVERY    0x00000040
+#define LINK_GO_INACTIVE    0x00000020
+#define LINK_GO_DISABLED    0x00000010
+#define LINK_PD_MODE_MASK   0x00000003
+#define LINK_P0_MODE        0x00000000
+#define LINK_P1_MODE        0x00000001
+#define LINK_P2_MODE        0x00000002
+#define LINK_P3_MODE        0x00000003
+
+/* LINK_INT_CTRL */
+#define LINK_IE_STATE_CHG    0x80000000
+#define LINK_IE_U1_TOUT      0x40000000
+#define LINK_IE_U2_TOUT      0x20000000
+#define LINK_IE_UX_FAIL      0x10000000
+#define LINK_IE_TX_WARMRST   0x08000000
+#define LINK_IE_UX_EXIT_FAIL 0x04000000
+#define LINK_IE_RX_LMP_TOUT  0x00800000
+#define LINK_IE_TX_LMP       0x00400000
+#define LINK_IE_RX_LMP       0x00200000
+#define LINK_IE_RX_DET       0x00100000
+#define LINK_IE_LOOPBACK     0x00080000
+#define LINK_IE_COMPLIANCE   0x00040000
+#define LINK_IE_RX_SET_FC    0x00020000
+#define LINK_IE_HPBUF_EMPTY  0x00010000
+#define LINK_IE_HOT_RST      0x00008000
+#define LINK_IE_WAKEUP       0x00004000
+#define LINK_IE_WARM_RST     0x00002000
+#define LINK_IE_UX_EXIT      0x00001000
+#define LINK_IE_TXEQ         0x00000800
+#define LINK_IE_TERM_PRES    0x00000400
+#define LINK_IE_UX_REJ       0x00000200
+#define LINK_IE_U3_WK_TOUT   0x00000100
+#define LINK_IE_GO_U0        0x00000080
+#define LINK_IE_GO_U1        0x00000040
+#define LINK_IE_GO_U2        0x00000020
+#define LINK_IE_GO_U3        0x00000010
+#define LINK_IE_DISABLE      0x00000008
+#define LINK_IE_INACTIVE     0x00000004
+#define LINK_IE_RECOVERY     0x00000002
+#define LINK_IE_READY        0x00000001
+
+/* LINK_INT_FLAG */
+#define LINK_IF_STATE_CHG    0x80000000
+#define LINK_IF_U1_TOUT      0x40000000
+#define LINK_IF_U2_TOUT      0x20000000
+#define LINK_IF_UX_FAIL      0x10000000
+#define LINK_IF_TX_WARMRST   0x08000000
+#define LINK_IF_UX_EXIT_FAIL 0x04000000
+#define LINK_IF_RX_LMP_TOUT  0x00800000
+#define LINK_IF_TX_LMP       0x00400000
+#define LINK_IF_RX_LMP       0x00200000
+#define LINK_IF_RX_DET       0x00100000
+#define LINK_IF_LOOPBACK     0x00080000
+#define LINK_IF_COMPLIANCE   0x00040000
+#define LINK_IF_RX_SET_FC    0x00020000
+#define LINK_IF_HPBUF_EMPTY  0x00010000
+#define LINK_IF_HOT_RST      0x00008000
+#define LINK_IF_WAKEUP       0x00004000
+#define LINK_IF_WARM_RST     0x00002000
+#define LINK_IF_UX_EXIT      0x00001000
+#define LINK_IF_TXEQ         0x00000800
+#define LINK_IF_TERM_PRES    0x00000400
+#define LINK_IF_UX_REJ       0x00000200
+#define LINK_IF_U3_WK_TOUT   0x00000100
+#define LINK_IF_GO_U0        0x00000080
+#define LINK_IF_GO_U1        0x00000040
+#define LINK_IF_GO_U2        0x00000020
+#define LINK_IF_GO_U3        0x00000010
+#define LINK_IF_DISABLE      0x00000008
+#define LINK_IF_INACTIVE     0x00000004
+#define LINK_IF_RECOVERY     0x00000002
+#define LINK_IF_READY        0x00000001
+
+/* LINK_STATUS */
+#define LINK_HPBUF_EMPTY       0x80000000
+#define LINK_HPBUF_FULL        0x40000000
+#define LINK_HPBUF_IDLE        0x20000000
+#define LINK_U3_SLEEP_ALLOW    0x00400000
+#define LINK_U2_SLEEP_ALLOW    0x00200000
+#define LINK_RXDET_SLEEP_ALLOW 0x00100000
+#define LINK_WAKUP             0x00080000
+#define LINK_RX_LFPS           0x00040000
+#define LINK_RX_DETECT         0x00020000
+#define LINK_RX_UX_EXIT_REQ    0x00010000
+#define LINK_STATE_MASK        0x00000F00
+#define LINK_STATE_U0          0x00000000
+#define LINK_STATE_U1          0x00000100
+#define LINK_STATE_U2          0x00000200
+#define LINK_STATE_U3          0x00000300
+#define LINK_STATE_DISABLE     0x00000400
+#define LINK_STATE_RXDET       0x00000500
+#define LINK_STATE_INACTIVE    0x00000600
+#define LINK_STATE_POLLING     0x00000700
+#define LINK_STATE_RECOVERY    0x00000800
+#define LINK_STATE_HOTRST      0x00000900
+#define LINK_STATE_COMPLIANCE  0x00000A00
+#define LINK_STATE_LOOPBACK    0x00000B00
+#define LINK_TXEQ              0x00000040
+#define LINK_PD_MODE_ST_MASK   0x00000030
+#define LINK_PD_MODE_ST_P0     0x00000000
+#define LINK_PD_MODE_ST_P1     0x00000010
+#define LINK_PD_MODE_ST_P2     0x00000020
+#define LINK_PD_MODE_ST_P3     0x00000030
+#define LINK_READY             0x00000008
+#define LINK_BUSY              0x00000004
+#define LINK_RX_WARM_RST       0x00000002
+#define LINK_RX_TERM_PRES      0x00000001
+
+/* LINK_LPM_CR */
+#define LINK_LPM_TERM_PRESENT 0x00000800
+#define LINK_LPM_TERM_CHG     0x00000400
+#define LINK_LPM_EN           0x00000200
+#define LINK_LPM_RST          0x00000100
+
+/* LINK_PORT_CAP */
+#define LINK_LMP_RX_CAP_VLD 0x80000000
+#define LINK_LMP_TX_CAP_VLD 0x40000000
+#define FORCE_PM            0x20000000
+#define LINK_SPEED_MASK     0x3F000000
+#define LINK_PORT_CAP_MASK  0x00FFFFFF
+
+/* USB_CONTROL */
+#define USBSS_DEV_ADDR_MASK  0x7F000000
+#define USBSS_UIE_FIFO_RXOV  0x00800000
+#define USBSS_UIE_FIFO_TXOV  0x00400000
+#define USBSS_UIE_ITP        0x00100000
+#define USBSS_UIE_RX_PING    0x00080000
+#define USBSS_UDIE_STATUS    0x00040000
+#define USBSS_UHIE_NOTIF     0x00040000
+#define USBSS_UDIE_SETUP     0x00020000
+#define USBSS_UHIE_ERDY      0x00020000
+#define USBSS_UIE_TRANSFER   0x00010000
+#define USBSS_CHAIN_CONFLICT 0x00008000
+#define USBSS_TX_ERDY_MODE   0x00004000
+#define USBSS_HP_PEND_MASK   0x00000300
+#define USBSS_HP_PENDING     0x00000200
+#define USBSS_HOST_MODE      0x00000080
+#define USBSS_ITP_EN         0x00000040
+#define USBSS_SETUP_FLOW     0x00000020
+#define USBSS_DIR_ABORT      0x00000010
+#define USBSS_DMA_MODE       0x00000008
+#define USBSS_FORCE_RST      0x00000004
+#define USBSS_USB_CLR_ALL    0x00000002
+#define USBSS_DMA_EN         0x00000001
+
+/* USB_STATUS */
+#define USBSS_HRX_RES_MASK  0xC0000000
+#define USBSS_HTX_RES_MASK  0x00C00000
+#define USBSS_EP_DIR_MASK   0x00001000
+#define USBSS_EP_ID_MASK    0x00000700
+#define USBSS_UIF_FIFO_RXOV 0x00000080
+#define USBSS_UIF_FIFO_TXOV 0x00000040
+#define USBSS_UIF_ITP       0x00000010
+#define USBSS_UIF_RX_PING   0x00000008
+#define USBSS_UDIF_STATUS   0x00000004
+#define USBSS_UHIF_NOTIF    0x00000004
+#define USBSS_UDIF_SETUP    0x00000002
+#define USBSS_UHIF_ERDY     0x00000002
+#define USBSS_UIF_TRANSFER  0x00000001
+
+/* USB_ITP */
+#define USBSS_ITP_INTERVAL_MASK 0x00003FFF
+
+/* USB_ITP_ADJ */
+#define USBSS_ITP_DELTA       0x001FFF00
+#define USBSS_ITP_DELAYED     0x00000080
+#define USBSS_ITP_ADJ_CR_MASK 0x0000007F
+
+/* UEP_TX_EN */
+#define USBSS_EP15_TX_EN 0x00008000
+#define USBSS_EP14_TX_EN 0x00004000
+#define USBSS_EP13_TX_EN 0x00002000
+#define USBSS_EP12_TX_EN 0x00001000
+#define USBSS_EP11_TX_EN 0x00000800
+#define USBSS_EP10_TX_EN 0x00000400
+#define USBSS_EP9_TX_EN  0x00000200
+#define USBSS_EP8_TX_EN  0x00000100
+#define USBSS_EP7_TX_EN  0x00000080
+#define USBSS_EP6_TX_EN  0x00000040
+#define USBSS_EP5_TX_EN  0x00000020
+#define USBSS_EP4_TX_EN  0x00000010
+#define USBSS_EP3_TX_EN  0x00000008
+#define USBSS_EP2_TX_EN  0x00000004
+#define USBSS_EP1_TX_EN  0x00000002
+#define USBSS_UH_TX_EN   0x00000002
+
+/* UEP_RX_EN */
+#define USBSS_EP15_RX_EN 0x00008000
+#define USBSS_EP14_RX_EN 0x00004000
+#define USBSS_EP13_RX_EN 0x00002000
+#define USBSS_EP12_RX_EN 0x00001000
+#define USBSS_EP11_RX_EN 0x00000800
+#define USBSS_EP10_RX_EN 0x00000400
+#define USBSS_EP9_RX_EN  0x00000200
+#define USBSS_EP8_RX_EN  0x00000100
+#define USBSS_EP7_RX_EN  0x00000080
+#define USBSS_EP6_RX_EN  0x00000040
+#define USBSS_EP5_RX_EN  0x00000020
+#define USBSS_EP4_RX_EN  0x00000010
+#define USBSS_EP3_RX_EN  0x00000008
+#define USBSS_EP2_RX_EN  0x00000004
+#define USBSS_EP1_RX_EN  0x00000002
+#define USBSS_UH_RX_EN   0x00000002
+
+/* UEP0_TX_CTRL */
+#define USBSS_UIF_EP0_TX_ACT  0x80000000
+#define USBSS_EP0_TX_FLOW     0x02000000
+#define USBSS_EP0_TX_PP       0x01000000
+#define USBSS_EP0_TX_ERDY     0x00800000
+#define USBSS_EP0_TX_RES      0x00600000
+#define USBSS_EP0_TX_NRDY     0x00000000
+#define USBSS_EP0_TX_DPH      0x00200000
+#define USBSS_EP0_TX_STALL    0x00400000
+#define USBSS_EP0_TX_SEQ_MASK 0x001F0000
+#define USBSS_NUMP_1          0x00010000
+#define USBSS_NUMP_2          0x00020000
+#define USBSS_NUMP_3          0x00030000
+#define USBSS_NUMP_4          0x00040000
+#define USBSS_NUMP_5          0x00050000
+#define USBSS_NUMP_6          0x00060000
+#define USBSS_NUMP_7          0x00070000
+#define USBSS_NUMP_8          0x00080000
+#define USBSS_NUMP_9          0x00090000
+#define USBSS_NUMP_10         0x000A0000
+#define USBSS_NUMP_11         0x000B0000
+#define USBSS_NUMP_12         0x000C0000
+#define USBSS_NUMP_13         0x000D0000
+#define USBSS_NUMP_14         0x000E0000
+#define USBSS_NUMP_15         0x000F0000
+#define USBSS_NUMP_16         0x00100000
+#define USBSS_EP0_TX_LEN_MASK 0x000007FF
+
+/* UEP0_RX_CTRL */
+#define USBSS_UIF_EP0_RX_ACT  0x80000000
+#define USBSS_EP0_RX_PP       0x01000000
+#define USBSS_EP0_RX_ERDY     0x00800000
+#define USBSS_EP0_RX_RES      0x00600000
+#define USBSS_EP0_RX_NRDY     0x00000000
+#define USBSS_EP0_RX_ACK      0x00200000
+#define USBSS_EP0_RX_STALL    0x00400000
+#define USBSS_EP0_RX_SEQ_MASK 0x001F0000
+#define USBSS_EP0_RX_LEN_MASK 0x000007FF
+
+/* R8_UEPn_TX_CFG */
+#define USBSS_EP_TX_CHAIN_AUTO 0x80
+#define USBSS_EP_TX_FIFO_MODE  0x40
+#define USBSS_EP_TX_FIFO_CFG   0x20
+#define USBSS_EP_TX_EOB_MODE   0x08
+#define USBSS_EP_TX_ERDY_AUTO  0x04
+#define USBSS_EP_TX_SEQ_AUTO   0x02
+#define USBSS_EP_TX_ISO_MODE   0x01
+
+/* R8_UEPn_TX_CR */
+#define USBSS_EP_TX_HALT           0x80
+#define USBSS_EP_TX_CLR            0x40
+#define USBSS_EP_TX_CHAIN_CLR      0x20
+#define USBSS_EP_TX_ERDY_NUMP_MASK 0x1F
+
+/* R8_UEPn_TX_SEQ */
+#define USBSS_EP_TX_SEQ_NUM_MASK 0x1F
+
+/* R8_UEPn_TX_ST */
+#define USBSS_EP_TX_INT_FLAG      0x80
+#define USBSS_EP_TX_FC_ST         0x40
+#define USBSS_EP_TX_ERDY_REQ      0x20
+#define USBSS_EP_TX_CHAIN_RES     0x10
+#define USBSS_EP_TX_CHAIN_EN_MASK 0x0F
+
+/* R8_UEPn_TX_CHAIN_CR */
+#define USBSS_EP_TX_CUR_USE   0xC0
+#define USBSS_EP_TX_CUR_CFG   0x30
+#define USBSS_EP_TX_FORCE_RET 0x04
+#define USBSS_EP_TX_RET_SEL   0x03
+
+/* R8_UEPn_TX_CHAIN_ST */
+#define USBSS_EP_TX_CHAIN_EN      0x80
+#define USBSS_EP_TX_CHAIN_IF      0x40
+#define USBSS_EP_TX_EOB_LPF       0x20
+#define USBSS_EP_TX_NUMP_EMPTY    0x08
+#define USBSS_EP_TX_DPH_PP        0x04
+#define USBSS_EP_TX_CHAIN_NO_MASK 0x03
+
+/* R8_UEPn_RX_CFG */
+#define USBSS_EP_RX_CHAIN_AUTO 0x80
+#define USBSS_EP_RX_FIFO_MODE  0x40
+#define USBSS_EP_RX_FIFO_CFG   0x20
+#define USBSS_EP_RX_EOB_MODE   0x08
+#define USBSS_EP_RX_ERDY_AUTO  0x04
+#define USBSS_EP_RX_SEQ_AUTO   0x02
+#define USBSS_EP_RX_ISO_MODE   0x01
+
+/* R8_UEPn_RX_CR */
+#define USBSS_EP_RX_HALT           0x80
+#define USBSS_EP_RX_CLR            0x40
+#define USBSS_EP_RX_CHAIN_CLR      0x20
+#define USBSS_EP_RX_ERDY_NUMP_MASK 0x1F
+
+/* R8_UEPn_RX_SEQ */
+#define USBSS_EP_RX_SEQ_NUM_MASK 0x1F
+
+/* R8_UEPn_RX_ST */
+#define USBSS_EP_RX_INT_FLAG      0x80
+#define USBSS_EP_RX_FC_ST         0x40
+#define USBSS_EP_RX_ERDY_REQ      0x20
+#define USBSS_EP_RX_CHAIN_RES     0x10
+#define USBSS_EP_RX_CHAIN_EN_MASK 0x0F
+
+/* R8_UEPn_RX_CHAIN_CR */
+#define USBSS_EP_RX_CUR_USE   0xC0
+#define USBSS_EP_RX_CUR_CFG   0x30
+#define USBSS_EP_RX_FORCE_RET 0x04
+#define USBSS_EP_RX_RET_SEL   0x03
+
+/* R8_UEPn_RX_CHAIN_ST */
+#define USBSS_EP_RX_CHAIN_EN      0x80
+#define USBSS_EP_RX_CHAIN_IF      0x40
+#define USBSS_EP_RX_LPF_FLAG      0x20
+#define USBSS_EP_RX_ISO_PKT_ERR   0x10
+#define USBSS_EP_RX_NUMP_EMPTY    0x08
+#define USBSS_EP_RX_DPH_PP        0x04
+#define USBSS_EP_RX_CHAIN_NO_MASK 0x03
+
+/* R32_UH_TX_CTRL */
+#define USBSS_UH_TX_ACT      0x80000000
+#define USBSS_UH_TX_ISO      0x40000000
+#define USBSS_UH_TX_SETUP    0x20000000
+#define USBSS_UH_TX_STATUS   0x10000000
+#define USBSS_UH_TX_LPF      0x00800000
+#define USBSS_UH_TX_RES      0x00600000
+#define USBSS_UH_TX_NRDY     0x00000000
+#define USBSS_UH_TX_ACK      0x00200000
+#define USBSS_UH_TX_STALL    0x00400000
+#define USBSS_UH_TX_SEQ      0x001F0000
+#define USBSS_UH_TX_EP       0x0000F000
+#define USBSS_UH_TX_LEN_MASK 0x000007FF
+
+/* R32_UH_RX_CTRL */
+#define USBSS_UH_RX_ACT      0x80000000
+#define USBSS_UH_RX_ISO      0x40000000
+#define USBSS_UH_RX_NUMP     0x1F000000
+#define USBSS_UH_RX_RES      0x00600000
+#define USBSS_UH_RX_NRDY     0x00000000
+#define USBSS_UH_RX_ACK      0x00200000
+#define USBSS_UH_RX_STALL    0x00400000
+#define USBSS_UH_RX_SEQ      0x001F0000
+#define USBSS_UH_RX_EP       0x0000F000
+#define USBSS_UH_RX_LEN_MASK 0x000007FF
+
+/* R32_HOST_STATUS */
+#define USBSS_UH_ITP_PRESAGE    0x000C0000
+#define USBSS_UH_RX_ISO_PKT_ERR 0x00020000
+#define USBSS_UH_RX_EOB_LPF     0x00010000
+#define USBSS_UH_RX_ERDY_DIR    0x00008000
+#define USBSS_UH_RX_ERDY_NUMP   0x00001F00
+#define USBSS_UH_RX_ERDY_EP     0x000000F0
+
+/* IO definitions */
+#ifdef __cplusplus
+#define __I volatile
+#else
+#define __I volatile const
+#endif
+
+#define __O  volatile
+#define __IO volatile
+
+/* USBSS Deveice Registers */
+typedef struct
+{
+    __IO uint8_t UEP_TX_CFG;
+    __IO uint8_t UEP_TX_CR;
+    __IO uint8_t UEP_TX_SEQ;
+    __IO uint8_t UEP_TX_ST;
+    __IO uint8_t UEP_TX_CHAIN_CR;
+    __IO uint8_t UEP_TX_CHAIN_ST;
+    __IO uint16_t UEP_TX_CHAIN_LEN;
+    __IO uint8_t UEP_TX_CHAIN_EXP_NUMP;
+    __IO uint8_t UEP_TX_CHAIN_NUMP;
+    __IO uint16_t UEP_TX_DMA_OFS;
+    __IO uint32_t UEP_TX_DMA;
+} USBSS_EP_TX_TypeDef;
+
+typedef struct
+{
+    __IO uint8_t UEP_RX_CFG;
+    __IO uint8_t UEP_RX_CR;
+    __IO uint8_t UEP_RX_SEQ;
+    __IO uint8_t UEP_RX_ST;
+    __IO uint8_t UEP_RX_CHAIN_CR;
+    __IO uint8_t UEP_RX_CHAIN_ST;
+    __IO uint16_t UEP_RX_CHAIN_LEN;
+    __IO uint8_t UEP_RX_CHAIN_MAX_NUMP;
+    __IO uint8_t UEP_RX_CHAIN_NUMP;
+    __IO uint16_t UEP_RX_DMA_OFS;
+    __IO uint32_t UEP_RX_DMA;
+} USBSS_EP_RX_TypeDef;
+
+typedef struct
+{
+    __IO uint32_t LINK_CFG;
+    __IO uint32_t LINK_CTRL;
+    __IO uint32_t LINK_INT_CTRL;
+    __IO uint32_t LINK_INT_FLAG;
+    __IO uint32_t LINK_STATUS;
+    uint8_t Reserved0[3];
+    __IO uint8_t LINK_ITP_PRE;
+    uint8_t Reserved1[5];
+    __IO uint8_t LINK_U2_INACT_TIMER;
+    uint8_t Reserved2[10];
+    __IO uint8_t LINK_U1_WKUP_FILTER;
+    uint8_t Reserved3[1];
+    __IO uint16_t LINK_U1_WKUP_TMR;
+    __IO uint8_t LINK_U2_WKUP_FILTER;
+    uint8_t Reserved4[3];
+    __IO uint8_t LINK_U3_WKUP_FILTER;
+    uint8_t Reserved5[1];
+    __IO uint16_t LINK_U3_WKUP_TMR;
+    __IO uint32_t LINK_U1_EXIT_CFG;
+    __IO uint32_t LINK_U2_EXIT_CFG;
+    __IO uint32_t LINK_U3_EXIT_CFG;
+    __IO uint16_t LINK_ISO_DLY;
+    uint8_t Reserved7[14];
+    __IO uint16_t LINK_LPM_CR;
+    uint8_t Reserved8[2];
+    __IO uint32_t LINK_LMP_PORT_CAP;
+    __IO uint32_t LINK_LMP_RX_DATA0;
+    __IO uint32_t LINK_LMP_RX_DATA1;
+    __IO uint32_t LINK_LMP_RX_DATA2;
+    __IO uint32_t LINK_LMP_TX_DATA0;
+    __IO uint32_t LINK_LMP_TX_DATA1;
+    __IO uint32_t LINK_LMP_TX_DATA2;
+    __IO uint32_t USB_CONTROL;
+    __IO uint32_t USB_STATUS;
+    __IO uint32_t USB_ITP;
+    __IO uint32_t USB_ITP_ADJ;
+    __IO uint16_t UEP_TX_EN;
+    __IO uint16_t UEP_RX_EN;
+    __IO uint32_t UEP0_TX_CTRL;
+    __IO uint32_t UEP0_RX_CTRL;
+    __IO uint32_t UEP0_TX_DMA;
+    __IO uint32_t UEP0_RX_DMA;
+    __IO uint32_t UEP0_TX_DMA_OFS;
+    __IO uint32_t UEP0_RX_DMA_OFS;
+    uint8_t Reserved9[36];
+    __IO USBSS_EP_TX_TypeDef EP1_TX;
+    __IO USBSS_EP_RX_TypeDef EP1_RX;
+    __IO USBSS_EP_TX_TypeDef EP2_TX;
+    __IO USBSS_EP_RX_TypeDef EP2_RX;
+    __IO USBSS_EP_TX_TypeDef EP3_TX;
+    __IO USBSS_EP_RX_TypeDef EP3_RX;
+    __IO USBSS_EP_TX_TypeDef EP4_TX;
+    __IO USBSS_EP_RX_TypeDef EP4_RX;
+    __IO USBSS_EP_TX_TypeDef EP5_TX;
+    __IO USBSS_EP_RX_TypeDef EP5_RX;
+    __IO USBSS_EP_TX_TypeDef EP6_TX;
+    __IO USBSS_EP_RX_TypeDef EP6_RX;
+    __IO USBSS_EP_TX_TypeDef EP7_TX;
+    __IO USBSS_EP_RX_TypeDef EP7_RX;
+} USBSSD_TypeDef;
+
+typedef struct
+{
+    __IO uint32_t LINK_CFG;
+    __IO uint32_t LINK_CTRL;
+    __IO uint32_t LINK_INT_CTRL;
+    __IO uint32_t LINK_INT_FLAG;
+    __IO uint32_t LINK_STATUS;
+    uint8_t Reserved0[3];
+    __IO uint8_t LINK_ITP_PRE;
+    uint8_t Reserved1[5];
+    __IO uint8_t LINK_U2_INACT_TIMER;
+    uint8_t Reserved2[10];
+    __IO uint8_t LINK_U1_WKUP_FILTER;
+    uint8_t Reserved3[3];
+    __IO uint8_t LINK_U2_WKUP_FILTER;
+    uint8_t Reserved4[3];
+    __IO uint8_t LINK_U3_WKUP_FILTER;
+    uint8_t Reserved5[15];
+    __IO uint16_t LINK_ISO_DLY;
+    uint8_t Reserved6[10];
+    __IO uint32_t LINK_TX_ROUTE;
+    __IO uint16_t LINK_LPM_CR;
+    uint8_t Reserved7[2];
+    __IO uint32_t LINK_LMP_PORT_CAP;
+    __IO uint32_t LINK_LMP_RX_DATA0;
+    __IO uint32_t LINK_LMP_RX_DATA1;
+    __IO uint32_t LINK_LMP_RX_DATA2;
+    __IO uint32_t LINK_LMP_TX_DATA0;
+    __IO uint32_t LINK_LMP_TX_DATA1;
+    __IO uint32_t LINK_LMP_TX_DATA2;
+
+    __IO uint32_t USB_CONTROL;
+    __IO uint32_t USB_STATUS;
+    __IO uint32_t USB_ITP;
+    __IO uint32_t USB_ITP_ADJ;
+    __IO uint16_t UEP_TX_EN;
+    __IO uint16_t UEP_RX_EN;
+
+    __IO uint32_t UH_TX_CTRL;
+    __IO uint32_t UH_RX_CTRL;
+    __IO uint32_t UH_TX_DMA;
+    __IO uint32_t UH_RX_DMA;
+    __IO uint32_t UH_TX_DMA_OFS;
+    __IO uint32_t UH_RX_DMA_OFS;
+    __IO uint16_t HOST_TX_NUMP;
+    __IO uint16_t HOST_RX_NUMP;
+    __IO uint32_t HOST_STATUS;
+    __IO uint16_t HOST_TX_FC_STATUS;
+    __IO uint16_t HOST_RX_FC_STATUS;
+    __IO uint32_t TP_RX_DATA0;
+    __IO uint32_t TP_RX_DATA1;
+    __IO uint32_t TP_RX_DATA2;
+} USBSSH_TypeDef;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
