@@ -223,9 +223,10 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, ui
         memcpy(g_ch32_usbss_udc[busid].ep0_dma_buf, data, xfer_len);
         USBSSD->UEP0_TX_CTRL = USBSS_EP0_TX_DPH | USBSS_EP0_TX_ERDY | xfer_len;
     } else {
+        uint32_t temp = data_len ? (data_len - 1) : 0;
         ENDP_TX_DMA(ep_idx) = (uint32_t)data;
-        ENDP_TX_CHAIN_LEN(ep_idx) = data_len & 0x3FF;
-        ENDP_TX_CHAIN_EXP_NUMP(ep_idx) = (data_len >> 10) + 1;
+        ENDP_TX_CHAIN_LEN(ep_idx) = data_len ? (temp & 0x03FF) + 1 : 0;
+        ENDP_TX_CHAIN_EXP_NUMP(ep_idx) = (temp >> 10) + 1;
     }
 
     return 0;
@@ -261,8 +262,7 @@ int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t 
         USBSSD->UEP0_RX_CTRL = USBSS_EP0_RX_ERDY | USBSS_EP0_RX_ACK;
     } else {
         ENDP_RX_DMA(ep_idx) = (uint32_t)data;
-        ENDP_RX_CHAIN_LEN(ep_idx) = data_len & 0x3FF;
-        ENDP_RX_CHAIN_MAX_NUMP(ep_idx) = data_len >> 10;
+        ENDP_RX_CHAIN_MAX_NUMP(ep_idx) = data_len ? (((data_len - 1) >> 10) + 1) : 1;
     }
 
     return 0;
@@ -323,8 +323,7 @@ void USBD_IRQHandler(uint8_t busid)
                     USBSSD->UEP0_TX_CTRL = USBSS_EP0_TX_DPH | USBSS_EP0_TX_ERDY | xfer_len | curr_seq + (1 << 16);
                 }
             } else {
-                uint8_t nump = ENDP_TX_CHAIN_NUMP(ep_idx);
-                uint32_t xfer_len = (nump ? nump - 1 : 0) * 1024 + ENDP_TX_CHAIN_LEN(ep_idx);
+                uint32_t xfer_len = (ENDP_TX_CHAIN_NUMP(ep_idx) - 1) * 1024 + ENDP_TX_CHAIN_LEN(ep_idx);
                 ENDP_TX_CHAIN_ST(ep_idx) |= USBSS_EP_TX_CHAIN_IF;
                 usbd_event_ep_in_complete_handler(busid, 0x80 | ep_idx, xfer_len);
             }
@@ -341,8 +340,7 @@ void USBD_IRQHandler(uint8_t busid)
                     USBSSD->UEP0_RX_CTRL = USBSS_EP0_RX_ERDY | USBSS_EP0_RX_ACK;
                 }
             } else {
-                uint8_t nump = ENDP_RX_CHAIN_NUMP(ep_idx);
-                uint32_t xfer_len = (nump ? nump - 1 : 0) * 1024 + ENDP_RX_CHAIN_LEN(ep_idx);
+                uint32_t xfer_len = (ENDP_RX_CHAIN_NUMP(ep_idx) - 1) * 1024 + ENDP_RX_CHAIN_LEN(ep_idx);
                 ENDP_RX_CHAIN_ST(ep_idx) |= USBSS_EP_RX_CHAIN_IF;
                 usbd_event_ep_out_complete_handler(busid, 0x00 | ep_idx, xfer_len);
             }

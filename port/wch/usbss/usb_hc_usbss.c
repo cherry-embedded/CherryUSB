@@ -111,6 +111,7 @@ int usbh_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
                     return -USB_ERR_INVAL;
                 }
 
+                status = 0;
                 memcpy(buf, &status, 4);
                 break;
             default:
