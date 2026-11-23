@@ -153,6 +153,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep)
             USBHSD->UEP_RX_BURST &= ~bit;
             USBHSD->UEP_RX_RES_MODE &= ~bit;
         }
+        ENDP_RX_LEN(epid) = 0;
         ENDP_RX_CTRL(epid) = USBHS_UEP_R_RES_NAK;
     }
 
