@@ -778,6 +778,25 @@ struct usb_desc_header {
 #define USB_BOS_CAP_PLATFORM_WEBUSB_DESCRIPTOR_LEN 24
 #define USB_BOS_CAP_PLATFORM_WINUSB_DESCRIPTOR_LEN 28
 
+#define USB_BOS_CAP_USB2_0_EXTENSION_DESCRIPTOR_INIT(bmAttributes) \
+    0x07,                                           /* bLength */                \
+    USB_DESCRIPTOR_TYPE_DEVICE_CAPABILITY,          /* bDescriptorType */        \
+    USB_DEVICE_CAPABILITY_USB_2_0_EXTENSION,        /* bDevCapabilityType */     \
+    DBVAL(bmAttributes)                             /* bmAttributes */
+
+#define USB_BOS_CAP_SUPERSPEED_USB_DESCRIPTOR_INIT(bmAttributes, wSpeedsSupported, bFunctionalitySupport, bU1DevExitLat, bU2DevExitLat) \
+    0x0A,                                           /* bLength */                \
+    USB_DESCRIPTOR_TYPE_DEVICE_CAPABILITY,          /* bDescriptorType */        \
+    USB_DEVICE_CAPABILITY_SUPERSPEED_USB,           /* bDevCapabilityType */     \
+    bmAttributes,                                   /* bmAttributes */           \
+    WBVAL(wSpeedsSupported),                        /* wSpeedsSupported */       \
+    bFunctionalitySupport,                          /* bFunctionalitySupport */  \
+    bU1DevExitLat,                                  /* bU1DevExitLat */          \
+    WBVAL(bU2DevExitLat)                            /* bU2DevExitLat */
+
+#define USB_BOS_CAP_USB2_0_EXTENSION_DESCRIPTOR_LEN 0x07
+#define USB_BOS_CAP_SUPERSPEED_USB_DESCRIPTOR_LEN   0x0A
+
 #define USB_MSOSV1_STRING_DESCRIPTOR_INIT(vendor_code) \
     0x12,                       /* bLength */                             \
     USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */                     \
