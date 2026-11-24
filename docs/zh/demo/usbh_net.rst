@@ -66,7 +66,7 @@ USB 网卡对接过程
             }
         }
 
-        usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, NULL);
+        usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
     #if LWIP_DHCP
         dhcp_start(netif);
         usb_osal_timer_start(dhcp_handle);

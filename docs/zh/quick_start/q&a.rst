@@ -39,7 +39,7 @@ GD IP 问题
 
 GD IP 采用 DWC2，但是读取的硬件参数都是 0（我也不懂为什么不给人知道），因此需要用户自行知道硬件信息，从 1.5.0 开始由于需要读取硬件信息，因此无法直接使用。
 
-其次 GD 复位以后无法使用 EPDIS 功能关闭端点，需要用户删除 reset 中断中的以下代码：
+其次 GD 复位以后无法使用 EPDIS 功能关闭端点，需要用户删除 reset 中断中的以下代码（从 1.7.0 开始不需要加了，默认不再 EPDIS）：
 
 .. code-block:: C
 
@@ -47,6 +47,8 @@ GD IP 采用 DWC2，但是读取的硬件参数都是 0（我也不懂为什么�
     USB_OTG_OUTEP(i)->DOEPCTL = (USB_OTG_DOEPCTL_EPDIS | USB_OTG_DOEPCTL_SNAK);
 
 除此之外可能存在其他未知 BUG，请自行测试。
+
+.. note:: 从 1.7.0 开始，新增 dwc2_get_gd_reg，用于软件模拟 DWC2 参数寄存器信息，以替换硬件参数寄存器
 
 开启 USB_LOG_DBG 后无法枚举
 ----------------------------------------------------------------
@@ -81,7 +83,7 @@ This dwc2 version does not support dma mode, so stop working
 OTG 有哪些芯片支持
 ------------------------------
 
-当前主线仅 HPM 芯片支持 OTG 功能，通过 ID 引脚自动切换主从模式，其他芯片请使用手动切换模式 OR 自行实现添加 ID 识别的驱动。
+当前主线仅 hpmicro 支持，厂家 sdk 则包括 phytuim，artinchip, nuvoton 芯片支持 OTG 功能，通过 ID 引脚或者 UCSI-ACPI 自动切换主从模式，其他芯片请使用手动切换模式 OR 自行实现添加 ID 识别的驱动。
 
 PC 识别的 COM 口如何更改名称
 ----------------------------------------------------------------
@@ -136,3 +138,55 @@ USB host 连接 USB 网卡问题
 
 - 在未开启 CONFIG_USB_DCACHE_ENABLE 时，仅 DWC2/WCH/AIC IP 需要 4字节对齐，其余 1字节对齐即可。
 - 在开启 CONFIG_USB_DCACHE_ENABLE 时，所有 IP 都需要对齐到 CONFIG_USB_ALIGN_SIZE 字节
+
+主机优先级相关注意事项
+-------------------------------------------------
+
+枚举线程优先级需要比所有用到 submit 地方的 USB APP 优先级低。
+
+主机 class 变量生命周期的处理
+-------------------------------------------------
+
+当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。合理的做法是，
+在 disconnect 函数中增加信号量等待，直到所有对该 class 资源的操作完成，然后释放信号量，这样才能保证安全退出。 **也可以使用互斥锁解决**。选其一即可。
+
+举例如下：
+
+.. code-block:: C
+    static usb_osal_sem_t xxx_exit_sem;
+
+    /* 启动任务前执行；初始计数为 0 */
+    xxx_exit_sem = usb_osal_sem_create(0);
+
+    static void xxx_thread(void *arg)
+    {
+        struct usbh_xxx *xxx = arg;
+        int ret;
+
+        while (xxx->hport->connected) {
+            ret = usbh_submit_urb(&xxx->xxxin_urb);
+            if (ret < 0) {
+                break;
+            }
+
+            /* 处理数据 */
+        }
+
+        /* 在这里完成其他收尾 */
+
+        usb_osal_sem_give(xxx_exit_sem);
+        /* 从这里开始，不能再访问 xxx、URB 或相关 buffer */
+        usb_osal_thread_delete(NULL);
+    }
+
+    void usbh_xxx_stop(struct usbh_xxx *xxx)
+    {
+        /* 等待任务退出 */
+        usb_osal_sem_take(xxx_exit_sem, USB_OSAL_WAIT_FOREVER);
+    }
+
+主机 class 驱动编写注意事项
+-------------------------------------------------
+
+- 禁止在 class 驱动中调用非控制传输的请求，class 驱动只做枚举相关功能
+- 禁止在 class 驱动中使用除了控制传输的阻塞功能，否则影响插拔时效

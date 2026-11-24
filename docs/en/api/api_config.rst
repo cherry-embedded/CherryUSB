@@ -139,7 +139,7 @@ The following parameters determine the maximum number of supported class drivers
 CONFIG_USBHOST_PSC_PRIO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Priority of host plug/unplug thread, default is 0. Lower values mean higher priority.
+Priority of host plug/unplug thread, default is 29. Lower values mean higher priority.
 
 CONFIG_USBHOST_PSC_STACKSIZE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

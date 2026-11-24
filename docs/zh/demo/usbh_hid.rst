@@ -10,7 +10,7 @@ HID Host
 
     void usbh_hid_run(struct usbh_hid *hid_class)
     {
-        usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, hid_class);
+        usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_hid_thread, hid_class);
     }
 
     void usbh_hid_stop(struct usbh_hid *hid_class)
