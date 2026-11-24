@@ -15,6 +15,8 @@ usb_osal_mq_t usb_osal_mq;
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
+    USB_ASSERT_MSG((prio <= CONFIG_USBHOST_PSC_PRIO), "prio must be <= CONFIG_USBHOST_PSC_PRIO", prio, CONFIG_USBHOST_PSC_PRIO);
+
     TX_THREAD *thread_ptr = TX_NULL;
 
     tx_byte_allocate(&usb_byte_pool, (VOID **)&thread_ptr, USB_ALIGN_UP(sizeof(TX_THREAD), 4) + stack_size, TX_NO_WAIT);

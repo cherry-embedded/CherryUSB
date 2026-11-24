@@ -321,10 +321,10 @@ void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
         bt_hci_driver_register(&usbh_drv);
 
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
-        usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_rx_thread, NULL);
+        usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_bluetooth_hci_rx_thread, NULL);
 #else
-        usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
-        usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
+        usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
+        usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
 #endif
         s_registered = true;
     }

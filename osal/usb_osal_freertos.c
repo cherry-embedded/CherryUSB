@@ -14,6 +14,8 @@
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
+    USB_ASSERT_MSG((prio <= CONFIG_USBHOST_PSC_PRIO), "prio must be <= CONFIG_USBHOST_PSC_PRIO", prio, CONFIG_USBHOST_PSC_PRIO);
+
     TaskHandle_t htask = NULL;
     stack_size /= sizeof(StackType_t);
     xTaskCreate(entry, name, stack_size, args, configMAX_PRIORITIES - 1 - prio, &htask);

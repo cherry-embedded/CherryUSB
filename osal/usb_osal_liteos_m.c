@@ -17,6 +17,8 @@
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
+    USB_ASSERT_MSG((prio <= CONFIG_USBHOST_PSC_PRIO), "prio must be <= CONFIG_USBHOST_PSC_PRIO", prio, CONFIG_USBHOST_PSC_PRIO);
+
     UINT32 task_id;
     UINT32 ret;
 

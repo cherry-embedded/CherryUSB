@@ -158,7 +158,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     eth_device_init(&g_cdc_ecm_dev, "u0");
     eth_device_linkchange(&g_cdc_ecm_dev, RT_TRUE);
 
-    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, NULL);
+    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
 }
 
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
@@ -247,7 +247,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     eth_device_init(&g_rndis_dev, "u2");
     eth_device_linkchange(&g_rndis_dev, RT_TRUE);
 
-    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, NULL);
+    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rndis_rx_thread, NULL);
     //timer_init(rndis_class);
 }
 
@@ -319,7 +319,7 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
     eth_device_init(&g_cdc_ncm_dev, "u1");
     eth_device_linkchange(&g_cdc_ncm_dev, RT_TRUE);
 
-    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ncm_rx_thread, NULL);
+    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ncm_rx_thread, NULL);
 }
 
 void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
@@ -388,7 +388,7 @@ void usbh_asix_run(struct usbh_asix *asix_class)
     eth_device_init(&g_asix_dev, "u3");
     eth_device_linkchange(&g_asix_dev, RT_TRUE);
 
-    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_asix_rx_thread, NULL);
+    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_asix_rx_thread, NULL);
 }
 
 void usbh_asix_stop(struct usbh_asix *asix_class)
@@ -457,7 +457,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     eth_device_init(&g_rtl8152_dev, "u4");
     eth_device_linkchange(&g_rtl8152_dev, RT_TRUE);
 
-    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rtl8152_rx_thread, NULL);
+    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rtl8152_rx_thread, NULL);
 }
 
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)

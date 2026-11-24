@@ -118,7 +118,7 @@ static int rndis_ifup(struct net_driver_s *dev)
 {
     printf("rndis if up\r\n");
     g_rndis_dev.linkup = true;
-    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, NULL);
+    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rndis_rx_thread, NULL);
     return OK;
 }
 

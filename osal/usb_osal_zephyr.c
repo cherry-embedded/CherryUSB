@@ -22,6 +22,8 @@ struct release_thread_work {
 
 usb_osal_thread_t usb_osal_thread_create(const char *name, uint32_t stack_size, uint32_t prio, usb_thread_entry_t entry, void *args)
 {
+    USB_ASSERT_MSG((prio <= CONFIG_USBHOST_PSC_PRIO), "prio must be <= CONFIG_USBHOST_PSC_PRIO", prio, CONFIG_USBHOST_PSC_PRIO);
+
     k_tid_t tid = NULL;
     struct k_thread *thread = (struct k_thread *)k_aligned_alloc(8, sizeof(struct k_thread) + stack_size);
     k_thread_stack_t *stack = (k_thread_stack_t *)thread;

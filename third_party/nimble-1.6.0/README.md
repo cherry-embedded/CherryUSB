@@ -162,7 +162,7 @@ void nimble_init(void)
 {
     nimble_port_init();
 
-    usb_osal_thread_create("nimble", 2048, CONFIG_USBHOST_PSC_PRIO + 1, nimble_thread_entry, NULL);
+    usb_osal_thread_create("nimble", 2048, CONFIG_USBHOST_PSC_PRIO - 1, nimble_thread_entry, NULL);
 }
 
 ```

@@ -88,10 +88,10 @@ void usbh_bluetooth_run(struct usbh_bluetooth *bluetooth_class)
     hci_h4_sm_init(&g_hci_h4sm, &hci_h4_allocs_from_ll, hci_usb_frame_cb);
 
 #ifdef CONFIG_USBHOST_BLUETOOTH_HCI_H4
-    usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_rx_thread, NULL);
+    usb_osal_thread_create("ble_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_bluetooth_hci_rx_thread, NULL);
 #else
-    usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
-    usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
+    usb_osal_thread_create("ble_evt", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_bluetooth_hci_evt_rx_thread, NULL);
+    usb_osal_thread_create("ble_acl", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_bluetooth_hci_acl_rx_thread, NULL);
 #endif
     usbh_bluetooth_run_callback();
 }

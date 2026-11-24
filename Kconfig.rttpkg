@@ -478,7 +478,7 @@ if PKG_USING_CHERRYUSB
         config CONFIG_USBHOST_PSC_PRIO
             int
             prompt "Set hubport change thread priority, 0 is the max priority"
-            default 0
+            default 29
 
         config CONFIG_USBHOST_PSC_STACKSIZE
             int

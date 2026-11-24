@@ -166,8 +166,9 @@
 
 #define CONFIG_USBHOST_DEV_NAMELEN 16
 
+/* enum thread priority should be the lower than usb application priority */
 #ifndef CONFIG_USBHOST_PSC_PRIO
-#define CONFIG_USBHOST_PSC_PRIO 0
+#define CONFIG_USBHOST_PSC_PRIO 29
 #endif
 #ifndef CONFIG_USBHOST_PSC_STACKSIZE
 #define CONFIG_USBHOST_PSC_STACKSIZE 2048

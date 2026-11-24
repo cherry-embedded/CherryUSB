@@ -143,7 +143,7 @@ void usb_osal_leave_critical_section(size_t flag);
 #define CONFIG_USBHOST_DEV_NAMELEN 16
 
 #ifndef CONFIG_USBHOST_PSC_PRIO
-#define CONFIG_USBHOST_PSC_PRIO 0
+#define CONFIG_USBHOST_PSC_PRIO 29
 #endif
 #ifndef CONFIG_USBHOST_PSC_STACKSIZE
 #define CONFIG_USBHOST_PSC_STACKSIZE 8192

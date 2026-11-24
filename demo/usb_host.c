@@ -368,7 +368,7 @@ void usbh_serial_run(struct usbh_serial *serial)
         return;
     }
     serial_is_opened = true;
-    usb_osal_thread_create("usbh_serial", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_serial_thread, serial);
+    usb_osal_thread_create("usbh_serial", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_serial_thread, serial);
 }
 
 void usbh_serial_stop(struct usbh_serial *serial)
@@ -380,7 +380,7 @@ void usbh_serial_stop(struct usbh_serial *serial)
 #ifdef CONFIG_TEST_USBH_HID
 void usbh_hid_run(struct usbh_hid *hid_class)
 {
-    usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_hid_thread, hid_class);
+    usb_osal_thread_create("usbh_hid", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_hid_thread, hid_class);
 }
 
 void usbh_hid_stop(struct usbh_hid *hid_class)
@@ -391,7 +391,7 @@ void usbh_hid_stop(struct usbh_hid *hid_class)
 #ifdef CONFIG_TEST_USBH_MSC
 void usbh_msc_run(struct usbh_msc *msc_class)
 {
-    usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_msc_thread, msc_class);
+    usb_osal_thread_create("usbh_msc", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_msc_thread, msc_class);
 }
 
 void usbh_msc_stop(struct usbh_msc *msc_class)

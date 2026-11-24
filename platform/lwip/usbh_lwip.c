@@ -173,7 +173,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
         }
     }
 
-    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ecm_rx_thread, NULL);
+    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
 #if LWIP_DHCP
     dhcp_start(netif);
     usb_osal_timer_start(dhcp_handle);
@@ -277,7 +277,7 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
         }
     }
 
-    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rndis_rx_thread, NULL);
+    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rndis_rx_thread, NULL);
 
     //timer_init(rndis_class);
 
@@ -365,7 +365,7 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
         }
     }
 
-    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_cdc_ncm_rx_thread, NULL);
+    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ncm_rx_thread, NULL);
 #if LWIP_DHCP
     dhcp_start(netif);
     usb_osal_timer_start(dhcp_handle);
@@ -448,7 +448,7 @@ void usbh_asix_run(struct usbh_asix *asix_class)
         }
     }
 
-    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_asix_rx_thread, NULL);
+    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_asix_rx_thread, NULL);
 #if LWIP_DHCP
     dhcp_start(netif);
     usb_osal_timer_start(dhcp_handle);
@@ -531,7 +531,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
         }
     }
 
-    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO + 1, usbh_rtl8152_rx_thread, NULL);
+    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rtl8152_rx_thread, NULL);
 #if LWIP_DHCP
     dhcp_start(netif);
     usb_osal_timer_start(dhcp_handle);

@@ -286,3 +286,39 @@ int usbh_uac_volume(int argc, char **argv)
 
 CSH_CMD_EXPORT(usbh_uac_volume, usbh_uac_volume);
 #endif
+
+int stack(int argc, const char **argv)
+{
+    (void)argv;
+    if (argc != 1) {
+        printf("Usage: stack\n");
+        return -1;
+    }
+
+    UBaseType_t capacity = uxTaskGetNumberOfTasks() + 4U;
+    TaskStatus_t *tasks = pvPortMalloc(capacity * sizeof(*tasks));
+    if (!tasks) {
+        printf("Failed to allocate task snapshot\n");
+        return -1;
+    }
+
+    UBaseType_t count = uxTaskGetSystemState(tasks, capacity, NULL);
+    if (!count) {
+        vPortFree(tasks);
+        printf("Task list changed; run stack again\n");
+        return -1;
+    }
+
+    printf("%-16s %5s %14s\n", "Task", "Prio", "Min free bytes");
+    for (UBaseType_t i = 0; i < count; i++) {
+        if (tasks[i].eCurrentState == eDeleted || !tasks[i].pcTaskName) {
+            continue;
+        }
+        size_t free_bytes = (size_t)tasks[i].usStackHighWaterMark * sizeof(StackType_t);
+        printf("%-16.16s %5lu %14lu\n", tasks[i].pcTaskName,
+               (unsigned long)tasks[i].uxCurrentPriority, (unsigned long)free_bytes);
+    }
+    vPortFree(tasks);
+    return 0;
+}
+CSH_CMD_EXPORT(stack, show minimum free stack bytes for each task);
