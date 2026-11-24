@@ -421,6 +421,7 @@
 <h2>v1.7.0<a class="headerlink" href="#v1-7-0" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>新增注册驱动 API，从这个版本开始可以同时使用多个不同的 USBIP</strong></p></li>
+<li><p><strong>设置枚举线程优先级默认为 29，修改所有 USB APP 优先级为 CONFIG_USBHOST_PSC_PRIO - 1，需要大于枚举线程优先级，解决 kill urb 和 submit urb 存在的互斥问题</strong></p></li>
 <li><p>device: <strong>新增 cdc ncm class 驱动</strong></p></li>
 <li><p>device: <strong>新增 tmc class 驱动</strong></p></li>
 <li><p>device: <strong>新增 usb3.0 request 和配置</strong></p></li>
@@ -429,6 +430,7 @@
 <li><p>device: 新增获取 speed 和 ep info api</p></li>
 <li><p>device: <strong>新增 usb_vfs api, posix 标准接口</strong></p></li>
 <li><p>device: msc 支持 SCSI_readCapacity16 命令</p></li>
+<li><p>device: <strong>新增 gs usb 驱动</strong></p></li>
 <li><p>host: <strong>重构 audio 驱动和 API，volume 配置范围改成 0~ 100，audio sample rate 最大支持 8个默认</strong></p></li>
 <li><p>host: <strong>serial 增加 RX 流控</strong></p></li>
 <li><p>host: <strong>简化 net class rx 接收，最大不再超过 16K</strong></p></li>
@@ -437,10 +439,11 @@
 <li><p>host: 修复 hid API 漏掉的 <strong>hport-&gt;intf</strong></p></li>
 <li><p>host: only release hport in disconnect</p></li>
 <li><p>port: <strong>renesas 从机支持</strong></p></li>
-<li><p>port: <strong>esp32s31 支持</strong></p></li>
+<li><p>port: <strong>esp32s31，esp32h4 支持</strong></p></li>
 <li><p>port: <strong>N32H49X和N32H7XX USBHS 支持</strong></p></li>
 <li><p>port: <strong>N32H4x (N32H47x_48x / N32H49x) FSDEV 支持</strong></p></li>
 <li><p>port: <strong>删除旧版本 wch 驱动，重构 usbfs，usbhs 主从驱动支持</strong></p></li>
+<li><p>port: <strong>wch usb3.0 主从支持</strong></p></li>
 <li><p>port: 统一 cache 处理到 usbh_submit_urb</p></li>
 <li><p>port: 将部分 glue 文件放到厂家文件夹中</p></li>
 <li><p>port: 修复 ehci setup cache 和 qh，qtd cache 处理</p></li>
@@ -458,7 +461,7 @@
 <li><p>更新 usb 测速工具</p></li>
 <li><p>CI 功能新增 wch，sifli，phytium 支持</p></li>
 <li><p>osal 的部分修复</p></li>
-<li><p>安全性代码检查</p></li>
+<li><p>安全性代码检查和修复</p></li>
 </ul>
 </section>
 </section>

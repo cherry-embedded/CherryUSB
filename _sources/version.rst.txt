@@ -219,6 +219,7 @@ v1.7.0
 ----------------------
 
 - **新增注册驱动 API，从这个版本开始可以同时使用多个不同的 USBIP**
+- **设置枚举线程优先级默认为 29，修改所有 USB APP 优先级为 CONFIG_USBHOST_PSC_PRIO - 1，需要大于枚举线程优先级，解决 kill urb 和 submit urb 存在的互斥问题**
 - device: **新增 cdc ncm class 驱动**
 - device: **新增 tmc class 驱动**
 - device: **新增 usb3.0 request 和配置**
@@ -227,6 +228,7 @@ v1.7.0
 - device: 新增获取 speed 和 ep info api
 - device: **新增 usb_vfs api, posix 标准接口**
 - device: msc 支持 SCSI_readCapacity16 命令
+- device: **新增 gs usb 驱动**
 - host: **重构 audio 驱动和 API，volume 配置范围改成 0~ 100，audio sample rate 最大支持 8个默认**
 - host: **serial 增加 RX 流控**
 - host: **简化 net class rx 接收，最大不再超过 16K**
@@ -235,10 +237,11 @@ v1.7.0
 - host: 修复 hid API 漏掉的 **hport->intf**
 - host: only release hport in disconnect
 - port: **renesas 从机支持**
-- port: **esp32s31 支持**
+- port: **esp32s31，esp32h4 支持**
 - port: **N32H49X和N32H7XX USBHS 支持**
 - port: **N32H4x (N32H47x_48x / N32H49x) FSDEV 支持**
 - port: **删除旧版本 wch 驱动，重构 usbfs，usbhs 主从驱动支持**
+- port: **wch usb3.0 主从支持**
 - port: 统一 cache 处理到 usbh_submit_urb
 - port: 将部分 glue 文件放到厂家文件夹中
 - port: 修复 ehci setup cache 和 qh，qtd cache 处理
@@ -256,4 +259,4 @@ v1.7.0
 - 更新 usb 测速工具
 - CI 功能新增 wch，sifli，phytium 支持
 - osal 的部分修复
-- 安全性代码检查
+- 安全性代码检查和修复
