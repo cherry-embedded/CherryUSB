@@ -24,17 +24,10 @@ struct usbh_msc {
     void *user_data;
 };
 
-struct usbh_msc_modeswitch_config {
-    const char *name;
-    uint16_t vid; /* Vendor ID (for vendor/product specific devices) */
-    uint16_t pid; /* Product ID (for vendor/product specific devices) */
-    const uint8_t *message_content;
-};
-
-void usbh_msc_modeswitch_enable(struct usbh_msc_modeswitch_config *config);
 int usbh_msc_scsi_init(struct usbh_msc *msc_class);
 int usbh_msc_scsi_write10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors);
 int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, const uint8_t *buffer, uint32_t nsectors);
+void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message);
 
 void usbh_msc_run(struct usbh_msc *msc_class);
 void usbh_msc_stop(struct usbh_msc *msc_class);

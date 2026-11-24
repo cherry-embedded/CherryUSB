@@ -22,7 +22,6 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_msc_buf[CONFIG_USBHOST_MAX_MSC_
 
 static struct usbh_msc g_msc_class[CONFIG_USBHOST_MAX_MSC_CLASS];
 static uint32_t g_devinuse = 0;
-static struct usbh_msc_modeswitch_config *g_msc_modeswitch_config = NULL;
 
 static struct usbh_msc *usbh_msc_class_alloc(void)
 {
@@ -265,22 +264,9 @@ static inline int usbh_msc_scsi_readcapacity10(struct usbh_msc *msc_class)
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], g_msc_buf[msc_class->sdchar - 'a'], CONFIG_USBHOST_MSC_TIMEOUT);
 }
 
-static inline void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
-{
-    struct CBW *cbw;
-
-    /* Construct the CBW */
-    cbw = (struct CBW *)g_msc_cbw_csw[msc_class->sdchar - 'a'];
-
-    memcpy(g_msc_cbw_csw[msc_class->sdchar - 'a'], message, 31);
-
-    usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], NULL, CONFIG_USBHOST_MSC_TIMEOUT);
-}
-
 static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
-    struct usbh_msc_modeswitch_config *config;
     int ret;
 
     struct usbh_msc *msc_class = usbh_msc_class_alloc();
@@ -313,25 +299,6 @@ static int usbh_msc_connect(struct usbh_hubport *hport, uint8_t intf)
             USBH_EP_INIT(msc_class->bulkin, ep_desc);
         } else {
             USBH_EP_INIT(msc_class->bulkout, ep_desc);
-        }
-    }
-
-    if (g_msc_modeswitch_config) {
-        uint8_t num = 0;
-        while (1) {
-            config = &g_msc_modeswitch_config[num];
-            if (config && config->name) {
-                if ((hport->device_desc.idVendor == config->vid) &&
-                    (hport->device_desc.idProduct == config->pid)) {
-                    USB_LOG_INFO("%s usb_modeswitch enable\r\n", config->name);
-                    usbh_msc_modeswitch(msc_class, config->message_content);
-                    ret = -USB_ERR_NODEV;
-                    goto errout;
-                }
-                num++;
-            } else {
-                break;
-            }
         }
     }
 
@@ -452,13 +419,16 @@ int usbh_msc_scsi_read10(struct usbh_msc *msc_class, uint32_t start_sector, cons
     return usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], (uint8_t *)buffer, CONFIG_USBHOST_MSC_TIMEOUT);
 }
 
-void usbh_msc_modeswitch_enable(struct usbh_msc_modeswitch_config *config)
+void usbh_msc_modeswitch(struct usbh_msc *msc_class, const uint8_t *message)
 {
-    if (config) {
-        g_msc_modeswitch_config = config;
-    } else {
-        g_msc_modeswitch_config = NULL;
-    }
+    struct CBW *cbw;
+
+    /* Construct the CBW */
+    cbw = (struct CBW *)g_msc_cbw_csw[msc_class->sdchar - 'a'];
+
+    memcpy(g_msc_cbw_csw[msc_class->sdchar - 'a'], message, 31);
+
+    usbh_bulk_cbw_csw_xfer(msc_class, cbw, (struct CSW *)g_msc_cbw_csw[msc_class->sdchar - 'a'], NULL, CONFIG_USBHOST_MSC_TIMEOUT);
 }
 
 __WEAK void usbh_msc_run(struct usbh_msc *msc_class)
