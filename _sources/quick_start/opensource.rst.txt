@@ -74,4 +74,12 @@
     * - zmk
       - OpenSiFli
       - https://github.com/OpenSiFli/zmk
-
+    * - esp-hosted-mcu
+      - espressif
+      - https://github.com/espressif/esp-hosted-mcu
+    * - ds5dongle-bl618-opensource
+      - sqlCRT
+      - https://github.com/sqlCRT/ds5dongle-bl618-opensource
+    * - zephyr-components
+      - YuzukiHD
+      - https://github.com/YuzukiHD/zephyr-components
