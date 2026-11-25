@@ -830,7 +830,25 @@ void mass_storage_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
         case MSC_READ_CBW:
             if (SCSI_CBWDecode(busid, nbytes) == false) {
                 USB_LOG_ERR("Command: 0x%02x decode err\r\n", g_usbd_msc[busid].cbw.CB[0]);
-                usbd_msc_bot_abort(busid);
+                if ((nbytes == sizeof(struct CBW)) &&
+                    (g_usbd_msc[busid].cbw.dSignature == MSC_CBW_Signature) &&
+                    (g_usbd_msc[busid].cbw.bCBLength >= 1) &&
+                    (g_usbd_msc[busid].cbw.bCBLength <= 16)) {
+                    /* A failed command in a valid CBW still needs a CSW.
+                     * Queue it behind the stalled data phase so the host can
+                     * read it after clearing the halt, without resetting the
+                     * composite device and cancelling other interfaces' I/O.
+                     */
+                    if (g_usbd_msc[busid].cbw.dDataLength != 0) {
+                        uint8_t data_ep = (g_usbd_msc[busid].cbw.bmFlags & 0x80) ?
+                                              mass_ep_data[busid][MSD_IN_EP_IDX].ep_addr :
+                                              mass_ep_data[busid][MSD_OUT_EP_IDX].ep_addr;
+                        usbd_ep_set_stall(busid, data_ep);
+                    }
+                    usbd_msc_send_csw(busid, CSW_STATUS_CMD_FAILED);
+                } else {
+                    usbd_msc_bot_abort(busid);
+                }
                 return;
             }
             break;
