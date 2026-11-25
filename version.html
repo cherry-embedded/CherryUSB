@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="性能展示" href="show/index.html" />
+    <link rel="next" title="部分改动迁移指南" href="migration.html" />
     <link rel="prev" title="chryusb_configurator" href="tools/index.html" /> 
 </head>
 
@@ -49,7 +49,6 @@
 <li class="toctree-l1"><a class="reference internal" href="quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/q%26a.html">Q &amp; A</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quick_start/migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/opensource.html">基于 CherryUSB 的开源项目</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start/usb_speed.html">USB 极限速度测试</a></li>
 </ul>
@@ -147,6 +146,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#v1-7-0">v1.7.0</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="migration.html">部分改动迁移指南</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
 <ul>
@@ -422,6 +422,8 @@
 <ul class="simple">
 <li><p><strong>新增注册驱动 API，从这个版本开始可以同时使用多个不同的 USBIP</strong></p></li>
 <li><p><strong>设置枚举线程优先级默认为 29，修改所有 USB APP 优先级为 CONFIG_USBHOST_PSC_PRIO - 1，需要大于枚举线程优先级，解决 kill urb 和 submit urb 存在的互斥问题</strong></p></li>
+<li><p><strong>修复大量安全漏洞和临界问题</strong></p></li>
+<li><p><strong>修复主机驱动 usbh_submit_urb, usbh_kill_urb, isr，断连之间可能存在的变量临界问题。统一 xxx_urb_waitup 处理（包含完成，超时，取消）</strong></p></li>
 <li><p>device: <strong>新增 cdc ncm class 驱动</strong></p></li>
 <li><p>device: <strong>新增 tmc class 驱动</strong></p></li>
 <li><p>device: <strong>新增 usb3.0 request 和配置</strong></p></li>
@@ -429,21 +431,24 @@
 <li><p>device: <strong>audio 新增 usbd_audio_get_volume_range，volume 读写改成 float 类型</strong></p></li>
 <li><p>device: 新增获取 speed 和 ep info api</p></li>
 <li><p>device: <strong>新增 usb_vfs api, posix 标准接口</strong></p></li>
-<li><p>device: msc 支持 SCSI_readCapacity16 命令</p></li>
+<li><p>device: msc 支持 SCSI_readCapacity16 命令，不支持的命令发送 failed 而不是 abort</p></li>
 <li><p>device: <strong>新增 gs usb 驱动</strong></p></li>
 <li><p>host: <strong>重构 audio 驱动和 API，volume 配置范围改成 0~ 100，audio sample rate 最大支持 8个默认</strong></p></li>
 <li><p>host: <strong>serial 增加 RX 流控</strong></p></li>
-<li><p>host: <strong>简化 net class rx 接收，最大不再超过 16K</strong></p></li>
+<li><p>host: <strong>修复 serial 断连和 close 时的资源释放，避免资源泄漏</strong></p></li>
+<li><p>host: 简化 net class rx 接收，最大不再超过 16K</p></li>
 <li><p>host: <strong>rndis msg resp 处理统一到 usbh_rndis_parse_resp</strong></p></li>
 <li><p>host: rndis 驱动增加 Android RNDIS class code (0xEF/0x04/0x01) 匹配规则</p></li>
 <li><p>host: 修复 hid API 漏掉的 <strong>hport-&gt;intf</strong></p></li>
 <li><p>host: only release hport in disconnect</p></li>
+<li><p>host: <strong>class xxx_connect 失败时直接释放资源，不等到断开处理</strong></p></li>
 <li><p>port: <strong>renesas 从机支持</strong></p></li>
 <li><p>port: <strong>esp32s31，esp32h4 支持</strong></p></li>
 <li><p>port: <strong>N32H49X和N32H7XX USBHS 支持</strong></p></li>
 <li><p>port: <strong>N32H4x (N32H47x_48x / N32H49x) FSDEV 支持</strong></p></li>
 <li><p>port: <strong>删除旧版本 wch 驱动，重构 usbfs，usbhs 主从驱动支持</strong></p></li>
 <li><p>port: <strong>wch usb3.0 主从支持</strong></p></li>
+<li><p>port: <strong>dwc2 device desc dma 模式支持</strong></p></li>
 <li><p>port: 统一 cache 处理到 usbh_submit_urb</p></li>
 <li><p>port: 将部分 glue 文件放到厂家文件夹中</p></li>
 <li><p>port: 修复 ehci setup cache 和 qh，qtd cache 处理</p></li>
@@ -461,7 +466,6 @@
 <li><p>更新 usb 测速工具</p></li>
 <li><p>CI 功能新增 wch，sifli，phytium 支持</p></li>
 <li><p>osal 的部分修复</p></li>
-<li><p>安全性代码检查和修复</p></li>
 </ul>
 </section>
 </section>
@@ -471,7 +475,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="tools/index.html" class="btn btn-neutral float-left" title="chryusb_configurator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="show/index.html" class="btn btn-neutral float-right" title="性能展示" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="migration.html" class="btn btn-neutral float-right" title="部分改动迁移指南" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

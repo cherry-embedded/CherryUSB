@@ -49,7 +49,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/q%26a.html">Q &amp; A</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quick_start/migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/opensource.html">基于 CherryUSB 的开源项目</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/usb_speed.html">USB 极限速度测试</a></li>
 </ul>
@@ -161,6 +160,7 @@
 <p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migration.html">部分改动迁移指南</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
 <ul>
@@ -374,7 +374,7 @@
 </section>
 <section id="usbh-serial-close">
 <h3>usbh_serial_close<a class="headerlink" href="#usbh-serial-close" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_close</span></code> 关闭串口设备。</p>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_serial_close</span></code> 关闭串口设备。open 以后退出必须调用该 API，否则会导致 USB 断开时，枚举线程阻塞等待 close，无法释放资源。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_serial_close</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_serial</span><span class="w"> </span><span class="o">*</span><span class="n">serial</span><span class="p">);</span>
 </pre></div>
 </div>

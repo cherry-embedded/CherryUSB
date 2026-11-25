@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="部分改动迁移指南" href="migration.html" />
+    <link rel="next" title="基于 CherryUSB 的开源项目" href="opensource.html" />
     <link rel="prev" title="基于 RT-Thread 软件包开发指南" href="rtthread.html" /> 
 </head>
 
@@ -67,7 +67,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#failed-to-enable-port">Failed to enable port</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usb-host-urb-12-14">移植 usb host 出现 urb  返回 -12/-14</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usb-err-nak">USB_ERR_NAK 说明</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#usb-host-usb">USB host 连接 USB 网卡问题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usb-host-usb">USB host 连接 USB 网卡无法联网问题</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#config-usb-dcache-enable">什么时候需要开启 CONFIG_USB_DCACHE_ENABLE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ip">哪些 IP 对数据有对齐要求</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id3">主机优先级相关注意事项</a></li>
@@ -75,7 +75,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#id4">主机 class 驱动编写注意事项</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="opensource.html">基于 CherryUSB 的开源项目</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usb_speed.html">USB 极限速度测试</a></li>
 </ul>
@@ -153,6 +152,7 @@
 <p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migration.html">部分改动迁移指南</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
 <ul>
@@ -298,7 +298,7 @@
 DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split 传输。总结， <strong>食之无味，弃之可惜</strong>。</p>
 </section>
 <section id="usb-host-usb">
-<h2>USB host 连接 USB 网卡问题<a class="headerlink" href="#usb-host-usb" title="Link to this heading"></a></h2>
+<h2>USB host 连接 USB 网卡无法联网问题<a class="headerlink" href="#usb-host-usb" title="Link to this heading"></a></h2>
 <p>表现为能识别网卡并且分配到 IP 地址，但是无法 ping 通，这是因为网卡自身需要开启自动拨号，通常需要使用 AT 口设置。具体为 EC20/ML307 等模块。</p>
 </section>
 <section id="config-usb-dcache-enable">
@@ -322,6 +322,10 @@ DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split �
 <p>当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。合理的做法是，
 在 disconnect 函数中增加信号量等待，直到所有对该 class 资源的操作完成，然后释放信号量，这样才能保证安全退出。 <strong>也可以使用互斥锁解决</strong>。选其一即可。</p>
 <p>举例如下：</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>serial，网络相关的 class 不需要用户额外处理</p>
+</div>
 </section>
 <section id="id4">
 <h2>主机 class 驱动编写注意事项<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
@@ -337,7 +341,7 @@ DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split �
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="rtthread.html" class="btn btn-neutral float-left" title="基于 RT-Thread 软件包开发指南" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="migration.html" class="btn btn-neutral float-right" title="部分改动迁移指南" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="opensource.html" class="btn btn-neutral float-right" title="基于 CherryUSB 的开源项目" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

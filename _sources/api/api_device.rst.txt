@@ -7,6 +7,8 @@
 - 有多少个接口就调用多少次 `usbd_add_interface`，参数填相关 `xxx_init_intf`, 如果没有支持的，手动创建一个 intf 填入
 - 有多少个端点就调用多少次 `usbd_add_endpoint`，当中断完成时，会调用到注册的端点回调中。
 
+初始化顺序为 ``usbd_desc_register`` → ``usbd_add_interface`` / ``usbd_add_endpoint`` → ``usbd_initialize``，同一次初始化使用一致的 ``busid``。RTOS 环境中在线程里执行初始化。
+
 参考下面这张图：
 
 .. figure:: img/api_device1.png
@@ -64,19 +66,12 @@ bos描述符，winusb 描述符。
 
 .. code-block:: C
 
-    // 开启 CONFIG_USBDEV_ADVANCE_DESC
     void usbd_desc_register(uint8_t busid, const struct usb_descriptor *desc);
 
-    // 关闭 CONFIG_USBDEV_ADVANCE_DESC
-    void usbd_desc_register(uint8_t busid, const uint8_t *desc);
-    void usbd_msosv1_desc_register(uint8_t busid, struct usb_msosv1_descriptor *desc);
-    void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc);
-    void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
-    void usbd_webusb_desc_register(uint8_t busid, struct usb_webusb_descriptor *desc);
+- **busid** USB 总线 id
+- **desc** 描述符句柄，包含设备、配置、字符串等描述符的回调和扩展描述符。
 
-- **desc**  描述符的句柄
-
-.. note:: 当前默认开启 CONFIG_USBDEV_ADVANCE_DESC，如果需要使用旧版本 API 请关闭该宏，从 v1.6.0 开始只有开启了 CONFIG_USBDEV_ADVANCE_DESC 的 API
+描述符对象及其回调返回的数据在设备使用期间保持有效。此函数初始化该 bus 的 core 状态，因此放在接口和端点注册之前。
 
 usbd_add_interface
 """"""""""""""""""""""""""""""""""""
@@ -90,6 +85,8 @@ usbd_add_interface
 - **busid** USB 总线 id
 - **intf**  接口驱动句柄，通常从不同 class 的 `xxx_init_intf` 函数获取
 
+有几个接口就注册几次，每个接口使用独立、持续有效的 ``struct usbd_interface``，通常由对应 class 的 ``xxx_init_intf()`` 初始化。接口驱动注册与配置描述符中的接口定义保持一致。
+
 usbd_add_endpoint
 """"""""""""""""""""""""""""""""""""
 
@@ -101,6 +98,10 @@ usbd_add_endpoint
 
 - **busid** USB 总线 id
 - **ep**    端点句柄
+
+``ep_addr`` 与描述符中的端点地址及方向一致，如 ``0x81`` 为 IN、``0x01`` 为 OUT。硬件端点按配置描述符配置，EP0 的控制传输由 core 管理。
+
+端点完成回调运行在 USB ISR 中，适合简短处理、继续挂接传输或通过 RTOS/OSAL 通知工作线程；耗时处理放在工作线程。
 
 usbd_initialize
 """"""""""""""""""""""""""""""""""""

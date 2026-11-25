@@ -1,26 +1,26 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>部分改动迁移指南 &mdash; CherryUSB 1.6.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=d6a008b6"></script>
-      <script src="../_static/doctools.js?v=9a2dae69"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="基于 CherryUSB 的开源项目" href="opensource.html" />
-    <link rel="prev" title="Q &amp; A" href="q%26a.html" /> 
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d6a008b6"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="性能展示" href="show/index.html" />
+    <link rel="prev" title="版本说明" href="version.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -31,11 +31,11 @@
 
           
           
-          <a href="../index.html" class="icon icon-home">
+          <a href="index.html" class="icon icon-home">
             CherryUSB
           </a>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -43,108 +43,122 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">快速上手</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="start.html">入门必看</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo.html">基于现有 demo 快速验证</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transplant.html">芯片通用移植指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
-<li class="toctree-l1"><a class="reference internal" href="q%26a.html">Q &amp; A</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">部分改动迁移指南</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#usbh-initialize">usbh_initialize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dwc2-glue-st">dwc2 glue st</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dwc2-glue">dwc2 glue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#host-serial">host serial</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="opensource.html">基于 CherryUSB 的开源项目</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usb_speed.html">USB 极限速度测试</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/start.html">入门必看</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/demo.html">基于现有 demo 快速验证</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/transplant.html">芯片通用移植指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/q%26a.html">Q &amp; A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/opensource.html">基于 CherryUSB 的开源项目</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/usb_speed.html">USB 极限速度测试</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USB 基本知识点</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usb/usb_desc.html">USB 描述符</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usb/usb_request.html">USB 设备请求</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usb/usb_enum.html">USB 枚举</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usb/usb_ext.html">USB 知识点拓展</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb2.0_basic.html">USB 基本概念(2.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb3.0_basic.html">USB 基本概念(3.0 为主)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_desc.html">USB 描述符</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_request.html">USB 设备请求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_enum.html">USB 枚举</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb/usb_ext.html">USB 知识点拓展</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API 手册</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../api/api_device.html">设备协议栈</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/api_host.html">主机协议栈</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/api_port.html">主从驱动</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/api_config.html">USB CONFIG 说明</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_device.html">设备协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_host.html">主机协议栈</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_port.html">主从驱动</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_config.html">USB CONFIG 说明</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Class 指南</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../class/class_cdc.html">CDC</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../class/class_hid.html">HID</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../class/class_msc.html">MSC</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../class/class_audio.html">UAC</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../class/class_video.html">UVC</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../class/winusb.html">WINUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_cdc.html">CDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_hid.html">HID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_msc.html">MSC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_audio.html">UAC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/class_video.html">UVC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class/winusb.html">WINUSB</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">例程</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_cdc_acm.html">CDC ACM Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_hid.html">HID Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_msc.html">MSC Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov1.html">AudioV1 Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_audiov2.html">AudioV2 Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_video.html">USB Video Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_winusb.html">WinUSB Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_webusb.html">WebUSB Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_rndis.html">CDC RNDIS Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_ecm.html">CDC ECM Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_adb.html">ADB Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_mtp.html">MTP Device</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_serial.html">Serial Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_hid.html">HID Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_msc.html">MSC Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_net.html">Network Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_bluetooth.html">BTBLE Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_wifi.html">WIFI Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_audio.html">Audio Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_video.html">Video Host</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usb_otg.html">USB OTG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbd_vendor.html">Vendor Device 驱动编写</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo/usbh_vendor.html">Vendor Host 驱动编写</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_cdc_acm.html">CDC ACM Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_hid.html">HID Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_msc.html">MSC Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_audiov1.html">AudioV1 Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_audiov2.html">AudioV2 Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_video.html">USB Video Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_winusb.html">WinUSB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_webusb.html">WebUSB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_rndis.html">CDC RNDIS Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_ecm.html">CDC ECM Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_adb.html">ADB Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_mtp.html">MTP Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_serial.html">Serial Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_hid.html">HID Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_msc.html">MSC Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_net.html">Network Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_bluetooth.html">BTBLE Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_wifi.html">WIFI Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_audio.html">Audio Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_video.html">Video Host</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usb_otg.html">USB OTG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbd_vendor.html">Vendor Device 驱动编写</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo/usbh_vendor.html">Vendor Host 驱动编写</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">USBIP 介绍</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/ohci.html">OHCI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/ehci.html">EHCI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/xhci.html">XHCI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/chipidea.html">CHIPIDEA</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc2.html">DWC2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/musb.html">MUSB</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/fotg210.html">FOTG210</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns2.html">CDNS2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/cdns3.html">CDNS3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usbip/dwc3.html">DWC3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/ohci.html">OHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/ehci.html">EHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/xhci.html">XHCI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/chipidea.html">CHIPIDEA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/dwc2.html">DWC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/musb.html">MUSB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/fotg210.html">FOTG210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/cdns2.html">CDNS2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/cdns3.html">CDNS3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usbip/dwc3.html">DWC3</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">工具使用</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">chryusb_configurator</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#wireshark">Wireshark</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tools/index.html#audacity">Audacity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">chryusb_configurator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#usb-protocol-suite">力科 USB Protocol Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#wireshark">Wireshark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html#audacity">Audacity</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="version.html">版本说明</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">部分改动迁移指南</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-0">v1.5.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dwc2-glue">dwc2 glue</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dwc2-user-params">dwc2_user_params</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-6-0">v1.6.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-initialize">usbh_initialize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#host-serial-class">host serial class</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-7-0">v1.7.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#psc-thread">psc thread</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#host-audio">host audio</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../show/index.html">性能展示</a></li>
+<li class="toctree-l1"><a class="reference internal" href="show/index.html">性能展示</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">商业支持</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../support/index.html">商业支持</a></li>
+<li class="toctree-l1"><a class="reference internal" href="support/index.html">商业支持</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">安全公告</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../security.html">安全公告与 CVE 目录</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">安全公告与 CVE 目录</a></li>
 </ul>
 
         </div>
@@ -153,17 +167,17 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">CherryUSB</a>
+          <a href="index.html">CherryUSB</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">部分改动迁移指南</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/quick_start/migration.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/migration.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -173,16 +187,18 @@
              
   <section id="id1">
 <h1>部分改动迁移指南<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
-<section id="usbh-initialize">
-<h2>usbh_initialize<a class="headerlink" href="#usbh-initialize" title="Link to this heading"></a></h2>
-<p>usbh_initialize 从 v1.6.0 开始新增 event_handler 参数，通常不需要使用，可以传入 NULL。</p>
-</section>
-<section id="dwc2-glue-st">
-<h2>dwc2 glue st<a class="headerlink" href="#dwc2-glue-st" title="Link to this heading"></a></h2>
+<p>部分改动可能使得旧代码无法用于新代码上，需要根据具体改动进行相应调整。</p>
+<section id="v1-5-0">
+<h2>v1.5.0<a class="headerlink" href="#v1-5-0" title="Link to this heading"></a></h2>
+<section id="dwc2-glue">
+<h3>dwc2 glue<a class="headerlink" href="#dwc2-glue" title="Link to this heading"></a></h3>
 <p>dwc2 从 v1.5.0 开始 glue 文件内置底层初始化，比如 <cite>usb_dc_low_level_init</cite>，底层依赖 <cite>HAL_PCD_MspInit</cite> 和 <cite>HAL_HCD_MspInit</cite>，必须使用 stm32cubemx 生成。第三方平台不保证有这些函数实现，自行检查。</p>
 </section>
-<section id="dwc2-glue">
-<h2>dwc2 glue<a class="headerlink" href="#dwc2-glue" title="Link to this heading"></a></h2>
+</section>
+<section id="v1-5-1">
+<h2>v1.5.1<a class="headerlink" href="#v1-5-1" title="Link to this heading"></a></h2>
+<section id="dwc2-user-params">
+<h3>dwc2_user_params<a class="headerlink" href="#dwc2-user-params" title="Link to this heading"></a></h3>
 <p>dwc2 从 v1.5.1 开始新增 <cite>struct dwc2_user_params</cite>，用于实现多 dwc2 port 不同配置。并替代 <cite>usbd_get_dwc2_gccfg_conf</cite> 和 <cite>usbh_get_dwc2_hccfg_conf</cite> 函数，
 并增加 <cite>dwc2_get_user_params</cite> 函数实现，举例如下：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifndef CONFIG_USB_DWC2_CUSTOM_PARAM</span>
@@ -204,8 +220,15 @@
 </pre></div>
 </div>
 </section>
-<section id="host-serial">
-<h2>host serial<a class="headerlink" href="#host-serial" title="Link to this heading"></a></h2>
+</section>
+<section id="v1-6-0">
+<h2>v1.6.0<a class="headerlink" href="#v1-6-0" title="Link to this heading"></a></h2>
+<section id="usbh-initialize">
+<h3>usbh_initialize<a class="headerlink" href="#usbh-initialize" title="Link to this heading"></a></h3>
+<p>usbh_initialize 从 v1.6.0 开始新增 event_handler 参数，通常不需要使用，可以传入 NULL。</p>
+</section>
+<section id="host-serial-class">
+<h3>host serial class<a class="headerlink" href="#host-serial-class" title="Link to this heading"></a></h3>
 <p>从 v1.6.0 开始，主机增加 host serial 框架，用于统一所有类串口设备。以下 API 需要使用新 serial API 替换：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_xxx_set_line_coding</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_xxx</span><span class="w"> </span><span class="o">*</span><span class="n">xxx_class</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdc_line_coding</span><span class="w"> </span><span class="o">*</span><span class="n">line_coding</span><span class="p">);</span>
 <span class="kt">int</span><span class="w"> </span><span class="nf">usbh_xxx_get_line_coding</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_xxx</span><span class="w"> </span><span class="o">*</span><span class="n">xxx_class</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdc_line_coding</span><span class="w"> </span><span class="o">*</span><span class="n">line_coding</span><span class="p">);</span>
@@ -225,13 +248,25 @@
 </div>
 </section>
 </section>
+<section id="v1-7-0">
+<h2>v1.7.0<a class="headerlink" href="#v1-7-0" title="Link to this heading"></a></h2>
+<section id="psc-thread">
+<h3>psc thread<a class="headerlink" href="#psc-thread" title="Link to this heading"></a></h3>
+<p>主机枚举线程从默认 0 改成 29，应用线程优先级如果比枚举线程低，创建线程会报错。</p>
+</section>
+<section id="host-audio">
+<h3>host audio<a class="headerlink" href="#host-audio" title="Link to this heading"></a></h3>
+<p>主机 audio 驱动重构，API 采用新的接口，旧接口不再兼容。 volume 单位从 db 改成 0 ~ 100%。</p>
+</section>
+</section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="q%26a.html" class="btn btn-neutral float-left" title="Q &amp; A" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="opensource.html" class="btn btn-neutral float-right" title="基于 CherryUSB 的开源项目" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="version.html" class="btn btn-neutral float-left" title="版本说明" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="show/index.html" class="btn btn-neutral float-right" title="性能展示" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

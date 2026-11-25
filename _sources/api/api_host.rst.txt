@@ -187,7 +187,7 @@ usbh_serial_open
 usbh_serial_close
 """"""""""""""""""""""""""""""""""""
 
-``usbh_serial_close`` 关闭串口设备。
+``usbh_serial_close`` 关闭串口设备。open 以后退出必须调用该 API，否则会导致 USB 断开时，枚举线程阻塞等待 close，无法释放资源。
 
 .. code-block:: C
 

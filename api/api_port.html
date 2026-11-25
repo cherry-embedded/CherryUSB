@@ -49,7 +49,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/transplant.html">芯片通用移植指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/rtthread.html">基于 RT-Thread 软件包开发指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/q%26a.html">Q &amp; A</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quick_start/migration.html">部分改动迁移指南</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/opensource.html">基于 CherryUSB 的开源项目</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quick_start/usb_speed.html">USB 极限速度测试</a></li>
 </ul>
@@ -85,6 +84,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#usb-hc-deinit">usb_hc_deinit</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbh-roothub-control">usbh_roothub_control</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#usbh-submit-urb">usbh_submit_urb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-kill-urb">usbh_kill_urb</a></li>
 </ul>
 </li>
 </ul>
@@ -149,6 +149,7 @@
 <p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../version.html">版本说明</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migration.html">部分改动迁移指南</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">性能展示</span></p>
 <ul>
@@ -191,8 +192,9 @@
 <h1>主从驱动<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>请注意，v1.1 版本开始增加 busid 形参，其余保持不变，所以 API 说明不做更新</p>
+<p>部分历史接口示例省略了 busid 等参数，使用时以当前版本的头文件声明为准。</p>
 </div>
+<p>setup 和传输 buffer 按当前控制器要求放入 DMA 可访问的内存，并满足地址及 cache line 对齐；根据配置使用非缓存区或已有 cache 维护接口。</p>
 <section id="device-controller-dcd">
 <h2>device controller(dcd)<a class="headerlink" href="#device-controller-dcd" title="Link to this heading"></a></h2>
 <section id="usb-dc-init">
@@ -283,37 +285,40 @@
 </section>
 <section id="usbd-ep-start-write">
 <h3>usbd_ep_start_write<a class="headerlink" href="#usbd-ep-start-write" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_start_write</span></code> 启动端点发送，发送完成以后，会调用注册的 in 端点传输完成中断回调函数。该函数为异步发送。 <strong>此函数对用户开放</strong>。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_ep_start_write</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">data_len</span><span class="p">);</span>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_start_write</span></code> 向 IN 端点启动异步发送。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_ep_start_write</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">data_len</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>ep</strong> in 端点地址</p></li>
+<li><p><strong>busid</strong> USB 总线 id</p></li>
+<li><p><strong>ep</strong> IN 端点地址，包含方向位</p></li>
 <li><p><strong>data</strong> 发送数据缓冲区</p></li>
-<li><p><strong>data_len</strong> 发送长度，原则上无限长，推荐 16K 字节以内</p></li>
-<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+<li><p><strong>data_len</strong> 发送长度，零长度用于发送 ZLP</p></li>
+<li><p><strong>return</strong> 返回 0 表示启动成功，负值表示失败</p></li>
 </ul>
+<p>发送结束后进入注册的 IN 完成回调，回调的 <code class="docutils literal notranslate"><span class="pre">nbytes</span></code> 为实际长度。发送 buffer 保持有效且内容稳定，直到本次传输完成。同一 IN 端点的发送由应用串行安排，根据启动返回值决定是否等待本次完成通知。</p>
+<p>发送长度为 MPS 整数倍时，是否追加 ZLP 由 class/协议决定，按对应 class/demo 的用法处理。</p>
 </section>
 <section id="usbd-ep-start-read">
 <h3>usbd_ep_start_read<a class="headerlink" href="#usbd-ep-start-read" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_start_read</span></code>  启动端点接收，接收完成以后，会调用注册的 out 端点传输完成中断回调函数。该函数为异步接收。 <strong>此函数对用户开放</strong>。</p>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_ep_start_read</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">data_len</span><span class="p">);</span>
+<p><code class="docutils literal notranslate"><span class="pre">usbd_ep_start_read</span></code> 向 OUT 端点挂接异步接收。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbd_ep_start_read</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">busid</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">data_len</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>ep</strong> out 端点地址</p></li>
-<li><p><strong>data</strong> 接收数据缓冲区</p></li>
-<li><p><strong>data_len</strong> 接收长度，原则上无限长，推荐 16K 字节以内，并且推荐是最大包长的整数倍</p></li>
-<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+<li><p><strong>busid</strong> USB 总线 id</p></li>
+<li><p><strong>ep</strong> OUT 端点地址</p></li>
+<li><p><strong>data</strong> 接收数据缓冲区，在本次接收完成前保持有效</p></li>
+<li><p><strong>data_len</strong> 请求接收长度，通常取端点 MPS 的整数倍；buffer 容量满足当前 DCD 的接收范围要求</p></li>
+<li><p><strong>return</strong> 返回 0 表示启动成功，负值表示失败</p></li>
 </ul>
+<p>接收达到请求长度或遇到短包（含 ZLP）后进入注册的 OUT 完成回调，<code class="docutils literal notranslate"><span class="pre">nbytes</span></code> 为实际接收长度，应用据此处理数据。</p>
+<p>普通端点在 <code class="docutils literal notranslate"><span class="pre">USBD_EVENT_CONFIGURED</span></code> 后开始使用，先挂接第一次 OUT 接收；持续接收时在每次完成后再次挂接。同一 OUT 端点的接收由应用串行安排，数据处理与下一次接收通过 buffer 交接协调。</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>启动接收以后，以下两种情况，会进入传输完成中断：1、最后一包为短包（小于 EP MPS）；2、接收总长度等于 data_len</p>
+<p>对于 bulk 传输，data_len 通常设计为 EP MPS。固定长度、自定义协议携带长度（如 MSC）、主机发送 ZLP 或短包（如 RNDIS）时，可按协议使用多个 EP MPS。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>对于 bulk 传输，data_len 通常设计为 EP MPS，以下三种情况可以修改为多个 EP MPS: 固定长度；自定义协议并携带长度（MSC）; 主机手动发送 ZLP 或者短包（RNDIS）</p>
-</div>
+<p>端点完成回调在 USB ISR 中执行，适合简短处理、继续挂接传输或通过 RTOS/OSAL 通知工作线程；耗时业务放在线程中执行。</p>
 </section>
 </section>
 <section id="host-controller-hcd">
@@ -352,14 +357,20 @@
 </section>
 <section id="usbh-submit-urb">
 <h3>usbh_submit_urb<a class="headerlink" href="#usbh-submit-urb" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbh_submit_urb</span></code> 对某个地址上的端点进行数据请求。 <strong>此函数对用户开放</strong>。</p>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_submit_urb</span></code> 向 <code class="docutils literal notranslate"><span class="pre">urb-&gt;hport</span></code> 对应设备的 <code class="docutils literal notranslate"><span class="pre">urb-&gt;ep</span></code> 端点提交传输。 <strong>此函数对用户开放</strong>。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_submit_urb</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="o">*</span><span class="n">urb</span><span class="p">);</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p><strong>urb</strong> usb 请求块</p></li>
-<li><p><strong>return</strong> 返回 0 表示正确，其他表示错误</p></li>
+<li><p><strong>urb</strong> USB 请求块，包含端口、端点、setup、buffer、长度、timeout 和完成回调等参数</p></li>
+<li><p><strong>return</strong> 返回 0 表示成功，负值表示错误；同步和异步的成功含义如下</p></li>
 </ul>
+<p>每次调用 <code class="docutils literal notranslate"><span class="pre">usbh_submit_urb()</span></code> 前，都要调用对应的 <code class="docutils literal notranslate"><span class="pre">usbh_control_urb_fill()</span></code>、<code class="docutils literal notranslate"><span class="pre">usbh_bulk_urb_fill()</span></code>、<code class="docutils literal notranslate"><span class="pre">usbh_int_urb_fill()</span></code> 等 fill 函数填写本次请求参数，包括完成回调中的再次提交。URB 在首次使用前初始化；控制传输包含 setup 包，interrupt 传输包含 interval。</p>
+<ul class="simple">
+<li><p><strong>同步传输</strong>：<code class="docutils literal notranslate"><span class="pre">timeout</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>，<code class="docutils literal notranslate"><span class="pre">complete</span> <span class="pre">=</span> <span class="pre">NULL</span></code>。调用线程等待完成或超时，返回 0 表示成功，实际长度读取 <code class="docutils literal notranslate"><span class="pre">urb-&gt;actual_length</span></code>。</p></li>
+<li><p><strong>异步传输</strong>：<code class="docutils literal notranslate"><span class="pre">timeout</span> <span class="pre">=</span> <span class="pre">0</span></code>，设置 <code class="docutils literal notranslate"><span class="pre">complete</span></code> 和 <code class="docutils literal notranslate"><span class="pre">arg</span></code>。返回 0 表示提交成功；完成后调用 <code class="docutils literal notranslate"><span class="pre">complete(arg,</span> <span class="pre">nbytes)</span></code>，非负值为实际长度，负值为错误。正常传输完成回调在 USB ISR 中执行，适合简短处理、继续提交或通知工作线程。</p></li>
+</ul>
+<p>每笔在途请求独占其 URB 和 buffer，相关 setup、buffer、arg 在传输及收尾期间保持有效。完成后调用对应的 fill 函数填写下一笔传输参数，再次提交。<code class="docutils literal notranslate"><span class="pre">hcpriv</span></code> 由 HCD 维护。</p>
 <p>其中， <cite>urb</cite> 结构体信息如下：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">usb_slist_t</span><span class="w"> </span><span class="n">list</span><span class="p">;</span>
@@ -367,7 +378,7 @@
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_hubport</span><span class="w"> </span><span class="o">*</span><span class="n">hport</span><span class="p">;</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_endpoint_descriptor</span><span class="w"> </span><span class="o">*</span><span class="n">ep</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">data_toggle</span><span class="p">;</span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">interval</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">interval</span><span class="p">;</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usb_setup_packet</span><span class="w"> </span><span class="o">*</span><span class="n">setup</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">transfer_buffer</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">transfer_buffer_length</span><span class="p">;</span>
@@ -407,7 +418,7 @@
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>timeout 如何没有特别对时间的要求，必须设置成 0xffffffff，原则上不允许超时，如果超时了，一般不能再继续工作</p>
+<p>同步传输按业务要求设置等待时间；同步超时时由 submit 路径负责取消和收尾，上层处理 submit 的返回结果。异步传输通过 complete 回调通知结果。</p>
 </div>
 <p><cite>errorcode</cite> 可以返回以下值：</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="cp">#define USB_ERR_NOMEM    1</span>
@@ -441,6 +452,20 @@
 <li><p><strong>actual_length</strong> 实际传输长度</p></li>
 <li><p><strong>errorcode</strong> 错误码</p></li>
 </ul>
+</section>
+<section id="usbh-kill-urb">
+<h3>usbh_kill_urb<a class="headerlink" href="#usbh-kill-urb" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_kill_urb</span></code> 取消指定 URB 的传输。 <strong>此函数对用户开放</strong>。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_kill_urb</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="o">*</span><span class="n">urb</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>urb</strong> 此前提交的同一个 USB 请求块</p></li>
+<li><p><strong>return</strong> 返回 0 表示取消调用成功，负值表示错误</p></li>
+</ul>
+<p>使用场景：枚举线程处理设备断连时取消 class 的在途 URB；同步传输超时时由 submit 路径负责取消和收尾，上层处理 submit 的返回结果。</p>
+<p>取消同步请求时唤醒等待线程，取消异步请求时执行错误回调。错误回调在 kill 调用者上下文执行，只处理报错并结束本次传输；正常成功回调按业务需要继续提交。</p>
+<p>断连处理按停止业务提交、取消在途请求、结束相关工作线程、释放应用对象的顺序进行。URB 和数据 buffer 的应用内存由调用方管理。</p>
 </section>
 </section>
 </section>

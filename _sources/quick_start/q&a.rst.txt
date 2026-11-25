@@ -121,7 +121,7 @@ USB_ERR_NAK 说明
 USB_ERR_NAK 只存在于 DWC2 buffer dma/slave 模式(我们不使用 slave 模式)，DWC2 在 buffer dma模式下对于中断传输不支持硬件处理 NAK 中断，因此需要软件处理，导致 NAK 中断非常多，建议搭配定时器使用。
 DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split 传输。总结， **食之无味，弃之可惜**。
 
-USB host 连接 USB 网卡问题
+USB host 连接 USB 网卡无法联网问题
 ----------------------------------------------------------------
 
 表现为能识别网卡并且分配到 IP 地址，但是无法 ping 通，这是因为网卡自身需要开启自动拨号，通常需要使用 AT 口设置。具体为 EC20/ML307 等模块。
@@ -184,6 +184,8 @@ USB host 连接 USB 网卡问题
         /* 等待任务退出 */
         usb_osal_sem_take(xxx_exit_sem, USB_OSAL_WAIT_FOREVER);
     }
+
+.. note:: serial，网络相关的 class 不需要用户额外处理
 
 主机 class 驱动编写注意事项
 -------------------------------------------------
