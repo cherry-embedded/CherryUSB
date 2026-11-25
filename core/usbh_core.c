@@ -635,10 +635,13 @@ errout:
 
 void usbh_hubport_release(struct usbh_hubport *hport)
 {
+    size_t flags;
+
+    flags = usb_osal_enter_critical_section();
     if (hport->connected) {
-        usb_osal_mutex_take(hport->mutex);
         hport->connected = false;
-        usb_osal_mutex_give(hport->mutex);
+        usb_osal_leave_critical_section(flags);
+
         usbh_kill_urb(&hport->ep0_urb);
         usbh_free_devaddr(hport);
         for (uint8_t i = 0; i < hport->config.config_desc.bNumInterfaces; i++) {
@@ -651,6 +654,8 @@ void usbh_hubport_release(struct usbh_hubport *hport)
         usb_osal_mutex_delete(hport->mutex);
         USB_LOG_INFO("Device on Bus %u, Hub %u, Port %u disconnected\r\n", hport->bus->busid, hport->parent->index, hport->port);
         hport->bus->event_handler(hport->bus->busid, hport->parent->index, hport->port, USB_INTERFACE_ANY, USBH_EVENT_DEVICE_DISCONNECTED);
+    } else {
+        usb_osal_leave_critical_section(flags);
     }
 }
 
@@ -738,14 +743,13 @@ int usbh_control_transfer(struct usbh_hubport *hport, struct usb_setup_packet *s
 
     urb = &hport->ep0_urb;
 
-    usb_osal_mutex_take(hport->mutex);
-
-resubmit:
     if (!hport->connected) {
-        usb_osal_mutex_give(hport->mutex);
         return -USB_ERR_NODEV;
     }
 
+    usb_osal_mutex_take(hport->mutex);
+
+resubmit:
     memcpy(hport->setup, setup, sizeof(struct usb_setup_packet));
     usbh_print_setup(hport->setup);
 
@@ -760,7 +764,7 @@ resubmit:
         }
     }
 
-    if (ret < 0 && (ret != -USB_ERR_TIMEOUT)) {
+    if (ret < 0 && (ret != -USB_ERR_TIMEOUT) && hport->connected) {
         retry--;
         if (retry > 0) {
             USB_LOG_WRN("Control transfer failed, errorcode %d, retrying...\r\n", ret);

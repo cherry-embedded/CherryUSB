@@ -63,8 +63,6 @@ struct ehci_qh_hw {
     uint32_t first_qtd;
     struct usbh_urb *urb;
     usb_osal_sem_t waitsem;
-    uint8_t remove_in_iaad;
-    volatile uint8_t killed; /* only used in usbh_kill_urb */
 } __attribute__((aligned(CONFIG_USB_EHCI_ALIGN_SIZE)));
 
 struct ehci_itd_hw {
@@ -83,6 +81,8 @@ struct ehci_iso_hw {
 };
 
 struct ehci_hcd {
+    usb_osal_sem_t iaad_sem;
+    usb_osal_mutex_t iaad_mutex;
     bool ehci_iso_used[CONFIG_USB_EHCI_ISO_NUM];
     bool ppc;      /* Port Power Control */
     bool has_tt;   /* if use tt instead of Companion Controller */

@@ -658,6 +658,39 @@ static void dwc2_iso_urb_init(struct usbh_bus *bus, uint8_t chidx, struct usbh_u
 }
 #endif
 
+static void dwc2_urb_waitup(struct usbh_urb *urb)
+{
+    struct dwc2_chan *chan;
+
+    chan = (struct dwc2_chan *)urb->hcpriv;
+    if (!chan) {
+        return;
+    }
+
+    if (urb->errorcode == -USB_ERR_TIMEOUT) {
+        urb->timeout = 0;
+        usb_osal_sem_reset(chan->waitsem);
+        dwc2_chan_free(chan);
+        return;
+    }
+
+    if (urb->timeout) {
+        urb->timeout = 0;
+        usb_osal_sem_give(chan->waitsem);
+        return;
+    }
+
+    dwc2_chan_free(chan);
+
+    if (urb->complete) {
+        if (urb->errorcode < 0) {
+            urb->complete(urb->arg, urb->errorcode);
+        } else {
+            urb->complete(urb->arg, urb->actual_length);
+        }
+    }
+}
+
 extern void usb_hc_low_level_init(struct usbh_bus *bus);
 extern void usb_hc_low_level_deinit(struct usbh_bus *bus);
 
@@ -965,6 +998,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     size_t flags;
     int ret = 0;
     int chidx;
+    uint32_t timeout;
 
     if (!urb || !urb->hport || !urb->ep || !urb->hport->bus) {
         return -USB_ERR_INVAL;
@@ -980,14 +1014,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
                    "urb->setup or urb->transfer_buffer is not aligned %d", CONFIG_USB_ALIGN_SIZE);
 #endif
     bus = urb->hport->bus;
-
-    if (!(USB_OTG_HPRT & USB_OTG_HPRT_PCSTS) || !urb->hport->connected) {
-        return -USB_ERR_NOTCONN;
-    }
-
-    if (urb->errorcode == -USB_ERR_BUSY) {
-        return -USB_ERR_BUSY;
-    }
 
     if (urb->ep->bEndpointAddress & 0x80) {
         /* Check if pipe rx fifo is overflow */
@@ -1008,16 +1034,27 @@ int usbh_submit_urb(struct usbh_urb *urb)
         }
     }
 
-    chidx = dwc2_chan_alloc(bus);
-    if (chidx == -1) {
-        return -USB_ERR_NOMEM;
+    flags = usb_osal_enter_critical_section();
+    if (!(USB_OTG_HPRT & USB_OTG_HPRT_PCSTS) || !urb->hport->connected) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_NOTCONN;
     }
 
-    flags = usb_osal_enter_critical_section();
+    if (urb->hcpriv || urb->errorcode == -USB_ERR_BUSY) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_BUSY;
+    }
+
+    chidx = dwc2_chan_alloc(bus);
+    if (chidx == -1) {
+        usb_osal_leave_critical_section(flags);
+        return -USB_ERR_NOMEM;
+    }
 
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx];
     chan->chidx = chidx;
     chan->urb = urb;
+    timeout = urb->timeout;
     chan->do_ssplit = 0;
 
     if (urb->hport->speed != USB_SPEED_HIGH &&
@@ -1031,7 +1068,6 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->hcpriv = chan;
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
-
     usb_osal_leave_critical_section(flags);
 
     if (urb->setup) {
@@ -1039,7 +1075,8 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
 
     if (urb->transfer_buffer) {
-        if ((urb->setup && urb->setup->bmRequestType & 0x80) || (urb->ep->bEndpointAddress & 0x80)) {
+        if ((urb->setup && urb->setup->bmRequestType & 0x80) ||
+            (!urb->setup && urb->ep->bEndpointAddress & 0x80)) {
             usb_dcache_invalidate((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
         } else {
             usb_dcache_clean((uintptr_t)urb->transfer_buffer, USB_ALIGN_UP(urb->transfer_buffer_length, CONFIG_USB_ALIGN_SIZE));
@@ -1056,25 +1093,28 @@ int usbh_submit_urb(struct usbh_urb *urb)
             dwc2_bulk_intr_urb_init(bus, chidx, urb, urb->transfer_buffer, urb->transfer_buffer_length);
             break;
         case USB_ENDPOINT_TYPE_ISOCHRONOUS:
+            USB_ASSERT_MSG(0, "Do not support iso transfer");
             break;
         default:
             break;
     }
 
-    if (urb->timeout > 0) {
-        /* wait until timeout or sem give */
-        ret = usb_osal_sem_take(chan->waitsem, urb->timeout);
+    if (timeout > 0) {
+        ret = usb_osal_sem_take(chan->waitsem, timeout);
         if (ret < 0) {
             goto errout_timeout;
         }
-        urb->timeout = 0;
         ret = urb->errorcode;
-        /* we can free chan when waitsem is done */
         dwc2_chan_free(chan);
     }
     return ret;
 errout_timeout:
-    urb->timeout = 0;
+    flags = usb_osal_enter_critical_section();
+    if (urb->errorcode == -USB_ERR_BUSY) {
+        urb->errorcode = -USB_ERR_TIMEOUT;
+    }
+    ret = urb->errorcode;
+    usb_osal_leave_critical_section(flags);
     usbh_kill_urb(urb);
     return ret;
 }
@@ -1085,57 +1125,32 @@ int usbh_kill_urb(struct usbh_urb *urb)
     struct usbh_bus *bus;
     size_t flags;
 
-    if (!urb || !urb->hcpriv || !urb->hport->bus) {
+    if (!urb || !urb->hport || !urb->ep || !urb->hport->bus) {
         return -USB_ERR_INVAL;
     }
 
     bus = urb->hport->bus;
 
     flags = usb_osal_enter_critical_section();
-
     chan = (struct dwc2_chan *)urb->hcpriv;
     if (!chan) {
         usb_osal_leave_critical_section(flags);
         return -USB_ERR_INVAL;
     }
 
+    if (urb->errorcode != -USB_ERR_BUSY && urb->errorcode != -USB_ERR_TIMEOUT) {
+        usb_osal_leave_critical_section(flags);
+        return 0;
+    }
+
     dwc2_halt(bus, chan->chidx);
+    if (urb->errorcode == -USB_ERR_BUSY) {
+        urb->errorcode = -USB_ERR_SHUTDOWN;
+    }
 
-    urb->errorcode = -USB_ERR_SHUTDOWN;
+    dwc2_urb_waitup(urb);
     usb_osal_leave_critical_section(flags);
-
-    if (urb->timeout) {
-        usb_osal_sem_give(chan->waitsem);
-    } else {
-        dwc2_chan_free(chan);
-    }
-
-    if (urb->complete) {
-        urb->complete(urb->arg, urb->errorcode);
-    }
-
     return 0;
-}
-
-static inline void dwc2_urb_waitup(struct usbh_urb *urb)
-{
-    struct dwc2_chan *chan;
-
-    chan = (struct dwc2_chan *)urb->hcpriv;
-
-    if (urb->timeout) {
-        usb_osal_sem_give(chan->waitsem);
-    } else {
-        dwc2_chan_free(chan);
-    }
-
-    if (urb->complete) {
-        if (urb->errorcode < 0) {
-            urb->complete(urb->arg, urb->errorcode);
-        } else {
-            urb->complete(urb->arg, urb->actual_length);
-        }
-    }
 }
 
 static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
@@ -1148,6 +1163,11 @@ static void dwc2_inchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
 
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[ch_num];
     urb = chan->urb;
+    if (!urb || urb->errorcode != -USB_ERR_BUSY) {
+        USB_OTG_HC(ch_num)->HCINTMSK = 0;
+        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
+        return;
+    }
     //printf("s1:%08x\r\n", chan_intstatus);
 
     if (chan_intstatus & USB_OTG_HCINT_CHH) {
@@ -1290,6 +1310,11 @@ static void dwc2_outchan_irq_handler(struct usbh_bus *bus, uint8_t ch_num)
 
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[ch_num];
     urb = chan->urb;
+    if (!urb || urb->errorcode != -USB_ERR_BUSY) {
+        USB_OTG_HC(ch_num)->HCINTMSK = 0;
+        USB_OTG_HC(ch_num)->HCINT = chan_intstatus;
+        return;
+    }
     //printf("s2:%08x\r\n", chan_intstatus);
 
     if (chan_intstatus & USB_OTG_HCINT_CHH) {
