@@ -126,7 +126,11 @@ struct usbh_serial {
     int minor;         /* Serial Port Number (/dev/ttyUSBx or /dev/ttyACMx) */
     int cdc_minor;     /* Serial Port Number (/dev/ttyACMx) */
     uint8_t *iobuffer; /* I/O buffer for serial transfers */
-    uint8_t ref_count; /* Reference Count */
+    uint8_t ref_count; /* Held from successful open until close completes */
+    bool disconnected;
+    bool closing;
+    usb_osal_mutex_t mutex;
+    usb_osal_sem_t close_sem;
     uint32_t open_flags;
     uint32_t rx_timeout_ms;
 
