@@ -1,7 +1,9 @@
 Host and Device Drivers
 =======================================
 
-.. note:: Please note that starting from version v1.1, the busid parameter has been added, while everything else remains unchanged, so API documentation is not updated
+.. note:: Some older interface examples omit busid or other parameters. Use the declarations in the current version's headers when calling these interfaces.
+
+Place setup and transfer buffers in memory accessible to the controller's DMA, and meet its address and cache-line alignment requirements. Use non-cacheable memory or the existing cache maintenance interfaces according to the configuration.
 
 device controller(dcd)
 -------------------------
@@ -103,34 +105,44 @@ usbd_ep_is_stalled
 usbd_ep_start_write
 """"""""""""""""""""""""""""""""""""
 
-``usbd_ep_start_write`` starts endpoint transmission. After transmission completion, it will call the registered IN endpoint transfer completion interrupt callback function. This function performs asynchronous transmission. **This function is open to users**.
+``usbd_ep_start_write`` starts an asynchronous transfer on an IN endpoint. **This function is open to users**.
 
 .. code-block:: C
 
-    int usbd_ep_start_write(const uint8_t ep, const uint8_t *data, uint32_t data_len);
+    int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data, uint32_t data_len);
 
-- **ep** IN endpoint address
-- **data** Transmission data buffer
-- **data_len** Transmission length, theoretically unlimited, recommended within 16K bytes
-- **return** Returns 0 for success, other values indicate error
+- **busid** USB bus ID
+- **ep** IN endpoint address, including the direction bit
+- **data** Transmission buffer
+- **data_len** Transmission length; use zero to send a ZLP
+- **return** Returns 0 when the transfer starts successfully, or a negative value on failure
+
+The registered IN completion callback runs when the transfer finishes; its ``nbytes`` argument is the actual length. Keep the transmission buffer valid and its contents unchanged until completion. The application serializes transmissions on each IN endpoint and uses the start result to determine whether to wait for a completion notification.
+
+When the transmission length is a multiple of MPS, the class or protocol determines whether to append a ZLP. Follow the corresponding class/demo usage.
 
 usbd_ep_start_read
 """"""""""""""""""""""""""""""""""""
 
-``usbd_ep_start_read`` starts endpoint reception. After reception completion, it will call the registered OUT endpoint transfer completion interrupt callback function. This function performs asynchronous reception. **This function is open to users**.
+``usbd_ep_start_read`` prepares an asynchronous receive transfer on an OUT endpoint. **This function is open to users**.
 
 .. code-block:: C
 
-    int usbd_ep_start_read(const uint8_t ep, uint8_t *data, uint32_t data_len);
+    int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data, uint32_t data_len);
 
+- **busid** USB bus ID
 - **ep** OUT endpoint address
-- **data** Reception data buffer
-- **data_len** Reception length, theoretically unlimited, recommended within 16K bytes, and preferably a multiple of maximum packet size
-- **return** Returns 0 for success, other values indicate error
+- **data** Reception buffer, which must remain valid until this receive transfer completes
+- **data_len** Requested receive length, normally a multiple of the endpoint MPS; the buffer capacity must cover the receive range programmed by the current DCD
+- **return** Returns 0 when the transfer starts successfully, or a negative value on failure
 
-.. note:: After starting reception, transfer completion interrupt will be triggered under two conditions: 1. Last packet is a short packet (less than EP MPS); 2. Total received length equals data_len
+The registered OUT completion callback runs when reception reaches the requested length or encounters a short packet, including a ZLP. Its ``nbytes`` argument is the actual received length; use it when processing the data.
 
-.. note:: For bulk transfers, data_len is usually designed as EP MPS. The following three cases can be modified to multiple EP MPS: fixed length; custom protocol with length information (MSC); host manually sends ZLP or short packet (RNDIS)
+Start using ordinary endpoints after ``USBD_EVENT_CONFIGURED`` and prepare the first OUT receive transfer. For continuous reception, prepare another receive transfer after each completion. The application serializes reception on each OUT endpoint and coordinates buffer ownership between data processing and the next receive transfer.
+
+.. note:: For bulk transfers, data_len is normally EP MPS. A protocol may use multiple EP MPS for fixed-length transfers, a custom protocol carrying length information (such as MSC), or host transfers terminated with a ZLP or short packet (such as RNDIS).
+
+Endpoint completion callbacks run in the USB ISR. Use them for brief processing, starting the next transfer, or notifying a worker thread through the RTOS/OSAL. Perform lengthy processing in a thread.
 
 host controller(hcd)
 ------------------------
@@ -173,14 +185,21 @@ usbh_roothub_control
 usbh_submit_urb
 """"""""""""""""""""""""""""""""""""
 
-``usbh_submit_urb`` performs data requests to endpoints at a specific address. **This function is open to users**.
+``usbh_submit_urb`` submits a transfer to endpoint ``urb->ep`` on the device associated with ``urb->hport``. **This function is open to users**.
 
 .. code-block:: C
 
     int usbh_submit_urb(struct usbh_urb *urb);
 
-- **urb** USB request block
-- **return** Returns 0 for success, other values indicate error
+- **urb** USB request block containing the port, endpoint, setup, buffer, length, timeout and completion callback parameters
+- **return** Returns 0 on success, or a negative value on error; success has different meanings for synchronous and asynchronous transfers, as described below
+
+Before every call to ``usbh_submit_urb()``, call the corresponding fill function, such as ``usbh_control_urb_fill()``, ``usbh_bulk_urb_fill()`` or ``usbh_int_urb_fill()``, to populate the current request parameters. This also applies when resubmitting from a completion callback. Initialize the URB before its first use. Control transfers include a setup packet; interrupt transfers include an interval.
+
+- **Synchronous transfer**: Set ``timeout > 0`` and ``complete = NULL``. The calling thread waits for completion or timeout. A return value of 0 indicates success; read the actual length from ``urb->actual_length``.
+- **Asynchronous transfer**: Set ``timeout = 0`` and provide ``complete`` and ``arg``. A return value of 0 indicates successful submission. Completion is reported through ``complete(arg, nbytes)``: a non-negative value is the actual length, and a negative value is an error. Normal transfer completion callbacks run in the USB ISR and are suitable for brief processing, submitting another transfer, or notifying a worker thread.
+
+Each in-flight request has exclusive use of its URB and buffer. Keep the associated setup, buffer and arg objects valid throughout the transfer and cleanup. After completion, call the corresponding fill function to populate the next transfer parameters before submitting it. The HCD manages ``hcpriv``.
 
 Among them, the `urb` structure information is as follows:
 
@@ -192,7 +211,7 @@ Among them, the `urb` structure information is as follows:
         struct usbh_hubport *hport;
         struct usb_endpoint_descriptor *ep;
         uint8_t data_toggle;
-        uint8_t interval;
+        uint32_t interval;
         struct usb_setup_packet *setup;
         uint8_t *transfer_buffer;
         uint32_t transfer_buffer_length;
@@ -228,7 +247,7 @@ Among them, the `urb` structure information is as follows:
 - **arg** Parameters carried when transfer completes
 - **iso_packet** ISO data packet
 
-.. note:: If there are no special time requirements for timeout, it must be set to 0xffffffff. In principle, timeout is not allowed. If timeout occurs, generally cannot continue working
+.. note:: Set the synchronous wait time according to application requirements. On synchronous timeout, the submit path handles cancellation and cleanup; the caller handles the return result. Asynchronous transfers report their results through the complete callback.
 
 `errorcode` can return the following values:
 
@@ -264,3 +283,21 @@ Among them, the `iso_packet` structure information is as follows:
 - **transfer_buffer_length** Transfer length
 - **actual_length** Actual transfer length
 - **errorcode** Error code
+
+usbh_kill_urb
+""""""""""""""""""""""""""""""""""""
+
+``usbh_kill_urb`` cancels the transfer associated with the specified URB. **This function is open to users**.
+
+.. code-block:: C
+
+    int usbh_kill_urb(struct usbh_urb *urb);
+
+- **urb** The same USB request block that was previously submitted
+- **return** Returns 0 when the cancellation call succeeds, or a negative value on error
+
+Usage: during device disconnection, the enumeration thread cancels the class's in-flight URBs. On synchronous timeout, the submit path handles cancellation and cleanup; the caller handles the submit result.
+
+Cancelling a synchronous request wakes its waiting thread. Cancelling an asynchronous request invokes its error callback. The error callback runs in the kill caller's context and handles the error to end the current transfer; normal success callbacks may submit further transfers as required by the application.
+
+During disconnection, stop application submissions, cancel in-flight requests, terminate the associated worker threads, then release application objects. The caller manages the application memory for URBs and data buffers.

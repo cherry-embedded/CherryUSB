@@ -62,7 +62,7 @@ CherryUSB Device Stack provides a unified framework of functions for standard de
 
 CherryUSB Device Stack has the following functions:
 
-- Support USB2.0 full and high speed(USB3.0 super speed TODO)
+- Support full speed, high speed and super speed device
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
 - Support Composite Device
 - Support Communication Device Class (CDC_ACM, CDC_ECM)

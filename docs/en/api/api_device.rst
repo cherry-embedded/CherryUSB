@@ -7,6 +7,8 @@ After calling `usbd_desc_register`, interface registration and endpoint registra
 - Call `usbd_add_interface` as many times as there are interfaces, with parameters filling in the relevant `xxx_init_intf`. If not supported, manually create an intf and fill it in
 - Call `usbd_add_endpoint` as many times as there are endpoints. When interrupts complete, the registered endpoint callback will be called.
 
+Initialize in this order: ``usbd_desc_register`` → ``usbd_add_interface`` / ``usbd_add_endpoint`` → ``usbd_initialize``. Use the same ``busid`` throughout initialization. In an RTOS environment, perform initialization in a thread.
+
 Refer to the diagram below:
 
 .. figure:: img/api_device1.png
@@ -63,19 +65,12 @@ usbd_desc_register
 
 .. code-block:: C
 
-    // Enable CONFIG_USBDEV_ADVANCE_DESC
     void usbd_desc_register(uint8_t busid, const struct usb_descriptor *desc);
 
-    // Disable CONFIG_USBDEV_ADVANCE_DESC
-    void usbd_desc_register(uint8_t busid, const uint8_t *desc);
-    void usbd_msosv1_desc_register(uint8_t busid, struct usb_msosv1_descriptor *desc);
-    void usbd_msosv2_desc_register(uint8_t busid, struct usb_msosv2_descriptor *desc);
-    void usbd_bos_desc_register(uint8_t busid, struct usb_bos_descriptor *desc);
-    void usbd_webusb_desc_register(uint8_t busid, struct usb_webusb_descriptor *desc);
+- **busid** USB bus ID
+- **desc** Descriptor handle containing callbacks for device, configuration and string descriptors, together with extended descriptors.
 
-- **desc**  Descriptor handle
-
-.. note:: Currently CONFIG_USBDEV_ADVANCE_DESC is enabled by default. If you need to use the old version API, please disable this macro. Starting from v1.6.0, only APIs with CONFIG_USBDEV_ADVANCE_DESC enabled are available
+Keep the descriptor object and the data returned by its callbacks valid while the device is in use. This function initializes the core state for the bus, so call it before registering interfaces and endpoints.
 
 usbd_add_interface
 """"""""""""""""""""""""""""""""""""
@@ -89,6 +84,8 @@ usbd_add_interface
 - **busid** USB bus ID
 - **intf**  Interface driver handle, usually obtained from different class `xxx_init_intf` functions
 
+Register each interface separately, using a distinct ``struct usbd_interface`` that remains valid while the device is in use. Initialize it with the corresponding class's ``xxx_init_intf()`` function. Interface driver registration must match the interface definitions in the configuration descriptor.
+
 usbd_add_endpoint
 """"""""""""""""""""""""""""""""""""
 
@@ -100,6 +97,10 @@ usbd_add_endpoint
 
 - **busid** USB bus ID
 - **ep**    Endpoint handle
+
+``ep_addr`` must match the endpoint address and direction in the descriptor: for example, ``0x81`` is IN and ``0x01`` is OUT. Hardware endpoints are configured according to the configuration descriptor; the core manages control transfers on EP0.
+
+Endpoint completion callbacks run in the USB ISR. Use them for brief processing, starting the next transfer, or notifying a worker thread through the RTOS/OSAL. Perform lengthy processing in the worker thread.
 
 usbd_initialize
 """"""""""""""""""""""""""""""""""""

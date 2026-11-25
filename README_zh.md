@@ -62,7 +62,7 @@ CherryUSB Device 协议栈对标准设备请求、CLASS 请求、VENDOR 请求�
 
 CherryUSB Device 协议栈当前实现以下功能：
 
-- 支持 USB2.0 全速和高速设备（USB3.0 超高速 TODO）
+- 支持 full speed，high speed 和 super speed 设备
 - 支持端点中断注册功能，porting 给用户自己处理中断里的数据
 - 支持复合设备
 - 支持 Communication Device Class (CDC_ACM, CDC_ECM)
