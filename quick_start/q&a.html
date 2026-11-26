@@ -319,9 +319,19 @@ DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split �
 </section>
 <section id="class">
 <h2>主机 class 变量生命周期的处理<a class="headerlink" href="#class" title="Link to this heading"></a></h2>
-<p>当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。合理的做法是，
-在 disconnect 函数中增加信号量等待，直到所有对该 class 资源的操作完成，然后释放信号量，这样才能保证安全退出。 <strong>也可以使用互斥锁解决</strong>。选其一即可。</p>
-<p>举例如下：</p>
+<p>当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。可以选择以下方式处理：</p>
+<ul class="simple">
+<li><p>使用信号量等待，前提所有的 class 资源都在这个线程中处理</p></li>
+</ul>
+<ul class="simple">
+<li><p>直接删除线程，前提所有的 class 资源都在这个线程中处理</p></li>
+</ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_xxx_stop</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_xxx</span><span class="w"> </span><span class="o">*</span><span class="n">xxx</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">usb_osal_thread_delete</span><span class="p">(</span><span class="n">xxx</span><span class="o">-&gt;</span><span class="kr">thread</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>serial，网络相关的 class 不需要用户额外处理</p>

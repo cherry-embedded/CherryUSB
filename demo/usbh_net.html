@@ -214,10 +214,34 @@
 <section id="id1">
 <h2>USB 网卡对接过程<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <p>下面举例对接 LWIP 的对接过程。</p>
+<p>ECM、NCM、RNDIS、ASIX 和 RTL8152 的线程均由 class 内部创建，创建成功后调用平台的 <cite>usbh_xxx_run</cite>，平台无需再创建线程。优先级和栈大小分别由 <cite>CONFIG_USBHOST_APP_THREAD_PRIO</cite>、<cite>CONFIG_USBHOST_APP_THREAD_STACKSIZE</cite> 配置，默认 20 和 2048 字节。</p>
 <ul class="simple">
-<li><p>在 USB 网卡枚举完成以后，会 <strong>自动</strong> 调用 <cite>usbh_xxx_run</cite> 函数，此时注册 netif 驱动，并且开启 DHCP 客户端和获取 IP 的定时器。</p></li>
+<li><p>以 ECM 为例，class 内部先创建 <cite>usbh_cdc_ecm_thread</cite>，成功后调用 <cite>usbh_cdc_ecm_run</cite> 注册 netif，再启动定时器提交异步 INTR，完成回调解析链路状态和速率；线程等待通知后接收数据，并通过 <cite>usbh_cdc_ecm_link_up(bool up)</cite> 更新 netif 和 DHCP。disconnect 取消传输并删除线程后，再调用 stop 释放网络接口。</p></li>
 </ul>
-<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_cdc_ecm_run</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_cdc_ecm</span><span class="w"> </span><span class="o">*</span><span class="n">cdc_ecm_class</span><span class="p">)</span>
+<p>上述网卡的资源成员统一命名为 <cite>link_sem</cite>、<cite>link_timer</cite>、<cite>rx_sem</cite>、<cite>thread</cite>。RNDIS 另外使用 <cite>notify_sem</cite> 等待控制响应通知。</p>
+<p>RNDIS 在发送第一条初始化命令前启动异步 Interrupt IN 接收。INITIALIZE、QUERY、SET、KEEPALIVE 分别保留发送流程，发送后永久等待 RESPONSE_AVAILABLE 通知，再通过 <cite>usbh_rndis_parse_resp</cite> 读取响应，并校验响应类型、RequestId 和 Status；空响应、类型或 RequestId 不匹配、Status 失败时立即返回错误，不循环等待。命令和响应的 wIndex 使用控制接口编号。初始化期间由 connect 消费通知，完成初始化后由 <cite>link_timer</cite> 消费通知并解析链路变化，不再周期查询连接状态。定时器需要在线程上下文运行，RX 线程仍按 ECM 的流程接收和解析多包。</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">usbh_cdc_ecm_link_up</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="n">up</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">netif</span><span class="w"> </span><span class="o">*</span><span class="n">netif</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">g_cdc_ecm_netif</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">LOCK_TCPIP_CORE</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">up</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">netif_set_link_up</span><span class="p">(</span><span class="n">netif</span><span class="p">);</span>
+<span class="cp">#if LWIP_DHCP</span>
+<span class="w">        </span><span class="n">dhcp_start</span><span class="p">(</span><span class="n">netif</span><span class="p">);</span>
+<span class="w">        </span><span class="n">usb_osal_timer_start</span><span class="p">(</span><span class="n">dhcp_handle</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">netif_set_link_down</span><span class="p">(</span><span class="n">netif</span><span class="p">);</span>
+<span class="cp">#if LWIP_DHCP</span>
+<span class="w">        </span><span class="n">dhcp_stop</span><span class="p">(</span><span class="n">netif</span><span class="p">);</span>
+<span class="w">        </span><span class="n">usb_osal_timer_stop</span><span class="p">(</span><span class="n">dhcp_handle</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">UNLOCK_TCPIP_CORE</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">usbh_cdc_ecm_run</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_cdc_ecm</span><span class="w"> </span><span class="o">*</span><span class="n">cdc_ecm_class</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">netif</span><span class="w"> </span><span class="o">*</span><span class="n">netif</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">g_cdc_ecm_netif</span><span class="p">;</span>
 
@@ -233,6 +257,7 @@
 <span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">netif_is_up</span><span class="p">(</span><span class="n">netif</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="p">}</span>
 
+<span class="cp">#if LWIP_DHCP</span>
 <span class="w">    </span><span class="n">dhcp_handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usb_osal_timer_create</span><span class="p">(</span><span class="s">&quot;dhcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="n">dhcp_timeout</span><span class="p">,</span><span class="w"> </span><span class="n">netif</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">dhcp_handle</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">USB_LOG_ERR</span><span class="p">(</span><span class="s">&quot;timer creation failed! </span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
@@ -240,10 +265,6 @@
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="n">usb_osal_thread_create</span><span class="p">(</span><span class="s">&quot;usbh_cdc_ecm_rx&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2048</span><span class="p">,</span><span class="w"> </span><span class="n">CONFIG_USBHOST_PSC_PRIO</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">usbh_cdc_ecm_rx_thread</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
-<span class="cp">#if LWIP_DHCP</span>
-<span class="w">    </span><span class="n">dhcp_start</span><span class="p">(</span><span class="n">netif</span><span class="p">);</span>
-<span class="w">    </span><span class="n">usb_osal_timer_start</span><span class="p">(</span><span class="n">dhcp_handle</span><span class="p">);</span>
 <span class="cp">#endif</span>
 <span class="p">}</span>
 </pre></div>

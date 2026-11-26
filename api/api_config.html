@@ -99,6 +99,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#id2">主机协议栈 CONFIG</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#config-usbhost-psc-prio">CONFIG_USBHOST_PSC_PRIO</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usbhost-psc-stacksize">CONFIG_USBHOST_PSC_STACKSIZE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-usbhost-app-thread-prio">CONFIG_USBHOST_APP_THREAD_PRIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-usbhost-app-thread-stacksize">CONFIG_USBHOST_APP_THREAD_STACKSIZE</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usbhost-request-buffer-len">CONFIG_USBHOST_REQUEST_BUFFER_LEN</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usbhost-control-transfer-timeout">CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config-usbhost-msc-timeout">CONFIG_USBHOST_MSC_TIMEOUT</a></li>
@@ -327,6 +329,14 @@ usbd_msc_sector_read 和 usbd_msc_sector_write 就会在线程中执行。</p>
 <section id="config-usbhost-psc-stacksize">
 <h3>CONFIG_USBHOST_PSC_STACKSIZE<a class="headerlink" href="#config-usbhost-psc-stacksize" title="Link to this heading"></a></h3>
 <p>主机插拔线程的堆栈大小，默认 2K 字节</p>
+</section>
+<section id="config-usbhost-app-thread-prio">
+<h3>CONFIG_USBHOST_APP_THREAD_PRIO<a class="headerlink" href="#config-usbhost-app-thread-prio" title="Link to this heading"></a></h3>
+<p>主机应用线程的优先级，默认是 20，数值越小，优先级越高。当前用于 ECM、NCM、RNDIS、ASIX 和 RTL8152 内部线程，需要高于主机插拔线程的优先级。</p>
+</section>
+<section id="config-usbhost-app-thread-stacksize">
+<h3>CONFIG_USBHOST_APP_THREAD_STACKSIZE<a class="headerlink" href="#config-usbhost-app-thread-stacksize" title="Link to this heading"></a></h3>
+<p>主机应用线程的堆栈大小，默认 2048 字节（2K）。</p>
 </section>
 <section id="config-usbhost-request-buffer-len">
 <h3>CONFIG_USBHOST_REQUEST_BUFFER_LEN<a class="headerlink" href="#config-usbhost-request-buffer-len" title="Link to this heading"></a></h3>

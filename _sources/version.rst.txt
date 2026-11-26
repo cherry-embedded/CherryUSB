@@ -221,7 +221,7 @@ v1.7.0
 - **新增注册驱动 API，从这个版本开始可以同时使用多个不同的 USBIP**
 - **设置枚举线程优先级默认为 29，修改所有 USB APP 优先级为 CONFIG_USBHOST_PSC_PRIO - 1，需要大于枚举线程优先级，解决 kill urb 和 submit urb 存在的互斥问题**
 - **修复大量安全漏洞和临界问题**
-- **修复主机驱动 usbh_submit_urb, usbh_kill_urb, isr，断连之间可能存在的变量临界问题。统一 xxx_urb_waitup 处理（包含完成，超时，取消）**
+- **修复主机驱动 usbh_submit_urb, usbh_kill_urb, isr，断连之间可能存在的资源竞争问题。统一 xxx_urb_waitup 处理（包含完成，超时，取消）**
 - device: **新增 cdc ncm class 驱动**
 - device: **新增 tmc class 驱动**
 - device: **新增 usb3.0 request 和配置**
@@ -232,9 +232,9 @@ v1.7.0
 - device: msc 支持 SCSI_readCapacity16 命令，不支持的命令发送 failed 而不是 abort
 - device: **新增 gs usb 驱动**
 - host: **重构 audio 驱动和 API，volume 配置范围改成 0~ 100，audio sample rate 最大支持 8个默认**
+- host: **重构 net 驱动，增加 link 状态监控，并解决断连时的资源竞争问题，限制接收长度最大 16K**
 - host: **serial 增加 RX 流控**
-- host: **修复 serial 断连和 close 时的资源释放，避免资源泄漏**
-- host: 简化 net class rx 接收，最大不再超过 16K
+- host: **修复 serial 断连和 close 时的资源竞争问题**
 - host: **rndis msg resp 处理统一到 usbh_rndis_parse_resp**
 - host: rndis 驱动增加 Android RNDIS class code (0xEF/0x04/0x01) 匹配规则
 - host: 修复 hid API 漏掉的 **hport->intf**

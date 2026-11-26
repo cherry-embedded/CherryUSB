@@ -147,10 +147,9 @@ USB host 连接 USB 网卡无法联网问题
 主机 class 变量生命周期的处理
 -------------------------------------------------
 
-当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。合理的做法是，
-在 disconnect 函数中增加信号量等待，直到所有对该 class 资源的操作完成，然后释放信号量，这样才能保证安全退出。 **也可以使用互斥锁解决**。选其一即可。
+当前每个 class 提供了 disconnect 函数，当这个函数执行完成后，class 的资源就准备释放了，因此，其他地方就不可以再访问该资源。可以选择以下方式处理：
 
-举例如下：
+- 使用信号量等待，前提所有的 class 资源都在这个线程中处理
 
 .. code-block:: C
     static usb_osal_sem_t xxx_exit_sem;
@@ -183,6 +182,15 @@ USB host 连接 USB 网卡无法联网问题
     {
         /* 等待任务退出 */
         usb_osal_sem_take(xxx_exit_sem, USB_OSAL_WAIT_FOREVER);
+    }
+
+- 直接删除线程，前提所有的 class 资源都在这个线程中处理
+
+.. code-block:: C
+
+    void usbh_xxx_stop(struct usbh_xxx *xxx)
+    {
+        usb_osal_thread_delete(xxx->thread);
     }
 
 .. note:: serial，网络相关的 class 不需要用户额外处理

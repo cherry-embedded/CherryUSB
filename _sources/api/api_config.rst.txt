@@ -147,6 +147,16 @@ CONFIG_USBHOST_PSC_STACKSIZE
 
 主机插拔线程的堆栈大小，默认 2K 字节
 
+CONFIG_USBHOST_APP_THREAD_PRIO
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+主机应用线程的优先级，默认是 20，数值越小，优先级越高。当前用于 ECM、NCM、RNDIS、ASIX 和 RTL8152 内部线程，需要高于主机插拔线程的优先级。
+
+CONFIG_USBHOST_APP_THREAD_STACKSIZE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+主机应用线程的堆栈大小，默认 2048 字节（2K）。
+
 CONFIG_USBHOST_REQUEST_BUFFER_LEN
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
