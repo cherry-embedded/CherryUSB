@@ -214,7 +214,7 @@
 <section id="id1">
 <h2>USB 网卡对接过程<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <p>下面举例对接 LWIP 的对接过程。</p>
-<p>ECM、NCM、RNDIS、ASIX 和 RTL8152 的线程均由 class 内部创建，创建成功后调用平台的 <cite>usbh_xxx_run</cite>，平台无需再创建线程。优先级和栈大小分别由 <cite>CONFIG_USBHOST_APP_THREAD_PRIO</cite>、<cite>CONFIG_USBHOST_APP_THREAD_STACKSIZE</cite> 配置，默认 20 和 2048 字节。</p>
+<p>ECM、NCM、RNDIS、ASIX 和 RTL8152 的线程均由 class 内部创建，创建成功后调用平台的 <cite>usbh_xxx_run</cite>，平台无需再创建线程。优先级和栈大小分别由 <cite>CONFIG_USBHOST_NET_THREAD_PRIO</cite>、<cite>CONFIG_USBHOST_NET_THREAD_STACKSIZE</cite> 配置，默认 20 和 2048 字节。</p>
 <ul class="simple">
 <li><p>以 ECM 为例，class 内部先创建 <cite>usbh_cdc_ecm_thread</cite>，成功后调用 <cite>usbh_cdc_ecm_run</cite> 注册 netif，再启动定时器提交异步 INTR，完成回调解析链路状态和速率；线程等待通知后接收数据，并通过 <cite>usbh_cdc_ecm_link_up(bool up)</cite> 更新 netif 和 DHCP。disconnect 取消传输并删除线程后，再调用 stop 释放网络接口。</p></li>
 </ul>

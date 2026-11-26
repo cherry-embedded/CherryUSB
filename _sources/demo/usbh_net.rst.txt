@@ -39,7 +39,7 @@ USB 网卡对接过程
 
 下面举例对接 LWIP 的对接过程。
 
-ECM、NCM、RNDIS、ASIX 和 RTL8152 的线程均由 class 内部创建，创建成功后调用平台的 `usbh_xxx_run`，平台无需再创建线程。优先级和栈大小分别由 `CONFIG_USBHOST_APP_THREAD_PRIO`、`CONFIG_USBHOST_APP_THREAD_STACKSIZE` 配置，默认 20 和 2048 字节。
+ECM、NCM、RNDIS、ASIX 和 RTL8152 的线程均由 class 内部创建，创建成功后调用平台的 `usbh_xxx_run`，平台无需再创建线程。优先级和栈大小分别由 `CONFIG_USBHOST_NET_THREAD_PRIO`、`CONFIG_USBHOST_NET_THREAD_STACKSIZE` 配置，默认 20 和 2048 字节。
 
 - 以 ECM 为例，class 内部先创建 `usbh_cdc_ecm_thread`，成功后调用 `usbh_cdc_ecm_run` 注册 netif，再启动定时器提交异步 INTR，完成回调解析链路状态和速率；线程等待通知后接收数据，并通过 `usbh_cdc_ecm_link_up(bool up)` 更新 netif 和 DHCP。disconnect 取消传输并删除线程后，再调用 stop 释放网络接口。
 
