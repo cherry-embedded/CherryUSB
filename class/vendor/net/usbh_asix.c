@@ -13,15 +13,24 @@
 
 #define DEV_FORMAT "/dev/asix"
 
-static struct usbh_asix g_asix_class;
-
 #if CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE > (16 * 1024)
 #error "CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE must be less than 16K"
 #endif
 
+struct asix_notification {
+    uint8_t reserved;
+    uint8_t status;
+    uint8_t link;
+    uint8_t reserved1[5];
+} __PACKED;
+
+static struct usbh_asix g_asix_class;
+
+static void usbh_asix_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV);
+
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_rx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_tx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_ASIX_ETH_MAX_TX_SIZE, CONFIG_USB_ALIGN_SIZE)];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_inttx_buffer[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_intr_buffer[USB_ALIGN_UP(sizeof(struct asix_notification), CONFIG_USB_ALIGN_SIZE)];
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_asix_buf[USB_ALIGN_UP(32, CONFIG_USB_ALIGN_SIZE)];
 
@@ -513,6 +522,54 @@ static void usbh_ax88772_mac_link_up(struct usbh_asix *asix_class, int speed, in
     usbh_asix_write_medium_mode(asix_class, m);
 }
 
+static void usbh_asix_rx_complete(void *arg, int nbytes)
+{
+    struct usbh_asix *asix_class = (struct usbh_asix *)arg;
+
+    (void)nbytes;
+    usb_osal_sem_give(asix_class->rx_sem);
+}
+
+static void usbh_asix_intr_complete(void *arg, int nbytes)
+{
+    struct usbh_asix *asix_class = (struct usbh_asix *)arg;
+    struct asix_notification *notification = (struct asix_notification *)g_asix_intr_buffer;
+
+    if (nbytes < 0 || !asix_class->hport->connected) {
+        return;
+    }
+
+    if (nbytes < sizeof(struct asix_notification) || notification->status != 0) {
+        return;
+    }
+    if (notification->link & 0x01) {
+        if (asix_class->link_state == USBH_ASIX_LINK_STATE_DOWN) {
+            asix_class->link_state = USBH_ASIX_LINK_STATE_PENDING_UP;
+            usb_osal_sem_give(asix_class->link_sem);
+        }
+    } else if (asix_class->link_state == USBH_ASIX_LINK_STATE_UP) {
+        asix_class->link_state = USBH_ASIX_LINK_STATE_PENDING_DOWN;
+        usb_osal_sem_give(asix_class->rx_sem);
+        usb_osal_sem_give(asix_class->link_sem);
+    }
+}
+
+static void usbh_asix_intr_timeout(void *arg)
+{
+    struct usbh_asix *asix_class = (struct usbh_asix *)arg;
+
+    /* Do not receive another link change until the worker handles this one. */
+    if ((asix_class->link_state != USBH_ASIX_LINK_STATE_DOWN &&
+         asix_class->link_state != USBH_ASIX_LINK_STATE_UP) ||
+        asix_class->intin_urb.errorcode == -USB_ERR_BUSY) {
+        return;
+    }
+
+    usbh_int_urb_fill(&asix_class->intin_urb, asix_class->hport, asix_class->intin,
+                      g_asix_intr_buffer, sizeof(struct asix_notification), 0, usbh_asix_intr_complete, asix_class);
+    usbh_submit_urb(&asix_class->intin_urb);
+}
+
 static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
 {
     struct usb_endpoint_descriptor *ep_desc;
@@ -543,7 +600,7 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
         }
     }
 
-    USB_LOG_INFO("asix MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+    USB_LOG_INFO("MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
                  asix_class->mac[0],
                  asix_class->mac[1],
                  asix_class->mac[2],
@@ -617,9 +674,42 @@ static int usbh_asix_connect(struct usbh_hubport *hport, uint8_t intf)
     strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
     USB_LOG_INFO("Register ASIX Class:%s\r\n", hport->config.intf[intf].devname);
+    asix_class->link_sem = usb_osal_sem_create(0);
+    if (asix_class->link_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    asix_class->rx_sem = usb_osal_sem_create(0);
+    if (asix_class->rx_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    asix_class->link_timer = usb_osal_timer_create("asix_intr", 100, usbh_asix_intr_timeout, asix_class, true);
+    if (asix_class->link_timer == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
+    asix_class->thread = usb_osal_thread_create("usbh_asix", CONFIG_USBHOST_NET_THREAD_STACKSIZE,
+                                                CONFIG_USBHOST_NET_THREAD_PRIO, usbh_asix_thread, NULL);
+    if (asix_class->thread == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
     usbh_asix_run(asix_class);
-    return ret;
+    usb_osal_timer_start(asix_class->link_timer);
+    return 0;
 errout:
+    if (asix_class->link_timer) {
+        usb_osal_timer_delete(asix_class->link_timer);
+    }
+    if (asix_class->rx_sem) {
+        usb_osal_sem_delete(asix_class->rx_sem);
+    }
+    if (asix_class->link_sem) {
+        usb_osal_sem_delete(asix_class->link_sem);
+    }
     usbh_set_intf_data(hport, intf, NULL);
     memset(asix_class, 0, sizeof(struct usbh_asix));
     return ret;
@@ -631,19 +721,19 @@ static int usbh_asix_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_asix *asix_class = (struct usbh_asix *)usbh_get_intf_data(hport, intf);
 
-    if (asix_class->bulkin) {
-        usbh_kill_urb(&asix_class->bulkin_urb);
-    }
+    asix_class->link_state = USBH_ASIX_LINK_STATE_DOWN;
+    usb_osal_timer_stop(asix_class->link_timer);
+    usb_osal_timer_delete(asix_class->link_timer);
 
-    if (asix_class->bulkout) {
-        usbh_kill_urb(&asix_class->bulkout_urb);
-    }
-
-    if (asix_class->intin) {
-        usbh_kill_urb(&asix_class->intin_urb);
-    }
+    usbh_kill_urb(&asix_class->intin_urb);
+    usbh_kill_urb(&asix_class->bulkin_urb);
+    usbh_kill_urb(&asix_class->bulkout_urb);
 
     usb_osal_thread_schedule_other();
+
+    usb_osal_thread_delete(asix_class->thread);
+    usb_osal_sem_delete(asix_class->rx_sem);
+    usb_osal_sem_delete(asix_class->link_sem);
     USB_LOG_INFO("Unregister ASIX Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_asix_stop(asix_class);
 
@@ -652,102 +742,92 @@ static int usbh_asix_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-int usbh_asix_get_connect_status(struct usbh_asix *asix_class)
+static void usbh_asix_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
-    int ret;
-
-    usbh_int_urb_fill(&asix_class->intin_urb, asix_class->hport, asix_class->intin, g_asix_inttx_buffer, 8, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&asix_class->intin_urb);
-    if (ret < 0) {
-        return ret;
-    }
-
-    if (g_asix_inttx_buffer[1] == 0x00) {
-        if (g_asix_inttx_buffer[2] & 0x01) {
-            asix_class->connect_status = true;
-            usbh_ax88772_mac_link_up(asix_class, SPEED_100, 1, 1, 1);
-            usbh_asix_set_multicast(asix_class);
-        } else {
-            asix_class->connect_status = false;
-            usbh_ax88772_mac_link_down(asix_class);
-        }
-    }
-    return 0;
-}
-
-void usbh_asix_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
-{
-    uint32_t g_asix_rx_length;
+    struct usbh_asix *asix_class = &g_asix_class;
+    uint32_t actual_length;
     int ret;
     uint16_t len;
     uint16_t len_crc;
     uint32_t data_offset;
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
-    USB_LOG_INFO("Create asix rx thread\r\n");
 
-    g_asix_class.connect_status = false;
-    if (usbh_find_class_instance("/dev/asix") == NULL) {
-        goto delete;
-    }
-
-    while (g_asix_class.connect_status == false) {
-        ret = usbh_asix_get_connect_status(&g_asix_class);
-        if (ret < 0) {
-            goto delete;
-        }
-        usb_osal_msleep(128);
-    }
-
-    g_asix_rx_length = 0;
+    USB_LOG_INFO("Link Down\r\n");
     while (1) {
-        usbh_bulk_urb_fill(&g_asix_class.bulkin_urb, g_asix_class.hport, g_asix_class.bulkin, g_asix_rx_buffer, CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-        ret = usbh_submit_urb(&g_asix_class.bulkin_urb);
-        if (ret < 0) {
-            goto delete;
-        }
+        usb_osal_sem_take(asix_class->link_sem, USB_OSAL_WAITING_FOREVER);
+        if (asix_class->link_state == USBH_ASIX_LINK_STATE_PENDING_UP) {
+            asix_class->link_state = USBH_ASIX_LINK_STATE_UP;
 
-        g_asix_rx_length = g_asix_class.bulkin_urb.actual_length;
-        if (g_asix_rx_length == 0) {
-            continue;
-        }
+            usb_osal_sem_reset(asix_class->rx_sem);
+            usbh_ax88772_mac_link_up(asix_class, SPEED_100, 1, 1, 1);
+            usbh_asix_set_multicast(asix_class);
+            usbh_asix_link_up(true);
+            USB_LOG_INFO("Link Up\r\n");
 
-        if (g_asix_rx_length < CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE) {
-            USB_LOG_DBG("rxlen:%d\r\n", g_asix_rx_length);
-
-            data_offset = 0;
-            while (g_asix_rx_length > 0) {
-                if (g_asix_rx_length < 4) {
+            while (asix_class->link_state == USBH_ASIX_LINK_STATE_UP) {
+                usbh_bulk_urb_fill(&asix_class->bulkin_urb, asix_class->hport, asix_class->bulkin,
+                                   g_asix_rx_buffer, CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE, 0, usbh_asix_rx_complete, asix_class);
+                ret = usbh_submit_urb(&asix_class->bulkin_urb);
+                if (ret < 0) {
                     break;
                 }
-                len = ((uint16_t)g_asix_rx_buffer[data_offset + 0] | ((uint16_t)(g_asix_rx_buffer[data_offset + 1]) << 8)) & 0x7ff;
-                len_crc = g_asix_rx_buffer[data_offset + 2] | ((uint16_t)(g_asix_rx_buffer[data_offset + 3]) << 8);
 
-                if (len != (~len_crc & 0x7ff) || len == 0 || (len > g_asix_rx_length - 4)) {
-                    USB_LOG_ERR("rx header error\r\n");
-                    g_asix_rx_length = 0;
+                usb_osal_sem_take(asix_class->rx_sem, USB_OSAL_WAITING_FOREVER);
+                if (asix_class->link_state != USBH_ASIX_LINK_STATE_UP) {
+                    break;
+                }
+
+                if (asix_class->bulkin_urb.errorcode < 0) {
+                    break;
+                }
+
+                actual_length = asix_class->bulkin_urb.actual_length;
+                if (actual_length == 0) {
                     continue;
                 }
 
-                uint8_t *buf = (uint8_t *)&g_asix_rx_buffer[data_offset + 4];
-                usbh_asix_eth_input(buf, len);
-                g_asix_rx_length -= (len + 4);
-                data_offset += (len + 4);
+                if (actual_length < CONFIG_USBHOST_ASIX_ETH_MAX_RX_SIZE) {
+                    USB_LOG_DBG("rxlen:%d\r\n", actual_length);
 
-                if ((len & 1) && g_asix_rx_length > 0) {
-                    g_asix_rx_length--;
-                    data_offset++;
+                    data_offset = 0;
+                    while (actual_length > 0) {
+                        if (actual_length < 4) {
+                            break;
+                        }
+                        len = ((uint16_t)g_asix_rx_buffer[data_offset + 0] | ((uint16_t)(g_asix_rx_buffer[data_offset + 1]) << 8)) & 0x7ff;
+                        len_crc = g_asix_rx_buffer[data_offset + 2] | ((uint16_t)(g_asix_rx_buffer[data_offset + 3]) << 8);
+
+                        if (len != (~len_crc & 0x7ff) || len == 0 || (len > actual_length - 4)) {
+                            USB_LOG_ERR("rx header error\r\n");
+                            actual_length = 0;
+                            continue;
+                        }
+
+                        uint8_t *buf = (uint8_t *)&g_asix_rx_buffer[data_offset + 4];
+                        usbh_asix_eth_input(buf, len);
+                        actual_length -= (len + 4);
+                        data_offset += (len + 4);
+
+                        if ((len & 1) && actual_length > 0) {
+                            actual_length--;
+                            data_offset++;
+                        }
+                    }
+                } else {
+                    USB_LOG_ERR("rx packet overflow\r\n");
                 }
             }
-        } else {
-            USB_LOG_ERR("asix packet overflow\r\n");
+        } else if (asix_class->link_state == USBH_ASIX_LINK_STATE_PENDING_DOWN) {
+            asix_class->link_state = USBH_ASIX_LINK_STATE_DOWN;
+            usbh_asix_link_up(false);
+
+            usbh_kill_urb(&asix_class->bulkin_urb);
+            usbh_kill_urb(&asix_class->bulkout_urb);
+            usbh_ax88772_mac_link_down(asix_class);
+            USB_LOG_INFO("Link Down\r\n");
         }
     }
-    // clang-format off
-delete:
-    USB_LOG_INFO("Delete asix rx thread\r\n");
-    usb_osal_thread_delete(NULL);
-    // clang-format on
 }
 
 uint8_t *usbh_asix_get_eth_txbuf(void)
@@ -759,7 +839,7 @@ int usbh_asix_eth_output(uint32_t buflen)
 {
     uint16_t actual_len;
 
-    if (g_asix_class.connect_status == false) {
+    if (g_asix_class.link_state != USBH_ASIX_LINK_STATE_UP) {
         return -USB_ERR_NOTCONN;
     }
 

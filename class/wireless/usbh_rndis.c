@@ -21,22 +21,106 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_buf[512];
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_rx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_tx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_RNDIS_ETH_MAX_TX_SIZE, CONFIG_USB_ALIGN_SIZE)];
-// static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_inttx_buffer[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
+struct rndis_notification {
+    uint32_t notification;
+    uint32_t reserved;
+} __PACKED;
+
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_rndis_intr_buffer[USB_ALIGN_UP(sizeof(struct rndis_notification), CONFIG_USB_ALIGN_SIZE)];
 
 static struct usbh_rndis g_rndis_class;
 
+static void usbh_rndis_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV);
+static int usbh_rndis_parse_resp(struct usbh_rndis *rndis_class);
+
+static void usbh_rndis_update_link_state(struct usbh_rndis *rndis_class, bool up)
+{
+    if (up) {
+        if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_DOWN) {
+            rndis_class->link_state = USBH_RNDIS_LINK_STATE_PENDING_UP;
+        }
+    } else if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_UP ||
+               rndis_class->link_state == USBH_RNDIS_LINK_STATE_PENDING_UP) {
+        rndis_class->link_state = USBH_RNDIS_LINK_STATE_PENDING_DOWN;
+    }
+}
+
+static void usbh_rndis_rx_complete(void *arg, int nbytes)
+{
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)arg;
+
+    (void)nbytes;
+    usb_osal_sem_give(rndis_class->rx_sem);
+}
+
+static void usbh_rndis_link_timeout(void *arg)
+{
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)arg;
+    int ret;
+
+    if (!rndis_class->hport->connected) {
+        return;
+    }
+
+    if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_DOWN ||
+        rndis_class->link_state == USBH_RNDIS_LINK_STATE_UP) {
+        if (usb_osal_sem_take(rndis_class->notify_sem, 0) == 0) {
+            if (rndis_class->intin_urb.errorcode < 0 && rndis_class->intin_urb.errorcode != -USB_ERR_BUSY) {
+                ret = rndis_class->intin_urb.errorcode;
+            } else {
+                ret = usbh_rndis_parse_resp(rndis_class);
+            }
+            if (ret < 0) {
+                USB_LOG_ERR("notification response error, ret: %d\r\n", ret);
+            }
+        }
+    }
+
+    if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_PENDING_UP) {
+        usb_osal_sem_give(rndis_class->link_sem);
+    } else if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_PENDING_DOWN) {
+        usb_osal_sem_give(rndis_class->rx_sem);
+        usb_osal_sem_give(rndis_class->link_sem);
+    }
+}
+
+static void usbh_rndis_intr_complete(void *arg, int nbytes)
+{
+    struct usbh_rndis *rndis_class = (struct usbh_rndis *)arg;
+    struct rndis_notification *notification = (struct rndis_notification *)g_rndis_intr_buffer;
+
+    if (!rndis_class->hport->connected) {
+        return;
+    }
+
+    if (nbytes < 0 && nbytes != -USB_ERR_NAK) {
+        usb_osal_sem_give(rndis_class->notify_sem);
+        return;
+    }
+
+    if (nbytes >= sizeof(struct rndis_notification) &&
+        notification->notification == CDC_RESPONSE_AVAILABLE && notification->reserved == 0) {
+        usb_osal_sem_give(rndis_class->notify_sem);
+    }
+    usbh_submit_urb(&rndis_class->intin_urb);
+}
+
 static int usbh_rndis_get_notification(struct usbh_rndis *rndis_class)
 {
-    (void)rndis_class;
-    // int ret;
-    // struct usbh_urb *urb = &rndis_class->intin_urb;
+    int ret;
 
-    // usbh_int_urb_fill(urb, rndis_class->hport, rndis_class->intin, g_rndis_inttx_buffer, rndis_class->intin->wMaxPacketSize, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    // ret = usbh_submit_urb(urb);
-    // if (ret == 0) {
-    //     ret = urb->actual_length;
-    // }
-    // return ret;
+    ret = usb_osal_sem_take(rndis_class->notify_sem, USB_OSAL_WAITING_FOREVER);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if (!rndis_class->hport->connected) {
+        return -USB_ERR_NOTCONN;
+    }
+
+    if (rndis_class->intin_urb.errorcode < 0 && rndis_class->intin_urb.errorcode != -USB_ERR_BUSY) {
+        return rndis_class->intin_urb.errorcode;
+    }
     return 0;
 }
 
@@ -50,18 +134,24 @@ static int usbh_rndis_parse_resp(struct usbh_rndis *rndis_class)
         return -USB_ERR_INVAL;
     }
 
-    usbh_rndis_get_notification(rndis_class);
-
     setup.bmRequestType = USB_REQUEST_DIR_IN | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup.bRequest = CDC_REQUEST_GET_ENCAPSULATED_RESPONSE;
     setup.wValue = 0;
-    setup.wIndex = 0;
+    setup.wIndex = rndis_class->ctrl_intf;
     setup.wLength = sizeof(g_rndis_buf);
 
     ret = usbh_control_transfer(rndis_class->hport, &setup, g_rndis_buf);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if (ret == 1 && g_rndis_buf[0] == 0) {
+        return 0;
+    }
+
     if (ret < sizeof(rndis_generic_msg_t)) {
         USB_LOG_ERR("resp recv error, ret: %d\r\n", ret);
-        return ret;
+        return -USB_ERR_RANGE;
     }
 
     resp_generic = (rndis_generic_msg_t *)g_rndis_buf;
@@ -101,10 +191,16 @@ static int usbh_rndis_parse_resp(struct usbh_rndis *rndis_class)
 
             break;
         case REMOTE_NDIS_SET_CMPLT:
+            if (ret != sizeof(rndis_set_cmplt_t)) {
+                return -USB_ERR_RANGE;
+            }
             break;
         case REMOTE_NDIS_RESET_CMPLT:
             break;
         case REMOTE_NDIS_KEEPALIVE_CMPLT:
+            if (ret != sizeof(rndis_keepalive_cmplt_t)) {
+                return -USB_ERR_RANGE;
+            }
             break;
         case REMOTE_NDIS_INDICATE_STATUS_MSG:
             if (ret != sizeof(rndis_indicate_status_t)) {
@@ -114,11 +210,38 @@ static int usbh_rndis_parse_resp(struct usbh_rndis *rndis_class)
             rndis_indicate_status_t *resp_indicate;
             resp_indicate = (rndis_indicate_status_t *)g_rndis_buf;
 
-            rndis_class->connect_status = (resp_indicate->Status == RNDIS_STATUS_MEDIA_CONNECT) ? true : false;
+            if (resp_indicate->Status == RNDIS_STATUS_MEDIA_CONNECT) {
+                usbh_rndis_update_link_state(rndis_class, true);
+            } else if (resp_indicate->Status == RNDIS_STATUS_MEDIA_DISCONNECT) {
+                usbh_rndis_update_link_state(rndis_class, false);
+            }
             break;
 
         default:
             break;
+    }
+
+    return ret;
+}
+
+static int usbh_rndis_wait_resp(struct usbh_rndis *rndis_class, uint32_t complete_type, uint32_t request_id)
+{
+    rndis_generic_msg_t *resp;
+    int ret;
+
+    ret = usbh_rndis_get_notification(rndis_class);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = usbh_rndis_parse_resp(rndis_class);
+    if (ret < 0) {
+        return ret;
+    }
+
+    resp = (rndis_generic_msg_t *)g_rndis_buf;
+    if (resp->MessageType != complete_type) {
+        return -USB_ERR_INVAL;
     }
 
     return ret;
@@ -146,7 +269,7 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
     setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup.bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
     setup.wValue = 0;
-    setup.wIndex = 0;
+    setup.wIndex = rndis_class->ctrl_intf;
     setup.wLength = sizeof(rndis_initialize_msg_t);
 
     ret = usbh_control_transfer(rndis_class->hport, &setup, (uint8_t *)cmd);
@@ -155,7 +278,8 @@ static int usbh_rndis_init_msg_transfer(struct usbh_rndis *rndis_class)
         return ret;
     }
 
-    return usbh_rndis_parse_resp(rndis_class);
+    ret = usbh_rndis_wait_resp(rndis_class, REMOTE_NDIS_INITIALIZE_CMPLT, cmd->RequestId);
+    return ret;
 }
 
 static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
@@ -178,7 +302,6 @@ static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
         return -USB_ERR_NOMEM;
     }
 
-
     cmd = (rndis_query_msg_t *)g_rndis_buf;
 
     cmd->MessageType = REMOTE_NDIS_QUERY_MSG;
@@ -192,7 +315,7 @@ static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
     setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup.bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
     setup.wValue = 0;
-    setup.wIndex = 0;
+    setup.wIndex = rndis_class->ctrl_intf;
     setup.wLength = query_len + sizeof(rndis_query_msg_t);
 
     ret = usbh_control_transfer(rndis_class->hport, &setup, (uint8_t *)cmd);
@@ -201,13 +324,14 @@ static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
         return ret;
     }
 
-    ret = usbh_rndis_parse_resp(rndis_class);
+    ret = usbh_rndis_wait_resp(rndis_class, REMOTE_NDIS_QUERY_CMPLT, cmd->RequestId);
     if (ret < 0) {
         return ret;
     }
 
     if (ret < (int)sizeof(rndis_generic_msg_t)) {
-        return -USB_ERR_INVAL;
+        ret = -USB_ERR_INVAL;
+        return ret;
     }
 
     resp = (rndis_query_cmplt_t *)g_rndis_buf;
@@ -219,11 +343,13 @@ static int usbh_rndis_query_msg_transfer(struct usbh_rndis *rndis_class,
 
     if ((ret != (int)(sizeof(rndis_query_cmplt_t) + resp->InformationBufferLength)) ||
         (query_len != 0 && resp->InformationBufferLength != query_len)) {
-        return -USB_ERR_INVAL;
+        ret = -USB_ERR_INVAL;
+        return ret;
     }
 
     if (resp->InformationBufferLength > info_max_len) {
-        return -USB_ERR_NOMEM;
+        ret = -USB_ERR_NOMEM;
+        return ret;
     }
 
     memcpy(info, ((uint8_t *)resp + sizeof(rndis_query_cmplt_t)), resp->InformationBufferLength);
@@ -246,7 +372,6 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
         return -USB_ERR_NOMEM;
     }
 
-
     cmd = (rndis_set_msg_t *)g_rndis_buf;
 
     cmd->MessageType = REMOTE_NDIS_SET_MSG;
@@ -261,7 +386,7 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
     setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup.bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
     setup.wValue = 0;
-    setup.wIndex = 0;
+    setup.wIndex = rndis_class->ctrl_intf;
     setup.wLength = info_len + sizeof(rndis_set_msg_t);
 
     ret = usbh_control_transfer(rndis_class->hport, &setup, (uint8_t *)cmd);
@@ -270,30 +395,8 @@ static int usbh_rndis_set_msg_transfer(struct usbh_rndis *rndis_class, uint32_t 
         return ret;
     }
 
-    return usbh_rndis_parse_resp(rndis_class);
-}
-
-int usbh_rndis_get_connect_status(struct usbh_rndis *rndis_class)
-{
-    int ret;
-    uint8_t data[4];
-    uint32_t data_len;
-
-    ret = usbh_rndis_query_msg_transfer(rndis_class, OID_GEN_MEDIA_CONNECT_STATUS, 4, data, sizeof(data), &data_len);
-    if (ret < 0) {
-        return ret;
-    }
-
-    if (ret == sizeof(rndis_indicate_status_t)) {
-        return 0;
-    }
-
-    if (NDIS_MEDIA_STATE_CONNECTED == data[0]) {
-        rndis_class->connect_status = true;
-    } else {
-        rndis_class->connect_status = false;
-    }
-    return 0;
+    ret = usbh_rndis_wait_resp(rndis_class, REMOTE_NDIS_SET_CMPLT, cmd->RequestId);
+    return ret;
 }
 
 int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
@@ -315,7 +418,7 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
     setup.bmRequestType = USB_REQUEST_DIR_OUT | USB_REQUEST_CLASS | USB_REQUEST_RECIPIENT_INTERFACE;
     setup.bRequest = CDC_REQUEST_SEND_ENCAPSULATED_COMMAND;
     setup.wValue = 0;
-    setup.wIndex = 0;
+    setup.wIndex = rndis_class->ctrl_intf;
     setup.wLength = sizeof(rndis_keepalive_msg_t);
 
     ret = usbh_control_transfer(rndis_class->hport, &setup, (uint8_t *)cmd);
@@ -324,7 +427,8 @@ int usbh_rndis_keepalive(struct usbh_rndis *rndis_class)
         return ret;
     }
 
-    return usbh_rndis_parse_resp(rndis_class);
+    ret = usbh_rndis_wait_resp(rndis_class, REMOTE_NDIS_KEEPALIVE_CMPLT, cmd->RequestId);
+    return ret;
 }
 
 static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -349,8 +453,32 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
     usbh_set_intf_data(hport, intf, rndis_class);
     usbh_set_intf_data(hport, intf + 1, NULL);
 
-    // ep_desc = &hport->config.intf[intf].altsetting[0].ep[0].ep_desc;
-    // USBH_EP_INIT(rndis_class->intin, ep_desc);
+    for (uint8_t i = 0; i < hport->config.intf[intf].altsetting[0].intf_desc.bNumEndpoints; i++) {
+        ep_desc = &hport->config.intf[intf].altsetting[0].ep[i].ep_desc;
+        if (USB_GET_ENDPOINT_TYPE(ep_desc->bmAttributes) == USB_ENDPOINT_TYPE_INTERRUPT &&
+            (ep_desc->bEndpointAddress & USB_EP_DIR_IN)) {
+            USBH_EP_INIT(rndis_class->intin, ep_desc);
+            break;
+        }
+    }
+
+    if (rndis_class->intin == NULL) {
+        ret = -USB_ERR_INVAL;
+        goto errout;
+    }
+
+    rndis_class->notify_sem = usb_osal_sem_create(0);
+    if (rndis_class->notify_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
+    usbh_int_urb_fill(&rndis_class->intin_urb, rndis_class->hport, rndis_class->intin,
+                      g_rndis_intr_buffer, sizeof(struct rndis_notification), 0, usbh_rndis_intr_complete, rndis_class);
+    ret = usbh_submit_urb(&rndis_class->intin_urb);
+    if (ret < 0) {
+        goto errout;
+    }
 
     for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
         ep_desc = &hport->config.intf[intf + 1].altsetting[0].ep[i].ep_desc;
@@ -404,11 +532,8 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
                 if (ret < 0) {
                     goto query_errorout;
                 }
-                if (NDIS_MEDIA_STATE_CONNECTED == data[0]) {
-                    rndis_class->connect_status = true;
-                } else {
-                    rndis_class->connect_status = false;
-                }
+
+                usbh_rndis_update_link_state(rndis_class, data[0] == NDIS_MEDIA_STATE_CONNECTED);
                 break;
             case OID_802_3_MAXIMUM_LIST_SIZE:
                 ret = usbh_rndis_query_msg_transfer(rndis_class, OID_802_3_MAXIMUM_LIST_SIZE, 4, data, sizeof(data), &data_len);
@@ -449,7 +574,7 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
         goto errout;
     }
 
-    USB_LOG_INFO("rndis MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+    USB_LOG_INFO("MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
                  rndis_class->mac[0],
                  rndis_class->mac[1],
                  rndis_class->mac[2],
@@ -459,12 +584,49 @@ static int usbh_rndis_connect(struct usbh_hubport *hport, uint8_t intf)
 
     strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
 
+    rndis_class->link_sem = usb_osal_sem_create(0);
+    if (rndis_class->link_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    rndis_class->rx_sem = usb_osal_sem_create(0);
+    if (rndis_class->rx_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    rndis_class->link_timer = usb_osal_timer_create("rndis_link", 100, usbh_rndis_link_timeout, rndis_class, true);
+    if (rndis_class->link_timer == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    rndis_class->thread = usb_osal_thread_create("usbh_rndis", CONFIG_USBHOST_NET_THREAD_STACKSIZE,
+                                                 CONFIG_USBHOST_NET_THREAD_PRIO, usbh_rndis_thread, NULL);
+    if (rndis_class->thread == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
     USB_LOG_INFO("Register RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
+
     usbh_rndis_run(rndis_class);
-    return ret;
+    usb_osal_timer_start(rndis_class->link_timer);
+    return 0;
 query_errorout:
     USB_LOG_ERR("rndis query iod:%08x error\r\n", (unsigned int)oid);
 errout:
+    if (rndis_class->notify_sem) {
+        usbh_kill_urb(&rndis_class->intin_urb);
+        usb_osal_sem_delete(rndis_class->notify_sem);
+    }
+    if (rndis_class->link_timer) {
+        usb_osal_timer_delete(rndis_class->link_timer);
+    }
+    if (rndis_class->rx_sem) {
+        usb_osal_sem_delete(rndis_class->rx_sem);
+    }
+    if (rndis_class->link_sem) {
+        usb_osal_sem_delete(rndis_class->link_sem);
+    }
     usbh_set_intf_data(hport, intf, NULL);
     memset(rndis_class, 0, sizeof(struct usbh_rndis));
     return ret;
@@ -476,19 +638,21 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_rndis *rndis_class = (struct usbh_rndis *)usbh_get_intf_data(hport, intf);
 
-    if (rndis_class->bulkin) {
-        usbh_kill_urb(&rndis_class->bulkin_urb);
-    }
+    rndis_class->link_state = USBH_RNDIS_LINK_STATE_DOWN;
+    usb_osal_timer_stop(rndis_class->link_timer);
+    usb_osal_timer_delete(rndis_class->link_timer);
 
-    if (rndis_class->bulkout) {
-        usbh_kill_urb(&rndis_class->bulkout_urb);
-    }
-
-    // if (rndis_class->intin) {
-    //     usbh_kill_urb(&rndis_class->intin_urb);
-    // }
+    usbh_kill_urb(&rndis_class->intin_urb);
+    usb_osal_sem_give(rndis_class->notify_sem);
+    usbh_kill_urb(&rndis_class->bulkin_urb);
+    usbh_kill_urb(&rndis_class->bulkout_urb);
 
     usb_osal_thread_schedule_other();
+
+    usb_osal_thread_delete(rndis_class->thread);
+    usb_osal_sem_delete(rndis_class->rx_sem);
+    usb_osal_sem_delete(rndis_class->link_sem);
+    usb_osal_sem_delete(rndis_class->notify_sem);
     USB_LOG_INFO("Unregister RNDIS Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_rndis_stop(rndis_class);
 
@@ -497,9 +661,10 @@ static int usbh_rndis_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
+static void usbh_rndis_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
-    uint32_t g_rndis_rx_length;
+    struct usbh_rndis *rndis_class = &g_rndis_class;
+    uint32_t actual_length;
     int ret;
     uint32_t pmg_offset;
     rndis_data_packet_t *pmsg;
@@ -507,83 +672,89 @@ void usbh_rndis_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
 
-    USB_LOG_INFO("Create rndis rx thread\r\n");
-
-    g_rndis_class.connect_status = false;
-    if (usbh_find_class_instance("/dev/rndis") == NULL) {
-        goto delete;
-    }
-
-    while (g_rndis_class.connect_status == false) {
-        ret = usbh_rndis_get_connect_status(&g_rndis_class);
-        if (ret < 0) {
-            goto delete;
-        }
-        usb_osal_msleep(128);
-    }
-
-    g_rndis_rx_length = 0;
+    USB_LOG_INFO("Link Down\r\n");
     while (1) {
-        usbh_bulk_urb_fill(&g_rndis_class.bulkin_urb, g_rndis_class.hport, g_rndis_class.bulkin, g_rndis_rx_buffer, CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-        ret = usbh_submit_urb(&g_rndis_class.bulkin_urb);
-        if (ret < 0) {
-            goto delete;
-        }
+        usb_osal_sem_take(rndis_class->link_sem, USB_OSAL_WAITING_FOREVER);
+        if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_PENDING_UP) {
+            rndis_class->link_state = USBH_RNDIS_LINK_STATE_UP;
 
-        g_rndis_rx_length = g_rndis_class.bulkin_urb.actual_length;
-        if (g_rndis_rx_length == 0) {
-            continue;
-        }
+            usb_osal_sem_reset(rndis_class->rx_sem);
+            usbh_rndis_link_up(true);
+            USB_LOG_INFO("Link Up\r\n");
 
-        if (g_rndis_rx_length < CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
-            pmg_offset = 0;
-            USB_LOG_DBG("rxlen:%d\r\n", g_rndis_rx_length);
-
-            while (g_rndis_rx_length > 0) {
-                USB_LOG_DBG("rxlen:%u\r\n", (unsigned int)g_rndis_rx_length);
-
-                if (g_rndis_rx_length < sizeof(rndis_data_packet_t)) {
+            while (rndis_class->link_state == USBH_RNDIS_LINK_STATE_UP) {
+                usbh_bulk_urb_fill(&rndis_class->bulkin_urb, rndis_class->hport, rndis_class->bulkin,
+                                   g_rndis_rx_buffer, CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE, 0, usbh_rndis_rx_complete, rndis_class);
+                ret = usbh_submit_urb(&rndis_class->bulkin_urb);
+                if (ret < 0) {
                     break;
                 }
-                pmsg = (rndis_data_packet_t *)(g_rndis_rx_buffer + pmg_offset);
 
-                /* Not word-aligned case */
-                if (pmg_offset & 0x3) {
-                    usb_memcpy(&temp, pmsg, sizeof(rndis_data_packet_t));
-                    pmsg = &temp;
+                usb_osal_sem_take(rndis_class->rx_sem, USB_OSAL_WAITING_FOREVER);
+                if (rndis_class->link_state != USBH_RNDIS_LINK_STATE_UP) {
+                    break;
                 }
 
-                if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG &&
-                    pmsg->MessageLength >= sizeof(rndis_data_packet_t) &&
-                    pmsg->MessageLength <= g_rndis_rx_length &&
-                    pmsg->DataOffset >= sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t) &&
-                    pmsg->DataOffset <= pmsg->MessageLength - sizeof(rndis_generic_msg_t) &&
-                    pmsg->DataLength <= pmsg->MessageLength - sizeof(rndis_generic_msg_t) - pmsg->DataOffset) {
-                    uint8_t *buf = (uint8_t *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
+                if (rndis_class->bulkin_urb.errorcode < 0) {
+                    break;
+                }
 
-                    usbh_rndis_eth_input(buf, pmsg->DataLength);
-                    pmg_offset += pmsg->MessageLength;
-                    g_rndis_rx_length -= pmsg->MessageLength;
+                actual_length = rndis_class->bulkin_urb.actual_length;
+                if (actual_length == 0) {
+                    continue;
+                }
+                if (actual_length < CONFIG_USBHOST_RNDIS_ETH_MAX_RX_SIZE) {
+                    pmg_offset = 0;
+                    USB_LOG_DBG("rxlen:%d\r\n", actual_length);
 
-                    /* drop the last dummy byte, it is a short packet to tell us we have received a multiple of wMaxPacketSize */
-                    if (g_rndis_rx_length < 4) {
-                        g_rndis_rx_length = 0;
+                    while (actual_length > 0) {
+                        USB_LOG_DBG("rxlen:%u\r\n", (unsigned int)actual_length);
+
+                        if (actual_length < sizeof(rndis_data_packet_t)) {
+                            break;
+                        }
+                        pmsg = (rndis_data_packet_t *)(g_rndis_rx_buffer + pmg_offset);
+
+                        /* Not word-aligned case */
+                        if (pmg_offset & 0x3) {
+                            usb_memcpy(&temp, pmsg, sizeof(rndis_data_packet_t));
+                            pmsg = &temp;
+                        }
+
+                        if (pmsg->MessageType == REMOTE_NDIS_PACKET_MSG &&
+                            pmsg->MessageLength >= sizeof(rndis_data_packet_t) &&
+                            pmsg->MessageLength <= actual_length &&
+                            pmsg->DataOffset >= sizeof(rndis_data_packet_t) - sizeof(rndis_generic_msg_t) &&
+                            pmsg->DataOffset <= pmsg->MessageLength - sizeof(rndis_generic_msg_t) &&
+                            pmsg->DataLength <= pmsg->MessageLength - sizeof(rndis_generic_msg_t) - pmsg->DataOffset) {
+                            uint8_t *buf = (uint8_t *)(g_rndis_rx_buffer + pmg_offset + sizeof(rndis_generic_msg_t) + pmsg->DataOffset);
+
+                            usbh_rndis_eth_input(buf, pmsg->DataLength);
+                            pmg_offset += pmsg->MessageLength;
+                            actual_length -= pmsg->MessageLength;
+
+                            /* drop the last dummy byte, it is a short packet to tell us we have received a multiple of wMaxPacketSize */
+                            if (actual_length < 4) {
+                                actual_length = 0;
+                            }
+                        } else {
+                            USB_LOG_ERR("Error rndis packet message, offset:%u, remain:%u\r\n", (unsigned int)pmg_offset, (unsigned int)actual_length);
+                            actual_length = 0;
+                        }
                     }
                 } else {
-                    USB_LOG_ERR("Error rndis packet message, offset:%u, remain:%u\r\n", (unsigned int)pmg_offset, (unsigned int)g_rndis_rx_length);
-                    g_rndis_rx_length = 0;
+                    USB_LOG_ERR("rndis packet overflow\r\n");
                 }
             }
-        } else {
-            USB_LOG_ERR("rndis packet overflow\r\n");
+        } else if (rndis_class->link_state == USBH_RNDIS_LINK_STATE_PENDING_DOWN) {
+            rndis_class->link_state = USBH_RNDIS_LINK_STATE_DOWN;
+            usbh_rndis_link_up(false);
+
+            usbh_kill_urb(&rndis_class->bulkin_urb);
+            usbh_kill_urb(&rndis_class->bulkout_urb);
+            USB_LOG_INFO("Link Down\r\n");
         }
     }
-
-    // clang-format off
-delete:
-    USB_LOG_INFO("Delete rndis rx thread\r\n");
-    usb_osal_thread_delete(NULL);
-    // clang-format on
 }
 
 uint8_t *usbh_rndis_get_eth_txbuf(void)
@@ -596,7 +767,7 @@ int usbh_rndis_eth_output(uint32_t buflen)
     rndis_data_packet_t *hdr;
     uint32_t len;
 
-    if (g_rndis_class.connect_status == false) {
+    if (g_rndis_class.link_state != USBH_RNDIS_LINK_STATE_UP) {
         return -USB_ERR_NOTCONN;
     }
 

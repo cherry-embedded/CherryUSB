@@ -29,11 +29,13 @@
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_rx_buffer[CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_tx_buffer[CONFIG_USBHOST_CDC_NCM_ETH_MAX_TX_SIZE];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_inttx_buffer[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_intr_buffer[USB_ALIGN_UP(sizeof(struct cdc_eth_notification), CONFIG_USB_ALIGN_SIZE)];
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ncm_buf[USB_ALIGN_UP(32, CONFIG_USB_ALIGN_SIZE)];
 
 static struct usbh_cdc_ncm g_cdc_ncm_class;
+
+static void usbh_cdc_ncm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV);
 
 static int usbh_cdc_ncm_get_ntb_parameters(struct usbh_cdc_ncm *cdc_ncm_class, struct cdc_ncm_ntb_parameters *param)
 {
@@ -78,26 +80,56 @@ static void print_ntb_parameters(struct cdc_ncm_ntb_parameters *param)
     USB_LOG_RAW("wNtbOutMaxDatagrams: 0x%02x     \r\n", param->wNtbOutMaxDatagrams);
 }
 
-int usbh_cdc_ncm_get_connect_status(struct usbh_cdc_ncm *cdc_ncm_class)
+static void usbh_cdc_ncm_rx_complete(void *arg, int nbytes)
 {
-    int ret;
+    struct usbh_cdc_ncm *cdc_ncm_class = (struct usbh_cdc_ncm *)arg;
 
-    usbh_int_urb_fill(&cdc_ncm_class->intin_urb, cdc_ncm_class->hport, cdc_ncm_class->intin, g_cdc_ncm_inttx_buffer, 16, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&cdc_ncm_class->intin_urb);
-    if (ret < 0) {
-        return ret;
+    (void)nbytes;
+    usb_osal_sem_give(cdc_ncm_class->rx_sem);
+}
+
+static void usbh_cdc_ncm_intr_complete(void *arg, int nbytes)
+{
+    struct usbh_cdc_ncm *cdc_ncm_class = (struct usbh_cdc_ncm *)arg;
+    struct cdc_eth_notification *notification = (struct cdc_eth_notification *)g_cdc_ncm_intr_buffer;
+
+    if (nbytes < 0 || !cdc_ncm_class->hport->connected) {
+        return;
     }
 
-    if (g_cdc_ncm_inttx_buffer[1] == CDC_ECM_NOTIFY_CODE_NETWORK_CONNECTION) {
-        if (g_cdc_ncm_inttx_buffer[2] == CDC_ECM_NET_CONNECTED) {
-            cdc_ncm_class->connect_status = true;
-        } else {
-            cdc_ncm_class->connect_status = false;
+    if (nbytes >= offsetof(struct cdc_eth_notification, data)) {
+        if (notification->bNotificationType == CDC_ECM_NOTIFY_CODE_NETWORK_CONNECTION) {
+            if (notification->wValue == CDC_ECM_NET_CONNECTED) {
+                if (cdc_ncm_class->link_state == USBH_CDC_NCM_LINK_STATE_DOWN) {
+                    cdc_ncm_class->link_state = USBH_CDC_NCM_LINK_STATE_PENDING_UP;
+                    usb_osal_sem_give(cdc_ncm_class->link_sem);
+                }
+            } else if (cdc_ncm_class->link_state == USBH_CDC_NCM_LINK_STATE_UP) {
+                cdc_ncm_class->link_state = USBH_CDC_NCM_LINK_STATE_PENDING_DOWN;
+                usb_osal_sem_give(cdc_ncm_class->rx_sem);
+                usb_osal_sem_give(cdc_ncm_class->link_sem);
+            }
+        } else if (notification->bNotificationType == CDC_ECM_NOTIFY_CODE_CONNECTION_SPEED_CHANGE &&
+                   nbytes >= sizeof(struct cdc_eth_notification)) {
+            memcpy(&cdc_ncm_class->link_speed, notification->data, sizeof(cdc_ncm_class->link_speed));
         }
-    } else if (g_cdc_ncm_inttx_buffer[1] == CDC_ECM_NOTIFY_CODE_CONNECTION_SPEED_CHANGE) {
-        memcpy(cdc_ncm_class->speed, &g_cdc_ncm_inttx_buffer[8], 8);
     }
-    return 0;
+}
+
+static void usbh_cdc_ncm_intr_timeout(void *arg)
+{
+    struct usbh_cdc_ncm *cdc_ncm_class = (struct usbh_cdc_ncm *)arg;
+
+    /* Do not receive another link change until the worker handles this one. */
+    if ((cdc_ncm_class->link_state != USBH_CDC_NCM_LINK_STATE_DOWN &&
+         cdc_ncm_class->link_state != USBH_CDC_NCM_LINK_STATE_UP) ||
+        cdc_ncm_class->intin_urb.errorcode == -USB_ERR_BUSY) {
+        return;
+    }
+
+    usbh_int_urb_fill(&cdc_ncm_class->intin_urb, cdc_ncm_class->hport, cdc_ncm_class->intin,
+                      g_cdc_ncm_intr_buffer, sizeof(struct cdc_eth_notification), 0, usbh_cdc_ncm_intr_complete, cdc_ncm_class);
+    usbh_submit_urb(&cdc_ncm_class->intin_urb);
 }
 
 static int usbh_cdc_ncm_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -171,7 +203,7 @@ get_mac:
         cdc_ncm_class->mac[j] = (unsigned char)byte;
     }
 
-    USB_LOG_INFO("CDC NCM MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+    USB_LOG_INFO("MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
                  cdc_ncm_class->mac[0],
                  cdc_ncm_class->mac[1],
                  cdc_ncm_class->mac[2],
@@ -180,9 +212,9 @@ get_mac:
                  cdc_ncm_class->mac[5]);
 
     if (cdc_ncm_class->max_segment_size > CONFIG_USBHOST_CDC_NCM_ETH_MAX_SEGSZE) {
-        USB_LOG_ERR("CDC NCM Max Segment Size is overflow, default is %u, but now %u\r\n", CONFIG_USBHOST_CDC_NCM_ETH_MAX_SEGSZE, cdc_ncm_class->max_segment_size);
+        USB_LOG_ERR("Max Segment Size is overflow, default is %u, but now %u\r\n", CONFIG_USBHOST_CDC_NCM_ETH_MAX_SEGSZE, cdc_ncm_class->max_segment_size);
     } else {
-        USB_LOG_INFO("CDC NCM Max Segment Size:%u\r\n", cdc_ncm_class->max_segment_size);
+        USB_LOG_INFO("Max Segment Size:%u\r\n", cdc_ncm_class->max_segment_size);
     }
 
     usbh_cdc_ncm_get_ntb_parameters(cdc_ncm_class, &cdc_ncm_class->ntb_param);
@@ -205,7 +237,7 @@ get_mac:
             }
         }
 
-        USB_LOG_INFO("Select cdc ncm altsetting: %d\r\n", altsetting);
+        USB_LOG_INFO("Select altsetting: %d\r\n", altsetting);
         usbh_set_interface(cdc_ncm_class->hport, cdc_ncm_class->data_intf, altsetting);
     } else {
         for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
@@ -223,9 +255,42 @@ get_mac:
 
     USB_LOG_INFO("Register CDC NCM Class:%s\r\n", hport->config.intf[intf].devname);
 
+    cdc_ncm_class->link_sem = usb_osal_sem_create(0);
+    if (cdc_ncm_class->link_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    cdc_ncm_class->rx_sem = usb_osal_sem_create(0);
+    if (cdc_ncm_class->rx_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    cdc_ncm_class->link_timer = usb_osal_timer_create("cdc_ncm_intr", 100, usbh_cdc_ncm_intr_timeout, cdc_ncm_class, true);
+    if (cdc_ncm_class->link_timer == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
+    cdc_ncm_class->thread = usb_osal_thread_create("usbh_cdc_ncm", CONFIG_USBHOST_NET_THREAD_STACKSIZE,
+                                                   CONFIG_USBHOST_NET_THREAD_PRIO, usbh_cdc_ncm_thread, NULL);
+    if (cdc_ncm_class->thread == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
     usbh_cdc_ncm_run(cdc_ncm_class);
-    return ret;
+    usb_osal_timer_start(cdc_ncm_class->link_timer);
+    return 0;
 errout:
+    if (cdc_ncm_class->link_timer) {
+        usb_osal_timer_delete(cdc_ncm_class->link_timer);
+    }
+    if (cdc_ncm_class->rx_sem) {
+        usb_osal_sem_delete(cdc_ncm_class->rx_sem);
+    }
+    if (cdc_ncm_class->link_sem) {
+        usb_osal_sem_delete(cdc_ncm_class->link_sem);
+    }
     usbh_set_intf_data(hport, intf, NULL);
     memset(cdc_ncm_class, 0, sizeof(struct usbh_cdc_ncm));
     return ret;
@@ -237,19 +302,19 @@ static int usbh_cdc_ncm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_cdc_ncm *cdc_ncm_class = (struct usbh_cdc_ncm *)usbh_get_intf_data(hport, intf);
 
-    if (cdc_ncm_class->bulkin) {
-        usbh_kill_urb(&cdc_ncm_class->bulkin_urb);
-    }
+    cdc_ncm_class->link_state = USBH_CDC_NCM_LINK_STATE_DOWN;
+    usb_osal_timer_stop(cdc_ncm_class->link_timer);
+    usb_osal_timer_delete(cdc_ncm_class->link_timer);
 
-    if (cdc_ncm_class->bulkout) {
-        usbh_kill_urb(&cdc_ncm_class->bulkout_urb);
-    }
-
-    if (cdc_ncm_class->intin) {
-        usbh_kill_urb(&cdc_ncm_class->intin_urb);
-    }
+    usbh_kill_urb(&cdc_ncm_class->intin_urb);
+    usbh_kill_urb(&cdc_ncm_class->bulkin_urb);
+    usbh_kill_urb(&cdc_ncm_class->bulkout_urb);
 
     usb_osal_thread_schedule_other();
+
+    usb_osal_thread_delete(cdc_ncm_class->thread);
+    usb_osal_sem_delete(cdc_ncm_class->rx_sem);
+    usb_osal_sem_delete(cdc_ncm_class->link_sem);
     USB_LOG_INFO("Unregister CDC NCM Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_cdc_ncm_stop(cdc_ncm_class);
 
@@ -258,104 +323,115 @@ static int usbh_cdc_ncm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-void usbh_cdc_ncm_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
+static void usbh_cdc_ncm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
-    uint32_t g_cdc_ncm_rx_length;
+    struct usbh_cdc_ncm *cdc_ncm_class = &g_cdc_ncm_class;
+    uint32_t actual_length;
     int ret;
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
-    USB_LOG_INFO("Create cdc ncm rx thread\r\n");
 
-    g_cdc_ncm_class.connect_status = false;
-    if (usbh_find_class_instance("/dev/cdc_ncm") == NULL) {
-        goto delete;
-    }
-
-    while (g_cdc_ncm_class.connect_status == false) {
-        ret = usbh_cdc_ncm_get_connect_status(&g_cdc_ncm_class);
-        if (ret < 0) {
-            goto delete;
-        }
-    }
-
-    g_cdc_ncm_rx_length = 0;
+    USB_LOG_INFO("Link Down\r\n");
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ncm_class.bulkin_urb, g_cdc_ncm_class.hport, g_cdc_ncm_class.bulkin, g_cdc_ncm_rx_buffer, CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-        ret = usbh_submit_urb(&g_cdc_ncm_class.bulkin_urb);
-        if (ret < 0) {
-            goto delete;
-        }
+        usb_osal_sem_take(cdc_ncm_class->link_sem, USB_OSAL_WAITING_FOREVER);
+        if (cdc_ncm_class->link_state == USBH_CDC_NCM_LINK_STATE_PENDING_UP) {
+            cdc_ncm_class->link_state = USBH_CDC_NCM_LINK_STATE_UP;
 
-        g_cdc_ncm_rx_length = g_cdc_ncm_class.bulkin_urb.actual_length;
-        if (g_cdc_ncm_rx_length == 0) {
-            continue;
-        }
+            usb_osal_sem_reset(cdc_ncm_class->rx_sem);
+            usbh_cdc_ncm_link_up(true);
+            USB_LOG_INFO("Link Up\r\n");
 
-        if (g_cdc_ncm_rx_length < CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE) {
-            USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ncm_rx_length);
-
-            if (g_cdc_ncm_rx_length < sizeof(struct cdc_ncm_nth16)) {
-                continue;
-            }
-            struct cdc_ncm_nth16 *nth16 = (struct cdc_ncm_nth16 *)&g_cdc_ncm_rx_buffer[0];
-            if ((nth16->dwSignature != CDC_NCM_NTH16_SIGNATURE) ||
-                (nth16->wHeaderLength != 12) ||
-                (nth16->wBlockLength != g_cdc_ncm_rx_length)) {
-                USB_LOG_ERR("invalid rx nth16\r\n");
-                g_cdc_ncm_rx_length = 0;
-                continue;
-            }
-
-            if (nth16->wNdpIndex < sizeof(struct cdc_ncm_nth16) ||
-                (nth16->wNdpIndex & 3) ||
-                nth16->wNdpIndex > g_cdc_ncm_rx_length - sizeof(struct cdc_ncm_ndp16)) {
-                USB_LOG_ERR("invalid rx ndp16 index\r\n");
-                continue;
-            }
-            struct cdc_ncm_ndp16 *ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_rx_buffer[nth16->wNdpIndex];
-            if ((ndp16->dwSignature != CDC_NCM_NDP16_SIGNATURE_NCM0) && (ndp16->dwSignature != CDC_NCM_NDP16_SIGNATURE_NCM1)) {
-                USB_LOG_ERR("invalid rx ndp16\r\n");
-                g_cdc_ncm_rx_length = 0;
-                continue;
-            }
-
-            if (ndp16->wLength < sizeof(struct cdc_ncm_ndp16) + sizeof(struct cdc_ncm_ndp16_datagram) ||
-                (ndp16->wLength & 3) ||
-                ndp16->wLength > g_cdc_ncm_rx_length - nth16->wNdpIndex) {
-                USB_LOG_ERR("invalid rx ndp16 length\r\n");
-                continue;
-            }
-            uint16_t datagram_num = (ndp16->wLength - 8) / 4;
-
-            USB_LOG_DBG("datagram num:%02x\r\n", datagram_num);
-            for (uint16_t i = 0; i < datagram_num; i++) {
-                struct cdc_ncm_ndp16_datagram *ndp16_datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_rx_buffer[nth16->wNdpIndex + 8 + 4 * i];
-                if (!ndp16_datagram->wDatagramIndex && !ndp16_datagram->wDatagramLength) {
+            while (cdc_ncm_class->link_state == USBH_CDC_NCM_LINK_STATE_UP) {
+                usbh_bulk_urb_fill(&cdc_ncm_class->bulkin_urb, cdc_ncm_class->hport, cdc_ncm_class->bulkin,
+                                   g_cdc_ncm_rx_buffer, CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE, 0, usbh_cdc_ncm_rx_complete, cdc_ncm_class);
+                ret = usbh_submit_urb(&cdc_ncm_class->bulkin_urb);
+                if (ret < 0) {
                     break;
                 }
-                if (ndp16_datagram->wDatagramIndex < sizeof(struct cdc_ncm_nth16) ||
-                    ndp16_datagram->wDatagramIndex > g_cdc_ncm_rx_length ||
-                    !ndp16_datagram->wDatagramLength ||
-                    ndp16_datagram->wDatagramLength > g_cdc_ncm_rx_length - ndp16_datagram->wDatagramIndex) {
-                    USB_LOG_ERR("invalid rx datagram range\r\n");
+
+                usb_osal_sem_take(cdc_ncm_class->rx_sem, USB_OSAL_WAITING_FOREVER);
+                if (cdc_ncm_class->link_state != USBH_CDC_NCM_LINK_STATE_UP) {
                     break;
                 }
-                USB_LOG_DBG("ndp16_datagram index:%02x, length:%02x\r\n", ndp16_datagram->wDatagramIndex, ndp16_datagram->wDatagramLength);
 
-                uint8_t *buf = (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex];
-                usbh_cdc_ncm_eth_input(buf, ndp16_datagram->wDatagramLength);
+                if (cdc_ncm_class->bulkin_urb.errorcode < 0) {
+                    break;
+                }
+
+                actual_length = cdc_ncm_class->bulkin_urb.actual_length;
+                if (actual_length == 0) {
+                    continue;
+                }
+
+                if (actual_length < CONFIG_USBHOST_CDC_NCM_ETH_MAX_RX_SIZE) {
+                    USB_LOG_DBG("rxlen:%d\r\n", actual_length);
+
+                    if (actual_length < sizeof(struct cdc_ncm_nth16)) {
+                        continue;
+                    }
+                    struct cdc_ncm_nth16 *nth16 = (struct cdc_ncm_nth16 *)&g_cdc_ncm_rx_buffer[0];
+                    if ((nth16->dwSignature != CDC_NCM_NTH16_SIGNATURE) ||
+                        (nth16->wHeaderLength != 12) ||
+                        (nth16->wBlockLength != actual_length)) {
+                        USB_LOG_ERR("invalid rx nth16\r\n");
+                        actual_length = 0;
+                        continue;
+                    }
+
+                    if (nth16->wNdpIndex < sizeof(struct cdc_ncm_nth16) ||
+                        (nth16->wNdpIndex & 3) ||
+                        nth16->wNdpIndex > actual_length - sizeof(struct cdc_ncm_ndp16)) {
+                        USB_LOG_ERR("invalid rx ndp16 index\r\n");
+                        continue;
+                    }
+                    struct cdc_ncm_ndp16 *ndp16 = (struct cdc_ncm_ndp16 *)&g_cdc_ncm_rx_buffer[nth16->wNdpIndex];
+                    if ((ndp16->dwSignature != CDC_NCM_NDP16_SIGNATURE_NCM0) && (ndp16->dwSignature != CDC_NCM_NDP16_SIGNATURE_NCM1)) {
+                        USB_LOG_ERR("invalid rx ndp16\r\n");
+                        actual_length = 0;
+                        continue;
+                    }
+
+                    if (ndp16->wLength < sizeof(struct cdc_ncm_ndp16) + sizeof(struct cdc_ncm_ndp16_datagram) ||
+                        (ndp16->wLength & 3) ||
+                        ndp16->wLength > actual_length - nth16->wNdpIndex) {
+                        USB_LOG_ERR("invalid rx ndp16 length\r\n");
+                        continue;
+                    }
+                    uint16_t datagram_num = (ndp16->wLength - 8) / 4;
+
+                    USB_LOG_DBG("datagram num:%02x\r\n", datagram_num);
+                    for (uint16_t i = 0; i < datagram_num; i++) {
+                        struct cdc_ncm_ndp16_datagram *ndp16_datagram = (struct cdc_ncm_ndp16_datagram *)&g_cdc_ncm_rx_buffer[nth16->wNdpIndex + 8 + 4 * i];
+                        if (!ndp16_datagram->wDatagramIndex && !ndp16_datagram->wDatagramLength) {
+                            break;
+                        }
+                        if (ndp16_datagram->wDatagramIndex < sizeof(struct cdc_ncm_nth16) ||
+                            ndp16_datagram->wDatagramIndex > actual_length ||
+                            !ndp16_datagram->wDatagramLength ||
+                            ndp16_datagram->wDatagramLength > actual_length - ndp16_datagram->wDatagramIndex) {
+                            USB_LOG_ERR("invalid rx datagram range\r\n");
+                            break;
+                        }
+                        USB_LOG_DBG("ndp16_datagram index:%02x, length:%02x\r\n", ndp16_datagram->wDatagramIndex, ndp16_datagram->wDatagramLength);
+
+                        uint8_t *buf = (uint8_t *)&g_cdc_ncm_rx_buffer[ndp16_datagram->wDatagramIndex];
+                        usbh_cdc_ncm_eth_input(buf, ndp16_datagram->wDatagramLength);
+                    }
+
+                    actual_length = 0;
+                } else {
+                    USB_LOG_ERR("rx packet overflow\r\n");
+                }
             }
+        } else if (cdc_ncm_class->link_state == USBH_CDC_NCM_LINK_STATE_PENDING_DOWN) {
+            cdc_ncm_class->link_state = USBH_CDC_NCM_LINK_STATE_DOWN;
+            usbh_cdc_ncm_link_up(false);
 
-            g_cdc_ncm_rx_length = 0;
-        } else {
-            USB_LOG_ERR("cdc ncm rx packet overflow\r\n");
+            usbh_kill_urb(&cdc_ncm_class->bulkin_urb);
+            usbh_kill_urb(&cdc_ncm_class->bulkout_urb);
+            USB_LOG_INFO("Link Down\r\n");
         }
     }
-    // clang-format off
-delete:
-    USB_LOG_INFO("Delete cdc ncm rx thread\r\n");
-    usb_osal_thread_delete(NULL);
-    // clang-format on
 }
 
 uint8_t *usbh_cdc_ncm_get_eth_txbuf(void)
@@ -367,7 +443,7 @@ int usbh_cdc_ncm_eth_output(uint32_t buflen)
 {
     struct cdc_ncm_ndp16_datagram *ndp16_datagram;
 
-    if (g_cdc_ncm_class.connect_status == false) {
+    if (g_cdc_ncm_class.link_state != USBH_CDC_NCM_LINK_STATE_UP) {
         return -USB_ERR_NOTCONN;
     }
 

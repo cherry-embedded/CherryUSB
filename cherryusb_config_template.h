@@ -198,6 +198,14 @@
 #define CONFIG_USBHOST_MSC_TIMEOUT 5000
 #endif
 
+/* Host net thread configuration */
+#ifndef CONFIG_USBHOST_NET_THREAD_PRIO
+#define CONFIG_USBHOST_NET_THREAD_PRIO 20
+#endif
+#ifndef CONFIG_USBHOST_NET_THREAD_STACKSIZE
+#define CONFIG_USBHOST_NET_THREAD_STACKSIZE 2048
+#endif
+
 /* This parameter affects usb performance, and depends on (TCP_WND)tcp eceive windows size,
  * you can change to 2K ~ 16K and must be larger than TCP RX windows size in order to avoid being overflow.
  */

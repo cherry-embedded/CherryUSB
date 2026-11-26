@@ -470,6 +470,16 @@ if CHERRYUSB
             prompt "Set hubport change thread stacksize"
             default 4096
 
+        config USBHOST_NET_THREAD_PRIO
+            int
+            prompt "Set host net thread priority, 0 is the max priority"
+            default 20
+
+        config USBHOST_NET_THREAD_STACKSIZE
+            int
+            prompt "Set host net thread stacksize in bytes"
+            default 2048
+
         config USBHOST_REQUEST_BUFFER_LEN
             int
             prompt "Set host control transfer max buffer size"

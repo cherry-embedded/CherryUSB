@@ -50,9 +50,36 @@ USB Network Card Connection Process
 
 The following example shows the LWIP connection process.
 
-- After USB network card enumeration is completed, the `usbh_xxx_run` function will be **automatically** called, at which time netif driver is registered, and DHCP client and IP acquisition timer are started.
+ECM, NCM, RNDIS, ASIX and RTL8152 create their workers inside the class before calling the platform `usbh_xxx_run`; platforms do not create these threads. `CONFIG_USBHOST_NET_THREAD_PRIO` and `CONFIG_USBHOST_NET_THREAD_STACKSIZE` configure their priority and stack size, defaulting to 20 and 2048 bytes.
+
+- For ECM, the class creates `usbh_cdc_ecm_thread` internally, calls `usbh_cdc_ecm_run` to register the netif after thread creation succeeds, and then starts its timer. The timer submits asynchronous INTR requests; the completion callback parses link state and speed. The thread waits for notifications, receives packets, and calls `usbh_cdc_ecm_link_up(bool up)` to update the netif and DHCP. Disconnect cancels transfers and deletes the thread before calling stop to release the network interface.
+
+These network classes use the resource member names `link_sem`, `link_timer`, `rx_sem` and `thread`. RNDIS also uses `notify_sem` for control response notifications.
+
+RNDIS starts asynchronous Interrupt IN reception before its first initialization command. INITIALIZE, QUERY, SET and KEEPALIVE retain separate send paths and wait indefinitely for RESPONSE_AVAILABLE before `usbh_rndis_parse_resp` fetches the response. Completion type, RequestId and Status must match; empty responses, completion type or RequestId mismatches, and failed Status values return an error immediately without retrying. Control transfers use the control interface number in wIndex. Connect consumes notifications during initialization; afterwards, `link_timer` consumes notifications and parses link changes without periodic media-status queries. The timer must run in thread context. The RX thread retains the ECM receive flow and multi-packet parsing.
 
 .. code-block:: C
+
+    void usbh_cdc_ecm_link_up(bool up)
+    {
+        struct netif *netif = &g_cdc_ecm_netif;
+
+        LOCK_TCPIP_CORE();
+        if (up) {
+            netif_set_link_up(netif);
+    #if LWIP_DHCP
+            dhcp_start(netif);
+            usb_osal_timer_start(dhcp_handle);
+    #endif
+        } else {
+            netif_set_link_down(netif);
+    #if LWIP_DHCP
+            dhcp_stop(netif);
+            usb_osal_timer_stop(dhcp_handle);
+    #endif
+        }
+        UNLOCK_TCPIP_CORE();
+    }
 
     void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     {
@@ -70,6 +97,7 @@ The following example shows the LWIP connection process.
         while (!netif_is_up(netif)) {
         }
 
+    #if LWIP_DHCP
         dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
         if (dhcp_handle == NULL) {
             USB_LOG_ERR("timer creation failed! \r\n");
@@ -77,10 +105,6 @@ The following example shows the LWIP connection process.
             }
         }
 
-        usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
-    #if LWIP_DHCP
-        dhcp_start(netif);
-        usb_osal_timer_start(dhcp_handle);
     #endif
     }
 

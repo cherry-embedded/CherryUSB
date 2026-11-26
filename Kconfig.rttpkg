@@ -485,6 +485,16 @@ if PKG_USING_CHERRYUSB
             prompt "Set hubport change thread stacksize"
             default 4096
 
+        config CONFIG_USBHOST_NET_THREAD_PRIO
+            int
+            prompt "Set host application thread priority, 0 is the max priority"
+            default 20
+
+        config CONFIG_USBHOST_NET_THREAD_STACKSIZE
+            int
+            prompt "Set host application thread stacksize in bytes"
+            default 2048
+
         config CONFIG_USBHOST_REQUEST_BUFFER_LEN
             int
             prompt "Set host control transfer max buffer size"

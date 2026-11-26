@@ -8,6 +8,11 @@
 
 #include "usb_cdc.h"
 
+#define USBH_CDC_NCM_LINK_STATE_DOWN         0
+#define USBH_CDC_NCM_LINK_STATE_UP           1
+#define USBH_CDC_NCM_LINK_STATE_PENDING_UP   2
+#define USBH_CDC_NCM_LINK_STATE_PENDING_DOWN 3
+
 struct usbh_cdc_ncm {
     struct usbh_hubport *hport;
     struct usb_endpoint_descriptor *bulkin;  /* Bulk IN endpoint */
@@ -25,10 +30,15 @@ struct usbh_cdc_ncm {
     uint16_t bulkin_sequence;
     uint16_t bulkout_sequence;
 
-    uint8_t mac[6];
-    bool connect_status;
     uint16_t max_segment_size;
-    uint32_t speed[2];
+
+    uint8_t mac[6];
+    uint8_t link_state;
+    uint32_t link_speed;
+    usb_osal_sem_t link_sem;
+    struct usb_osal_timer *link_timer;
+    usb_osal_sem_t rx_sem;
+    usb_osal_thread_t thread;
 
     void *user_data;
 };
@@ -37,15 +47,13 @@ struct usbh_cdc_ncm {
 extern "C" {
 #endif
 
-int usbh_cdc_ncm_get_connect_status(struct usbh_cdc_ncm *cdc_ncm_class);
-
 void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class);
 void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class);
 
 uint8_t *usbh_cdc_ncm_get_eth_txbuf(void);
 int usbh_cdc_ncm_eth_output(uint32_t buflen);
 void usbh_cdc_ncm_eth_input(uint8_t *buf, uint32_t buflen);
-void usbh_cdc_ncm_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV);
+void usbh_cdc_ncm_link_up(bool up);
 
 #ifdef __cplusplus
 }

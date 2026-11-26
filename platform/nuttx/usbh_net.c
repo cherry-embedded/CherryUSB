@@ -118,7 +118,6 @@ static int rndis_ifup(struct net_driver_s *dev)
 {
     printf("rndis if up\r\n");
     g_rndis_dev.linkup = true;
-    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rndis_rx_thread, NULL);
     return OK;
 }
 
@@ -163,6 +162,17 @@ void usbh_rndis_eth_input(uint8_t *buf, uint32_t buflen)
     usbh_net_eth_input_common(&g_rndis_dev.netdev, buf, buflen, usbh_rndis_get_eth_txbuf, usbh_rndis_eth_output);
 }
 
+void usbh_rndis_link_up(bool up)
+{
+    net_lock();
+    if (up) {
+        netdev_carrier_on(&g_rndis_dev.netdev);
+    } else {
+        netdev_carrier_off(&g_rndis_dev.netdev);
+    }
+    net_unlock();
+}
+
 void usbh_rndis_run(struct usbh_rndis *rndis_class)
 {
     memset(&g_rndis_dev.netdev, 0, sizeof(struct net_driver_s));
@@ -177,6 +187,8 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     }
     netdev_register(&g_rndis_dev.netdev, NET_LL_ETHERNET);
 
+    /* netinit may wait for DHCP; allow the class worker to receive meanwhile. */
+    usb_osal_timer_start(rndis_class->link_timer);
     netinit_bringup();
 }
 

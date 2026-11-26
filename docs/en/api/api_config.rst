@@ -146,6 +146,16 @@ CONFIG_USBHOST_PSC_STACKSIZE
 
 Stack size of host plug/unplug thread, default 2K bytes
 
+CONFIG_USBHOST_NET_THREAD_PRIO
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Host application thread priority, default 20. Lower values mean higher priority. Currently used by the internal ECM, NCM, RNDIS, ASIX and RTL8152 threads; it must have higher priority than the host plug/unplug thread.
+
+CONFIG_USBHOST_NET_THREAD_STACKSIZE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Host application thread stack size, default 2048 bytes (2K).
+
 CONFIG_USBHOST_REQUEST_BUFFER_LEN
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

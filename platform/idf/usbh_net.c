@@ -119,6 +119,15 @@ void usbh_cdc_ecm_eth_input(uint8_t *buf, uint32_t buflen)
     usbh_net_input_common(&g_cdc_ecm_netif_glue, buf, buflen);
 }
 
+void usbh_cdc_ecm_link_up(bool up)
+{
+    if (up) {
+        esp_netif_action_connected(g_cdc_ecm_netif_glue.base.netif, NULL, 0, NULL);
+    } else {
+        esp_netif_action_disconnected(g_cdc_ecm_netif_glue.base.netif, NULL, 0, NULL);
+    }
+}
+
 void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
 {
     memset(&g_cdc_ecm_netif_glue, 0, sizeof(struct usbh_net_netif_glue));
@@ -137,9 +146,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     esp_netif_set_mac(esp_netif, cdc_ecm_class->mac);
 
     esp_netif_action_start(esp_netif, NULL, 0, NULL);
-    esp_netif_action_connected(esp_netif, NULL, 0, NULL);
 
-    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
 }
 
 void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
@@ -154,27 +161,6 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 
 #ifdef CONFIG_USBHOST_PLATFORM_CDC_RNDIS
 #include "usbh_rndis.h"
-
-struct usb_osal_timer *timer_handle;
-
-static void rndis_dev_keepalive_timeout(void *arg)
-{
-    struct usbh_rndis *rndis_class = (struct usbh_rndis *)arg;
-    usbh_rndis_keepalive(rndis_class);
-}
-
-void timer_init(struct usbh_rndis *rndis_class)
-{
-    timer_handle = usb_osal_timer_create("rndis_keepalive", 5000, rndis_dev_keepalive_timeout, rndis_class, true);
-    if (NULL != timer_handle) {
-        usb_osal_timer_start(timer_handle);
-    } else {
-        USB_LOG_ERR("timer creation failed! \r\n");
-        for (;;) {
-            ;
-        }
-    }
-}
 
 struct usbh_net_netif_glue g_rndis_netif_glue;
 
@@ -197,6 +183,16 @@ void usbh_rndis_eth_input(uint8_t *buf, uint32_t buflen)
     usbh_net_input_common(&g_rndis_netif_glue, buf, buflen);
 }
 
+void usbh_rndis_link_up(bool up)
+{
+    if (up) {
+        esp_netif_action_connected(g_rndis_netif_glue.base.netif, NULL, 0, NULL);
+    } else {
+        esp_netif_action_disconnected(g_rndis_netif_glue.base.netif, NULL, 0, NULL);
+    }
+}
+
+
 void usbh_rndis_run(struct usbh_rndis *rndis_class)
 {
     memset(&g_rndis_netif_glue, 0, sizeof(struct usbh_net_netif_glue));
@@ -215,11 +211,6 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     esp_netif_set_mac(esp_netif, rndis_class->mac);
 
     esp_netif_action_start(esp_netif, NULL, 0, NULL);
-    esp_netif_action_connected(esp_netif, NULL, 0, NULL);
-
-    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rndis_rx_thread, NULL);
-
-    //timer_init(rndis_class);
 }
 
 void usbh_rndis_stop(struct usbh_rndis *rndis_class)
@@ -229,9 +220,6 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
     usbh_net_netif_glue_deinit_common(&g_rndis_netif_glue);
     esp_netif_action_stop(g_rndis_netif_glue.base.netif, NULL, 0, NULL);
     esp_netif_destroy(g_rndis_netif_glue.base.netif);
-
-    // xTimerStop(timer_handle, 0);
-    // xTimerDelete(timer_handle, 0);
 }
 #endif
 
@@ -259,6 +247,15 @@ void usbh_cdc_ncm_eth_input(uint8_t *buf, uint32_t buflen)
     usbh_net_input_common(&g_cdc_ncm_netif_glue, buf, buflen);
 }
 
+void usbh_cdc_ncm_link_up(bool up)
+{
+    if (up) {
+        esp_netif_action_connected(g_cdc_ncm_netif_glue.base.netif, NULL, 0, NULL);
+    } else {
+        esp_netif_action_disconnected(g_cdc_ncm_netif_glue.base.netif, NULL, 0, NULL);
+    }
+}
+
 void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
 {
     memset(&g_cdc_ncm_netif_glue, 0, sizeof(struct usbh_net_netif_glue));
@@ -277,9 +274,7 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
     esp_netif_set_mac(esp_netif, cdc_ncm_class->mac);
 
     esp_netif_action_start(esp_netif, NULL, 0, NULL);
-    esp_netif_action_connected(esp_netif, NULL, 0, NULL);
 
-    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ncm_rx_thread, NULL);
 }
 
 void usbh_cdc_ncm_stop(struct usbh_cdc_ncm *cdc_ncm_class)
@@ -316,6 +311,15 @@ void usbh_asix_eth_input(uint8_t *buf, uint32_t buflen)
     usbh_net_input_common(&g_asix_netif_glue, buf, buflen);
 }
 
+void usbh_asix_link_up(bool up)
+{
+    if (up) {
+        esp_netif_action_connected(g_asix_netif_glue.base.netif, NULL, 0, NULL);
+    } else {
+        esp_netif_action_disconnected(g_asix_netif_glue.base.netif, NULL, 0, NULL);
+    }
+}
+
 void usbh_asix_run(struct usbh_asix *asix_class)
 {
     memset(&g_asix_netif_glue, 0, sizeof(struct usbh_net_netif_glue));
@@ -334,9 +338,7 @@ void usbh_asix_run(struct usbh_asix *asix_class)
     esp_netif_set_mac(esp_netif, asix_class->mac);
 
     esp_netif_action_start(esp_netif, NULL, 0, NULL);
-    esp_netif_action_connected(esp_netif, NULL, 0, NULL);
 
-    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_asix_rx_thread, NULL);
 }
 
 void usbh_asix_stop(struct usbh_asix *asix_class)
@@ -373,6 +375,15 @@ void usbh_rtl8152_eth_input(uint8_t *buf, uint32_t buflen)
     usbh_net_input_common(&g_rtl8152_netif_glue, buf, buflen);
 }
 
+void usbh_rtl8152_link_up(bool up)
+{
+    if (up) {
+        esp_netif_action_connected(g_rtl8152_netif_glue.base.netif, NULL, 0, NULL);
+    } else {
+        esp_netif_action_disconnected(g_rtl8152_netif_glue.base.netif, NULL, 0, NULL);
+    }
+}
+
 void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 {
     memset(&g_rtl8152_netif_glue, 0, sizeof(struct usbh_net_netif_glue));
@@ -391,9 +402,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     esp_netif_set_mac(esp_netif, rtl8152_class->mac);
 
     esp_netif_action_start(esp_netif, NULL, 0, NULL);
-    esp_netif_action_connected(esp_netif, NULL, 0, NULL);
 
-    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rtl8152_rx_thread, NULL);
 }
 
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
