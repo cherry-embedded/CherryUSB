@@ -39,9 +39,36 @@ USB 网卡对接过程
 
 下面举例对接 LWIP 的对接过程。
 
-- 在 USB 网卡枚举完成以后，会 **自动** 调用 `usbh_xxx_run` 函数，此时注册 netif 驱动，并且开启 DHCP 客户端和获取 IP 的定时器。
+ECM、NCM、RNDIS、ASIX 和 RTL8152 的线程均由 class 内部创建，创建成功后调用平台的 `usbh_xxx_run`，平台无需再创建线程。优先级和栈大小分别由 `CONFIG_USBHOST_NET_THREAD_PRIO`、`CONFIG_USBHOST_NET_THREAD_STACKSIZE` 配置，默认 20 和 2048 字节。
+
+- 以 ECM 为例，class 内部先创建 `usbh_cdc_ecm_thread`，成功后调用 `usbh_cdc_ecm_run` 注册 netif，再启动定时器提交异步 INTR，完成回调解析链路状态和速率；线程等待通知后接收数据，并通过 `usbh_cdc_ecm_link_up(bool up)` 更新 netif 和 DHCP。disconnect 取消传输并删除线程后，再调用 stop 释放网络接口。
+
+上述网卡的资源成员统一命名为 `link_sem`、`link_timer`、`rx_sem`、`thread`。RNDIS 另外使用 `notify_sem` 等待控制响应通知。
+
+RNDIS 在发送第一条初始化命令前启动异步 Interrupt IN 接收。INITIALIZE、QUERY、SET、KEEPALIVE 分别保留发送流程，发送后永久等待 RESPONSE_AVAILABLE 通知，再通过 `usbh_rndis_parse_resp` 读取响应，并校验响应类型、RequestId 和 Status；空响应、类型或 RequestId 不匹配、Status 失败时立即返回错误，不循环等待。命令和响应的 wIndex 使用控制接口编号。初始化期间由 connect 消费通知，完成初始化后由 `link_timer` 消费通知并解析链路变化，不再周期查询连接状态。定时器需要在线程上下文运行，RX 线程仍按 ECM 的流程接收和解析多包。
 
 .. code-block:: C
+
+    void usbh_cdc_ecm_link_up(bool up)
+    {
+        struct netif *netif = &g_cdc_ecm_netif;
+
+        LOCK_TCPIP_CORE();
+        if (up) {
+            netif_set_link_up(netif);
+    #if LWIP_DHCP
+            dhcp_start(netif);
+            usb_osal_timer_start(dhcp_handle);
+    #endif
+        } else {
+            netif_set_link_down(netif);
+    #if LWIP_DHCP
+            dhcp_stop(netif);
+            usb_osal_timer_stop(dhcp_handle);
+    #endif
+        }
+        UNLOCK_TCPIP_CORE();
+    }
 
     void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     {
@@ -59,6 +86,7 @@ USB 网卡对接过程
         while (!netif_is_up(netif)) {
         }
 
+    #if LWIP_DHCP
         dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
         if (dhcp_handle == NULL) {
             USB_LOG_ERR("timer creation failed! \r\n");
@@ -66,10 +94,6 @@ USB 网卡对接过程
             }
         }
 
-        usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
-    #if LWIP_DHCP
-        dhcp_start(netif);
-        usb_osal_timer_start(dhcp_handle);
     #endif
     }
 

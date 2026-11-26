@@ -141,13 +141,34 @@ static err_t usbh_cdc_ecm_if_init(struct netif *netif)
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
     netif->mtu = 1500;
-    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
     netif->state = NULL;
     netif->name[0] = 'E';
     netif->name[1] = 'X';
     netif->output = etharp_output;
     netif->linkoutput = usbh_cdc_ecm_linkoutput;
     return ERR_OK;
+}
+
+void usbh_cdc_ecm_link_up(bool up)
+{
+    struct netif *netif = &g_cdc_ecm_netif;
+
+    LOCK_TCPIP_CORE();
+    if (up) {
+        netif_set_link_up(netif);
+#if LWIP_DHCP
+        dhcp_start(netif);
+        usb_osal_timer_start(dhcp_handle);
+#endif
+    } else {
+        netif_set_link_down(netif);
+#if LWIP_DHCP
+        dhcp_stop(netif);
+        usb_osal_timer_stop(dhcp_handle);
+#endif
+    }
+    UNLOCK_TCPIP_CORE();
 }
 
 void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
@@ -166,6 +187,7 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
     while (!netif_is_up(netif)) {
     }
 
+#if LWIP_DHCP
     dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
@@ -173,10 +195,6 @@ void usbh_cdc_ecm_run(struct usbh_cdc_ecm *cdc_ecm_class)
         }
     }
 
-    usb_osal_thread_create("usbh_cdc_ecm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ecm_rx_thread, NULL);
-#if LWIP_DHCP
-    dhcp_start(netif);
-    usb_osal_timer_start(dhcp_handle);
 #endif
 }
 
@@ -197,27 +215,6 @@ void usbh_cdc_ecm_stop(struct usbh_cdc_ecm *cdc_ecm_class)
 
 #ifdef CONFIG_USBHOST_PLATFORM_CDC_RNDIS
 #include "usbh_rndis.h"
-
-struct usb_osal_timer *timer_handle;
-
-static void rndis_dev_keepalive_timeout(void *arg)
-{
-    struct usbh_rndis *rndis_class = (struct usbh_rndis *)arg;
-    usbh_rndis_keepalive(rndis_class);
-}
-
-void timer_init(struct usbh_rndis *rndis_class)
-{
-    timer_handle = usb_osal_timer_create("rndis_keepalive", 5000, rndis_dev_keepalive_timeout, rndis_class, true);
-    if (NULL != timer_handle) {
-        usb_osal_timer_start(timer_handle);
-    } else {
-        USB_LOG_ERR("timer creation failed! \r\n");
-        for (;;) {
-            ;
-        }
-    }
-}
 
 struct netif g_rndis_netif;
 
@@ -245,7 +242,7 @@ static err_t usbh_rndis_if_init(struct netif *netif)
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
     netif->mtu = 1500;
-    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
     netif->state = NULL;
     netif->name[0] = 'E';
     netif->name[1] = 'X';
@@ -253,6 +250,28 @@ static err_t usbh_rndis_if_init(struct netif *netif)
     netif->linkoutput = usbh_rndis_linkoutput;
     return ERR_OK;
 }
+
+void usbh_rndis_link_up(bool up)
+{
+    struct netif *netif = &g_rndis_netif;
+
+    LOCK_TCPIP_CORE();
+    if (up) {
+        netif_set_link_up(netif);
+#if LWIP_DHCP
+        dhcp_start(netif);
+        usb_osal_timer_start(dhcp_handle);
+#endif
+    } else {
+        netif_set_link_down(netif);
+#if LWIP_DHCP
+        dhcp_stop(netif);
+        usb_osal_timer_stop(dhcp_handle);
+#endif
+    }
+    UNLOCK_TCPIP_CORE();
+}
+
 
 void usbh_rndis_run(struct usbh_rndis *rndis_class)
 {
@@ -270,20 +289,13 @@ void usbh_rndis_run(struct usbh_rndis *rndis_class)
     while (!netif_is_up(netif)) {
     }
 
+#if LWIP_DHCP
     dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
         while (1) {
         }
     }
-
-    usb_osal_thread_create("usbh_rndis_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rndis_rx_thread, NULL);
-
-    //timer_init(rndis_class);
-
-#if LWIP_DHCP
-    dhcp_start(netif);
-    usb_osal_timer_start(dhcp_handle);
 #endif
 }
 
@@ -299,8 +311,6 @@ void usbh_rndis_stop(struct usbh_rndis *rndis_class)
 #endif
     netif_set_down(netif);
     netif_remove(netif);
-    // xTimerStop(timer_handle, 0);
-    // xTimerDelete(timer_handle, 0);
 }
 #endif
 
@@ -333,13 +343,34 @@ static err_t usbh_cdc_ncm_if_init(struct netif *netif)
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
     netif->mtu = 1500;
-    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
     netif->state = NULL;
     netif->name[0] = 'E';
     netif->name[1] = 'X';
     netif->output = etharp_output;
     netif->linkoutput = usbh_cdc_ncm_linkoutput;
     return ERR_OK;
+}
+
+void usbh_cdc_ncm_link_up(bool up)
+{
+    struct netif *netif = &g_cdc_ncm_netif;
+
+    LOCK_TCPIP_CORE();
+    if (up) {
+        netif_set_link_up(netif);
+#if LWIP_DHCP
+        dhcp_start(netif);
+        usb_osal_timer_start(dhcp_handle);
+#endif
+    } else {
+        netif_set_link_down(netif);
+#if LWIP_DHCP
+        dhcp_stop(netif);
+        usb_osal_timer_stop(dhcp_handle);
+#endif
+    }
+    UNLOCK_TCPIP_CORE();
 }
 
 void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
@@ -358,6 +389,7 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
     while (!netif_is_up(netif)) {
     }
 
+#if LWIP_DHCP
     dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
@@ -365,10 +397,6 @@ void usbh_cdc_ncm_run(struct usbh_cdc_ncm *cdc_ncm_class)
         }
     }
 
-    usb_osal_thread_create("usbh_cdc_ncm_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_cdc_ncm_rx_thread, NULL);
-#if LWIP_DHCP
-    dhcp_start(netif);
-    usb_osal_timer_start(dhcp_handle);
 #endif
 }
 
@@ -416,13 +444,34 @@ static err_t usbh_asix_if_init(struct netif *netif)
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
     netif->mtu = 1500;
-    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
     netif->state = NULL;
     netif->name[0] = 'E';
     netif->name[1] = 'X';
     netif->output = etharp_output;
     netif->linkoutput = usbh_asix_linkoutput;
     return ERR_OK;
+}
+
+void usbh_asix_link_up(bool up)
+{
+    struct netif *netif = &g_asix_netif;
+
+    LOCK_TCPIP_CORE();
+    if (up) {
+        netif_set_link_up(netif);
+#if LWIP_DHCP
+        dhcp_start(netif);
+        usb_osal_timer_start(dhcp_handle);
+#endif
+    } else {
+        netif_set_link_down(netif);
+#if LWIP_DHCP
+        dhcp_stop(netif);
+        usb_osal_timer_stop(dhcp_handle);
+#endif
+    }
+    UNLOCK_TCPIP_CORE();
 }
 
 void usbh_asix_run(struct usbh_asix *asix_class)
@@ -441,6 +490,7 @@ void usbh_asix_run(struct usbh_asix *asix_class)
     while (!netif_is_up(netif)) {
     }
 
+#if LWIP_DHCP
     dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
@@ -448,10 +498,6 @@ void usbh_asix_run(struct usbh_asix *asix_class)
         }
     }
 
-    usb_osal_thread_create("usbh_asix_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_asix_rx_thread, NULL);
-#if LWIP_DHCP
-    dhcp_start(netif);
-    usb_osal_timer_start(dhcp_handle);
 #endif
 }
 
@@ -499,13 +545,34 @@ static err_t usbh_rtl8152_if_init(struct netif *netif)
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
     netif->mtu = 1500;
-    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
     netif->state = NULL;
     netif->name[0] = 'E';
     netif->name[1] = 'X';
     netif->output = etharp_output;
     netif->linkoutput = usbh_rtl8152_linkoutput;
     return ERR_OK;
+}
+
+void usbh_rtl8152_link_up(bool up)
+{
+    struct netif *netif = &g_rtl8152_netif;
+
+    LOCK_TCPIP_CORE();
+    if (up) {
+        netif_set_link_up(netif);
+#if LWIP_DHCP
+        dhcp_start(netif);
+        usb_osal_timer_start(dhcp_handle);
+#endif
+    } else {
+        netif_set_link_down(netif);
+#if LWIP_DHCP
+        dhcp_stop(netif);
+        usb_osal_timer_stop(dhcp_handle);
+#endif
+    }
+    UNLOCK_TCPIP_CORE();
 }
 
 void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
@@ -524,6 +591,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     while (!netif_is_up(netif)) {
     }
 
+#if LWIP_DHCP
     dhcp_handle = usb_osal_timer_create("dhcp", 200, dhcp_timeout, netif, true);
     if (dhcp_handle == NULL) {
         USB_LOG_ERR("timer creation failed! \r\n");
@@ -531,10 +599,6 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
         }
     }
 
-    usb_osal_thread_create("usbh_rtl8152_rx", 2048, CONFIG_USBHOST_PSC_PRIO - 1, usbh_rtl8152_rx_thread, NULL);
-#if LWIP_DHCP
-    dhcp_start(netif);
-    usb_osal_timer_start(dhcp_handle);
 #endif
 }
 

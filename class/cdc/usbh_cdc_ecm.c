@@ -26,9 +26,11 @@
 
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_rx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, CONFIG_USB_ALIGN_SIZE)];
 static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_tx_buffer[USB_ALIGN_UP(CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, CONFIG_USB_ALIGN_SIZE)];
-static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_inttx_buffer[USB_ALIGN_UP(16, CONFIG_USB_ALIGN_SIZE)];
+static USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_cdc_ecm_intr_buffer[USB_ALIGN_UP(sizeof(struct cdc_eth_notification), CONFIG_USB_ALIGN_SIZE)];
 
 static struct usbh_cdc_ecm g_cdc_ecm_class;
+
+static void usbh_cdc_ecm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV);
 
 static int usbh_cdc_ecm_set_eth_packet_filter(struct usbh_cdc_ecm *cdc_ecm_class, uint16_t filter_value)
 {
@@ -47,26 +49,56 @@ static int usbh_cdc_ecm_set_eth_packet_filter(struct usbh_cdc_ecm *cdc_ecm_class
     return usbh_control_transfer(cdc_ecm_class->hport, &setup, NULL);
 }
 
-int usbh_cdc_ecm_get_connect_status(struct usbh_cdc_ecm *cdc_ecm_class)
+static void usbh_cdc_ecm_rx_complete(void *arg, int nbytes)
 {
-    int ret;
+    struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)arg;
 
-    usbh_int_urb_fill(&cdc_ecm_class->intin_urb, cdc_ecm_class->hport, cdc_ecm_class->intin, g_cdc_ecm_inttx_buffer, 16, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-    ret = usbh_submit_urb(&cdc_ecm_class->intin_urb);
-    if (ret < 0) {
-        return ret;
+    (void)nbytes;
+    usb_osal_sem_give(cdc_ecm_class->rx_sem);
+}
+
+static void usbh_cdc_ecm_intr_complete(void *arg, int nbytes)
+{
+    struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)arg;
+    struct cdc_eth_notification *notification = (struct cdc_eth_notification *)g_cdc_ecm_intr_buffer;
+
+    if (nbytes < 0 || !cdc_ecm_class->hport->connected) {
+        return;
     }
 
-    if (g_cdc_ecm_inttx_buffer[1] == CDC_ECM_NOTIFY_CODE_NETWORK_CONNECTION) {
-        if (g_cdc_ecm_inttx_buffer[2] == CDC_ECM_NET_CONNECTED) {
-            cdc_ecm_class->connect_status = true;
-        } else {
-            cdc_ecm_class->connect_status = false;
+    if (nbytes >= offsetof(struct cdc_eth_notification, data)) {
+        if (notification->bNotificationType == CDC_ECM_NOTIFY_CODE_NETWORK_CONNECTION) {
+            if (notification->wValue == CDC_ECM_NET_CONNECTED) {
+                if (cdc_ecm_class->link_state == USBH_CDC_ECM_LINK_STATE_DOWN) {
+                    cdc_ecm_class->link_state = USBH_CDC_ECM_LINK_STATE_PENDING_UP;
+                    usb_osal_sem_give(cdc_ecm_class->link_sem);
+                }
+            } else if (cdc_ecm_class->link_state == USBH_CDC_ECM_LINK_STATE_UP) {
+                cdc_ecm_class->link_state = USBH_CDC_ECM_LINK_STATE_PENDING_DOWN;
+                usb_osal_sem_give(cdc_ecm_class->rx_sem);
+                usb_osal_sem_give(cdc_ecm_class->link_sem);
+            }
+        } else if (notification->bNotificationType == CDC_ECM_NOTIFY_CODE_CONNECTION_SPEED_CHANGE &&
+                   nbytes >= sizeof(struct cdc_eth_notification)) {
+            memcpy(&cdc_ecm_class->link_speed, notification->data, sizeof(cdc_ecm_class->link_speed));
         }
-    } else if (g_cdc_ecm_inttx_buffer[1] == CDC_ECM_NOTIFY_CODE_CONNECTION_SPEED_CHANGE) {
-        memcpy(cdc_ecm_class->speed, &g_cdc_ecm_inttx_buffer[8], 8);
     }
-    return 0;
+}
+
+static void usbh_cdc_ecm_intr_timeout(void *arg)
+{
+    struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)arg;
+
+    /* Do not receive another link change until the worker handles this one. */
+    if ((cdc_ecm_class->link_state != USBH_CDC_ECM_LINK_STATE_DOWN &&
+         cdc_ecm_class->link_state != USBH_CDC_ECM_LINK_STATE_UP) ||
+        cdc_ecm_class->intin_urb.errorcode == -USB_ERR_BUSY) {
+        return;
+    }
+
+    usbh_int_urb_fill(&cdc_ecm_class->intin_urb, cdc_ecm_class->hport, cdc_ecm_class->intin,
+                      g_cdc_ecm_intr_buffer, sizeof(struct cdc_eth_notification), 0, usbh_cdc_ecm_intr_complete, cdc_ecm_class);
+    usbh_submit_urb(&cdc_ecm_class->intin_urb);
 }
 
 static int usbh_cdc_ecm_connect(struct usbh_hubport *hport, uint8_t intf)
@@ -145,7 +177,7 @@ get_mac:
         cdc_ecm_class->mac[j] = (unsigned char)byte;
     }
 
-    USB_LOG_INFO("CDC ECM MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+    USB_LOG_INFO("MAC address %02x:%02x:%02x:%02x:%02x:%02x\r\n",
                  cdc_ecm_class->mac[0],
                  cdc_ecm_class->mac[1],
                  cdc_ecm_class->mac[2],
@@ -154,9 +186,9 @@ get_mac:
                  cdc_ecm_class->mac[5]);
 
     if (cdc_ecm_class->max_segment_size > CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
-        USB_LOG_ERR("CDC ECM Max Segment Size is overflow, default is %u, but now %u\r\n", CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, cdc_ecm_class->max_segment_size);
+        USB_LOG_ERR("Max Segment Size is overflow, default is %u, but now %u\r\n", CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, cdc_ecm_class->max_segment_size);
     } else {
-        USB_LOG_INFO("CDC ECM Max Segment Size:%u\r\n", cdc_ecm_class->max_segment_size);
+        USB_LOG_INFO("Max Segment Size:%u\r\n", cdc_ecm_class->max_segment_size);
     }
 
     /* enable int ep */
@@ -176,7 +208,7 @@ get_mac:
             }
         }
 
-        USB_LOG_INFO("Select cdc ecm altsetting: %d\r\n", altsetting);
+        USB_LOG_INFO("Select altsetting: %d\r\n", altsetting);
         usbh_set_interface(cdc_ecm_class->hport, cdc_ecm_class->data_intf, altsetting);
     } else {
         for (uint8_t i = 0; i < hport->config.intf[intf + 1].altsetting[0].intf_desc.bNumEndpoints; i++) {
@@ -200,15 +232,48 @@ get_mac:
     if (ret < 0) {
         goto errout;
     }
-    USB_LOG_INFO("Set CDC ECM packet filter:%04x\r\n", CONFIG_USBHOST_CDC_ECM_PKT_FILTER);
+    USB_LOG_INFO("Set packet filter:%04x\r\n", CONFIG_USBHOST_CDC_ECM_PKT_FILTER);
 
     strncpy(hport->config.intf[intf].devname, DEV_FORMAT, CONFIG_USBHOST_DEV_NAMELEN);
+
+    cdc_ecm_class->link_sem = usb_osal_sem_create(0);
+    if (cdc_ecm_class->link_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    cdc_ecm_class->rx_sem = usb_osal_sem_create(0);
+    if (cdc_ecm_class->rx_sem == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+    cdc_ecm_class->link_timer = usb_osal_timer_create("cdc_ecm_intr", 100, usbh_cdc_ecm_intr_timeout, cdc_ecm_class, true);
+    if (cdc_ecm_class->link_timer == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
+
+    cdc_ecm_class->thread = usb_osal_thread_create("usbh_cdc_ecm", CONFIG_USBHOST_NET_THREAD_STACKSIZE,
+                                                   CONFIG_USBHOST_NET_THREAD_PRIO, usbh_cdc_ecm_thread, NULL);
+    if (cdc_ecm_class->thread == NULL) {
+        ret = -USB_ERR_NOMEM;
+        goto errout;
+    }
 
     USB_LOG_INFO("Register CDC ECM Class:%s\r\n", hport->config.intf[intf].devname);
 
     usbh_cdc_ecm_run(cdc_ecm_class);
-    return ret;
+    usb_osal_timer_start(cdc_ecm_class->link_timer);
+    return 0;
 errout:
+    if (cdc_ecm_class->link_timer) {
+        usb_osal_timer_delete(cdc_ecm_class->link_timer);
+    }
+    if (cdc_ecm_class->rx_sem) {
+        usb_osal_sem_delete(cdc_ecm_class->rx_sem);
+    }
+    if (cdc_ecm_class->link_sem) {
+        usb_osal_sem_delete(cdc_ecm_class->link_sem);
+    }
     usbh_set_intf_data(hport, intf, NULL);
     memset(cdc_ecm_class, 0, sizeof(struct usbh_cdc_ecm));
     return ret;
@@ -220,19 +285,19 @@ static int usbh_cdc_ecm_disconnect(struct usbh_hubport *hport, uint8_t intf)
 
     struct usbh_cdc_ecm *cdc_ecm_class = (struct usbh_cdc_ecm *)usbh_get_intf_data(hport, intf);
 
-    if (cdc_ecm_class->bulkin) {
-        usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
-    }
+    cdc_ecm_class->link_state = USBH_CDC_ECM_LINK_STATE_DOWN;
+    usb_osal_timer_stop(cdc_ecm_class->link_timer);
+    usb_osal_timer_delete(cdc_ecm_class->link_timer);
 
-    if (cdc_ecm_class->bulkout) {
-        usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
-    }
-
-    if (cdc_ecm_class->intin) {
-        usbh_kill_urb(&cdc_ecm_class->intin_urb);
-    }
+    usbh_kill_urb(&cdc_ecm_class->intin_urb);
+    usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
+    usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
 
     usb_osal_thread_schedule_other();
+
+    usb_osal_thread_delete(cdc_ecm_class->thread);
+    usb_osal_sem_delete(cdc_ecm_class->rx_sem);
+    usb_osal_sem_delete(cdc_ecm_class->link_sem);
     USB_LOG_INFO("Unregister CDC ECM Class:%s\r\n", hport->config.intf[intf].devname);
     usbh_cdc_ecm_stop(cdc_ecm_class);
 
@@ -241,55 +306,61 @@ static int usbh_cdc_ecm_disconnect(struct usbh_hubport *hport, uint8_t intf)
     return ret;
 }
 
-void usbh_cdc_ecm_rx_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
+static void usbh_cdc_ecm_thread(CONFIG_USB_OSAL_THREAD_SET_ARGV)
 {
-    uint32_t g_cdc_ecm_rx_length;
+    struct usbh_cdc_ecm *cdc_ecm_class = &g_cdc_ecm_class;
+    uint32_t actual_length;
     int ret;
 
     (void)CONFIG_USB_OSAL_THREAD_GET_ARGV;
-    USB_LOG_INFO("Create cdc ecm rx thread\r\n");
 
-    g_cdc_ecm_class.connect_status = false;
-    if (usbh_find_class_instance("/dev/cdc_ether") == NULL) {
-        goto delete;
-    }
-
-    while (g_cdc_ecm_class.connect_status == false) {
-        ret = usbh_cdc_ecm_get_connect_status(&g_cdc_ecm_class);
-        if (ret < 0) {
-            goto delete;
-        }
-        usb_osal_msleep(128);
-    }
-
-    g_cdc_ecm_rx_length = 0;
+    USB_LOG_INFO("Link Down\r\n");
     while (1) {
-        usbh_bulk_urb_fill(&g_cdc_ecm_class.bulkin_urb, g_cdc_ecm_class.hport, g_cdc_ecm_class.bulkin, g_cdc_ecm_rx_buffer, CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, USB_OSAL_WAITING_FOREVER, NULL, NULL);
-        ret = usbh_submit_urb(&g_cdc_ecm_class.bulkin_urb);
-        if (ret < 0) {
-            goto delete;
-        }
+        usb_osal_sem_take(cdc_ecm_class->link_sem, USB_OSAL_WAITING_FOREVER);
+        if (cdc_ecm_class->link_state == USBH_CDC_ECM_LINK_STATE_PENDING_UP) {
+            cdc_ecm_class->link_state = USBH_CDC_ECM_LINK_STATE_UP;
 
-        g_cdc_ecm_rx_length = g_cdc_ecm_class.bulkin_urb.actual_length;
-        if (g_cdc_ecm_rx_length == 0) {
-            continue;
-        }
+            usb_osal_sem_reset(cdc_ecm_class->rx_sem);
+            usbh_cdc_ecm_link_up(true);
+            USB_LOG_INFO("Link Up\r\n");
 
-        if (g_cdc_ecm_rx_length < CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
-            USB_LOG_DBG("rxlen:%d\r\n", g_cdc_ecm_rx_length);
+            while (cdc_ecm_class->link_state == USBH_CDC_ECM_LINK_STATE_UP) {
+                usbh_bulk_urb_fill(&cdc_ecm_class->bulkin_urb, cdc_ecm_class->hport, cdc_ecm_class->bulkin,
+                                   g_cdc_ecm_rx_buffer, CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE, 0, usbh_cdc_ecm_rx_complete, cdc_ecm_class);
+                ret = usbh_submit_urb(&cdc_ecm_class->bulkin_urb);
+                if (ret < 0) {
+                    break;
+                }
 
-            usbh_cdc_ecm_eth_input(g_cdc_ecm_rx_buffer, g_cdc_ecm_rx_length);
+                usb_osal_sem_take(cdc_ecm_class->rx_sem, USB_OSAL_WAITING_FOREVER);
+                if (cdc_ecm_class->link_state != USBH_CDC_ECM_LINK_STATE_UP) {
+                    break;
+                }
 
-            g_cdc_ecm_rx_length = 0;
-        } else {
-            USB_LOG_ERR("cdc ecm rx packet overflow\r\n");
+                if (cdc_ecm_class->bulkin_urb.errorcode < 0) {
+                    break;
+                }
+
+                actual_length = cdc_ecm_class->bulkin_urb.actual_length;
+                if (actual_length == 0) {
+                    continue;
+                }
+                if (actual_length < CONFIG_USBHOST_CDC_ECM_ETH_MAX_SIZE) {
+                    USB_LOG_DBG("rxlen:%d\r\n", actual_length);
+                    usbh_cdc_ecm_eth_input(g_cdc_ecm_rx_buffer, actual_length);
+                } else {
+                    USB_LOG_ERR("rx packet overflow\r\n");
+                }
+            }
+        } else if (cdc_ecm_class->link_state == USBH_CDC_ECM_LINK_STATE_PENDING_DOWN) {
+            cdc_ecm_class->link_state = USBH_CDC_ECM_LINK_STATE_DOWN;
+            usbh_cdc_ecm_link_up(false);
+
+            usbh_kill_urb(&cdc_ecm_class->bulkin_urb);
+            usbh_kill_urb(&cdc_ecm_class->bulkout_urb);
+            USB_LOG_INFO("Link Down\r\n");
         }
     }
-    // clang-format off
-delete:
-    USB_LOG_INFO("Delete cdc ecm rx thread\r\n");
-    usb_osal_thread_delete(NULL);
-    // clang-format on
 }
 
 uint8_t *usbh_cdc_ecm_get_eth_txbuf(void)
@@ -299,7 +370,7 @@ uint8_t *usbh_cdc_ecm_get_eth_txbuf(void)
 
 int usbh_cdc_ecm_eth_output(uint32_t buflen)
 {
-    if (g_cdc_ecm_class.connect_status == false) {
+    if (g_cdc_ecm_class.link_state != USBH_CDC_ECM_LINK_STATE_UP) {
         return -USB_ERR_NOTCONN;
     }
 
