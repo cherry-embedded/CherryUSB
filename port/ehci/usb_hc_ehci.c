@@ -1314,6 +1314,10 @@ errout_timeout:
     flags = usb_osal_enter_critical_section();
     if (urb->errorcode == -USB_ERR_BUSY) {
         urb->errorcode = -USB_ERR_TIMEOUT;
+    } else {
+        urb->timeout = 0;
+        usb_osal_sem_reset(qh->waitsem);
+        USB_LOG_ERR("complete but timeout too small\r\n");
     }
     ret = urb->errorcode;
     usb_osal_leave_critical_section(flags);
