@@ -143,6 +143,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#v1-7-0">v1.7.0</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#psc-thread">psc thread</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#host-audio">host audio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usbh-control-transfer">usbh_control_transfer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#net-class">net class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#video-frame">video frame 描述符</a></li>
 </ul>
 </li>
 </ul>
@@ -257,6 +260,18 @@
 <section id="host-audio">
 <h3>host audio<a class="headerlink" href="#host-audio" title="Link to this heading"></a></h3>
 <p>主机 audio 驱动重构，API 采用新的接口，旧接口不再兼容。 volume 单位从 db 改成 0 ~ 100%。</p>
+</section>
+<section id="usbh-control-transfer">
+<h3>usbh_control_transfer<a class="headerlink" href="#usbh-control-transfer" title="Link to this heading"></a></h3>
+<p>usbh_control_transfer 返回值删除了 setup 的 8 字节长度，方便做数据长度的判断。</p>
+</section>
+<section id="net-class">
+<h3>net class<a class="headerlink" href="#net-class" title="Link to this heading"></a></h3>
+<p>net class 内置线程，应用无需手动创建，因此需要增加  <cite>CONFIG_USBHOST_NET_THREAD_PRIO</cite> 和 <cite>CONFIG_USBHOST_NET_THREAD_STACKSIZE</cite> 配置项，用于设置线程优先级和栈大小。</p>
+</section>
+<section id="video-frame">
+<h3>video frame 描述符<a class="headerlink" href="#video-frame" title="Link to this heading"></a></h3>
+<p>VIDEO_VS_FRAME_xxx_DESCRIPTOR_INIT 删除了多个 interval 功能，改成只用一个 interval。</p>
 </section>
 </section>
 </section>

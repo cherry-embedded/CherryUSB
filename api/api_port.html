@@ -409,7 +409,7 @@
 <li><p><strong>transfer_buffer_length</strong> 传输长度</p></li>
 <li><p><strong>transfer_flags</strong> 传输时携带的 flag</p></li>
 <li><p><strong>actual_length</strong> 实际传输长度</p></li>
-<li><p><strong>timeout</strong> 传输超时时间，为 0 该函数则为非阻塞，可在中断中使用</p></li>
+<li><p><strong>timeout</strong> 传输超时时间，为 0 该函数则为非阻塞，可在中断中使用，timeout 和 complete 不能同时开启</p></li>
 <li><p><strong>errorcode</strong> 错误码</p></li>
 <li><p><strong>num_of_iso_packets</strong> iso 帧或者微帧个数</p></li>
 <li><p><strong>complete</strong> 传输完成回调函数</p></li>
@@ -455,7 +455,7 @@
 </section>
 <section id="usbh-kill-urb">
 <h3>usbh_kill_urb<a class="headerlink" href="#usbh-kill-urb" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">usbh_kill_urb</span></code> 取消指定 URB 的传输。 <strong>此函数对用户开放</strong>。</p>
+<p><code class="docutils literal notranslate"><span class="pre">usbh_kill_urb</span></code> 取消指定 URB 的传输。不可以在中断和回调中调用，通常只在 disconnect 和超时时调用。 <strong>此函数对用户开放</strong>。</p>
 <div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">usbh_kill_urb</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_urb</span><span class="w"> </span><span class="o">*</span><span class="n">urb</span><span class="p">);</span>
 </pre></div>
 </div>

@@ -16,8 +16,8 @@ CDC ACM 通信
 - WCH USBHS 高速（从机 46MB/S）, 超高速(从机 400MB/S)
 
 .. figure:: img/wch_hs_speed.jpg
-.. figure:: img/wch_ss_speed.jpg
-.. figure:: img/wch_ss_ch372_speed.jpg
+.. figure:: img/wch_ss_speed.png
+.. figure:: img/wch_ss_ch372_speed.png
 
 从机测速demo: cdc_acm_template.c 并且关闭 log，脚本使用 `tools/test_srcipts/test_cdc_speed.py`
 主机测速demo: usb_host.c 中 TEST_USBH_CDC_SPEED=1

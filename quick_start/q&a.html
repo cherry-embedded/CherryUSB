@@ -323,6 +323,39 @@ DWC2 scatter/gather dma 模式下全部由硬件处理，但是不支持 split �
 <ul class="simple">
 <li><p>使用信号量等待，前提所有的 class 资源都在这个线程中处理</p></li>
 </ul>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="n">usb_osal_sem_t</span><span class="w"> </span><span class="n">xxx_exit_sem</span><span class="p">;</span>
+
+<span class="cm">/* 启动任务前执行；初始计数为 0 */</span>
+<span class="n">xxx_exit_sem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usb_osal_sem_create</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">xxx_thread</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_xxx</span><span class="w"> </span><span class="o">*</span><span class="n">xxx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arg</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">xxx</span><span class="o">-&gt;</span><span class="n">hport</span><span class="o">-&gt;</span><span class="n">connected</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usbh_submit_urb</span><span class="p">(</span><span class="o">&amp;</span><span class="n">xxx</span><span class="o">-&gt;</span><span class="n">xxxin_urb</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="cm">/* 处理数据 */</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 在这里完成其他收尾 */</span>
+
+<span class="w">    </span><span class="n">usb_osal_sem_give</span><span class="p">(</span><span class="n">xxx_exit_sem</span><span class="p">);</span>
+<span class="w">    </span><span class="cm">/* 从这里开始，不能再访问 xxx、URB 或相关 buffer */</span>
+<span class="w">    </span><span class="n">usb_osal_thread_delete</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">usbh_xxx_stop</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">usbh_xxx</span><span class="w"> </span><span class="o">*</span><span class="n">xxx</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 等待任务退出 */</span>
+<span class="w">    </span><span class="n">usb_osal_sem_take</span><span class="p">(</span><span class="n">xxx_exit_sem</span><span class="p">,</span><span class="w"> </span><span class="n">USB_OSAL_WAIT_FOREVER</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <ul class="simple">
 <li><p>直接删除线程，前提所有的 class 资源都在这个线程中处理</p></li>
 </ul>
