@@ -65,7 +65,7 @@ CherryUSB Device Stack has the following functions:
 - Support full speed, high speed and super speed device
 - Support endpoint irq callback register by users, let users do whatever they wants in endpoint irq callback.
 - Support Composite Device
-- Support Communication Device Class (CDC_ACM, CDC_ECM)
+- Support Communication Device Class (CDC_ACM, CDC_ECM, CDC_NCM)
 - Support Human Interface Device (HID)
 - Support Mass Storage Class (MSC)
 - Support USB VIDEO CLASS (UVC1.0, UVC1.5)

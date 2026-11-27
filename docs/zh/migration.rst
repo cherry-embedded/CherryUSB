@@ -84,3 +84,18 @@ host audio
 ^^^^^^^^^^^^^^^^^^^^
 
 主机 audio 驱动重构，API 采用新的接口，旧接口不再兼容。 volume 单位从 db 改成 0 ~ 100%。
+
+usbh_control_transfer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+usbh_control_transfer 返回值删除了 setup 的 8 字节长度，方便做数据长度的判断。
+
+net class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+net class 内置线程，应用无需手动创建，因此需要增加  `CONFIG_USBHOST_NET_THREAD_PRIO` 和 `CONFIG_USBHOST_NET_THREAD_STACKSIZE` 配置项，用于设置线程优先级和栈大小。
+
+video frame 描述符
+^^^^^^^^^^^^^^^^^^^^
+
+VIDEO_VS_FRAME_xxx_DESCRIPTOR_INIT 删除了多个 interval 功能，改成只用一个 interval。

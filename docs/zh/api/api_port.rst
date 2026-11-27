@@ -240,7 +240,7 @@ usbh_submit_urb
 - **transfer_buffer_length** 传输长度
 - **transfer_flags** 传输时携带的 flag
 - **actual_length** 实际传输长度
-- **timeout** 传输超时时间，为 0 该函数则为非阻塞，可在中断中使用
+- **timeout** 传输超时时间，为 0 该函数则为非阻塞，可在中断中使用，timeout 和 complete 不能同时开启
 - **errorcode** 错误码
 - **num_of_iso_packets** iso 帧或者微帧个数
 - **complete** 传输完成回调函数
@@ -287,7 +287,7 @@ usbh_submit_urb
 usbh_kill_urb
 """"""""""""""""""""""""""""""""""""
 
-``usbh_kill_urb`` 取消指定 URB 的传输。 **此函数对用户开放**。
+``usbh_kill_urb`` 取消指定 URB 的传输。不可以在中断和回调中调用，通常只在 disconnect 和超时时调用。 **此函数对用户开放**。
 
 .. code-block:: C
 
