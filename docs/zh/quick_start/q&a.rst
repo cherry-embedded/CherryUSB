@@ -152,6 +152,7 @@ USB host 连接 USB 网卡无法联网问题
 - 使用信号量等待，前提所有的 class 资源都在这个线程中处理
 
 .. code-block:: C
+
     static usb_osal_sem_t xxx_exit_sem;
 
     /* 启动任务前执行；初始计数为 0 */
