@@ -145,7 +145,7 @@ int ohci_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
     nports = g_ohci_hcd[bus->hcd.hcd_id].n_ports;
 
     port = setup->wIndex;
-    if (setup->bmRequestType & USB_REQUEST_RECIPIENT_DEVICE) {
+    if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_DEVICE) {
         switch (setup->bRequest) {
             case HUB_REQUEST_CLEAR_FEATURE:
                 switch (setup->wValue) {
@@ -175,7 +175,7 @@ int ohci_roothub_control(struct usbh_bus *bus, struct usb_setup_packet *setup, u
             default:
                 break;
         }
-    } else if (setup->bmRequestType & USB_REQUEST_RECIPIENT_OTHER) {
+    } else if ((setup->bmRequestType & USB_REQUEST_RECIPIENT_MASK) == USB_REQUEST_RECIPIENT_OTHER) {
         switch (setup->bRequest) {
             case HUB_REQUEST_CLEAR_FEATURE:
                 if (!port || port > nports) {
