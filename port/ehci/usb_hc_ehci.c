@@ -113,7 +113,7 @@ static void ehci_qh_free_qtds(struct usbh_bus *bus, struct ehci_qh_hw *qh)
     qh->hw.overlay.alt_next_qtd = QTD_LIST_END;
     qh->hw.overlay.token = QTD_TOKEN_STATUS_HALTED;
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-    usb_dcache_clean((uintptr_t)&qh->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+    usb_dcache_clean((uintptr_t)&qh->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 #endif
     qtd = EHCI_ADDR2QTD(qh->first_qtd);
 
@@ -150,7 +150,7 @@ static inline void usb_ehci_qh_qtd_flush(struct ehci_qh_hw *qh)
         usb_dcache_clean((uintptr_t)&qtd->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
         qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
     }
-    usb_dcache_clean((uintptr_t)&qh->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+    usb_dcache_clean((uintptr_t)&qh->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 }
 #else
 #define usb_ehci_qh_qtd_flush(qh)
@@ -163,7 +163,7 @@ static inline void ehci_qh_add_head(struct ehci_qh_hw *head, struct ehci_qh_hw *
 
     head->hw.hlp = QH_HLP_QH(n);
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-    usb_dcache_clean((uintptr_t)&head->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+    usb_dcache_clean((uintptr_t)&head->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 #endif
 }
 
@@ -177,11 +177,12 @@ static inline void ehci_qh_remove(struct ehci_qh_hw *head, struct ehci_qh_hw *n)
 
     if (tmp) {
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-        usb_dcache_invalidate((uintptr_t)&n->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+        usb_dcache_invalidate((uintptr_t)&n->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
+        usb_dcache_invalidate((uintptr_t)&tmp->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 #endif
         tmp->hw.hlp = n->hw.hlp;
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-        usb_dcache_clean((uintptr_t)&tmp->hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+        usb_dcache_clean((uintptr_t)&tmp->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 #endif
     }
 }
@@ -704,6 +705,9 @@ static void ehci_check_qh(struct usbh_bus *bus, struct ehci_qh_hw *qhead, struct
         qtd = EHCI_ADDR2QTD(qtd->hw.next_qtd);
     }
 
+#if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
+    usb_dcache_invalidate((uintptr_t)&qh->hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
+#endif
     urb->data_toggle = (qh->hw.overlay.token & QTD_TOKEN_TOGGLE) != 0;
 
     if ((token & QTD_TOKEN_STATUS_ERRORS) == 0) {
@@ -828,8 +832,8 @@ int usb_hc_init(struct usbh_bus *bus)
     }
 
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-    usb_dcache_clean((uintptr_t)&g_async_qh_head[bus->hcd.hcd_id].hw, CONFIG_USB_EHCI_ALIGN_SIZE);
-    usb_dcache_clean((uintptr_t)&g_periodic_qh_head[bus->hcd.hcd_id].hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+    usb_dcache_clean((uintptr_t)&g_async_qh_head[bus->hcd.hcd_id].hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
+    usb_dcache_clean((uintptr_t)&g_periodic_qh_head[bus->hcd.hcd_id].hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
     usb_dcache_clean((uintptr_t)g_framelist[bus->hcd.hcd_id], sizeof(uint32_t) * CONFIG_USB_EHCI_FRAME_LIST_SIZE);
 #endif
 
@@ -1411,7 +1415,7 @@ static void ehci_scan_async_list(struct usbh_bus *bus)
     struct ehci_qh_hw *qh;
 
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-    usb_dcache_invalidate((uintptr_t)&g_async_qh_head[bus->hcd.hcd_id].hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+    usb_dcache_invalidate((uintptr_t)&g_async_qh_head[bus->hcd.hcd_id].hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 #endif
     qh = EHCI_ADDR2QH(g_async_qh_head[bus->hcd.hcd_id].hw.hlp);
     while ((qh != &g_async_qh_head[bus->hcd.hcd_id]) && qh) {
@@ -1427,7 +1431,7 @@ static void ehci_scan_periodic_list(struct usbh_bus *bus)
     struct ehci_qh_hw *qh;
 
 #if defined(CONFIG_USB_EHCI_DESC_DCACHE_ENABLE)
-    usb_dcache_invalidate((uintptr_t)&g_periodic_qh_head[bus->hcd.hcd_id].hw, CONFIG_USB_EHCI_ALIGN_SIZE);
+    usb_dcache_invalidate((uintptr_t)&g_periodic_qh_head[bus->hcd.hcd_id].hw, USB_ALIGN_UP(sizeof(struct ehci_qh), CONFIG_USB_EHCI_ALIGN_SIZE));
 #endif
     qh = EHCI_ADDR2QH(g_periodic_qh_head[bus->hcd.hcd_id].hw.hlp);
     while (qh) {
