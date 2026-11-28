@@ -167,6 +167,7 @@ typedef enum {
 struct musb_pipe {
     uint8_t chidx;
     bool inuse;
+    bool is_timeout;
     uint32_t xfrd;
     volatile uint8_t ep0_state;
     usb_osal_sem_t waitsem;
@@ -595,13 +596,6 @@ static void musb_urb_waitup(struct usbh_urb *urb)
         return;
     }
 
-    if (urb->errorcode == -USB_ERR_TIMEOUT) {
-        urb->timeout = 0;
-        usb_osal_sem_reset(pipe->waitsem);
-        musb_pipe_free(pipe);
-        return;
-    }
-
     if (urb->timeout) {
         urb->timeout = 0;
         usb_osal_sem_give(pipe->waitsem);
@@ -898,11 +892,13 @@ int usbh_submit_urb(struct usbh_urb *urb)
     pipe = &g_musb_hcd[bus->hcd.hcd_id].pipe_pool[chidx];
     pipe->chidx = chidx;
     pipe->urb = urb;
-    timeout = urb->timeout;
+    pipe->is_timeout = false;
 
     urb->hcpriv = pipe;
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
+
+    timeout = urb->timeout;
 
     switch (USB_GET_ENDPOINT_TYPE(urb->ep->bmAttributes)) {
         case USB_ENDPOINT_TYPE_CONTROL:
@@ -934,18 +930,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
     return ret;
 errout_timeout:
-    flags = usb_osal_enter_critical_section();
-    if (urb->errorcode != -USB_ERR_BUSY) {
-        ret = urb->errorcode;
-        usb_osal_sem_reset(pipe->waitsem);
-        musb_pipe_free(pipe);
-        usb_osal_leave_critical_section(flags);
-        USB_LOG_ERR("complete but timeout too small\r\n");
-        return ret;
-    }
-    urb->errorcode = -USB_ERR_TIMEOUT;
-    ret = urb->errorcode;
-    usb_osal_leave_critical_section(flags);
+    pipe->is_timeout = true;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -969,29 +954,35 @@ int usbh_kill_urb(struct usbh_urb *urb)
         return -USB_ERR_INVAL;
     }
 
-    if (urb->errorcode != -USB_ERR_BUSY && urb->errorcode != -USB_ERR_TIMEOUT) {
-        usb_osal_leave_critical_section(flags);
-        return 0;
-    }
-
-    musb_set_active_ep(bus, pipe->chidx);
-
-    if (urb->ep->bEndpointAddress & 0x80) {
-        HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << pipe->chidx);
-        HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << pipe->chidx);
-
-        musb_fifo_flush(bus, pipe->chidx | 0x80);
-    } else {
-        HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << pipe->chidx);
-        HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << pipe->chidx);
-
-        musb_fifo_flush(bus, pipe->chidx);
-    }
-
+    /* URB is not completed yet */
     if (urb->errorcode == -USB_ERR_BUSY) {
+        musb_set_active_ep(bus, pipe->chidx);
+
+        if (urb->ep->bEndpointAddress & 0x80) {
+            HWREGH(USB_BASE + MUSB_RXIE_OFFSET) &= ~(1 << pipe->chidx);
+            HWREGH(USB_BASE + MUSB_RXIS_OFFSET) = (1 << pipe->chidx);
+
+            musb_fifo_flush(bus, pipe->chidx | 0x80);
+        } else {
+            HWREGH(USB_BASE + MUSB_TXIE_OFFSET) &= ~(1 << pipe->chidx);
+            HWREGH(USB_BASE + MUSB_TXIS_OFFSET) = (1 << pipe->chidx);
+
+            musb_fifo_flush(bus, pipe->chidx);
+        }
+
         urb->errorcode = -USB_ERR_SHUTDOWN;
+
+        if (!pipe->is_timeout) {
+            musb_urb_waitup(urb);
+        }
     }
-    musb_urb_waitup(urb);
+
+    /* URB is timed out */
+    if (pipe->is_timeout) {
+        urb->timeout = 0;
+        usb_osal_sem_reset(pipe->waitsem);
+        musb_pipe_free(pipe);
+    }
     usb_osal_leave_critical_section(flags);
     return 0;
 }

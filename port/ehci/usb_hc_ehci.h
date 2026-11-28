@@ -60,6 +60,7 @@ struct ehci_qh_hw {
     uint16_t pad[16];
 #endif
     bool inuse;
+    bool is_timeout;
     uint32_t first_qtd;
     struct usbh_urb *urb;
     usb_osal_sem_t waitsem;

@@ -20,6 +20,7 @@ struct dwc2_chan {
     uint32_t xferlen;
     uint8_t chidx;
     bool inuse;
+    bool is_timeout;
     bool do_ssplit;
     bool do_csplit;
     uint8_t hub_addr;
@@ -667,13 +668,6 @@ static void dwc2_urb_waitup(struct usbh_urb *urb)
         return;
     }
 
-    if (urb->errorcode == -USB_ERR_TIMEOUT) {
-        urb->timeout = 0;
-        usb_osal_sem_reset(chan->waitsem);
-        dwc2_chan_free(chan);
-        return;
-    }
-
     if (urb->timeout) {
         urb->timeout = 0;
         usb_osal_sem_give(chan->waitsem);
@@ -1054,7 +1048,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     chan = &g_dwc2_hcd[bus->hcd.hcd_id].chan_pool[chidx];
     chan->chidx = chidx;
     chan->urb = urb;
-    timeout = urb->timeout;
+    chan->is_timeout = false;
     chan->do_ssplit = 0;
 
     if (urb->hport->speed != USB_SPEED_HIGH &&
@@ -1068,6 +1062,9 @@ int usbh_submit_urb(struct usbh_urb *urb)
     urb->hcpriv = chan;
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
+
+    timeout = urb->timeout;
+
     usb_osal_leave_critical_section(flags);
 
     if (urb->setup) {
@@ -1109,18 +1106,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
     return ret;
 errout_timeout:
-    flags = usb_osal_enter_critical_section();
-    if (urb->errorcode != -USB_ERR_BUSY) {
-        ret = urb->errorcode;
-        usb_osal_sem_reset(chan->waitsem);
-        dwc2_chan_free(chan);
-        usb_osal_leave_critical_section(flags);
-        USB_LOG_ERR("complete but timeout too small\r\n");
-        return ret;
-    }
-    urb->errorcode = -USB_ERR_TIMEOUT;
-    ret = urb->errorcode;
-    usb_osal_leave_critical_section(flags);
+    chan->is_timeout = true;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -1144,17 +1130,23 @@ int usbh_kill_urb(struct usbh_urb *urb)
         return -USB_ERR_INVAL;
     }
 
-    if (urb->errorcode != -USB_ERR_BUSY && urb->errorcode != -USB_ERR_TIMEOUT) {
-        usb_osal_leave_critical_section(flags);
-        return 0;
-    }
-
-    dwc2_halt(bus, chan->chidx);
+    /* URB is not completed yet */
     if (urb->errorcode == -USB_ERR_BUSY) {
+        dwc2_halt(bus, chan->chidx);
         urb->errorcode = -USB_ERR_SHUTDOWN;
+
+        if (!chan->is_timeout) {
+            dwc2_urb_waitup(urb);
+        }
     }
 
-    dwc2_urb_waitup(urb);
+    /* URB is timed out */
+    if (chan->is_timeout) {
+        urb->timeout = 0;
+        usb_osal_sem_reset(chan->waitsem);
+        dwc2_chan_free(chan);
+    }
+
     usb_osal_leave_critical_section(flags);
     return 0;
 }

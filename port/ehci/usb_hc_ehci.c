@@ -643,12 +643,6 @@ static void ehci_urb_waitup(struct usbh_bus *bus, struct usbh_urb *urb)
     }
 #endif
 
-    if (urb->errorcode == -USB_ERR_TIMEOUT) {
-        urb->timeout = 0;
-        usb_osal_sem_reset(qh->waitsem);
-        return;
-    }
-
     if (urb->timeout) {
         urb->timeout = 0;
         usb_osal_sem_give(qh->waitsem);
@@ -1261,9 +1255,14 @@ int usbh_submit_urb(struct usbh_urb *urb)
         urb->hcpriv = qh;
     }
 
-    timeout = urb->timeout;
+    if (qh) {
+        qh->is_timeout = false;
+    }
+
     urb->errorcode = -USB_ERR_BUSY;
     urb->actual_length = 0;
+
+    timeout = urb->timeout;
 
     usb_osal_leave_critical_section(flags);
 
@@ -1311,16 +1310,7 @@ int usbh_submit_urb(struct usbh_urb *urb)
     }
     return ret;
 errout_timeout:
-    flags = usb_osal_enter_critical_section();
-    if (urb->errorcode == -USB_ERR_BUSY) {
-        urb->errorcode = -USB_ERR_TIMEOUT;
-    } else {
-        urb->timeout = 0;
-        usb_osal_sem_reset(qh->waitsem);
-        USB_LOG_ERR("complete but timeout too small\r\n");
-    }
-    ret = urb->errorcode;
-    usb_osal_leave_critical_section(flags);
+    qh->is_timeout = true;
     usbh_kill_urb(urb);
     return ret;
 }
@@ -1332,6 +1322,7 @@ int usbh_kill_urb(struct usbh_urb *urb)
     size_t flags;
     uint8_t ep_type;
     bool need_iaad_lock;
+    bool need_waitup = false;
     int ret = 0;
 
     if (!urb || !urb->hport || !urb->ep || !urb->hport->bus) {
@@ -1379,8 +1370,10 @@ int usbh_kill_urb(struct usbh_urb *urb)
         ehci_qh_remove(&g_periodic_qh_head[bus->hcd.hcd_id], qh);
     }
 
+    /* URB is not completed yet */
     if (urb->errorcode == -USB_ERR_BUSY) {
         urb->errorcode = -USB_ERR_SHUTDOWN;
+        need_waitup = true;
     }
     EHCI_HCOR->usbcmd |= EHCI_USBCMD_PSEN | EHCI_USBCMD_ASEN;
 
@@ -1396,7 +1389,11 @@ int usbh_kill_urb(struct usbh_urb *urb)
         }
     }
 
-    if (urb->errorcode == -USB_ERR_SHUTDOWN || urb->errorcode == -USB_ERR_TIMEOUT) {
+    /* URB is timed out */
+    if (qh->is_timeout) {
+        urb->timeout = 0;
+        usb_osal_sem_reset(qh->waitsem);
+    } else if (need_waitup) {
         ehci_urb_waitup(bus, urb);
     }
     ehci_qh_free(bus, qh);
